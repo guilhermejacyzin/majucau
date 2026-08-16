@@ -26,6 +26,7 @@ Push-Location $projectRoot
 try {
     Invoke-NativeChecked $wailsCommand @('build', '-clean', '-trimpath')
     Invoke-NativeChecked $goCommand @('build', '-trimpath', '-o', (Join-Path $projectRoot 'build\bin\majucau-worker.exe'), './cmd/worker')
+    Invoke-NativeChecked $goCommand @('build', '-trimpath', '-o', (Join-Path $projectRoot 'build\bin\installer-helper.exe'), './cmd/installer-helper')
 
     if ($Installer) {
         $installerStartedAt = Get-Date

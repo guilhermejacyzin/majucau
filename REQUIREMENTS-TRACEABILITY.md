@@ -31,6 +31,7 @@
 | OPS-01 | NSIS x64 assinado, WebView2, PostgreSQL dedicado, porta sob lock, serviços, migrations, atalho, upgrade/uninstall | pp. 24–25, §§46–47 | ADR §9; Plano fases 2 e 12 | G1/G6/G7 | Matriz Windows online/offline, UAC, porta ocupada, upgrade e uninstall | NOT_STARTED |
 | OPS-02 | Backup/restore com dump, globals, manifesto, hash, criptografia, retenção e validação pós-restore | pp. 24–25, §§46–47 | ADR §10; Plano §15.1 | G6/G7 | Backup e restore reais, incluindo RAW, snapshots, roles e continuidade | NOT_STARTED |
 | OPS-03 | Atualização aceita somente pacote assinado e mantém compatibilidade binário/schema | criticidade e operação do handoff | ADR §9.2; Plano §15.2 | G6/G7 | Assinatura/hash, migration, smoke, falha e restore conjunto | NOT_STARTED |
+| OPS-04 | Instalação em máquina de terceiro detecta, recupera ou bloqueia com segurança falhas conhecidas e produz diagnóstico sanitizado para falhas desconhecidas | solicitação explícita da usuária em 2026-08-16 | AGENTS “Instalação em máquinas de terceiros”; matriz de resiliência Windows; helper de preflight | G1/G6/G7 | Casos automatizados + matriz executada em VMs para install/repair/upgrade/rollback/uninstall e falhas parciais | PARTIAL |
 
 ## Dados, sincronização e integrações
 

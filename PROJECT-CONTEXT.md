@@ -176,11 +176,15 @@ Single-user não elimina RBAC: ações administrativas/materialmente destrutivas
 
 Instalação alvo: validar Windows/UAC/espaço; instalar WebView2 se ausente; instalar UI/worker/PostgreSQL; criar `%ProgramData%` e ACLs; gerar segredos e configurar loopback/SCRAM; iniciar banco/migrations; registrar serviços e dependências; criar atalhos; abrir first-run.
 
+Máquinas de terceiros são ambiente não confiável e potencialmente divergente. O instalador deve fazer preflight antes da primeira mutação, manter journal de fases, usar escrita/rename atômicos, ser idempotente, retomar ou reparar execução interrompida e nunca interferir em PostgreSQL/serviços de terceiros. Cada falha conhecida possui detecção, código estável, rollback/retomada e instrução simples. Falha desconhecida bloqueia com segurança e gera support bundle sanitizado; “continuar mesmo assim” não pode contornar risco de perda, exposição ou schema parcial.
+
 Upgrade: verificar assinatura/hash, backup pré-update, parar serviços, trocar binários, migrar e executar smoke. Rollback binário apenas com schema compatível; senão restaurar banco/roles/binários atomicamente.
 
 Backup: `pg_dump -Fc`, manifesto, SHA-256, globals/roles, criptografia autenticada e chave DPAPI. Só é validado após restore real e checagem funcional.
 
 Uninstall não apaga dados silenciosamente. Remoção material exige escolha explícita e recuperável.
+
+A promessa verificável não é antecipar literalmente toda falha possível, e sim cobrir sistematicamente as classes conhecidas, testar os modos de maior impacto e garantir contenção, diagnóstico e recuperação para o desconhecido. A matriz executável fica em `docs/WINDOWS-INSTALLATION-RESILIENCE.md`.
 
 ## 11. Testes e gates
 

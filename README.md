@@ -65,10 +65,12 @@ Leia [PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) antes de implementar ou revisar qu
 
 ```text
 cmd/worker/              processo/serviço Windows de background
+cmd/installer-helper/    preflight read-only usado pelo instalador
 internal/application/    contratos de casos de uso
 internal/domain/         dinheiro, identidades e estados
 internal/financial/      regras financeiras versionadas
 internal/ipc/            protocolo e Named Pipe
+internal/installer/      política e probes de compatibilidade da máquina
 internal/security/       DPAPI, vault e sanitização
 database/migrations/     migrations PostgreSQL forward-only
 database/queries/        SQL fonte usado pelo sqlc
@@ -139,6 +141,8 @@ Os requisitos e as evidências esperadas estão em [REQUIREMENTS-TRACEABILITY.md
 
 O destino é um instalador x64 simples: a usuária instala, abre pelo atalho e começa o first-run sem terminal. O pacote final deverá incluir UI, worker, PostgreSQL dedicado, migrations e WebView2 quando necessário; criar contas/ACLs; sobreviver a reboot; preservar dados em upgrade/uninstall; e oferecer backup/restore testado.
 
+O fluxo será defensivo para máquinas de terceiros: preflight antes de alterar o sistema, operações idempotentes, journal de fases, repair/retomada, rollback seguro, proteção contra instalações concorrentes e diagnóstico sanitizado. Cenários desconhecidos devem bloquear sem corromper o estado e fornecer um código acionável; não existe opção genérica para ignorar falhas críticas.
+
 Builds G1 são deliberadamente não assinados. O G7 exige certificado Authenticode, verificação de hash/assinatura e smoke tests em Windows 10 e 11 limpos.
 
 ## Documentação principal
@@ -153,6 +157,8 @@ Builds G1 são deliberadamente não assinados. O G7 exige certificado Authentico
 - [UX-TOOLTIP-CATALOG.md](UX-TOOLTIP-CATALOG.md) — explicações acessíveis;
 - [REQUIREMENTS-TRACEABILITY.md](REQUIREMENTS-TRACEABILITY.md) — requisito → artefato → evidência.
 - [docs/evidence/G1-VALIDATION-2026-08-16.md](docs/evidence/G1-VALIDATION-2026-08-16.md) — comandos executados, resultados e riscos residuais da fundação G1.
+- [docs/WINDOWS-INSTALLATION-RESILIENCE.md](docs/WINDOWS-INSTALLATION-RESILIENCE.md) — matriz de falhas, recuperação e aceite em máquinas de terceiros.
+- [docs/evidence/INSTALLATION-RESILIENCE-2026-08-16.md](docs/evidence/INSTALLATION-RESILIENCE-2026-08-16.md) — execução local do preflight, build e runtime desktop/worker.
 
 ## Distribuição
 

@@ -64,6 +64,18 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Não logar documento, folha, token ou payload completo sem necessidade legal e proteção explícita.
 - Rodar scan de secrets, dependências, vulnerabilidades, SBOM e licenças no pipeline.
 
+## Instalação em máquinas de terceiros
+
+- Tratar instalação, repair, upgrade, rollback e uninstall como operações transacionais, idempotentes e retomáveis.
+- Antes de mutar a máquina, executar preflight de Windows/arquitetura, UAC, reboot pendente, espaço, paths, portas, WebView2, serviços e instalação anterior.
+- Nunca reutilizar nem alterar PostgreSQL, serviço, porta ou diretório de outro produto.
+- Falha parcial não pode deixar serviço iniciado contra schema incompleto, credencial exposta, porta liberada sem registro ou dados silenciosamente removidos.
+- Preservar dados por padrão; exclusão exige escolha explícita, confirmação reforçada e recomendação de backup.
+- Upgrade exige pacote assinado, backup prévio, compatibilidade binário/schema e recuperação conjunta quando rollback isolado for inseguro.
+- Todo erro de instalação usa código estável, mensagem simples, ação recomendada e log técnico sanitizado; nunca registrar senha, token, PII ou argumento sensível.
+- Suportar diagnóstico offline e support bundle sanitizado. Problema desconhecido deve falhar com segurança e produzir evidência acionável.
+- G7 exige execução da matriz de instalação em VMs limpas e cenários adversos; documentação ou mocks não substituem esse teste.
+
 ## Frontend e acessibilidade
 
 - Todo componente funcional declara `helpText` ou justificativa de não aplicabilidade.

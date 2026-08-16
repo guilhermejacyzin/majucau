@@ -450,6 +450,20 @@ Testar em VMs limpas:
 - falha de migration;
 - backup e restore.
 
+Além do caminho limpo, executar a matriz versionada em `docs/WINDOWS-INSTALLATION-RESILIENCE.md`, cobrindo preflight, instalação interrompida, repair, reinstall, upgrade, rollback conjunto, arquivos bloqueados, disco cheio, reboot pendente, ACL/SID/DPAPI, serviço que não inicia, corrupção de dados, proxy/TLS e diagnóstico offline. Cada caso deve registrar entrada, fase da falha, código esperado, estado final da máquina, preservação de dados e evidência.
+
+### 15.5 Garantias de falha e suporte
+
+- journal de instalação sem secrets, com fase confirmada somente após commit;
+- rollback em ordem reversa para artefatos criados pela tentativa atual;
+- dados existentes e backups nunca entram no rollback automático destrutivo;
+- locks contra duas instalações/upgrades concorrentes;
+- códigos estáveis separados de texto traduzido;
+- coleta de diagnóstico local, sanitizada e revisável antes do envio;
+- botão de retry somente para fases idempotentes e condições já corrigidas;
+- repair reconcilia estado desejado versus observado sem recriar identidade DPAPI;
+- falha desconhecida termina bloqueada, preserva evidência e orienta suporte.
+
 ## 16. Critério de pronto para produção
 
 O produto só será classificado como pronto quando:

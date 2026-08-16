@@ -1,6 +1,6 @@
 # ADR-001 - Arquitetura, segurança e empacotamento Windows
 
-- **Status:** Proposto para aprovação
+- **Status:** Aprovado no G0 em 2026-08-16; implementação sujeita aos gates G1–G7
 - **Data:** 2026-08-15
 - **Produto:** Majucau Financial Intelligence
 - **Plataforma:** Windows 10/11 x64, single-user, instalação local

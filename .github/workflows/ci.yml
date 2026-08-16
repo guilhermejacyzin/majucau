@@ -86,6 +86,9 @@ jobs:
       - name: Build worker executable
         run: go build -trimpath -o build/bin/majucau-worker.exe ./cmd/worker
 
+      - name: Build installer preflight helper
+        run: go build -trimpath -o build/bin/installer-helper.exe ./cmd/installer-helper
+
       - name: Upload unsigned G1 build
         uses: actions/upload-artifact@v4
         with:
@@ -93,4 +96,5 @@ jobs:
           path: |
             build/bin/majucau.exe
             build/bin/majucau-worker.exe
+            build/bin/installer-helper.exe
           if-no-files-found: error

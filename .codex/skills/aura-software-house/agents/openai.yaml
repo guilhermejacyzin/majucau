@@ -1,0 +1,4 @@
+interface:
+  display_name: "Aura Software House"
+  short_description: "Orquestra engenharia de software com rigor"
+  default_prompt: "Use $aura-software-house para liderar tecnicamente este trabalho de software do diagnostico a validacao."

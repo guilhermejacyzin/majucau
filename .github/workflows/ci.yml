@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.6'
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Go tests
+        run: go test . ./cmd/... ./database/... ./internal/...
+
+      - name: Go vet
+        run: go vet . ./cmd/... ./database/... ./internal/...
+
+      - name: Install pinned Go verification tools
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
+
+      - name: Go vulnerability scan
+        run: govulncheck . ./cmd/... ./database/... ./internal/...
+
+      - name: Migration checksums
+        shell: pwsh
+        run: ./scripts/verify-migrations.ps1
+
+      - name: Generate SQL access layer
+        run: |
+          sqlc generate -f database/sqlc.yaml
+          git diff --exit-code -- database/gen
+
+      - name: Secret scan
+        shell: pwsh
+        run: ./scripts/scan-secrets.ps1
+
+      - name: Frontend lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Frontend typecheck
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Frontend tests
+        working-directory: frontend
+        run: npm run test:run
+
+      - name: Frontend build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Dependency audit
+        working-directory: frontend
+        run: npm audit
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+
+      - name: Build desktop executable
+        run: wails build -clean
+
+      - name: Build worker executable
+        run: go build -trimpath -o build/bin/majucau-worker.exe ./cmd/worker
+
+      - name: Upload unsigned G1 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: majucau-g1-unsigned
+          path: |
+            build/bin/majucau.exe
+            build/bin/majucau-worker.exe
+          if-no-files-found: error

@@ -1,0 +1,16 @@
+* text=auto eol=lf
+
+*.ps1 text eol=crlf
+*.png binary
+*.ico binary
+*.pdf binary
+*.woff2 binary
+
+# Preserve intentional Markdown line breaks and upstream/generated formatting.
+IMPLEMENTATION-PLAN.md whitespace=-trailing-space
+build/README.md whitespace=-trailing-space
+build/windows/installer/wails_tools.nsh whitespace=-trailing-space
+docs/source/** whitespace=-trailing-space
+frontend/index.html whitespace=-blank-at-eof
+frontend/src/assets/fonts/OFL.txt whitespace=-trailing-space
+frontend/wailsjs/** whitespace=-trailing-space,-blank-at-eof

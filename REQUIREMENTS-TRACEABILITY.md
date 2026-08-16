@@ -3,6 +3,7 @@
 - **Baseline:** handoff técnico-funcional de 30 páginas, revisado em 2026-08-15
 - **Estado avaliado:** G0 aprovado em 2026-08-16; fundação G1 em implementação e ainda sem aceite do gate
 - **Objetivo:** impedir que requisito, regra protegida ou evidência de aceite desapareça entre arquitetura, implementação, teste e produção
+- **Decomposição funcional:** `docs/FUNCTIONAL-DECOMPOSITION-v1.md` detalha cada módulo, subfunção, contrato, regra e critério de aceite relacionado às seções do handoff
 
 ## Legenda
 
@@ -44,7 +45,7 @@
 | INT-02 | Nuvemshop: OAuth, loja, escopos, pedidos, clientes, status, parcelas, cancelamento/reembolso | pp. 4–6, §§5.2, 6 | ADR §6.3; API §4; Registro D-002 | G2 | Redirect aceito, relay publicado, E2E, replay/TTL/PKCE | BLOCKED |
 | INT-03 | Nuvem Pago: taxa, líquido, repasse e data somente por fonte oficial | pp. 4–6, §§5.2, 6 | ADR §6.4; API §5; Registro D-004 | G2/G3/G7 | API/arquivo oficial, contrato e reconciliação R$ 0,01 | BLOCKED |
 | INT-04 | Polling incremental, paginação, limite, retry/backoff, schema mismatch e último dado válido | pp. 13, 22–23, §§20–21, 42–43 | ADR §8; API §§2–6; AGENTS | G2/G6 | Testes 429, timeout, cursor, schema incompatível e stale | NOT_STARTED |
-| INT-05 | Tela de credenciais para Bling, Nuvemshop e Nuvem Pago, campos mascarados, conectar/testar/reconectar/desconectar e status | solicitação da usuária + pp. 22–23 | ADR §6; API §7; Plano fase 4 | G4/G7 | Testes funcionais, DPAPI, acessibilidade e erros sanitizados | NOT_STARTED |
+| INT-05 | Área frontend editável para configurar dados públicos e secrets de Bling/Nuvemshop, iniciar OAuth, testar, reconectar, desconectar e sincronizar; Nuvem Pago segue contrato oficial | solicitação da usuária + pp. 22–23 | ADR §6; API §§7.1–7.3; Functional Decomposition M13-F01–F12; Plano fase 4 | G2/G4/G7 | E2E de formulário/IPC/OAuth, DPAPI, ACL, acessibilidade, redaction e erros sanitizados | NOT_STARTED |
 
 ## Tesouraria, recebíveis e obrigações
 

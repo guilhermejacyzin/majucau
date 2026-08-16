@@ -241,7 +241,40 @@ Integrações
 
 Todos os campos terão label visível; tooltip não substituirá instrução crítica.
 
-### 7.3 Testes de conexão
+### 7.3 Formulário editável e autenticação iniciada pela UI
+
+A tela é a área oficial para preencher e alterar a configuração das APIs. A pessoa usuária poderá digitar os dados públicos e o secret de cada provedor, salvar a configuração, iniciar a conexão, testar, reconectar, desconectar e solicitar uma sincronização. Esse fluxo é editável no frontend e deve parecer uma operação normal de aplicativo desktop.
+
+Isso não significa que o React possa armazenar ou executar a autenticação. O desenho obrigatório é:
+
+```text
+form React editável
+  -> validação de formato e confirmação
+  -> IPC local autenticado
+  -> worker valida SID/permissão
+  -> DPAPI/ACL para secret e token
+  -> navegador externo para OAuth
+  -> callback/relay temporário
+  -> worker testa e sincroniza
+  -> UI recebe estado sanitizado
+```
+
+Regras da experiência:
+
+- Client ID/App ID, Redirect URI, Store ID, conta e scopes aparecem como campos editáveis;
+- Client Secret aparece mascarado; depois de salvo, a UI mostra apenas “configurado” e permite substituição explícita;
+- limpar o campo sem confirmar não apaga o secret existente;
+- salvar não dispara sincronização automaticamente;
+- “Conectar” abre o navegador externo e não captura login em WebView;
+- “Testar conexão” faz uma leitura mínima e explica a causa em caso de falha;
+- “Reconectar” permite trocar a conta/loja sem apagar RAW histórico;
+- “Desconectar” revoga/remove credenciais e preserva dados já importados;
+- nenhuma credencial aparece em URL, localStorage, bundle, log, diagnóstico ou resposta IPC;
+- todos os botões, campos, erros e estados têm tooltip simples, label, foco visível e mensagem acessível.
+
+O frontend não cria campos financeiros fictícios para Nuvem Pago. O adapter só habilita seu formulário quando existir contrato oficial para autenticação e ledger; até lá, o card permanece editável quanto à visualização/estado, mas `UNAVAILABLE` para confirmação financeira.
+
+### 7.4 Testes de conexão
 
 - Bling: chamada GET mínima a recurso autorizado, com paginação 1/limite 1.
 - Nuvemshop: `GET /orders?page=1&per_page=1` com `read_orders`.

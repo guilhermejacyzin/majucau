@@ -111,7 +111,7 @@ Qualquer mudança nessas regras exige versão, regressão financeira e aprovaç�
 
 ## Integrações e credenciais
 
-A tela **Configurações > Integrações** contém cards independentes para Bling, Nuvemshop e Nuvem Pago, campos e estados de conexão. Na fundação G1, conectar, testar, reconectar, desconectar e sincronizar aparecem desabilitados: serão liberados somente quando o protocolo autenticado do worker implementar credenciais/OAuth sem expor secrets.
+A tela **Configurações > Integrações** é a área editável para preencher os dados públicos e secrets das APIs de Bling, Nuvemshop e, quando houver fonte oficial, Nuvem Pago. Na fundação G1 os campos já são apresentados com labels/tooltips e os comandos de conectar, testar, reconectar, desconectar e sincronizar aparecem desabilitados: serão liberados quando o protocolo autenticado do worker implementar o fluxo completo. Para a pessoa usuária, a experiência final será normal de aplicativo — editar, salvar, conectar no navegador externo e acompanhar o estado — sem o React persistir ou executar secrets.
 
 - secrets e tokens não entram no frontend, Git, logs ou banco em texto aberto;
 - a UI envia a credencial ao worker por IPC local autenticado;
@@ -148,6 +148,8 @@ Builds G1 são deliberadamente não assinados. O G7 exige certificado Authentico
 ## Documentação principal
 
 - [PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) — contexto profundo e continuidade;
+- [docs/REALINHAMENTO-2026-08-16.md](docs/REALINHAMENTO-2026-08-16.md) — análise crítica das novas referências e plano de realinhamento;
+- [docs/FUNCTIONAL-DECOMPOSITION-v1.md](docs/FUNCTIONAL-DECOMPOSITION-v1.md) — decomposição máxima de módulos, funções, regras, dados e aceite;
 - [ADR-001-ARQUITETURA-E-EMPACOTAMENTO.md](ADR-001-ARQUITETURA-E-EMPACOTAMENTO.md) — arquitetura Windows;
 - [ERD-v1.md](ERD-v1.md) — entidades e relações;
 - [DATA-DICTIONARY-v1.md](DATA-DICTIONARY-v1.md) — semântica dos dados;

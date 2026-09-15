@@ -1,0 +1,20 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "Majucau Financial Intelligence",
+  "outputfilename": "majucau",
+  "frontend:install": "npm ci",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Majucau",
+    "email": ""
+  },
+  "info": {
+    "companyName": "Majucau",
+    "productName": "Majucau Financial Intelligence",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright © 2026 Majucau",
+    "comments": "Build de fundação G1; não aprovado para produção."
+  }
+}

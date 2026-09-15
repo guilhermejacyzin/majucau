@@ -1,0 +1,13 @@
+{
+  "tasks": 127,
+  "revised_tasks": 70,
+  "technical_fronts": 10,
+  "business_questions_reopened": 0,
+  "completed_planning": 3,
+  "development_progress": 0,
+  "acyclic_dependencies": true,
+  "losses_required_before_release": true,
+  "source_files_unchanged": 19,
+  "formula_errors": 0,
+  "validation": "Planning artifacts only; no product implementation or live integration tests."
+}

@@ -1,0 +1,169 @@
+A1=I Testes
+A2=Regra crítica | B2=Caso | C2=Tipo | D2=Entrada/Cenário | E2=Resultado esperado | F2=Previne | G2=Status
+A3=Venda realizada / não duplicidade | B3=01 | C3=normal | D3=Pedido existe no Bling e também no arquivo Nuvem | E3=Conta uma venda realizada; Nuvem só auxilia vínculo. | F3=dupla receita | G3=EXECUTÁVEL APÓS GATE
+A4=Venda realizada / não duplicidade | B4=02 | C4=limite | D4=Pedido Bling com qty=0/cancelado conforme status de origem | E4=Não inventar receita/quantidade; respeitar status real. | F4=KPI inválido | G4=APÓS MAPEAMENTO
+A5=Venda realizada / não duplicidade | B5=03 | C5=ausência | D5=Evento Nuvem sem correspondente Bling | E5=Não entra em Venda Realizada. | F5=falso positivo | G5=EXECUTÁVEL APÓS GATE
+A6=Venda realizada / não duplicidade | B6=04 | C6=divergente | D6=Bling e Nuvem têm valores diferentes | E6=Venda continua fato Bling; divergência fica auditável, não ajusta venda. | F6=ajuste silencioso | G6=EXECUTÁVEL APÓS GATE
+A7=Venda realizada / não duplicidade | B7=05 | C7=duplicado | D7=Mesmo arquivo Nuvem reimportado | E7=Totais de venda e eventos não aumentam. | F7=duplicidade | G7=EXECUTÁVEL APÓS GATE
+A8=Venda realizada / não duplicidade | B8=06 | C8=parece correto mas não é | D8=Somar Bling+Nuvem porque totais parecem bater meta | E8=Teste deve falhar: é dupla fonte do mesmo fato. | F8=falso positivo | G8=EXECUTÁVEL APÓS GATE
+A9=Venda realizada / não duplicidade | B9=07 | C9=parece erro mas é válido | D9=Mesmo pedido tem eventos distintos venda/estorno/contestação | E9=Preservar eventos distintos; não deduplicar agressivamente. | F9=falso negativo | G9=EXECUTÁVEL APÓS GATE
+A10=null/UNAVAILABLE ≠ 0 | B10=01 | C10=normal | D10=Campo monetário = 0 explicitamente válido | E10=Aceitar 0 CONFIRMED quando a fonte prova zero. | F10=falso indisponível | G10=EXECUTÁVEL
+A11=null/UNAVAILABLE ≠ 0 | B11=02 | C11=limite | D11=Campo vazio mas arquivo e schema dizem opcional | E11=Classificar conforme regra do campo; não converter automaticamente em 0. | F11=zero fictício | G11=APÓS MAPEAMENTO
+A12=null/UNAVAILABLE ≠ 0 | B12=03 | C12=ausência | D12=Coluna obrigatória ausente | E12=UNAVAILABLE/rejeição de lote; cálculo dependente bloqueia. | F12=zero fictício | G12=EXECUTÁVEL
+A13=null/UNAVAILABLE ≠ 0 | B13=04 | C13=divergente | D13=Duas fontes trazem 0 e 10 para mesma chave | E13=DIVERGENT; não escolher uma silenciosamente. | F13=falso confirmado | G13=EXECUTÁVEL
+A14=null/UNAVAILABLE ≠ 0 | B14=05 | C14=duplicado | D14=Dois zeros da mesma chave por reimportação | E14=Uma ocorrência lógica; sem inflar contagem. | F14=duplicidade | G14=EXECUTÁVEL
+A15=null/UNAVAILABLE ≠ 0 | B15=06 | C15=parece correto mas não é | D15=Dashboard exibe R$0 porque parser falhou | E15=Teste deve falhar; deve exibir indisponível. | F15=falso positivo | G15=EXECUTÁVEL
+A16=null/UNAVAILABLE ≠ 0 | B16=07 | C16=parece erro mas é válido | D16=NF válida sem frete destacado | E16=R$0 de frete cliente é válido se ausência semântica confirmada. | F16=falso negativo | G16=APÓS MAPEAMENTO NF
+A17=Importação por pasta / idempotência | B17=01 | C17=normal | D17=Arquivo novo, layout válido, hash novo | E17=Criar batch, validar, importar, auditar totais. | F17=perda de lineage | G17=APÓS CONTRATO
+A18=Importação por pasta / idempotência | B18=02 | C18=limite | D18=Arquivo com 1 linha válida e 1 inválida | E18=Resultado conforme política de parcial; status não pode fingir carga completa. | F18=confirmação parcial | G18=APÓS CONTRATO
+A19=Importação por pasta / idempotência | B19=03 | C19=ausência | D19=Pasta sem acesso/arquivo esperado ausente | E19=UNAVAILABLE/STALE; sem 0 e sem apagar último valor. | F19=falso zero | G19=APÓS CONTRATO
+A20=Importação por pasta / idempotência | B20=04 | C20=divergente | D20=Novo arquivo para mesmo período com valores incompatíveis | E20=DIVERGENT ou versionamento explícito; não sobrescrever silenciosamente. | F20=sobrescrita | G20=APÓS CONTRATO
+A21=Importação por pasta / idempotência | B21=05 | C21=duplicado | D21=Mesmo conteúdo com outro nome | E21=Hash impede nova carga. | F21=duplicidade | G21=APÓS CONTRATO
+A22=Importação por pasta / idempotência | B22=06 | C22=parece correto mas não é | D22=Layout mudou mas colunas continuam parseáveis em posições erradas | E22=Rejeitar por schema/headers/tipos/totais. | F22=corrupção silenciosa | G22=APÓS CONTRATO
+A23=Importação por pasta / idempotência | B23=07 | C23=parece erro mas é válido | D23=Mesmo Nº transação em tipos de evento diferentes | E23=Preservar ambos com chave composta adequada. | F23=dedupe agressiva | G23=APÓS CONTRATO
+A24=Taxas Nuvem realizadas | B24=01 | C24=normal | D24=Venda com Taxas+Juros=Custos Totais e Valor Líquido exportado | E24=Usar exportado; fórmula apenas valida. | F24=recalculo indevido | G24=APÓS GATE
+A25=Taxas Nuvem realizadas | B25=02 | C25=limite | D25=Venda com Taxa=0 e Juros=0 | E25=0 válido se exportado; não aplicar contrato automaticamente. | F25=dupla cobrança | G25=APÓS GATE
+A26=Taxas Nuvem realizadas | B26=03 | C26=ausência | D26=Custos Totais ausente em coluna obrigatória | E26=Lote/registro indisponível; não inferir. | F26=valor inventado | G26=APÓS CONTRATO
+A27=Taxas Nuvem realizadas | B27=04 | C27=divergente | D27=Custos Totais ≠ Taxas+Juros em venda | E27=Marcar DIVERGENT/alerta de auditoria; preservar exportado. | F27=correção silenciosa | G27=APÓS GATE
+A28=Taxas Nuvem realizadas | B28=05 | C28=duplicado | D28=Mesmo evento no mesmo/novo arquivo | E28=Não duplicar custo realizado. | F28=duplicidade | G28=APÓS CHAVES
+A29=Taxas Nuvem realizadas | B29=06 | C29=parece correto mas não é | D29=Aplicar 2,59% + R$0,35 sobre evento já líquido | E29=Teste deve falhar; não reaplicar contrato. | F29=dupla taxa | G29=APÓS GATE
+A30=Taxas Nuvem realizadas | B30=07 | C30=parece erro mas é válido | D30=Contestação não obedece fórmula de venda | E30=Preservar tipo e valor exportado; não forçar fórmula. | F30=falso divergente | G30=APÓS GATE
+A31=Etiqueta / frete operacional | B31=01 | C31=normal | D31=Fatura de envio presente | E31=invoice_total => CONFIRMED; não somar cotação. | F31=dupla etiqueta | G31=APÓS CONTRATO
+A32=Etiqueta / frete operacional | B32=02 | C32=limite | D32=Somente cotação presente | E32=quote_total => PROVISIONAL. | F32=provisório como realizado | G32=APÓS CONTRATO
+A33=Etiqueta / frete operacional | B33=03 | C33=ausência | D33=Sem fatura e sem cotação | E33=UNAVAILABLE; derivados bloqueados. | F33=zero fictício | G33=APÓS CONTRATO
+A34=Etiqueta / frete operacional | B34=04 | C34=divergente | D34=Fatura não corresponde à cotação ou pedido | E34=Preservar ambos; fatura substitui custo se chave correta, divergência auditável. | F34=match errado | G34=APÓS CHAVES
+A35=Etiqueta / frete operacional | B35=05 | C35=duplicado | D35=Mesma fatura em dois arquivos | E35=Uma etiqueta lógica. | F35=duplicidade | G35=APÓS CHAVES
+A36=Etiqueta / frete operacional | B36=06 | C36=parece correto mas não é | D36=Somar quote_total + invoice_total | E36=Teste deve falhar. | F36=dupla contagem | G36=APÓS GATE
+A37=Etiqueta / frete operacional | B37=07 | C37=parece erro mas é válido | D37=Correios só cotado e sem faturamento | E37=Permanece PROVISIONAL, não gasto confirmado. | F37=falso negativo | G37=APÓS GATE
+A38=Frete cliente / subsídio / resultado | B38=01 | C38=normal | D38=Etiqueta 20; frete NF 8 | E38=Subsídio=12; Resultado=-12. | F38=fórmula errada | G38=APÓS GATE
+A39=Frete cliente / subsídio / resultado | B39=02 | C39=limite | D39=Etiqueta 20; frete NF 25 | E39=Subsídio=0; Resultado=5. | F39=subsídio negativo | G39=APÓS GATE
+A40=Frete cliente / subsídio / resultado | B40=03 | C40=ausência | D40=Falha ao ler frete da NF | E40=UNAVAILABLE; não usar 0. | F40=zero fictício | G40=APÓS MAPEAMENTO
+A41=Frete cliente / subsídio / resultado | B41=04 | C41=divergente | D41=Duas NFs candidatas com fretes diferentes | E41=PENDING_RECONCILIATION/DIVERGENT. | F41=match forçado | G41=APÓS CHAVES
+A42=Frete cliente / subsídio / resultado | B42=05 | C42=duplicado | D42=Mesma NF importada duas vezes | E42=Frete recuperado uma vez. | F42=duplicidade | G42=APÓS CHAVES
+A43=Frete cliente / subsídio / resultado | B43=06 | C43=parece correto mas não é | D43=Campo vazio por parser quebrado tratado como frete zero | E43=Teste deve falhar. | F43=falso subsídio | G43=APÓS MAPEAMENTO
+A44=Frete cliente / subsídio / resultado | B44=07 | C44=parece erro mas é válido | D44=NF válida com frete 0 | E44=Frete cliente=0 CONFIRMED; subsídio pode ser total. | F44=falso negativo | G44=APÓS MAPEAMENTO
+A45=Conciliação | B45=01 | C45=normal | D45=Uma obrigação e um movimento com evidência suficiente | E45=Match automático único. | F45=falso pendente | G45=APÓS REGRAS
+A46=Conciliação | B46=02 | C46=limite | D46=Pagamento após vencimento com valor compatível | E46=Pode ser válido; atraso de data isolado não é erro. | F46=falso divergente | G46=APÓS REGRAS
+A47=Conciliação | B47=03 | C47=ausência | D47=Movimento sem título ou título sem movimento | E47=PENDING_RECONCILIATION. | F47=falso quitado | G47=APÓS REGRAS
+A48=Conciliação | B48=04 | C48=divergente | D48=Valor incompatível | E48=DIVERGENT/PENDING; nunca ajustar valor. | F48=ajuste silencioso | G48=APÓS C-01
+A49=Conciliação | B49=05 | C49=duplicado | D49=Dois movimentos idênticos candidatos | E49=Não escolher; pendente até evidência. | F49=falso match | G49=APÓS REGRAS
+A50=Conciliação | B50=06 | C50=parece correto mas não é | D50=Escolher candidato 'mais parecido' por valor/data aproximados | E50=Teste deve falhar. | F50=falso positivo | G50=APÓS REGRAS
+A51=Conciliação | B51=07 | C51=parece erro mas é válido | D51=Dois eventos legítimos do mesmo pedido | E51=Não deduplicar só por order_id. | F51=falso negativo | G51=APÓS CHAVES
+A52=A Pagar — parcial (CONFLITO) | B52=01 | C52=normal | D52=Título 1000, pagamento 1000 | E52=Quitação integral, se demais evidências válidas. | F52=erro básico | G52=BLOQUEADO C-01
+A53=A Pagar — parcial (CONFLITO) | B53=02 | C53=limite | D53=Título 1000, movimento 999,99 | E53=Resultado depende da regra de tolerância/partial; não inventar. | F53=tolerância oculta | G53=BLOQUEADO C-01
+A54=A Pagar — parcial (CONFLITO) | B54=03 | C54=ausência | D54=Sem movimento | E54=ABERTO/VENCIDO pelo valor definido em regra. | F54=falso quitado | G54=BLOQUEADO C-01
+A55=A Pagar — parcial (CONFLITO) | B55=04 | C55=divergente | D55=Título 1000, movimento 600 | E55=Não existe resultado único entre documentos. | F55=decisão silenciosa | G55=BLOQUEADO C-01
+A56=A Pagar — parcial (CONFLITO) | B56=05 | C56=duplicado | D56=Dois movimentos de 500 | E56=1:N não pode ser assumido sem regra aprovada. | F56=match forçado | G56=BLOQUEADO C-01
+A57=A Pagar — parcial (CONFLITO) | B57=06 | C57=parece correto mas não é | D57=Reduzir saldo para 400 por 'bom senso' | E57=Proibido até decisão. | F57=falso positivo | G57=BLOQUEADO C-01
+A58=A Pagar — parcial (CONFLITO) | B58=07 | C58=parece erro mas é válido | D58=Movimento após vencimento por 1000 | E58=Pode quitar; vencimento original permanece rastreável. | F58=falso negativo | G58=BLOQUEADO C-01
+A59=DRE / UNMAPPED | B59=01 | C59=normal | D59=Fato com mapping_id aprovado | E59=Entra na linha correta conforme competência. | F59=classificação errada | G59=APÓS GATE
+A60=DRE / UNMAPPED | B60=02 | C60=limite | D60=Valor 0 confirmado em fato mapeado | E60=Pode compor sem gerar valor; mantém lineage. | F60=falso unavailable | G60=APÓS GATE
+A61=DRE / UNMAPPED | B61=03 | C61=ausência | D61=Fato sem mapping_id | E61=UNMAPPED; não entra em Outras. | F61=conta coringa | G61=APÓS GATE
+A62=DRE / UNMAPPED | B62=04 | C62=divergente | D62=Duas classificações aprovadas conflitantes | E62=DIVERGENT/bloqueio; não escolher. | F62=classificação silenciosa | G62=APÓS GOVERNANÇA
+A63=DRE / UNMAPPED | B63=05 | C63=duplicado | D63=Mesmo fato chega de planilha e Bling com vínculo | E63=Consumir uma vez conforme regra. | F63=dupla DRE | G63=APÓS CHAVES
+A64=DRE / UNMAPPED | B64=06 | C64=parece correto mas não é | D64=Jogar fato sem conta em 'Outras despesas' para DRE fechar | E64=Teste deve falhar. | F64=falso fechamento | G64=APÓS GATE
+A65=DRE / UNMAPPED | B65=07 | C65=parece erro mas é válido | D65=Linha obrigatória sem fonte | E65=Mostrar UNAVAILABLE; linha não some. | F65=falso completude | G65=APÓS GATE
+A66=CMV histórico | B66=01 | C66=normal | D66=Venda com snapshot de custo válido na data | E66=CMV usa esse custo Bling. | F66=metodologia errada | G66=BLOQUEADO OPEN-01
+A67=CMV histórico | B67=02 | C67=limite | D67=Custo válido muda no dia da venda | E67=Usar regra temporal aprovada; sem ela bloquear. | F67=look-ahead | G67=BLOQUEADO OPEN-01
+A68=CMV histórico | B68=03 | C68=ausência | D68=Bling só traz custo atual | E68=Histórico não pode ser tratado como exato. | F68=falso confirmado | G68=BLOQUEADO OPEN-01
+A69=CMV histórico | B69=04 | C69=divergente | D69=Snapshot e custo atual diferem | E69=Não substituir snapshot por atual silenciosamente. | F69=reescrita histórica | G69=BLOQUEADO OPEN-01
+A70=CMV histórico | B70=05 | C70=duplicado | D70=Mesmo item de venda duplicado por importação | E70=CMV uma vez. | F70=dupla margem | G70=APÓS CHAVES
+A71=CMV histórico | B71=06 | C71=parece correto mas não é | D71=Usar custo médio/NF/BOM porque 'faz mais sentido' | E71=Teste deve falhar; LOCK-08 proíbe. | F71=metodologia não aprovada | G71=APÓS GATE
+A72=CMV histórico | B72=07 | C72=parece erro mas é válido | D72=Custo zero explicitamente cadastrado e válido | E72=Pode ser 0 se fonte/semântica comprovadas; não confundir com ausente. | F72=falso unavailable | G72=APÓS MAPEAMENTO
+A73=Semana crítica (CONFLITO) | B73=01 | C73=normal | D73=Maior despesa e menor saldo acontecem na mesma semana | E73=Ambas regras coincidem; não prova ausência de conflito. | F73=falso consenso | G73=BLOQUEADO C-02
+A74=Semana crítica (CONFLITO) | B74=02 | C74=limite | D74=Duas semanas empatam em despesas | E74=Critério de desempate não documentado; expor pendência. | F74=desempate inventado | G74=BLOQUEADO C-02
+A75=Semana crítica (CONFLITO) | B75=03 | C75=ausência | D75=Fluxo semanal incompleto | E75=UNAVAILABLE/STALE; não calcular. | F75=falso máximo | G75=BLOQUEADO C-02
+A76=Semana crítica (CONFLITO) | B76=04 | C76=divergente | D76=Maior despesa ≠ menor saldo | E76=Resultado deve permanecer bloqueado até decisão. | F76=escolha arbitrária | G76=BLOQUEADO C-02
+A77=Semana crítica (CONFLITO) | B77=05 | C77=duplicado | D77=Despesa repetida por reimportação | E77=Idempotência deve impedir mudar a semana. | F77=falso crítico | G77=APÓS CHAVES
+A78=Semana crítica (CONFLITO) | B78=06 | C78=parece correto mas não é | D78=Escolher menor saldo porque 'mais conservador' sem aprovação | E78=Teste deve falhar. | F78=decisão oculta | G78=BLOQUEADO C-02
+A79=Semana crítica (CONFLITO) | B79=07 | C79=parece erro mas é válido | D79=Semana de maior despesa tem saldo saudável por entradas altas | E79=Não é erro; demonstra diferença semântica das regras. | F79=falso negativo | G79=BLOQUEADO C-02
+A80=Perdas / dupla contagem | B80=01 | C80=normal | D80=Perda só na planilha e reconhecida conforme regra | E80=Consumir uma vez no domínio/DRE quando permitido. | F80=omissão | G80=APÓS OPEN-02
+A81=Perdas / dupla contagem | B81=02 | C81=limite | D81=Perda valor 0 com evento válido | E81=Preservar evento sem impacto monetário. | F81=falso ausência | G81=APÓS GATE
+A82=Perdas / dupla contagem | B82=03 | C82=ausência | D82=Sem fonte financeira para recuperação | E82=Não lançar recuperação em caixa/DRE. | F82=receita fictícia | G82=APÓS GATE
+A83=Perdas / dupla contagem | B83=04 | C83=divergente | D83=Planilha e Bling têm valores diferentes para provável mesmo evento | E83=DIVERGENT/PENDING; não somar nem escolher. | F83=dupla perda | G83=APÓS CHAVES
+A84=Perdas / dupla contagem | B84=05 | C84=duplicado | D84=Mesmo evento presente em Perdas e Bling com vínculo | E84=Reduz resultado uma vez. | F84=dupla DRE | G84=APÓS CHAVES
+A85=Perdas / dupla contagem | B85=06 | C85=parece correto mas não é | D85=Somar planilha + baixa Bling para 'não perder nada' | E85=Teste deve falhar. | F85=dupla contagem | G85=APÓS GATE
+A86=Perdas / dupla contagem | B86=07 | C86=parece erro mas é válido | D86=Reposição e ressarcimento financeiro são eventos distintos | E86=Preservar ambos; classificação separada. | F86=dedupe agressiva | G86=APÓS REGRAS
+A87=Pricing / tarifa fixa | B87=01 | C87=normal | D87=SKU único, taxas percentuais válidas, sem tarifa fixa pendente | E87=Calcular fórmula de contribuição; não gravar Bling. | F87=pricing incorreto | G87=APÓS GATE
+A88=Pricing / tarifa fixa | B88=02 | C88=limite | D88=Denominador = 0 ou negativo | E88=BLOQUEADO. | F88=divisão inválida | G88=APÓS GATE
+A89=Pricing / tarifa fixa | B89=03 | C89=ausência | D89=Custo Bling ausente | E89=UNAVAILABLE/BLOQUEADO; sem default. | F89=preço fictício | G89=APÓS GATE
+A90=Pricing / tarifa fixa | B90=04 | C90=divergente | D90=Dois conjuntos de parâmetros vigentes para mesma chave | E90=DIVERGENT/bloqueio. | F90=parâmetro arbitrário | G90=APÓS VERSIONAMENTO
+A91=Pricing / tarifa fixa | B91=05 | C91=duplicado | D91=Taxa do extrato + taxa contratual somadas | E91=Teste deve falhar. | F91=dupla taxa | G91=APÓS GATE
+A92=Pricing / tarifa fixa | B92=06 | C92=parece correto mas não é | D92=Ratear R$0,35 igualmente entre SKUs sem regra | E92=Proibido; componente PENDENTE. | F92=rateio inventado | G92=BLOQUEADO OPEN-04
+A93=Pricing / tarifa fixa | B93=07 | C93=parece erro mas é válido | D93=Preço sugerido diferente do ERP | E93=É analítico; diferença é esperada e não gera escrita automática. | F93=falso erro | G93=APÓS GATE
+A94=Investimentos / máximo aplicável | B94=01 | C94=normal | D94=Inputs confirmados e sem conflito | E94=Aplicar fórmula aprovada somente após C-02/C-03/L-07. | F94=recomendação errada | G94=BLOQUEADO
+A95=Investimentos / máximo aplicável | B95=02 | C95=limite | D95=Caixa-reserva < 0 | E95=Máximo=0, se inputs e algoritmo estiverem aprovados. | F95=valor negativo | G95=BLOQUEADO
+A96=Investimentos / máximo aplicável | B96=03 | C96=ausência | D96=Lucro/caixa/CDI Plus indisponível | E96=Cálculo bloqueado, sem 0 default. | F96=falso seguro | G96=BLOQUEADO
+A97=Investimentos / máximo aplicável | B97=04 | C97=divergente | D97=DRE Bling ≠ DRE Majucau / semana difere | E97=Não calcular definitivo. | F97=decisão oculta | G97=BLOQUEADO C-02/C-03
+A98=Investimentos / máximo aplicável | B98=05 | C98=duplicado | D98=Recebimento Nuvem já incorporado no fluxo Bling | E98=Não somar novamente. | F98=dupla liquidez | G98=APÓS CHAVES
+A99=Investimentos / máximo aplicável | B99=06 | C99=parece correto mas não é | D99=PMR/NCG ruim reduz automaticamente máximo | E99=Teste deve falhar; diagnósticos não alteram INV-05. | F99=regra não aprovada | G99=APÓS GATE
+A100=Investimentos / máximo aplicável | B100=07 | C100=parece erro mas é válido | D100=Máximo>saldo transferível | E100=Executável hoje=min(máximo,saldo transferível); máximo analítico pode ser maior. | F100=falso erro | G100=APÓS GATE
+A101=Freshness / estados | B101=01 | C101=normal | D101=Carga dentro da janela aprovada | E101=Pode chegar a CONFIRMED se demais gates passarem. | F101=falso stale | G101=APÓS L-11
+A102=Freshness / estados | B102=02 | C102=limite | D102=Carga exatamente no limite de freshness | E102=Comportamento deve seguir política aprovada, sem arredondamento oculto. | F102=status instável | G102=APÓS L-11
+A103=Freshness / estados | B103=03 | C103=ausência | D103=Nenhuma carga válida | E103=UNAVAILABLE. | F103=falso zero | G103=APÓS L-11
+A104=Freshness / estados | B104=04 | C104=divergente | D104=Arquivo novo contradiz período já confirmado | E104=DIVERGENT até reconciliação/versionamento. | F104=sobrescrita | G104=APÓS L-11
+A105=Freshness / estados | B105=05 | C105=duplicado | D105=Carga repetida dentro da janela | E105=Não muda freshness do fato artificialmente sem política. | F105=falso atual | G105=APÓS L-11
+A106=Freshness / estados | B106=06 | C106=parece correto mas não é | D106=Timestamp de importação novo para arquivo antigo | E106=Não considerar dado atual só porque imported_at é recente. | F106=falso freshness | G106=APÓS L-11
+A107=Freshness / estados | B107=07 | C107=parece erro mas é válido | D107=Último valor conhecido está antigo mas ainda útil para contexto | E107=Preservar STALE com alerta, sem fingir atualização. | F107=falso indisponível | G107=APÓS L-11
+A108=Tela 11 / CEI | B108=01 | C108=reconciliação | D108=Tela 09 contém N insumos abaixo do mínimo sem pedido | E108=Tela 11 contém exatamente N recomendações na mesma posição/filtros. | F108=listas divergentes | G108=CEI APROVADO
+A109=Tela 11 / CEI | B109=02 | C109=pedido aberto | D109=saldo<=mínimo + pedido aberto aplicável | E109=Item não entra em recomendações. | F109=compra duplicada | G109=CEI APROVADO
+A110=Tela 11 / CEI | B110=03 | C110=sem pedido | D110=saldo<=mínimo + nenhum pedido aplicável | E110=Item entra em recomendações. | F110=omissão operacional | G110=CEI APROVADO
+A111=Tela 11 / CEI | B111=04 | C111=último preço | D111=último PO atendido possui NF-e entrada vinculada | E111=Preço exibido = preço unitário faturado da NF-e. | F111=preço fictício | G111=CEI APROVADO
+A112=Tela 11 / CEI | B112=05 | C112=prazo real | D112=PO em D1; status manual ATENDIDO em D2 | E112=Prazo real = D2-D1 preservando timestamp. | F112=lead time artificial | G112=CEI APROVADO
+A113=Tela 11 / CEI | B113=06 | C113=quantidade | D113=histórico de compras fragmentadas | E113=Sem fórmula homologada, recommendation_qty permanece PENDING_RULE; não inventar. | F113=falsa precisão | G113=PENDENTE L-17
+A114=Tela 11 / CEI | B114=07 | C114=prioridade | D114=prazos históricos diferentes | E114=Prioridade respeita monotonicidade do prazo após thresholds homologados. | F114=priorização invertida | G114=PENDENTE L-18
+A115=Tela 11 / CEI | B115=08 | C115=exportação | D115=usuário exporta recomendações | E115=Excel contém lista completa/metadados mínimos; nenhum pedido é criado. | F115=efeito colateral | G115=CEI APROVADO
+A116=Tela 11 / CEI | B116=09 | C116=cacau operacional | D116=cacau<=mínimo sem pedido | E116=Cacau entra pela mesma regra dos demais insumos. | F116=tratamento especial indevido | G116=CEI APROVADO
+A117=Tela 11 / CEI | B117=10 | C117=cacau mercado | D117=sinal externo adverso com estoque normal/pedido aberto | E117=Risco aparece no bloco especial sem forçar recomendação. | F117=mistura mercado/operação | G117=CEI APROVADO
+A118=Tela 11 / CEI | B118=11 | C118=oportunidade | D118=último preço pago comparável < referência | E118=Exibir Preço favorável/Oportunidade em verde. | F118=sinal invertido | G118=CEI APROVADO APÓS L-19
+A119=Tela 11 / CEI | B119=12 | C119=read-only | D119=usuário procura criar pedido/editar fornecedor/estoque | E119=Nenhum CTA existe e nenhuma escrita ocorre. | F119=ação não autorizada | G119=CEI APROVADO
+A120=Tela 12 / CEI | B120=01 | C120=histórico | D120=Bling possui 24 meses válidos | E120=Versão do estudo registra exatamente a janela usada. | F120=janela obscura | G120=CEI APROVADO
+A121=Tela 12 / CEI | B121=02 | C121=sazonalidade | D121=Páscoa/Natal e demais janelas estão configuradas | E121=Forecast usa calendário versionado e permite leitura de qualidade sazonal. | F121=erro sazonal escondido | G121=CEI APROVADO
+A122=Tela 12 / CEI | B122=03 | C122=entidade | D122=SKU sem conceito de família | E122=Tela calcula/filtra apenas por SKU; nenhuma família é exigida. | F122=dependência inexistente | G122=CEI APROVADO
+A123=Tela 12 / CEI | B123=04 | C123=produção | D123=Venda projetada existente + estoque pronto positivo | E123=Produção projetada deriva da venda e NÃO é reduzida pelo estoque pronto. | F123=produção subestimada | G123=CEI APROVADO
+A124=Tela 12 / CEI | B124=05 | C124=estoque | D124=Saldo inicial válido + produção/venda projetadas | E124=Saldo final reconcilia: saldo anterior + produção - venda. | F124=saldo incoerente | G124=CEI APROVADO
+A125=Tela 12 / CEI | B125=06 | C125=estoque indisponível | D125=Bling não fornece saldo inicial válido | E125=Estoque projetado fica UNAVAILABLE; nunca zero. | F125=falso saldo | G125=CEI APROVADO
+A126=Tela 12 / CEI | B126=07 | C126=meta SKU | D126=Usuário define quantidade-alvo para SKU | E126=Cenário META recalcula produção e estoque do SKU. | F126=meta sem efeito | G126=CEI APROVADO
+A127=Tela 12 / CEI | B127=08 | C127=meta faturamento | D127=Usuário define meta R$ | E127=Sistema transforma em cenário por SKU conforme método versionado; sem escrever no Bling. | F127=quantidade financeira fictícia | G127=PENDENTE L-21
+A128=Tela 12 / CEI | B128=09 | C128=meta mista | D128=Meta R$ + ajuste específico de SKU | E128=Override fica explícito e cenário permanece reconciliado/versionado. | F128=regra silenciosa | G128=CEI APROVADO
+A129=Tela 12 / CEI | B129=10 | C129=métricas | D129=Backtest concluído | E129=WAPE/Bias/MASE exibidos vêm do backtest real; mockup não é fonte de valor. | F129=métrica fictícia | G129=CEI APROVADO
+A130=Tela 12 / CEI | B130=11 | C130=export estudo | D130=Cenário ESTUDO selecionado | E130=XLSX contém resumo, vendas, produção, estoque, qualidade, OP Projetada e metadados. | F130=export incompleto | G130=CEI APROVADO
+A131=Tela 12 / CEI | B131=12 | C131=export meta | D131=Cenário META selecionado | E131=XLSX contém também metas/overrides e valores recalculados. | F131=cenário errado | G131=CEI APROVADO
+A132=Tela 12 / CEI | B132=13 | C132=segurança | D132=Usuário recalcula/exporta | E132=Nenhuma venda, OP, compra ou estoque é criado/alterado no Bling. | F132=mutação indevida | G132=CEI APROVADO
+A133=Tela 13 / CEI | B133=01 | C133=OPEN | D133=Regra ainda não fechada | E133=Pendência exibe origem e dependência; não usa default. | F133=decisão inventada | G133=CEI APROVADO
+A134=Tela 13 / CEI | B134=02 | C134=UNMAPPED | D134=Fato sem mapping | E134=Permanece UNMAPPED; não vai para categoria coringa. | F134=classificação falsa | G134=CEI APROVADO
+A135=Tela 13 / CEI | B135=03 | C135=DIVERGENT | D135=Duas fontes não reconciliam | E135=Ambas evidências ficam visíveis; divergência não é resolvida silenciosamente. | F135=perda de evidência | G135=CEI APROVADO
+A136=Tela 13 / CEI | B136=04 | C136=STALE | D136=Fonte fora da freshness | E136=Mostra STALE e última posição válida. | F136=falso atual | G136=CEI APROVADO
+A137=Tela 13 / CEI | B137=05 | C137=resolver | D137=Usuário clica Resolver | E137=Abre contexto; não fecha automaticamente. | F137=falsa resolução | G137=CEI APROVADO
+A138=Tela 13 / CEI | B138=06 | C138=design lock | D138=Conteúdo precisa mudar | E138=Dados/textos mudam sem redesenhar layout. | F138=redesign indevido | G138=CEI APROVADO
+A139=Tela 13 / CEI | B139=07 | C139=export | D139=Contrato não homologado | E139=Não gera arquivo. | F139=artefato inventado | G139=PENDENTE L-22
+A140=Tela 14 / CEI | B140=01 | C140=estoque | D140=Tela 09 publica alerta aprovado | E140=T14 exibe o mesmo alerta com source_ref. | F140=regra duplicada | G140=CEI APROVADO
+A141=Tela 14 / CEI | B141=02 | C141=produção | D141=Tela 10 sem contrato de alerta | E141=T14 não inventa alerta de produção. | F141=escopo indevido | G141=CEI APROVADO
+A142=Tela 14 / CEI | B142=03 | C142=resolvido | D142=Condição de origem cessa | E142=Sai dos ativos e mantém histórico RESOLVED. | F142=apagamento de evidência | G142=CEI APROVADO
+A143=Tela 14 / CEI | B143=04 | C143=threshold | D143=Origem define prioridade | E143=T14 preserva prioridade; não recalcula. | F143=threshold paralelo | G143=CEI APROVADO
+A144=Tela 14 / CEI | B144=05 | C144=design lock | D144=Atualização de dados | E144=Layout não muda. | F144=redesign indevido | G144=CEI APROVADO
+A145=Tela 14 / CEI | B145=06 | C145=export | D145=Contrato não homologado | E145=Não gera arquivo. | F145=artefato inventado | G145=PENDENTE L-22
+A146=Tela 15 / CEI | B146=01 | C146=hash | D146=Mesmo arquivo reprocessado | E146=Não cria nova carga/fato duplicado. | F146=duplicação | G146=CEI APROVADO
+A147=Tela 15 / CEI | B147=02 | C147=business key | D147=Mesmo evento em arquivos distintos | E147=Deduplica conforme contrato, preservando lineage. | F147=duplicação cross-file | G147=CEI APROVADO
+A148=Tela 15 / CEI | B148=03 | C148=rejeição parcial | D148=Há linhas aceitas e rejeitadas | E148=Contagens fecham e motivos ficam auditáveis. | F148=erro silencioso | G148=CEI APROVADO
+A149=Tela 15 / CEI | B149=04 | C149=reprocessar | D149=Lote falhou | E149=Nova tentativa auditada e idempotente. | F149=sobrescrita/duplicação | G149=CEI APROVADO
+A150=Tela 15 / CEI | B150=05 | C150=STALE | D150=Fonte excede freshness configurada | E150=Mostra STALE + last_success_at; não zera dados. | F150=falso zero | G150=DEPENDÊNCIA L-24
+A151=Tela 15 / CEI | B151=06 | C151=fonte | D151=Fonte não aprovada/configurada | E151=Não aparece como integração ativa. | F151=fonte fictícia | G151=CEI APROVADO
+A152=Tela 15 / CEI | B152=07 | C152=design lock | D152=Status/dados mudam | E152=Layout permanece idêntico. | F152=redesign indevido | G152=CEI APROVADO
+A153=Tela 15 / CEI | B153=08 | C153=export | D153=Contrato não homologado | E153=Não gera arquivo. | F153=artefato inventado | G153=PENDENTE L-22
+A154=Tela 16 / CEI | B154=01 | C154=design lock | D154=Valores/contagens mudam | E154=Layout permanece idêntico ao mockup aprovado. | F154=redesign indevido | G154=CEI APROVADO
+A155=Tela 16 / CEI | B155=02 | C155=regra | D155=Parâmetro sem CEI/aprovação | E155=Não aparece como vigente. | F155=regra inventada | G155=CEI APROVADO
+A156=Tela 16 / CEI | B156=03 | C156=forecast | D156=Consulta projeções | E156=Mostra 24 meses, 12 meses e WAPE/Bias/MASE conforme T12. | F156=divergência T12 | G156=CEI APROVADO
+A157=Tela 16 / CEI | B157=04 | C157=estoque | D157=Mínimo ausente no Bling | E157=Exibe UNAVAILABLE/N/A; não zero. | F157=segunda verdade | G157=CEI APROVADO
+A158=Tela 16 / CEI | B158=05 | C158=compras | D158=Consulta condição de recomendação | E158=saldo<=mínimo e sem pedido aberto aplicável. | F158=divergência T09/T11 | G158=CEI APROVADO
+A159=Tela 16 / CEI | B159=06 | C159=fonte | D159=Fonte externa não configurada | E159=Não aparece como ativa. | F159=fonte fictícia | G159=CEI APROVADO
+A160=Tela 16 / CEI | B160=07 | C160=segurança | D160=Referência contém token/credencial | E160=UI/log mascara ou não exibe segredo. | F160=vazamento | G160=CEI APROVADO
+A161=Tela 16 / CEI | B161=08 | C161=edição | D161=Usuário tenta editar diretamente na central | E161=Nenhuma mutação genérica; depende de fluxo homologado. | F161=mudança crítica acidental | G161=PENDENTE L-25
+A162=Tela 17 / CEI | B162=01 | C162=design lock | D162=Dados/usuários mudam | E162=Layout permanece idêntico. | F162=redesign indevido | G162=CEI APROVADO
+A163=Tela 17 / CEI | B163=02 | C163=leitura | D163=Perfil LEITURA tenta ação mutável | E163=Backend nega. | F163=privilégio excessivo | G163=CEI APROVADO
+A164=Tela 17 / CEI | B164=03 | C164=bloqueado | D164=Conta BLOCKED tenta acessar | E164=Acesso negado e evento auditável. | F164=acesso indevido | G164=CEI APROVADO
+A165=Tela 17 / CEI | B165=04 | C165=mudança perfil | D165=Alteração administrativa autorizada | E165=Antes/depois/ator/timestamp registrados. | F165=mudança silenciosa | G165=PENDENTE L-26
+A166=Tela 17 / CEI | B166=05 | C166=bypass frontend | D166=Usuário chama endpoint protegido diretamente | E166=Backend nega pela permissão efetiva. | F166=bypass de autorização | G166=CEI APROVADO
+A167=Tela 17 / CEI | B167=06 | C167=pendente | D167=Convite não ativado | E167=Status PENDENTE; sem último acesso fictício. | F167=falso acesso | G167=PENDENTE L-26
+A168=Tela 17 / CEI | B168=07 | C168=segredo | D168=Tabela/logs inspecionados | E168=Nenhuma senha/token/secret é exibido. | F168=vazamento | G168=CEI APROVADO
+A169=Tela 17 / CEI | B169=08 | C169=rota removida | D169=Menu renderizado | E169=Balanço Patrimonial não aparece. | F169=rota fora do produto | G169=CEI APROVADO

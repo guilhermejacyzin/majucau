@@ -1,0 +1,14 @@
+A1=G Ordem
+A2=Fase | B2=Objetivo | C2=Entradas necessárias | D2=Saída/aceite | E2=Risco se antecipar | F2=Estado
+A3=0 | B3=Gate documental | C3=C-01..C-03 + L-01 e aprovações | D3=Documentação sem conflito material | E3=Codificar regra errada e depois migrar dados | F3=BLOQUEADO
+A4=1 | B4=Auditoria read-only do sistema atual | C4=Repo, schema, configs, logs, testes | D4=Mapa JÁ CONFORME / PRECISA ALTERAÇÃO por componente | E4=Alterações cegas/duplicação de módulos | F4=BLOQUEADO POR DADO
+A5=2 | B5=Contrato de dados e arquivos | C5=Layouts reais, chaves, freshness, política de pasta | D5=Contratos versionados e testes de fixture | E5=Importador frágil/silencioso | F5=BLOQUEADO POR DADO
+A6=3 | B6=Camada transversal de fatos/proveniência | C6=Fases 0–2 | D6=Status, lineage, rule_version, idempotência, auditoria manual | E6=Cada domínio cria cópia própria do fato | F6=PENDENTE
+A7=4 | B7=Ingestão por pasta controlada | C7=Fase 2–3 | D7=Staging, validação, lotes, rejeições, reprocessamento seguro | E7=Duplicidade/perda de evidência | F7=PENDENTE
+A8=5 | B8=Fatos operacionais compartilhados | C8=Bling/Nuvem/Nuvem Envio/NF | D8=Venda, recebível, etiqueta, frete, estoque, compras como fatos únicos | E8=Dupla verdade entre domínios | F8=PENDENTE
+A9=6 | B9=Conciliação | C9=Chaves reais + fatos | D9=PENDING_RECONCILIATION/DIVERGENT conservadores | E9=Falso match | F9=PENDENTE
+A10=7 | B10=Logística e taxas realizadas | C10=Fatos + conciliação | D10=KPIs realizados/provisórios por pedido/transportadora | E10=Mistura de projeção/realizado | F10=PENDENTE
+A11=8 | B11=DRE/Balancete — partes fechadas | C11=Mappings e fontes aprovadas | D11=Motores auditáveis com OPEN bloqueados | E11=Conta coringa/zero fictício | F11=PENDENTE
+A12=9 | B12=Pricing/Margem | C12=CMV válido + taxas + OPEN-04/08 | D12=Análise sem escrita ERP | E12=Preço incorreto | F12=PENDENTE
+A13=10 | B13=Investimentos | C13=DRE/caixa + C-02/C-03/L-07 resolvidos | D13=Máximo e executável reproduzíveis | E13=Aplicação acima do seguro | F13=PENDENTE
+A14=11 | B14=Planejamento/otimizações adicionais | C14=Base estável e backtests | D14=Somente melhorias com ganho demonstrado | E14=Overengineering | F14=PENDENTE

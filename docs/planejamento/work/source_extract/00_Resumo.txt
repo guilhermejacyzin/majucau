@@ -1,0 +1,42 @@
+A1=MAJUCAU INTELLIGENCE — CONSOLIDAÇÃO COMERCIAL/LOGÍSTICA × FINANCEIRO
+A3=Gate atual | B3=BLOQUEADO — não alterar código antes da aprovação Majucau
+A4=Conflitos reais encontrados | B4=3
+A5=Lacunas/bloqueios explícitos | B5=26
+A6=Alinhamentos documentais | B6=12
+A7=Código/sistema atual auditado? | B7=NÃO — nenhum repo/schema/config/testes foi fornecido
+A8=Alterações de código realizadas | B8=0
+A9=FIN DEV_LOCK x FIN BUSINESS_RULE | B9=Conteúdo textual extraído idêntico; não constitui evidência de implementação
+A10=Autoridade | B10=Comercial/Logística no operacional; Financeiro no financeiro; conflito real retorna à Majucau
+A12=Fonte | B12=Arquivo | C12=SHA-256 | D12=Papel
+A13=GOV | B13=Markdown.md colado | C13=1cc73f9a1a8fc3e8b54e0688859297a123812259588b5a64d41b5a7775048fea | D13=Constituição de governança / pedido executado
+A14=FIN-1 | B14=MAJUCAU_INTELLIGENCE_FINANCEIRO_RC3_DEV_LOCK_READ_ONLY.docx | C14=4a00f8f8bd5c523e96cc831fff4f993de9570a223d24e14c6c08065c7ad8a44e | D14=RC-3 Financeiro
+A15=FIN-2 | B15=MAJUCAU_INTELLIGENCE_FINANCEIRO_RC3_BUSINESS_RULE_LOCK_WIREFRAMES (1).docx | C15=7e2f4e2d7d0dede29f95830838fa8a3430de67b7d4b0b1f46dedc330632ba8d8 | D15=RC-3 Financeiro — conteúdo textual igual ao FIN-1
+A16=COM/LOG | B16=MAJUCAU_INTELLIGENCE_RC2_2_FINAL_TAXAS_FRETES_LOGISTICA.docx | C16=a468eac652e932671f55beb36db5f36986de2d08b42bca14c7efc09a475f135e | D16=RC-2.2 Comercial + Planejamento + Logística
+A18=GATE FINAL
+A19=Nenhuma regra foi marcada como JÁ CONFORME porque o sistema atual não foi fornecido. Nenhuma regra fechada foi marcada como APROVADO PARA IMPLEMENTAR porque RC-2.2 e RC-3 ainda estão em gate de aprovação. Antes de codificar, resolver os conflitos C-01, C-02 e C-03 e os OPENs que bloqueiam cada cálculo.
+A20=CEI TELA 11 | B20=Q_CEI_Tela_11 | C20=Compras | D20=Mockup aprovado e contrato executável atualizado
+A21=Natureza | B21=READ-ONLY / INFORMATIVA | C21=Sem criação de pedido | D21=Único resultado externo: Excel de Compras Recomendadas
+A22=Regra principal | B22=Estoque <= mínimo Bling E sem pedido aberto aplicável | C22=Reconcilia com Tela 09 | D22=Abaixo do mínimo sem pedido = Compras Recomendadas
+A23=Pontos OPEN | B23=L-17 / L-18 / L-19 | C23=Quantidade, prioridade/lead time, sinais externos do cacau | D23=Não inventar fórmula/thresholds antes da homologação
+A24=CEI TELA 12 | B24=R_CEI_Tela_12 | C24=Projeções | D24=Estrutura funcional e exportação aprovadas nesta revisão
+A25=Base do estudo | B25=Bling — vendas/estoque | C25=Histórico: 24 meses | D25=Horizonte projetado: 12 meses; entidade = SKU
+A26=Cenários | B26=ESTUDO + META | C26=Meta de faturamento / SKU / mista | D26=Produção e estoque recalculados por cenário; tudo PROJECTED
+A27=Métricas | B27=WAPE + Bias + MASE | C27=Backtest temporal + sazonalidade | D27=Valores devem vir de estudo real, nunca do mockup
+A28=Exportação Tela 12 | B28=XLSX do cenário/contexto | C28=Inclui vendas, produção, estoque, metas, qualidade, OP Projetada e metadados | D28=Não cria/edita nada no Bling
+A30=REGRA VISUAL GLOBAL | B30=DESIGN IMUTÁVEL | C30=Manter layout-base dos mockups; alterar somente dados/conteúdo | D30=Qualquer mudança estrutural exige aprovação explícita Majucau
+A31=CEI TELA 13 | B31=S_CEI_Tela_13 | C31=Lançamentos & Pendências | D31=Central de OPEN/BLOCKED/PENDING/UNMAPPED/STALE/DIVERGENT; não altera fatos no Bling
+A32=Tela 13 — exportação | B32=OPEN | C32=Botão visual sem contrato funcional homologado | D32=Não implementar exportação até decisão específica
+A33=CEI TELA 14 | B33=T_CEI_Tela_14 | C33=Alertas | D33=Agregador: alertas nascem nos módulos de origem; Tela 14 não inventa thresholds
+A34=Tela 14 — exportação | B34=OPEN | C34=Botão visual sem contrato funcional homologado | D34=Não implementar exportação até decisão específica
+A35=CEI TELA 15 | B35=U_CEI_Tela_15 | C35=Importações / Integrações | D35=Saúde, freshness, lotes, hash, idempotência, rejeições e reprocessamento
+A36=Tela 15 — fontes | B36=Bling + fontes externas aprovadas/configuradas | C36=Não exibir fonte fictícia | D36=Último snapshot válido não é zerado em falha
+A37=Tela 15 — exportação | B37=OPEN | C37=Botão visual sem contrato funcional homologado | D37=Não implementar exportação até decisão específica
+A38=Separação Controle | B38=T13 = resolver pendência | T14 = atenção | T15 = saúde técnica da fonte | C38=Sem duplicar regra | D38=Vínculos por IDs/origem preservam rastreabilidade
+A39=Consolidação T13–T15 | B39=CONCLUÍDA NA DOCUMENTAÇÃO | C39=CEIs + matriz + contratos + testes + lacunas atualizados | D39=Implementação continua sujeita ao gate geral
+A40=MÓDULO CONFIGURAÇÕES | B40=TELA 16 = PARÂMETROS | TELA 17 = USUÁRIOS | C40=Numeração oficializada pelos mockups aprovados | D40=Design Lock global permanece válido
+A41=MOCKUP TELA 16 | B41=V_Mockup_Tela_16 | C41=Parâmetros | D41=Imagem aprovada incorporada como evidência visual
+A42=CEI TELA 16 | B42=W_CEI_Tela_16 | C42=Central de parâmetros/fontes aprovados | D42=Sem editor genérico; sem Exportar/Ajuda no mockup aprovado
+A43=MOCKUP TELA 17 | B43=X_Mockup_Tela_17 | C43=Usuários | D43=Imagem aprovada incorporada como evidência visual
+A44=CEI TELA 17 | B44=Y_CEI_Tela_17 | C44=Usuários, perfis e permissões | D44=Autorização backend + auditoria; sem Exportar/Ajuda no mockup aprovado
+A45=OPEN CONFIGURAÇÕES | B45=L-25 / L-26 | C45=Edição/versionamento de parâmetros + fluxo técnico de identidade/permissões | D45=Não implementar por inferência
+A46=Conteúdo legado no mockup T17 | B46=Balanço Patrimonial | C46=REMOVER na implementação | D46=Correção de conteúdo; não altera design

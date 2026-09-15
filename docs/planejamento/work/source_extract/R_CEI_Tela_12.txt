@@ -1,0 +1,86 @@
+A1=R — CEI TELA 12 | PROJEÇÕES
+A2=Contrato Executável de Interface — versão 12/09/2026. Base funcional: histórico de vendas e estoque do Bling. Estudo usa 24 meses de histórico e projeta 12 meses, com sazonalidade específica do negócio de chocolates. Existem dois cenários paralelos: ESTUDO (automático) e META (planejamento). Tudo é PROJECTED/informativo: não cria venda, OP, compra nem altera estoque no Bling.
+A4=DECISÕES ESTRUTURAIS | B4=VALOR | C4=FONTE/REGRA | D4=EFEITO | E4=STATUS | F4=DEPENDÊNCIA | G4=ACEITE | H4=OBSERVAÇÃO
+A5=Base histórica | B5=24 MESES | C5=Decisão Majucau | D5=Treino/backtest e sazonalidade | E5=APROVADO | F5=Histórico Bling disponível | G5=Versão do estudo registra janela exata | H5=Dois anos permitem comparar duas ocorrências anuais
+A6=Horizonte | B6=12 MESES | C6=Decisão Majucau | D6=Projeção anual | E6=APROVADO | F6=Calendário sazonal | G6=Tela explicita período projetado | H6=Não tratar forecast como realizado
+A7=Granularidade de entidade | B7=SOMENTE SKU | C7=Decisão Majucau | D7=Sem família de produtos | E7=APROVADO | F7=Cadastro Bling | G7=Nenhuma aba/filtro Família | H7=Produto é identificado por SKU
+A8=Cenários | B8=ESTUDO + META | C8=Decisão Majucau | D8=Comparação lado a lado | E8=APROVADO | F8=Motor de projeção | G8=Mesma base/período/versão | H8=Meta pode ser faturamento, SKU ou mista
+A9=Escrita no Bling | B9=NÃO EXISTE | C9=Decisão CEI | D9=Nenhuma mutação | E9=APROVADO | F9=Nenhuma | G9=Nenhuma projeção cria OP/compra/venda | H9=Tela read-only/informativa
+A10=Exportação | B10=EXISTE | C10=Decisão Majucau | D10=Gera Excel do cenário/contexto selecionado | E10=APROVADO | F10=Contrato de exportação abaixo | G10=Arquivo marcado PROJECTED | H10=Não exportar print da tela
+A12=FONTES E BASE DO ESTUDO
+A13=ID | B13=Elemento | C13=Fonte oficial | D13=Uso | E13=Estado | F13=Interação | G13=Efeito externo | H13=Observação
+A14=12-IN-01 | B14=Histórico de vendas por SKU | C14=Bling | D14=Treino, backtest, mix e sazonalidade | E14=CONFIRMED/STALE/UNAVAILABLE | F14=Somente leitura | G14=Nenhum | H14=Mapeamento técnico de campos/estados deve ser auditado; cancelados não podem virar realizado
+A15=12-IN-02 | B15=Estoque atual de produto pronto | C15=Bling | D15=Somente posição inicial do estoque projetado | E15=CONFIRMED/STALE/UNAVAILABLE | F15=Somente leitura | G15=Nenhum | H15=NÃO reduz a projeção de produção
+A16=12-IN-03 | B16=Preço realizado por SKU | C16=Bling | D16=Converter/distribuir meta de faturamento e apresentar R$ | E16=CONFIRMED/UNAVAILABLE | F16=Somente leitura | G16=Nenhum | H16=Usar preço realizado do estudo com regra versionada e unidade/moeda compatíveis
+A17=12-IN-04 | B17=Calendário sazonal | C17=Majucau | D17=Marcar janelas de Páscoa, Natal e demais sazonalidades relevantes | E17=ACTIVE/INACTIVE | F17=Configuração administrativa | G17=Nenhum | H17=Datas precisam ser versionadas por ano; Páscoa não é data fixa
+A18=12-IN-05 | B18=Metas do cenário | C18=Majucau | D18=Meta de faturamento e/ou meta por SKU | E18=ACTIVE/INACTIVE | F18=Editar meta | G18=Nenhum | H18=Planejamento interno; não grava no Bling
+A20=SAZONALIDADE — CHOCOLATES
+A21=Conceito | B21=Tratamento CEI | C21=Exemplos iniciais | D21=Regra | E21=Métrica separada? | F21=Editável? | G21=Estado | H21=Observação
+A22=Períodos sazonais | B22=OBRIGATÓRIOS NO ESTUDO | C22=Páscoa, Natal, Dia das Mães, Dia dos Namorados, inverno, Black Friday | D22=Calendário versionado por ano | E22=SIM quando volume permitir | F22=Configuração | G22=ACTIVE/INACTIVE | H22=Não hardcode datas móveis
+A23=Período normal | B23=BASE DE COMPARAÇÃO | C23=Meses sem evento sazonal relevante | D23=Comparar desempenho fora de eventos | E23=SIM | F23=Não na tela | G23=ACTIVE | H23=Evita WAPE geral esconder erro sazonal
+A24=Sazonalidade futura | B24=APLICADA AO HORIZONTE | C24=12 meses projetados | D24=Usar calendário do ano projetado | E24=SIM | F24=Não na tela | G24=PROJECTED | H24=Evento sazonal altera a curva por SKU
+A26=MÉTRICAS DO ESTUDO / BACKTEST
+A27=Métrica | B27=Finalidade | C27=Definição executável | D27=Melhor quando | E27=Exibição | F27=Threshold aprovado? | G27=Estado | H27=Observação
+A28=WAPE | B28=Métrica principal de erro agregado | C28=Σ|Realizado-Previsto| / ΣRealizado × 100 | D28=MENOR | E28=Geral + por sazonalidade crítica | F28=NÃO | G28=CONFIRMED após backtest | H28=Nunca usar valor fictício do mockup
+A29=Bias | B29=Direção do erro | C29=Erro assinado agregado/normalizado conforme versão do modelo | D29=PRÓXIMO DE ZERO | E29=Geral + leitura de alta/baixa | F29=NÃO | G29=CONFIRMED após backtest | H29=Mostra tendência de super/subestimar
+A30=MASE | B30=Comparar contra baseline sazonal simples | C30=Erro do modelo / erro de referência sazonal | D30=< 1 | E30=Geral e quando aplicável por SKU | F30=NÃO | G30=CONFIRMED após backtest | H30=Valida se modelo supera referência sazonal
+A31=Backtest | B31=Teste temporal | C31=Simular previsões no passado usando apenas dados disponíveis em cada corte | D31=— | E31=Versão e detalhes | F31=— | G31=CONFIRMED | H31=Nunca usar split aleatório que vaze futuro
+A33=CENÁRIO ESTUDO
+A34=Elemento | B34=Definição | C34=Fonte | D34=Por SKU? | E34=Por período? | F34=Estado | G34=Efeito externo | H34=Observação
+A35=Venda projetada | B35=Forecast automático com 24 meses Bling + sazonalidade + versão do modelo | C35=Motor Majucau | D35=SIM | E35=SIM | F35=PROJECTED | G35=Nenhum | H35=Quantidade é base operacional; faturamento é derivado quando preço disponível
+A36=Faturamento projetado | B36=Venda projetada × preço realizado/referência do estudo | C36=Motor Majucau + Bling | D36=SIM | E36=SIM | F36=PROJECTED | G36=Nenhum | H36=Regra de preço deve ficar versionada
+A37=Produção projetada | B37=Quantidade a produzir derivada da venda projetada do mesmo SKU/período | C37=Motor Majucau | D37=SIM | E37=SIM | F37=PROJECTED | G37=Nenhum | H37=Estoque pronto atual NÃO reduz esta projeção
+A38=Estoque projetado | B38=Saldo futuro calculado a partir do estoque inicial real + produção projetada - venda projetada | C38=Motor Majucau + Bling | D38=SIM | E38=SIM | F38=PROJECTED/UNAVAILABLE | G38=Nenhum | H38=Se estoque inicial indisponível, não usar zero
+A40=CENÁRIO META
+A41=Tipo de meta | B41=Entrada do usuário | C41=Transformação | D41=Resultado | E41=Override SKU? | F41=Estado | G41=Efeito externo | H41=Observação
+A42=Meta de faturamento | B42=R$ por período/cenário | C42=Distribuir pelos SKUs conforme mix do ESTUDO/sazonalidade e preço realizado do estudo | D42=Meta de venda por SKU → produção → estoque | E42=SIM, via cenário misto | F42=PROJECTED | G42=Nenhum | H42=Algoritmo de distribuição deve ser versionado
+A43=Meta por SKU | B43=Quantidade desejada para SKU/período | C43=Substitui a quantidade do ESTUDO para aquele SKU no cenário META | D43=Produção e estoque recalculados | E43=SIM | F43=PROJECTED | G43=Nenhum | H43=Produto é somente SKU; não existe Família
+A44=Meta mista | B44=Faturamento + ajustes específicos por SKU | C44=Combina meta global com overrides explícitos | D44=Cenário META reconciliado | E44=SIM | F44=PROJECTED | G44=Nenhum | H44=Mostrar quais SKUs foram sobrescritos
+A46=CADEIA DE PROJEÇÃO — REGRA
+A47=Etapa | B47=Entrada | C47=Regra | D47=Saída | E47=Usa estoque atual? | F47=Estado | G47=Falha segura | H47=Observação
+A48=1. Venda | B48=24 meses Bling + sazonalidade + cenário | C48=ESTUDO calcula forecast; META recebe/distribui objetivo | D48=Venda projetada SKU/período | E48=NÃO | F48=PROJECTED | G48=UNAVAILABLE se base inválida | H48=Ponto de partida
+A49=2. Produção | B49=Venda projetada do cenário | C49=Produção segue a demanda projetada do SKU/período; não descontar produto pronto existente | D49=Produção projetada SKU/período | E49=NÃO | F49=PROJECTED | G49=Não inventar quantidade | H49=Regra-base atual; política adicional exige nova aprovação
+A50=3. Estoque | B50=Estoque inicial Bling + produção projetada - venda projetada | C50=Acumular período a período | D50=Estoque projetado final de cada período | E50=SIM, SOMENTE COMO SALDO INICIAL | F50=PROJECTED/UNAVAILABLE | G50=Ausência ≠ zero | H50=Permite enxergar quanto produto pronto restará
+A52=REGRA DO ESTOQUE PROJETADO
+A53=Campo | B53=Regra | C53=Fórmula conceitual | D53=Fonte | E53=Estado | F53=Critério QA | G53=Efeito externo | H53=Observação
+A54=Primeiro período | B54=Parte do saldo atual do Bling | C54=EstoqueProj₁ = EstoqueAtual + ProduçãoProj₁ - VendaProj₁ | D54=Bling + projeções | E54=PROJECTED | F54=Reconciliar componentes | G54=Nenhum | H54=Estoque atual não reduz produção
+A55=Períodos seguintes | B55=Parte do estoque projetado anterior | C55=EstoqueProj_t = EstoqueProj_(t-1) + ProduçãoProj_t - VendaProj_t | D55=Motor | E55=PROJECTED | F55=Reconciliação por período | G55=Nenhum | H55=Cálculo por SKU e unidade original
+A57=INTERAÇÕES EXECUTÁVEIS
+A58=Elemento | B58=Tipo | C58=Origem | D58=Destino/resultado | E58=Preserva contexto? | F58=Altera dado real? | G58=Gera externo? | H58=Critério de aceite
+A59=Ano/período da projeção | B59=FILTER | C59=Cabeçalho | D59=Recarrega cenário/versionamento para 12 meses | E59=Sim | F59=Não | G59=Não | H59=Período explícito
+A60=Selecionar ESTUDO / META | B60=SCENARIO_SWITCH | C60=Tela 12 | D60=Troca cenário sem misturar realizado | E60=Sim | F60=Não | G60=Não | H60=Estado PROJECTED visível
+A61=Definir Meta de Faturamento | B61=INPUT/SCENARIO | C61=Cenário META | D61=Recalcula distribuição por SKU, produção e estoque | E61=Sim | F61=Não | G61=Não | H61=Não grava no Bling
+A62=Editar meta por SKU | B62=INPUT/SCENARIO | C62=Linha do SKU | D62=Recalcula cenário META para SKU e dependências | E62=Sim | F62=Não | G62=Não | H62=Override fica auditável
+A63=Aplicar meta e recalcular | B63=CALCULATE | C63=Cenário META | D63=Cria nova versão interna do cenário | E63=Sim | F63=Não | G63=Não | H63=Não sobrescrever versão anterior sem histórico
+A64=Detalhes do backtest | B64=DRAWER | C64=Métricas | D64=Exibe cortes, WAPE, Bias, MASE e versão | E64=Sim | F64=Não | G64=Não | H64=Sem valor ilustrativo como real
+A65=Exportar | B65=EXPORT | C65=Cenário/contexto selecionado | D65=Excel de planejamento conforme contrato abaixo | E65=Sim | F65=Não | G65=SIM | H65=Nenhum efeito no Bling
+A67=CONTRATO DE EXPORTAÇÃO — TELA 12
+A68=Aba Excel | B68=Conteúdo obrigatório | C68=Origem | D68=Estado | E68=Gráficos | F68=Mutação externa? | G68=Reconciliação | H68=Observação
+A69=Resumo_Cenario | B69=Período, cenário, faturamento projetado, produção projetada, estoque projetado, versão | C69=Tela 12/snapshot | D69=PROJECTED | E69=Opcional nativo Excel | F69=NÃO | G69=Totais batem com abas detalhadas | H69=Sem decoração de UI
+A70=Projecao_Vendas_SKU | B70=SKU, produto, unidade, período, Estudo, Meta, deltas | C70=Motor | D70=PROJECTED | E70=Opcional nativo Excel | F70=NÃO | G70=Soma/reconcilia com resumo | H70=Lista completa no contexto
+A71=Projecao_Producao_SKU | B71=SKU, produto, unidade, período, produção Estudo/Meta | C71=Motor | D71=PROJECTED | E71=Opcional nativo Excel | F71=NÃO | G71=Reconciliar por SKU/período | H71=Estoque atual não é desconto
+A72=Estoque_Projetado_SKU | B72=SKU, unidade, estoque inicial, entradas projetadas, saídas projetadas, saldo projetado | C72=Bling + motor | D72=PROJECTED/UNAVAILABLE | E72=Opcional nativo Excel | F72=NÃO | G72=Fórmula reconcilia período a período | H72=Ausência não vira zero
+A73=Metas | B73=Meta faturamento e metas/overrides por SKU, período, usuário/versão | C73=Majucau | D73=PROJECTED | E73=Não necessário | F73=NÃO | G73=Cenário META reproduzível | H73=Somente planejamento
+A74=Qualidade_Estudo | B74=Histórico 24m, sazonalidades, WAPE, Bias, MASE, versão/backtest | C74=Motor | D74=CONFIRMED/PROJECTED | E74=Opcional nativo Excel | F74=NÃO | G74=Valores iguais à versão exibida | H74=Métrica sem backtest fica UNAVAILABLE
+A75=OP_Projetada | B75=SKU, produto, unidade, quantidade projetada, período, cenário, versão | C75=Motor | D75=PROJECTED | E75=Não necessário | F75=NÃO | G75=Deriva da produção projetada exportada | H75=Marcar: NÃO É OP REAL
+A76=Metadados | B76=position_ts, generated_at, model_version, scenario_version, filtros, horizonte, fontes | C76=Sistema | D76=CONFIRMED | E76=Não | F76=NÃO | G76=Rastreabilidade completa | H76=Snapshot do contexto exportado
+A78=MARCAÇÕES OBRIGATÓRIAS NO EXCEL
+A79=Regra | B79=Valor | C79=Aplicação | D79=Critério de aceite | E79=Efeito externo | F79=Status | G79=Risco evitado | H79=Observação
+A80=Classificação | B80=PROJECTED / PROJEÇÃO — NÃO É DADO REAL DO BLING | C80=Todas as abas projetadas | D80=Visível no Resumo e metadados | E80=Nenhum | F80=APROVADO | G80=Confundir forecast com realizado
+A81=OP | B81=PROJETADA — NÃO É ORDEM DE PRODUÇÃO REAL | C81=Aba OP_Projetada | D81=Visível no cabeçalho da aba | E81=Nenhum | F81=APROVADO | G81=Execução acidental
+A82=Formato | B82=XLSX | C82=Exportação | D82=Arquivo abre com dados estruturados | E82=Nenhum | F82=APROVADO | G82=Print sem auditabilidade | H82=Se houver gráfico, deve ser gráfico nativo Excel, não screenshot
+A84=CRITÉRIOS DE ACEITE PRINCIPAIS
+A85=ID | B85=Cenário | C85=Entrada | D85=Resultado esperado | E85=Risco evitado | F85=Implementação | G85=Status | H85=Observação
+A86=T-CEI12-01 | B86=Histórico | C86=Bling possui 24 meses válidos | D86=Versão do estudo registra exatamente 24 meses usados | E86=janela obscura | F86=Após gate | G86=APROVADO CEI
+A87=T-CEI12-02 | B87=Sazonalidade | C87=Páscoa/Natal e demais janelas configuradas | D87=Forecast aplica calendário versionado; métricas podem ser vistas por sazonalidade | E87=erro sazonal escondido | F87=Após gate | G87=APROVADO CEI
+A88=T-CEI12-03 | B88=Entidade | C88=Cadastro contém SKU sem família | D88=Tela opera normalmente somente por SKU | E88=dependência inexistente | F88=Após gate | G88=APROVADO CEI
+A89=T-CEI12-04 | B89=Estudo | C89=Modelo gera venda projetada | D89=Produção projetada deriva da venda e NÃO desconta estoque atual | E89=produção subestimada | F89=Após gate | G89=APROVADO CEI
+A90=T-CEI12-05 | B90=Estoque | C90=Há saldo inicial Bling válido | D90=Estoque projetado = saldo anterior + produção - venda, por período | E90=saldo incoerente | F90=Após gate | G90=APROVADO CEI
+A91=T-CEI12-06 | B91=Estoque indisponível | C91=Saldo inicial Bling ausente | D91=Estoque projetado fica UNAVAILABLE; nunca zero | E91=falso saldo | F91=Após gate | G91=APROVADO CEI
+A92=T-CEI12-07 | B92=Meta SKU | C92=Usuário define meta de quantidade para SKU | D92=Cenário META recalcula produção e estoque do SKU | E92=meta sem consequência | F92=Após gate | G92=APROVADO CEI
+A93=T-CEI12-08 | B93=Meta faturamento | C93=Usuário define meta R$ | D93=Sistema distribui cenário por SKU usando mix/preço do estudo e recalcula dependências | E93=faturamento sem quantidade | F93=Após homologação técnica | G93=APROVADO CONCEITO
+A94=T-CEI12-09 | B94=Meta mista | C94=Meta R$ + override de SKU | D94=Override fica explícito e cenário permanece reconciliado | E94=dupla regra silenciosa | F94=Após gate | G94=APROVADO CEI
+A95=T-CEI12-10 | B95=Métricas | C95=Backtest concluído | D95=WAPE, Bias e MASE vêm do backtest real, nunca do mockup | E95=métrica fictícia | F95=Após gate | G95=APROVADO CEI
+A96=T-CEI12-11 | B96=Exportar ESTUDO | C96=Cenário ESTUDO selecionado | D96=XLSX contém snapshot completo do estudo + OP Projetada + metadados | E96=artefato incompleto | F96=Após gate | G96=APROVADO CEI
+A97=T-CEI12-12 | B97=Exportar META | C97=Cenário META selecionado | D97=XLSX contém metas + vendas/produção/estoque recalculados + OP Projetada | E97=cenário errado | F97=Após gate | G97=APROVADO CEI
+A98=T-CEI12-13 | B98=Segurança | C98=Usuário exporta ou recalcula | D98=Nenhuma venda, OP, compra ou estoque é criado/alterado no Bling | E98=mutação não autorizada | F98=Após gate | G98=APROVADO CEI

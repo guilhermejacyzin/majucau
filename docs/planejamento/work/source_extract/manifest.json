@@ -1,0 +1,87 @@
+[
+  {
+    "name": "ChatGPT Image 12 de set. de 2026, 20_48_11.png",
+    "bytes": 1606921,
+    "sha256": "cf04afe7be720d359fc783c4380d04efc785ba830e36925d93626f7a27b30f56"
+  },
+  {
+    "name": "MAJUCAU_CONSOLIDACAO_DEV_GATE_RC3_CEI_CONFIGURACOES_T16_T17.xlsx",
+    "bytes": 136558,
+    "sha256": "41e35e0460aab54430a8ca2ced518f06dd571ecde53287d52bc4b6910a5c6777"
+  },
+  {
+    "name": "T02_Fluxo_de_Caixa.png",
+    "bytes": 2332867,
+    "sha256": "28e98d1be53a319cb8b4a83fae5103b57fabc65d0308a2b3eac175e6a4ad0d0a"
+  },
+  {
+    "name": "T03_Contas_a_Receber.png",
+    "bytes": 2401711,
+    "sha256": "1844863e9a7cfb271ac9c5077c2dce29099093fcc7b885e703bea6180d0efde9"
+  },
+  {
+    "name": "T04_Contas_a_Pagar.png",
+    "bytes": 2436091,
+    "sha256": "e0beba0257e027e925cd644e170903a9e7b8a463d3edf8d1d3d02d0a1c22126b"
+  },
+  {
+    "name": "T05_Conciliacao.png",
+    "bytes": 2413314,
+    "sha256": "50b75ffb1ca4c95f1983acef64b4c4a8d5b47fbb7954da63743dba7de092b734"
+  },
+  {
+    "name": "T06_DRE.png",
+    "bytes": 2372823,
+    "sha256": "94a5ac357405720e19cc2e92375dc0816aee1c1578d174bea4e03360d8497c02"
+  },
+  {
+    "name": "T07_Balancete.png",
+    "bytes": 2474897,
+    "sha256": "20b3ef6b31af48983c8b18416010ba5023115b939374595b1c33600735252192"
+  },
+  {
+    "name": "T08_Calculadora_de_Aplicacao.png",
+    "bytes": 1740732,
+    "sha256": "7987ae139fa1b0590635660578b73ba2ba859178d0517a46884f895ec2f61ac1"
+  },
+  {
+    "name": "T09_Estoque.png",
+    "bytes": 1522389,
+    "sha256": "70887af8f35d3ab10a6af4f03859fb34c8e87ccf308d63316e1f20000cbc540f"
+  },
+  {
+    "name": "T10_Producao.png",
+    "bytes": 1606921,
+    "sha256": "cf04afe7be720d359fc783c4380d04efc785ba830e36925d93626f7a27b30f56"
+  },
+  {
+    "name": "T12_Projecoes.png",
+    "bytes": 1738295,
+    "sha256": "a99cd3b7fe9e8befaae36221f8cebc994d725e983cba61729cc5b752af58af51"
+  },
+  {
+    "name": "T13_Lancamentos_e_Pendencias.png",
+    "bytes": 1444040,
+    "sha256": "5787c545ed0c29674fa41f7243bb2f52d9fc332996cbc65c0d6b5ef0076ea39a"
+  },
+  {
+    "name": "T14_Alertas.png",
+    "bytes": 1518414,
+    "sha256": "b55f597b2fb945680a76d96a688a51f5c029623ed34b7ed585a4b312053ef731"
+  },
+  {
+    "name": "T15_Importacoes_e_Integracoes.png",
+    "bytes": 1597856,
+    "sha256": "91626d3c6fb92b523113deeeb75502091f83105e1111c4db30134613ce361b49"
+  },
+  {
+    "name": "T16_Parametros.png",
+    "bytes": 1621547,
+    "sha256": "ae91e304c0185c5908e3ac40497d98c6d3e63936ab9a35dc9a9ac8729329753c"
+  },
+  {
+    "name": "T17_Usuarios.png",
+    "bytes": 1571197,
+    "sha256": "fcd45dde50ea33a1ed039931a4f39ff4b85aacc232c1f8b4cca64749f4261406"
+  }
+]

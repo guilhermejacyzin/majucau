@@ -1,0 +1,4116 @@
+[
+  {
+    "key": "baseline",
+    "id": "BK-000",
+    "phase": "00 Descoberta e decisões",
+    "title": "Confirmar a base de escopo e as decisões da Majucau",
+    "goal": "Ter uma referência única para construir o produto.",
+    "action": "Registrar escopo, responsáveis e decisões pendentes.",
+    "steps": [
+      "Registrar Go, React JS, DDD hexagonal monolítico, única empresa Majucau, três diretores e hospedagem local em Windows.",
+      "Confirmar todos os módulos da primeira produção",
+      "Resolver divergências caso a caso e registrar autor, data e referência"
+    ],
+    "accept": "Majucau revisou o escopo e cada decisão tem resposta ou bloqueio explícito.",
+    "impact": "Evita construir uma regra ou módulo diferente do esperado.",
+    "deps": [],
+    "refs": "Pedido do usuário; 00_Resumo; C_Conflitos; D_Lacunas",
+    "questions": "Todas as decisões em aberto",
+    "owner": "Majucau + Arquitetura",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "inventory",
+    "id": "BK-001",
+    "phase": "00 Descoberta e decisões",
+    "title": "Inventariar os materiais e suas versões",
+    "goal": "Saber exatamente o que foi analisado.",
+    "action": "Catalogar as imagens, abas e documentos citados.",
+    "steps": [
+      "Listar 16 PNGs e 20 abas",
+      "Registrar duplicata T10 por hash e materiais ausentes",
+      "Preservar originais e vincular requisitos às coordenadas da planilha"
+    ],
+    "accept": "Inventário identifica 15 imagens únicas, todas as abas e documentos apenas referenciados.",
+    "impact": "Evita omissões e mistura de versões.",
+    "deps": [],
+    "refs": "Pacote fornecido; manifesto de arquivos",
+    "questions": "",
+    "owner": "Produto + UX",
+    "kind": "Planejamento",
+    "status": "Concluída",
+    "evidence": "MAJUCAU_ANALISE_E_DECISOES_v0.md — inventário e análise; inspeção dos materiais e GitHub nesta sessão.",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 1
+  },
+  {
+    "key": "repoaudit",
+    "id": "BK-002",
+    "phase": "00 Descoberta e decisões",
+    "title": "Verificar o ponto de partida no GitHub",
+    "goal": "Separar trabalho existente de trabalho futuro.",
+    "action": "Inspecionar repositório, commits, arquivos e issues.",
+    "steps": [
+      "Consultar repositório em modo leitura",
+      "Registrar resposta de repositório vazio",
+      "Perguntar se há código ou ambientes fora do GitHub"
+    ],
+    "accept": "Estado do GitHub comprovado; eventual material externo registrado como não inspecionado.",
+    "impact": "Permite planejar a preparação do projeto desde o início.",
+    "deps": [],
+    "refs": "GitHub majucau /contents e /commits",
+    "questions": "",
+    "owner": "Arquitetura",
+    "kind": "Planejamento",
+    "status": "Concluída",
+    "evidence": "MAJUCAU_ANALISE_E_DECISOES_v0.md — inventário e análise; inspeção dos materiais e GitHub nesta sessão.",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 1
+  },
+  {
+    "key": "visualaudit",
+    "id": "BK-003",
+    "phase": "00 Descoberta e decisões",
+    "title": "Auditar cada tela e seus cálculos ilustrativos",
+    "goal": "Transformar imagens em comportamentos verificáveis.",
+    "action": "Mapear cartões, tabelas, gráficos, filtros, links, mensagens e inconsistências.",
+    "steps": [
+      "Percorrer cada imagem e suas notas",
+      "Conferir somas, percentuais, datas, unidades e estados",
+      "Registrar conflitos sem escolher silenciosamente uma referência"
+    ],
+    "accept": "Cada tela possui inventário e achados, com destino no backlog.",
+    "impact": "Reduz erros que passariam despercebidos numa reprodução visual.",
+    "deps": [
+      "inventory"
+    ],
+    "refs": "Todas as imagens; CEIs T11–T17",
+    "questions": "",
+    "owner": "UX + Produto + QA",
+    "kind": "Planejamento",
+    "status": "Concluída",
+    "evidence": "MAJUCAU_ANALISE_E_DECISOES_v0.md — inventário e análise; inspeção dos materiais e GitHub nesta sessão.",
+    "weight": 1,
+    "dependencies": [
+      "BK-001"
+    ],
+    "progress": 1
+  },
+  {
+    "key": "missing",
+    "id": "BK-004",
+    "phase": "00 Descoberta e decisões",
+    "title": "Completar o escopo sem imagem ou com referência antiga",
+    "goal": "Definir as telas ainda insuficientemente especificadas.",
+    "action": "Obter e conferir T01, T11, Aplicações e os blocos adicionais citados.",
+    "steps": [
+      "Solicitar mockup Compras e Visão Executiva",
+      "Confirmar Aplicações, Pricing, Logística, Simuladores, Relatórios e Produtos; registrar Balanço Patrimonial excluído por decisão atual.",
+      "Reconciliar a numeração antiga da matriz com a atual"
+    ],
+    "accept": "Mapa de navegação aprovado cobre todos os módulos exigidos; nenhum item é removido por suposição.",
+    "impact": "Impede declarar produção completa com módulos faltantes.",
+    "deps": [
+      "inventory"
+    ],
+    "refs": "A_Matriz_Mestra!A41:S41; 00_Resumo!A46:D46; menus das imagens",
+    "questions": "Q-01,Q-02",
+    "owner": "Majucau + UX",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-001"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "partial",
+    "id": "BK-005",
+    "phase": "00 Descoberta e decisões",
+    "title": "Detalhar os casos de pagamento divergente após decidir C-01",
+    "goal": "Ter uma única semântica de baixa de títulos.",
+    "action": "Formalizar a decisão: valor diferente gera divergência e mantém título sem baixa até análise.",
+    "steps": [
+      "Registrar decisão já recebida para R$1.000/R$600: divergência e título sem baixa até análise.",
+      "Registrar saldo, estado e efeito no caixa para a regra escolhida",
+      "Definir estorno, excesso, desconto, tarifa e parcelamento"
+    ],
+    "accept": "Exemplos aprovados produzem um único saldo e estado por evento.",
+    "impact": "Afeta contas a pagar, vencidos, caixa e conciliação.",
+    "deps": [],
+    "refs": "C_Conflitos!A3:L3; T04",
+    "questions": "C-01",
+    "owner": "Majucau / Financeiro",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "investmentpolicy",
+    "id": "BK-006",
+    "phase": "00 Descoberta e decisões",
+    "title": "Fechar os critérios da calculadora de aplicação",
+    "goal": "Permitir um cálculo reproduzível e compreensível.",
+    "action": "Resolver fonte do lucro, semana crítica, posição de caixa e período elegível.",
+    "steps": [
+      "Registrar decisões já recebidas: semana de maior total de despesas e lucro da DRE Majucau.",
+      "Definir L-07, semana/calendário, empates, reserva, CDI Plus e saldo transferível",
+      "Reconciliar fórmula da matriz com memória da T08 e casos de entrada faltante"
+    ],
+    "accept": "Exemplos aprovados incluem lucro negativo, reserva insuficiente, M−2, janeiro e dados antigos; saída bloqueia quando necessário.",
+    "impact": "Evita uma capacidade de aplicação baseada em critérios indefinidos.",
+    "deps": [],
+    "refs": "C_Conflitos!A4:L5; A_Matriz_Mestra!A32:S36; T02/T08",
+    "questions": "L-07,Q-10,Q-21",
+    "owner": "Majucau / Financeiro",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "accountingpolicy",
+    "id": "BK-007",
+    "phase": "00 Descoberta e decisões",
+    "title": "Definir competência, fontes e classificações financeiras",
+    "goal": "Fixar a origem e o período de cada linha da DRE e do balancete.",
+    "action": "Resolver custos históricos, perdas, juros, fretes, tributos e saldos iniciais.",
+    "steps": [
+      "Obter amostras e plano de contas",
+      "Definir L-03,L-04,L-05,L-08,L-09,L-13,L-14 por tipo de evento",
+      "Aprovar exemplos de reabertura, correção e estorno"
+    ],
+    "accept": "Cada linha material tem fonte, conta, competência, contrapartida quando aplicável e tratamento de ausência.",
+    "impact": "Previne resultado incompleto apresentado como definitivo.",
+    "deps": [],
+    "refs": "D_Lacunas; M-017..M-029",
+    "questions": "L-03,L-04,L-05,L-08,L-09,L-13,L-14,Q-09",
+    "owner": "Majucau / Financeiro",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "opsrules",
+    "id": "BK-008",
+    "phase": "00 Descoberta e decisões",
+    "title": "Definir regras pendentes de estoque, produção e compras",
+    "goal": "Eliminar critérios operacionais ambíguos.",
+    "action": "Homologar pedidos aplicáveis, metas, quantidades e prioridades.",
+    "steps": [
+      "Definir saldo utilizável, depósito, unidade e pedido aberto aplicável",
+      "Decidir significado de Em andamento e Abaixo da meta na T10",
+      "Fechar fórmula de quantidade, prazo histórico e prioridades da T11"
+    ],
+    "accept": "Casos de igualdade ao mínimo, pedido parcial/cancelado, meta zero/ausente e unidades distintas têm resultado aprovado.",
+    "impact": "Evita compra duplicada e avaliação incorreta da produção.",
+    "deps": [],
+    "refs": "T09/T10; Q_CEI_Tela_11",
+    "questions": "L-17,L-18,Q-07,Q-08",
+    "owner": "Majucau / Operação",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "forecastpolicy",
+    "id": "BK-009",
+    "phase": "00 Descoberta e decisões",
+    "title": "Homologar regras de estudo, metas e qualidade de projeção",
+    "goal": "Definir quando uma projeção pode ser utilizada.",
+    "action": "Fechar métricas, limites, distribuição de metas e produção derivada.",
+    "steps": [
+      "Aprovar calendário sazonal e séries com pouco histórico",
+      "Definir limites WAPE/Bias/MASE e preço/mix/overrides",
+      "Resolver quantidades de produção da imagem versus regra textual e relação entre metas T10/T12"
+    ],
+    "accept": "Conjunto de exemplos por SKU/mês fecha vendas, produção, estoque e faturamento; critérios de qualidade ficam versionados.",
+    "impact": "Impede metas irreconciliáveis e métricas de qualidade fictícias.",
+    "deps": [],
+    "refs": "R_CEI_Tela_12; T12; M-045..M-049",
+    "questions": "L-20,L-21,Q-11,Q-12",
+    "owner": "Majucau / Planejamento",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "filecontracts",
+    "id": "BK-010",
+    "phase": "00 Descoberta e decisões",
+    "title": "Obter arquivos reais e homologar contratos de importação",
+    "goal": "Conhecer os formatos que o sistema realmente receberá.",
+    "action": "Mapear Bling, Nuvem Pago, Nuvem Envio, extratos, perdas, ajustes e demais fontes ativas.",
+    "steps": [
+      "Receber amostras com dados protegidos quando necessário",
+      "Mapear colunas, IDs, tipos, sinais, datas e versões",
+      "Definir pasta, cópia imutável, periodicidade, descarte, rejeição e atualização"
+    ],
+    "accept": "Cada fonte ativa tem amostra, responsável e contrato; ausência de arquivo não significa ausência de movimento.",
+    "impact": "Evita importações que duplicam ou perdem dados.",
+    "deps": [],
+    "refs": "H_Contrato_Dados; U_CEI_Tela_15",
+    "questions": "L-11,L-12,L-24,Q-06",
+    "owner": "Majucau + Engenharia de Dados",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "cocoapolicy",
+    "id": "BK-011",
+    "phase": "00 Descoberta e decisões",
+    "title": "Definir fontes e critérios dos sinais do cacau",
+    "goal": "Tornar os sinais externos comparáveis e rastreáveis.",
+    "action": "Homologar fontes de preço, câmbio, clima, safra e estoques globais.",
+    "steps": [
+      "Mapear origens reais dos fornecedores",
+      "Definir unidades, câmbio, datas e comparabilidade do preço",
+      "Aprovar thresholds, validade dos dados e custo/licença de acesso"
+    ],
+    "accept": "Cada sinal tem fonte, origem geográfica, regra e tratamento de dado insuficiente.",
+    "impact": "Evita oportunidade ou risco calculados sobre bases incompatíveis.",
+    "deps": [],
+    "refs": "Q_CEI_Tela_11; H_Contrato_Dados!A21:H22",
+    "questions": "L-19",
+    "owner": "Majucau / Compras",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "actionpolicy",
+    "id": "BK-012",
+    "phase": "00 Descoberta e decisões",
+    "title": "Definir exportações, ações e resolução de pendências",
+    "goal": "Especificar o que cada botão pode fazer.",
+    "action": "Fechar matriz de ações por tela e fluxo de resolução por tipo.",
+    "steps": [
+      "Definir destinos de Ver detalhes, Ajuda e atualização",
+      "Decidir exportações T02–T07 e T13–T15, filtros, colunas e permissões",
+      "Definir resolução com evidência sem baixa genérica de pendência"
+    ],
+    "accept": "Todo controle visível tem comportamento aprovado, indisponibilidade explicada ou decisão pendente identificada.",
+    "impact": "Evita botões decorativos e encerramento indevido de problemas.",
+    "deps": [],
+    "refs": "S/T/U CEIs; T02–T07; T13–T15",
+    "questions": "L-22,L-23,Q-13",
+    "owner": "Majucau + UX",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "accesspolicy",
+    "id": "BK-013",
+    "phase": "00 Descoberta e decisões",
+    "title": "Homologar acesso, perfis e edição de parâmetros",
+    "goal": "Definir quem pode consultar ou alterar cada recurso.",
+    "action": "Fechar matriz ação por módulo e ciclo de vida de usuários.",
+    "steps": [
+      "Validar ADMIN, FINANCEIRO, OPERAÇÃO e LEITURA",
+      "Definir login, MFA, convite, recuperação, expiração e revogação",
+      "Aprovar edição/vigência/rollback de cada parâmetro crítico"
+    ],
+    "accept": "Matriz distingue consulta, exportação, reprocessamento, metas, parâmetros e usuários; bloqueado não acessa.",
+    "impact": "Reduz acesso indevido e mudança de regra sem rastreio.",
+    "deps": [],
+    "refs": "W/Y CEIs; H_Contrato_Dados!A34:H39",
+    "questions": "L-25,L-26,Q-14",
+    "owner": "Majucau + Segurança",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "localrequirements",
+    "id": "BK-014",
+    "phase": "00 Descoberta e decisões",
+    "title": "Levantar a infraestrutura local e a rotina de uso",
+    "goal": "Dimensionar uma instalação que a Majucau consiga operar.",
+    "action": "Registrar equipamento, rede, disponibilidade e responsáveis.",
+    "steps": [
+      "Windows já confirmado; levantar CPU, RAM, disco, energia, internet e disponibilidade de funcionamento.",
+      "Três diretores já confirmados; definir acesso na rede local ou remoto e navegadores utilizados.",
+      "Definir tolerância a parada, perda de dados, horários de manutenção e operador"
+    ],
+    "accept": "Ficha de infraestrutura aprovada inclui backup separado, restauração esperada e forma de suporte.",
+    "impact": "Evita depender de um computador sem capacidade ou sem recuperação.",
+    "deps": [],
+    "refs": "Pedido: hospedagem local",
+    "questions": "Q-03,Q-04,Q-05,Q-15,Q-16",
+    "owner": "Majucau + Infraestrutura",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [],
+    "progress": 0
+  },
+  {
+    "key": "deliveryplan",
+    "id": "BK-015",
+    "phase": "00 Descoberta e decisões",
+    "title": "Organizar responsáveis, estimativas e marcos de entrega",
+    "goal": "Manter evolução visível sem prometer prazos sem base.",
+    "action": "Revisar dependências e estimar esforço com a equipe.",
+    "steps": [
+      "Confirmar prazo e disponibilidade de pessoas",
+      "Subdividir tarefas grandes e atribuir pesos de esforço",
+      "Definir marcos internos e um único lançamento com todos os módulos homologados"
+    ],
+    "accept": "Backlog sem dependências circulares, dono por tarefa e cronograma apoiado em capacidade real.",
+    "impact": "Permite acompanhar avanço e antecipar bloqueios.",
+    "deps": [
+      "baseline",
+      "missing",
+      "localrequirements"
+    ],
+    "refs": "Pedido do usuário; G_Ordem",
+    "questions": "Q-17",
+    "owner": "Majucau + Liderança técnica",
+    "kind": "Planejamento",
+    "status": "Aguarda decisão",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-000",
+      "BK-004",
+      "BK-014"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "domainmap",
+    "id": "BK-016",
+    "phase": "01 Arquitetura e UX",
+    "title": "Modelar os domínios e o vocabulário do negócio",
+    "goal": "Separar regras sem fragmentar a aplicação em serviços.",
+    "action": "Desenhar contextos do monólito e suas responsabilidades.",
+    "steps": [
+      "Modelar Tesouraria, Conciliação, Resultados, Operação, Planejamento, Integrações e Acesso",
+      "Definir entidades, agregados, invariantes e eventos",
+      "Compartilhar contratos e IDs, evitando modelos únicos gigantes"
+    ],
+    "accept": "Mapa mostra dono de cada fato, dependências direcionais e transações de negócio.",
+    "impact": "Evita regras duplicadas entre telas e módulos.",
+    "deps": [
+      "baseline",
+      "partial",
+      "investmentpolicy",
+      "accountingpolicy",
+      "opsrules",
+      "forecastpolicy"
+    ],
+    "refs": "A_Matriz_Mestra; B_Intersecoes; H_Contrato_Dados",
+    "questions": "",
+    "owner": "Arquitetura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-000",
+      "BK-005",
+      "BK-006",
+      "BK-007",
+      "BK-008",
+      "BK-009"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "hexagonal",
+    "id": "BK-017",
+    "phase": "01 Arquitetura e UX",
+    "title": "Definir a estrutura hexagonal do monólito Go",
+    "goal": "Manter regras testáveis e independentes das integrações.",
+    "action": "Registrar portas, casos de uso e adaptadores.",
+    "steps": [
+      "Separar domínio, aplicação e adaptadores por módulo",
+      "Definir portas de repositório, relógio, arquivos e provedores",
+      "Documentar composição única, fronteiras de transação e dependências permitidas"
+    ],
+    "accept": "Domínio não depende de HTTP, React, ORM ou clientes Bling; módulos se comunicam por contratos.",
+    "impact": "Facilita manutenção e substituição de integração.",
+    "deps": [
+      "domainmap"
+    ],
+    "refs": "Stack definida pelo usuário",
+    "questions": "",
+    "owner": "Arquitetura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-016"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "storage",
+    "id": "BK-018",
+    "phase": "01 Arquitetura e UX",
+    "title": "Definir persistência, migrações e precisão dos dados",
+    "goal": "Preservar dinheiro, quantidades e histórico corretamente.",
+    "action": "Avaliar PostgreSQL local e modelo relacional por domínio.",
+    "steps": [
+      "Definir valores monetários exatos e arredondamento por regra",
+      "Modelar chaves, índices, constraints, versões e transações",
+      "Escolher migrações e política de compatibilidade de versões"
+    ],
+    "accept": "Modelo diferencia ausência de zero e proíbe duplicatas de negócio; decisão de banco é registrada.",
+    "impact": "Evita erros de centavos e corrupção lógica de fatos.",
+    "deps": [
+      "domainmap",
+      "filecontracts"
+    ],
+    "refs": "H_Contrato_Dados; proposta técnica",
+    "questions": "",
+    "owner": "Arquitetura + Dados",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-016",
+      "BK-010"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "apicontract",
+    "id": "BK-019",
+    "phase": "01 Arquitetura e UX",
+    "title": "Descrever contratos de API e estados de leitura",
+    "goal": "Unir React e Go com respostas previsíveis.",
+    "action": "Documentar endpoints, ações, filtros e erros em OpenAPI.",
+    "steps": [
+      "Definir paginação, ordenação, datas, moeda e unidade",
+      "Incluir posição, origem, qualidade, versão e autorização",
+      "Diferenciar validação, falta de dado, conflito, acesso negado e falha de fonte"
+    ],
+    "accept": "Exemplos por tela permitem testar cliente e servidor antes da integração real.",
+    "impact": "Reduz retrabalho de interface e interpretação incorreta.",
+    "deps": [
+      "hexagonal",
+      "actionpolicy",
+      "accesspolicy"
+    ],
+    "refs": "H_Contrato_Dados; todos CEIs",
+    "questions": "",
+    "owner": "Full Stack",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-017",
+      "BK-012",
+      "BK-013"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "dataquality",
+    "id": "BK-020",
+    "phase": "01 Arquitetura e UX",
+    "title": "Modelar estado, proveniência e consistência entre telas",
+    "goal": "Explicar a confiabilidade de cada número.",
+    "action": "Separar status do negócio, qualidade do dado e processamento.",
+    "steps": [
+      "Mapear CONFIRMED, PROJECTED, STALE, UNAVAILABLE e demais estados",
+      "Definir cobertura, data de posição e snapshot consistente",
+      "Definir propagação de qualidade sem transformar ausência em zero"
+    ],
+    "accept": "Mesma consulta e posição produzem mesmos totais; dados parciais e antigos ficam identificados.",
+    "impact": "Impede que uma tela pareça atualizada quando sua fonte falhou.",
+    "deps": [
+      "storage",
+      "apicontract"
+    ],
+    "refs": "M-002,M-037,M-038; H_Contrato_Dados",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-018",
+      "BK-019"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "designsystem",
+    "id": "BK-021",
+    "phase": "01 Arquitetura e UX",
+    "title": "Consolidar o padrão visual e a navegação",
+    "goal": "Traduzir os mockups para componentes consistentes.",
+    "action": "Especificar tokens, componentes e mapa de rotas.",
+    "steps": [
+      "Comparar logos, menus, agrupamentos, títulos e rótulos",
+      "Registrar cada diferença para decisão Majucau",
+      "Definir tabelas, cartões, filtros, gráficos, badges e estados de seleção"
+    ],
+    "accept": "Biblioteca de especificações preserva escolhas aprovadas; menu aponta para a tela certa.",
+    "impact": "Corrige inconsistência de navegação sem redesenho silencioso.",
+    "deps": [
+      "visualaudit",
+      "missing",
+      "actionpolicy"
+    ],
+    "refs": "Todas as imagens; M-039,M-050",
+    "questions": "Q-01,Q-02,Q-18",
+    "owner": "UX",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-003",
+      "BK-004",
+      "BK-012"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "uxstates",
+    "id": "BK-022",
+    "phase": "01 Arquitetura e UX",
+    "title": "Especificar acessibilidade, telas pequenas e estados de exceção",
+    "goal": "Permitir uso além da imagem estática.",
+    "action": "Desenhar loading, vazio, erro, bloqueado e dados antigos.",
+    "steps": [
+      "Definir navegação por teclado, foco, rótulos e mensagens",
+      "Testar legibilidade, zoom, contraste e leitura de tabelas largas",
+      "Submeter ajustes estruturais e telas ausentes à Majucau"
+    ],
+    "accept": "Fluxos completos cobrem falhas e permissões; nenhuma informação depende só da cor.",
+    "impact": "Reduz erros de operação e dificuldade no uso diário.",
+    "deps": [
+      "designsystem",
+      "localrequirements"
+    ],
+    "refs": "Todas as imagens; gaps UX",
+    "questions": "Q-18",
+    "owner": "UX + QA",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-021",
+      "BK-014"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "analyticschoice",
+    "id": "BK-023",
+    "phase": "01 Arquitetura e UX",
+    "title": "Decidir a necessidade de Python e Streamlit",
+    "goal": "Adicionar ferramentas somente quando houver benefício verificável.",
+    "action": "Planejar avaliação de importação e projeções com dados representativos.",
+    "steps": [
+      "Comparar processamento Go com Python para cargas e séries reais",
+      "Avaliar pandas ou Polars conforme memória, formato e tempo medidos",
+      "Manter React como interface principal; documentar eventual uso interno de Streamlit"
+    ],
+    "accept": "Decisão registra ganho, custo de operação e contrato de entrada/saída; sem segundo motor financeiro.",
+    "impact": "Controla complexidade e mantém uma fonte de regras.",
+    "deps": [
+      "hexagonal",
+      "forecastpolicy",
+      "filecontracts",
+      "localrequirements"
+    ],
+    "refs": "Sugestão permitida pelo usuário; proposta técnica",
+    "questions": "",
+    "owner": "Arquitetura + Dados",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-017",
+      "BK-009",
+      "BK-010",
+      "BK-014"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "threatmodel",
+    "id": "BK-024",
+    "phase": "01 Arquitetura e UX",
+    "title": "Planejar segurança e proteção dos dados",
+    "goal": "Identificar falhas possíveis antes de expor o sistema.",
+    "action": "Mapear acessos, arquivos, credenciais e fronteiras da rede.",
+    "steps": [
+      "Classificar informações e privilégios",
+      "Avaliar importação maliciosa, acesso direto à API e exposição de segredos",
+      "Definir retenção, restauração e controle de dados usados em testes"
+    ],
+    "accept": "Riscos têm tratamento e testes associados; nenhuma credencial entra no Git ou no navegador.",
+    "impact": "Protege os dados financeiros e operacionais.",
+    "deps": [
+      "accesspolicy",
+      "localrequirements",
+      "apicontract"
+    ],
+    "refs": "M-058; Y_CEI_Tela_17",
+    "questions": "",
+    "owner": "Segurança + Arquitetura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-013",
+      "BK-014",
+      "BK-019"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "repoinit",
+    "id": "BK-025",
+    "phase": "02 Fundação do projeto",
+    "title": "Preparar o repositório e as convenções do projeto",
+    "goal": "Criar uma base reproduzível para a equipe.",
+    "action": "Inicializar estrutura, documentação e políticas do Git.",
+    "steps": [
+      "Criar README, ignore de segredos e regras de contribuição",
+      "Organizar backend, frontend, docs e infraestrutura conforme decisão",
+      "Configurar revisão e permissões do repositório"
+    ],
+    "accept": "Novo desenvolvedor encontra instruções e convenções; histórico contém somente artefatos do projeto.",
+    "impact": "Evita configuração informal e exposição de arquivos locais.",
+    "deps": [
+      "repoaudit",
+      "hexagonal",
+      "deliveryplan"
+    ],
+    "refs": "GitHub vazio; BK arquitetura",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-002",
+      "BK-017",
+      "BK-015"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "devsetup",
+    "id": "BK-026",
+    "phase": "02 Fundação do projeto",
+    "title": "Preparar o ambiente de desenvolvimento local",
+    "goal": "Permitir execução reproduzível fora da produção.",
+    "action": "Documentar versões e comandos de instalação, execução e limpeza.",
+    "steps": [
+      "Fixar dependências e arquivos de lock aplicáveis",
+      "Criar configuração exemplo sem segredos e dados sintéticos",
+      "Validar início em máquina limpa"
+    ],
+    "accept": "Ambiente sobe seguindo documentação e não acessa dados de produção por padrão.",
+    "impact": "Diminui tempo perdido com diferenças entre máquinas.",
+    "deps": [
+      "repoinit",
+      "storage",
+      "localrequirements"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-025",
+      "BK-018",
+      "BK-014"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "gofoundation",
+    "id": "BK-027",
+    "phase": "02 Fundação do projeto",
+    "title": "Criar a fundação do backend Go",
+    "goal": "Dispor de processo executável com as fronteiras planejadas.",
+    "action": "Implementar composição, configuração, servidor e ciclo de vida.",
+    "steps": [
+      "Validar configuração ao iniciar",
+      "Implementar timeouts, cancelamento, desligamento e health/readiness",
+      "Montar módulos por injeção explícita de dependências"
+    ],
+    "accept": "Processo inicia e encerra sem interromper operações silenciosamente; configuração inválida é identificada.",
+    "impact": "Sustenta todas as funcionalidades.",
+    "deps": [
+      "devsetup",
+      "hexagonal"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-026",
+      "BK-017"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "reactfoundation",
+    "id": "BK-028",
+    "phase": "02 Fundação do projeto",
+    "title": "Criar a fundação do frontend React JS",
+    "goal": "Dispor de navegação e layout reutilizáveis.",
+    "action": "Montar rotas, shell, estilos e cliente de API.",
+    "steps": [
+      "Implementar menu e componentes comuns aprovados",
+      "Configurar tratamento de erro e sessão",
+      "Padronizar moeda, datas, unidade e tradução de status"
+    ],
+    "accept": "Rotas e estados base funcionam por teclado; seleção do menu corresponde à página.",
+    "impact": "Evita refazer componentes em cada tela.",
+    "deps": [
+      "devsetup",
+      "designsystem",
+      "uxstates",
+      "apicontract"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Frontend",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-026",
+      "BK-021",
+      "BK-022",
+      "BK-019"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "dbfoundation",
+    "id": "BK-029",
+    "phase": "02 Fundação do projeto",
+    "title": "Criar o esquema inicial e o controle de migrações",
+    "goal": "Evoluir banco sem ajustes manuais improvisados.",
+    "action": "Implementar migrações base, usuários técnicos e constraints.",
+    "steps": [
+      "Separar permissões de aplicação e migração",
+      "Criar índices e versões iniciais",
+      "Validar aplicação e recuperação de migração em base descartável"
+    ],
+    "accept": "Banco vazio fica pronto automaticamente; migração falha de modo diagnosticável.",
+    "impact": "Reduz risco na instalação e atualização local.",
+    "deps": [
+      "storage",
+      "gofoundation"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-018",
+      "BK-027"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "qualitypipeline",
+    "id": "BK-030",
+    "phase": "02 Fundação do projeto",
+    "title": "Configurar verificações automáticas do projeto",
+    "goal": "Detectar regressões antes da entrega.",
+    "action": "Criar pipeline de lint, testes, análise de dependências e build.",
+    "steps": [
+      "Executar Go, React e testes contratuais apropriados",
+      "Bloquear publicação de artefato com verificações obrigatórias falhas",
+      "Separar CI de acesso à máquina de produção"
+    ],
+    "accept": "Commit válido produz resultado rastreável; PR não confiável não executa na rede da Majucau.",
+    "impact": "Reduz falhas e exposição da rede local.",
+    "deps": [
+      "gofoundation",
+      "reactfoundation"
+    ],
+    "refs": "Repositório público; recomendação GitHub Actions",
+    "questions": "",
+    "owner": "Engenharia + Infraestrutura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-027",
+      "BK-028"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "observabilitybase",
+    "id": "BK-031",
+    "phase": "02 Fundação do projeto",
+    "title": "Criar logs e rastreio técnico básicos",
+    "goal": "Diagnosticar falhas sem expor dados sensíveis.",
+    "action": "Padronizar IDs de requisição, erro, lote e operação.",
+    "steps": [
+      "Implementar logs estruturados com mascaramento",
+      "Correlacionar API, job, lote e fonte",
+      "Definir métricas de latência, falhas e tamanho das filas"
+    ],
+    "accept": "Erro visível ao usuário possui referência que encontra diagnóstico técnico sem tokens ou extratos completos.",
+    "impact": "Facilita suporte e investigação.",
+    "deps": [
+      "gofoundation",
+      "threatmodel"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-027",
+      "BK-024"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "identity",
+    "id": "BK-032",
+    "phase": "03 Identidade e configurações",
+    "title": "Implementar autenticação e administração inicial",
+    "goal": "Permitir entrada segura no ambiente local.",
+    "action": "Construir login e integração com identidade aprovada.",
+    "steps": [
+      "Criar primeiro administrador sem senha fixa no pacote",
+      "Implementar sessão, logout e expiração",
+      "Aplicar recuperação e MFA conforme fluxo homologado",
+      "Compatibilizar convites e recuperação com as ferramentas locais e o canal aprovado para três diretores."
+    ],
+    "accept": "Sessão expirada não acessa API; recuperação não permite tomar conta de outro usuário.",
+    "impact": "Protege a entrada no sistema.",
+    "deps": [
+      "accesspolicy",
+      "dbfoundation",
+      "reactfoundation",
+      "threatmodel"
+    ],
+    "refs": "L-26; Y_CEI_Tela_17",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-013",
+      "BK-029",
+      "BK-028",
+      "BK-024"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "authorization",
+    "id": "BK-033",
+    "phase": "03 Identidade e configurações",
+    "title": "Aplicar permissões no backend e na interface",
+    "goal": "Garantir que cada perfil faça somente o autorizado.",
+    "action": "Implementar matriz de recursos e ações.",
+    "steps": [
+      "Aplicar negação por padrão nas rotas e casos de uso",
+      "Restringir consultas, exports e operações internas",
+      "Refletir permissões na UI sem depender dela para segurança"
+    ],
+    "accept": "Chamada direta proibida é negada; perfil LEITURA não modifica metas, usuários ou parâmetros.",
+    "impact": "Evita escalada de privilégios.",
+    "deps": [
+      "identity",
+      "apicontract"
+    ],
+    "refs": "M-057,M-058; H_Contrato_Dados!A38:H38",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-032",
+      "BK-019"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "accessaudit",
+    "id": "BK-034",
+    "phase": "03 Identidade e configurações",
+    "title": "Registrar auditoria de acesso e mudanças",
+    "goal": "Saber quem executou cada alteração material.",
+    "action": "Persistir eventos com ator, alvo, data, resultado e motivo.",
+    "steps": [
+      "Registrar mudanças de perfil, bloqueio, metas e parâmetros",
+      "Preservar antes/depois e vínculo com requisição",
+      "Restringir acesso à auditoria e aplicar retenção aprovada"
+    ],
+    "accept": "Histórico permanece consultável após bloqueio e rollback; nenhum segredo é registrado.",
+    "impact": "Permite investigar ações e explicar alterações.",
+    "deps": [
+      "authorization",
+      "observabilitybase"
+    ],
+    "refs": "H_Contrato_Dados!A39:H39",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-033",
+      "BK-031"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "usersscreen",
+    "id": "BK-035",
+    "phase": "03 Identidade e configurações",
+    "title": "Implementar T17 Usuários e o ciclo de vida das contas",
+    "goal": "Administrar acessos de forma compreensível.",
+    "action": "Construir lista, perfis, detalhes e convites aprovados.",
+    "steps": [
+      "Calcular cartões e distribuição com população definida",
+      "Implementar convite, ativação, bloqueio e desbloqueio",
+      "Revogar sessões quando o bloqueio exigir e proteger o último administrador"
+    ],
+    "accept": "Contagens conferem com filtros; bloqueado perde acesso; convite vencido não ativa conta.",
+    "impact": "Mantém controle centralizado do acesso.",
+    "deps": [
+      "authorization",
+      "accessaudit",
+      "uxstates"
+    ],
+    "refs": "T17; Y_CEI_Tela_17; T-CEI17-01..08",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-033",
+      "BK-034",
+      "BK-022"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "parameterversions",
+    "id": "BK-036",
+    "phase": "03 Identidade e configurações",
+    "title": "Implementar registro e vigência dos parâmetros",
+    "goal": "Reproduzir resultados com a regra vigente em cada data.",
+    "action": "Persistir parâmetros tipados, origem e histórico.",
+    "steps": [
+      "Validar tipo, unidade e faixa por parâmetro",
+      "Versionar valor, regra, vigência e evidência",
+      "Proibir sobreposição de vigências e edição sem permissão"
+    ],
+    "accept": "Cálculo histórico recupera versão utilizada; zero válido não é confundido com ausência.",
+    "impact": "Evita alterações retroativas silenciosas.",
+    "deps": [
+      "storage",
+      "authorization",
+      "accessaudit"
+    ],
+    "refs": "M-056; H_Contrato_Dados!A34:H35",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-018",
+      "BK-033",
+      "BK-034"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "parametersscreen",
+    "id": "BK-037",
+    "phase": "03 Identidade e configurações",
+    "title": "Implementar T16 Parâmetros e fluxos autorizados de edição",
+    "goal": "Mostrar regras vigentes e suas fontes.",
+    "action": "Construir central de consulta e edições específicas aprovadas.",
+    "steps": [
+      "Apresentar grupos, valores, origem e estado",
+      "Conectar cada parâmetro à regra do domínio",
+      "Implementar aprovação, motivo e rollback onde homologados"
+    ],
+    "accept": "Sem editor genérico nem valores fictícios; parâmetros sem aprovação não aparecem como vigentes.",
+    "impact": "Ajuda a Majucau a entender o efeito de cada configuração.",
+    "deps": [
+      "parameterversions",
+      "designsystem"
+    ],
+    "refs": "T16; W_CEI_Tela_16; T-CEI16-01..08",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-036",
+      "BK-021"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "provenance",
+    "id": "BK-038",
+    "phase": "04 Dados e integrações",
+    "title": "Implementar proveniência e snapshots de fatos",
+    "goal": "Rastrear indicadores até a origem.",
+    "action": "Criar metadados e consultas de linhagem.",
+    "steps": [
+      "Persistir origem, IDs, lote, datas, posição e versão",
+      "Vincular fatos derivados às entradas",
+      "Preservar histórico de correções e versões"
+    ],
+    "accept": "Um indicador chega ao registro e à regra que o produziram; reprocessamento preserva versões.",
+    "impact": "Permite conferir qualquer número relevante.",
+    "deps": [
+      "dataquality",
+      "dbfoundation",
+      "accessaudit"
+    ],
+    "refs": "M-037; H_Contrato_Dados!A3:H3",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-020",
+      "BK-029",
+      "BK-034"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "jobengine",
+    "id": "BK-039",
+    "phase": "04 Dados e integrações",
+    "title": "Implementar execução controlada de trabalhos em segundo plano",
+    "goal": "Processar integrações sem travar consultas.",
+    "action": "Criar agendamento, tentativas e recuperação de jobs.",
+    "steps": [
+      "Persistir estado, checkpoint e tentativa",
+      "Impedir execução concorrente duplicada da mesma carga",
+      "Aplicar cancelamento, timeout e retomada após reinício"
+    ],
+    "accept": "Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis.",
+    "impact": "Sustenta sincronização e reprocessamento local.",
+    "deps": [
+      "gofoundation",
+      "dbfoundation",
+      "observabilitybase"
+    ],
+    "refs": "U_CEI_Tela_15",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-027",
+      "BK-029",
+      "BK-031"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "blingcontract",
+    "id": "BK-040",
+    "phase": "04 Dados e integrações",
+    "title": "Validar acesso e cobertura dos dados do Bling",
+    "goal": "Provar que os campos necessários estão disponíveis.",
+    "action": "Fazer descoberta técnica em conta e permissões autorizadas.",
+    "steps": [
+      "Mapear OAuth, escopos, callback e renovação",
+      "Verificar produtos, vendas, títulos, estoque, OPs, compras e NF-e",
+      "Registrar campos históricos ou endpoints ausentes sem inventá-los"
+    ],
+    "accept": "Matriz requisito→campo real inclui limitações de histórico, paginação e volume.",
+    "impact": "Evita construir telas apoiadas em dados inexistentes.",
+    "deps": [
+      "filecontracts",
+      "localrequirements",
+      "threatmodel"
+    ],
+    "refs": "Bling documentação oficial; H_Contrato_Dados",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-010",
+      "BK-014",
+      "BK-024"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "blingadapter",
+    "id": "BK-041",
+    "phase": "04 Dados e integrações",
+    "title": "Implementar o adaptador de leitura do Bling",
+    "goal": "Ingerir dados oficiais sem alterar o ERP.",
+    "action": "Construir cliente e autenticação no backend.",
+    "steps": [
+      "Armazenar credenciais fora do frontend",
+      "Renovar tokens com exclusão de concorrência",
+      "Aplicar paginação, limites vigentes, retry e erros de autenticação"
+    ],
+    "accept": "Adaptador usa somente operações aprovadas; 401/429/falha de rede geram diagnóstico e retomada segura.",
+    "impact": "Mantém integração estável e credenciais protegidas.",
+    "deps": [
+      "blingcontract",
+      "jobengine",
+      "provenance"
+    ],
+    "refs": "M-003,M-035; documentação Bling",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-040",
+      "BK-039",
+      "BK-038"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "fileingestion",
+    "id": "BK-042",
+    "phase": "04 Dados e integrações",
+    "title": "Implementar leitura da pasta controlada",
+    "goal": "Receber arquivos sem destruir evidências.",
+    "action": "Criar recepção, staging e identificação de lotes.",
+    "steps": [
+      "Esperar arquivo terminar de ser gravado",
+      "Calcular hash e registrar cópia interna conforme política",
+      "Validar extensão, tamanho, estrutura e acesso a caminhos"
+    ],
+    "accept": "Arquivo parcial ou não autorizado não vira carga; origem permanece conforme política homologada.",
+    "impact": "Evita importação incompleta e perda do original.",
+    "deps": [
+      "filecontracts",
+      "jobengine",
+      "provenance",
+      "threatmodel"
+    ],
+    "refs": "M-009,M-010; L-11,L-12",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-010",
+      "BK-039",
+      "BK-038",
+      "BK-024"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "parsers",
+    "id": "BK-043",
+    "phase": "04 Dados e integrações",
+    "title": "Implementar validação e interpretação dos arquivos",
+    "goal": "Converter entradas heterogêneas em registros confiáveis.",
+    "action": "Construir parsers por contrato e versão.",
+    "steps": [
+      "Validar colunas, encoding, separadores, datas, moeda e sinais",
+      "Distinguir célula vazia, zero e conteúdo inválido",
+      "Registrar rejeições por linha e rejeição total quando o contrato exigir"
+    ],
+    "accept": "Amostras válidas produzem registros esperados; arquivo incompatível explica o erro sem produzir números parciais ocultos.",
+    "impact": "Evita erros silenciosos de importação.",
+    "deps": [
+      "fileingestion"
+    ],
+    "refs": "H_Contrato_Dados; T-FILE-*",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-042"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "idempotency",
+    "id": "BK-044",
+    "phase": "04 Dados e integrações",
+    "title": "Deduplicar arquivos e fatos de negócio",
+    "goal": "Garantir que repetir uma carga não altere os totais.",
+    "action": "Implementar chaves e transações de importação.",
+    "steps": [
+      "Deduplicar por hash e chave de evento",
+      "Preservar eventos diferentes com o mesmo número de transação",
+      "Tratar arquivo corrigido como nova versão rastreável"
+    ],
+    "accept": "Carga repetida e duas cargas concorrentes não duplicam fatos; estorno legítimo é preservado.",
+    "impact": "Protege todos os indicadores contra duplicidade.",
+    "deps": [
+      "parsers",
+      "blingadapter",
+      "storage"
+    ],
+    "refs": "M-038; T-IDEMP-*",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-043",
+      "BK-041",
+      "BK-018"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "salesingest",
+    "id": "BK-045",
+    "phase": "04 Dados e integrações",
+    "title": "Ingerir produtos, clientes e vendas realizadas",
+    "goal": "Criar base oficial de vendas por item e canal.",
+    "action": "Mapear entidades Bling e estados da venda.",
+    "steps": [
+      "Preservar IDs por pedido/item/SKU",
+      "Tratar cancelamentos, devoluções e alterações",
+      "Identificar B2C/B2B com regra aprovada e preservar unidade"
+    ],
+    "accept": "Venda Bling é contada uma vez; evento Nuvem não cria outra venda.",
+    "impact": "Sustenta resultados e projeções sem duplicidade.",
+    "deps": [
+      "idempotency",
+      "blingcontract"
+    ],
+    "refs": "M-003; H_Contrato_Dados!A4:H4",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-044",
+      "BK-040"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "receivableingest",
+    "id": "BK-046",
+    "phase": "04 Dados e integrações",
+    "title": "Ingerir recebíveis e eventos do Nuvem Pago",
+    "goal": "Separar direito a receber de venda e recebimento.",
+    "action": "Mapear B2C por arquivos e B2B por Bling.",
+    "steps": [
+      "Persistir agenda, valor bruto/líquido, parcela e evento",
+      "Preservar taxas, juros, custos e sinal do extrato",
+      "Ligar chargeback/estorno à origem sem apagar o evento inicial"
+    ],
+    "accept": "B2C e B2B não duplicam direitos; contrato de taxa não é somado sobre custo já realizado.",
+    "impact": "Melhora a confiabilidade das contas e da conciliação.",
+    "deps": [
+      "idempotency",
+      "salesingest"
+    ],
+    "refs": "M-004,M-005,M-011,M-012; H_Contrato_Dados!A5:H6",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-044",
+      "BK-045"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "payableingest",
+    "id": "BK-047",
+    "phase": "04 Dados e integrações",
+    "title": "Ingerir obrigações e movimentos financeiros",
+    "goal": "Formar títulos reais e suas evidências de pagamento.",
+    "action": "Ler Bling e fontes bancárias aprovadas.",
+    "steps": [
+      "Mapear documento, fornecedor, vencimento, valor e eventos",
+      "Preservar datas de competência e caixa separadas",
+      "Não transformar recomendação ou forecast em obrigação"
+    ],
+    "accept": "Cada título possui chave de origem e histórico; previsão de compra não aparece como dívida constituída.",
+    "impact": "Evita compromissos financeiros fictícios.",
+    "deps": [
+      "idempotency",
+      "partial"
+    ],
+    "refs": "M-006,M-007; T04",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-044",
+      "BK-005"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "opsingest",
+    "id": "BK-048",
+    "phase": "04 Dados e integrações",
+    "title": "Ingerir estoque, produção, compras e notas de entrada",
+    "goal": "Criar uma posição operacional única.",
+    "action": "Mapear snapshots e estados operacionais do Bling.",
+    "steps": [
+      "Ler saldos por SKU/unidade/depósito e mínimo",
+      "Mapear OP planejada, em andamento e concluída",
+      "Vincular pedido atendido, timestamp e NF-e de entrada"
+    ],
+    "accept": "Fatos mantêm IDs, posição e unidade; campo ausente é indisponível e não zero.",
+    "impact": "Faz Estoque, Produção e Compras concordarem.",
+    "deps": [
+      "idempotency",
+      "blingcontract"
+    ],
+    "refs": "M-035; H_Contrato_Dados!A11:H14,A19:H20",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-044",
+      "BK-040"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "logisticsingest",
+    "id": "BK-049",
+    "phase": "04 Dados e integrações",
+    "title": "Ingerir etiquetas, faturas e frete da nota fiscal",
+    "goal": "Preservar o custo logístico realizado e provisório.",
+    "action": "Relacionar Nuvem Envio, envio, pedido e NF de saída.",
+    "steps": [
+      "Mapear cotação e fatura por envio",
+      "Substituir cotação somente quando sua fatura chegar",
+      "Diferenciar NF válida sem frete de falha na leitura"
+    ],
+    "accept": "Fatura e cotação do mesmo envio não se somam; status e origem do custo permanecem visíveis.",
+    "impact": "Evita duplicar frete e distorcer margens.",
+    "deps": [
+      "idempotency",
+      "salesingest",
+      "filecontracts"
+    ],
+    "refs": "M-013..M-016; H_Contrato_Dados!A7:H9",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-044",
+      "BK-045",
+      "BK-010"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "supplementaryingest",
+    "id": "BK-050",
+    "phase": "04 Dados e integrações",
+    "title": "Ingerir perdas, ajustes e extratos de investimentos",
+    "goal": "Completar fontes aprovadas sem inventar fatos financeiros.",
+    "action": "Construir adaptadores por tipo de arquivo.",
+    "steps": [
+      "Identificar ocorrência de perda e vínculo Bling",
+      "Preservar posição e movimentações dos investimentos",
+      "Ingerir ajustes e fontes complementares com origem e regra própria"
+    ],
+    "accept": "Arquivo de perdas não cria venda, caixa ou movimento de estoque; fontes não configuradas não aparecem como ativas.",
+    "impact": "Permite compor análises mantendo a separação dos fatos.",
+    "deps": [
+      "parsers",
+      "idempotency",
+      "accountingpolicy"
+    ],
+    "refs": "M-024..M-029,M-033; T15",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-043",
+      "BK-044",
+      "BK-007"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "freshness",
+    "id": "BK-051",
+    "phase": "04 Dados e integrações",
+    "title": "Controlar atualização e falha por fonte",
+    "goal": "Mostrar claramente quando os dados ficaram antigos.",
+    "action": "Implementar política de freshness e snapshots válidos.",
+    "steps": [
+      "Guardar última tentativa e último sucesso separadamente",
+      "Calcular STALE conforme prazo de cada fonte",
+      "Preservar último snapshot válido com data e aviso"
+    ],
+    "accept": "Falha não zera saldos nem atualiza falsamente a data; fonte sem primeira carga fica indisponível.",
+    "impact": "Evita decisões sobre dados antigos apresentados como atuais.",
+    "deps": [
+      "jobengine",
+      "provenance",
+      "filecontracts"
+    ],
+    "refs": "L-24; U_CEI_Tela_15",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-039",
+      "BK-038",
+      "BK-010"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "integrationsscreen",
+    "id": "BK-052",
+    "phase": "04 Dados e integrações",
+    "title": "Implementar T15 Importações e Integrações",
+    "goal": "Permitir diagnosticar a entrada de dados.",
+    "action": "Construir listagem de fontes, lotes, rejeições e tentativas.",
+    "steps": [
+      "Calcular cartões com período explícito",
+      "Mostrar detalhes, hash, aceitações e rejeições sem segredos",
+      "Executar reprocessamento autorizado pelo mesmo motor de importação"
+    ],
+    "accept": "Reprocessar mantém idempotência; fontes reais e estados conferem com lotes; export depende da decisão por tela.",
+    "impact": "Reduz tempo para corrigir uma integração.",
+    "deps": [
+      "freshness",
+      "idempotency",
+      "authorization",
+      "reactfoundation",
+      "actionpolicy"
+    ],
+    "refs": "T15; U_CEI_Tela_15; T-CEI15-01..08",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-051",
+      "BK-044",
+      "BK-033",
+      "BK-028",
+      "BK-012"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "matchengine",
+    "id": "BK-053",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar conciliação por evidência e unicidade",
+    "goal": "Relacionar venda, transação e recebimento sem falso vínculo.",
+    "action": "Construir regras de matching versionadas.",
+    "steps": [
+      "Priorizar ID Bling validado",
+      "Homologar fallback nome/valor, normalização, datas e tolerância",
+      "Bloquear reutilização e manter ambíguos para análise"
+    ],
+    "accept": "Dois candidatos não geram match automático. Em A Pagar, diferença de valor gera divergência e mantém título sem baixa; R$1.000/R$999,99 segue essa regra. Tolerância exige nova decisão explícita.",
+    "impact": "Evita baixa ou recebimento associados à operação errada.",
+    "deps": [
+      "receivableingest",
+      "payableingest",
+      "salesingest",
+      "parameterversions"
+    ],
+    "refs": "M-008; T03/T05",
+    "questions": "Q-19",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-046",
+      "BK-047",
+      "BK-045",
+      "BK-036"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "manualmatch",
+    "id": "BK-054",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar revisão, confirmação e desfazimento de conciliação",
+    "goal": "Permitir corrigir exceções com trilha de decisão.",
+    "action": "Criar fluxo contextual conforme permissões.",
+    "steps": [
+      "Exibir evidências das duas pontas e regra aplicada",
+      "Exigir motivo nas decisões manuais aprovadas",
+      "Impedir conflito concorrente e registrar reversão sem apagar histórico"
+    ],
+    "accept": "Revisão não altera origem Bling indevidamente; desfazer restaura vínculos consistentes.",
+    "impact": "Resolve casos que não podem ser automatizados.",
+    "deps": [
+      "matchengine",
+      "accessaudit",
+      "actionpolicy"
+    ],
+    "refs": "L-23; T05/T13",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-053",
+      "BK-034",
+      "BK-012"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "reconciliationscreen",
+    "id": "BK-055",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar T05 Conciliação",
+    "goal": "Dar visibilidade aos vínculos e exceções.",
+    "action": "Construir cartões, tabela, distribuição e detalhamento.",
+    "steps": [
+      "Adicionar busca/filtros aprovados e paginação",
+      "Exibir ID Bling, origem Nuvem, bruto, recebimento e situação",
+      "Conectar pendentes, ambíguos, divergentes, chargebacks e regras"
+    ],
+    "accept": "Contagens totalizam a mesma população; cada linha permite consultar evidência e revisão autorizada.",
+    "impact": "Facilita resolver divergências sem procurar em vários sistemas.",
+    "deps": [
+      "manualmatch",
+      "reactfoundation"
+    ],
+    "refs": "T05; T-RECON-*",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-054",
+      "BK-028"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "receivables",
+    "id": "BK-056",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar regras e leitura de Contas a Receber",
+    "goal": "Mostrar direitos abertos, recebidos e vencidos corretamente.",
+    "action": "Calcular saldos e agrupamentos com contratos aprovados.",
+    "steps": [
+      "Separar bruto/líquido, canal, vencimento e liquidação",
+      "Tratar parcelas, atraso, antecipação, devolução e chargeback",
+      "Definir estados de negócio separados de conciliação"
+    ],
+    "accept": "Recebido no mês usa data de liquidação; vencido usa posição e regra temporal; totais não duplicam fontes.",
+    "impact": "Apoia cobrança e planejamento de caixa.",
+    "deps": [
+      "receivableingest",
+      "matchengine",
+      "dataquality"
+    ],
+    "refs": "T03; M-004,M-005",
+    "questions": "Q-20",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-046",
+      "BK-053",
+      "BK-020"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "receivablesscreen",
+    "id": "BK-057",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar T03 Contas a Receber",
+    "goal": "Expor valores e exceções de recebimento de modo rastreável.",
+    "action": "Construir cartões, lista, distribuição e meios de pagamento.",
+    "steps": [
+      "Conectar detalhes e alertas aos filtros corretos",
+      "Mostrar cliente, origem, vencimento, bruto, líquido e status",
+      "Traduzir rótulos técnicos conforme padrão aprovado"
+    ],
+    "accept": "Lista, cartões e gráfico usam a mesma posição; usuário chega à origem de qualquer valor.",
+    "impact": "Reduz dúvidas sobre o que ainda será recebido.",
+    "deps": [
+      "receivables",
+      "reconciliationscreen"
+    ],
+    "refs": "T03",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-056",
+      "BK-055"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "payables",
+    "id": "BK-058",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar regras de Contas a Pagar",
+    "goal": "Mostrar obrigações e efeitos de pagamento de forma única.",
+    "action": "Aplicar a decisão C-01 e o calendário de vencimentos.",
+    "steps": [
+      "Calcular aberto, vence hoje, atrasado e próximos sete dias",
+      "Tratar valor diferente, estorno e cancelamento conforme regra",
+      "Separar divergência de valor de status temporal"
+    ],
+    "accept": "Exemplo R$1.000/R$600 reproduz decisão aprovada; título futuro não aparece vencido na data anterior.",
+    "impact": "Evita saldo a pagar incorreto.",
+    "deps": [
+      "payableingest",
+      "partial",
+      "matchengine"
+    ],
+    "refs": "T04; C-01",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-047",
+      "BK-005",
+      "BK-053"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "payablesscreen",
+    "id": "BK-059",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar T04 Contas a Pagar",
+    "goal": "Permitir acompanhar fornecedores, vencimentos e divergências.",
+    "action": "Construir cartões, obrigações, categorias e detalhamento.",
+    "steps": [
+      "Mostrar documento e vínculo financeiro",
+      "Conectar vencidos, impostos, fretes e conciliação",
+      "Reconciliar distribuição e total de divergências"
+    ],
+    "accept": "Valor de divergências é o mesmo nos componentes com igual filtro; ações obedecem permissões.",
+    "impact": "Ajuda a priorizar pagamentos e análise.",
+    "deps": [
+      "payables",
+      "reactfoundation"
+    ],
+    "refs": "T04",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-058",
+      "BK-028"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "cashengine",
+    "id": "BK-060",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar fluxo de caixa realizado, previsto e projetado",
+    "goal": "Calcular a trajetória do caixa sem dupla contagem.",
+    "action": "Combinar posição bancária e eventos temporais aprovados.",
+    "steps": [
+      "Definir saldo inicial e tratamento de contas/transferências internas",
+      "Substituir previsto pela liquidação correspondente",
+      "Calcular horizontes diários, mínimos e folga sobre a reserva vigente"
+    ],
+    "accept": "Saldo final reconcilia com saldo inicial e movimentos; 30/60 dias respeitam datas e limites aprovados.",
+    "impact": "Sustenta decisões de liquidez.",
+    "deps": [
+      "receivables",
+      "payables",
+      "supplementaryingest",
+      "dataquality",
+      "investmentpolicy"
+    ],
+    "refs": "T02; M-002; C-02; L-07",
+    "questions": "Q-21",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-056",
+      "BK-058",
+      "BK-050",
+      "BK-020",
+      "BK-006"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "criticalweek",
+    "id": "BK-061",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar seleção e memória da semana crítica",
+    "goal": "Explicar qual semana foi selecionada e por quê.",
+    "action": "Aplicar algoritmo, calendário e posição de caixa aprovados.",
+    "steps": [
+      "Calcular entradas e despesas por semana",
+      "Resolver empates e semanas incompletas",
+      "Preservar indicadores de mínimo de caixa como medida distinta quando aprovados"
+    ],
+    "accept": "Dataset com maior despesa e menor saldo em semanas diferentes produz decisão esperada.",
+    "impact": "Impede divergência entre fluxo e calculadora.",
+    "deps": [
+      "cashengine",
+      "investmentpolicy"
+    ],
+    "refs": "T02/T08; C-02,L-07",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-060",
+      "BK-006"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "cashscreen",
+    "id": "BK-062",
+    "phase": "05 Tesouraria e conciliação",
+    "title": "Implementar T02 Fluxo de Caixa",
+    "goal": "Apresentar a posição e os próximos compromissos.",
+    "action": "Construir cartões, gráfico combinado, semana crítica e alertas.",
+    "steps": [
+      "Distinguir realizado, previsto e projetado com legendas",
+      "Conectar detalhes, reserva, saldo transferível e períodos",
+      "Mostrar posição da fonte e indisponibilidade de cálculos parciais"
+    ],
+    "accept": "Valores, folgas, datas e gráfico conferem com motor; export mantém filtros aprovados.",
+    "impact": "Torna a situação do caixa compreensível.",
+    "deps": [
+      "criticalweek",
+      "reactfoundation",
+      "actionpolicy"
+    ],
+    "refs": "T02",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-061",
+      "BK-028",
+      "BK-012"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "historicalcost",
+    "id": "BK-063",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Preservar o custo Bling válido para cada venda",
+    "goal": "Sustentar CMV e margem histórica auditáveis.",
+    "action": "Implementar custo por SKU com validade e evidência.",
+    "steps": [
+      "Mapear snapshot histórico confirmado",
+      "Vincular custo à data da venda",
+      "Aplicar decisão de indisponibilidade quando só houver custo atual"
+    ],
+    "accept": "Venda antiga não recebe custo atual como se fosse histórico confirmado; BOM e NF não substituem a metodologia financeira.",
+    "impact": "Evita margem histórica artificial.",
+    "deps": [
+      "salesingest",
+      "accountingpolicy",
+      "provenance"
+    ],
+    "refs": "M-019,M-020; L-03",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-045",
+      "BK-007",
+      "BK-038"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "financialmapping",
+    "id": "BK-064",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar classificação e competência financeira",
+    "goal": "Converter fatos em linhas financeiras sem conta genérica.",
+    "action": "Persistir mappings aprovados por tipo e versão.",
+    "steps": [
+      "Classificar receita, deduções, custos, perdas, juros, fretes e tributos",
+      "Manter UNMAPPED fora do resultado definitivo",
+      "Reprocessar versões com trilha e impacto explícito"
+    ],
+    "accept": "Cada fato mapeado tem conta/regra/data; desconhecido gera pendência, nunca conta coringa.",
+    "impact": "Permite conferir a composição do resultado.",
+    "deps": [
+      "accountingpolicy",
+      "parameterversions",
+      "provenance"
+    ],
+    "refs": "M-017,M-018,M-029; H_Contrato_Dados!A18:H18",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-007",
+      "BK-036",
+      "BK-038"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "losses",
+    "id": "BK-065",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar perdas e recuperações sem dupla contagem",
+    "goal": "Reconhecer eventos uma única vez no período correto.",
+    "action": "Relacionar planilha, origem oficial e decisão financeira.",
+    "steps": [
+      "Separar ocorrência, confirmação, baixa e recuperação",
+      "Vincular eventos equivalentes entre arquivos e Bling",
+      "Propagar competência e estado de reconhecimento aprovados"
+    ],
+    "accept": "Aprovação de ressarcimento não altera caixa sem recebimento; mesma perda não reduz DRE duas vezes.",
+    "impact": "Protege resultado e rastreabilidade das perdas.",
+    "deps": [
+      "supplementaryingest",
+      "financialmapping"
+    ],
+    "refs": "M-024..M-026; L-04,L-14",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-050",
+      "BK-064"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "dreengine",
+    "id": "BK-066",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar o motor da DRE Majucau",
+    "goal": "Calcular linhas e subtotais por competência.",
+    "action": "Construir demonstração com cobertura e memória.",
+    "steps": [
+      "Aplicar receita, deduções, CMV/CPV, despesas, perdas, financeiro e tributos",
+      "Propagar ausência de fonte e pendências de mapping",
+      "Versionar cálculo e permitir detalhe por origem"
+    ],
+    "accept": "Subtotais reconciliam; linha obrigatória ausente não vira zero nem desaparece; resultado incompleto não fica confirmado. Taxas, juros, obrigações e fretes aprovados reconciliam com as ingestões correspondentes.",
+    "impact": "Oferece resultado verificável.",
+    "deps": [
+      "historicalcost",
+      "financialmapping",
+      "losses",
+      "receivableingest",
+      "payableingest",
+      "logisticsingest"
+    ],
+    "refs": "T06; M-017..M-029",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-063",
+      "BK-064",
+      "BK-065",
+      "BK-046",
+      "BK-047",
+      "BK-049"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "drescreen",
+    "id": "BK-067",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar T06 DRE",
+    "goal": "Explicar como o resultado foi formado.",
+    "action": "Construir linhas, cartões, composição e navegação.",
+    "steps": [
+      "Mostrar competência, sinais e margem com denominador explícito",
+      "Definir a semântica do gráfico sem somar subtotais sobrepostos",
+      "Abrir lançamentos, perdas e mapeamentos pendentes"
+    ],
+    "accept": "Tabela reproduz motor; percentuais derivam dos valores e base aprovada; gráfico não contradiz o resultado.",
+    "impact": "Evita interpretação enganosa da rentabilidade.",
+    "deps": [
+      "dreengine",
+      "reactfoundation",
+      "designsystem"
+    ],
+    "refs": "T06",
+    "questions": "Q-22",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-066",
+      "BK-028",
+      "BK-021"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "trialbalanceengine",
+    "id": "BK-068",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar o motor do balancete",
+    "goal": "Preservar partidas e saldos auditáveis.",
+    "action": "Reconstruir débitos, créditos, contrapartidas e abertura.",
+    "steps": [
+      "Ingerir saldos iniciais da fonte aprovada",
+      "Vincular documento e competência às partidas",
+      "Registrar diferenças sem criar ajuste automático de fechamento"
+    ],
+    "accept": "Débitos e créditos reconciliam quando a base é completa; abertura ausente fica indisponível.",
+    "impact": "Impede fechamento artificial do balancete.",
+    "deps": [
+      "financialmapping",
+      "accountingpolicy",
+      "receivableingest",
+      "payableingest",
+      "logisticsingest",
+      "losses"
+    ],
+    "refs": "T07; M-027,M-028; L-08",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-064",
+      "BK-007",
+      "BK-046",
+      "BK-047",
+      "BK-049",
+      "BK-065"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "trialbalancescreen",
+    "id": "BK-069",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar T07 Balancete",
+    "goal": "Permitir conferir saldos e divergências por conta.",
+    "action": "Construir tabela, grupos, cartões e detalhamento.",
+    "steps": [
+      "Exibir saldo inicial, movimentos e saldo final conforme contrato",
+      "Explicar natureza devedora/credora e pendências",
+      "Ligar contrapartida ao documento original"
+    ],
+    "accept": "Saldo não nulo não é divergência por si só; composição usa grupos e base aprovados.",
+    "impact": "Facilita investigação financeira.",
+    "deps": [
+      "trialbalanceengine",
+      "reactfoundation"
+    ],
+    "refs": "T07",
+    "questions": "Q-23",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-068",
+      "BK-028"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "cyclemetrics",
+    "id": "BK-070",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Definir e implementar PMR, PMP, PME e ciclo financeiro",
+    "goal": "Explicar os indicadores de prazo presentes na calculadora.",
+    "action": "Homologar e calcular cada indicador separadamente.",
+    "steps": [
+      "Definir período, fontes, numeradores e denominadores de prazo médio de recebimento, pagamento e estoque",
+      "Implementar médias e ciclo conforme regra aprovada, preservando ausência e denominador zero",
+      "Exibir memória e função diagnóstica, sem alterar a capacidade de aplicação por inferência"
+    ],
+    "accept": "Cada indicador tem fonte e fórmula própria; os 28 e 41 dias da imagem não viram constantes; NCG só entra se confirmado no escopo.",
+    "impact": "Evita confundir três medidas diferentes ou influenciar indevidamente a calculadora.",
+    "deps": [
+      "receivables",
+      "payables",
+      "inventoryrules",
+      "dreengine"
+    ],
+    "refs": "T08 indicadores PMR/PMP/PME e ciclo; B_Intersecoes!A12:I12",
+    "questions": "Q-27",
+    "owner": "Financeiro + Backend",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-056",
+      "BK-058",
+      "BK-077",
+      "BK-066"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "investmentledger",
+    "id": "BK-071",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar posições e movimentos de aplicações",
+    "goal": "Unir extratos, transferências e rendimentos sem duplicidade.",
+    "action": "Modelar investimentos e vínculo com o Bling.",
+    "steps": [
+      "Separar aporte, resgate, rendimento, transferência e saldo de posição",
+      "Reconciliar CDI Plus e período de elegibilidade",
+      "Identificar extrato antigo e aplicação sem fonte"
+    ],
+    "accept": "Posição não é confundida com aporte acumulado; transferência interna não vira receita ou despesa operacional.",
+    "impact": "Dá base correta à calculadora e à consulta de aplicações.",
+    "deps": [
+      "supplementaryingest",
+      "investmentpolicy",
+      "financialmapping"
+    ],
+    "refs": "M-030..M-034; T08",
+    "questions": "Q-10",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-050",
+      "BK-006",
+      "BK-064"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "investmentcalculator",
+    "id": "BK-072",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar o cálculo de capacidade de aplicação",
+    "goal": "Reproduzir a decisão financeira homologada.",
+    "action": "Calcular lucro elegível, reserva, máximo e executável.",
+    "steps": [
+      "Aplicar fonte e corte temporal aprovados",
+      "Usar caixa da semana crítica e saldo transferível corretos",
+      "Propagar bloqueio por dados ausentes, divergentes ou critérios abertos"
+    ],
+    "accept": "Memória reproduz entradas e limites; nenhuma transferência ou aplicação é executada.",
+    "impact": "Evita valor disponível aparente sem sustentação.",
+    "deps": [
+      "investmentledger",
+      "criticalweek",
+      "dreengine",
+      "investmentpolicy"
+    ],
+    "refs": "T08; M-034; C-02,C-03,L-07",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-071",
+      "BK-061",
+      "BK-066",
+      "BK-006"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "calculatorscreen",
+    "id": "BK-073",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar T08 Calculadora de Aplicação",
+    "goal": "Mostrar cálculo, condições e motivos de bloqueio.",
+    "action": "Construir indicadores e memória detalhada.",
+    "steps": [
+      "Exibir fonte, período, fórmula e valores intermediários",
+      "Distinguir máximo calculado de executável",
+      "Conectar parâmetros, DRE, fluxo e aplicações sem ação financeira"
+    ],
+    "accept": "Estado OPEN não apresenta capacidade confirmada; tela não exporta nem executa dinheiro conforme contrato a validar.",
+    "impact": "Torna o resultado compreensível e auditável.",
+    "deps": [
+      "investmentcalculator",
+      "reactfoundation",
+      "actionpolicy",
+      "cyclemetrics"
+    ],
+    "refs": "T08; T16 regra Tela 08 não exporta",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-072",
+      "BK-028",
+      "BK-012",
+      "BK-070"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "applicationsscreen",
+    "id": "BK-074",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar a consulta de Aplicações",
+    "goal": "Cobrir o módulo citado no menu e na calculadora.",
+    "action": "Construir a tela e o detalhamento após completar a especificação.",
+    "steps": [
+      "Homologar campos, filtros e extratos sem mockup recebido",
+      "Mostrar histórico de aporte, resgate, rendimento e posição",
+      "Reconciliar vínculos com calculadora e Bling"
+    ],
+    "accept": "Layout aprovado e totais por período conferem com extratos; ações externas não são inventadas.",
+    "impact": "Evita entregar um menu sem funcionalidade.",
+    "deps": [
+      "missing",
+      "investmentledger",
+      "designsystem"
+    ],
+    "refs": "Menus; T08 Ver aplicações",
+    "questions": "Q-02",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-004",
+      "BK-071",
+      "BK-021"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "pricing",
+    "id": "BK-075",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar análise de preço e margem no local aprovado",
+    "goal": "Cobrir Pricing citado na matriz sem alterar o ERP.",
+    "action": "Construir cálculo analítico por SKU e canal.",
+    "steps": [
+      "Homologar rateio de tarifa fixa e parâmetros de margem",
+      "Aplicar custo válido, taxas e impostos aprovados",
+      "Exibir fórmula e bloquear denominador inválido"
+    ],
+    "accept": "Pedido com vários SKUs usa rateio explícito; sugestão não grava preço no Bling.",
+    "impact": "Permite analisar preço com regra rastreável.",
+    "deps": [
+      "missing",
+      "historicalcost",
+      "financialmapping",
+      "parameterversions"
+    ],
+    "refs": "M-021..M-023; L-06,L-10",
+    "questions": "L-06,L-10",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-004",
+      "BK-063",
+      "BK-064",
+      "BK-036"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "logisticsanalysis",
+    "id": "BK-076",
+    "phase": "06 Resultados, perdas e aplicações",
+    "title": "Implementar indicadores de logística no local aprovado",
+    "goal": "Cobrir os custos e subsídios de frete citados na matriz.",
+    "action": "Calcular resultado do frete por pedido e transportadora.",
+    "steps": [
+      "Aplicar custo confirmado/provisório e frete da NF",
+      "Calcular subsídio e resultado preservando sinal",
+      "Apresentar agregados comparáveis sem afirmar melhor transportadora só pela média"
+    ],
+    "accept": "Fatura substitui cotação por envio; origem e qualidade acompanham o indicador.",
+    "impact": "Evita análise logística baseada em custo duplicado.",
+    "deps": [
+      "missing",
+      "logisticsingest",
+      "financialmapping"
+    ],
+    "refs": "M-013..M-016; L-16",
+    "questions": "L-16",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-004",
+      "BK-049",
+      "BK-064"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "inventoryrules",
+    "id": "BK-077",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar classificação e posição de estoque",
+    "goal": "Mostrar quantidade por item e unidade correta.",
+    "action": "Aplicar saldo, tipo, mínimo e pedido aberto aplicável.",
+    "steps": [
+      "Separar produto pronto e insumo",
+      "Aplicar igualdade ao mínimo conforme regra aprovada",
+      "Calcular abaixo do mínimo sem pedido e com reposição"
+    ],
+    "accept": "Produtos prontos não recebem mínimo/alerta de insumo; kg e unidades não são somados.",
+    "impact": "Evita indicação incorreta de necessidade de compra.",
+    "deps": [
+      "opsingest",
+      "opsrules",
+      "dataquality"
+    ],
+    "refs": "T09; Q_CEI_Tela_11",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-048",
+      "BK-008",
+      "BK-020"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "inventoryscreen",
+    "id": "BK-078",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar T09 Estoque",
+    "goal": "Exibir a posição operacional informativa.",
+    "action": "Construir filtros, lista, cartões e distribuição.",
+    "steps": [
+      "Mostrar pedido, quantidade, mínimo e situação",
+      "Calcular distribuição por população de SKUs definida",
+      "Conectar lista completa e origem Bling"
+    ],
+    "accept": "Contagens reconciliam com Compras; não há escrita de estoque no Bling.",
+    "impact": "Permite identificar insumos que exigem atenção.",
+    "deps": [
+      "inventoryrules",
+      "reactfoundation"
+    ],
+    "refs": "T09",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-077",
+      "BK-028"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "productiontargets",
+    "id": "BK-079",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar metas de produção por SKU e período",
+    "goal": "Guardar o planejamento interno da Majucau.",
+    "action": "Criar cadastro específico de metas versionadas.",
+    "steps": [
+      "Validar unidade, período e SKU",
+      "Registrar autor, valor anterior, vigência e motivo",
+      "Definir relação ou independência com cenário META da T12"
+    ],
+    "accept": "Alteração autorizada mantém histórico; meta ausente é diferente de zero.",
+    "impact": "Permite comparar produção real e objetivo sem alterar OP.",
+    "deps": [
+      "opsrules",
+      "parameterversions",
+      "accessaudit"
+    ],
+    "refs": "T10; T16 Meta por SKU",
+    "questions": "Q-08,Q-12",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-008",
+      "BK-036",
+      "BK-034"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "productionrules",
+    "id": "BK-080",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar indicadores de produção realizada",
+    "goal": "Separar ordens, quantidades e alcance de metas.",
+    "action": "Calcular planejado, andamento, concluído e percentual por SKU.",
+    "steps": [
+      "Contar ordens por ID sem confundir com número de SKUs",
+      "Usar concluído/meta quando denominador válido",
+      "Aplicar classificação homologada durante e após o período"
+    ],
+    "accept": "Mesmo dataset produz tabela e cartões consistentes; meta atingida e sem meta são estados inequívocos.",
+    "impact": "Evita indicadores contraditórios como os do mockup.",
+    "deps": [
+      "opsingest",
+      "productiontargets",
+      "opsrules"
+    ],
+    "refs": "T10; T10 duplicata",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-048",
+      "BK-079",
+      "BK-008"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "productionscreen",
+    "id": "BK-081",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar T10 Produção",
+    "goal": "Apresentar acompanhamento e acesso às metas.",
+    "action": "Construir período, busca, filtros, tabela e cartões.",
+    "steps": [
+      "Exibir unidade e posição de sincronização",
+      "Conectar Definir metas ao fluxo autorizado",
+      "Preservar natureza informativa e ausência de exportação/alertas conforme regra aprovada"
+    ],
+    "accept": "Tabela e distribuição usam a mesma população; nenhuma OP é criada, cancelada ou editada no Bling.",
+    "impact": "Ajuda a acompanhar produção com confiança.",
+    "deps": [
+      "productionrules",
+      "reactfoundation"
+    ],
+    "refs": "T10; M-052",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-080",
+      "BK-028"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "purchaseeligibility",
+    "id": "BK-082",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar elegibilidade de Compras Recomendadas",
+    "goal": "Usar uma regra única entre Estoque e Compras.",
+    "action": "Selecionar insumos no mínimo ou abaixo, sem pedido aplicável.",
+    "steps": [
+      "Reutilizar snapshot e regra de estoque",
+      "Excluir pedidos abertos aplicáveis e tratar cancelados/atendidos",
+      "Aplicar mesma regra ao cacau independentemente do sinal externo"
+    ],
+    "accept": "Contagem coincide com T09 na mesma posição; recomendação não cria pedido nem obrigação.",
+    "impact": "Evita compras duplicadas e números distintos entre telas.",
+    "deps": [
+      "inventoryrules",
+      "opsrules"
+    ],
+    "refs": "M-042; Q_CEI_Tela_11",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-077",
+      "BK-008"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "purchasehistory",
+    "id": "BK-083",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar preço faturado e prazo histórico de compras",
+    "goal": "Mostrar fatos de compra comprováveis por insumo.",
+    "action": "Calcular último preço e tempo até ATENDIDO.",
+    "steps": [
+      "Vincular última NF-e válida ao pedido atendido",
+      "Preservar preço, moeda, unidade e quantidade",
+      "Usar timestamp real de atendimento com janela/estatística homologadas"
+    ],
+    "accept": "Preço não vem de cotação; prazo não usa média genérica de fornecedor sem a regra individual.",
+    "impact": "Melhora a base de priorização e previsão de compra.",
+    "deps": [
+      "opsingest",
+      "opsrules"
+    ],
+    "refs": "M-043; H_Contrato_Dados!A19:H20",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-048",
+      "BK-008"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "purchasesizing",
+    "id": "BK-084",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar quantidade, prioridade e custo de compra",
+    "goal": "Aplicar o planejamento de compra homologado.",
+    "action": "Construir recomendação reproduzível por insumo.",
+    "steps": [
+      "Usar janela histórica, mínimos/múltiplos e fórmula aprovados",
+      "Aplicar faixas de prioridade e prazo individual",
+      "Tratar ausência de taxa/custo de carregamento como dado insuficiente"
+    ],
+    "accept": "Não inventa quantidade ou prioridade quando regra falta; cálculo exibe entradas e versão.",
+    "impact": "Evita excesso ou fragmentação de compras.",
+    "deps": [
+      "purchaseeligibility",
+      "purchasehistory",
+      "opsrules"
+    ],
+    "refs": "L-15,L-17,L-18; Q_CEI_Tela_11",
+    "questions": "L-15",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-082",
+      "BK-083",
+      "BK-008"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "cocoasignals",
+    "id": "BK-085",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar sinais externos do cacau",
+    "goal": "Apresentar risco e oportunidade com fontes verificáveis.",
+    "action": "Construir adaptadores e avaliação de sinais homologados.",
+    "steps": [
+      "Ingerir fontes com origem, unidade, data e validade",
+      "Aplicar conversões e thresholds versionados",
+      "Restringir clima às origens cadastradas e separar elegibilidade operacional"
+    ],
+    "accept": "Sinal antigo fica STALE; oportunidade compara preços equivalentes; nenhum sinal gera pedido.",
+    "impact": "Apoia análise de suprimento sem automatizar compra indevida.",
+    "deps": [
+      "cocoapolicy",
+      "jobengine",
+      "parameterversions",
+      "purchasehistory"
+    ],
+    "refs": "M-044; Q_CEI_Tela_11",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-011",
+      "BK-039",
+      "BK-036",
+      "BK-083"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "purchasesscreen",
+    "id": "BK-086",
+    "phase": "07 Estoque, produção e compras",
+    "title": "Implementar T11 Compras e exportação de recomendações",
+    "goal": "Entregar o módulo de compras especificado na planilha.",
+    "action": "Construir lista e bloco do cacau no mockup a fornecer.",
+    "steps": [
+      "Apresentar quantidades, preço faturado, prazo e prioridade",
+      "Exportar somente lista completa de recomendações no contexto aprovado",
+      "Separar ações informativas de pedidos reais no Bling"
+    ],
+    "accept": "Não há Gerar pedidos; exportação e cartões reconciliam com a mesma base e versão.",
+    "impact": "Permite discutir compras com evidência sem alterar o ERP.",
+    "deps": [
+      "missing",
+      "purchasesizing",
+      "cocoasignals",
+      "reactfoundation"
+    ],
+    "refs": "Q_CEI_Tela_11; T-CEI11-01..12",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-004",
+      "BK-084",
+      "BK-085",
+      "BK-028"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "forecasthistory",
+    "id": "BK-087",
+    "phase": "08 Projeções e cenários",
+    "title": "Preparar histórico de vendas por SKU para projeções",
+    "goal": "Construir séries temporais confiáveis.",
+    "action": "Consolidar 24 meses com cobertura e qualidade explícitas.",
+    "steps": [
+      "Buscar histórico em janelas compatíveis com API",
+      "Tratar cancelamentos, devoluções, períodos sem venda e lacunas",
+      "Definir SKU novo, descontinuado e mudanças de unidade"
+    ],
+    "accept": "Mês sem fonte não vira venda zero; calendário e cortes temporais são reproduzíveis.",
+    "impact": "Evita treinar projeções sobre histórico incompleto.",
+    "deps": [
+      "salesingest",
+      "forecastpolicy",
+      "analyticschoice"
+    ],
+    "refs": "R_CEI_Tela_12",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-045",
+      "BK-009",
+      "BK-023"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "forecastcalendar",
+    "id": "BK-088",
+    "phase": "08 Projeções e cenários",
+    "title": "Implementar calendário sazonal versionado",
+    "goal": "Representar eventos relevantes do negócio de chocolates.",
+    "action": "Persistir eventos, períodos e versões por ano.",
+    "steps": [
+      "Cadastrar Páscoa, Natal e demais eventos aprovados",
+      "Usar datas corretas de eventos móveis",
+      "Separar dados conhecidos na data de cada simulação"
+    ],
+    "accept": "Modelo registra calendário utilizado e reproduz projeção sem informação futura indevida.",
+    "impact": "Melhora a interpretação da sazonalidade.",
+    "deps": [
+      "forecastpolicy",
+      "parameterversions"
+    ],
+    "refs": "H_Contrato_Dados!A23:H23; T12",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-009",
+      "BK-036"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "forecastmodel",
+    "id": "BK-089",
+    "phase": "08 Projeções e cenários",
+    "title": "Construir e comparar modelos de projeção",
+    "goal": "Selecionar método pelo desempenho observado.",
+    "action": "Implementar referência simples e candidatos pertinentes.",
+    "steps": [
+      "Comparar baseline sazonal e métodos adequados ao volume",
+      "Manter divisão temporal e parâmetros versionados",
+      "Medir tempo/memória em hardware local"
+    ],
+    "accept": "Método escolhido tem resultado comparativo reproduzível e atende restrições locais.",
+    "impact": "Evita complexidade sem ganho demonstrado.",
+    "deps": [
+      "forecasthistory",
+      "forecastcalendar",
+      "analyticschoice"
+    ],
+    "refs": "M-046; R_CEI_Tela_12",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-087",
+      "BK-088",
+      "BK-023"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "forecastvalidation",
+    "id": "BK-090",
+    "phase": "08 Projeções e cenários",
+    "title": "Validar WAPE, Bias e MASE sem vazamento temporal",
+    "goal": "Medir qualidade real e condições de utilização.",
+    "action": "Executar backtest e diagnósticos por período e SKU.",
+    "steps": [
+      "Definir fórmulas, sinal do Bias e baseline MASE",
+      "Tratar denominadores zero e histórico insuficiente",
+      "Avaliar sazonalidades separadas conforme volume e thresholds aprovados"
+    ],
+    "accept": "Métricas vêm de execução real; versão não vira CONFIRMED sem critérios atendidos.",
+    "impact": "Evita confiança em percentuais copiados do mockup.",
+    "deps": [
+      "forecastmodel",
+      "forecastpolicy"
+    ],
+    "refs": "L-20; T-CEI12-01,02,10",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-089",
+      "BK-009"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "targetscenario",
+    "id": "BK-091",
+    "phase": "08 Projeções e cenários",
+    "title": "Implementar cenários ESTUDO e META",
+    "goal": "Preservar estudo e planejamento como versões distintas.",
+    "action": "Salvar metas em dinheiro, por SKU e mistas.",
+    "steps": [
+      "Distribuir por mix e preço aprovados",
+      "Aplicar overrides preservando zero válido",
+      "Conciliar orçamento total com arredondamentos e metas específicas"
+    ],
+    "accept": "Versão registra autor, modelo base, preço/mix e exceções; mesma versão reproduz quantidades e faturamento.",
+    "impact": "Evita metas que não fecham com o detalhe.",
+    "deps": [
+      "forecastvalidation",
+      "forecastpolicy",
+      "productiontargets"
+    ],
+    "refs": "M-048; L-21; R_CEI_Tela_12",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-090",
+      "BK-009",
+      "BK-079"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "productionprojection",
+    "id": "BK-092",
+    "phase": "08 Projeções e cenários",
+    "title": "Implementar produção projetada a partir das vendas",
+    "goal": "Calcular necessidade futura pela regra aprovada.",
+    "action": "Derivar produção por SKU, cenário e período.",
+    "steps": [
+      "Aplicar regra sem descontar estoque pronto atual conforme contrato candidato",
+      "Separar perdas/rendimento somente se homologados",
+      "Preservar origem da venda e versão de cenário"
+    ],
+    "accept": "Mudança de estoque atual não reduz produção quando mantida essa regra; quantidades não são OPs reais.",
+    "impact": "Mantém o planejamento coerente com a decisão operacional.",
+    "deps": [
+      "targetscenario",
+      "forecastpolicy"
+    ],
+    "refs": "M-047; R_CEI_Tela_12",
+    "questions": "Q-11",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-091",
+      "BK-009"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "inventoryprojection",
+    "id": "BK-093",
+    "phase": "08 Projeções e cenários",
+    "title": "Implementar evolução do estoque projetado",
+    "goal": "Mostrar trajetória de saldo por cenário.",
+    "action": "Acumular posição inicial, produção e vendas.",
+    "steps": [
+      "Usar saldo Bling inicial validado",
+      "Calcular saldo por período com a mesma unidade",
+      "Evidenciar saldo inicial ausente e quantidades negativas conforme regra"
+    ],
+    "accept": "Saldo final=saldo inicial+produção−venda; cada mês começa no saldo anterior.",
+    "impact": "Explica o impacto das metas no estoque.",
+    "deps": [
+      "productionprojection",
+      "opsingest"
+    ],
+    "refs": "M-047; H_Contrato_Dados!A28:H28",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-092",
+      "BK-048"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "inputprojection",
+    "id": "BK-094",
+    "phase": "08 Projeções e cenários",
+    "title": "Implementar necessidade de insumos e OP Projetada",
+    "goal": "Cobrir a aba de insumos para um ano.",
+    "action": "Converter produção em insumos com composição aprovada.",
+    "steps": [
+      "Validar fonte, versão e vigência de BOM/ficha técnica",
+      "Converter unidades e rendimento/perda conforme regra",
+      "Marcar OP Projetada e necessidades como planejamento informativo"
+    ],
+    "accept": "Composição ausente bloqueia o SKU afetado; projeção não altera estoque, compras ou OP no Bling.",
+    "impact": "Evita entregar uma aba de planejamento sem base técnica.",
+    "deps": [
+      "productionprojection",
+      "opsingest",
+      "forecastpolicy"
+    ],
+    "refs": "H_Contrato_Dados!A12:H12; R_CEI_Tela_12",
+    "questions": "Q-24",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-092",
+      "BK-048",
+      "BK-009"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "projectionfinancial",
+    "id": "BK-095",
+    "phase": "08 Projeções e cenários",
+    "title": "Implementar resumo financeiro dos cenários",
+    "goal": "Relacionar quantidades projetadas a preços e valores.",
+    "action": "Calcular faturamento e componentes aprovados por cenário.",
+    "steps": [
+      "Aplicar preço de referência versionado",
+      "Distinguir valores projetados dos demonstrativos realizados",
+      "Expor bases ausentes e contexto de filtros"
+    ],
+    "accept": "Resumo reconcilia com SKUs; não cria receita, caixa ou obrigação financeira realizada.",
+    "impact": "Permite comparar cenários sem misturar planejamento e resultado.",
+    "deps": [
+      "targetscenario",
+      "inventoryprojection",
+      "financialmapping"
+    ],
+    "refs": "T12 aba Resumo financeiro; R_CEI_Tela_12",
+    "questions": "Q-25",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-091",
+      "BK-093",
+      "BK-064"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "projectionsscreen",
+    "id": "BK-096",
+    "phase": "08 Projeções e cenários",
+    "title": "Implementar T12 Projeções e ajuste de metas",
+    "goal": "Oferecer estudo e planejamento em uma interface completa.",
+    "action": "Construir gráfico, cenário, filtros e quatro abas.",
+    "steps": [
+      "Mostrar métricas reais, ano e versão",
+      "Implementar edição por SKU e em lote com validação",
+      "Exibir comparação estudo/meta e indisponibilidade dos componentes"
+    ],
+    "accept": "Todas as abas funcionam; cartões conferem com contexto total ou subtotal explicitamente indicado.",
+    "impact": "Permite testar metas entendendo suas consequências.",
+    "deps": [
+      "forecastvalidation",
+      "targetscenario",
+      "inventoryprojection",
+      "inputprojection",
+      "projectionfinancial",
+      "reactfoundation"
+    ],
+    "refs": "T12; R_CEI_Tela_12",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-090",
+      "BK-091",
+      "BK-093",
+      "BK-094",
+      "BK-095",
+      "BK-028"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "projectionexport",
+    "id": "BK-097",
+    "phase": "08 Projeções e cenários",
+    "title": "Exportar o cenário de projeções para Excel",
+    "goal": "Produzir artefato de planejamento reproduzível.",
+    "action": "Gerar XLSX estruturado do snapshot selecionado.",
+    "steps": [
+      "Criar Resumo_Cenario, Projecao_Vendas_SKU, Projecao_Producao_SKU e Estoque_Projetado_SKU",
+      "Incluir Metas, Qualidade_Estudo, OP_Projetada e Metadados",
+      "Preservar filtros, versões, unidades e marcação PROJECTED"
+    ],
+    "accept": "Valores conciliam com tela; OP é explicitamente projetada e nenhum fato é escrito no Bling.",
+    "impact": "Permite discutir planejamento fora do sistema com contexto.",
+    "deps": [
+      "projectionsscreen",
+      "authorization"
+    ],
+    "refs": "M-049; R_CEI_Tela_12; T-CEI12-11..13",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-096",
+      "BK-033"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "pendingengine",
+    "id": "BK-098",
+    "phase": "09 Controle e visão executiva",
+    "title": "Implementar registro único de pendências",
+    "goal": "Concentrar problemas sem duplicar suas regras.",
+    "action": "Criar ocorrências e vínculos aos módulos de origem.",
+    "steps": [
+      "Modelar estados, responsável, dependência e evidência",
+      "Deduplicar pela condição e origem",
+      "Registrar resolução somente pelo fluxo autorizado do tipo"
+    ],
+    "accept": "Um evento mantém um pending_id rastreável; visualizar não fecha a pendência.",
+    "impact": "Evita problemas ocultos ou duplicados.",
+    "deps": [
+      "provenance",
+      "actionpolicy",
+      "accessaudit"
+    ],
+    "refs": "M-051,M-054; S_CEI_Tela_13",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-038",
+      "BK-012",
+      "BK-034"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "pendingscreen",
+    "id": "BK-099",
+    "phase": "09 Controle e visão executiva",
+    "title": "Implementar T13 Lançamentos e Pendências",
+    "goal": "Permitir localizar e resolver exceções.",
+    "action": "Construir filtros, lista, distribuição e ações contextuais.",
+    "steps": [
+      "Definir contagens exclusivas ou sobrepostas com rótulo explícito",
+      "Abrir origem e fluxo de resolução correto",
+      "Exibir dependência de regra/dado e responsável"
+    ],
+    "accept": "Total não repete o erro 53 versus soma 58 do mockup; estado não muda sem evidência.",
+    "impact": "Facilita tratamento diário das exceções.",
+    "deps": [
+      "pendingengine",
+      "reactfoundation",
+      "authorization"
+    ],
+    "refs": "T13; S_CEI_Tela_13",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-098",
+      "BK-028",
+      "BK-033"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "alertengine",
+    "id": "BK-100",
+    "phase": "09 Controle e visão executiva",
+    "title": "Implementar eventos de alerta com regra única de origem",
+    "goal": "Chamar atenção para condições reais.",
+    "action": "Publicar alertas a partir dos módulos responsáveis.",
+    "steps": [
+      "Definir identidade, prioridade, posição e ciclo de vida",
+      "Deduplicar e preservar histórico de resolução/recorrência",
+      "Não criar thresholds próprios na central ou alertas T10 por inferência"
+    ],
+    "accept": "Mesmo fato liga alert_id, pending_id e origem; nenhuma central recalcula regra divergente.",
+    "impact": "Evita ruído e falsos alertas.",
+    "deps": [
+      "pendingengine",
+      "freshness",
+      "inventoryrules",
+      "cashengine",
+      "actionpolicy"
+    ],
+    "refs": "M-052,M-054; T_CEI_Tela_14",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-098",
+      "BK-051",
+      "BK-077",
+      "BK-060",
+      "BK-012"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "alertsscreen",
+    "id": "BK-101",
+    "phase": "09 Controle e visão executiva",
+    "title": "Implementar T14 Alertas",
+    "goal": "Consolidar o que exige atenção.",
+    "action": "Construir prioridades, módulos, filtros e detalhes.",
+    "steps": [
+      "Separar ativos e resolvidos no período",
+      "Reconciliar distribuição com mesma população",
+      "Conectar alerta ao módulo de origem e à pendência associada"
+    ],
+    "accept": "Cartões não usam população diferente sem explicar; resolução mantém histórico e responsabilidade.",
+    "impact": "Permite priorizar problemas reais.",
+    "deps": [
+      "alertengine",
+      "reactfoundation"
+    ],
+    "refs": "T14; T_CEI_Tela_14",
+    "questions": "",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-100",
+      "BK-028"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "executivescreen",
+    "id": "BK-102",
+    "phase": "09 Controle e visão executiva",
+    "title": "Implementar T01 Visão Executiva",
+    "goal": "Consolidar indicadores aprovados para gestão.",
+    "action": "Construir a tela após receber e fechar a especificação.",
+    "steps": [
+      "Definir indicadores, fontes, períodos e navegação",
+      "Reutilizar resultados dos motores de domínio",
+      "Propagar atraso, parcialidade e indisponibilidade de fonte"
+    ],
+    "accept": "Cada indicador chega ao módulo e ao detalhe; nenhuma fórmula paralela na dashboard.",
+    "impact": "Oferece uma visão geral confiável.",
+    "deps": [
+      "missing",
+      "cashscreen",
+      "drescreen",
+      "inventoryscreen",
+      "productionscreen",
+      "projectionsscreen",
+      "alertsscreen"
+    ],
+    "refs": "Menus: Visão Executiva",
+    "questions": "Q-02",
+    "owner": "Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-004",
+      "BK-062",
+      "BK-067",
+      "BK-078",
+      "BK-081",
+      "BK-096",
+      "BK-101"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "extrascreens",
+    "id": "BK-103",
+    "phase": "09 Controle e visão executiva",
+    "title": "Implementar os módulos adicionais confirmados no escopo",
+    "goal": "Cobrir todos os itens que a Majucau mantiver para a primeira versão.",
+    "action": "Detalhar e executar Produtos, Simuladores e Relatórios após decisão.",
+    "steps": [
+      "Fechar o comportamento de cada item sem imagem",
+      "Decompor esta tarefa em tarefas por fluxo aprovado",
+      "Integrar navegação, permissões e critérios de aceite próprios"
+    ],
+    "accept": "Nenhum módulo confirmado permanece apenas como link; exclusão exige decisão registrada.",
+    "impact": "Evita falsa completude do produto.",
+    "deps": [
+      "missing",
+      "designsystem",
+      "domainmap"
+    ],
+    "refs": "Menus T12/T13; matriz Pricing/Logística",
+    "questions": "Q-02",
+    "owner": "Produto + Full Stack",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-004",
+      "BK-021",
+      "BK-016"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "approvedexports",
+    "id": "BK-104",
+    "phase": "10 Verificação integrada",
+    "title": "Implementar exportações financeiras e de controle aprovadas",
+    "goal": "Transformar botões homologados em relatórios completos.",
+    "action": "Construir contratos de exportação por tela, endpoint, gerador e integração do botão.",
+    "steps": [
+      "Após decisão, implementar formatos, colunas e contexto de T02–T07 e T13–T15",
+      "Aplicar permissão, filtros, snapshot, limite de carga e metadados",
+      "Conferir totais, tipos, tratamento de campos perigosos e erros do download"
+    ],
+    "accept": "Cada exportação aprovada produz o conteúdo definido e rastreável; telas sem exportação aprovada não recebem função inventada.",
+    "impact": "Evita aprovar uma interface com botão de exportação sem implementação.",
+    "deps": [
+      "actionpolicy",
+      "cashscreen",
+      "receivablesscreen",
+      "payablesscreen",
+      "reconciliationscreen",
+      "drescreen",
+      "trialbalancescreen",
+      "pendingscreen",
+      "alertsscreen",
+      "integrationsscreen"
+    ],
+    "refs": "T02–T07; T13–T15; L-22",
+    "questions": "",
+    "owner": "Full Stack",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-012",
+      "BK-062",
+      "BK-057",
+      "BK-059",
+      "BK-055",
+      "BK-067",
+      "BK-069",
+      "BK-099",
+      "BK-101",
+      "BK-052"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "tracecoverage",
+    "id": "BK-105",
+    "phase": "10 Verificação integrada",
+    "title": "Rastrear cada requisito até tarefa e teste",
+    "goal": "Garantir cobertura do material de ponta a ponta.",
+    "action": "Relacionar regras da matriz e CEIs às entregas.",
+    "steps": [
+      "Mapear M-001..M-058, C-01..03, L-01..26 e testes I_Testes",
+      "Complementar contratos incompletos de caixa, metas e investimentos",
+      "Marcar regras sem evidência de aceite e corrigir lacunas"
+    ],
+    "accept": "Toda regra do escopo tem responsável, implementação prevista e validação específica.",
+    "impact": "Evita perder requisitos espalhados na planilha.",
+    "deps": [
+      "domainmap",
+      "apicontract"
+    ],
+    "refs": "A_Matriz_Mestra; H_Contrato_Dados; I_Testes",
+    "questions": "",
+    "owner": "QA + Arquitetura",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-016",
+      "BK-019"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "domainverification",
+    "id": "BK-106",
+    "phase": "10 Verificação integrada",
+    "title": "Validar regras de domínio e casos de fronteira",
+    "goal": "Provar os cálculos fora da interface.",
+    "action": "Executar testes unitários e de invariantes relevantes.",
+    "steps": [
+      "Testar centavos, arredondamento, zero/ausente, datas e estados",
+      "Validar conflitos resolvidos com exemplos homologados",
+      "Cobrir idempotência, estornos e real versus projetado"
+    ],
+    "accept": "Falhas materiais são corrigidas; números de mockup não servem como oráculo quando inconsistentes.",
+    "impact": "Detecta erros de cálculo antes da operação.",
+    "deps": [
+      "tracecoverage",
+      "investmentcalculator",
+      "trialbalanceengine",
+      "purchasesizing",
+      "inventoryprojection"
+    ],
+    "refs": "I_Testes: catálogo previsto, ainda não executado",
+    "questions": "",
+    "owner": "QA + Backend",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-105",
+      "BK-072",
+      "BK-068",
+      "BK-084",
+      "BK-093"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "integrationverification",
+    "id": "BK-107",
+    "phase": "10 Verificação integrada",
+    "title": "Validar integrações, concorrência e reinício",
+    "goal": "Provar comportamento sob falhas reais de sistema.",
+    "action": "Testar banco, arquivos, adaptadores e jobs em ambiente controlado.",
+    "steps": [
+      "Simular 401,429,timeout, arquivo corrompido e versão nova",
+      "Repetir carga e interromper processo durante processamento",
+      "Disputar reprocessamento e mudança manual concorrente"
+    ],
+    "accept": "Último snapshot válido sobrevive; fatos não duplicam; retomada possui evidência.",
+    "impact": "Reduz falhas de sincronização em produção.",
+    "deps": [
+      "integrationsscreen",
+      "idempotency",
+      "blingadapter",
+      "manualmatch"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "QA + Integrações",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-052",
+      "BK-044",
+      "BK-041",
+      "BK-054"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "uiverification",
+    "id": "BK-108",
+    "phase": "10 Verificação integrada",
+    "title": "Validar fidelidade visual e acessibilidade",
+    "goal": "Conferir a experiência completa nos dispositivos previstos.",
+    "action": "Comparar telas implementadas e decisões UX aprovadas.",
+    "steps": [
+      "Verificar cabeçalhos, menus, layout, tamanhos e conteúdo",
+      "Testar teclado, foco, zoom, estados e permissões",
+      "Conferir tabelas, porcentagens e gráficos em conjuntos controlados"
+    ],
+    "accept": "Todas as telas do escopo passam pelos critérios acordados; alterações de estrutura têm decisão registrada.",
+    "impact": "Evita entregar apenas uma aparência semelhante sem usabilidade.",
+    "deps": [
+      "executivescreen",
+      "extrascreens",
+      "applicationsscreen",
+      "pricing",
+      "logisticsanalysis",
+      "purchasesscreen",
+      "parametersscreen",
+      "usersscreen",
+      "reconciliationscreen",
+      "receivablesscreen",
+      "payablesscreen",
+      "trialbalancescreen",
+      "calculatorscreen",
+      "pendingscreen"
+    ],
+    "refs": "Todas as imagens e decisões UX",
+    "questions": "",
+    "owner": "UX + QA",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-102",
+      "BK-103",
+      "BK-074",
+      "BK-075",
+      "BK-076",
+      "BK-086",
+      "BK-037",
+      "BK-035",
+      "BK-055",
+      "BK-057",
+      "BK-059",
+      "BK-069",
+      "BK-073",
+      "BK-099"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "exportverification",
+    "id": "BK-109",
+    "phase": "10 Verificação integrada",
+    "title": "Validar arquivos exportados e proteção do conteúdo",
+    "goal": "Garantir que relatórios correspondam à tela e ao perfil.",
+    "action": "Conferir contratos XLSX/CSV/PDF apenas onde aprovados.",
+    "steps": [
+      "Validar colunas, tipos, filtros, totais e metadados",
+      "Proteger células de texto contra injeção de fórmulas",
+      "Abrir amostras no programa usado pela Majucau"
+    ],
+    "accept": "Exports não incluem segredos nem linhas sem permissão; dados conferem com snapshot.",
+    "impact": "Evita relatório incorreto ou exposição de informação.",
+    "deps": [
+      "projectionexport",
+      "purchasesscreen",
+      "actionpolicy",
+      "approvedexports"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "QA",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-097",
+      "BK-086",
+      "BK-012",
+      "BK-104"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "e2everification",
+    "id": "BK-110",
+    "phase": "10 Verificação integrada",
+    "title": "Executar jornadas completas de ponta a ponta",
+    "goal": "Provar que os módulos trabalham juntos.",
+    "action": "Testar entradas reais controladas até resultados e resolução.",
+    "steps": [
+      "Percorrer importação→conciliação→contas→caixa→DRE/balancete→calculadora",
+      "Percorrer estoque→compras e vendas→estudo→meta→produção/estoque→export",
+      "Percorrer erro de fonte→T15→T13/T14→reprocessamento e login→bloqueio"
+    ],
+    "accept": "Jornadas conferem IDs, valores, permissões, estados e histórico, com evidência reproduzível.",
+    "impact": "Demonstra funcionamento do produto completo.",
+    "deps": [
+      "domainverification",
+      "integrationverification",
+      "uiverification",
+      "exportverification"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "QA + Majucau",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-106",
+      "BK-107",
+      "BK-108",
+      "BK-109"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "securityverification",
+    "id": "BK-111",
+    "phase": "10 Verificação integrada",
+    "title": "Validar controles de segurança antes da produção",
+    "goal": "Verificar que restrições resistem a acesso indevido.",
+    "action": "Executar testes direcionados do modelo de ameaças.",
+    "steps": [
+      "Testar bypass de API, troca de perfil, sessão revogada e recuperação",
+      "Revisar uploads, exportações, path traversal e exposição de logs",
+      "Verificar dependências e segredos no pacote/artefatos"
+    ],
+    "accept": "Nenhuma falha crítica sem tratamento; perfil somente leitura não consegue mutar via chamada direta.",
+    "impact": "Reduz risco de comprometimento de dados.",
+    "deps": [
+      "usersscreen",
+      "parametersscreen",
+      "integrationsscreen",
+      "threatmodel"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Segurança + QA",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-035",
+      "BK-037",
+      "BK-052",
+      "BK-024"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "performanceverification",
+    "id": "BK-112",
+    "phase": "10 Verificação integrada",
+    "title": "Validar desempenho no hardware local",
+    "goal": "Demonstrar capacidade de uso e processamento.",
+    "action": "Medir jornadas com volume e concorrência esperados.",
+    "steps": [
+      "Medir percentis de resposta, importação, forecast, CPU, memória e disco",
+      "Validar carga simultânea sem congelar consultas",
+      "Otimizar índices e consultas somente nos gargalos medidos"
+    ],
+    "accept": "Metas aprovadas de tempo e capacidade são atingidas; limites conhecidos ficam documentados.",
+    "impact": "Evita lentidão percebida após a instalação.",
+    "deps": [
+      "e2everification",
+      "localrequirements",
+      "analyticschoice",
+      "staginglocal"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Engenharia + Infraestrutura",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-110",
+      "BK-014",
+      "BK-023",
+      "BK-117"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "businessacceptance",
+    "id": "BK-113",
+    "phase": "10 Verificação integrada",
+    "title": "Homologar todos os módulos com a Majucau",
+    "goal": "Confirmar que o produto atende às regras e ao uso diário.",
+    "action": "Executar roteiro com dados e cenários reconhecidos pelos responsáveis.",
+    "steps": [
+      "Conferir amostras com fontes oficiais e responsáveis do negócio",
+      "Resolver discrepâncias e repetir apenas verificações afetadas",
+      "Registrar aceite de cada módulo e de cada conflito encerrado"
+    ],
+    "accept": "Todos os módulos confirmados têm aceite; não se substitui pendência crítica por zero ou tela vazia.",
+    "impact": "Evita lançar um sistema tecnicamente ativo, mas incorreto para a operação.",
+    "deps": [
+      "e2everification",
+      "securityverification",
+      "performanceverification"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Majucau + QA",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-110",
+      "BK-111",
+      "BK-112"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "localdesign",
+    "id": "BK-114",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Definir a topologia final da instalação local",
+    "goal": "Tornar operação, acesso e recuperação viáveis.",
+    "action": "Desenhar aplicação, banco, arquivos e rede no equipamento escolhido.",
+    "steps": [
+      "Escolher serviço Windows ou containers conforme edição, suporte e operação; não pressupor servidor Linux.",
+      "Definir acesso local/remoto com autenticação e transporte seguro",
+      "Registrar dependência de internet para Bling e sinais externos"
+    ],
+    "accept": "Diagrama explica portas, permissões, dados persistentes, operador e comportamento sem internet.",
+    "impact": "Evita exposição acidental e dependência não planejada.",
+    "deps": [
+      "localrequirements",
+      "hexagonal",
+      "threatmodel",
+      "analyticschoice"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Infraestrutura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-014",
+      "BK-017",
+      "BK-024",
+      "BK-023"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "localhostprep",
+    "id": "BK-115",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Preparar o servidor e a rede local",
+    "goal": "Disponibilizar um ambiente estável para instalação.",
+    "action": "Configurar sistema, contas técnicas, armazenamento e acesso.",
+    "steps": [
+      "Aplicar atualizações e permissões mínimas",
+      "Configurar DNS/TLS/firewall e acesso remoto aprovado",
+      "Validar energia, espaço e reinício automático conforme necessidade"
+    ],
+    "accept": "Serviços não executam com privilégio excessivo; somente acessos planejados alcançam a aplicação.",
+    "impact": "Reduz paradas e riscos da máquina local.",
+    "deps": [
+      "localdesign"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Infraestrutura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-114"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "releasepackage",
+    "id": "BK-116",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Gerar pacote versionado de instalação",
+    "goal": "Entregar uma versão reproduzível e identificável.",
+    "action": "Empacotar Go, build React, migrações e dependências aprovadas.",
+    "steps": [
+      "Gerar artefato em CI confiável",
+      "Registrar versão, hash e inventário de dependências",
+      "Incluir configuração exemplo e instruções sem credenciais"
+    ],
+    "accept": "Pacote instala em ambiente limpo; versão visível corresponde ao artefato validado.",
+    "impact": "Facilita suporte e retorno à versão anterior.",
+    "deps": [
+      "qualitypipeline",
+      "localdesign"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Engenharia + Infraestrutura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-030",
+      "BK-114"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "staginglocal",
+    "id": "BK-117",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Instalar ambiente local de homologação",
+    "goal": "Ensaiar instalação e atualização sem usar produção.",
+    "action": "Criar ambiente e dados separados no hardware previsto ou equivalente.",
+    "steps": [
+      "Instalar pacote e executar migrações",
+      "Configurar fontes de teste e credenciais separadas quando disponíveis",
+      "Verificar que nenhum job de teste altera a operação real"
+    ],
+    "accept": "Ambiente reproduz instalação documentada e permite validar desempenho e restauração.",
+    "impact": "Reduz surpresas na entrada em produção.",
+    "deps": [
+      "localhostprep",
+      "releasepackage"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Infraestrutura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-115",
+      "BK-116"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "backupdesign",
+    "id": "BK-118",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Configurar backup de banco, arquivos e configuração",
+    "goal": "Preservar tudo que é necessário para recuperar o serviço.",
+    "action": "Implantar cópias automáticas conforme perda tolerável de dados.",
+    "steps": [
+      "Incluir banco, fontes importadas, versões e configurações críticas",
+      "Guardar cópia separada do disco e da máquina de produção",
+      "Definir retenção, proteção das cópias e verificação de falha"
+    ],
+    "accept": "Rotina gera evidência de backup completo e alerta quando falha; cópia no mesmo disco não é a única proteção.",
+    "impact": "Permite recuperar o sistema após falha do equipamento.",
+    "deps": [
+      "localrequirements",
+      "staginglocal",
+      "storage"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Infraestrutura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-014",
+      "BK-117",
+      "BK-018"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "restoreexercise",
+    "id": "BK-119",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Testar restauração e recuperação do ambiente",
+    "goal": "Provar que o backup funciona no prazo necessário.",
+    "action": "Restaurar em instalação separada e conferir dados.",
+    "steps": [
+      "Simular perda de banco/arquivo e indisponibilidade da máquina",
+      "Reinstalar versão compatível e restaurar cópias",
+      "Conferir totais, arquivos, permissões e jobs antes de reativar integrações"
+    ],
+    "accept": "Tempo e perda real medidos atendem os limites aprovados; procedimento é executável pelo responsável.",
+    "impact": "Evita descobrir backup inválido durante uma falha.",
+    "deps": [
+      "backupdesign",
+      "releasepackage"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Infraestrutura + QA",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-118",
+      "BK-116"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "productionmonitoring",
+    "id": "BK-120",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Configurar monitoramento operacional local",
+    "goal": "Perceber falhas antes que invalidem a operação.",
+    "action": "Monitorar serviço, banco, disco, sincronização e backups.",
+    "steps": [
+      "Definir sinais e limites com responsáveis",
+      "Separar alerta técnico de alerta de negócio",
+      "Validar canal escolhido e alertas de falta de espaço/token expirado/fonte antiga"
+    ],
+    "accept": "Falha simulada chega ao responsável pelo canal acordado; diagnóstico identifica ação necessária.",
+    "impact": "Reduz tempo de indisponibilidade e dados desatualizados.",
+    "deps": [
+      "observabilitybase",
+      "freshness",
+      "backupdesign"
+    ],
+    "refs": "",
+    "questions": "Q-26",
+    "owner": "Infraestrutura",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-031",
+      "BK-051",
+      "BK-118"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "initialload",
+    "id": "BK-121",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Preparar e reconciliar a carga inicial",
+    "goal": "Começar a produção com base conhecida e validada.",
+    "action": "Planejar corte temporal, importação histórica e snapshots iniciais.",
+    "steps": [
+      "Definir data de corte e ordem das cargas",
+      "Importar histórico, aberturas, parâmetros, usuários e metas",
+      "Reconciliar amostras e totais com fontes sem criar duplicata"
+    ],
+    "accept": "Carga inicial tem cobertura, pendências conhecidas e aceite por domínio; fonte ausente permanece explícita.",
+    "impact": "Evita lançar sobre dados incompletos sem perceber.",
+    "deps": [
+      "businessacceptance",
+      "staginglocal",
+      "idempotency"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Dados + Majucau",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-113",
+      "BK-117",
+      "BK-044"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "upgradeplan",
+    "id": "BK-122",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Ensaiar atualização e retorno à versão anterior",
+    "goal": "Controlar mudanças futuras sem perder informação.",
+    "action": "Criar roteiro de release, migração e recuperação.",
+    "steps": [
+      "Verificar compatibilidade de esquema e pacote",
+      "Fazer backup prévio e definir ponto de retorno",
+      "Testar rollback de aplicação e recuperação de dados quando migração não for reversível"
+    ],
+    "accept": "Procedimento identifica quando rollback simples é possível e quando requer restauração; sem prometer reversão destrutiva automática.",
+    "impact": "Reduz risco de atualização local.",
+    "deps": [
+      "releasepackage",
+      "restoreexercise"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Infraestrutura + Engenharia",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-116",
+      "BK-119"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "training",
+    "id": "BK-123",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Documentar e treinar a rotina da Majucau",
+    "goal": "Permitir uso e suporte sem depender de memória da equipe.",
+    "action": "Produzir guia por perfil e manual de operação.",
+    "steps": [
+      "Explicar consulta, metas, pendências, importações e dados antigos",
+      "Documentar login, recuperação, atualização e backup",
+      "Executar exercícios com responsáveis do negócio e da máquina"
+    ],
+    "accept": "Usuários executam tarefas críticas; operador sabe diagnosticar falha e acionar recuperação.",
+    "impact": "Reduz erros e dependência informal.",
+    "deps": [
+      "businessacceptance",
+      "productionmonitoring",
+      "upgradeplan"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Produto + Infraestrutura + Majucau",
+    "kind": "Desenvolvimento",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-113",
+      "BK-120",
+      "BK-122"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "readiness",
+    "id": "BK-124",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Verificar os critérios de entrada em produção",
+    "goal": "Confirmar que toda a primeira versão está pronta.",
+    "action": "Reunir evidências funcionais, técnicas e operacionais.",
+    "steps": [
+      "Conferir todos os módulos e conflitos do escopo",
+      "Validar segurança, carga inicial, desempenho, restauração e responsável",
+      "Registrar versão, decisão de entrada e plano de contingência"
+    ],
+    "accept": "Nenhum requisito obrigatório permanece sem evidência; Majucau autoriza a entrada da versão concreta.",
+    "impact": "Evita liberar com módulo faltante ou recuperação não testada.",
+    "deps": [
+      "initialload",
+      "securityverification",
+      "restoreexercise",
+      "upgradeplan",
+      "training",
+      "productionmonitoring"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Majucau + Liderança técnica",
+    "kind": "Qualidade",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-121",
+      "BK-111",
+      "BK-119",
+      "BK-122",
+      "BK-123",
+      "BK-120"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "golive",
+    "id": "BK-125",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Instalar e ativar a primeira versão em produção local",
+    "goal": "Colocar a versão homologada em uso real.",
+    "action": "Executar o roteiro aprovado no ambiente de produção.",
+    "steps": [
+      "Instalar pacote, configurar segredos e aplicar migrações",
+      "Ativar fontes e jobs na sequência planejada",
+      "Executar verificações rápidas de acesso, dados, módulos e backup"
+    ],
+    "accept": "Versão esperada está acessível aos usuários autorizados e produz dados reconciliados; roteiro de contingência disponível.",
+    "impact": "Inicia a operação completa da Majucau.",
+    "deps": [
+      "readiness"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Infraestrutura + Engenharia",
+    "kind": "Produção",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-124"
+    ],
+    "progress": 0
+  },
+  {
+    "key": "assistedoperation",
+    "id": "BK-126",
+    "phase": "11 Instalação, produção e sustentação",
+    "title": "Acompanhar os primeiros ciclos reais e encerrar a entrega",
+    "goal": "Confirmar estabilidade no uso cotidiano.",
+    "action": "Observar conciliação, fechamento, projeção e atualização de fontes.",
+    "steps": [
+      "Validar ciclos acordados com o negócio",
+      "Registrar e corrigir incidentes com evidência",
+      "Transferir responsabilidade operacional e rotina de manutenção"
+    ],
+    "accept": "Critérios de estabilização acordados são atendidos; suporte, backups e atualizações têm responsáveis.",
+    "impact": "Consolida a produção e evita abandono após a instalação.",
+    "deps": [
+      "golive"
+    ],
+    "refs": "",
+    "questions": "",
+    "owner": "Majucau + Engenharia + Infraestrutura",
+    "kind": "Produção",
+    "status": "Não iniciada",
+    "evidence": "",
+    "weight": 1,
+    "dependencies": [
+      "BK-125"
+    ],
+    "progress": 0
+  }
+]

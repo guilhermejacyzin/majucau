@@ -1,0 +1,11 @@
+{
+  "tasks": 127,
+  "completed_planning": 3,
+  "development_progress": 0,
+  "all_required_screens_precede_production": true,
+  "formula_errors": [],
+  "source_files_unchanged": 17,
+  "percent_by_count": 0.023622047244094488,
+  "open_decision_records": 52,
+  "validation": "Structure, dependencies, original hashes, saved XLSX formulas/caches, plus Artifact Tool input-change and render checks. Native Excel app not exercised."
+}

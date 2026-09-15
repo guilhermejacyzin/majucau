@@ -1,0 +1,61 @@
+A1=Y — CEI TELA 17 | USUÁRIOS
+A2=Contrato Executável de Interface — versão 12/09/2026. Tela 17 consolida usuários, perfis e permissões. O mockup aprovado define quatro perfis de alto nível (ADMIN, FINANCEIRO, OPERAÇÃO e LEITURA), mas a autorização efetiva deve ser aplicada no backend e auditada. O design é imutável; contagens/nomes do mockup são ilustrativos.
+A4=DESIGN LOCK — REGRA IMUTÁVEL
+A5=Item | B5=Regra | C5=Fonte | D5=Pode alterar design? | E5=Pode alterar conteúdo? | F5=Efeito externo | G5=Status | H5=Observação
+A6=Layout/base visual | B6=Preservar integralmente o mockup aprovado da Tela 17. | C6=Decisão Majucau | D6=NÃO | E6=SIM, quando aprovado | F6=Nenhum | G6=APROVADO | H6=Não redesenhar.
+A7=Balanço Patrimonial | B7=Não exibir rota/elemento legado que apareceu no mockup gerado. | C7=Decisão estrutural anterior | D7=N/A | E7=SIM — remover conteúdo legado | F7=Nenhum | G7=APROVADO | H7=Fora do produto; imagem fica como evidência visual, implementação corrige o conteúdo.
+A9=PAPEL DA TELA 17
+A10=ID | B10=Conceito | C10=Definição executável | D10=Fonte | E10=Interação | F10=Mutação? | G10=Status | H10=Observação
+A11=17-R01 | B11=Gestão de usuários | C11=Centralizar contas, perfis, status e rastreabilidade de acesso. | D11=Majucau / identidade | E11=Consultar/navegar | F11=NÃO na lista principal | G11=APROVADO | H11=Valores do mockup são exemplos.
+A12=17-R02 | B12=Autorização por perfil | C12=Permissões devem ser concedidas por perfil e validadas no backend. | D12=access_profile/profile_permission | E12=Ver permissões | F12=Somente em fluxo administrativo | G12=APROVADO | H12=Frontend nunca é autoridade de autorização.
+A13=17-R03 | B13=Privilégio mínimo | C13=Usuário recebe apenas módulos/ações necessários ao perfil. | D13=Política de acesso | E13=Ver perfil | F13=Somente admin | G13=APROVADO | H13=Default deny para ação não concedida.
+A14=17-R04 | B14=Auditoria | C14=Mudança de perfil/status/acesso deve registrar ator, alvo, antes/depois e timestamp. | D14=access_audit_event | E14=Ver histórico | F14=SIM em fluxo autorizado | G14=APROVADO | H14=Nunca alteração silenciosa.
+A16=KPIs DO TOPO
+A17=Indicador | B17=Definição | C17=Fonte | D17=Interação | E17=Altera dado? | F17=Exporta? | G17=Estado | H17=Observação
+A18=Usuários Ativos | B18=Contagem de contas habilitadas. | C18=user_account | D18=Ver usuários completos | E18=NÃO | F18=NÃO | G18=Dinâmico | H18=Número do mockup é ilustrativo.
+A19=Perfis | B19=Quantidade de perfis ativos/configurados. | C19=access_profile | D19=Ver perfis | E19=NÃO | F19=NÃO | G19=Dinâmico | H19=Mockup apresenta quatro perfis funcionais.
+A20=Bloqueados | B20=Contagem de contas com acesso suspenso. | C20=user_account.status | D20=Filtrar/Ver permissões | E20=NÃO | F20=NÃO | G20=Dinâmico | H20=Bloqueado não pode autenticar/acessar.
+A21=Pendentes | B21=Convites/ativações ainda não concluídos. | C21=user_account/invite flow | D21=Ver convite | E21=NÃO | F21=NÃO | G21=Dinâmico | H21=Fluxo técnico exato permanece L-26.
+A23=PERFIS FUNCIONAIS DO MOCKUP
+A24=Perfil | B24=Escopo de alto nível | C24=Pode administrar usuários? | D24=Pode alterar financeiro? | E24=Pode operar módulos? | F24=Pode apenas consultar? | G24=Status | H24=Observação
+A25=ADMIN | B25=Acesso administrativo amplo conforme matriz final. | C25=SIM | D25=Conforme permissão | E25=Conforme permissão | F25=SIM | G25=APROVADO CONCEITUAL | H25=Permissão exata por ação precisa matriz técnica.
+A26=FINANCEIRO | B26=Tesouraria e Resultados. | C26=NÃO por padrão | D26=SIM no escopo autorizado | E26=NÃO fora do escopo | F26=SIM | G26=APROVADO CONCEITUAL | H26=Nunca herdar administração implicitamente.
+A27=OPERAÇÃO | B27=Estoque, Produção e Compras. | C27=NÃO por padrão | D27=NÃO por padrão | E27=SIM no escopo autorizado | F27=SIM | G27=APROVADO CONCEITUAL | H27=Respeitar read-only onde CEI da tela não permite mutação.
+A28=LEITURA | B28=Somente consulta. | C28=NÃO | D28=NÃO | E28=NÃO | F28=SIM | G28=APROVADO | H28=Nenhuma mutação.
+A30=TABELA USUÁRIOS E ACESSOS
+A31=Campo | B31=Definição | C31=Fonte | D31=Editável na tabela? | E31=Interação | F31=Efeito externo | G31=Obrigatório | H31=Observação
+A32=Usuário | B32=Nome de exibição da conta. | C32=user_account | D32=NÃO | E32=Ver permissões | F32=Nenhum | G32=SIM | H32=Não usar como ID estável.
+A33=Perfil | B33=Perfil ativo associado. | C33=access_profile | D33=NÃO | E33=Ver permissões | F33=Nenhum na consulta | G33=SIM | H33=Mudança somente em fluxo administrativo.
+A34=Login | B34=Identificador de login/e-mail conforme provedor aprovado. | C34=user_account | D34=NÃO | E34=Consultar | F34=Nenhum | G34=SIM | H34=Não armazenar segredo na tela.
+A35=Último acesso | B35=Timestamp do último acesso conhecido. | C35=auth/audit | D35=NÃO | E35=Consultar | F35=Nenhum | G35=NÃO | H35=Ausência não vira data fictícia.
+A36=Status | B36=ATIVO / BLOQUEADO / PENDENTE. | C36=user_account | D36=NÃO | E36=Ver conta/convite | F36=Nenhum na consulta | G36=SIM | H36=Transições precisam auditoria.
+A37=Ação | B37=Ver permissões ou Ver convite conforme estado. | C37=Tela 17 | D37=NÃO | E37=DRAWER/NAVIGATION | F37=Nenhum até confirmação | G37=SIM | H37=Não executar mutação no clique de consulta.
+A39=REGRAS IMPORTANTES
+A40=Regra | B40=Definição | C40=Fonte | D40=Interação | E40=Mutação? | F40=Status | G40=Risco evitado | H40=Observação
+A41=Permissão segue perfil | B41=Acesso é determinado pela matriz de perfil, não por lógica espalhada na UI. | C41=RBAC | D41=Ver permissões | E41=NÃO na consulta | F41=APROVADO | G41=privilégio excessivo
+A42=Ações auditáveis | B42=Mudanças administrativas deixam trilha imutável. | C42=access_audit_event | D42=Ver histórico | E42=SIM em fluxo autorizado | F42=APROVADO | G42=mudança silenciosa
+A43=Bloqueado não acessa | B43=Conta BLOCKED deve falhar autorização/autenticação conforme camada de identidade. | C43=user_account.status | D43=Consultar | E43=NÃO | F43=APROVADO | G43=acesso indevido
+A44=Alterações exigem administrador | B44=Criação/convite, mudança de perfil e bloqueio/desbloqueio exigem permissão administrativa específica. | C44=profile_permission | D44=Fluxo administrativo | E44=SIM | F44=APROVADO | G44=escalada de privilégio | H44=Detalhe visual desses fluxos ainda não foi desenhado.
+A46=INTERAÇÕES EXECUTÁVEIS
+A47=Elemento | B47=Tipo | C47=Origem | D47=Destino/resultado | E47=Preserva contexto? | F47=Altera dados? | G47=Gera externo? | H47=Critério de aceite
+A48=Ver permissões | B48=DRAWER/NAVIGATION | C48=Linha de usuário | D48=Mostra perfil e permissões efetivas | E48=SIM | F48=NÃO | G48=NÃO | H48=Consulta deve refletir backend.
+A49=Ver convite | B49=DRAWER/NAVIGATION | C49=Usuário PENDENTE | D49=Mostra estado/evidência do convite | E49=SIM | F49=NÃO | G49=NÃO | H49=Não reenviar/cancelar sem fluxo aprovado.
+A50=Ver usuários completos | B50=NAVIGATION | C50=Tabela | D50=Lista completa com filtros/contexto | E50=SIM | F50=NÃO | G50=NÃO | H50=Sem export automático.
+A51=Ver perfis | B51=NAVIGATION | C51=Gráfico/cards | D51=Matriz de perfis/permissões | E51=SIM | F51=NÃO | G51=NÃO | H51=Matriz final depende L-26.
+A52=Exportar / Ajuda | B52=NÃO EXISTE | C52=— | D52=— | E52=— | F52=NÃO | G52=NÃO | H52=Mockup aprovado não contém CTAs.
+A54=SEGURANÇA
+A55=Controle | B55=Exigência | C55=Aplicação | D55=Falha segura | E55=Auditoria | F55=Status | G55=Aceite | H55=Observação
+A56=Autorização backend | B56=Toda ação protegida valida permissão no servidor. | C56=Todos endpoints/ações | D56=NEGAR | E56=Registrar negação material quando aplicável | F56=OBRIGATÓRIO | G56=Manipular frontend não concede acesso | H56=OWASP/least privilege.
+A57=Default deny | B57=Ação sem permissão explícita é negada. | C57=profile_permission | D57=NEGAR | E57=Auditável | F57=OBRIGATÓRIO | G57=Perfil novo não ganha acesso implícito
+A58=Segredos | B58=Senha/token nunca aparecem em tabela/log/CEI. | C58=Identidade | D58=N/A | E58=Mascarar | F58=OBRIGATÓRIO | G58=Nenhum segredo exposto | H58=Provedor/autenticação exatos L-26.
+A59=Sessão/autenticação | B59=MFA, política de senha, recuperação, sessão e provedor ainda precisam contrato técnico. | C59=Identidade | D59=NEGAR em falha | E59=Auditável | F59=OPEN L-26 | G59=Não implementar por inferência | H59=Tela 17 não define esses mecanismos.
+A61=CRITÉRIOS DE ACEITE
+A62=ID | B62=Cenário | C62=Entrada | D62=Resultado esperado | E62=Risco evitado | F62=Implementação | G62=Status | H62=Observação
+A63=T-CEI17-01 | B63=Design | C63=Dados/usuários mudam | D63=Layout permanece idêntico. | E63=redesign indevido | F63=Após gate | G63=APROVADO CEI
+A64=T-CEI17-02 | B64=Leitura | C64=Usuário perfil LEITURA tenta mutação | D64=Backend nega. | E64=privilégio excessivo | F64=Após gate | G64=APROVADO CEI
+A65=T-CEI17-03 | B65=Bloqueado | C65=Conta BLOCKED tenta acessar | D65=Acesso negado; estado permanece auditável. | E65=acesso indevido | F65=Após gate | G65=APROVADO CEI
+A66=T-CEI17-04 | B66=Mudança de perfil | C66=Admin autorizado altera perfil em fluxo aprovado | D66=Antes/depois/ator/timestamp registrados. | E66=mudança silenciosa | F66=Após gate | G66=DEPENDÊNCIA L-26
+A67=T-CEI17-05 | B67=Usuário sem permissão | C67=Chamada direta ao backend | D67=Servidor responde negação independentemente da UI. | E67=bypass frontend | F67=Após gate | G67=APROVADO CEI
+A68=T-CEI17-06 | B68=Pendência | C68=Convite ainda não ativado | D68=Status PENDENTE; sem último acesso inventado. | E68=falso acesso | F68=Após gate | G68=DEPENDÊNCIA L-26
+A69=T-CEI17-07 | B69=Segredo | C69=Logs/tabela inspecionados | D69=Nenhuma senha/token/secret é exibido. | E69=vazamento | F69=Após gate | G69=APROVADO CEI
+A70=T-CEI17-08 | B70=Balanço legado | C70=Menu renderizado | D70=Rota Balanço Patrimonial não aparece. | E70=rota fora do produto | F70=Após gate | G70=APROVADO CEI | H70=Correção de conteúdo.

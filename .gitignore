@@ -1,0 +1,19 @@
+# Dependências e execução local
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.log
+*.inspect.ndjson
+~$*.xlsx
+.DS_Store
+Thumbs.db
+docs/planejamento/sources/private/

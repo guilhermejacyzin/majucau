@@ -1,0 +1,130 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"majucau.local/financial-intelligence/internal/application"
+	"majucau.local/financial-intelligence/internal/domain"
+	"majucau.local/financial-intelligence/internal/ipc"
+)
+
+const appVersion = "0.1.0-g1"
+
+// App is the deliberately small Wails boundary. It never receives or stores
+// provider secrets; privileged actions belong to the worker.
+type App struct {
+	ctx           context.Context
+	clientFactory func() (ipc.Client, error)
+}
+
+type BootstrapState struct {
+	AppVersion   string                          `json:"app_version"`
+	Worker       application.HealthResponse      `json:"worker"`
+	Integrations []application.IntegrationStatus `json:"integrations"`
+	ErrorCode    string                          `json:"error_code,omitempty"`
+	Message      string                          `json:"message,omitempty"`
+	CheckedAt    time.Time                       `json:"checked_at"`
+}
+
+func NewApp() *App {
+	return &App{clientFactory: func() (ipc.Client, error) {
+		return ipc.NewNamedPipeClient(ipc.DefaultNamedPipeConfig())
+	}}
+}
+
+func (a *App) startup(ctx context.Context) { a.ctx = ctx }
+
+// GetBootstrapState asks the local worker for live health and integration
+// status. Failure is explicit and does not synthesize financial values.
+func (a *App) GetBootstrapState() BootstrapState {
+	checkedAt := time.Now().UTC()
+	unavailable := BootstrapState{
+		AppVersion: appVersion,
+		Worker: application.HealthResponse{
+			Service:   "majucau-worker",
+			Version:   "unknown",
+			State:     application.HealthUnavailable,
+			CheckedAt: checkedAt,
+		},
+		Integrations: unavailableIntegrations(),
+		ErrorCode:    "WORKER_UNAVAILABLE",
+		Message:      "O serviço local ainda não está disponível.",
+		CheckedAt:    checkedAt,
+	}
+
+	client, err := a.clientFactory()
+	if err != nil {
+		return unavailable
+	}
+	defer client.Close()
+
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 3*time.Second)
+	defer cancel()
+
+	healthResponse, err := client.Call(ctx, ipc.Request{
+		Version:   ipc.ProtocolVersion,
+		RequestID: requestID("health"),
+		Method:    ipc.MethodHealth,
+	})
+	if err != nil || !healthResponse.OK {
+		return unavailable
+	}
+	var health application.HealthResponse
+	if err := json.Unmarshal(healthResponse.Payload, &health); err != nil {
+		unavailable.ErrorCode = "WORKER_INVALID_RESPONSE"
+		unavailable.Message = "O serviço local respondeu em formato inválido."
+		return unavailable
+	}
+
+	integrationResponse, err := client.Call(ctx, ipc.Request{
+		Version:   ipc.ProtocolVersion,
+		RequestID: requestID("integrations"),
+		Method:    ipc.MethodIntegrationStatus,
+	})
+	if err != nil || !integrationResponse.OK {
+		return BootstrapState{
+			AppVersion:   appVersion,
+			Worker:       health,
+			Integrations: unavailableIntegrations(),
+			ErrorCode:    "INTEGRATION_STATUS_UNAVAILABLE",
+			Message:      "O status das integrações não pôde ser consultado.",
+			CheckedAt:    checkedAt,
+		}
+	}
+	var integrations []application.IntegrationStatus
+	if err := json.Unmarshal(integrationResponse.Payload, &integrations); err != nil {
+		return BootstrapState{
+			AppVersion:   appVersion,
+			Worker:       health,
+			Integrations: unavailableIntegrations(),
+			ErrorCode:    "WORKER_INVALID_RESPONSE",
+			Message:      "O serviço local respondeu em formato inválido.",
+			CheckedAt:    checkedAt,
+		}
+	}
+	return BootstrapState{
+		AppVersion:   appVersion,
+		Worker:       health,
+		Integrations: integrations,
+		CheckedAt:    checkedAt,
+	}
+}
+
+func unavailableIntegrations() []application.IntegrationStatus {
+	return []application.IntegrationStatus{
+		{Provider: domain.OriginBling, Status: domain.IntegrationNotConfigured},
+		{Provider: domain.OriginNuvemshop, Status: domain.IntegrationNotConfigured},
+		{Provider: domain.OriginNuvemPago, Status: domain.IntegrationUnavailable},
+	}
+}
+
+func requestID(prefix string) string {
+	return fmt.Sprintf("%s-%d", prefix, time.Now().UTC().UnixNano())
+}

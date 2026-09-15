@@ -165,11 +165,3 @@ Builds G1 são deliberadamente não assinados. O G7 exige certificado Authentico
 ## Distribuição
 
 O repositório é privado. Não redistribua código, documentação, dados, fixtures, credenciais ou builds sem autorização da responsável pelo produto. Licenças de terceiros e SBOM serão gerados e revisados antes do gate de produção.
-
-<!-- MAJUCAU_PLANEJAMENTO_CONVERSA -->
-## Planejamento consolidado desta conversa
-
-O material preparado nesta conversa está em [docs/planejamento](docs/planejamento/README.md). A [visão geral da entrega](docs/planejamento/VISAO_GERAL.md) apresenta o backlog v2, com 127 tarefas, as decisões vigentes desta consolidação e a planilha de evolução. As versões v0/v1 foram preservadas como histórico.
-
-Esta inclusão é documental. O progresso registrado nesse backlog corresponde às evidências produzidas nesta conversa: três levantamentos concluídos e desenvolvimento em 0%. Não é uma auditoria das afirmações ou implementações citadas nas seções anteriores deste README.
-<!-- /MAJUCAU_PLANEJAMENTO_CONVERSA -->

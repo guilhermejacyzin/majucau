@@ -28,6 +28,12 @@ do preflight. O comando pode retornar `BLOCKED` e ainda assim produzir o ZIP;
 o bundle contém apenas `diagnostic.json` e `README.txt`, sem caminhos completos,
 segredos, tokens, DSNs ou payloads.
 
+O pacote também fornece `JournalStore` para o `Install\\state.json`, com
+escrita temporária, `fsync`, rename atômico, fases versionadas e validação de
+hash/estado. `AcquireInstallLock` usa mutex nomeado no Windows (`Global\\MajucauInstaller`)
+para impedir duas instalações simultâneas; a UI do instalador ainda precisa
+integrar essas primitivas ao fluxo NSIS antes do gate G7.
+
 Os códigos de bloqueio estáveis incluem `OS_UNSUPPORTED`,
 `INSTALL_NOT_ELEVATED`, `REBOOT_PENDING`, `DISK_SPACE_LOW`,
 `PATH_UNAVAILABLE`, `PATH_UNSAFE_LOCATION`, `DB_PORT_CONFLICT` e

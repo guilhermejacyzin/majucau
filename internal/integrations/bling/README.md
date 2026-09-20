@@ -24,6 +24,12 @@ homologação funcional dos campos. A homologação BK-040 ainda precisa registr
 endpoint, campo, significado, ausência, limites e uma amostra sanitizada da
 conta autorizada antes da normalização contábil.
 
+O `ReceivablesAPISyncService` já fecha a etapa seguinte de infraestrutura: lê
+as páginas e grava cada página como evidência RAW append-only em uma transação
+PostgreSQL, com hash, versão corrente, deduplicação e lote de sincronização.
+Ele não transforma a página em recebimento nem em indicador enquanto o ID e os
+campos financeiros do payload real não estiverem homologados.
+
 ## Importador CSV de apoio — Contas Recebidas
 
 O importador usa o relatório do Bling como uma entrada local controlada para

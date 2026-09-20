@@ -15,6 +15,8 @@ Commit: `953137b feat: add read-only Bling API OAuth adapter`
 - OAuth Authorization Code e refresh token com Basic Auth no worker;
 - testes `httptest` sem credenciais reais, incluindo verificação de que token,
   client secret e corpo de erro não aparecem nas mensagens;
+- sincronização transacional das páginas para `raw_records`, com hash,
+  deduplicação e versão corrente, sem normalização prematura;
 - documentação atualizada para separar API oficial de CSV de apoio.
 
 ## Limite deliberado

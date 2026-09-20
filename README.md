@@ -145,6 +145,8 @@ Os requisitos e as evidências esperadas estão em [REQUIREMENTS-TRACEABILITY.md
 
 O destino é um instalador x64 simples: a usuária instala, abre pelo atalho e começa o first-run sem terminal. O pacote final deverá incluir UI, worker, PostgreSQL dedicado, migrations e WebView2 quando necessário; criar contas/ACLs; sobreviver a reboot; preservar dados em upgrade/uninstall; e oferecer backup/restore testado.
 
+O `installer-helper.exe` também oferece `diagnostics --output CAMINHO\diagnostico.zip`, que exporta somente o contrato de preflight e instruções sanitizadas. O comando pode retornar `BLOCKED` e ainda gerar o diagnóstico; ele não coleta segredos, tokens, DSNs, payloads ou caminhos completos.
+
 O fluxo será defensivo para máquinas de terceiros: preflight antes de alterar o sistema, operações idempotentes, journal de fases, repair/retomada, rollback seguro, proteção contra instalações concorrentes e diagnóstico sanitizado. Cenários desconhecidos devem bloquear sem corromper o estado e fornecer um código acionável; não existe opção genérica para ignorar falhas críticas.
 
 Builds G1 são deliberadamente não assinados. O G7 exige certificado Authenticode, verificação de hash/assinatura e smoke tests em Windows 10 e 11 limpos.

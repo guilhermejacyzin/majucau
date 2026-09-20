@@ -22,6 +22,12 @@ Os códigos de processo são estáveis:
 * `2` — `BLOCKED`: a máquina não atende um ou mais requisitos recuperáveis;
 * `3` — `INTERNAL_ERROR`: argumento inválido ou probe não configurado/falhou.
 
+Para exportar diagnóstico sanitizado, use `installer-helper diagnostics
+--output C:\\Temp\\majucau-diagnostic.zip` com os mesmos parâmetros opcionais
+do preflight. O comando pode retornar `BLOCKED` e ainda assim produzir o ZIP;
+o bundle contém apenas `diagnostic.json` e `README.txt`, sem caminhos completos,
+segredos, tokens, DSNs ou payloads.
+
 Os códigos de bloqueio estáveis incluem `OS_UNSUPPORTED`,
 `INSTALL_NOT_ELEVATED`, `REBOOT_PENDING`, `DISK_SPACE_LOW`,
 `PATH_UNAVAILABLE`, `PATH_UNSAFE_LOCATION`, `DB_PORT_CONFLICT` e

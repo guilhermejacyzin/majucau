@@ -11,9 +11,10 @@ O requisito de lidar defensivamente com máquinas Windows de terceiros foi regis
 - testes de segurança de localização do preflight (caminho local aceito; UNC/sincronizado bloqueado): aprovados;
 - suíte completa `scripts/verify.ps1`: aprovada;
 - `govulncheck`: nenhuma vulnerabilidade encontrada;
-- frontend: lint, typecheck, 12 testes, build e `npm audit` aprovados;
+- frontend: lint, typecheck, 19 testes, build e `npm audit` aprovados;
 - build Wails, worker e installer-helper Windows: aprovado;
 - execução real `installer-helper.exe preflight`: contrato JSON válido, exit code `2`/`BLOCKED`;
+- execução real `installer-helper.exe diagnostics`: produziu ZIP sanitizado mesmo com preflight `BLOCKED`, contendo somente `diagnostic.json` e `README.txt`;
 - execução real `majucau-worker.exe --console`: health `OK`;
 - execução real `majucau.exe`: processo permaneceu ativo e abriu a janela `Majucau Financial Intelligence`.
 
@@ -52,4 +53,4 @@ Os executáveis ficam ignorados pelo Git e precisam ser reconstruídos e assinad
 7. provar backup/restore real e reconexão DPAPI em outra máquina;
 8. assinar e verificar todos os binários e o instalador.
 
-Até esses itens passarem, o helper é uma fundação de detecção, não uma alegação de instalação pronta para terceiros.
+Até esses itens passarem, o helper é uma fundação de detecção/diagnóstico, não uma alegação de instalação pronta para terceiros.

@@ -19,11 +19,14 @@ A tela de integrações agora abre um painel explícito com tipo de data (vencim
 - cursor não avança quando o lote falha ou é cancelado;
 - página repetida usa hash e não cria nova versão quando não houve mudança;
 - falha em uma fonte não apaga o último RAW válido.
+- respostas 408, 429 e 5xx, além de falhas transitórias de transporte, usam até três tentativas com backoff exponencial e jitter; `Retry-After` é respeitado com teto de 30 segundos;
+- 401/403, schema incompatível e resposta inválida não são repetidos e chegam à UI por códigos sanitizados.
 
 ## Evidência automatizada
 
 - teste de rejeição de filtro vazio;
 - teste de passagem de filtros de recebimento/pagamento e contagens sanitizadas;
+- testes de retry/backoff, `Retry-After`, limite de tentativas e classificação de erros sanitizados;
 - teste de aceitação do método no protocolo versionado;
 - `go test ./...` e `go vet ./...`: aprovados;
 - frontend lint/typecheck/test (19) e build: aprovados;

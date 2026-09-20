@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -24,6 +25,10 @@ const (
 	BlingMaxPageSize = 100
 
 	defaultBlingResponseLimit int64 = 4 << 20 // 4 MiB; protects the worker from an unexpected payload.
+	defaultBlingMaxAttempts         = 3
+	defaultBlingRetryBase           = 250 * time.Millisecond
+	defaultBlingRetryJitter         = 100 * time.Millisecond
+	defaultBlingMaxRetryAfter       = 30 * time.Second
 )
 
 var (
@@ -80,6 +85,9 @@ type BlingAPIClient struct {
 	httpClient       HTTPDoer
 	accessToken      string
 	maxResponseBytes int64
+	maxAttempts      int
+	wait             func(context.Context, time.Duration) error
+	random           func() float64
 }
 
 // NewBlingAPIClient builds a read-only Bling v3 client. The production URL is
@@ -104,6 +112,9 @@ func NewBlingAPIClient(httpClient HTTPDoer, rawBaseURL, accessToken string) (*Bl
 		httpClient:       httpClient,
 		accessToken:      accessToken,
 		maxResponseBytes: defaultBlingResponseLimit,
+		maxAttempts:      defaultBlingMaxAttempts,
+		wait:             waitBlingRetry,
+		random:           rand.Float64,
 	}, nil
 }
 
@@ -214,6 +225,35 @@ func (c *BlingAPIClient) TestConnection(ctx context.Context) (BlingConnectionPro
 }
 
 func (c *BlingAPIClient) doFinancialResourceRequest(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+	attempts := c.maxAttempts
+	if attempts < 1 {
+		attempts = 1
+	}
+	for attempt := 1; attempt <= attempts; attempt++ {
+		page, err := c.doFinancialResourceAttempt(req, filter)
+		if err == nil {
+			return page, nil
+		}
+		if attempt == attempts || !retryableBlingError(err) {
+			return BlingReceivablesPage{}, err
+		}
+		var apiErr *BlingAPIError
+		var retryAfter time.Duration
+		if errors.As(err, &apiErr) {
+			retryAfter = apiErr.RetryAfter
+		}
+		wait := c.wait
+		if wait == nil {
+			wait = waitBlingRetry
+		}
+		if err := wait(req.Context(), c.retryDelay(attempt, retryAfter)); err != nil {
+			return BlingReceivablesPage{}, err
+		}
+	}
+	return BlingReceivablesPage{}, ErrBlingAPIUnavailable
+}
+
+func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		if req.Context().Err() != nil {
@@ -260,6 +300,49 @@ func (c *BlingAPIClient) doFinancialResourceRequest(req *http.Request, filter Re
 		}
 	}
 	return page, nil
+}
+
+func retryableBlingError(err error) bool {
+	var apiErr *BlingAPIError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == http.StatusRequestTimeout || apiErr.StatusCode == http.StatusTooManyRequests || apiErr.StatusCode >= http.StatusInternalServerError
+	}
+	return errors.Is(err, ErrBlingAPIUnavailable)
+}
+
+func (c *BlingAPIClient) retryDelay(attempt int, retryAfter time.Duration) time.Duration {
+	if retryAfter > 0 {
+		if retryAfter > defaultBlingMaxRetryAfter {
+			return defaultBlingMaxRetryAfter
+		}
+		return retryAfter
+	}
+	delay := defaultBlingRetryBase
+	for step := 1; step < attempt; step++ {
+		delay *= 2
+	}
+	jitter := 0.5
+	if c.random != nil {
+		jitter = c.random()
+	}
+	if jitter < 0 {
+		jitter = 0
+	}
+	if jitter > 1 {
+		jitter = 1
+	}
+	return delay + time.Duration(jitter*float64(defaultBlingRetryJitter))
+}
+
+func waitBlingRetry(ctx context.Context, delay time.Duration) error {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func parseBlingURL(raw string) (*url.URL, error) {

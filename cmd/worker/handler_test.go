@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -134,5 +135,28 @@ func TestWorkerSyncRequiresExplicitFilterAndReturnsCounts(t *testing.T) {
 	}
 	if fake.filter.ReceivedDateFrom != "2026-09-01" || fake.filter.PaymentDateTo != "2026-09-30" || !strings.Contains(string(response.Payload), `"records_read":2`) {
 		t.Fatalf("filter/counts not preserved: filter=%+v payload=%s", fake.filter, response.Payload)
+	}
+}
+
+func TestBlingSyncErrorClassificationIsSanitized(t *testing.T) {
+	tests := []struct {
+		err  error
+		code string
+	}{
+		{err: bling.ErrBlingAPIUnauthorized, code: "BLING_API_UNAUTHORIZED"},
+		{err: bling.ErrBlingAPIRateLimited, code: "BLING_API_RATE_LIMITED"},
+		{err: bling.ErrBlingAPIUnavailable, code: "BLING_API_UNAVAILABLE"},
+		{err: bling.ErrBlingAPISchemaMismatch, code: "BLING_SCHEMA_MISMATCH"},
+		{err: bling.ErrBlingAPIInvalidResponse, code: "BLING_INVALID_RESPONSE"},
+	}
+	for _, test := range tests {
+		t.Run(test.code, func(t *testing.T) {
+			if got := blingSyncErrorCode(test.err); got != test.code {
+				t.Fatalf("code = %q, want %q", got, test.code)
+			}
+			if strings.Contains(blingSyncErrorMessage(test.err), "token") || errors.Is(test.err, context.Canceled) {
+				t.Fatal("sanitized message leaked implementation detail")
+			}
+		})
 	}
 }

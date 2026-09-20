@@ -116,6 +116,16 @@ func blingSyncErrorCode(err error) string {
 		return "BLING_CONNECTION_NOT_CONFIGURED"
 	case errors.Is(err, bling.ErrBlingAPISyncPageLimit):
 		return "BLING_SYNC_PAGE_LIMIT"
+	case errors.Is(err, bling.ErrBlingAPIUnauthorized):
+		return "BLING_API_UNAUTHORIZED"
+	case errors.Is(err, bling.ErrBlingAPIRateLimited):
+		return "BLING_API_RATE_LIMITED"
+	case errors.Is(err, bling.ErrBlingAPIUnavailable):
+		return "BLING_API_UNAVAILABLE"
+	case errors.Is(err, bling.ErrBlingAPISchemaMismatch):
+		return "BLING_SCHEMA_MISMATCH"
+	case errors.Is(err, bling.ErrBlingAPIInvalidResponse):
+		return "BLING_INVALID_RESPONSE"
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return "BLING_SYNC_CANCELLED"
 	default:
@@ -131,6 +141,16 @@ func blingSyncErrorMessage(err error) string {
 		return "Configure e autorize o Bling antes de sincronizar."
 	case "BLING_SYNC_PAGE_LIMIT":
 		return "A sincronização atingiu o limite de segurança de páginas; reduza a janela."
+	case "BLING_API_UNAUTHORIZED":
+		return "A autorização do Bling expirou ou foi revogada; conecte novamente."
+	case "BLING_API_RATE_LIMITED":
+		return "O Bling limitou temporariamente as consultas; aguarde e tente novamente."
+	case "BLING_API_UNAVAILABLE":
+		return "O Bling não respondeu após as tentativas seguras; o último dado válido foi preservado."
+	case "BLING_SCHEMA_MISMATCH":
+		return "O formato retornado pelo Bling não coincide com o contrato homologado; nenhum dado novo foi confirmado."
+	case "BLING_INVALID_RESPONSE":
+		return "A resposta do Bling não pôde ser validada; o último dado válido foi preservado."
 	case "BLING_SYNC_CANCELLED":
 		return "A sincronização foi cancelada antes do commit do lote."
 	default:

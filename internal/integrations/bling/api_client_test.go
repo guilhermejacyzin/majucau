@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
@@ -99,6 +100,7 @@ func TestListReceivablesClassifiesSafeTransportErrors(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			client.wait = func(context.Context, time.Duration) error { return nil }
 			_, err = client.ListReceivables(context.Background(), ReceivablesFilter{})
 			if !errors.Is(err, test.want) {
 				t.Fatalf("error = %v, errors.Is(%v) is false", err, test.want)
@@ -113,6 +115,55 @@ func TestListReceivablesClassifiesSafeTransportErrors(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestListReceivablesRetriesTransientFailuresWithJitter(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts < 3 {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		_, _ = w.Write([]byte(`{"data":[{"id":321}],"pagination":{"page":1,"limit":1,"total":1}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var waits []time.Duration
+	client.wait = func(_ context.Context, delay time.Duration) error { waits = append(waits, delay); return nil }
+	client.random = func() float64 { return 0.5 }
+	page, err := client.ListReceivables(context.Background(), ReceivablesFilter{Limit: 1})
+	if err != nil || len(page.Records) != 1 {
+		t.Fatalf("page = %+v, err = %v", page, err)
+	}
+	if attempts != 3 || len(waits) != 2 || waits[0] != 300*time.Millisecond || waits[1] != 550*time.Millisecond {
+		t.Fatalf("attempts=%d waits=%v", attempts, waits)
+	}
+}
+
+func TestListReceivablesStopsAfterRetryBudget(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.Header().Set("Retry-After", "1")
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.wait = func(context.Context, time.Duration) error { return nil }
+	_, err = client.ListReceivables(context.Background(), ReceivablesFilter{})
+	if !errors.Is(err, ErrBlingAPIRateLimited) {
+		t.Fatalf("error = %v", err)
+	}
+	if attempts != defaultBlingMaxAttempts {
+		t.Fatalf("attempts = %d, want %d", attempts, defaultBlingMaxAttempts)
 	}
 }
 

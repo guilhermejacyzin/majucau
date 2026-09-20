@@ -1,5 +1,111 @@
 export namespace application {
 	
+	export class BlingReceiptImportFile {
+	    name: string;
+	    sha256: string;
+	    receipt_count: number;
+	    error_count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingReceiptImportFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.sha256 = source["sha256"];
+	        this.receipt_count = source["receipt_count"];
+	        this.error_count = source["error_count"];
+	    }
+	}
+	export class BlingReceiptImportIssue {
+	    file: string;
+	    line: number;
+	    code: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingReceiptImportIssue(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.file = source["file"];
+	        this.line = source["line"];
+	        this.code = source["code"];
+	        this.message = source["message"];
+	    }
+	}
+	export class BlingReceiptImportPreview {
+	    files: BlingReceiptImportFile[];
+	    receipt_count: number;
+	    error_count: number;
+	    ignored_count: number;
+	    issues?: BlingReceiptImportIssue[];
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingReceiptImportPreview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.files = this.convertValues(source["files"], BlingReceiptImportFile);
+	        this.receipt_count = source["receipt_count"];
+	        this.error_count = source["error_count"];
+	        this.ignored_count = source["ignored_count"];
+	        this.issues = this.convertValues(source["issues"], BlingReceiptImportIssue);
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class BlingReceiptImportResult {
+	    batch_id?: string;
+	    status?: string;
+	    records_read: number;
+	    records_created: number;
+	    records_updated: number;
+	    records_failed: number;
+	    ignored_count: number;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingReceiptImportResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.batch_id = source["batch_id"];
+	        this.status = source["status"];
+	        this.records_read = source["records_read"];
+	        this.records_created = source["records_created"];
+	        this.records_updated = source["records_updated"];
+	        this.records_failed = source["records_failed"];
+	        this.ignored_count = source["ignored_count"];
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	}
 	export class DependencyHealth {
 	    name: string;
 	    state: string;

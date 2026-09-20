@@ -5,3 +5,11 @@
 export function GetBootstrapState() {
   return window['go']['main']['App']['GetBootstrapState']();
 }
+
+export function ImportBlingReceipts(arg1) {
+  return window['go']['main']['App']['ImportBlingReceipts'](arg1);
+}
+
+export function PreviewBlingReceipts(arg1) {
+  return window['go']['main']['App']['PreviewBlingReceipts'](arg1);
+}

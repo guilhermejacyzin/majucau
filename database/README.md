@@ -5,7 +5,7 @@ This directory is the SQL-first persistence boundary for Majucau Financial Intel
 ## Layout
 
 - `migrations/000001_init.up.sql`: initial forward-only schema.
-- `queries/`: SQL consumed by `sqlc` for health, integration status/revocation and RAW ingestion.
+- `queries/`: SQL consumed by `sqlc` for health, integration status/revocation, RAW ingestion and idempotent receipt batches.
 - `privileges/runtime.sql`: least-privilege grants applied after migrations.
 - `sqlc.yaml`: PostgreSQL + `pgx/v5` generation configuration.
 - `gen/`: generated Go code (created by `sqlc generate`; do not edit manually).

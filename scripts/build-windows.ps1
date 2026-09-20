@@ -5,6 +5,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$artifactRoot = Join-Path $projectRoot 'artifacts'
+$env:GOCACHE = Join-Path $artifactRoot 'cache\go-build'
+$env:GOMODCACHE = Join-Path $artifactRoot 'cache\go-mod'
+$env:npm_config_cache = Join-Path $artifactRoot 'cache\npm'
 $wailsCommand = if ($env:MAJUCAU_WAILS) { $env:MAJUCAU_WAILS } else { (Get-Command wails -ErrorAction Stop).Source }
 $goCommand = if ($env:MAJUCAU_GO) { $env:MAJUCAU_GO } else { (Get-Command go -ErrorAction Stop).Source }
 $env:Path = "$(Split-Path -Parent $goCommand);$env:Path"

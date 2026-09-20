@@ -3,6 +3,10 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$artifactRoot = Join-Path $projectRoot 'artifacts'
+$env:GOCACHE = Join-Path $artifactRoot 'cache\go-build'
+$env:GOMODCACHE = Join-Path $artifactRoot 'cache\go-mod'
+$env:npm_config_cache = Join-Path $artifactRoot 'cache\npm'
 $goCommand = if ($env:MAJUCAU_GO) { $env:MAJUCAU_GO } else { (Get-Command go -ErrorAction Stop).Source }
 
 function Invoke-NativeChecked {

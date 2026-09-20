@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [switch]$CleanSourceOutputs
+    [switch]$KeepSourceOutputs
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,7 +56,7 @@ Get-ChildItem -LiteralPath $artifactRoot -Recurse -File |
     ForEach-Object { $lines += "$($_.FullName.Substring($artifactRoot.Length + 1))  $($_.Length) bytes" }
 Set-Content -LiteralPath $manifest -Value $lines -Encoding utf8
 
-if ($CleanSourceOutputs) {
+if (-not $KeepSourceOutputs) {
     foreach ($relativePath in @('build\bin', 'frontend\dist', 'tmp')) {
         $sourcePath = Join-Path $projectRoot $relativePath
         if (Test-Path -LiteralPath $sourcePath) {

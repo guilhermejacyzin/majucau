@@ -24,7 +24,8 @@ Os códigos de processo são estáveis:
 
 Os códigos de bloqueio estáveis incluem `OS_UNSUPPORTED`,
 `INSTALL_NOT_ELEVATED`, `REBOOT_PENDING`, `DISK_SPACE_LOW`,
-`PATH_UNAVAILABLE`, `DB_PORT_CONFLICT` e `WEBVIEW2_MISSING`.
+`PATH_UNAVAILABLE`, `PATH_UNSAFE_LOCATION`, `DB_PORT_CONFLICT` e
+`WEBVIEW2_MISSING`.
 
 O piso do fresh install é 4 GiB livres. Upgrade e restore devem substituir
 esse piso por uma necessidade calculada que inclua dados atuais, backup,
@@ -33,8 +34,11 @@ temporários e conjunto completo de rollback.
 ## Probes
 
 No Windows, os probes consultam arquitetura/versão, token elevado, chaves de
-reboot pendente, espaço livre no volume, estado dos diretórios, bind TCP local
-da porta preferida e registro do WebView2 Evergreen. A baseline de sistema é
+reboot pendente, espaço livre no volume, estado e segurança dos diretórios,
+bind TCP local da porta preferida e registro do WebView2 Evergreen. Caminhos
+UNC/rede, reparse points e marcadores de diretórios sincronizados (OneDrive,
+Dropbox e SharePoint) são bloqueados sem que o caminho completo apareça no
+JSON. A baseline de sistema é
 Windows 10 x64 21H2 (build 19044) ou posterior; Windows 11 também reporta
 major version 10 e builds acima dessa baseline. No Windows, o teste da
 porta abre e fecha um listener loopback; isso não cria regra de firewall nem

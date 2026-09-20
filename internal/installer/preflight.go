@@ -70,15 +70,22 @@ func Evaluate(config Config, probes Probes) Result {
 		check := PathCheck{
 			Label: spec.Label, Exists: observation.Exists,
 			IsDirectory: observation.IsDirectory, ParentExists: observation.ParentExists,
-			Accessible: observation.Accessible,
+			Accessible: observation.Accessible, LocationSafe: observation.LocationSafe,
 		}
 		// A destination may not exist yet, but it must be creatable in an
 		// existing accessible parent. Existing destinations must be directories.
+		// Database, secrets and journals must not live on network, removable or
+		// synchronized/reparse locations; the probe reduces those checks to the
+		// single sanitized LocationSafe bit.
 		check.Passed = observation.ParentExists && observation.Accessible &&
-			(!observation.Exists || observation.IsDirectory)
+			observation.LocationSafe && (!observation.Exists || observation.IsDirectory)
 		result.Checks.Paths = append(result.Checks.Paths, check)
 		if !check.Passed {
-			result.Issues = append(result.Issues, Issue{Code: "PATH_UNAVAILABLE", Check: spec.Label})
+			code := "PATH_UNAVAILABLE"
+			if !observation.LocationSafe {
+				code = "PATH_UNSAFE_LOCATION"
+			}
+			result.Issues = append(result.Issues, Issue{Code: code, Check: spec.Label})
 		}
 	}
 

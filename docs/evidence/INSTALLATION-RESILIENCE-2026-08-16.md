@@ -2,12 +2,13 @@
 
 ## Veredito
 
-O requisito de lidar defensivamente com máquinas Windows de terceiros foi registrado como `OPS-04` e recebeu uma primeira implementação verificável: matriz de 30 cenários e helper read-only de preflight. O estado permanece `PARTIAL`; esta evidência não substitui instalador NSIS integrado, elevação/UAC real, VMs limpas, repair, upgrade, rollback, backup/restore ou assinatura.
+O requisito de lidar defensivamente com máquinas Windows de terceiros foi registrado como `OPS-04` e recebeu uma primeira implementação verificável: matriz de 30 cenários e helper read-only de preflight. O preflight agora também bloqueia caminhos UNC/rede, reparse points e diretórios sincronizados por marcadores de OneDrive, Dropbox ou SharePoint, sem devolver o caminho no JSON. O estado permanece `PARTIAL`; esta evidência não substitui instalador NSIS integrado, elevação/UAC real, VMs limpas, repair, upgrade, rollback, backup/restore ou assinatura.
 
 ## Validações executadas
 
 - `go test ./internal/installer ./cmd/installer-helper`: aprovado;
 - `go vet ./internal/installer ./cmd/installer-helper`: aprovado;
+- testes de segurança de localização do preflight (caminho local aceito; UNC/sincronizado bloqueado): aprovados;
 - suíte completa `scripts/verify.ps1`: aprovada;
 - `govulncheck`: nenhuma vulnerabilidade encontrada;
 - frontend: lint, typecheck, 12 testes, build e `npm audit` aprovados;

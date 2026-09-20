@@ -16,7 +16,7 @@ func passingProbes() Probes {
 		Reboot:   func() (bool, error) { return false, nil },
 		DiskFree: func(string) (uint64, error) { return 2 << 30, nil },
 		Path: func(string) (PathObservation, error) {
-			return PathObservation{Exists: false, ParentExists: true, Accessible: true}, nil
+			return PathObservation{Exists: false, ParentExists: true, Accessible: true, LocationSafe: true}, nil
 		},
 		Port: func(uint16) (bool, error) { return true, nil },
 		WebView2: func() (WebViewObservation, error) {
@@ -61,9 +61,14 @@ func TestEvaluateBlockedBoundaries(t *testing.T) {
 		{"disk-boundary", func(p *Probes) { p.DiskFree = func(string) (uint64, error) { return (1 << 30) - 1, nil } }, "DISK_SPACE_LOW"},
 		{"path-file", func(p *Probes) {
 			p.Path = func(string) (PathObservation, error) {
-				return PathObservation{Exists: true, IsDirectory: false, ParentExists: true, Accessible: true}, nil
+				return PathObservation{Exists: true, IsDirectory: false, ParentExists: true, Accessible: true, LocationSafe: true}, nil
 			}
 		}, "PATH_UNAVAILABLE"},
+		{"unsafe-location", func(p *Probes) {
+			p.Path = func(string) (PathObservation, error) {
+				return PathObservation{ParentExists: true, Accessible: true, LocationSafe: false}, nil
+			}
+		}, "PATH_UNSAFE_LOCATION"},
 		{"port", func(p *Probes) { p.Port = func(uint16) (bool, error) { return false, nil } }, "DB_PORT_CONFLICT"},
 		{"webview", func(p *Probes) { p.WebView2 = func() (WebViewObservation, error) { return WebViewObservation{}, nil } }, "WEBVIEW2_MISSING"},
 	}

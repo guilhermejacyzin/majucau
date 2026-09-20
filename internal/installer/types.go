@@ -47,6 +47,7 @@ type PathObservation struct {
 	IsDirectory  bool
 	ParentExists bool
 	Accessible   bool
+	LocationSafe bool
 }
 
 type WebViewObservation struct {
@@ -108,6 +109,7 @@ type PathCheck struct {
 	IsDirectory  bool   `json:"is_directory"`
 	ParentExists bool   `json:"parent_exists"`
 	Accessible   bool   `json:"accessible"`
+	LocationSafe bool   `json:"location_safe"`
 	Passed       bool   `json:"passed"`
 }
 

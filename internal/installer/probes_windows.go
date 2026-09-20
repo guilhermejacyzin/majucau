@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -122,6 +123,7 @@ func probePath(path string) (PathObservation, error) {
 		return PathObservation{}, nil
 	}
 	clean := filepath.Clean(path)
+	locationSafe := safeLocation(clean)
 	parent := existingAncestor(filepath.Dir(clean))
 	parentInfo, parentErr := os.Stat(parent)
 	parentExists := parentErr == nil && parentInfo.IsDir()
@@ -138,12 +140,56 @@ func probePath(path string) (PathObservation, error) {
 		if handle != nil {
 			accessible = handle.Close() == nil
 		}
-		return PathObservation{Exists: true, IsDirectory: info.IsDir(), ParentExists: parentExists, Accessible: accessible}, nil
+		return PathObservation{Exists: true, IsDirectory: info.IsDir(), ParentExists: parentExists, Accessible: accessible, LocationSafe: locationSafe}, nil
 	}
 	if os.IsNotExist(err) {
-		return PathObservation{ParentExists: parentExists, Accessible: parentAccessible}, nil
+		return PathObservation{ParentExists: parentExists, Accessible: parentAccessible, LocationSafe: locationSafe}, nil
 	}
-	return PathObservation{Exists: true, ParentExists: parentExists, Accessible: false}, nil
+	return PathObservation{Exists: true, ParentExists: parentExists, Accessible: false, LocationSafe: locationSafe}, nil
+}
+
+func safeLocation(path string) bool {
+	clean := filepath.Clean(path)
+	if !filepath.IsAbs(clean) || strings.HasPrefix(clean, `\\`) || strings.HasPrefix(clean, `//`) {
+		return false
+	}
+	volume := filepath.VolumeName(clean)
+	if volume == "" {
+		return false
+	}
+	root, err := windows.UTF16PtrFromString(volume + `\`)
+	if err != nil {
+		return false
+	}
+	switch windows.GetDriveType(root) {
+	case windows.DRIVE_REMOVABLE, windows.DRIVE_REMOTE, windows.DRIVE_CDROM, windows.DRIVE_RAMDISK:
+		return false
+	case windows.DRIVE_UNKNOWN:
+		return false
+	}
+	normalized := strings.ToLower(strings.ReplaceAll(clean, "/", `\`))
+	for _, segment := range strings.Split(normalized, `\`) {
+		segment = strings.TrimSpace(segment)
+		if segment == "dropbox" || strings.HasPrefix(segment, "onedrive") || strings.HasPrefix(segment, "sharepoint") {
+			return false
+		}
+	}
+	for candidate := clean; ; candidate = filepath.Dir(candidate) {
+		info, err := os.Lstat(candidate)
+		if err == nil {
+			if info.Mode()&os.ModeSymlink != 0 {
+				return false
+			}
+			if data, ok := info.Sys().(*windows.Win32FileAttributeData); ok && data.FileAttributes&windows.FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+				return false
+			}
+		}
+		parent := filepath.Dir(candidate)
+		if parent == candidate {
+			break
+		}
+	}
+	return true
 }
 
 func probePort(port uint16) (bool, error) {

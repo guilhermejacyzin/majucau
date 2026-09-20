@@ -14,7 +14,7 @@ func DefaultProbes() Probes {
 		Admin:    func() (bool, error) { return false, nil },
 		Reboot:   func() (bool, error) { return false, nil },
 		DiskFree: func(string) (uint64, error) { return 0, nil },
-		Path:     func(string) (PathObservation, error) { return PathObservation{}, nil },
+		Path:     func(string) (PathObservation, error) { return PathObservation{LocationSafe: false}, nil },
 		Port:     func(uint16) (bool, error) { return false, nil },
 		WebView2: func() (WebViewObservation, error) { return WebViewObservation{}, nil },
 	}

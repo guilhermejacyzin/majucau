@@ -16,6 +16,18 @@
 .status-connected { color: #377b62; }
 .status-connected .status-dot { background: #5eb790; }
 .integration-disabled-note { margin: 16px 0 0; color: #9b7d38; font-size: 9px; }
+.folder-import-panel { margin-top: 12px; padding: 15px 16px; background: #f5faf8; border: 1px solid #d8ebe5; border-radius: 8px; }
+.folder-import-heading { display: flex; align-items: center; gap: 7px; color: #416963; font-size: 11px; }
+.folder-import-panel > p { margin: 5px 0 12px; color: #78918c; font-size: 10px; }
+.folder-import-controls { display: flex; gap: 8px; align-items: center; }
+.folder-import-controls > .tooltip:first-child { flex: 1; }
+.folder-import-controls input { width: 100%; height: 34px; border: 1px solid #dbe5e2; border-radius: 6px; padding: 0 10px; color: var(--ink); background: #fff; font-size: 11px; outline: none; }
+.folder-import-controls input:focus { border-color: #65a99c; box-shadow: 0 0 0 3px #dff0eb; }
+.folder-import-result,.folder-import-error { display: flex; flex-direction: column; gap: 4px; margin-top: 11px; font-size: 10px; color: #66817b; }
+.folder-import-result strong { color: #357465; }
+.folder-import-error { color: #9a5d50; }
+.folder-import-error strong { color: #b15e4e; }
+.folder-import-result ul { margin: 4px 0 0; padding-left: 17px; color: #94766d; line-height: 1.45; }
 .button:disabled { cursor: not-allowed; opacity: .52; filter: saturate(.45); }
 .notice-error { background: #fbeceb; border: 1px solid #edc8c3; margin-bottom: 20px; }
 .notice-error .notice-icon { background: #e7aca1; color: #7e332b; }

@@ -34,6 +34,32 @@ type IntegrationStatus struct {
 	LastAttemptAt *time.Time               `json:"last_attempt_at,omitempty"`
 	ErrorCode     string                   `json:"error_code,omitempty"`
 }
+
+type BlingReceiptImportFile struct {
+	Name         string `json:"name"`
+	SHA256       string `json:"sha256"`
+	ReceiptCount int    `json:"receipt_count"`
+	ErrorCount   int    `json:"error_count"`
+}
+
+type BlingReceiptImportIssue struct {
+	File    string `json:"file"`
+	Line    int    `json:"line"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// BlingReceiptImportPreview is deliberately summary-only: customer names,
+// histories and financial rows never cross the worker/UI boundary in preview.
+type BlingReceiptImportPreview struct {
+	Files        []BlingReceiptImportFile  `json:"files"`
+	ReceiptCount int                       `json:"receipt_count"`
+	ErrorCount   int                       `json:"error_count"`
+	IgnoredCount int                       `json:"ignored_count"`
+	Issues       []BlingReceiptImportIssue `json:"issues,omitempty"`
+	ErrorCode    string                    `json:"error_code,omitempty"`
+	Message      string                    `json:"message,omitempty"`
+}
 type HealthChecker interface {
 	CheckHealth(context.Context) HealthResponse
 }

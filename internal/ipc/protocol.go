@@ -20,8 +20,9 @@ var (
 type Method string
 
 const (
-	MethodHealth            Method = "health.get"
-	MethodIntegrationStatus Method = "integration.status"
+	MethodHealth               Method = "health.get"
+	MethodIntegrationStatus    Method = "integration.status"
+	MethodBlingReceiptsPreview Method = "bling.receipts.preview"
 )
 
 type Request struct {
@@ -49,7 +50,7 @@ func (r Request) Validate() error {
 	if strings.TrimSpace(r.RequestID) == "" || len(r.RequestID) > 128 {
 		return ErrInvalidRequest
 	}
-	if r.Method != MethodHealth && r.Method != MethodIntegrationStatus {
+	if r.Method != MethodHealth && r.Method != MethodIntegrationStatus && r.Method != MethodBlingReceiptsPreview {
 		return fmt.Errorf("%w: %s", ErrUnsupportedMethod, r.Method)
 	}
 	if len(r.Payload) > MaxMessageSize {

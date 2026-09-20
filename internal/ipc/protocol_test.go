@@ -18,4 +18,7 @@ func TestProtocolRoundTripAndValidation(t *testing.T) {
 	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"unknown"}`)); err == nil {
 		t.Fatal("unknown method must fail")
 	}
+	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"bling.receipts.preview","payload":{"folder":"C:\\imports"}}`)); err != nil {
+		t.Fatalf("Bling preview method must be accepted: %v", err)
+	}
 }

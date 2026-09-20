@@ -114,6 +114,8 @@ type ReceivablesFilter struct {
 	DueDateTo        string
 	ReceivedDateFrom string
 	ReceivedDateTo   string
+	PaymentDateFrom  string
+	PaymentDateTo    string
 	Status           string
 }
 
@@ -157,6 +159,16 @@ type blingReceivablesEnvelope struct {
 }
 
 func (c *BlingAPIClient) ListReceivables(ctx context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+	return c.listFinancialResource(ctx, "contas/receber", filter)
+}
+
+// ListPayables reads the Bling accounts-payable resource using the same
+// conservative raw-page contract. No payable field is normalized here.
+func (c *BlingAPIClient) ListPayables(ctx context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+	return c.listFinancialResource(ctx, "contas/pagar", filter)
+}
+
+func (c *BlingAPIClient) listFinancialResource(ctx context.Context, resource string, filter ReceivablesFilter) (BlingReceivablesPage, error) {
 	if c == nil || c.baseURL == nil || c.httpClient == nil {
 		return BlingReceivablesPage{}, ErrBlingAPIConfiguration
 	}
@@ -165,7 +177,7 @@ func (c *BlingAPIClient) ListReceivables(ctx context.Context, filter Receivables
 		return BlingReceivablesPage{}, err
 	}
 	pathURL := *c.baseURL
-	pathURL.Path = strings.TrimRight(pathURL.Path, "/") + "/contas/receber"
+	pathURL.Path = strings.TrimRight(pathURL.Path, "/") + "/" + strings.TrimLeft(resource, "/")
 	query := pathURL.Query()
 	query.Set("pagina", strconv.Itoa(filter.Page))
 	query.Set("limite", strconv.Itoa(filter.Limit))
@@ -173,6 +185,8 @@ func (c *BlingAPIClient) ListReceivables(ctx context.Context, filter Receivables
 	setOptionalQuery(query, "dataVencimentoFinal", filter.DueDateTo)
 	setOptionalQuery(query, "dataRecebimentoInicial", filter.ReceivedDateFrom)
 	setOptionalQuery(query, "dataRecebimentoFinal", filter.ReceivedDateTo)
+	setOptionalQuery(query, "dataPagamentoInicial", filter.PaymentDateFrom)
+	setOptionalQuery(query, "dataPagamentoFinal", filter.PaymentDateTo)
 	setOptionalQuery(query, "situacao", filter.Status)
 	pathURL.RawQuery = query.Encode()
 
@@ -182,7 +196,7 @@ func (c *BlingAPIClient) ListReceivables(ctx context.Context, filter Receivables
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
-	return c.doReceivablesRequest(req, filter)
+	return c.doFinancialResourceRequest(req, filter)
 }
 
 type BlingConnectionProbe struct {
@@ -199,7 +213,7 @@ func (c *BlingAPIClient) TestConnection(ctx context.Context) (BlingConnectionPro
 	return BlingConnectionProbe{PageRecordCount: len(page.Records), Page: page.Page, Limit: page.Limit}, nil
 }
 
-func (c *BlingAPIClient) doReceivablesRequest(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+func (c *BlingAPIClient) doFinancialResourceRequest(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		if req.Context().Err() != nil {

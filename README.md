@@ -166,6 +166,7 @@ Builds G1 são deliberadamente não assinados. O G7 exige certificado Authentico
 - [docs/WINDOWS-INSTALLATION-RESILIENCE.md](docs/WINDOWS-INSTALLATION-RESILIENCE.md) — matriz de falhas, recuperação e aceite em máquinas de terceiros.
 - [docs/evidence/INSTALLATION-RESILIENCE-2026-08-16.md](docs/evidence/INSTALLATION-RESILIENCE-2026-08-16.md) — execução local do preflight, build e runtime desktop/worker.
 - [docs/evidence/BLING-OAUTH-2026-09-20.md](docs/evidence/BLING-OAUTH-2026-09-20.md) — sessão OAuth desktop, callback loopback, teste mínimo e evidências automatizadas.
+- [docs/evidence/BLING-RAW-SOURCES-2026-09-20.md](docs/evidence/BLING-RAW-SOURCES-2026-09-20.md) — recursos `contas/receber` e `contas/pagar` preservados em RAW idempotente.
 
 ## Distribuição
 

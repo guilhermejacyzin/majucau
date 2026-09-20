@@ -50,6 +50,30 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 	}
 }
 
+func TestListPayablesUsesPayableEndpointAndPaymentFilter(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/Api/v3/contas/pagar" {
+			t.Fatalf("path = %s", r.URL.Path)
+		}
+		if got := r.URL.Query().Get("dataPagamentoInicial"); got != "2026-09-01" {
+			t.Fatalf("dataPagamentoInicial = %q", got)
+		}
+		if got := r.URL.Query().Get("dataPagamentoFinal"); got != "2026-09-30" {
+			t.Fatalf("dataPagamentoFinal = %q", got)
+		}
+		_, _ = w.Write([]byte(`{"data":[{"id":77,"situacao":"pago"}],"pagination":{"page":1,"limit":1,"total":1}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := client.ListPayables(context.Background(), ReceivablesFilter{PaymentDateFrom: "2026-09-01", PaymentDateTo: "2026-09-30", Limit: 1})
+	if err != nil || len(page.Records) != 1 || !strings.Contains(string(page.Records[0]), `"id":77`) {
+		t.Fatalf("unexpected payable page: %+v, err=%v", page, err)
+	}
+}
+
 func TestListReceivablesClassifiesSafeTransportErrors(t *testing.T) {
 	for _, test := range []struct {
 		name      string

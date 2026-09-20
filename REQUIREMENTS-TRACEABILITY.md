@@ -38,8 +38,8 @@
 
 | ID | Requisito | Fonte | Artefato/contrato | Gate | Evidência final | Estado atual |
 |---|---|---|---|---|---|---|
-| DATA-01 | RAW versionado sem sobrescrita operacional; lineage obrigatório até fonte original | pp. 1, 12, 21, 30 | ERD §§1, 5–7; Data §§3, 5; AGENTS | G2/G4/G5 | Reprocessamento e percurso card → regra → entidade → RAW | NOT_STARTED |
-| DATA-02 | Idempotência, chave de origem, hash, lote e logs com contagens/erros/retries | p. 13, §§19–20 | ERD §3; Data §4.2; view `integration_sync_logs` | G2 | Replay, falha antes do commit, cursor e relatório de lote | NOT_STARTED |
+| DATA-01 | RAW versionado sem sobrescrita operacional; lineage obrigatório até fonte original | pp. 1, 12, 21, 30 | ERD §§1, 5–7; Data §§3, 5; AGENTS | G2/G4/G5 | Reprocessamento e percurso card → regra → entidade → RAW | PARTIAL |
+| DATA-02 | Idempotência, chave de origem, hash, lote e logs com contagens/erros/retries | p. 13, §§19–20 | ERD §3; Data §4.2; view `integration_sync_logs` | G2 | Replay, falha antes do commit, cursor e relatório de lote | PARTIAL |
 | DATA-03 | Separar caixa/competência, realizado/projetado, datas e decimal exato | pp. 1, 6–7, 16 | ADR §4; Data §§2, 9, 15; Registro D-005 | G0/G3/G5 | D-005 aprovada; faltam casos executados de timezone, limites, precisão e arredondamento | PARTIAL |
 | INT-01 | Bling: contas a pagar, realizados, B2B, contatos/fornecedores, notas, categorias, compras, contas financeiras e caixa/banco | pp. 4–5, §5.1 | API §3; Data §§6–8; Plano fase 5 | G2/G3 | Credencial real, OpenAPI/fixtures, reconciliação e RAW | PARTIAL |
 | INT-02 | Nuvemshop: OAuth, loja, escopos, pedidos, clientes, status, parcelas, cancelamento/reembolso | pp. 4–6, §§5.2, 6 | ADR §6.3; API §4; Registro D-002 | G2 | Redirect aceito, relay publicado, E2E, replay/TTL/PKCE | BLOCKED |

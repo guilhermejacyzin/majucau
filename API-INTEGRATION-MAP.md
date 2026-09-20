@@ -63,6 +63,10 @@ classificados sem devolver corpo de resposta ou segredo em mensagens. Ainda não
 há mapeamento de campos financeiros: ele só será ativado depois do BK-040 com
 uma resposta real sanitizada da conta autorizada.
 
+`BlingAPIClient.ListPayables` também cobre `GET /contas/pagar`, e o sync RAW
+genérico diferencia `bling.contas_receber.page` de `bling.contas_pagar.page`.
+Os dois recursos continuam somente leitura e sem normalização financeira.
+
 O início do OAuth desktop está em `internal/integrations/bling/oauth_service.go`:
 o worker cria sessão efêmera, valida `state`, escuta somente loopback registrado,
 troca o código, executa o teste mínimo de leitura e guarda os tokens no DPAPI.

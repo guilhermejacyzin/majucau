@@ -37,21 +37,34 @@ type APISyncResult struct {
 // ReceivablesAPISyncService stores API pages as append-only RAW evidence. It
 // intentionally does not normalize financial fields: source IDs and meanings
 // are still subject to BK-040 confirmation from the real Bling account.
-type ReceivablesAPISyncService struct {
-	pool     *pgxpool.Pool
-	client   *BlingAPIClient
-	maxPages int
+type apiResourceSyncService struct {
+	pool         *pgxpool.Pool
+	client       *BlingAPIClient
+	maxPages     int
+	resource     string
+	sourceEntity string
+	list         func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
 }
+
+type ReceivablesAPISyncService struct{ *apiResourceSyncService }
 
 func NewReceivablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *ReceivablesAPISyncService {
-	return &ReceivablesAPISyncService{pool: pool, client: client, maxPages: 1000}
+	return &ReceivablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: 1000, resource: ReceivablesAPIResource, sourceEntity: "bling.contas_receber.page", list: client.ListReceivables}}
 }
 
-func (s *ReceivablesAPISyncService) Sync(ctx context.Context, filter ReceivablesFilter) (APISyncResult, error) {
+const PayablesAPIResource = "contas.pagar"
+
+type PayablesAPISyncService struct{ *apiResourceSyncService }
+
+func NewPayablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *PayablesAPISyncService {
+	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: 1000, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables}}
+}
+
+func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFilter) (APISyncResult, error) {
 	if s == nil || s.pool == nil {
 		return APISyncResult{}, ErrBlingAPISyncDatabaseUnavailable
 	}
-	if s.client == nil {
+	if s.client == nil || s.list == nil {
 		return APISyncResult{}, ErrBlingAPISyncClientRequired
 	}
 	if s.maxPages <= 0 {
@@ -73,7 +86,7 @@ func (s *ReceivablesAPISyncService) Sync(ctx context.Context, filter Receivables
 	if !connection.ID.Valid {
 		return APISyncResult{}, ErrBlingAPISyncConnectionMissing
 	}
-	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: ReceivablesAPIResource})
+	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: s.resource})
 	if err != nil {
 		return APISyncResult{}, fmt.Errorf("create Bling API sync batch: %w", err)
 	}
@@ -87,7 +100,7 @@ func (s *ReceivablesAPISyncService) Sync(ctx context.Context, filter Receivables
 		if err := ctx.Err(); err != nil {
 			return result, s.finishFailed(ctx, queries, batch.ID, result, "SYNC_CANCELLED", err)
 		}
-		page, err := s.client.ListReceivables(ctx, current)
+		page, err := s.list(ctx, current)
 		if err != nil {
 			return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_API_READ_FAILED", err)
 		}
@@ -95,7 +108,7 @@ func (s *ReceivablesAPISyncService) Sync(ctx context.Context, filter Receivables
 		if err != nil {
 			return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_API_PAYLOAD_INVALID", err)
 		}
-		created, updated, err := persistReceivablesPage(ctx, queries, connection.ID, batch.ID, page.Page, payload)
+		created, updated, err := persistResourcePage(ctx, queries, connection.ID, batch.ID, page.Page, s.sourceEntity, payload)
 		if err != nil {
 			return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_API_RAW_FAILED", err)
 		}
@@ -129,7 +142,7 @@ func (s *ReceivablesAPISyncService) Sync(ctx context.Context, filter Receivables
 	return result, nil
 }
 
-func (s *ReceivablesAPISyncService) finishFailed(ctx context.Context, queries *database.Queries, batchID pgtype.UUID, result APISyncResult, code string, cause error) error {
+func (s *apiResourceSyncService) finishFailed(ctx context.Context, queries *database.Queries, batchID pgtype.UUID, result APISyncResult, code string, cause error) error {
 	message := code
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
 		ID: batchID, Status: "FAILED", RecordsRead: int32(result.RecordsRead), RecordsCreated: int32(result.PagesCreated), RecordsUpdated: int32(result.PagesUpdated),
@@ -153,12 +166,15 @@ func marshalReceivablesPage(page BlingReceivablesPage) ([]byte, error) {
 }
 
 func persistReceivablesPage(ctx context.Context, q *database.Queries, connectionID, batchID pgtype.UUID, page int, payload []byte) (created, updated bool, err error) {
+	return persistResourcePage(ctx, q, connectionID, batchID, page, "bling.contas_receber.page", payload)
+}
+
+func persistResourcePage(ctx context.Context, q *database.Queries, connectionID, batchID pgtype.UUID, page int, sourceEntity string, payload []byte) (created, updated bool, err error) {
 	if !connectionID.Valid || !batchID.Valid || page < 1 || len(payload) == 0 {
 		return false, false, errors.New("invalid Bling API RAW page identity")
 	}
 	digest := sha256.Sum256(payload)
 	hash := hex.EncodeToString(digest[:])
-	const sourceEntity = "bling.contas_receber.page"
 	sourceID := receivablesPageSourceID(page)
 	current, currentErr := q.GetCurrentRawRecord(ctx, database.GetCurrentRawRecordParams{ConnectionID: connectionID, SourceSystem: string(domain.OriginBling), SourceEntity: sourceEntity, SourceID: sourceID})
 	if currentErr == nil && current.PayloadHash == hash {

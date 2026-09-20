@@ -10,7 +10,7 @@ Foi adicionado o método IPC `bling.sync` e o binding Wails `SyncBling`. O worke
 4. grava `sync_cursors` e finaliza o lote somente na mesma transação confirmada;
 5. devolve status, lotes e contagens sanitizadas.
 
-O botão da UI ainda não chama esse método automaticamente: a tela não inventa uma janela financeira. A habilitação visual ficará para o momento em que o período explícito e o estado operacional forem apresentados no componente.
+A tela de integrações agora abre um painel explícito com tipo de data (vencimento, recebimento ou pagamento), data inicial/final e situação opcional. O botão de execução permanece bloqueado enquanto o Bling não estiver conectado e a validação local recusa filtro vazio ou período invertido; não existe janela financeira inventada nem sincronização silenciosa.
 
 ## Segurança e consistência
 
@@ -26,7 +26,7 @@ O botão da UI ainda não chama esse método automaticamente: a tela não invent
 - teste de passagem de filtros de recebimento/pagamento e contagens sanitizadas;
 - teste de aceitação do método no protocolo versionado;
 - `go test ./...` e `go vet ./...`: aprovados;
-- frontend lint/typecheck/test (18) e build: aprovados;
+- frontend lint/typecheck/test (19) e build: aprovados;
 - `wails build -clean -trimpath`: aprovado; bindings incluem `SyncBling`.
 
 ## Limites

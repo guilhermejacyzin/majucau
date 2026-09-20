@@ -109,6 +109,31 @@ describe('shell financeiro', () => {
     expect(screen.queryByText('session-1')).not.toBeInTheDocument()
   })
 
+  it('exige filtro explícito antes de executar a sincronização do Bling', async () => {
+    const user = userEvent.setup()
+    let receivedInput: Record<string, unknown> | null = null
+    const blingOAuthAdapter: BlingOAuthAdapter = {
+      start: async () => ({ status: 'AUTHORIZING' }),
+      status: async () => ({ status: 'CONNECTED' }),
+      test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      sync: async (input) => { receivedInput = input; return { status: 'SUCCESS', receivables: { pages_read: 2, records_read: 4 }, payables: { pages_read: 1, records_read: 2 } } },
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingOAuthAdapter={blingOAuthAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    await user.click(screen.getAllByRole('button', { name: 'Sincronizar agora' })[0])
+    expect(screen.getByRole('region', { name: 'Sincronização filtrada do Bling' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Executar sincronização' }))
+    expect(await screen.findByText('Filtro inválido')).toBeInTheDocument()
+    expect(receivedInput).toBeNull()
+    await user.selectOptions(screen.getByLabelText(/Tipo de data/), 'received')
+    await user.type(screen.getByLabelText(/Data inicial/), '2026-09-01')
+    await user.type(screen.getByLabelText(/Data final/), '2026-09-30')
+    await user.click(screen.getByRole('button', { name: 'Executar sincronização' }))
+    expect(receivedInput).toMatchObject({ received_date_from: '2026-09-01', received_date_to: '2026-09-30' })
+    expect(await screen.findByText(/Recebíveis: 4 registro\(s\)/)).toBeInTheDocument()
+  })
+
   it('valida a pasta de recebimentos e mostra somente o resumo sanitizado', async () => {
     const user = userEvent.setup()
     const blingPreviewAdapter: BlingPreviewAdapter = { preview: async () => ({ files: [{ name: 'recebidos.csv', sha256: 'a'.repeat(64), receipt_count: 3, error_count: 1 }], receipt_count: 3, error_count: 1, ignored_count: 0, issues: [{ file: 'recebidos.csv', line: 5, code: 'NOT_PAID', message: 'linha não importada' }] }) }

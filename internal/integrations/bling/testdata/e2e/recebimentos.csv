@@ -1,0 +1,4 @@
+Cliente;Histórico;Forma de pagamento;Nº documento;Vencimento;Liquidação;Situação;Valor taxa;Recebido
+Cliente E2E A;Venda teste;PIX;E2E-20260920-001;20/09/2026;20/09/2026;Pago;R$ 0,99;R$ 99,01
+Cliente E2E B;Venda teste;Cartão de crédito;E2E-20260920-002;20/09/2026;20/09/2026;Pago;R$ 2,59;R$ 197,41
+Cliente E2E C;Venda não paga;Boleto;E2E-20260920-003;20/09/2026;;Em aberto;R$ 2,39;R$ 97,61

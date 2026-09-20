@@ -10,7 +10,7 @@ O parser espera exportação CSV separada por ponto e vírgula com os campos equ
 
 Somente `Situação=pago` vira `ReceiptCandidate` confirmado. Linhas abertas, canceladas ou sem documento ficam em `RowError`; não são convertidas em zero nem entram no total. Documentos duplicados no mesmo lote também ficam em erro para impedir dupla contagem.
 
-O PDF `Bling - Relatório de Contas a Receber` fornecido em 20/09/2026 foi usado para confirmar visualmente os nomes e a semântica das colunas. O adapter `PersistReceipts` já grava `raw_records`/`receipts` na transação fornecida pelo worker; a ligação ao ciclo de vida do serviço e à configuração da pasta fica para a integração operacional.
+O PDF `Bling - Relatório de Contas a Receber` fornecido em 20/09/2026 foi usado para confirmar visualmente os nomes e a semântica das colunas. O serviço `ReceiptImportService` abre a transação, carrega a conexão Bling, grava `raw_records`/`receipts` e finaliza o lote de sincronização de forma atômica.
 
 ## Pasta de entrada
 
@@ -21,3 +21,15 @@ O resultado da pasta é uma prévia determinística em memória. O worker deve a
 O método IPC `bling.receipts.preview` chama essa leitura pelo worker e retorna apenas nomes de arquivos, hashes, contagens e até 50 problemas sanitizados. A UI nunca recebe nomes de clientes, históricos ou valores de linhas.
 
 O método IPC `bling.receipts.import` só funciona quando o worker tem o PostgreSQL dedicado configurado em seu ambiente seguro (`MAJUCAU_DATABASE_URL`, sem senha em logs ou argumentos). Ele cria o lote e comita RAW + ledger atomicamente; sem banco ou conexão Bling configurada, retorna código estável e não altera arquivos nem dados.
+
+## Validação PostgreSQL
+
+O teste opt-in `TestReceiptImportServicePostgresE2E` não abre banco no fluxo normal de CI. Para executá-lo contra um PostgreSQL descartável com o schema aplicado:
+
+```powershell
+$env:MAJUCAU_TEST_DATABASE_URL = 'postgres://postgres@127.0.0.1:55439/majucau_test?sslmode=disable'
+$env:MAJUCAU_TEST_RECEIPTS_FOLDER = (Resolve-Path 'internal/integrations/bling/testdata/e2e').Path
+go test ./internal/integrations/bling -run TestReceiptImportServicePostgresE2E -count=1 -v
+```
+
+O fixture contém duas linhas pagas e uma linha em aberto. A primeira execução deve criar dois recebimentos e terminar como `PARTIAL`; uma nova execução deve atualizar os dois, sem duplicar o RAW corrente.

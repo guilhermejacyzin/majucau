@@ -1,6 +1,36 @@
-# Importador Bling — Contas Recebidas
+# Bling — API oficial e importador controlado de apoio
 
-O importador usa o relatório do Bling como fonte de verdade para recebimentos realizados. A forma de pagamento pode conter `NUVEMPAGO 1X`, `NUVEMPAGO 2X`, `NUVEMPAGO 3X` ou `Nuvemshop PIX`, mas isso não muda `source_system=BLING`.
+## API oficial (caminho principal)
+
+O Bling/API v3 é a fonte de verdade para fatos financeiros operacionais, em
+modo somente leitura. O pacote agora contém um cliente técnico para:
+
+- OAuth 2 Authorization Code e renovação por `refresh_token`;
+- `GET /contas/receber` com paginação (`pagina`/`limite`), filtros explícitos e
+  limite máximo de 100 registros;
+- classificação segura de 401/403, 429, timeout, indisponibilidade e resposta
+  fora do contrato;
+- preservação dos itens retornados como JSON bruto até a homologação dos
+  campos reais da conta Bling.
+
+O cliente não grava credenciais, não escreve no Bling, não faz scraping e não
+assume campos financeiros que ainda não foram confirmados em uma resposta
+real. O segredo deve chegar somente ao worker, ser protegido por DPAPI e
+nunca ser enviado ao frontend, colocado em URL ou incluído em logs/erros.
+
+O teste de conexão faz uma leitura mínima de `contas/receber` com uma linha.
+Isso prova transporte, autorização e formato básico, mas não equivale à
+homologação funcional dos campos. A homologação BK-040 ainda precisa registrar
+endpoint, campo, significado, ausência, limites e uma amostra sanitizada da
+conta autorizada antes da normalização contábil.
+
+## Importador CSV de apoio — Contas Recebidas
+
+O importador usa o relatório do Bling como uma entrada local controlada para
+fixtures, conferência e contingência operacional aprovada. Ele não substitui a
+API oficial e não deve ser tratado como a implementação final de sincronização.
+A forma de pagamento pode conter `NUVEMPAGO 1X`, `NUVEMPAGO 2X`, `NUVEMPAGO 3X`
+ou `Nuvemshop PIX`, mas isso não muda `source_system=BLING`.
 
 ## Contrato
 

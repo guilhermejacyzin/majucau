@@ -1,6 +1,6 @@
 # API Integration Map - Bling, Nuvemshop e Nuvem Pago
 
-- **Status:** Proposto para aprovação e validação com credenciais reais
+- **Status:** Adaptador técnico inicial implementado; validação funcional com credenciais reais ainda pendente
 - **Política:** somente leitura no MVP; nenhuma alteração será enviada aos ERPs
 - **Criticidade:** Alta
 - **Baseline documental:** fontes oficiais consultadas em 2026-08-15; OpenAPI, exemplos sanitizados e respostas reais serão versionados no repositório antes do conector passar pelo gate G2
@@ -55,6 +55,14 @@ Cada requisição terá:
 
 O worker renovará o token antes do vencimento, com exclusão mútua para impedir refresh concorrente. Falha permanente muda a conexão para `AUTH_ERROR` e preserva dados anteriores.
 
+Implementação atual: `internal/integrations/bling/oauth.go` executa a troca do
+código e a renovação por `refresh_token` somente no worker, usando Basic Auth e
+formulário `application/x-www-form-urlencoded`. `internal/integrations/bling/api_client.go`
+faz a leitura de `contas/receber`, preserva o JSON bruto e expõe erros
+classificados sem devolver corpo de resposta ou segredo em mensagens. Ainda não
+há mapeamento de campos financeiros: ele só será ativado depois do BK-040 com
+uma resposta real sanitizada da conta autorizada.
+
 ### 3.2 Recursos de leitura
 
 | Recurso interno | Endpoint Bling comprovado | Uso e regra |
@@ -85,6 +93,11 @@ O conector não utilizará endpoints de baixa ou escrita. O Majucau é consumido
 - HTTP 429: respeitar headers disponíveis, aplicar backoff e não avançar checkpoint.
 
 Usar janelas temporais pequenas e sobrepostas. A sobreposição é segura porque a ingestão é idempotente.
+
+O cliente inicial valida `pagina >= 1`, `1 <= limite <= 100`, envia somente
+`GET`, respeita cancelamento do contexto e reconhece `Retry-After` em 429. A
+retentativa com backoff e o checkpoint transacional pertencem à camada de
+orquestração/sincronização; não são simulados dentro do cliente HTTP.
 
 ### 3.4 Lacunas Bling
 

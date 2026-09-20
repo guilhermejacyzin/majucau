@@ -15,6 +15,7 @@ O requisito de lidar defensivamente com máquinas Windows de terceiros foi regis
 - build Wails, worker e installer-helper Windows: aprovado;
 - execução real `installer-helper.exe preflight`: contrato JSON válido, exit code `2`/`BLOCKED`;
 - execução real `installer-helper.exe diagnostics`: produziu ZIP sanitizado mesmo com preflight `BLOCKED`, contendo somente `diagnostic.json` e `README.txt`;
+- `JournalStore` e `AcquireInstallLock`: testes de round-trip, validação de fase/hash e segunda instância aprovados;
 - execução real `majucau-worker.exe --console`: health `OK`;
 - execução real `majucau.exe`: processo permaneceu ativo e abriu a janela `Majucau Financial Intelligence`.
 
@@ -44,7 +45,7 @@ Os executáveis ficam ignorados pelo Git e precisam ser reconstruídos e assinad
 
 ## Limites e próximos testes obrigatórios
 
-1. integrar o helper ao `.onInit` do NSIS e provar a passagem de exit codes;
+1. integrar preflight, diagnostics, journal e mutex ao `.onInit` do NSIS e provar a passagem de exit codes;
 2. fixar/instalar `makensis` e produzir o primeiro pacote;
 3. implementar journal durável, lock global, retomada e rollback;
 4. empacotar WebView2/PostgreSQL e aplicar serviços, dependências, ACL/SID e SCRAM;

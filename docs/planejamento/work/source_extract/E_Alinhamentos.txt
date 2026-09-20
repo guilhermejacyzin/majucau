@@ -1,0 +1,14 @@
+A1=E Alinhamentos
+A2=ID | B2=Tema | C2=Regra alinhada | D2=Evidência documental | E2=Evidência no sistema atual? | F2=Conclusão
+A3=E-01 | B3=Realizado x projetado | C3=Nunca somar fato real e projeção para a mesma chave. | D3=FIN LOCK-01; COM/LOG §3 | E3=NÃO | F3=Correto entre documentos; sistema não auditado.
+A4=E-02 | B4=Ausência x zero | C4=UNAVAILABLE/null não vira zero fictício. | D4=FIN LOCK-02; COM/LOG §3; GOV §1/21 | E4=NÃO | F4=Correto entre documentos; sistema não auditado.
+A5=E-03 | B5=Venda realizada | C5=Bling é a fonte da venda realizada; Nuvem não duplica. | D5=FIN LOCK-03; COM/LOG §2/5.1 | E5=NÃO | F5=Alinhado.
+A6=E-04 | B6=Recebíveis | C6=B2C=Nuvem; B2B=Bling; sem duplicidade. | D6=FIN LOCK-04; COM/LOG §2/4.2 | E6=NÃO | F6=Alinhado.
+A7=E-05 | B7=Nuvem sem API | C7=Nesta fase, ingestão por arquivo em pasta controlada. | D7=COM/LOG §0.5/14.1; FIN §13 | E7=NÃO | F7=Alinhado; ciclo de vida do arquivo ainda precisa decisão.
+A8=E-06 | B8=Taxas realizadas | C8=Extrato exportado prevalece; contrato não é reaplicado sobre realizado. | D8=FIN §5; COM/LOG §14.2 | E8=NÃO | F8=Alinhado.
+A9=E-07 | B9=Frete operacional | C9=Etiqueta é fato Nuvem Envio; contabilidade não reescreve fato operacional. | D9=COM/LOG §5.8; GOV §8 | E9=NÃO | F9=Alinhado; classificação financeira permanece dependência.
+A10=E-08 | B10=Conciliação | C10=Sem ajuste para fazer fechar; ambiguidade permanece pendente. | D10=FIN §4.4; COM/LOG §4.3; GOV §14 | E10=NÃO | F10=Alinhado.
+A11=E-09 | B11=Perdas | C11=Planilha de Perdas não é venda/caixa/estoque e não pode duplicar DRE. | D11=FIN §11; COM/LOG §3 | E11=NÃO | F11=Alinhado; competência ainda OPEN.
+A12=E-10 | B12=Compra sugerida | C12=Planejamento não vira A Pagar automaticamente. | D12=FIN §4.1/4.3; COM/LOG §3/5.5 | E12=NÃO | F12=Alinhado.
+A13=E-11 | B13=Rastreabilidade | C13=Origem, ids, datas, status, rule_version e idempotência obrigatórios. | D13=FIN §2/13; COM/LOG §13; GOV §12/15 | E13=NÃO | F13=Alinhado.
+A14=E-12 | B14=Design Lock | C14=Telas congeladas não mudam por conveniência técnica. | D14=COM/LOG gate/§19; GOV §17; FIN §16 | E14=NÃO | F14=Alinhado.

@@ -1,0 +1,74 @@
+A1=Q — CEI TELA 11 | COMPRAS
+A2=Contrato Executável de Interface — versão 12/09/2026. Mockup aprovado. Tela informativa/read-only. Não cria pedidos, não altera estoque, fornecedor ou financeiro. O único resultado externo permitido é Exportar recomendações, dentro do bloco Compras Recomendadas, em Excel e somente com a lista completa exibida pelo contrato.
+A4=DECISÕES ESTRUTURAIS | B4=VALOR | C4=FONTE/REGRA | D4=EFEITO | E4=STATUS | F4=DEPENDÊNCIA | G4=ACEITE | H4=OBSERVAÇÃO
+A5=Cabeçalho Exportar | B5=REMOVER | C5=Decisão CEI | D5=Nenhum | E5=APROVADO | F5=Nenhuma | G5=Botão ausente no cabeçalho | H5=Exportação existe somente em Compras Recomendadas
+A6=Ajuda | B6=REMOVER | C6=Decisão CEI | D6=Nenhum | E6=APROVADO | F6=Nenhuma | G6=Botão ausente
+A7=Gerar/Criar pedidos | B7=REMOVER | C7=Decisão CEI | D7=Tela não cria nada no Bling | E7=APROVADO | F7=Execução permanece fora da Tela 11 | G7=Nenhum CTA transacional | H7=Read-only
+A8=Compras indicadas — hoje | B8=REMOVER | C8=Duplica Compras Recomendadas | D8=Nenhum | E8=APROVADO | F8=Nenhuma | G8=Card ausente
+A9=Necessidade líquida total / projeção futura | B9=REMOVER | C9=Decisão CEI | D9=Nenhum cálculo projetado nesta tela | E9=APROVADO | F9=Nenhuma | G9=Bloco ausente | H9=Não usar forecast
+A10=Lead Time médio geral | B10=REMOVER | C10=Prazo é individual por insumo | D10=Nenhum | E10=APROVADO | F10=Histórico por insumo | G10=Card ausente
+A11=Blocos inferiores antigos | B11=REMOVER | C11=Necessidade de compra / Origem da necessidade / Alertas importantes | D11=Nenhum | E11=APROVADO | F11=Nenhuma | G11=Blocos ausentes
+A12=Tabela separada de fornecedores | B12=NÃO EXISTE | C12=Decisão CEI | D12=Nenhum | E12=APROVADO | F12=Dados de fornecedor podem existir como lineage | G12=Nenhuma tabela dedicada
+A14=REGRA DE ENTRADA EM COMPRAS RECOMENDADAS
+A15=ID | B15=Regra | C15=Fonte | D15=Resultado | E15=Efeito externo | F15=Estado | G15=Critério de aceite | H15=Observação
+A16=11-R01 | B16=Insumo entra quando estoque atual <= estoque mínimo cadastrado no Bling E não há pedido de compra aberto aplicável para o mesmo insumo. | C16=Bling — estoque mínimo + estoque atual + pedidos de compra | D16=COMPRAS RECOMENDADAS | E16=Nenhum | F16=CONFIRMED/STALE/UNAVAILABLE | G16=Quantidade de itens reconcilia com Tela 09: Abaixo do mínimo sem pedido = Compras Recomendadas | H16=Não aplicar a produto pronto
+A17=11-R02 | B17=Se houver pedido de compra aberto aplicável, o insumo não entra em Compras Recomendadas. | C17=Bling — Pedido de Compra | D17=EXCLUIR DA LISTA | E17=Nenhum | F17=CONFIRMED/UNAVAILABLE | G17=Não recomendar compra duplicada
+A18=11-R03 | B18=Cacau segue exatamente a mesma regra operacional dos demais insumos para entrar ou não em Compras Recomendadas. | C18=Bling | D18=MESMA REGRA | E18=Nenhum | F18=CONFIRMED/STALE | G18=Sinal de mercado não força inclusão | H18=Bloco de risco do cacau é independente
+A19=11-R04 | B19=Unidades permanecem exatamente nas unidades originais do Bling por insumo. | C19=Bling | D19=SEM CONSOLIDAÇÃO EM TONELADAS | E19=Nenhum | F19=CONFIRMED | G19=kg, t, L, un etc. não são somados em total físico único
+A21=TABELA — COMPRAS RECOMENDADAS
+A22=Campo | B22=Fonte oficial | C22=Definição CEI | D22=Derivado? | E22=Interação | F22=Exporta? | G22=Estado | H22=Observação
+A23=Insumo | B23=Bling | C23=SKU/nome do insumo | D23=Não | E23=Linha → detalhe interno | F23=SIM | G23=CONFIRMED
+A24=Estoque atual | B24=Bling | C24=Saldo atual do insumo na unidade original | D24=Não | E24=Somente leitura | F24=SIM | G24=CONFIRMED/STALE/UNAVAILABLE | H24=Nunca substituir ausência por zero
+A25=Estoque mínimo Bling | B25=Bling | C25=Mínimo já cadastrado no Bling para o insumo | D25=Não | E25=Somente leitura | F25=SIM | G25=CONFIRMED/UNAVAILABLE | H25=Fonte única do mínimo
+A26=Última compra | B26=Bling — último ciclo de compra atendido | C26=Referência do último Pedido de Compra atendido do insumo | D26=Não | E26=Drill-down | F26=SIM | G26=CONFIRMED/UNAVAILABLE | H26=Exibir referência/data do ciclo; sem inventar compra quando ausente
+A27=Último preço faturado | B27=NF-e de entrada vinculada ao Pedido de Compra atendido | C27=Preço unitário efetivamente faturado da última compra atendida | D27=Não | E27=Drill-down até NF-e | F27=SIM | G27=CONFIRMED/UNAVAILABLE | H27=Nunca usar preço sugerido/cotação como preço pago
+A28=Prazo histórico de entrega | B28=Bling — Pedido de Compra | C28=Tempo real entre data do Pedido de Compra e data/hora em que o pedido foi alterado manualmente para ATENDIDO | D28=Sim | E28=Ver histórico | F28=SIM | G28=CONFIRMED/UNAVAILABLE | H28=Agregação histórica/janela ainda precisa homologação
+A29=Quantidade recomendada | B29=Histórico real de compras + regra a homologar | C29=Sugestão deve reduzir compras fragmentadas e considerar comportamento real de compra do mesmo insumo | D29=Sim | E29=Somente leitura | F29=SIM | G29=PENDING_RULE | H29=Fórmula exata não pode ser documentada como definitiva antes da homologação
+A30=Valor estimado | B30=Quantidade recomendada × último preço faturado válido | C30=Estimativa indicativa para a recomendação | D30=Sim | E30=Somente leitura | F30=SIM | G30=CONFIRMED/PENDING_RULE/UNAVAILABLE | H30=Só calcular quando quantidade e preço forem válidos
+A31=Prioridade | B31=Prazo histórico individual do insumo | C31=Prioridade aumenta conforme o prazo histórico de entrega | D31=Sim | E31=Filtro | F31=SIM | G31=PENDING_RULE | H31=Faixas/limiares de Alta/Média/Baixa ainda precisam homologação
+A33=EXPORTAÇÃO PERMITIDA — SOMENTE COMPRAS RECOMENDADAS
+A34=Elemento | B34=Tipo | C34=Conteúdo | D34=Formato | E34=Altera dados? | F34=Gera externo? | G34=Estado | H34=Critério de aceite
+A35=Exportar recomendações | B35=EXPORT | C35=Lista completa de Compras Recomendadas conforme contrato da tabela | D35=Excel (.xlsx) | E35=Não | F35=SIM | G35=APROVADO | H35=Exporta somente a lista; nenhum pedido é criado
+A36=Escopo do Excel | B36=EXPORT | C36=Insumo, estoque atual, mínimo Bling, última compra, último preço faturado, prazo histórico, quantidade recomendada, valor estimado, prioridade | D36=Uma aba de recomendações + metadados mínimos de posição/filtro | E36=Não | F36=SIM | G36=APROVADO | H36=Sem gráficos obrigatórios e sem dados externos ao bloco
+A37=Demais áreas da Tela 11 | B37=NÃO EXPORTAM | C37=Cabeçalho, bloco de cacau, gauges/sinais | D37=— | E37=Não | F37=NÃO | G37=APROVADO | H37=Não oferecer exportação paralela
+A39=CACAU — MERCADO E RISCO DE ABASTECIMENTO
+A40=Sinal/Elemento | B40=Fonte conceitual | C40=Regra CEI | D40=Impacto visual | E40=Entra automaticamente em recomendação? | F40=Altera pedido? | G40=Estado | H40=Observação
+A41=Clima/tempo | B41=Fontes externas auditadas + locais de produção dos fornecedores atuais de cacau | C41=Sinal adverso relevante => ALTO RISCO / ATENÇÃO | D41=Card/gauge de risco | E41=NÃO | F41=NÃO | G41=INFORMATIVO | H41=Locais dos fornecedores precisam estar mapeados tecnicamente; sem tabela de fornecedores na tela
+A42=Safra | B42=Fontes externas auditadas | C42=Sinal adverso relevante => ALTO RISCO / ATENÇÃO | D42=Card/gauge de risco | E42=NÃO | F42=NÃO | G42=INFORMATIVO
+A43=Estoques globais | B43=Fontes externas auditadas | C43=Sinal adverso relevante => ALTO RISCO / ATENÇÃO | D43=Card/gauge de risco | E43=NÃO | F43=NÃO | G43=INFORMATIVO
+A44=Preço internacional | B44=Fonte de mercado auditada | C44=Sinal adverso relevante => ALTO RISCO / ATENÇÃO | D44=Card/gauge de risco | E44=NÃO | F44=NÃO | G44=INFORMATIVO
+A45=Câmbio | B45=Fonte cambial auditada | C45=Sinal adverso relevante => ALTO RISCO / ATENÇÃO | D45=Card/gauge de risco | E45=NÃO | F45=NÃO | G45=INFORMATIVO
+A46=Último preço pago x referência de mercado | B46=NF-e entrada atendida + referência externa | C46=Se último preço realmente pago < referência comparável, exibir verde PREÇO FAVORÁVEL / OPORTUNIDADE | D46=Sinal verde informativo | E46=NÃO | F46=NÃO | G46=INFORMATIVO | H46=Comparação exige mesma base/unidade/moeda/data de referência
+A47=Risco consolidado do cacau | B47=Derivado dos sinais externos aprovados | C47=Qualquer sinal adverso relevante pode elevar a visualização para ALTO RISCO / ATENÇÃO; thresholds exatos permanecem parametrizáveis/homologáveis | D47=Gauge/status | E47=NÃO | F47=NÃO | G47=PENDING_RULE | H47=Não cria compra nem força recomendação
+A49=INTERAÇÕES EXECUTÁVEIS
+A50=Elemento | B50=Tipo | C50=Origem | D50=Destino/resultado | E50=Preserva contexto? | F50=Altera dados? | G50=Gera externo? | H50=Critério de aceite
+A51=Atualizar | B51=SYNC | C51=Tela 11 | D51=Reconsulta fontes e atualiza posição informativa | E51=Sim | F51=Não | G51=Não | H51=Falha preserva última posição válida e sinaliza STALE/UNAVAILABLE
+A52=Ver recomendações | B52=DRILL_DOWN/FILTER | C52=Compras Recomendadas | D52=Lista completa filtrável | E52=Sim | F52=Não | G52=Não | H52=Contagem reconcilia com regra 11-R01
+A53=Linha de recomendação | B53=DRAWER | C53=Tabela | D53=Histórico de compras, NF-e vinculada, pedidos de compra e cálculo disponível | E53=Sim | F53=Não | G53=Não | H53=Somente leitura
+A54=Exportar recomendações | B54=EXPORT | C54=Bloco Compras Recomendadas | D54=Excel da lista completa | E54=Sim | F54=Não | G54=SIM | H54=Única exportação da tela
+A55=Bloco de cacau | B55=DRILL_DOWN informativo | C55=Sinais de mercado/clima | D55=Detalhe das fontes/sinais, sem transação | E55=Sim | F55=Não | G55=Não | H55=Não altera recomendação automaticamente
+A56=Gerar pedido / Criar pedido | B56=NÃO EXISTE | C56=— | D56=— | E56=— | F56=Não | G56=Não | H56=Nenhum CTA equivalente
+A58=ITENS REMOVIDOS DO MOCKUP ORIGINAL
+A59=Elemento anterior | B59=Tratamento | C59=Motivo | D59=Substituição | E59=Altera regra de negócio? | F59=Efeito externo | G59=Status | H59=Observação
+A60=Exportar no cabeçalho | B60=REMOVER | C60=Exportação deve existir apenas no bloco de recomendações | D60=Exportar recomendações | E60=NÃO | F60=Nenhum | G60=APROVADO
+A61=Ajuda | B61=REMOVER | C61=Decisão CEI | D61=Nenhuma | E61=NÃO | F61=Nenhum | G61=APROVADO
+A62=Compras indicadas — hoje | B62=REMOVER | C62=Duplica lista principal | D62=Nenhuma | E62=NÃO | F62=Nenhum | G62=APROVADO
+A63=Necessidade líquida total | B63=REMOVER | C63=Lógica de projeção futura fora desta tela | D63=Nenhuma | E63=NÃO | F63=Nenhum | G63=APROVADO
+A64=Pedidos confirmados como KPI | B64=REMOVER DO TOPO | C64=Não é necessário para estrutura aprovada | D64=Pedido aberto é consultado apenas para excluir recomendação | E64=NÃO | F64=Nenhum | G64=APROVADO
+A65=Lead Time médio geral | B65=REMOVER | C65=Prazo é individual por insumo | D65=Prazo histórico de entrega na linha | E65=NÃO | F65=Nenhum | G65=APROVADO
+A66=Gerar pedidos | B66=REMOVER | C66=Tela read-only | D66=Nenhuma | E66=NÃO | F66=Nenhum | G66=APROVADO
+A67=Necessidade de compra / Origem da necessidade / Alertas importantes | B67=REMOVER | C67=Blocos inferiores não pertencem à versão aprovada | D67=Nenhuma | E67=NÃO | F67=Nenhum | G67=APROVADO
+A69=CRITÉRIOS DE ACEITE PRINCIPAIS
+A70=ID | B70=Cenário | C70=Entrada | D70=Resultado esperado | E70=Risco evitado | F70=Implementação | G70=Status | H70=Observação
+A71=T-CEI11-01 | B71=Reconciliação Tela 09 | C71=N insumos abaixo do mínimo sem pedido na Tela 09 | D71=Tela 11 possui exatamente N Compras Recomendadas para a mesma posição/filtros | E71=listas divergentes | F71=Após gate | G71=APROVADO CEI
+A72=T-CEI11-02 | B72=Pedido aberto | C72=Insumo <= mínimo com pedido aberto aplicável | D72=Não entra em Compras Recomendadas | E72=compra duplicada | F72=Após gate | G72=APROVADO CEI
+A73=T-CEI11-03 | B73=Sem pedido | C73=Insumo <= mínimo sem pedido aplicável | D73=Entra em Compras Recomendadas | E73=omissão operacional | F73=Após gate | G73=APROVADO CEI
+A74=T-CEI11-04 | B74=Último preço | C74=Há NF-e de entrada ligada ao último Pedido atendido | D74=Preço exibido = preço unitário da NF-e vinculada | E74=preço fictício | F74=Após gate | G74=APROVADO CEI
+A75=T-CEI11-05 | B75=Prazo real | C75=Pedido criado em D1 e alterado para ATENDIDO em D2 | D75=Prazo real = D2 - D1 com data/hora preservadas | E75=lead time artificial | F75=Após gate | G75=APROVADO CEI
+A76=T-CEI11-06 | B76=Quantidade recomendada | C76=Histórico mostra compras fragmentadas | D76=Regra só publica quantidade após fórmula homologada; antes fica PENDING_RULE | E76=falsa precisão | F76=Após homologação | G76=PENDENTE REGRA
+A77=T-CEI11-07 | B77=Prioridade | C77=Dois insumos com prazos históricos diferentes | D77=Maior prazo não recebe prioridade inferior ao menor prazo, respeitando faixas homologadas | E77=priorização invertida | F77=Após homologação | G77=PENDENTE REGRA
+A78=T-CEI11-08 | B78=Exportação | C78=Usuário exporta recomendações | D78=Excel contém somente a lista completa e metadados mínimos; nenhuma ação no Bling | E78=efeito colateral | F78=Após gate | G78=APROVADO CEI
+A79=T-CEI11-09 | B79=Cacau fora do mínimo | C79=Cacau <= mínimo sem pedido | D79=Cacau entra na lista como qualquer insumo | E79=tratamento especial indevido | F79=Após gate | G79=APROVADO CEI
+A80=T-CEI11-10 | B80=Cacau com risco externo mas estoque normal | C80=Sinal adverso externo; estoque > mínimo ou pedido aberto | D80=Risco aparece no bloco de cacau, mas item não entra automaticamente em recomendações | E80=mistura mercado/operação | F80=Após gate | G80=APROVADO CEI
+A81=T-CEI11-11 | B81=Oportunidade de preço | C81=Último preço pago comparável < referência de mercado | D81=Mostrar PREÇO FAVORÁVEL / OPORTUNIDADE em verde | E81=sinal invertido | F81=Após fontes homologadas | G81=APROVADO CEI
+A82=T-CEI11-12 | B82=Read-only | C82=Usuário procura criar pedido/alterar fornecedor/estoque | D82=Nenhum CTA existe; nenhuma escrita ocorre | E82=ação não autorizada | F82=Após gate | G82=APROVADO CEI

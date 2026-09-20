@@ -1,0 +1,406 @@
+{
+  "description": "Artefatos preparados para guilhermejacyzin/majucau; não comprova envio remoto.",
+  "manifest_self_excluded": true,
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 116,
+      "sha256": "34cd0ee448001ad020f6e6c1635164e76e1d4a150d965beb0d3c84362c09dbd6"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 218,
+      "sha256": "34a0433fc05073290567964a4f9491db4c76fdd0eec4f1de0608fccf0572df40"
+    },
+    {
+      "path": "docs/planejamento/FONTES.md",
+      "bytes": 3323,
+      "sha256": "2b5f092f114a0cdb48654ec9494d9d6529962cea990bfabf82829321f3e674c5"
+    },
+    {
+      "path": "docs/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v0.md",
+      "bytes": 71160,
+      "sha256": "0f465f3365092a9036ab36602116100daa5ab98ba55c967877ab08e22de6776b"
+    },
+    {
+      "path": "docs/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v1.md",
+      "bytes": 60669,
+      "sha256": "33d656fee51c8c77598d69d107024223fd891a5e4a22fa870b48e7bbe526f132"
+    },
+    {
+      "path": "docs/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md",
+      "bytes": 68267,
+      "sha256": "596a93ce93e38b211254a0fbc46b059ae3c295a0409809d797f2b3c5e4a165ec"
+    },
+    {
+      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v0.md",
+      "bytes": 109134,
+      "sha256": "e0eab53799a878940426937bc10af0a6f5700fe6d3c31e380530dd6e322df305"
+    },
+    {
+      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v1.md",
+      "bytes": 128726,
+      "sha256": "2ad72a5192b172329db5b4c2108aff1b03b1279c8d6482da3002d4bce50a75bb"
+    },
+    {
+      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
+      "bytes": 150066,
+      "sha256": "3111337d09ad07b42424224d9b81499b039fb4bbf3b9253429afed1de4326df8"
+    },
+    {
+      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
+      "bytes": 37191,
+      "sha256": "6b44113d7da1607d608cc5f6f875e397b85bed5453ddd05b9728e04f0d1e01b2"
+    },
+    {
+      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v1.xlsx",
+      "bytes": 42665,
+      "sha256": "fd4228f6ee9acf3861badbf643463b51f10a18c80c64e0d7f01c5c67edebf3e5"
+    },
+    {
+      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
+      "bytes": 45048,
+      "sha256": "42232052b8ccb8e3668fc4962f47f59824b516875e4c04f61d77cd24e409fb6a"
+    },
+    {
+      "path": "docs/planejamento/README.md",
+      "bytes": 3609,
+      "sha256": "67be33bd180cef9852de0890f0140a2eab47c7a5a87787599b9dd5fbfdbebb70"
+    },
+    {
+      "path": "docs/planejamento/VISAO_GERAL.md",
+      "bytes": 2169,
+      "sha256": "3628fdd7bc287eb90cd14b8541436b574a1d26e4fdac59630357e43f7048c08f"
+    },
+    {
+      "path": "docs/planejamento/work/assemble_deliverables.py",
+      "bytes": 26668,
+      "sha256": "ad276c1bf6e3ccd6b86cdec6f93592bd2f0234d44cf44e9cad3792e2ca7e9828"
+    },
+    {
+      "path": "docs/planejamento/work/backlog.json",
+      "bytes": 137628,
+      "sha256": "123619465d3f4a4a18a1151a7974053c5ada26a5681ccc70779b41ee3f125b22"
+    },
+    {
+      "path": "docs/planejamento/work/backlog_v1.json",
+      "bytes": 157157,
+      "sha256": "3b1861f6902dfccd46261e4ba2c04ac8b44eda1a4cfec7c09bfb5418a37d8e42"
+    },
+    {
+      "path": "docs/planejamento/work/backlog_v2.json",
+      "bytes": 176511,
+      "sha256": "1d1e5e438596d0463206dc77e76df53c6ef80b053cfd3d12fb7d45b20b845798"
+    },
+    {
+      "path": "docs/planejamento/work/build_backlog.py",
+      "bytes": 82862,
+      "sha256": "6513c3cc31f6b5357f2a0e89c9ee2dbaf447534f5cee8c66f1e9b541edbc1d9d"
+    },
+    {
+      "path": "docs/planejamento/work/build_tracker.mjs",
+      "bytes": 12036,
+      "sha256": "1a879975025a8404da5f11039a1a5187983a47face013d7107d8dbd770bf2f73"
+    },
+    {
+      "path": "docs/planejamento/work/build_tracker_v1.mjs",
+      "bytes": 12172,
+      "sha256": "1d717fd00b2967c57a052cb8a2f48dc7f2aef44c1469cd1dfd562d6c151a8b96"
+    },
+    {
+      "path": "docs/planejamento/work/decisions.json",
+      "bytes": 24096,
+      "sha256": "36115aea3b7306fd7dbe854427481daf2fbd845217209aec1db8a04f7cb8c2c3"
+    },
+    {
+      "path": "docs/planejamento/work/decisions_v1.json",
+      "bytes": 46624,
+      "sha256": "f4b2b4ecd5a061a4b4ce645bf234053f907a266b5d198d5b7b7f43fb027d0537"
+    },
+    {
+      "path": "docs/planejamento/work/decisions_v2.json",
+      "bytes": 97121,
+      "sha256": "84d497b6387871b2e23c661fa73fe8757c36f9b9573a765ec39c4e4651b0710a"
+    },
+    {
+      "path": "docs/planejamento/work/financeiro.md",
+      "bytes": 23726,
+      "sha256": "e668d1bd5774d3729132b240db542558e8e6762e92a1255b7a1e61b664385079"
+    },
+    {
+      "path": "docs/planejamento/work/operacao_ux.md",
+      "bytes": 30026,
+      "sha256": "ec1a9afe4bf62062d40a533c58dd643151934ebdba57a280f62fcc4fca56267f"
+    },
+    {
+      "path": "docs/planejamento/work/prepare_tracker_v1.py",
+      "bytes": 3350,
+      "sha256": "e893a347bbd05704f46b34654f7c574e1a17d72b618e2afc56b6c2a98d7f01b1"
+    },
+    {
+      "path": "docs/planejamento/work/prepare_tracker_v2.py",
+      "bytes": 2637,
+      "sha256": "11283f573a31a80c6e63221a92cf9a7b91264b435b2b7edf01f1200b5ec65e34"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Cobertura.png",
+      "bytes": 50900,
+      "sha256": "e43860b7cf79b44cc0842b7d4f3991d5083dcb235e3ee7e0e6e8e15a85e9075f"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Decisoes.png",
+      "bytes": 72889,
+      "sha256": "3cc13a3d1c4a9e7f00c819922cead8c887da281debe9a773ab394161fd1fb21e"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Evolucao.png",
+      "bytes": 166770,
+      "sha256": "ef0a4c0b0cb2d5cf181ed4a309854fb37c0414adac545f2460360b297c0b31e9"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Tarefas.png",
+      "bytes": 72660,
+      "sha256": "72efbe0c78d22d5a3d643528a282ef9df23af569139d8afb3b4403051bc0ee7e"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v1/Cobertura.png",
+      "bytes": 50900,
+      "sha256": "e43860b7cf79b44cc0842b7d4f3991d5083dcb235e3ee7e0e6e8e15a85e9075f"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v1/Decisoes.png",
+      "bytes": 136512,
+      "sha256": "c1c9951fa002f3522e8a467e1319242ae7ca9db4f7ac184a99edf2d5d9a67004"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v1/Evolucao.png",
+      "bytes": 185867,
+      "sha256": "1db355704e1e834104a27d91c183af36e2ba59bc6235e0ecf14cfab554d60ac1"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v1/Tarefas.png",
+      "bytes": 72638,
+      "sha256": "a318873b72e3084f175e1a0833413534743537ba6bb36c1c68e3778b44f84bd9"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v1/Verificacoes.png",
+      "bytes": 123845,
+      "sha256": "1e648c91af12107493451442ae153bab474a0d0be10877ff5e09d4a2de638aa6"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v2/Cobertura.png",
+      "bytes": 62967,
+      "sha256": "31102e4c52082fac0dc88d410ac1232b7fda6357a59356733664b61988970bb3"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v2/Decisoes.png",
+      "bytes": 152135,
+      "sha256": "9af71b1c2fe68a766c476bb261f8fb8546cc76790a0dd6267c1222443094250d"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v2/Evolucao.png",
+      "bytes": 185587,
+      "sha256": "dca4b7704a10dfceb0a14ed4c5b43978f820813d301765a7d6f12d7b336a265e"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v2/Tarefas.png",
+      "bytes": 70628,
+      "sha256": "b313b8d26e0231b4f324d34ff355f84c2fa11cd36d0b42031fd88f2fc22e3817"
+    },
+    {
+      "path": "docs/planejamento/work/previews_v2/Verificacoes.png",
+      "bytes": 143805,
+      "sha256": "d4aa30496d84b2a90322507046247174ada2c5c59733eb481885d938e78d3782"
+    },
+    {
+      "path": "docs/planejamento/work/read_sources.py",
+      "bytes": 1253,
+      "sha256": "556c6ca45111a35aa238232896bb70aac27dad8d73ab7e6bf22221067b6852d7"
+    },
+    {
+      "path": "docs/planejamento/work/revise_closure_v2.py",
+      "bytes": 78024,
+      "sha256": "63ab9ef5349ed98c5739198325c3eba1fde86d22a93a49f816c020e878e01fef"
+    },
+    {
+      "path": "docs/planejamento/work/revise_consolidation_v1.py",
+      "bytes": 48354,
+      "sha256": "e7309b0c8f3f42a48d5076f0ef37cb18516d9ce6b4b3cb6b54732802c9ca738d"
+    },
+    {
+      "path": "docs/planejamento/work/revision_v1.json",
+      "bytes": 12627,
+      "sha256": "55743d3d5f8b83c2fdb7bc4224d4a9f1cca96f9cab0d3177f09984fe948cd588"
+    },
+    {
+      "path": "docs/planejamento/work/revision_v2.json",
+      "bytes": 12349,
+      "sha256": "3b57cadc236b97a4e5b0d1386fe5f218f8cfad3320930254fa8502edb734f642"
+    },
+    {
+      "path": "docs/planejamento/work/scope.json",
+      "bytes": 3494,
+      "sha256": "e10f4a2e19655f625a30d24bcb7460415de93f0edb493f8834df41edaa709257"
+    },
+    {
+      "path": "docs/planejamento/work/scope_v2.json",
+      "bytes": 4420,
+      "sha256": "71e79cfe1d03f3efb01ab50e8baedee15a33e231caa93a4042bd4592ae1e5bf0"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/00_Resumo.txt",
+      "bytes": 5738,
+      "sha256": "a145d33a3b73906c6364d1df00af020392db2fe848c3ab24aed145a322f175e3"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/A_Matriz_Mestra.txt",
+      "bytes": 50982,
+      "sha256": "bec7d0cab210b7ea66a6cb3dfe06427948c8a3ca8b7d426fca43ecdb04785a27"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/B_Intersecoes.txt",
+      "bytes": 3950,
+      "sha256": "db0af233ef11fa9730d57763f0b97c27b0b531b2eec2c3b2747ff6e0fd875bf7"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/C_Conflitos.txt",
+      "bytes": 2906,
+      "sha256": "c2c02efa862f2079e048e7a7402afe9a80bfab651e70501e9c075c3e23363b91"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/D_Lacunas.txt",
+      "bytes": 9291,
+      "sha256": "1fab8e0b9000de949a44216c8074afcbacf4b1358f6a0efa6d6dd09e6073110b"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/E_Alinhamentos.txt",
+      "bytes": 2191,
+      "sha256": "323d1b2dda4118c3468baa32db8e5a5a36a1a9dc65c06f15710fe47fc655fe29"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/F_Alteracoes.txt",
+      "bytes": 6478,
+      "sha256": "572de2188691bd3b8c8a0e21398061cc40ed18d0e352fb567c9fcdf21ca9bc23"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/G_Ordem.txt",
+      "bytes": 2245,
+      "sha256": "7fd125a2d7631d2be9b32aad656b64f74ef7ea3999c3dfc55dea2390bed09b17"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/H_Contrato_Dados.txt",
+      "bytes": 15139,
+      "sha256": "fdaeffb1f050e646be39c561008c9ca3ef66a58ea7913ab7eda3594b743b7eee"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/I_Testes.txt",
+      "bytes": 32505,
+      "sha256": "23b2ada1e45dba763f80ee94fabf0de1f02a9b86e9f504014ea9540ec3b2e95d"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/J_Autoauditoria.txt",
+      "bytes": 5751,
+      "sha256": "aa1f5f681a3d9690f0281ed3554720d4ee9cd0161200a632ec55724af01dc56a"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/manifest.json",
+      "bytes": 2596,
+      "sha256": "86d1bcd91d404925ee6d180c09c7c5c231b835d6e5b99f73d4ee72bf16f71cb6"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/Q_CEI_Tela_11.txt",
+      "bytes": 14051,
+      "sha256": "82ad1c8bbf2cbcb73fa9fee7e71dc638b8d6499c2b2d359ce825f42ade9941de"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/R_CEI_Tela_12.txt",
+      "bytes": 16175,
+      "sha256": "fe92c50f233f7fc1e0ccd646426084c48ef1e420bbfab40861601b1cf1c66128"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/S_CEI_Tela_13.txt",
+      "bytes": 7636,
+      "sha256": "0d8cadad89439db4ebf7c6343bf8bbaf84ecccf75d3cac31f854bf4591d96a0d"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/T_CEI_Tela_14.txt",
+      "bytes": 7401,
+      "sha256": "25aea782e5a730da86078703e3946145588ce823973880ce67061cc715ac64d9"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/U_CEI_Tela_15.txt",
+      "bytes": 8289,
+      "sha256": "2c288adc34000e361c605a57be35b094bd53bf3f8cc8d7138f33e9dc009a9fbc"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/V_Mockup_Tela_16.txt",
+      "bytes": 258,
+      "sha256": "70065ce6b6ecb7bc165005a734aaed8dc3d44869274e2cb3f95a2b0017bb8537"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/W_CEI_Tela_16.txt",
+      "bytes": 9465,
+      "sha256": "787f65253e34b60859598c9ffda8c0fcf637e0679007ad38a79e27ddcfa7d367"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/workbook.json",
+      "bytes": 286067,
+      "sha256": "1b8cee72563b88fd359ebc2a984d9f5cbd41c7cbe12f63b521924c043f6abe7c"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/X_Mockup_Tela_17.txt",
+      "bytes": 253,
+      "sha256": "8c07334d176623f921ee4bef33a723c2db3375a51b93f1d943acc979dbf3fd17"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/Y_CEI_Tela_17.txt",
+      "bytes": 10105,
+      "sha256": "036ca03ad2f6f9caf7d690e42ecad5954d39f539c7719bd1a05b93b6049f9209"
+    },
+    {
+      "path": "docs/planejamento/work/verification.json",
+      "bytes": 428,
+      "sha256": "bbee0c018c5aeacb0741022f47d9a8236dbe374e57fed840405c4ccc727c9404"
+    },
+    {
+      "path": "docs/planejamento/work/verification_v1.json",
+      "bytes": 444,
+      "sha256": "4e8f6e839d1122b1b38c8328f36f2bad2cda63ebc8d6da14066987f45966e366"
+    },
+    {
+      "path": "docs/planejamento/work/verification_v2.json",
+      "bytes": 385,
+      "sha256": "4c2e6e48c7fef1a3d396788e90dcd0c9d34658d3e2557406e3c1df6124c5472c"
+    },
+    {
+      "path": "docs/planejamento/work/verify_deliverables.py",
+      "bytes": 3059,
+      "sha256": "8da7432f7f07f1524b621e76884d13d5f00010e57043ebb9ffbaa1fafa94f643"
+    },
+    {
+      "path": "docs/planejamento/work/verify_package.py",
+      "bytes": 4446,
+      "sha256": "de2504f4f1a52f60c37a90645d68f769bc72a4d1729c968d9b54b06454eba000"
+    },
+    {
+      "path": "docs/planejamento/work/verify_v1.py",
+      "bytes": 4859,
+      "sha256": "d932072963afc5fcec1aa7dbc0b45e051166c93d64f269f479dacf20d3e65a80"
+    },
+    {
+      "path": "docs/planejamento/work/verify_v2.py",
+      "bytes": 3267,
+      "sha256": "4430f52d87caf12e7e3a448e28aec97cfc7aa2e7e0871619458fee39481d19b1"
+    },
+    {
+      "path": "README.md",
+      "bytes": 10688,
+      "sha256": "aefb74e6957290c24862c81c8483a50ad74686f61f3218e2e492df1b60f444d8"
+    },
+    {
+      "path": "tools/exportar_planejamento.py",
+      "bytes": 1926,
+      "sha256": "f89c888f5e05cbdf6ba9fc0b565a839a70330b359c0f362c14ef20a93625ac03"
+    }
+  ]
+}

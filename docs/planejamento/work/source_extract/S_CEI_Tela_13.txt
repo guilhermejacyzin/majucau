@@ -1,0 +1,44 @@
+A1=S — CEI TELA 13 | LANÇAMENTOS & PENDÊNCIAS
+A2=Contrato Executável de Interface — versão 12/09/2026. Tela 13 é a central de exceções e decisões pendentes. Ela consolida OPEN, BLOCKED, PENDING, UNMAPPED, STALE e DIVERGENT sem inventar resolução, sem alterar fatos no Bling e sem substituir as regras dos módulos de origem. Design do mockup vigente é imutável: somente dados/conteúdo podem ser alterados sem nova aprovação.
+A4=DESIGN LOCK — REGRA IMUTÁVEL
+A5=Item | B5=Regra | C5=Fonte | D5=Pode alterar design? | E5=Pode alterar dado/conteúdo? | F5=Efeito externo | G5=Status | H5=Observação
+A6=Layout/base visual | B6=Preservar sidebar, logo, cabeçalho, cores, tipografia, posições, proporções e containers do mockup vigente. | C6=Decisão Majucau | D6=NÃO | E6=SIM, quando aprovado | F6=Nenhum | G6=APROVADO | H6=Se uma regra não couber, pedir decisão antes de redesenhar.
+A7=Balanço Patrimonial | B7=Não exibir rota/elemento legado. | C7=Decisão estrutural anterior | D7=N/A | E7=SIM — remover conteúdo legado | F7=Nenhum | G7=APROVADO | H7=Fora do produto.
+A9=PAPEL DA TELA 13
+A10=ID | B10=Conceito | C10=Definição executável | D10=Fonte | E10=Ação permitida | F10=Mutação no Bling? | G10=Status | H10=Observação
+A11=13-R01 | B11=Central de pendências | C11=Concentrar exceções que exigem decisão, correção, mapeamento ou investigação humana. | D11=Eventos/estados dos módulos | E11=Consultar/abrir contexto | F11=NÃO | G11=APROVADO | H11=Não é tela de lançamentos operacionais no Bling.
+A12=13-R02 | B12=OPEN | C12=Regra/decisão necessária ainda não foi fechada. | D12=Governança/CEIs | E12=Ver contexto | F12=NÃO | G12=APROVADO | H12=Não transformar OPEN em valor padrão.
+A13=13-R03 | B13=BLOCKED | C13=Processo não pode continuar por falta de condição obrigatória. | D13=Módulo de origem | E13=Ver causa | F13=NÃO | G13=APROVADO | H13=Bloqueio deve apontar dependência.
+A14=13-R04 | B14=PENDING | C14=Item aguarda análise, confirmação ou processamento. | D14=Módulo de origem | E14=Ver contexto | F14=NÃO | G14=APROVADO | H14=Não equivale a erro.
+A15=13-R05 | B15=UNMAPPED | C15=Dado existe, mas ainda não possui classificação/mapeamento aprovado. | D15=Módulo de origem | E15=Ver origem | F15=NÃO | G15=APROVADO | H15=Nunca jogar em conta/categoria coringa.
+A16=13-R06 | B16=STALE | C16=Dado existe, porém está desatualizado além da política da fonte. | D16=Integração/origem | E16=Ver integração | F16=NÃO | G16=APROVADO | H16=Última posição válida permanece identificada.
+A17=13-R07 | B17=DIVERGENT | C17=Duas fontes/cálculos relevantes não reconciliaram. | D17=Reconciliação | E17=Comparar evidências | F17=NÃO | G17=APROVADO | H17=Não escolher lado silenciosamente.
+A19=KPIs E TABELA PRINCIPAL
+A20=Elemento | B20=Definição | C20=Origem | D20=Interação | E20=Altera dado? | F20=Exporta? | G20=Estado | H20=Critério
+A21=Pendências abertas | B21=Contagem dos itens ativos OPEN/PENDING conforme filtro. | C21=pending_item | D21=Filtrar lista | E21=Não | F21=Contrato OPEN | G21=CONFIRMED | H21=Contagem reconcilia com tabela.
+A22=Divergências | B22=Contagem de itens DIVERGENT ativos. | C22=pending_item | D22=Filtrar lista | E22=Não | F22=Contrato OPEN | G22=CONFIRMED | H22=Sem duplicar o mesmo item.
+A23=Bloqueados | B23=Contagem de itens BLOCKED ativos. | C23=pending_item | D23=Filtrar lista | E23=Não | F23=Contrato OPEN | G23=CONFIRMED | H23=Motivo obrigatório.
+A24=Não mapeados | B24=Contagem de itens UNMAPPED ativos. | C24=pending_item | D24=Filtrar lista | E24=Não | F24=Contrato OPEN | G24=CONFIRMED | H24=Origem/mapping ausente explícitos.
+A25=Tabela Itens Pendentes | B25=ID, módulo, origem, descrição, status, responsável/contexto, atualização e ação contextual. | C25=pending_item | D25=Linha → detalhe/rota | E25=Não diretamente | F25=Contrato OPEN | G25=CONFIRMED/STALE | H25=Ação não fecha item automaticamente.
+A26=Distribuição por status | B26=Contagem dos mesmos itens ativos por status. | C26=pending_item | D26=Filtro | E26=Não | F26=Não | G26=CONFIRMED | H26=Deve reconciliar com tabela.
+A28=INTERAÇÕES
+A29=Elemento | B29=Tipo | C29=Destino/resultado | D29=Pode fechar item? | E29=Pode alterar fonte? | F29=Auditoria | G29=Status | H29=Observação
+A30=Linha / Ver detalhes | B30=DRAWER/NAVIGATION | C30=Abre evidências, origem, regra e dependências. | D30=NÃO | E30=NÃO | F30=Sim | G30=APROVADO | H30=Preserva contexto e filtros.
+A31=Resolver | B31=AÇÃO CONTEXTUAL | C31=Abre o fluxo autorizado do tipo de pendência ou navega ao módulo responsável. | D31=NÃO automaticamente | E31=NÃO na Tela 13 | F31=Obrigatória | G31=APROVADO | H31=Fechamento depende da regra do item; nada é marcado resolvido só pelo clique.
+A32=Filtros/busca | B32=FILTER | C32=Filtra módulo/status/origem/texto. | D32=NÃO | E32=NÃO | F32=Não necessária | G32=APROVADO | H32=Sem efeito externo.
+A33=Atualizar | B33=SYNC | C33=Reconsulta estados consolidados. | D33=NÃO | E33=NÃO | F33=Registrar posição | G33=APROVADO | H33=Falha não apaga última posição.
+A34=Exportar | B34=EXPORT | C34=Comportamento ainda não homologado. | D34=NÃO | E34=NÃO | F34=Obrigatória se aprovado | G34=OPEN — NÃO IMPLEMENTAR | H34=Botão pode permanecer visualmente por Design Lock, mas sem contrato funcional definitivo.
+A35=Ajuda | B35=HELP | C35=Ajuda contextual. | D35=NÃO | E35=NÃO | F35=Não | G35=APROVADO VISUAL | H35=Não altera regra de negócio.
+A37=RELAÇÃO COM TELAS 14 E 15
+A38=Tela | B38=Responsabilidade | C38=Quando um item aparece aqui? | D38=Duplica regra? | E38=Mutação? | F38=Vínculo | G38=Status | H38=Observação
+A39=Tela 14 — Alertas | B39=Condição que exige atenção. | C39=Somente se o alerta também gerar uma pendência/decisão rastreável. | D39=NÃO | E39=Não | F39=alert_id opcional | G39=APROVADO | H39=Alerta não é automaticamente pendência.
+A40=Tela 15 — Importações/Integrações | B40=Saúde/erros das fontes. | C40=Quando erro, STALE, rejeição ou mapping requer intervenção. | D40=NÃO | E40=Não | F40=batch_id/source_id | G40=APROVADO | H40=Detalhe técnico fica na Tela 15.
+A42=CRITÉRIOS DE ACEITE
+A43=ID | B43=Cenário | C43=Entrada | D43=Resultado esperado | E43=Risco evitado | F43=Implementação | G43=Status | H43=Observação
+A44=T-CEI13-01 | B44=OPEN | C44=Regra não fechada | D44=Item aparece OPEN com dependência e origem. | E44=default inventado | F44=Após gate | G44=APROVADO CEI
+A45=T-CEI13-02 | B45=UNMAPPED | C45=Dado sem mapping | D45=Item aparece UNMAPPED; não é classificado automaticamente. | E45=conta coringa | F45=Após gate | G45=APROVADO CEI
+A46=T-CEI13-03 | B46=DIVERGENT | C46=Fontes não reconciliam | D46=Exibe ambas as evidências e mantém divergência. | E46=resolução silenciosa | F46=Após gate | G46=APROVADO CEI
+A47=T-CEI13-04 | B47=STALE | C47=Fonte além da freshness | D47=Exibe STALE e última posição válida. | E47=falso atual | F47=Após gate | G47=APROVADO CEI
+A48=T-CEI13-05 | B48=Resolver | C48=Usuário clica Resolver | D48=Abre contexto autorizado; não fecha automaticamente. | E48=falsa resolução | F48=Após gate | G48=APROVADO CEI
+A49=T-CEI13-06 | B49=Design | C49=Mudança funcional proposta | D49=Layout não muda sem aprovação explícita; somente conteúdo é alterado. | E49=redesign indevido | F49=Contínuo | G49=APROVADO CEI
+A50=T-CEI13-07 | B50=Exportar | C50=Usuário tenta usar botão sem contrato homologado | D50=Função permanece desabilitada/não implementada até decisão. | E50=export não contratado | F50=Após gate | G50=OPEN

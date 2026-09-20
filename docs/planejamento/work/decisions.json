@@ -1,0 +1,642 @@
+[
+  {
+    "id": "D-01",
+    "theme": "Empresa atendida",
+    "question": "Decisão recebida",
+    "impact": "Orienta o planejamento.",
+    "source": "Conversa atual",
+    "status": "Respondida",
+    "answer": "Somente Majucau. A resposta anterior sobre várias empresas foi corrigida pelo usuário.",
+    "tasks": ""
+  },
+  {
+    "id": "D-02",
+    "theme": "Usuários",
+    "question": "Decisão recebida",
+    "impact": "Orienta o planejamento.",
+    "source": "Conversa atual",
+    "status": "Respondida",
+    "answer": "Três pessoas da diretoria, cada uma em seu computador.",
+    "tasks": ""
+  },
+  {
+    "id": "D-03",
+    "theme": "Hospedagem",
+    "question": "Decisão recebida",
+    "impact": "Orienta o planejamento.",
+    "source": "Conversa atual",
+    "status": "Respondida",
+    "answer": "Local, em computador/servidor Windows existente. Demais características ainda desconhecidas.",
+    "tasks": ""
+  },
+  {
+    "id": "D-04",
+    "theme": "Primeira produção",
+    "question": "Decisão recebida",
+    "impact": "Orienta o planejamento.",
+    "source": "Conversa atual",
+    "status": "Respondida",
+    "answer": "Todos os módulos confirmados do material na primeira entrada em produção; etapas internas são permitidas para organizar o trabalho.",
+    "tasks": ""
+  },
+  {
+    "id": "D-05",
+    "theme": "Conflitos entre fontes",
+    "question": "Decisão recebida",
+    "impact": "Orienta o planejamento.",
+    "source": "Conversa atual",
+    "status": "Respondida",
+    "answer": "Analisar caso a caso com o usuário. Não existe precedência global da planilha sobre imagens.",
+    "tasks": ""
+  },
+  {
+    "id": "D-06",
+    "theme": "Tecnologias",
+    "question": "Decisão recebida",
+    "impact": "Orienta o planejamento.",
+    "source": "Conversa atual",
+    "status": "Respondida",
+    "answer": "Monólito com DDD e arquitetura hexagonal; backend Go; frontend JavaScript com React.",
+    "tasks": ""
+  },
+  {
+    "id": "D-07",
+    "theme": "Balanço Patrimonial",
+    "question": "Decisão recebida",
+    "impact": "Orienta o planejamento.",
+    "source": "Conversa atual",
+    "status": "Respondida",
+    "answer": "Fora da primeira versão; retirar o item dos menus por decisão explícita do usuário.",
+    "tasks": ""
+  },
+  {
+    "id": "D-08",
+    "theme": "Natureza desta entrega",
+    "question": "Decisão recebida",
+    "impact": "Orienta o planejamento.",
+    "source": "Conversa atual",
+    "status": "Respondida",
+    "answer": "Somente análise e backlog. Não desenvolver o produto nesta etapa.",
+    "tasks": ""
+  },
+  {
+    "id": "C-01",
+    "theme": "Pagamento diferente do título",
+    "question": "Qual o tratamento para R$1.000 com movimento de R$600?",
+    "impact": "Define baixa, saldo e conciliação.",
+    "source": "C_Conflitos!A3:L3",
+    "status": "Respondida",
+    "answer": "Marcar divergência e manter o título sem baixa até a análise. Casos complementares serão detalhados em BK-005.",
+    "tasks": "BK-005"
+  },
+  {
+    "id": "C-02",
+    "theme": "Semana crítica",
+    "question": "Maior despesa ou menor saldo?",
+    "impact": "Define seleção da semana no fluxo e na calculadora.",
+    "source": "C_Conflitos!A4:L4",
+    "status": "Respondida",
+    "answer": "A semana com o maior total de despesas. A posição de caixa dentro dela ainda precisa ser definida.",
+    "tasks": ""
+  },
+  {
+    "id": "C-03",
+    "theme": "Lucro elegível",
+    "question": "Qual DRE fornece o lucro?",
+    "impact": "Define fonte do limite da calculadora.",
+    "source": "C_Conflitos!A5:L5",
+    "status": "Respondida",
+    "answer": "A DRE calculada pelo Majucau. Período elegível e composição do valor já investido ainda precisam ser detalhados.",
+    "tasks": ""
+  },
+  {
+    "id": "L-01",
+    "theme": "Gate formal",
+    "question": "Aprovação formal Majucau após resolver conflitos.",
+    "impact": "Bloqueia qualquer implementação definitiva.",
+    "source": "D_Lacunas!A3:G3",
+    "status": "Planejamento autorizado",
+    "answer": "Usuário pediu somente análise e backlog. Implementação será trabalho futuro; o bloqueio textual do documento não impede planejar agora.",
+    "tasks": ""
+  },
+  {
+    "id": "L-02",
+    "theme": "Sistema atual",
+    "question": "Acesso read-only ao projeto e dados técnicos.",
+    "impact": "Impossível classificar JÁ CONFORME/PRECISA ALTERAÇÃO por código.",
+    "source": "D_Lacunas!A4:G4",
+    "status": "Parcialmente esclarecida",
+    "answer": "GitHub inspecionado e vazio. Falta confirmar se há código/dados técnicos fora do repositório.",
+    "tasks": ""
+  },
+  {
+    "id": "L-03",
+    "theme": "CMV histórico",
+    "question": "Mapear campo/snapshot ou decidir tratamento.",
+    "impact": "Margem/DRE histórica não podem ser exatas.",
+    "source": "D_Lacunas!A5:G5",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-007"
+  },
+  {
+    "id": "L-04",
+    "theme": "Perdas — competência",
+    "question": "Definir occurrence/confirmation/baixa/outra data.",
+    "impact": "Resultado por período pode mudar.",
+    "source": "D_Lacunas!A6:G6",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-007"
+  },
+  {
+    "id": "L-05",
+    "theme": "Juros Nuvem",
+    "question": "Aprovar conta/classificação e competência.",
+    "impact": "DRE por linha diverge.",
+    "source": "D_Lacunas!A7:G7",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-007"
+  },
+  {
+    "id": "L-06",
+    "theme": "Tarifa fixa Pricing",
+    "question": "Definir rateio ou excluir componente por SKU com regra explícita.",
+    "impact": "Preço sugerido por SKU incompleto.",
+    "source": "D_Lacunas!A8:G8",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-075"
+  },
+  {
+    "id": "L-07",
+    "theme": "Caixa da semana crítica",
+    "question": "Definir campo real do fluxo.",
+    "impact": "Máximo Aplicável indefinido mesmo após escolher semana.",
+    "source": "D_Lacunas!A9:G9",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-006"
+  },
+  {
+    "id": "L-08",
+    "theme": "Balancete — saldos iniciais",
+    "question": "Aprovar fonte/campos ou manter UNAVAILABLE.",
+    "impact": "Balancete não fecha de forma auditável.",
+    "source": "D_Lacunas!A10:G10",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-007"
+  },
+  {
+    "id": "L-09",
+    "theme": "DRE — fontes complementares",
+    "question": "Aprovar fontes complementares e mappings.",
+    "impact": "DRE incompleta.",
+    "source": "D_Lacunas!A11:G11",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-007"
+  },
+  {
+    "id": "L-10",
+    "theme": "UI Pricing",
+    "question": "Aprovar local em tela existente; sem nova rota automática.",
+    "impact": "Risco de violar Design Lock.",
+    "source": "D_Lacunas!A12:G12",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-075"
+  },
+  {
+    "id": "L-11",
+    "theme": "Arquivos Nuvem",
+    "question": "Fornecer arquivos-modelo e política operacional.",
+    "impact": "Bloqueia importador confiável e status CONFIRMED.",
+    "source": "D_Lacunas!A13:G13",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-010"
+  },
+  {
+    "id": "L-12",
+    "theme": "Ciclo de vida de arquivo",
+    "question": "Definir política: origem imutável + cópia interna ou movimento autorizado.",
+    "impact": "Risco de permissão/destruição de evidência.",
+    "source": "D_Lacunas!A14:G14",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-010"
+  },
+  {
+    "id": "L-13",
+    "theme": "Fretes/taxas na DRE",
+    "question": "Aprovar mapping/competência por tipo.",
+    "impact": "DRE final não pode consumir todos os fatos.",
+    "source": "D_Lacunas!A15:G15",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-007"
+  },
+  {
+    "id": "L-14",
+    "theme": "Recuperações",
+    "question": "Aprovar reconhecimento por tipo de evento.",
+    "impact": "Caixa/DRE podem antecipar ou duplicar recuperação.",
+    "source": "D_Lacunas!A16:G16",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-007"
+  },
+  {
+    "id": "L-15",
+    "theme": "Custo de carregar estoque",
+    "question": "Aprovar taxa/parametrização e armazenagem incremental válida.",
+    "impact": "Antecipação de compra fica sem custo econômico completo.",
+    "source": "D_Lacunas!A17:G17",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-084"
+  },
+  {
+    "id": "L-16",
+    "theme": "Mockup Logística",
+    "question": "Aprovar bloco/tela dentro do Design Lock.",
+    "impact": "UI não pode ser implementada sem risco de redesign indevido.",
+    "source": "D_Lacunas!A18:G18",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-076"
+  },
+  {
+    "id": "L-17",
+    "theme": "Compras — quantidade recomendada",
+    "question": "Homologar fórmula, janela histórica, mínimos/múltiplos e critérios por insumo.",
+    "impact": "Sem fórmula aprovada, quantidade sugerida pode superdimensionar ou fragmentar compras.",
+    "source": "D_Lacunas!A19:G19",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-008"
+  },
+  {
+    "id": "L-18",
+    "theme": "Compras — prioridade e prazo histórico",
+    "question": "Homologar janela histórica, estatística e thresholds de prioridade.",
+    "impact": "Prioridade pode ficar arbitrária ou invertida.",
+    "source": "D_Lacunas!A20:G20",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-008"
+  },
+  {
+    "id": "L-19",
+    "theme": "Cacau — sinais externos",
+    "question": "Homologar fontes, thresholds, freshness, origem geográfica e comparabilidade de preço.",
+    "impact": "Risco de cacau pode sinalizar falso positivo/negativo ou comparar bases incompatíveis.",
+    "source": "D_Lacunas!A21:G21",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-011"
+  },
+  {
+    "id": "L-20",
+    "theme": "Forecast — thresholds de qualidade",
+    "question": "Homologar limites por métrica e, quando aplicável, por sazonalidade/SKU.",
+    "impact": "Sem threshold não se deve aprovar automaticamente uma versão de forecast como 'boa'.",
+    "source": "D_Lacunas!A22:G22",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-009"
+  },
+  {
+    "id": "L-21",
+    "theme": "Meta de faturamento — distribuição",
+    "question": "Homologar preço realizado de referência, regra de distribuição e tratamento de overrides para cenário mista.",
+    "impact": "Distribuição mal definida pode transformar meta financeira em quantidades erradas.",
+    "source": "D_Lacunas!A23:G23",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-009"
+  },
+  {
+    "id": "L-22",
+    "theme": "Telas 13–15 — exportação",
+    "question": "Definir por tela se exporta, formato, colunas, filtros/contexto e permissões; até lá não implementar.",
+    "impact": "Implementar por inferência criaria artefato não aprovado e possível vazamento de dados técnicos.",
+    "source": "D_Lacunas!A24:G24",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-012"
+  },
+  {
+    "id": "L-23",
+    "theme": "Tela 13 — resolução por tipo",
+    "question": "Mapear tipos de pendência para fluxo autorizado, permissões, evidências e transição de status.",
+    "impact": "Fechar genericamente pode mascarar bloqueio ou divergência sem corrigir causa.",
+    "source": "D_Lacunas!A25:G25",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-012"
+  },
+  {
+    "id": "L-24",
+    "theme": "Tela 15 — freshness por fonte",
+    "question": "Homologar/configurar freshness, retry e timeout por Bling e por cada fonte externa ativa.",
+    "impact": "Sem política por fonte, status STALE/OK pode ser arbitrário.",
+    "source": "D_Lacunas!A26:G26",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-010"
+  },
+  {
+    "id": "L-25",
+    "theme": "Tela 16 — governança de edição de parâmetros",
+    "question": "Definir, somente quando necessário, quais parâmetros são editáveis, por quem, fluxo de aprovação, versionamento/vigência e rollback.",
+    "impact": "Transformar a central em editor genérico pode alterar cálculo crítico sem controle.",
+    "source": "D_Lacunas!A27:G27",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-013"
+  },
+  {
+    "id": "L-26",
+    "theme": "Tela 17 — identidade, ciclo de vida e matriz de permissões",
+    "question": "Homologar matriz de permissões e arquitetura de identidade/convites/sessão antes de implementar mutações.",
+    "impact": "Implementação por inferência pode criar escalada de privilégio ou autenticação insegura.",
+    "source": "D_Lacunas!A28:G28",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-013"
+  },
+  {
+    "id": "Q-01",
+    "theme": "Referência visual",
+    "question": "Qual logo e qual organização de menu devemos adotar quando as imagens diferem? Posso corrigir textos, números e seleção de menu mantendo a estrutura aprovada?",
+    "impact": "Fixa o padrão visual sem resolver diferenças silenciosamente.",
+    "source": "T12/T13 versus demais imagens",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-004, BK-021"
+  },
+  {
+    "id": "Q-02",
+    "theme": "Módulos sem especificação completa",
+    "question": "Quais referências completam T01 Visão Executiva, T11 Compras, Aplicações, Pricing, Logística, Produtos, Simuladores e Relatórios? Os itens citados nos menus são módulos próprios ou atalhos?",
+    "impact": "Esses itens permanecem no inventário até decisão; nenhuma rota será criada com comportamento inventado.",
+    "source": "Menus; A_Matriz_Mestra",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-004, BK-021, BK-074, BK-102, BK-103"
+  },
+  {
+    "id": "Q-03",
+    "theme": "Máquina Windows",
+    "question": "O Windows que hospedará o sistema é este computador ou outro? Qual é a edição e quem pode verificar CPU, RAM, disco e suspensão automática?",
+    "impact": "Permite dimensionar instalação e processamento.",
+    "source": "Resposta do usuário: Windows; demais dados desconhecidos",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-014"
+  },
+  {
+    "id": "Q-04",
+    "theme": "Locais de acesso",
+    "question": "Os três diretores acessarão apenas dentro da empresa ou também de casa e de outras redes?",
+    "impact": "Define rede, endereço e eventual acesso remoto.",
+    "source": "Uso em três computadores confirmado",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-014"
+  },
+  {
+    "id": "Q-05",
+    "theme": "Disponibilidade local",
+    "question": "O servidor ficará ligado continuamente? Como o sistema deve funcionar durante falta de energia ou de internet?",
+    "impact": "Fontes externas exigem internet; posição anterior deve ter data e aviso.",
+    "source": "Hospedagem local",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-014"
+  },
+  {
+    "id": "Q-06",
+    "theme": "Contas e fontes reais",
+    "question": "Quais contas bancárias, depósitos, canais e fontes já são usados: Bling, Itaú, Mercado Pago, Nuvem Pago, Nuvem Envio, CDI Plus, perdas, ajustes e cacau?",
+    "impact": "O contrato menciona fontes além das quatro ilustradas.",
+    "source": "H_Contrato_Dados; M-008; T15",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-010"
+  },
+  {
+    "id": "Q-07",
+    "theme": "Estoque e pedido aplicável",
+    "question": "Qual saldo e quais depósitos do Bling entram no estoque? Um pedido insuficiente ou parcialmente recebido ainda exclui o insumo da recomendação de compra?",
+    "impact": "Define a regra compartilhada de Estoque e Compras.",
+    "source": "T09; Q_CEI_Tela_11",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-008"
+  },
+  {
+    "id": "Q-08",
+    "theme": "Situação das metas",
+    "question": "Quando um SKU com produção abaixo de 100% deve aparecer Em andamento ou Abaixo da meta? Qual data e situação da OP contam como concluídas?",
+    "impact": "O mockup não contém regra suficiente para classificar as linhas.",
+    "source": "T10",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-008, BK-079"
+  },
+  {
+    "id": "Q-09",
+    "theme": "Uso dos demonstrativos",
+    "question": "A DRE e o balancete serão usados para gestão interna ou precisam seguir também algum processo formal da contabilidade? Quem valida contas, competência, fechamento e correções?",
+    "impact": "Define fontes, rigor do aceite e participação da contabilidade.",
+    "source": "T06/T07",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-007"
+  },
+  {
+    "id": "Q-10",
+    "theme": "Período e limite de aplicação",
+    "question": "Mantemos o lucro acumulado de janeiro até dois meses antes e a reserva mínima documentada? O que conta como já investido: aportes, aportes líquidos de resgates ou posição do CDI Plus?",
+    "impact": "Fonte da DRE já decidida; estes componentes ainda mudam o resultado.",
+    "source": "M-030..M-034; T08",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-006, BK-071"
+  },
+  {
+    "id": "Q-11",
+    "theme": "Vendas para produção projetada",
+    "question": "Como a previsão de venda vira quantidade a produzir, sem descontar o estoque pronto: existe lote mínimo, rendimento, perda ou antecipação de fabricação?",
+    "impact": "A imagem mostra vendas e produção diferentes sem explicar a transformação.",
+    "source": "M-047; T12",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-009, BK-092"
+  },
+  {
+    "id": "Q-12",
+    "theme": "Relação entre metas",
+    "question": "As metas de produção da T10 são independentes das metas do cenário da T12? Quem pode editar e como ficam mudanças em meses anteriores?",
+    "impact": "Evita duas metas conflitantes ou sobrescrita de histórico.",
+    "source": "T10/T12/T16",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-009, BK-079"
+  },
+  {
+    "id": "Q-13",
+    "theme": "Ações visíveis e exportação",
+    "question": "O que deve acontecer em Ajuda, Atualizar, Ver detalhes e Exportar em cada tela? A atualização apenas consulta a posição ou também solicita sincronização?",
+    "impact": "Os mockups mostram controles sem todos os fluxos detalhados.",
+    "source": "T02–T07; T13–T15; L-22",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-012"
+  },
+  {
+    "id": "Q-14",
+    "theme": "Permissões da diretoria",
+    "question": "Os três diretores terão as mesmas permissões? Quem administra usuários, aprova metas, edita parâmetros e reprocessa arquivos?",
+    "impact": "Quatro perfis conceituais não exigem criar contas fictícias.",
+    "source": "T17; L-26",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-013"
+  },
+  {
+    "id": "Q-15",
+    "theme": "Recuperação",
+    "question": "Quanto tempo a Majucau pode ficar sem o sistema e quanto dado pode perder após uma falha?",
+    "impact": "Escolha de backup e recuperação depende desses limites.",
+    "source": "Requisito de produção local",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-014"
+  },
+  {
+    "id": "Q-16",
+    "theme": "Backup e responsável",
+    "question": "Há outro disco ou equipamento para backup? Quem cuidará de atualizações, cópias e restauração?",
+    "impact": "A única cópia não deve depender do mesmo disco do servidor.",
+    "source": "Requisito de produção local",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-014"
+  },
+  {
+    "id": "Q-17",
+    "theme": "Prazo e equipe",
+    "question": "Existe data desejada para produção e quem fará desenvolvimento, validação financeira e suporte?",
+    "impact": "Ainda não há base para estimar datas e duração.",
+    "source": "Pergunta inicial respondida apenas quanto à hospedagem",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-015"
+  },
+  {
+    "id": "Q-18",
+    "theme": "Dispositivos e linguagem",
+    "question": "Qual o menor tamanho de tela usado? O sistema precisa atender celular? Podemos exibir status em português simples mantendo códigos técnicos internamente?",
+    "impact": "Define comportamento responsivo e ajustes de acessibilidade.",
+    "source": "Gaps UX em todas as imagens",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-021, BK-022"
+  },
+  {
+    "id": "Q-19",
+    "theme": "Conciliação detalhada",
+    "question": "Sem ID Bling, quais critérios autorizam o vínculo por nome e valor: datas, tolerância de centavos, parcelas e mais de um movimento? Quem confirma ou desfaz manualmente?",
+    "impact": "A regra visual Nome+Valor não define todas as condições de unicidade.",
+    "source": "T05; M-008",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-053"
+  },
+  {
+    "id": "Q-20",
+    "theme": "Recebimentos e status",
+    "question": "Quais estados, datas e bases definem total a receber, recebido no mês, atraso e percentual de conciliação? Há meios além dos três mostrados?",
+    "impact": "Cartões de meios e percentuais podem representar universos diferentes.",
+    "source": "T03/T05",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-056"
+  },
+  {
+    "id": "Q-21",
+    "theme": "Calendário e caixa da semana",
+    "question": "Qual saldo da semana de maior despesa será usado: em que dia/horário e com quais contas? Como contar semanas, horizontes de 30/60 dias e desempates?",
+    "impact": "C-02 foi respondida, mas L-07 e os limites de data permanecem.",
+    "source": "T02/T08; L-07",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-006, BK-060"
+  },
+  {
+    "id": "Q-22",
+    "theme": "Gráfico da DRE",
+    "question": "O gráfico deve explicar participação de despesas, formação do resultado ou outra comparação? Qual base deve usar para os percentuais?",
+    "impact": "Receita, despesas e resultado são valores sobrepostos na rosca atual.",
+    "source": "T06",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-067"
+  },
+  {
+    "id": "Q-23",
+    "theme": "Saldos do balancete",
+    "question": "Como mostrar saldo devedor/credor e qual universo usar na composição por grupo? O zero do cartão significa diferença entre movimentos ou saldo final conhecido?",
+    "impact": "Impede interpretar falta de abertura como saldo zero.",
+    "source": "T07; L-08",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-069"
+  },
+  {
+    "id": "Q-24",
+    "theme": "Ficha técnica de insumos",
+    "question": "Existe composição por produto no Bling ou em arquivo? Qual fonte define quantidades, unidades, rendimento, perdas e vigência?",
+    "impact": "Necessária para a aba de insumos e OP Projetada.",
+    "source": "H_Contrato_Dados!A12:H12; T12",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-094"
+  },
+  {
+    "id": "Q-25",
+    "theme": "Resumo financeiro projetado",
+    "question": "Quais linhas deverão aparecer na aba Resumo financeiro da T12 e como devem se relacionar com custos, preço e cenários?",
+    "impact": "A aba é citada, mas seu conteúdo completo não foi enviado.",
+    "source": "T12",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-095"
+  },
+  {
+    "id": "Q-26",
+    "theme": "Alertas e monitoramento",
+    "question": "Os avisos ficam somente dentro do sistema ou devem chegar por algum canal? Para estoque, vale a prioridade Atenção do contrato ou Crítico do exemplo visual?",
+    "impact": "Define comunicação e resolve discrepância concreta de severidade.",
+    "source": "T14; T_CEI_Tela_14",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-120"
+  },
+  {
+    "id": "Q-27",
+    "theme": "Indicadores de prazo",
+    "question": "Quais fórmulas, fontes e períodos definem prazo médio de recebimento, pagamento, estoque e ciclo financeiro? NCG será um indicador necessário nesta versão?",
+    "impact": "O mockup combina três prazos em 28 dias sem detalhar as bases e exibe ciclo de 41 dias.",
+    "source": "T08; B_Intersecoes!A12:I12",
+    "status": "Em aberto",
+    "answer": "",
+    "tasks": "BK-070"
+  }
+]

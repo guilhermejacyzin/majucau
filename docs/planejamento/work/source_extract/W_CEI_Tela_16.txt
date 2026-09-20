@@ -1,0 +1,53 @@
+A1=W — CEI TELA 16 | PARÂMETROS
+A2=Contrato Executável de Interface — versão 12/09/2026. Tela 16 consolida parâmetros e fontes já aprovados no Majucau. É uma central de referência/governança, não um editor genérico de regras críticas. O design aprovado é imutável; somente dados/conteúdo podem ser alterados sem nova aprovação.
+A4=DESIGN LOCK — REGRA IMUTÁVEL
+A5=Item | B5=Regra | C5=Fonte | D5=Pode alterar design? | E5=Pode alterar conteúdo? | F5=Efeito externo | G5=Status | H5=Observação
+A6=Layout/base visual | B6=Preservar integralmente o mockup aprovado da Tela 16. | C6=Decisão Majucau | D6=NÃO | E6=SIM, quando aprovado | F6=Nenhum | G6=APROVADO | H6=Sidebar, logo, cabeçalho, cores, tipografia, containers e proporções não mudam sem aprovação.
+A7=Balanço Patrimonial | B7=Não exibir rota/elemento legado. | C7=Decisão estrutural anterior | D7=N/A | E7=SIM — remover conteúdo legado | F7=Nenhum | G7=APROVADO | H7=Fora do produto; remoção é correção de conteúdo, não redesign.
+A9=PAPEL DA TELA 16
+A10=ID | B10=Conceito | C10=Definição executável | D10=Fonte | E10=Interação | F10=Mutação? | G10=Status | H10=Observação
+A11=16-R01 | B11=Central de parâmetros | C11=Consolidar parâmetros e fontes já aprovados no sistema, sem inventar nova regra de negócio. | D11=CEIs vigentes | E11=Consultar/navegar | F11=NÃO na tela principal | G11=APROVADO | H11=Tela de referência e governança.
+A12=16-R02 | B12=Parâmetro aprovado | C12=Só pode aparecer como vigente quando existir decisão/contrato aprovado e fonte identificada. | D12=CEI/regra de origem | E12=Ver origem | F12=NÃO | G12=APROVADO | H12=Mockup não é autoridade para criar regra.
+A13=16-R03 | B13=Valor ilustrativo | C13=Contagens e números de exemplo do mockup não são dados de produção. | D13=Mockup | E13=Somente visual | F13=NÃO | G13=APROVADO | H13=Implementação lê valores reais.
+A14=16-R04 | B14=Edição | C14=O mockup vigente não contém edição arbitrária nem Salvar; alterações futuras exigem fluxo específico, permissão, versionamento e auditoria. | D14=Governança | E14=Navegar para fluxo específico quando existir | F14=NÃO na tela principal | G14=APROVADO | H14=Não transformar a central em editor genérico.
+A16=PARÂMETROS E FONTES VISÍVEIS
+A17=Grupo | B17=Parâmetro/indicador | C17=Valor/regra aprovada | D17=Fonte oficial | E17=Interação | F17=Mutação? | G17=Estado | H17=Observação
+A18=Projeções | B18=Histórico do forecast | C18=24 meses | D18=Tela 12 / Bling histórico | E18=Ver parâmetros completos | F18=NÃO | G18=CONFIRMED | H18=Base do estudo.
+A19=Projeções | B19=Horizonte projetado | C19=12 meses | D19=Tela 12 | E19=Ver parâmetros completos | F19=NÃO | G19=CONFIRMED | H19=Horizonte do cenário.
+A20=Projeções | B20=Métricas de qualidade | C20=WAPE / Bias / MASE | D20=Tela 12 | E20=Ver parâmetros completos | F20=NÃO | G20=CONFIRMED | H20=Thresholds de aprovação permanecem L-20.
+A21=Estoque | B21=Estoque mínimo de insumos | C21=Valor cadastrado por SKU no Bling | D21=Tela 09 / Bling | E21=Ver origem | F21=NÃO | G21=CONFIRMED/UNAVAILABLE | H21=Majucau não mantém mínimo paralelo.
+A22=Compras | B22=Recomendação operacional | C22=saldo <= mínimo Bling e sem pedido de compra aberto aplicável | D22=Tela 11 + Tela 09 | E22=Ver regra | F22=NÃO | G22=CONFIRMED | H22=Quantidade recomendada ainda depende de homologação própria.
+A23=Investimentos | B23=Categoria de aporte | C23=Transferência | D23=Tela 08 / Bling funcional | E23=Ver origem | F23=NÃO | G23=CONFIRMED | H23=Mapeamento técnico deve usar recurso estruturado.
+A24=Investimentos | B24=Categoria de rendimento | C24=Rendimentos | D24=Tela 08 / Bling funcional | E24=Ver origem | F24=NÃO | G24=CONFIRMED | H24=Indicador informativo; evitar dupla contagem.
+A25=Integrações | B25=Recebimentos futuros | C25=Fonte externa controlada aprovada para DRE | D25=Contrato de dados / DRE | E25=Ver integração | F25=NÃO | G25=CONFIRMED/STALE/UNAVAILABLE | H25=Exibir referência lógica da fonte, nunca segredo/caminho sensível.
+A26=Integrações | B26=Lista de perdas | C26=Fonte externa controlada aprovada para DRE | D26=Contrato de dados / DRE | E26=Ver integração | F26=NÃO | G26=CONFIRMED/STALE/UNAVAILABLE | H26=Preservar arquivo original e lineage.
+A28=CARDS/ATALHOS DO MOCKUP
+A29=Elemento | B29=Definição | C29=Fonte | D29=Destino | E29=Altera dado? | F29=Exporta? | G29=Estado | H29=Critério
+A30=Projeções — 24 meses | B30=Exibe histórico base vigente. | C30=Tela 12 | D30=Parâmetros de projeção | E30=NÃO | F30=NÃO | G30=Dinâmico | H30=Valor reconcilia com cenário vigente.
+A31=Horizonte — 12 meses | B31=Exibe horizonte vigente. | C31=Tela 12 | D31=Parâmetros de projeção | E31=NÃO | F31=NÃO | G31=Dinâmico | H31=Não usar valor hardcoded no frontend.
+A32=Investimentos — Ativo | B32=Indica existência/configuração vigente de investimento(s). | C32=Tela 08 / investment_registry | D32=Investimentos | E32=NÃO | F32=NÃO | G32=Dinâmico | H32=Não confundir nome de aplicação com identidade da tela.
+A33=Integrações — fontes | B33=Conta fontes ativas/configuradas. | C33=Tela 15 | D33=Integrações | E33=NÃO | F33=NÃO | G33=Dinâmico | H33=Não exibir fonte fictícia.
+A34=Fonte oficial — Bling | B34=Produtos, vendas e estoque usam Bling conforme CEIs de origem. | C34=CEIs 09/10/11/12 | D34=Integração | E34=NÃO | F34=NÃO | G34=CONFIRMED | H34=Escopo por domínio.
+A35=Projeção — SKU | B35=Forecast/projeção é por SKU; não existe família como entidade da projeção. | C35=Tela 12 | D35=Projeções | E35=NÃO | F35=NÃO | G35=CONFIRMED | H35=Regra aprovada.
+A36=Meta de Produção — por SKU | B36=Metas de produção são por SKU e período. | C36=Tela 10 | D36=Metas de produção | E36=NÃO | F36=NÃO | G36=CONFIRMED | H36=Tela 16 apenas referencia.
+A37=Cenário Meta — Faturamento/SKU | B37=Cenário Meta aceita faturamento, SKU ou combinação conforme Tela 12. | C37=Tela 12 | D37=Projeções | E37=NÃO | F37=NÃO | G37=CONFIRMED | H37=Distribuição técnica L-21.
+A38=Extratos — pasta externa | B38=Posições de investimentos vêm de fontes externas controladas por investimento. | C38=Tela 08 | D38=Integrações/Investimentos | E38=NÃO | F38=NÃO | G38=CONFIRMED/STALE | H38=Não expor credenciais.
+A40=INTERAÇÕES EXECUTÁVEIS
+A41=Elemento | B41=Tipo | C41=Origem | D41=Destino/resultado | E41=Preserva contexto? | F41=Altera dados? | G41=Gera externo? | H41=Critério de aceite
+A42=Ver parâmetros completos | B42=NAVIGATION/DRILL_DOWN | C42=Tabela | D42=Lista interna completa com origem/status/versionamento | E42=SIM | F42=NÃO | G42=NÃO | H42=Não cria editor genérico.
+A43=Cards de domínio | B43=NAVIGATION | C43=Cards | D43=Abre módulo/CEI correspondente | E43=SIM | F43=NÃO | G43=NÃO | H43=Destino deve existir e respeitar permissão.
+A44=Exportar / Ajuda | B44=NÃO EXISTE | C44=— | D44=— | E44=— | F44=NÃO | G44=NÃO | H44=Mockup aprovado não contém esses CTAs.
+A46=SEGURANÇA E AUDITORIA
+A47=Regra | B47=Exigência | C47=Risco evitado | D47=Persistência | E47=Permissão | F47=Estado | G47=Aceite | H47=Observação
+A48=Referências sensíveis | B48=Exibir IDs/referências lógicas; nunca segredo/token/caminho sensível completo. | C48=Vazamento de credencial | D48=parameter_registry/source_ref | E48=Somente perfis autorizados | F48=OBRIGATÓRIO | G48=Nenhum secret exposto | H48=Logs também devem mascarar segredo.
+A49=Mudança de parâmetro | B49=Se um fluxo de edição for aprovado, registrar anterior/novo, usuário, data/hora, motivo e versão. | C49=Alteração silenciosa | D49=parameter_change_event | E49=Administrador/configuração autorizada | F49=FUTURO / CONTROLADO | G49=Histórico não sobrescrito | H49=Fluxo específico ainda não desenhado.
+A51=CRITÉRIOS DE ACEITE
+A52=ID | B52=Cenário | C52=Entrada | D52=Resultado esperado | E52=Risco evitado | F52=Implementação | G52=Status | H52=Observação
+A53=T-CEI16-01 | B53=Design | C53=Dados mudam | D53=Layout permanece idêntico ao mockup aprovado. | E53=redesign indevido | F53=Após gate | G53=APROVADO CEI
+A54=T-CEI16-02 | B54=Parâmetro não aprovado | C54=Novo parâmetro sem CEI/regra | D54=Não aparece como vigente. | E54=regra inventada | F54=Após gate | G54=APROVADO CEI
+A55=T-CEI16-03 | B55=Forecast | C55=Consulta parâmetros | D55=Mostra histórico 24m, horizonte 12m e métricas WAPE/Bias/MASE. | E55=inconsistência T12 | F55=Após gate | G55=APROVADO CEI
+A56=T-CEI16-04 | B56=Estoque | C56=Consulta mínimo | D56=Valor vem do Bling por SKU; ausência não vira zero. | E56=segunda verdade | F56=Após gate | G56=APROVADO CEI
+A57=T-CEI16-05 | B57=Compra | C57=Consulta regra | D57=Mostra saldo<=mínimo e sem pedido aberto como condição operacional. | E57=divergência T09/T11 | F57=Após gate | G57=APROVADO CEI
+A58=T-CEI16-06 | B58=Fonte | C58=Fonte externa não configurada | D58=Não aparece como ativa. | E58=fonte fictícia | F58=Após gate | G58=APROVADO CEI
+A59=T-CEI16-07 | B59=Segredo | C59=Fonte exige credencial | D59=Tela nunca mostra token/senha/caminho sensível completo. | E59=vazamento | F59=Após gate | G59=APROVADO CEI
+A60=T-CEI16-08 | B60=Edição | C60=Usuário tenta alterar diretamente na central | D60=Nenhuma edição genérica é executada; usa fluxo específico quando existir. | E60=mudança crítica acidental | F60=Após gate | G60=APROVADO CEI

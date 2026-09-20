@@ -1,0 +1,480 @@
+{
+  "source": "sources/private/consolidacao-respostas.txt",
+  "sha256": "ed8f04f469577e8772a91412edb6f49df65e5788beafd7f87920e226aa6aae42",
+  "changes": [
+    {
+      "id": "BK-000",
+      "title": "Confirmar a base de escopo e as decisões da Majucau",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Confirmar a base de escopo e as decisões da Majucau"
+    },
+    {
+      "id": "BK-001",
+      "title": "Inventariar os materiais e suas versões",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Inventariar os materiais e suas versões"
+    },
+    {
+      "id": "BK-006",
+      "title": "Fechar os critérios da calculadora de aplicação",
+      "fields": [
+        "action",
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Fechar os critérios da calculadora de aplicação"
+    },
+    {
+      "id": "BK-007",
+      "title": "Definir competência, fontes e classificações financeiras",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Definir competência, fontes e classificações financeiras"
+    },
+    {
+      "id": "BK-008",
+      "title": "Definir regras pendentes de estoque, produção e compras",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Definir regras pendentes de estoque, produção e compras"
+    },
+    {
+      "id": "BK-009",
+      "title": "Homologar regras de estudo, metas e qualidade de projeção",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Homologar regras de estudo, metas e qualidade de projeção"
+    },
+    {
+      "id": "BK-010",
+      "title": "Homologar contratos do Bling e das três estruturas do Google Drive",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept",
+        "owner"
+      ],
+      "previous_title": "Obter arquivos reais e homologar contratos de importação"
+    },
+    {
+      "id": "BK-011",
+      "title": "Definir fontes e critérios dos sinais do cacau",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Definir fontes e critérios dos sinais do cacau"
+    },
+    {
+      "id": "BK-016",
+      "title": "Modelar os domínios e o vocabulário do negócio",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Modelar os domínios e o vocabulário do negócio"
+    },
+    {
+      "id": "BK-024",
+      "title": "Planejar segurança e proteção dos dados",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Planejar segurança e proteção dos dados"
+    },
+    {
+      "id": "BK-037",
+      "title": "Implementar T16 Parâmetros e fluxos autorizados de edição",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar T16 Parâmetros e fluxos autorizados de edição"
+    },
+    {
+      "id": "BK-038",
+      "title": "Implementar proveniência e snapshots de fatos",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar proveniência e snapshots de fatos"
+    },
+    {
+      "id": "BK-040",
+      "title": "Validar acesso e cobertura dos dados do Bling",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Validar acesso e cobertura dos dados do Bling"
+    },
+    {
+      "id": "BK-041",
+      "title": "Implementar o adaptador de leitura do Bling",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar o adaptador de leitura do Bling"
+    },
+    {
+      "id": "BK-042",
+      "title": "Implementar leitura das três estruturas autorizadas do Google Drive",
+      "fields": [
+        "title",
+        "action",
+        "goal",
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar leitura da pasta controlada"
+    },
+    {
+      "id": "BK-043",
+      "title": "Implementar validação e interpretação dos arquivos",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar validação e interpretação dos arquivos"
+    },
+    {
+      "id": "BK-044",
+      "title": "Deduplicar arquivos e fatos de negócio",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Deduplicar arquivos e fatos de negócio"
+    },
+    {
+      "id": "BK-046",
+      "title": "Ingerir recebíveis e eventos do Nuvem Pago",
+      "fields": [
+        "action",
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Ingerir recebíveis e eventos do Nuvem Pago"
+    },
+    {
+      "id": "BK-047",
+      "title": "Ingerir obrigações e movimentos financeiros",
+      "fields": [
+        "action",
+        "steps"
+      ],
+      "previous_title": "Ingerir obrigações e movimentos financeiros"
+    },
+    {
+      "id": "BK-048",
+      "title": "Ingerir estoque, produção, compras e notas de entrada",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Ingerir estoque, produção, compras e notas de entrada"
+    },
+    {
+      "id": "BK-049",
+      "title": "Ingerir etiquetas, faturas e frete da nota fiscal",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Ingerir etiquetas, faturas e frete da nota fiscal"
+    },
+    {
+      "id": "BK-050",
+      "title": "Ingerir eventos de perdas operacionais",
+      "fields": [
+        "title",
+        "action",
+        "goal",
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Ingerir perdas, ajustes e extratos de investimentos"
+    },
+    {
+      "id": "BK-051",
+      "title": "Controlar atualização e falha por fonte",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Controlar atualização e falha por fonte"
+    },
+    {
+      "id": "BK-052",
+      "title": "Implementar T15 Importações e Integrações",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar T15 Importações e Integrações"
+    },
+    {
+      "id": "BK-053",
+      "title": "Implementar conciliação por evidência e unicidade",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar conciliação por evidência e unicidade"
+    },
+    {
+      "id": "BK-056",
+      "title": "Implementar regras e leitura de Contas a Receber",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Implementar regras e leitura de Contas a Receber"
+    },
+    {
+      "id": "BK-060",
+      "title": "Implementar fluxo de caixa realizado, previsto e projetado",
+      "fields": [
+        "steps",
+        "accept",
+        "deps"
+      ],
+      "previous_title": "Implementar fluxo de caixa realizado, previsto e projetado"
+    },
+    {
+      "id": "BK-062",
+      "title": "Implementar T02 Fluxo de Caixa",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Implementar T02 Fluxo de Caixa"
+    },
+    {
+      "id": "BK-063",
+      "title": "Preservar o custo Bling válido para cada venda",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Preservar o custo Bling válido para cada venda"
+    },
+    {
+      "id": "BK-064",
+      "title": "Implementar classificação e competência financeira",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar classificação e competência financeira"
+    },
+    {
+      "id": "BK-065",
+      "title": "Implementar perdas e recuperações sem dupla contagem",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar perdas e recuperações sem dupla contagem"
+    },
+    {
+      "id": "BK-068",
+      "title": "Implementar o motor do balancete",
+      "fields": [
+        "action",
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar o motor do balancete"
+    },
+    {
+      "id": "BK-071",
+      "title": "Implementar movimentos de investimentos e posição comprovada no Bling",
+      "fields": [
+        "title",
+        "action",
+        "goal",
+        "steps",
+        "accept",
+        "deps"
+      ],
+      "previous_title": "Implementar posições e movimentos de aplicações"
+    },
+    {
+      "id": "BK-072",
+      "title": "Implementar o cálculo de capacidade de aplicação",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar o cálculo de capacidade de aplicação"
+    },
+    {
+      "id": "BK-073",
+      "title": "Implementar T08 Calculadora de Aplicação",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar T08 Calculadora de Aplicação"
+    },
+    {
+      "id": "BK-074",
+      "title": "Implementar a consulta de Aplicações",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar a consulta de Aplicações"
+    },
+    {
+      "id": "BK-076",
+      "title": "Implementar indicadores de logística no local aprovado",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Implementar indicadores de logística no local aprovado"
+    },
+    {
+      "id": "BK-077",
+      "title": "Implementar classificação e posição de estoque",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar classificação e posição de estoque"
+    },
+    {
+      "id": "BK-085",
+      "title": "Implementar sinais externos do cacau",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar sinais externos do cacau"
+    },
+    {
+      "id": "BK-087",
+      "title": "Preparar histórico de vendas por SKU para projeções",
+      "fields": [
+        "action",
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Preparar histórico de vendas por SKU para projeções"
+    },
+    {
+      "id": "BK-090",
+      "title": "Validar WAPE, Bias e MASE sem vazamento temporal",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Validar WAPE, Bias e MASE sem vazamento temporal"
+    },
+    {
+      "id": "BK-094",
+      "title": "Implementar necessidade de insumos e OP Projetada",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Implementar necessidade de insumos e OP Projetada"
+    },
+    {
+      "id": "BK-098",
+      "title": "Implementar registro único de pendências",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Implementar registro único de pendências"
+    },
+    {
+      "id": "BK-105",
+      "title": "Rastrear cada requisito até tarefa e teste",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Rastrear cada requisito até tarefa e teste"
+    },
+    {
+      "id": "BK-106",
+      "title": "Validar regras de domínio e casos de fronteira",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Validar regras de domínio e casos de fronteira"
+    },
+    {
+      "id": "BK-107",
+      "title": "Validar integrações, concorrência e reinício",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Validar integrações, concorrência e reinício"
+    },
+    {
+      "id": "BK-111",
+      "title": "Validar controles de segurança antes da produção",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Validar controles de segurança antes da produção"
+    },
+    {
+      "id": "BK-114",
+      "title": "Definir a topologia final da instalação local",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Definir a topologia final da instalação local"
+    },
+    {
+      "id": "BK-118",
+      "title": "Configurar backup de banco, arquivos e configuração",
+      "fields": [
+        "steps",
+        "accept"
+      ],
+      "previous_title": "Configurar backup de banco, arquivos e configuração"
+    },
+    {
+      "id": "BK-119",
+      "title": "Testar restauração e recuperação do ambiente",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Testar restauração e recuperação do ambiente"
+    },
+    {
+      "id": "BK-121",
+      "title": "Preparar e reconciliar a carga inicial",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Preparar e reconciliar a carga inicial"
+    },
+    {
+      "id": "BK-123",
+      "title": "Documentar e treinar a rotina da Majucau",
+      "fields": [
+        "steps"
+      ],
+      "previous_title": "Documentar e treinar a rotina da Majucau"
+    }
+  ]
+}

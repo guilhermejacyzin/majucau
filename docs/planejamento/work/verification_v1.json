@@ -1,0 +1,13 @@
+{
+  "tasks": 127,
+  "changed_tasks": 52,
+  "stable_ids": true,
+  "acyclic_dependencies": true,
+  "decisions": 88,
+  "pending_records": 60,
+  "completed_planning": 3,
+  "development_progress": 0,
+  "source_files_unchanged": 18,
+  "formula_errors": [],
+  "validation": "Document structure, task/decision relationships, dependencies, hashes, XLSX formula caches and visual previews. No Majucau implementation or real integration tests executed."
+}

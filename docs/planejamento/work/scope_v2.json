@@ -1,0 +1,149 @@
+[
+  {
+    "code": "T01",
+    "module": "Visão Executiva",
+    "coverage": "Referência aprovada a localizar no pacote",
+    "source": "Menus; fechamento vigente (função/fonte)",
+    "task": "BK-102"
+  },
+  {
+    "code": "T02",
+    "module": "Fluxo de Caixa",
+    "coverage": "Imagem recebida",
+    "source": "T02_Fluxo_de_Caixa.png; fechamento vigente (função/fonte)",
+    "task": "BK-062"
+  },
+  {
+    "code": "T03",
+    "module": "Contas a Receber",
+    "coverage": "Imagem recebida",
+    "source": "T03_Contas_a_Receber.png; fechamento vigente (função/fonte)",
+    "task": "BK-057"
+  },
+  {
+    "code": "T04",
+    "module": "Contas a Pagar",
+    "coverage": "Imagem recebida",
+    "source": "T04_Contas_a_Pagar.png; fechamento vigente (função/fonte)",
+    "task": "BK-059"
+  },
+  {
+    "code": "T05",
+    "module": "Conciliação",
+    "coverage": "Imagem recebida",
+    "source": "T05_Conciliacao.png; fechamento vigente (função/fonte)",
+    "task": "BK-055"
+  },
+  {
+    "code": "T06",
+    "module": "DRE",
+    "coverage": "Imagem recebida",
+    "source": "T06_DRE.png; fechamento vigente (função/fonte)",
+    "task": "BK-067"
+  },
+  {
+    "code": "T07",
+    "module": "Balancete",
+    "coverage": "Imagem recebida",
+    "source": "T07_Balancete.png; fechamento vigente (função/fonte)",
+    "task": "BK-069"
+  },
+  {
+    "code": "T08",
+    "module": "Calculadora de Aplicação",
+    "coverage": "Imagem recebida",
+    "source": "T08_Calculadora_de_Aplicacao.png; fechamento vigente (função/fonte)",
+    "task": "BK-073"
+  },
+  {
+    "code": "T09",
+    "module": "Estoque",
+    "coverage": "Imagem recebida",
+    "source": "T09_Estoque.png; fechamento vigente (função/fonte)",
+    "task": "BK-078"
+  },
+  {
+    "code": "T10",
+    "module": "Produção",
+    "coverage": "2 arquivos idênticos",
+    "source": "T10_Producao.png + ChatGPT Image 12 de set. de 2026, 20_48_11.png; fechamento vigente (função/fonte)",
+    "task": "BK-081"
+  },
+  {
+    "code": "T11",
+    "module": "Compras",
+    "coverage": "Contrato recebido; visual aprovado a localizar",
+    "source": "Q_CEI_Tela_11; fechamento vigente (função/fonte)",
+    "task": "BK-086"
+  },
+  {
+    "code": "T12",
+    "module": "Projeções",
+    "coverage": "Imagem e contrato",
+    "source": "T12_Projecoes.png + R_CEI_Tela_12; fechamento vigente (função/fonte)",
+    "task": "BK-096"
+  },
+  {
+    "code": "T13",
+    "module": "Lançamentos e Pendências",
+    "coverage": "Imagem e contrato",
+    "source": "T13_Lancamentos_e_Pendencias.png + S_CEI_Tela_13; fechamento vigente (função/fonte)",
+    "task": "BK-099"
+  },
+  {
+    "code": "T14",
+    "module": "Alertas",
+    "coverage": "Imagem e contrato",
+    "source": "T14_Alertas.png + T_CEI_Tela_14; fechamento vigente (função/fonte)",
+    "task": "BK-101"
+  },
+  {
+    "code": "T15",
+    "module": "Importações e Integrações",
+    "coverage": "Imagem e contrato",
+    "source": "T15_Importacoes_e_Integracoes.png + U_CEI_Tela_15; fechamento vigente (função/fonte)",
+    "task": "BK-052"
+  },
+  {
+    "code": "T16",
+    "module": "Parâmetros",
+    "coverage": "Imagem e contrato",
+    "source": "T16_Parametros.png + V_Mockup_Tela_16 + W_CEI_Tela_16; fechamento vigente (função/fonte)",
+    "task": "BK-037"
+  },
+  {
+    "code": "T17",
+    "module": "Usuários",
+    "coverage": "Imagem e contrato",
+    "source": "T17_Usuarios.png + X_Mockup_Tela_17 + Y_CEI_Tela_17; fechamento vigente (função/fonte)",
+    "task": "BK-035"
+  },
+  {
+    "code": "Sem número confirmado",
+    "module": "Aplicações",
+    "coverage": "Referência aprovada a localizar no pacote",
+    "source": "Menu + T08; fechamento vigente (função/fonte)",
+    "task": "BK-074"
+  },
+  {
+    "code": "Bloco a localizar",
+    "module": "Pricing / preço e margem",
+    "coverage": "Localizar referência funcional/visual aprovada",
+    "source": "M-021..M-023; fechamento vigente (função/fonte)",
+    "task": "BK-075"
+  },
+  {
+    "code": "Bloco a localizar",
+    "module": "Logística",
+    "coverage": "Localizar referência funcional/visual aprovada",
+    "source": "M-013..M-016; fechamento vigente (função/fonte)",
+    "task": "BK-076"
+  },
+  {
+    "code": "Escopo a detalhar",
+    "module": "Produtos, Simuladores e Relatórios",
+    "coverage": "Localizar referência funcional/visual aprovada",
+    "source": "T12/T13; fechamento vigente (função/fonte)",
+    "task": "BK-103"
+  }
+]

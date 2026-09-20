@@ -1,0 +1,4 @@
+A70=MOCKUP APROVADO / REFERÊNCIA VISUAL
+A71=Regra | B71=Design imutável. Alterar somente dados/conteúdo sem aprovação estrutural.
+A72=Arquivo de referência | B72=/mnt/data/painel_de_usuários_majucau.png
+A73=Data de consolidação | B73=12/09/2026

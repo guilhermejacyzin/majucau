@@ -1,0 +1,602 @@
+{
+  "source": "sources/private/fechamento-questoes.txt",
+  "sha256": "0f413addc1e0ab7e3b1d294b86c99c458a3439fa6661e73d6cef01d70ba10341",
+  "changes": [
+    {
+      "id": "BK-000",
+      "title": "Confirmar a base de escopo e as decisões da Majucau",
+      "fields": [
+        "action",
+        "steps",
+        "accept",
+        "status"
+      ]
+    },
+    {
+      "id": "BK-001",
+      "title": "Inventariar os materiais e suas versões",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-004",
+      "title": "Localizar e versionar os mockups e contratos aprovados",
+      "fields": [
+        "title",
+        "goal",
+        "action",
+        "steps",
+        "accept",
+        "status"
+      ]
+    },
+    {
+      "id": "BK-005",
+      "title": "Detalhar os casos de pagamento divergente após decidir C-01",
+      "fields": [
+        "steps",
+        "accept",
+        "status"
+      ]
+    },
+    {
+      "id": "BK-006",
+      "title": "Especificar tecnicamente a regra fechada da calculadora",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept",
+        "status"
+      ]
+    },
+    {
+      "id": "BK-007",
+      "title": "Especificar a reprodução da DRE e do balancete do Bling",
+      "fields": [
+        "title",
+        "goal",
+        "action",
+        "steps",
+        "accept",
+        "status",
+        "owner"
+      ]
+    },
+    {
+      "id": "BK-008",
+      "title": "Especificar necessidade líquida e acompanhamento da produção",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept",
+        "status"
+      ]
+    },
+    {
+      "id": "BK-009",
+      "title": "Especificar forecast, metas e planejamento de reposição",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept",
+        "status",
+        "owner"
+      ]
+    },
+    {
+      "id": "BK-010",
+      "title": "Homologar contratos do Bling e das três estruturas do Google Drive",
+      "fields": [
+        "steps",
+        "status"
+      ]
+    },
+    {
+      "id": "BK-011",
+      "title": "Definir fontes e critérios dos sinais do cacau",
+      "fields": [
+        "steps",
+        "accept",
+        "status",
+        "owner"
+      ]
+    },
+    {
+      "id": "BK-012",
+      "title": "Especificar ações e exportações já previstas",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept",
+        "status"
+      ]
+    },
+    {
+      "id": "BK-013",
+      "title": "Especificar perfis, capacidades, vigência e auditoria",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept",
+        "status",
+        "owner"
+      ]
+    },
+    {
+      "id": "BK-014",
+      "title": "Inventariar o Windows e propor a operação local",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept",
+        "status",
+        "owner"
+      ]
+    },
+    {
+      "id": "BK-015",
+      "title": "Organizar responsáveis, estimativas e marcos de entrega",
+      "fields": [
+        "steps",
+        "status"
+      ]
+    },
+    {
+      "id": "BK-016",
+      "title": "Modelar os domínios e o vocabulário do negócio",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-019",
+      "title": "Descrever contratos de API e estados de leitura",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-020",
+      "title": "Modelar estado, proveniência e consistência entre telas",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-021",
+      "title": "Transcrever o design congelado em componentes",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-022",
+      "title": "Especificar acessibilidade, telas pequenas e estados de exceção",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-033",
+      "title": "Aplicar permissões no backend e na interface",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-034",
+      "title": "Registrar auditoria de acesso e mudanças",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-036",
+      "title": "Implementar registro e vigência dos parâmetros",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-037",
+      "title": "Implementar T16 Parâmetros e fluxos autorizados de edição",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-038",
+      "title": "Implementar proveniência e snapshots de fatos",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-039",
+      "title": "Implementar execução controlada de trabalhos em segundo plano",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-040",
+      "title": "Validar acesso e cobertura dos dados do Bling",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-041",
+      "title": "Implementar o adaptador de leitura do Bling",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-046",
+      "title": "Ingerir recebíveis e eventos do Nuvem Pago",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-051",
+      "title": "Controlar atualização e falha por fonte",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-053",
+      "title": "Implementar conciliação por evidência e unicidade",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-054",
+      "title": "Implementar revisão, confirmação e desfazimento de conciliação",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-056",
+      "title": "Implementar regras e leitura de Contas a Receber",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-060",
+      "title": "Implementar fluxo de caixa realizado, previsto e projetado",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-061",
+      "title": "Implementar seleção e memória da semana crítica",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-064",
+      "title": "Preservar contas, classificações e competência do Bling",
+      "fields": [
+        "title",
+        "goal",
+        "action",
+        "steps",
+        "accept",
+        "deps"
+      ]
+    },
+    {
+      "id": "BK-065",
+      "title": "Implementar perdas e recuperações sem dupla contagem",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-066",
+      "title": "Obter e reproduzir a DRE por competência do Bling",
+      "fields": [
+        "title",
+        "goal",
+        "action",
+        "steps",
+        "accept",
+        "deps"
+      ]
+    },
+    {
+      "id": "BK-067",
+      "title": "Implementar T06 DRE",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-068",
+      "title": "Reproduzir o balancete a partir da base do Bling",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept",
+        "deps"
+      ]
+    },
+    {
+      "id": "BK-069",
+      "title": "Implementar T07 Balancete",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-071",
+      "title": "Implementar movimentos de investimentos e posição comprovada no Bling",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-072",
+      "title": "Implementar o cálculo de capacidade de aplicação",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-075",
+      "title": "Implementar análise de preço e margem no local aprovado",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-077",
+      "title": "Implementar classificação e posição de estoque",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-079",
+      "title": "Implementar metas de produção por SKU e período",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-080",
+      "title": "Implementar indicadores de produção realizada",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-081",
+      "title": "Implementar T10 Produção",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-082",
+      "title": "Avaliar necessidade e cobertura temporal das compras",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept",
+        "deps"
+      ]
+    },
+    {
+      "id": "BK-084",
+      "title": "Calcular necessidade líquida e prioridade operacional de compra",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-085",
+      "title": "Implementar sinais externos do cacau",
+      "fields": [
+        "steps",
+        "accept",
+        "condition"
+      ]
+    },
+    {
+      "id": "BK-086",
+      "title": "Implementar T11 Compras e exportação de recomendações",
+      "fields": [
+        "action",
+        "steps",
+        "deps"
+      ]
+    },
+    {
+      "id": "BK-091",
+      "title": "Implementar forecast e metas explícitas como planejamento distinto",
+      "fields": [
+        "title",
+        "action",
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-092",
+      "title": "Implementar produção projetada a partir das vendas",
+      "fields": [
+        "action",
+        "steps",
+        "accept",
+        "deps"
+      ]
+    },
+    {
+      "id": "BK-093",
+      "title": "Implementar evolução do estoque projetado",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-094",
+      "title": "Implementar necessidade de insumos e OP Projetada",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-095",
+      "title": "Implementar resumo financeiro dos cenários",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-096",
+      "title": "Implementar T12 Projeções e ajuste de metas",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-102",
+      "title": "Implementar T01 Visão Executiva",
+      "fields": [
+        "action",
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-103",
+      "title": "Implementar os módulos adicionais confirmados no escopo",
+      "fields": [
+        "action",
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-104",
+      "title": "Implementar exportações financeiras e de controle aprovadas",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-105",
+      "title": "Rastrear cada requisito até tarefa e teste",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-106",
+      "title": "Validar regras de domínio e casos de fronteira",
+      "fields": [
+        "steps",
+        "deps"
+      ]
+    },
+    {
+      "id": "BK-107",
+      "title": "Validar integrações, concorrência e reinício",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-108",
+      "title": "Validar fidelidade visual e acessibilidade",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-110",
+      "title": "Executar jornadas completas de ponta a ponta",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-114",
+      "title": "Definir a topologia final da instalação local",
+      "fields": [
+        "steps",
+        "accept"
+      ]
+    },
+    {
+      "id": "BK-118",
+      "title": "Configurar backup de banco, arquivos e configuração",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-119",
+      "title": "Testar restauração e recuperação do ambiente",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-120",
+      "title": "Configurar monitoramento operacional local",
+      "fields": [
+        "steps"
+      ]
+    },
+    {
+      "id": "BK-123",
+      "title": "Documentar e treinar a rotina da Majucau",
+      "fields": [
+        "steps"
+      ]
+    }
+  ],
+  "scope": "Somente atualização do backlog, confirmado pelo usuário nesta rodada.",
+  "tasks": 127,
+  "completed_planning": 3,
+  "development_progress": 0,
+  "technical_fronts": 10,
+  "business_questions_reopened": 0
+}

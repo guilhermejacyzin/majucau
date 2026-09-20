@@ -1,0 +1,52 @@
+A1=U — CEI TELA 15 | IMPORTAÇÕES / INTEGRAÇÕES
+A2=Contrato Executável de Interface — versão 12/09/2026. Tela 15 é a central técnica de saúde e rastreabilidade das integrações. Mostra Bling e somente fontes externas realmente aprovadas/configuradas, com lotes, status, freshness, hash, idempotência, rejeições e reprocessamento controlado. Não cria regras de negócio nem apaga evidência de origem. Design vigente é imutável; somente dados/conteúdo podem mudar sem nova aprovação.
+A4=DESIGN LOCK — REGRA IMUTÁVEL
+A5=Item | B5=Regra | C5=Fonte | D5=Pode alterar design? | E5=Pode alterar dado/conteúdo? | F5=Efeito externo | G5=Status | H5=Observação
+A6=Layout/base visual | B6=Preservar integralmente o mockup vigente da Tela 15. | C6=Decisão Majucau | D6=NÃO | E6=SIM, quando aprovado | F6=Nenhum | G6=APROVADO | H6=Não redesenhar.
+A7=Balanço Patrimonial | B7=Não exibir rota/elemento legado. | C7=Decisão estrutural anterior | D7=N/A | E7=SIM — remover conteúdo legado | F7=Nenhum | G7=APROVADO | H7=Fora do produto.
+A9=PAPEL DA TELA 15
+A10=ID | B10=Conceito | C10=Definição executável | D10=Fonte | E10=Interação | F10=Efeito externo | G10=Status | H10=Observação
+A11=15-R01 | B11=Central de integrações | C11=Mostrar saúde, freshness, lotes, erros e rastreabilidade das fontes. | D11=Integrações/configurações | E11=Consultar/diagnosticar | F11=Nenhum por consulta | G11=APROVADO | H11=Não é dashboard de negócio.
+A12=15-R02 | B12=Bling | C12=Integração principal dos dados operacionais aprovados. | D12=Bling | E12=Ver status/sync | F12=Nenhum por consulta | G12=APROVADO | H12=Mapeamentos técnicos devem ser auditados.
+A13=15-R03 | B13=Arquivos externos controlados | C13=Exibir somente fontes realmente configuradas/aprovadas. | D13=Pasta controlada/importador | E13=Ver lote/erros | F13=Processamento controlado | G13=APROVADO | H13=Não mostrar fonte fictícia.
+A14=15-R04 | B14=Idempotência | C14=Mesmo arquivo/evento/chave não pode inflar fatos por reprocessamento. | D14=hash + business key | E14=Ver evidência | F14=Protege dados | G14=APROVADO | H14=Nome do arquivo sozinho não basta.
+A15=15-R05 | B15=Freshness | C15=Comparar última posição/sync com política específica de cada fonte. | D15=Configuração da fonte | E15=Ver atraso | F15=Nenhum | G15=APROVADO | H15=Não usar SLA global inventado.
+A17=ESTADOS
+A18=Estado | B18=Significado | C18=Critério de origem | D18=Pode virar zero? | E18=Ação | F18=Mutação? | G18=Status | H18=Observação
+A19=OK | B19=Última execução válida dentro da política. | C19=Integração/fonte | D19=NÃO | E19=Ver detalhes | F19=NÃO | G19=APROVADO
+A20=WARNING | B20=Execução concluída com rejeições/condições que exigem atenção. | C20=Lote/integrador | D20=NÃO | E20=Ver erros | F20=NÃO | G20=APROVADO | H20=Aceitos e rejeitados separados.
+A21=ERROR | B21=Execução falhou e não publicou resultado válido correspondente. | C21=Lote/integrador | D21=NÃO | E21=Ver erro/reprocessar | F21=CONDICIONAL | G21=APROVADO | H21=Último snapshot válido não é apagado.
+A22=STALE | B22=Fonte não atualizou dentro da política. | C22=Freshness | D22=NÃO | E22=Ver fonte | F22=NÃO | G22=APROVADO | H22=Expor last_success_at.
+A23=PENDING_REPROCESS | B23=Lote está apto/aguardando nova tentativa controlada. | C23=Importador | D23=NÃO | E23=Reprocessar | F23=SIM — ingestão idempotente | G23=APROVADO | H23=Não duplicar fatos.
+A25=LOTES E RASTREABILIDADE
+A26=Campo | B26=Obrigatório | C26=Fonte | D26=Exibição | E26=Reprocessa? | F26=Auditável? | G26=Estado | H26=Observação
+A27=batch_id | B27=SIM | C27=Sistema | D27=Sim | E27=Identifica tentativa/lote | F27=SIM | G27=todos | H27=Estável.
+A28=source/provider | B28=SIM | C28=Configuração | D28=Sim | E28=Não | F28=SIM | G28=todos | H28=Fonte real.
+A29=file_name / document ref | B29=Quando arquivo | C29=Origem | D29=Sim | E29=Não | F29=SIM | G29=todos | H29=Não expor caminho sensível completo.
+A30=file_hash | B30=Quando arquivo | C30=Ingestão | D30=Sim/abreviado | E30=SIM | F30=SIM | G30=todos | H30=Mesmo hash não cria nova carga.
+A31=rows_read / accepted / rejected | B31=Quando tabular | C31=Importador | D31=Sim | E31=SIM | F31=SIM | G31=OK/WARNING/ERROR | H31=Totais reconciliam.
+A32=rejection_reason | B32=Quando rejeição | C32=Validador | D32=Detalhe | E32=SIM | F32=SIM | G32=WARNING/ERROR | H32=Motivo por regra/linha quando possível.
+A33=sync_ts / last_success_at | B33=SIM | C33=Integração | D33=Sim | E33=SIM | F33=SIM | G33=OK/STALE | H33=Base da freshness.
+A34=business_key/idempotency_key | B34=Quando fato | C34=Contrato de dados | D34=Detalhe técnico | E34=SIM | F34=SIM | G34=todos | H34=Evita duplicação além do arquivo.
+A36=INTERAÇÕES
+A37=Elemento | B37=Tipo | C37=Destino/resultado | D37=Altera dado? | E37=Requisito de segurança | F37=Auditoria | G37=Status | H37=Observação
+A38=Linha / Ver detalhes | B38=DRAWER | C38=Mostra lote, fonte, contagens, erro, hash, timestamps e lineage. | D38=NÃO | E38=Somente leitura | F38=Sim | G38=APROVADO
+A39=Ver erros | B39=DRILL_DOWN | C39=Lista rejeições e motivos do lote. | D39=NÃO | E39=Não expor secrets | F39=Sim | G39=APROVADO
+A40=Reprocessar | B40=ACTION | C40=Executa novamente ingestão autorizada do mesmo lote/origem. | D40=SIM — processamento | E40=Idempotência + permissão + logs + sem apagar origem | F40=Obrigatória | G40=APROVADO | H40=Não significa duplicar; não sobrescrever silenciosamente.
+A41=Atualizar | B41=SYNC | C41=Reconsulta saúde/status. | D41=NÃO | E41=Timeout/retry controlados | F41=position_ts | G41=APROVADO
+A42=Exportar | B42=EXPORT | C42=Comportamento ainda não homologado. | D42=NÃO | E42=Não implementar até contrato | F42=Obrigatória se aprovado | G42=OPEN — NÃO IMPLEMENTAR | H42=Manter visual sem inventar formato/conteúdo.
+A43=Ajuda | B43=HELP | C43=Ajuda contextual. | D43=NÃO | E43=— | F43=Não | G43=APROVADO VISUAL
+A45=INTEGRAÇÃO COM TELAS 13 E 14
+A46=Destino | B46=Quando enviar/vincular | C46=Chave | D46=Duplica regra? | E46=Mutação? | F46=Status | G46=Observação | H46=Critério
+A47=Tela 13 | B47=Erro/rejeição/mapping/freshness requer intervenção ou decisão. | C47=batch_id/source_id/pending_id | D47=NÃO | E47=Não | F47=APROVADO | G47=T13 controla pendência; T15 mantém evidência técnica. | H47=Link bidirecional quando houver pendência.
+A48=Tela 14 | B48=Estado de integração gera alerta previsto pela regra da fonte. | C48=alert_id + source_id | D48=NÃO | E48=Não | F48=APROVADO | G48=T14 consolida; T15 diagnostica. | H48=Mesmo evento, sem dupla contagem.
+A50=CRITÉRIOS DE ACEITE
+A51=ID | B51=Cenário | C51=Entrada | D51=Resultado esperado | E51=Risco evitado | F51=Implementação | G51=Status | H51=Observação
+A52=T-CEI15-01 | B52=Mesmo arquivo | C52=Hash idêntico reprocessado | D52=Não cria segunda carga/fatos duplicados. | E52=duplicação | F52=Após gate | G52=APROVADO CEI
+A53=T-CEI15-02 | B53=Mesmo evento em arquivos diferentes | C53=Business key igual | D53=Deduplica conforme contrato de entidade, preservando lineage. | E53=duplicação cross-file | F53=Após gate | G53=APROVADO CEI
+A54=T-CEI15-03 | B54=Erro parcial | C54=Parte aceita e parte rejeitada | D54=Contagens reconciliam; rejeições têm motivo; status WARNING/ERROR conforme política. | E54=erro silencioso | F54=Após gate | G54=APROVADO CEI
+A55=T-CEI15-04 | B55=Reprocessar | C55=Lote falhou | D55=Nova tentativa é auditada e idempotente; origem preservada. | E55=sobrescrita/duplicação | F55=Após gate | G55=APROVADO CEI
+A56=T-CEI15-05 | B56=STALE | C56=Fonte não atualiza no prazo próprio | D56=Exibe STALE + last_success_at; não zera dados. | E56=falso zero | F56=Após gate | G56=APROVADO CEI
+A57=T-CEI15-06 | B57=Fonte fictícia | C57=Fonte não configurada/aprovada | D57=Não aparece como integração ativa. | E57=UI enganosa | F57=Após gate | G57=APROVADO CEI
+A58=T-CEI15-07 | B58=Design | C58=Atualização de status/dados | D58=Layout permanece idêntico ao mockup aprovado. | E58=redesign indevido | F58=Contínuo | G58=APROVADO CEI
+A59=T-CEI15-08 | B59=Exportar | C59=Sem contrato homologado | D59=Não gera arquivo até decisão específica. | E59=artefato inventado | F59=Após gate | G59=OPEN

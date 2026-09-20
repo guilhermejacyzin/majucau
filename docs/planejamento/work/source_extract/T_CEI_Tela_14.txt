@@ -1,0 +1,45 @@
+A1=T — CEI TELA 14 | ALERTAS
+A2=Contrato Executável de Interface — versão 12/09/2026. Tela 14 é a central consolidada de alertas. Ela não inventa regras ou thresholds: todo alerta deve nascer de uma regra aprovada em seu módulo de origem e manter source_ref, prioridade, status e timestamps. Design do mockup vigente é imutável; somente dados/conteúdo podem mudar sem nova aprovação.
+A4=DESIGN LOCK — REGRA IMUTÁVEL
+A5=Item | B5=Regra | C5=Fonte | D5=Pode alterar design? | E5=Pode alterar dado/conteúdo? | F5=Efeito externo | G5=Status | H5=Observação
+A6=Layout/base visual | B6=Preservar integralmente o mockup vigente da Tela 14. | C6=Decisão Majucau | D6=NÃO | E6=SIM, quando aprovado | F6=Nenhum | G6=APROVADO | H6=Não redesenhar containers, navegação, cores ou tipografia.
+A7=Balanço Patrimonial | B7=Não exibir rota/elemento legado. | C7=Decisão estrutural anterior | D7=N/A | E7=SIM — remover conteúdo legado | F7=Nenhum | G7=APROVADO | H7=Fora do produto.
+A9=PAPEL DA TELA 14
+A10=ID | B10=Conceito | C10=Definição executável | D10=Fonte | E10=Interação | F10=Mutação? | G10=Status | H10=Observação
+A11=14-R01 | B11=Central de alertas | C11=Concentrar condições que exigem atenção sem recriar as regras que originaram o alerta. | D11=CEIs/módulos de origem | E11=Consultar/filtrar | F11=NÃO | G11=APROVADO | H11=A Tela 14 é agregadora.
+A12=14-R02 | B12=CRÍTICO | C12=Prioridade vinda da regra aprovada do alerta de origem. | D12=Módulo de origem | E12=Ver origem | F12=NÃO | G12=APROVADO | H12=Tela 14 não inventa threshold.
+A13=14-R03 | B13=ATENÇÃO | C13=Prioridade vinda da regra aprovada do alerta de origem. | D13=Módulo de origem | E13=Ver origem | F13=NÃO | G13=APROVADO | H13=Sem regra de origem, não criar alerta.
+A14=14-R04 | B14=INFORMATIVO | C14=Sinal relevante sem necessidade de ação imediata. | D14=Módulo de origem | E14=Ver origem | F14=NÃO | G14=APROVADO
+A15=14-R05 | B15=RESOLVIDO | C15=Condição de origem deixou de estar ativa ou foi resolvida por fluxo autorizado. | D15=Módulo de origem | E15=Ver histórico | F15=NÃO | G15=APROVADO | H15=Não permitir marcar resolvido manualmente sem regra específica.
+A17=FONTES DE ALERTA APROVADAS
+A18=Origem | B18=Alerta permitido | C18=Regra | D18=Entra automaticamente? | E18=Ação | F18=Estado | G18=Status | H18=Observação
+A19=Tela 09 — Estoque | B19=Abaixo do mínimo sem pedido | C19=saldo <= mínimo Bling e nenhum pedido aplicável. | D19=SIM | E19=Abrir Tela 09 filtrada | F19=ATENÇÃO | G19=APROVADO | H19=Reconcilia com regra da Tela 09.
+A20=Tela 09 — Estoque | B20=Abaixo do mínimo com reposição | C20=saldo <= mínimo + pedido aplicável. | D20=SIM | E20=Abrir reposição | F20=INFORMATIVO | G20=APROVADO | H20=Não duplicar necessidade de compra.
+A21=Tela 09 / 15 | B21=Falha/freshness da integração | C21=Fonte STALE/UNAVAILABLE conforme política. | D21=SIM | E21=Abrir integração | F21=ATENÇÃO/CRÍTICO conforme origem | G21=APROVADO | H21=Tela 14 não define SLA próprio.
+A22=Tela 10 — Produção | B22=Nenhum alerta próprio | C22=Tela 10 foi fechada sem alertas. | D22=NÃO | E22=— | F22=— | G22=PROIBIDO | H22=Não inventar atraso, yield, perdas ou capacidade.
+A23=Tela 11 — Compras/Cacau | B23=Sinais aprovados do cacau | C23=Somente conforme CEI da Tela 11 e thresholds homologados. | D23=SIM quando homologado | E23=Abrir Tela 11 | F23=INFORMATIVO/ATENÇÃO/ALTO RISCO | G23=DEPENDÊNCIA L-19 | H23=Sinal externo não cria compra.
+A24=Demais módulos | B24=Somente alertas com regra própria aprovada | C24=A Tela 14 não cria regra nova. | D24=CONDICIONAL | E24=Abrir origem | F24=Conforme origem | G24=APROVADO | H24=Sem CEI/regra, não publicar alerta.
+A26=KPIs, TABELA E DISTRIBUIÇÃO
+A27=Elemento | B27=Definição | C27=Fonte | D27=Interação | E27=Altera dado? | F27=Exporta? | G27=Estado | H27=Critério
+A28=Críticos | B28=Contagem de alertas ativos CRÍTICO. | C28=alert_event | D28=Filtrar | E28=Não | F28=Contrato OPEN | G28=CONFIRMED | H28=Reconcilia com tabela.
+A29=Atenção | B29=Contagem de alertas ativos ATENÇÃO. | C29=alert_event | D29=Filtrar | E29=Não | F29=Contrato OPEN | G29=CONFIRMED | H29=Reconcilia com tabela.
+A30=Informativos | B30=Contagem de alertas ativos INFORMATIVO. | C30=alert_event | D30=Filtrar | E30=Não | F30=Contrato OPEN | G30=CONFIRMED | H30=Reconcilia com tabela.
+A31=Resolvidos | B31=Contagem histórica conforme período/filtro. | C31=alert_event | D31=Filtrar | E31=Não | F31=Contrato OPEN | G31=CONFIRMED | H31=Não misturar com ativos.
+A32=Alertas consolidados | B32=Módulo, alerta, impacto, prioridade, atualizado, status e origem. | C32=alert_event | D32=Linha → origem | E32=Não | F32=Contrato OPEN | G32=CONFIRMED/STALE | H32=Cada alerta possui source_ref.
+A33=Distribuição por módulo | B33=Contagem dos mesmos alertas por módulo. | C33=alert_event | D33=Filtro | E33=Não | F33=Não | G33=CONFIRMED | H33=Sem dupla contagem.
+A34=Alertas importantes | B34=Recorte visual dos alertas já existentes, sem regra paralela. | C34=alert_event | D34=Abrir origem | E34=Não | F34=Não | G34=CONFIRMED | H34=Mesmo alert_id da tabela.
+A36=INTERAÇÕES
+A37=Elemento | B37=Tipo | C37=Destino/resultado | D37=Pode alterar origem? | E37=Pode resolver manualmente? | F37=Auditoria | G37=Status | H37=Observação
+A38=Linha / Ver | B38=NAVIGATION/DRAWER | C38=Abre o módulo/registro que originou o alerta. | D38=NÃO | E38=NÃO | F38=Sim | G38=APROVADO | H38=Preserva alert_id e contexto.
+A39=Filtros/busca | B39=FILTER | C39=Filtra prioridade, módulo, status e texto. | D39=NÃO | E39=NÃO | F39=Não | G39=APROVADO
+A40=Atualizar | B40=SYNC | C40=Reconsulta alertas e estados de origem. | D40=NÃO | E40=NÃO | F40=position_ts | G40=APROVADO | H40=Não recria alertas com nova regra.
+A41=Exportar | B41=EXPORT | C41=Comportamento ainda não homologado. | D41=NÃO | E41=NÃO | F41=Obrigatória se aprovado | G41=OPEN — NÃO IMPLEMENTAR | H41=Manter componente visual, sem inventar XLSX.
+A42=Ajuda | B42=HELP | C42=Ajuda contextual. | D42=NÃO | E42=NÃO | F42=Não | G42=APROVADO VISUAL
+A44=CRITÉRIOS DE ACEITE
+A45=ID | B45=Cenário | C45=Entrada | D45=Resultado esperado | E45=Risco evitado | F45=Implementação | G45=Status | H45=Observação
+A46=T-CEI14-01 | B46=Alerta de estoque | C46=Tela 09 gera abaixo mínimo sem pedido | D46=Mesmo evento aparece na Tela 14 com vínculo de origem. | E46=regra duplicada | F46=Após gate | G46=APROVADO CEI
+A47=T-CEI14-02 | B47=Tela 10 | C47=Produção possui dado fora da meta | D47=Nenhum alerta é inventado pela Tela 14. | E47=escopo indevido | F47=Após gate | G47=APROVADO CEI
+A48=T-CEI14-03 | B48=Resolvido | C48=Condição de origem deixa de existir | D48=Alerta deixa ativos e mantém histórico resolvido. | E48=apagamento de evidência | F48=Após gate | G48=APROVADO CEI
+A49=T-CEI14-04 | B49=STALE | C49=Integração além da política | D49=Prioridade/status vêm da regra da origem; Tela 14 só consolida. | E49=threshold paralelo | F49=Após gate | G49=APROVADO CEI
+A50=T-CEI14-05 | B50=Design | C50=Atualização de dados | D50=Layout permanece idêntico ao mockup aprovado. | E50=redesign indevido | F50=Contínuo | G50=APROVADO CEI
+A51=T-CEI14-06 | B51=Exportar | C51=Sem contrato homologado | D51=Não gerar arquivo até decisão específica. | E51=artefato inventado | F51=Após gate | G51=OPEN

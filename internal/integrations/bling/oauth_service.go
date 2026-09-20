@@ -58,6 +58,12 @@ type BlingOAuthTestResult struct {
 	PageRecordCount int    `json:"page_record_count"`
 }
 
+type BlingRawSyncResult struct {
+	Status      string
+	Receivables APISyncResult
+	Payables    APISyncResult
+}
+
 type blingOAuthRepository interface {
 	Connection(context.Context) (database.IntegrationConnection, error)
 	MarkAuthorizing(context.Context) error
@@ -130,6 +136,7 @@ type blingOAuthSession struct {
 type BlingOAuthService struct {
 	repo       blingOAuthRepository
 	store      security.SecretStore
+	pool       *pgxpool.Pool
 	httpClient HTTPDoer
 	listen     func(string, string) (net.Listener, error)
 	now        func() time.Time
@@ -142,6 +149,7 @@ func NewBlingOAuthService(pool *pgxpool.Pool, store security.SecretStore) *Bling
 	return &BlingOAuthService{
 		repo:       newPostgresBlingOAuthRepository(pool),
 		store:      store,
+		pool:       pool,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 		listen:     net.Listen,
 		now:        time.Now,
@@ -282,6 +290,35 @@ func (s *BlingOAuthService) Test(ctx context.Context) (BlingOAuthTestResult, err
 		return BlingOAuthTestResult{}, ErrBlingOAuthStorage
 	}
 	return BlingOAuthTestResult{Status: "SUCCESS", PageRecordCount: probe.PageRecordCount}, nil
+}
+
+// Sync performs an explicit, read-only RAW synchronization for both primary
+// Bling financial resources. The caller must provide the date/status filters;
+// this method never invents a financial window and never normalizes records.
+func (s *BlingOAuthService) Sync(ctx context.Context, filter ReceivablesFilter) (BlingRawSyncResult, error) {
+	if s == nil || s.pool == nil {
+		return BlingRawSyncResult{}, ErrBlingAPISyncDatabaseUnavailable
+	}
+	if _, err := s.Test(ctx); err != nil {
+		return BlingRawSyncResult{}, err
+	}
+	bundle, err := loadBlingSecret(ctx, s.store)
+	if err != nil {
+		return BlingRawSyncResult{}, err
+	}
+	client, err := NewBlingAPIClient(s.httpClient, "", bundle.AccessToken)
+	if err != nil {
+		return BlingRawSyncResult{}, err
+	}
+	receivables, err := NewReceivablesAPISyncService(s.pool, client).Sync(ctx, filter)
+	if err != nil {
+		return BlingRawSyncResult{Status: "FAILED", Receivables: receivables}, err
+	}
+	payables, err := NewPayablesAPISyncService(s.pool, client).Sync(ctx, filter)
+	if err != nil {
+		return BlingRawSyncResult{Status: "PARTIAL", Receivables: receivables, Payables: payables}, err
+	}
+	return BlingRawSyncResult{Status: "SUCCESS", Receivables: receivables, Payables: payables}, nil
 }
 
 func (s *BlingOAuthService) runSession(session *blingOAuthSession, clientID, redirectURI string) {

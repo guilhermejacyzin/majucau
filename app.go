@@ -250,6 +250,39 @@ func (a *App) TestBlingConnection() application.BlingOAuthTestResponse {
 	return result
 }
 
+// SyncBling starts an explicit, filtered RAW synchronization. It never
+// chooses a financial window implicitly and returns only sanitized counters.
+func (a *App) SyncBling(input application.BlingSyncRequest) application.BlingSyncResponse {
+	fallback := application.BlingSyncResponse{Status: "FAILED", ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 2*time.Minute)
+	defer cancel()
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return application.BlingSyncResponse{Status: "FAILED", ErrorCode: "BLING_SYNC_FILTER_REQUIRED", Message: "Informe uma janela de datas ou situação antes de sincronizar."}
+	}
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-sync"), Method: ipc.MethodBlingSync, Payload: payload})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		return application.BlingSyncResponse{Status: "FAILED", ErrorCode: workerErrorCode(response), Message: workerErrorMessage(response)}
+	}
+	var result application.BlingSyncResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.BlingSyncResponse{Status: "FAILED", ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	return result
+}
+
 func workerErrorCode(response ipc.Response) string {
 	if response.Error == nil || response.Error.Code == "" {
 		return "WORKER_INVALID_RESPONSE"

@@ -15,4 +15,6 @@ export function SaveBlingConfig(arg1:application.BlingConfigRequest):Promise<app
 
 export function StartBlingOAuth():Promise<application.BlingOAuthStartResponse>;
 
+export function SyncBling(arg1:application.BlingSyncRequest):Promise<application.BlingSyncResponse>;
+
 export function TestBlingConnection():Promise<application.BlingOAuthTestResponse>;

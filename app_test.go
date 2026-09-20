@@ -108,3 +108,22 @@ func TestBlingOAuthMethodsUseSanitizedWorkerContracts(t *testing.T) {
 		t.Fatalf("unexpected OAuth test result: %+v", testResult)
 	}
 }
+
+func TestSyncBlingForwardsExplicitFilterAndOnlyCounts(t *testing.T) {
+	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+		if req.Method != ipc.MethodBlingSync {
+			return ipc.Response{}, ipc.ErrUnsupportedMethod
+		}
+		var input application.BlingSyncRequest
+		if err := json.Unmarshal(req.Payload, &input); err != nil || input.ReceivedDateFrom != "2026-09-01" {
+			t.Fatalf("unexpected sync request: %#v %v", input, err)
+		}
+		return ipc.NewResponse(req.RequestID, application.BlingSyncResponse{Status: "SUCCESS", Receivables: application.BlingSyncResourceResult{Status: "SUCCESS", RecordsRead: 2}, Payables: application.BlingSyncResourceResult{Status: "SUCCESS", RecordsRead: 1}})
+	})
+	app := NewApp()
+	app.clientFactory = func() (ipc.Client, error) { return ipc.NewFakeClient(handler), nil }
+	result := app.SyncBling(application.BlingSyncRequest{ReceivedDateFrom: "2026-09-01", ReceivedDateTo: "2026-09-30", PaymentDateFrom: "2026-09-01", PaymentDateTo: "2026-09-30"})
+	if result.ErrorCode != "" || result.Status != "SUCCESS" || result.Receivables.RecordsRead != 2 || result.Payables.RecordsRead != 1 {
+		t.Fatalf("unexpected sync result: %+v", result)
+	}
+}

@@ -26,6 +26,10 @@ export function StartBlingOAuth() {
   return window['go']['main']['App']['StartBlingOAuth']();
 }
 
+export function SyncBling(arg1) {
+  return window['go']['main']['App']['SyncBling'](arg1);
+}
+
 export function TestBlingConnection() {
   return window['go']['main']['App']['TestBlingConnection']();
 }

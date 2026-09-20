@@ -31,6 +31,17 @@ func (fakeBlingOAuthService) Test(context.Context) (bling.BlingOAuthTestResult, 
 	return bling.BlingOAuthTestResult{Status: "SUCCESS", PageRecordCount: 1}, nil
 }
 
+type fakeBlingRawSyncer struct {
+	called bool
+	filter bling.ReceivablesFilter
+}
+
+func (f *fakeBlingRawSyncer) Sync(_ context.Context, filter bling.ReceivablesFilter) (bling.BlingRawSyncResult, error) {
+	f.called = true
+	f.filter = filter
+	return bling.BlingRawSyncResult{Status: "SUCCESS", Receivables: bling.APISyncResult{Status: "SUCCESS", PagesRead: 1, RecordsRead: 2}, Payables: bling.APISyncResult{Status: "SUCCESS", PagesRead: 1, RecordsRead: 1}}, nil
+}
+
 func TestWorkerPreviewReturnsSanitizedBlingSummary(t *testing.T) {
 	folder := t.TempDir()
 	csv := "Cliente;Histórico;Forma de pagamento;Nº documento;Vencimento;Liquidação;Situação;Valor taxa;Recebido\n" +
@@ -106,5 +117,22 @@ func TestWorkerOAuthMethodsReturnOnlySanitizedState(t *testing.T) {
 	testResponse, err := handler.Handle(context.Background(), ipc.Request{RequestID: "test", Method: ipc.MethodBlingOAuthTest, Payload: []byte(`{}`)})
 	if err != nil || !testResponse.OK || !strings.Contains(string(testResponse.Payload), "page_record_count") {
 		t.Fatalf("unexpected OAuth test response: %#v %v", testResponse, err)
+	}
+}
+
+func TestWorkerSyncRequiresExplicitFilterAndReturnsCounts(t *testing.T) {
+	fake := &fakeBlingRawSyncer{}
+	handler := workerHandler{health: application.StaticHealth{Service: "test"}, blingSync: fake}
+	missing, err := handler.Handle(context.Background(), ipc.Request{RequestID: "missing", Method: ipc.MethodBlingSync, Payload: []byte(`{}`)})
+	if err != nil || missing.OK || missing.Error == nil || missing.Error.Code != "BLING_SYNC_FILTER_REQUIRED" {
+		t.Fatalf("missing filter response: %#v %v", missing, err)
+	}
+	payload := []byte(`{"received_date_from":"2026-09-01","received_date_to":"2026-09-30","payment_date_from":"2026-09-01","payment_date_to":"2026-09-30"}`)
+	response, err := handler.Handle(context.Background(), ipc.Request{RequestID: "sync", Method: ipc.MethodBlingSync, Payload: payload})
+	if err != nil || !response.OK || !fake.called {
+		t.Fatalf("sync response: %#v %v", response, err)
+	}
+	if fake.filter.ReceivedDateFrom != "2026-09-01" || fake.filter.PaymentDateTo != "2026-09-30" || !strings.Contains(string(response.Payload), `"records_read":2`) {
+		t.Fatalf("filter/counts not preserved: filter=%+v payload=%s", fake.filter, response.Payload)
 	}
 }

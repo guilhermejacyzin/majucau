@@ -59,3 +59,16 @@ SELECT EXISTS (
     AND source_entity = $2
     AND source_id = $3
 );
+
+-- name: GetSyncCursor :one
+SELECT id, connection_id, resource, cursor_value, watermark_at, updated_at
+FROM sync_cursors
+WHERE connection_id = $1 AND resource = $2;
+
+-- name: UpsertSyncCursor :exec
+INSERT INTO sync_cursors (connection_id, resource, cursor_value, watermark_at, updated_at)
+VALUES ($1, $2, $3, $4, clock_timestamp())
+ON CONFLICT (connection_id, resource)
+DO UPDATE SET cursor_value = EXCLUDED.cursor_value,
+              watermark_at = EXCLUDED.watermark_at,
+              updated_at = clock_timestamp();

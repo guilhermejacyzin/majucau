@@ -115,7 +115,7 @@ Qualquer mudança nessas regras exige versão, regressão financeira e aprovaç�
 
 ## Integrações e credenciais
 
-A tela **Configurações > Integrações** é a área editável para preencher os dados públicos e secrets das APIs de Bling, Nuvemshop e, quando houver fonte oficial, Nuvem Pago. O Bling permite salvar Client ID, Redirect URI e Client Secret pelo IPC autenticado, iniciar OAuth no navegador externo, acompanhar o callback loopback e testar uma leitura mínima; o secret e os tokens vão para DPAPI e os metadados públicos para PostgreSQL. Reconectar, desconectar e sincronizar continuam separados até suas etapas de homologação. Para a pessoa usuária, a experiência é normal de aplicativo — editar, salvar, conectar no navegador externo e acompanhar o estado — sem o React persistir ou executar secrets.
+A tela **Configurações > Integrações** é a área editável para preencher os dados públicos e secrets das APIs de Bling, Nuvemshop e, quando houver fonte oficial, Nuvem Pago. O Bling permite salvar Client ID, Redirect URI e Client Secret pelo IPC autenticado, iniciar OAuth no navegador externo, acompanhar o callback loopback, testar uma leitura mínima e enviar uma sincronização filtrada explícita ao worker; o secret e os tokens vão para DPAPI e os metadados públicos para PostgreSQL. Reconectar, desconectar e a habilitação visual da sincronização continuam separados até suas etapas de homologação. Para a pessoa usuária, a experiência é normal de aplicativo — editar, salvar, conectar no navegador externo e acompanhar o estado — sem o React persistir ou executar secrets.
 
 - secrets e tokens não entram no frontend, Git, logs ou banco em texto aberto;
 - a UI envia a credencial ao worker por IPC local autenticado;
@@ -167,6 +167,8 @@ Builds G1 são deliberadamente não assinados. O G7 exige certificado Authentico
 - [docs/evidence/INSTALLATION-RESILIENCE-2026-08-16.md](docs/evidence/INSTALLATION-RESILIENCE-2026-08-16.md) — execução local do preflight, build e runtime desktop/worker.
 - [docs/evidence/BLING-OAUTH-2026-09-20.md](docs/evidence/BLING-OAUTH-2026-09-20.md) — sessão OAuth desktop, callback loopback, teste mínimo e evidências automatizadas.
 - [docs/evidence/BLING-RAW-SOURCES-2026-09-20.md](docs/evidence/BLING-RAW-SOURCES-2026-09-20.md) — recursos `contas/receber` e `contas/pagar` preservados em RAW idempotente.
+- [docs/evidence/BLING-SYNC-2026-09-20.md](docs/evidence/BLING-SYNC-2026-09-20.md) — contrato IPC de sincronização filtrada, cursor transacional e limites do gate.
+- [docs/evidence/BUILD-ARTIFACTS-2026-09-20.md](docs/evidence/BUILD-ARTIFACTS-2026-09-20.md) — build Windows x64 validado e caches/outputs consolidados em `artifacts/`.
 
 ## Distribuição
 

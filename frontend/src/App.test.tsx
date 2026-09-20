@@ -98,6 +98,7 @@ describe('shell financeiro', () => {
       start: async () => ({ session_id: 'session-1', status: 'AUTHORIZING', authorization_url: 'https://www.bling.com.br/authorize?...' }),
       status: async () => { statusCalls += 1; return { session_id: 'session-1', status: 'CONNECTED', message: 'Bling autorizado e testado com sucesso.' } },
       test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      sync: async () => ({ status: 'SUCCESS', receivables: { pages_read: 1, records_read: 1 }, payables: { pages_read: 1, records_read: 1 } }),
     }
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingOAuthAdapter={blingOAuthAdapter} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })

@@ -200,6 +200,90 @@ export namespace application {
 	        this.message = source["message"];
 	    }
 	}
+	export class BlingSyncRequest {
+	    page?: number;
+	    limit?: number;
+	    due_date_from?: string;
+	    due_date_to?: string;
+	    received_date_from?: string;
+	    received_date_to?: string;
+	    payment_date_from?: string;
+	    payment_date_to?: string;
+	    status?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingSyncRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.page = source["page"];
+	        this.limit = source["limit"];
+	        this.due_date_from = source["due_date_from"];
+	        this.due_date_to = source["due_date_to"];
+	        this.received_date_from = source["received_date_from"];
+	        this.received_date_to = source["received_date_to"];
+	        this.payment_date_from = source["payment_date_from"];
+	        this.payment_date_to = source["payment_date_to"];
+	        this.status = source["status"];
+	    }
+	}
+	export class BlingSyncResourceResult {
+	    status?: string;
+	    batch_id?: string;
+	    pages_read: number;
+	    records_read: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingSyncResourceResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.batch_id = source["batch_id"];
+	        this.pages_read = source["pages_read"];
+	        this.records_read = source["records_read"];
+	    }
+	}
+	export class BlingSyncResponse {
+	    status?: string;
+	    receivables: BlingSyncResourceResult;
+	    payables: BlingSyncResourceResult;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingSyncResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.receivables = this.convertValues(source["receivables"], BlingSyncResourceResult);
+	        this.payables = this.convertValues(source["payables"], BlingSyncResourceResult);
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class DependencyHealth {
 	    name: string;
 	    state: string;

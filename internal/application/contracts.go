@@ -115,6 +115,33 @@ type BlingOAuthTestResponse struct {
 	ErrorCode       string `json:"error_code,omitempty"`
 	Message         string `json:"message,omitempty"`
 }
+
+type BlingSyncRequest struct {
+	Page             int    `json:"page,omitempty"`
+	Limit            int    `json:"limit,omitempty"`
+	DueDateFrom      string `json:"due_date_from,omitempty"`
+	DueDateTo        string `json:"due_date_to,omitempty"`
+	ReceivedDateFrom string `json:"received_date_from,omitempty"`
+	ReceivedDateTo   string `json:"received_date_to,omitempty"`
+	PaymentDateFrom  string `json:"payment_date_from,omitempty"`
+	PaymentDateTo    string `json:"payment_date_to,omitempty"`
+	Status           string `json:"status,omitempty"`
+}
+
+type BlingSyncResourceResult struct {
+	Status      string `json:"status,omitempty"`
+	BatchID     string `json:"batch_id,omitempty"`
+	PagesRead   int    `json:"pages_read"`
+	RecordsRead int    `json:"records_read"`
+}
+
+type BlingSyncResponse struct {
+	Status      string                  `json:"status,omitempty"`
+	Receivables BlingSyncResourceResult `json:"receivables"`
+	Payables    BlingSyncResourceResult `json:"payables"`
+	ErrorCode   string                  `json:"error_code,omitempty"`
+	Message     string                  `json:"message,omitempty"`
+}
 type HealthChecker interface {
 	CheckHealth(context.Context) HealthResponse
 }

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -129,6 +130,11 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 	}
 	if !completed {
 		return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_API_PAGE_LIMIT", ErrBlingAPISyncPageLimit)
+	}
+	cursorValue := fmt.Sprintf("page:%d", current.Page)
+	watermark := pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}
+	if err := queries.UpsertSyncCursor(ctx, database.UpsertSyncCursorParams{ConnectionID: connection.ID, Resource: s.resource, CursorValue: &cursorValue, WatermarkAt: watermark}); err != nil {
+		return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_SYNC_CURSOR_FAILED", err)
 	}
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
 		ID: batch.ID, Status: "SUCCESS", RecordsRead: int32(result.RecordsRead), RecordsCreated: int32(result.PagesCreated), RecordsUpdated: int32(result.PagesUpdated),

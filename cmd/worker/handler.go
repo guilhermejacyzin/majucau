@@ -27,11 +27,16 @@ type blingOAuthService interface {
 	Test(context.Context) (bling.BlingOAuthTestResult, error)
 }
 
+type blingRawSyncer interface {
+	Sync(context.Context, bling.ReceivablesFilter) (bling.BlingRawSyncResult, error)
+}
+
 type workerHandler struct {
 	health          application.StaticHealth
 	receiptImporter receiptImporter
 	blingConfig     blingConfigSaver
 	blingOAuth      blingOAuthService
+	blingSync       blingRawSyncer
 	statusReader    application.IntegrationStatusReader
 }
 
@@ -40,6 +45,7 @@ func newWorkerHandler() workerHandler {
 	var importer receiptImporter
 	var configSaver blingConfigSaver
 	var oauthService blingOAuthService
+	var rawSync blingRawSyncer
 	var statusReader application.IntegrationStatusReader
 	if pool != nil {
 		importer = bling.NewReceiptImportService(pool)
@@ -47,9 +53,10 @@ func newWorkerHandler() workerHandler {
 		if store := newWorkerSecretStore(); store != nil {
 			configSaver = bling.NewBlingCredentialService(pool, store)
 			oauthService = bling.NewBlingOAuthService(pool, store)
+			rawSync = oauthService.(blingRawSyncer)
 		}
 	}
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, blingConfig: configSaver, blingOAuth: oauthService, statusReader: statusReader}
+	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, blingConfig: configSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -65,12 +72,69 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		return h.statusBlingOAuth(ctx, req)
 	case ipc.MethodBlingOAuthTest:
 		return h.testBlingOAuth(ctx, req)
+	case ipc.MethodBlingSync:
+		return h.syncBling(ctx, req)
 	case ipc.MethodBlingReceiptsPreview:
 		return h.previewBlingReceipts(ctx, req)
 	case ipc.MethodBlingReceiptsImport:
 		return h.importBlingReceipts(ctx, req)
 	default:
 		return ipc.Response{}, ipc.ErrUnsupportedMethod
+	}
+}
+
+func (h workerHandler) syncBling(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	var input application.BlingSyncRequest
+	if err := json.Unmarshal(req.Payload, &input); err != nil || !hasBlingSyncFilter(input) {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_SYNC_FILTER_REQUIRED", "Informe uma janela de datas ou situação antes de sincronizar."), nil
+	}
+	if h.blingSync == nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
+	}
+	result, err := h.blingSync.Sync(ctx, bling.ReceivablesFilter{Page: input.Page, Limit: input.Limit, DueDateFrom: input.DueDateFrom, DueDateTo: input.DueDateTo, ReceivedDateFrom: input.ReceivedDateFrom, ReceivedDateTo: input.ReceivedDateTo, PaymentDateFrom: input.PaymentDateFrom, PaymentDateTo: input.PaymentDateTo, Status: input.Status})
+	response := application.BlingSyncResponse{Status: result.Status, Receivables: syncResourceResult(result.Receivables), Payables: syncResourceResult(result.Payables)}
+	if err != nil {
+		response.ErrorCode = blingSyncErrorCode(err)
+		response.Message = blingSyncErrorMessage(err)
+	}
+	return ipc.NewResponse(req.RequestID, response)
+}
+
+func hasBlingSyncFilter(input application.BlingSyncRequest) bool {
+	return strings.TrimSpace(input.DueDateFrom) != "" || strings.TrimSpace(input.DueDateTo) != "" || strings.TrimSpace(input.ReceivedDateFrom) != "" || strings.TrimSpace(input.ReceivedDateTo) != "" || strings.TrimSpace(input.PaymentDateFrom) != "" || strings.TrimSpace(input.PaymentDateTo) != "" || strings.TrimSpace(input.Status) != ""
+}
+
+func syncResourceResult(result bling.APISyncResult) application.BlingSyncResourceResult {
+	return application.BlingSyncResourceResult{Status: result.Status, BatchID: result.BatchID, PagesRead: result.PagesRead, RecordsRead: result.RecordsRead}
+}
+
+func blingSyncErrorCode(err error) string {
+	switch {
+	case errors.Is(err, bling.ErrBlingAPISyncDatabaseUnavailable):
+		return "BLING_DATABASE_NOT_CONFIGURED"
+	case errors.Is(err, bling.ErrBlingAPISyncConnectionMissing):
+		return "BLING_CONNECTION_NOT_CONFIGURED"
+	case errors.Is(err, bling.ErrBlingAPISyncPageLimit):
+		return "BLING_SYNC_PAGE_LIMIT"
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+		return "BLING_SYNC_CANCELLED"
+	default:
+		return "BLING_SYNC_FAILED"
+	}
+}
+
+func blingSyncErrorMessage(err error) string {
+	switch blingSyncErrorCode(err) {
+	case "BLING_DATABASE_NOT_CONFIGURED":
+		return "O banco local ainda não está configurado para sincronizar o Bling."
+	case "BLING_CONNECTION_NOT_CONFIGURED":
+		return "Configure e autorize o Bling antes de sincronizar."
+	case "BLING_SYNC_PAGE_LIMIT":
+		return "A sincronização atingiu o limite de segurança de páginas; reduza a janela."
+	case "BLING_SYNC_CANCELLED":
+		return "A sincronização foi cancelada antes do commit do lote."
+	default:
+		return "A sincronização do Bling falhou; o último dado válido foi preservado."
 	}
 }
 

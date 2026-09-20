@@ -4,7 +4,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
+$projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $artifactRoot = Join-Path $projectRoot 'artifacts'
 $windowsRoot = Join-Path $artifactRoot 'windows'
 

@@ -91,6 +91,31 @@ func (q *Queries) GetIntegrationConnectionByProvider(ctx context.Context, provid
 	return i, err
 }
 
+const getSyncCursor = `-- name: GetSyncCursor :one
+SELECT id, connection_id, resource, cursor_value, watermark_at, updated_at
+FROM sync_cursors
+WHERE connection_id = $1 AND resource = $2
+`
+
+type GetSyncCursorParams struct {
+	ConnectionID pgtype.UUID `json:"connection_id"`
+	Resource     string      `json:"resource"`
+}
+
+func (q *Queries) GetSyncCursor(ctx context.Context, arg GetSyncCursorParams) (SyncCursor, error) {
+	row := q.db.QueryRow(ctx, getSyncCursor, arg.ConnectionID, arg.Resource)
+	var i SyncCursor
+	err := row.Scan(
+		&i.ID,
+		&i.ConnectionID,
+		&i.Resource,
+		&i.CursorValue,
+		&i.WatermarkAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const insertIntegrationSyncBatch = `-- name: InsertIntegrationSyncBatch :one
 INSERT INTO integration_sync_batches (connection_id, resource)
 VALUES ($1, $2)
@@ -213,4 +238,30 @@ func (q *Queries) UpsertReceipt(ctx context.Context, arg UpsertReceiptParams) (R
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const upsertSyncCursor = `-- name: UpsertSyncCursor :exec
+INSERT INTO sync_cursors (connection_id, resource, cursor_value, watermark_at, updated_at)
+VALUES ($1, $2, $3, $4, clock_timestamp())
+ON CONFLICT (connection_id, resource)
+DO UPDATE SET cursor_value = EXCLUDED.cursor_value,
+              watermark_at = EXCLUDED.watermark_at,
+              updated_at = clock_timestamp()
+`
+
+type UpsertSyncCursorParams struct {
+	ConnectionID pgtype.UUID        `json:"connection_id"`
+	Resource     string             `json:"resource"`
+	CursorValue  *string            `json:"cursor_value"`
+	WatermarkAt  pgtype.Timestamptz `json:"watermark_at"`
+}
+
+func (q *Queries) UpsertSyncCursor(ctx context.Context, arg UpsertSyncCursorParams) error {
+	_, err := q.db.Exec(ctx, upsertSyncCursor,
+		arg.ConnectionID,
+		arg.Resource,
+		arg.CursorValue,
+		arg.WatermarkAt,
+	)
+	return err
 }

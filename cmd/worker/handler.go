@@ -17,13 +17,27 @@ type receiptImporter interface {
 	Close()
 }
 
+type blingConfigSaver interface {
+	Save(context.Context, bling.BlingConfigInput) (bling.BlingConfigResult, error)
+}
+
 type workerHandler struct {
 	health          application.StaticHealth
 	receiptImporter receiptImporter
+	blingConfig     blingConfigSaver
 }
 
 func newWorkerHandler() workerHandler {
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: newReceiptImporterFromEnvironment()}
+	pool := newDatabasePoolFromEnvironment()
+	var importer receiptImporter
+	var configSaver blingConfigSaver
+	if pool != nil {
+		importer = bling.NewReceiptImportService(pool)
+		if store := newWorkerSecretStore(); store != nil {
+			configSaver = bling.NewBlingCredentialService(pool, store)
+		}
+	}
+	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, blingConfig: configSaver}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -35,6 +49,8 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 			{Provider: domain.OriginNuvemshop, Status: domain.IntegrationNotConfigured},
 			{Provider: domain.OriginNuvemPago, Status: domain.IntegrationUnavailable},
 		})
+	case ipc.MethodBlingConfigSave:
+		return h.saveBlingConfig(ctx, req)
 	case ipc.MethodBlingReceiptsPreview:
 		return h.previewBlingReceipts(ctx, req)
 	case ipc.MethodBlingReceiptsImport:
@@ -42,6 +58,32 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 	default:
 		return ipc.Response{}, ipc.ErrUnsupportedMethod
 	}
+}
+
+func (h workerHandler) saveBlingConfig(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	var input application.BlingConfigRequest
+	if err := json.Unmarshal(req.Payload, &input); err != nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_CONFIG_INVALID", "Os dados da configuração do Bling são inválidos."), nil
+	}
+	if h.blingConfig == nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
+	}
+	result, err := h.blingConfig.Save(ctx, bling.BlingConfigInput{ClientID: input.ClientID, RedirectURI: input.RedirectURI, ClientSecret: input.ClientSecret})
+	if err != nil {
+		code, message := "BLING_CONFIG_SAVE_FAILED", "Não foi possível salvar a configuração do Bling."
+		switch {
+		case errors.Is(err, bling.ErrBlingCredentialValidation):
+			code, message = "BLING_CONFIG_INVALID", "Confira o Client ID e o Redirect URI do Bling."
+		case errors.Is(err, bling.ErrBlingCredentialMissing):
+			code, message = "BLING_SECRET_REQUIRED", "Informe o Client Secret na primeira configuração."
+		case errors.Is(err, bling.ErrBlingCredentialVault):
+			code, message = "BLING_VAULT_UNAVAILABLE", "O cofre seguro do Windows não está disponível."
+		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+			code, message = "BLING_CONFIG_CANCELLED", "A configuração foi cancelada antes de terminar."
+		}
+		return ipc.NewErrorResponse(req.RequestID, code, message), nil
+	}
+	return ipc.NewResponse(req.RequestID, application.BlingConfigResponse{ClientID: result.ClientID, RedirectURI: result.RedirectURI, SecretConfigured: result.SecretConfigured, Status: result.Status})
 }
 
 func (h workerHandler) importBlingReceipts(ctx context.Context, req ipc.Request) (ipc.Response, error) {

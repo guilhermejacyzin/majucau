@@ -24,4 +24,7 @@ func TestProtocolRoundTripAndValidation(t *testing.T) {
 	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"bling.receipts.import","payload":{"folder":"C:\\imports"}}`)); err != nil {
 		t.Fatalf("Bling import method must be accepted: %v", err)
 	}
+	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"bling.config.save","payload":{"client_id":"client","redirect_uri":"https://app.example.test/callback","client_secret":"secret"}}`)); err != nil {
+		t.Fatalf("Bling config method must be accepted: %v", err)
+	}
 }

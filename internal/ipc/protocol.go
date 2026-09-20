@@ -22,6 +22,7 @@ type Method string
 const (
 	MethodHealth               Method = "health.get"
 	MethodIntegrationStatus    Method = "integration.status"
+	MethodBlingConfigSave      Method = "bling.config.save"
 	MethodBlingReceiptsPreview Method = "bling.receipts.preview"
 	MethodBlingReceiptsImport  Method = "bling.receipts.import"
 )
@@ -51,7 +52,7 @@ func (r Request) Validate() error {
 	if strings.TrimSpace(r.RequestID) == "" || len(r.RequestID) > 128 {
 		return ErrInvalidRequest
 	}
-	if r.Method != MethodHealth && r.Method != MethodIntegrationStatus && r.Method != MethodBlingReceiptsPreview && r.Method != MethodBlingReceiptsImport {
+	if r.Method != MethodHealth && r.Method != MethodIntegrationStatus && r.Method != MethodBlingConfigSave && r.Method != MethodBlingReceiptsPreview && r.Method != MethodBlingReceiptsImport {
 		return fmt.Errorf("%w: %s", ErrUnsupportedMethod, r.Method)
 	}
 	if len(r.Payload) > MaxMessageSize {

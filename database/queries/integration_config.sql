@@ -1,0 +1,31 @@
+-- name: UpsertBlingConnectionConfig :exec
+INSERT INTO integration_connections (
+  provider,
+  client_id,
+  redirect_uri,
+  secret_ref,
+  status,
+  credentials_updated_at,
+  updated_at
+) VALUES (
+  'BLING', $1, $2, $3, 'NOT_CONFIGURED', clock_timestamp(), clock_timestamp()
+)
+ON CONFLICT (provider)
+DO UPDATE SET
+  client_id = EXCLUDED.client_id,
+  redirect_uri = EXCLUDED.redirect_uri,
+  secret_ref = EXCLUDED.secret_ref,
+  status = CASE
+    WHEN integration_connections.status IN ('CONNECTED', 'SYNCING') THEN 'AUTH_ERROR'
+    ELSE 'NOT_CONFIGURED'
+  END,
+  revoked_at = CASE
+    WHEN integration_connections.status IN ('CONNECTED', 'SYNCING') THEN clock_timestamp()
+    ELSE integration_connections.revoked_at
+  END,
+  last_error_code = CASE
+    WHEN integration_connections.status IN ('CONNECTED', 'SYNCING') THEN 'CREDENTIALS_CHANGED'
+    ELSE integration_connections.last_error_code
+  END,
+  credentials_updated_at = clock_timestamp(),
+  updated_at = clock_timestamp();

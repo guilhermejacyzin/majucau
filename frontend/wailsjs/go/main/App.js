@@ -13,3 +13,7 @@ export function ImportBlingReceipts(arg1) {
 export function PreviewBlingReceipts(arg1) {
   return window['go']['main']['App']['PreviewBlingReceipts'](arg1);
 }
+
+export function SaveBlingConfig(arg1) {
+  return window['go']['main']['App']['SaveBlingConfig'](arg1);
+}

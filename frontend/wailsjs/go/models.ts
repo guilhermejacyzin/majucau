@@ -1,5 +1,43 @@
 export namespace application {
 	
+	export class BlingConfigRequest {
+	    client_id: string;
+	    redirect_uri: string;
+	    client_secret: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingConfigRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.client_id = source["client_id"];
+	        this.redirect_uri = source["redirect_uri"];
+	        this.client_secret = source["client_secret"];
+	    }
+	}
+	export class BlingConfigResponse {
+	    client_id?: string;
+	    redirect_uri?: string;
+	    secret_configured: boolean;
+	    status?: string;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingConfigResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.client_id = source["client_id"];
+	        this.redirect_uri = source["redirect_uri"];
+	        this.secret_configured = source["secret_configured"];
+	        this.status = source["status"];
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	}
 	export class BlingReceiptImportFile {
 	    name: string;
 	    sha256: string;

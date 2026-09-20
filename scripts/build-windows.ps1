@@ -38,6 +38,8 @@ try {
             throw 'O Wails não produziu o instalador NSIS. Verifique se makensis está instalado e disponível no PATH.'
         }
     }
+
+    & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1')
 }
 finally {
     Pop-Location

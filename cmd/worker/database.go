@@ -16,6 +16,10 @@ import (
 // loopback PostgreSQL instance; local development without a database remains
 // usable for health and folder preview.
 func newReceiptImporterFromEnvironment() *bling.ReceiptImportService {
+	return bling.NewReceiptImportService(newDatabasePoolFromEnvironment())
+}
+
+func newDatabasePoolFromEnvironment() *pgxpool.Pool {
 	dsn := strings.TrimSpace(os.Getenv("MAJUCAU_DATABASE_URL"))
 	if dsn == "" {
 		return nil
@@ -36,5 +40,5 @@ func newReceiptImporterFromEnvironment() *bling.ReceiptImportService {
 		pool.Close()
 		return nil
 	}
-	return bling.NewReceiptImportService(pool)
+	return pool
 }

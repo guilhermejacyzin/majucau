@@ -94,6 +94,8 @@ Pré-requisitos: Windows 10/11 x64, Go 1.26.6, Node.js 24.x, Wails CLI 2.13.0, `
 ./scripts/build-windows.ps1 -Installer
 ```
 
+Os executáveis e instaladores finais são consolidados em `artifacts/windows/`, com o inventário em `artifacts/MANIFEST.txt`. Os diretórios intermediários (`build/bin`, `frontend/dist` e `tmp`) permanecem apenas como saídas de trabalho ignoradas pelo Git; o script de consolidação é idempotente e concentra o material que deve ser entregue ou anexado a uma execução.
+
 O script de validação não transforma automaticamente uma checagem externa em aprovada. PostgreSQL real, assinatura Authenticode, VM limpa e backup/restore exigem evidências próprias.
 
 ## Regras financeiras protegidas
@@ -113,7 +115,7 @@ Qualquer mudança nessas regras exige versão, regressão financeira e aprovaç�
 
 ## Integrações e credenciais
 
-A tela **Configurações > Integrações** é a área editável para preencher os dados públicos e secrets das APIs de Bling, Nuvemshop e, quando houver fonte oficial, Nuvem Pago. Na fundação G1 os campos já são apresentados com labels/tooltips e os comandos de conectar, testar, reconectar, desconectar e sincronizar aparecem desabilitados: serão liberados quando o protocolo autenticado do worker implementar o fluxo completo. Para a pessoa usuária, a experiência final será normal de aplicativo — editar, salvar, conectar no navegador externo e acompanhar o estado — sem o React persistir ou executar secrets.
+A tela **Configurações > Integrações** é a área editável para preencher os dados públicos e secrets das APIs de Bling, Nuvemshop e, quando houver fonte oficial, Nuvem Pago. O Bling já permite salvar Client ID, Redirect URI e Client Secret pelo IPC autenticado; o secret vai para DPAPI e os metadados públicos para PostgreSQL. Conectar, testar, reconectar, desconectar e sincronizar continuam separados e desabilitados até o fluxo OAuth completo estar homologado. Para a pessoa usuária, a experiência final será normal de aplicativo — editar, salvar, conectar no navegador externo e acompanhar o estado — sem o React persistir ou executar secrets.
 
 - secrets e tokens não entram no frontend, Git, logs ou banco em texto aberto;
 - a UI envia a credencial ao worker por IPC local autenticado;

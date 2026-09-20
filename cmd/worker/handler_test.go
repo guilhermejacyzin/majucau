@@ -9,8 +9,15 @@ import (
 	"testing"
 
 	"majucau.local/financial-intelligence/internal/application"
+	"majucau.local/financial-intelligence/internal/integrations/bling"
 	"majucau.local/financial-intelligence/internal/ipc"
 )
+
+type fakeBlingConfigSaver struct{}
+
+func (fakeBlingConfigSaver) Save(_ context.Context, input bling.BlingConfigInput) (bling.BlingConfigResult, error) {
+	return bling.BlingConfigResult{ClientID: input.ClientID, RedirectURI: input.RedirectURI, SecretConfigured: input.ClientSecret != "", Status: "NOT_CONFIGURED"}, nil
+}
 
 func TestWorkerPreviewReturnsSanitizedBlingSummary(t *testing.T) {
 	folder := t.TempDir()
@@ -50,5 +57,26 @@ func TestWorkerImportFailsClosedWhenDatabaseIsNotConfigured(t *testing.T) {
 	response, err := (workerHandler{health: application.StaticHealth{Service: "test"}}).Handle(context.Background(), ipc.Request{RequestID: "test", Method: ipc.MethodBlingReceiptsImport, Payload: []byte(`{"folder":"C:\\imports"}`)})
 	if err != nil || response.OK || response.Error == nil || response.Error.Code != "BLING_DATABASE_NOT_CONFIGURED" {
 		t.Fatalf("database-disabled import response: %#v %v", response, err)
+	}
+}
+
+func TestWorkerBlingConfigNeverEchoesSecret(t *testing.T) {
+	payload, err := json.Marshal(application.BlingConfigRequest{ClientID: "client", RedirectURI: "https://app.example.test/callback", ClientSecret: "secret-do-not-echo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := (workerHandler{health: application.StaticHealth{Service: "test"}, blingConfig: fakeBlingConfigSaver{}}).Handle(context.Background(), ipc.Request{RequestID: "test", Method: ipc.MethodBlingConfigSave, Payload: payload})
+	if err != nil || !response.OK {
+		t.Fatalf("config response: %#v %v", response, err)
+	}
+	if strings.Contains(string(response.Payload), "secret-do-not-echo") {
+		t.Fatalf("secret leaked in response: %s", response.Payload)
+	}
+	var result application.BlingConfigResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		t.Fatal(err)
+	}
+	if !result.SecretConfigured || result.ClientID != "client" {
+		t.Fatalf("unexpected result: %#v", result)
 	}
 }

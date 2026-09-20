@@ -72,6 +72,23 @@ type BlingReceiptImportResult struct {
 	ErrorCode      string `json:"error_code,omitempty"`
 	Message        string `json:"message,omitempty"`
 }
+
+// BlingConfigRequest crosses the authenticated local pipe only. The worker
+// consumes ClientSecret immediately and never echoes it back.
+type BlingConfigRequest struct {
+	ClientID     string `json:"client_id"`
+	RedirectURI  string `json:"redirect_uri"`
+	ClientSecret string `json:"client_secret"`
+}
+
+type BlingConfigResponse struct {
+	ClientID         string `json:"client_id,omitempty"`
+	RedirectURI      string `json:"redirect_uri,omitempty"`
+	SecretConfigured bool   `json:"secret_configured"`
+	Status           string `json:"status,omitempty"`
+	ErrorCode        string `json:"error_code,omitempty"`
+	Message          string `json:"message,omitempty"`
+}
 type HealthChecker interface {
 	CheckHealth(context.Context) HealthResponse
 }

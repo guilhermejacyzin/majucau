@@ -8,3 +8,5 @@ export function GetBootstrapState():Promise<main.BootstrapState>;
 export function ImportBlingReceipts(arg1:string):Promise<application.BlingReceiptImportResult>;
 
 export function PreviewBlingReceipts(arg1:string):Promise<application.BlingReceiptImportPreview>;
+
+export function SaveBlingConfig(arg1:application.BlingConfigRequest):Promise<application.BlingConfigResponse>;

@@ -117,6 +117,43 @@ func (a *App) GetBootstrapState() BootstrapState {
 	}
 }
 
+// SaveBlingConfig forwards the editable Bling configuration to the worker.
+// The Wails boundary does not persist or echo the secret; the worker owns the
+// DPAPI write and returns only sanitized metadata.
+func (a *App) SaveBlingConfig(input application.BlingConfigRequest) application.BlingConfigResponse {
+	fallback := application.BlingConfigResponse{ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
+	defer cancel()
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return application.BlingConfigResponse{ErrorCode: "BLING_CONFIG_INVALID", Message: "A configuração do Bling não pôde ser preparada."}
+	}
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-config"), Method: ipc.MethodBlingConfigSave, Payload: payload})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		if response.Error == nil {
+			return application.BlingConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+		}
+		return application.BlingConfigResponse{ErrorCode: response.Error.Code, Message: response.Error.Message}
+	}
+	var result application.BlingConfigResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.BlingConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	return result
+}
+
 // PreviewBlingReceipts asks the worker to validate a local Bling export folder.
 // It returns counts and sanitized issues only; financial rows stay in the worker.
 func (a *App) PreviewBlingReceipts(folder string) application.BlingReceiptImportPreview {

@@ -47,6 +47,11 @@ export type BlingReceiptImportResult = {
 export type BlingImportSource = (folder: string) => Promise<unknown>
 export type BlingImportAdapter = { import: (folder: string) => Promise<BlingReceiptImportResult> }
 
+export type BlingConfigInput = { client_id: string; redirect_uri: string; client_secret: string }
+export type BlingConfigResult = { client_id?: string; redirect_uri?: string; secret_configured: boolean; status?: string; error_code?: string; message?: string }
+export type BlingConfigSource = (input: BlingConfigInput) => Promise<unknown>
+export type BlingConfigAdapter = { save: (input: BlingConfigInput) => Promise<BlingConfigResult> }
+
 const unavailableIntegration = (provider: IntegrationProvider, status: IntegrationState = 'NOT_CONFIGURED'): BootstrapIntegration => ({ provider, status })
 
 export function unavailableBootstrap(errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BootstrapState {
@@ -130,6 +135,33 @@ export function createBlingImportAdapter(source: BlingImportSource = readWailsBl
   }
 }
 
+const unavailableBlingConfig = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingConfigResult => ({ secret_configured: false, error_code: errorCode, message })
+
+async function readWailsBlingConfig(input: BlingConfigInput): Promise<unknown> {
+  const method = window.go?.main?.App?.SaveBlingConfig
+  if (typeof method !== 'function') return unavailableBlingConfig()
+  return method(input)
+}
+
+function isBlingConfigResult(value: unknown): value is BlingConfigResult {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<BlingConfigResult>
+  return typeof candidate.secret_configured === 'boolean'
+}
+
+export function createBlingConfigAdapter(source: BlingConfigSource = readWailsBlingConfig): BlingConfigAdapter {
+  return {
+    save: async (input) => {
+      try {
+        const result = await source(input)
+        return isBlingConfigResult(result) ? result : unavailableBlingConfig('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableBlingConfig()
+      }
+    },
+  }
+}
+
 export function createBootstrapAdapter(source: BootstrapSource = readWailsBootstrap): BootstrapAdapter {
   return {
     getState: async () => {
@@ -145,6 +177,6 @@ export function createBootstrapAdapter(source: BootstrapSource = readWailsBootst
 
 declare global {
   interface Window {
-    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown> } } }
+    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown> } } }
   }
 }

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
 import { tooltipCatalog } from './tooltips'
-import type { BlingPreviewAdapter, BootstrapAdapter, BootstrapState } from './bootstrap'
+import type { BlingImportAdapter, BlingPreviewAdapter, BootstrapAdapter, BootstrapState } from './bootstrap'
 
 const connectedBootstrap: BootstrapState = { app_version: '0.1.0-g1', worker: { service: 'majucau-worker', version: 'test-worker', state: 'OK', checked_at: '2026-08-16T12:00:00Z' }, integrations: [{ provider: 'BLING', status: 'CONNECTED', last_success_at: '2026-08-16T11:58:00Z', last_attempt_at: '2026-08-16T11:58:00Z' }, { provider: 'NUVEMSHOP', status: 'PARTIALLY_AVAILABLE' }, { provider: 'NUVEM_PAGO', status: 'UNAVAILABLE' }], checked_at: '2026-08-16T12:00:00Z' }
 const adapterFor = (state: BootstrapState): BootstrapAdapter => ({ getState: () => Promise.resolve(state) })
@@ -76,12 +76,15 @@ describe('shell financeiro', () => {
   it('valida a pasta de recebimentos e mostra somente o resumo sanitizado', async () => {
     const user = userEvent.setup()
     const blingPreviewAdapter: BlingPreviewAdapter = { preview: async () => ({ files: [{ name: 'recebidos.csv', sha256: 'a'.repeat(64), receipt_count: 3, error_count: 1 }], receipt_count: 3, error_count: 1, ignored_count: 0, issues: [{ file: 'recebidos.csv', line: 5, code: 'NOT_PAID', message: 'linha não importada' }] }) }
-    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingPreviewAdapter={blingPreviewAdapter} />)
+    const blingImportAdapter: BlingImportAdapter = { import: async () => ({ status: 'SUCCESS', records_read: 3, records_created: 3, records_updated: 0, records_failed: 0, ignored_count: 0, batch_id: 'batch-1' }) }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingPreviewAdapter={blingPreviewAdapter} blingImportAdapter={blingImportAdapter} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await user.click(screen.getByRole('button', { name: 'Integrações' }))
     await user.type(screen.getByLabelText('Pasta dos relatórios CSV'), 'C:\\imports\\bling')
     await user.click(screen.getByRole('button', { name: 'Validar pasta' }))
     expect(await screen.findByText('3 recebimento(s) válido(s)')).toBeInTheDocument()
     expect(screen.getByText(/1 linha\(s\) com atenção/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Importar e gravar' }))
+    expect(await screen.findByText(/Lote SUCCESS/)).toBeInTheDocument()
   })
 })

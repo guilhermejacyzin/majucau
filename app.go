@@ -153,6 +153,42 @@ func (a *App) PreviewBlingReceipts(folder string) application.BlingReceiptImport
 	return preview
 }
 
+// ImportBlingReceipts asks the worker to persist the validated folder in one
+// PostgreSQL transaction. The UI receives counts and stable error codes only.
+func (a *App) ImportBlingReceipts(folder string) application.BlingReceiptImportResult {
+	fallback := application.BlingReceiptImportResult{ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 60*time.Second)
+	defer cancel()
+	payload, err := json.Marshal(map[string]string{"folder": folder})
+	if err != nil {
+		return application.BlingReceiptImportResult{ErrorCode: "IMPORT_REQUEST_INVALID", Message: "A pasta informada não pôde ser preparada."}
+	}
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-import"), Method: ipc.MethodBlingReceiptsImport, Payload: payload})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		if response.Error == nil {
+			return application.BlingReceiptImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+		}
+		return application.BlingReceiptImportResult{ErrorCode: response.Error.Code, Message: response.Error.Message}
+	}
+	var result application.BlingReceiptImportResult
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.BlingReceiptImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	return result
+}
+
 func unavailableIntegrations() []application.IntegrationStatus {
 	return []application.IntegrationStatus{
 		{Provider: domain.OriginBling, Status: domain.IntegrationNotConfigured},

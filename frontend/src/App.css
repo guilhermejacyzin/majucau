@@ -19,7 +19,7 @@
 .folder-import-panel { margin-top: 12px; padding: 15px 16px; background: #f5faf8; border: 1px solid #d8ebe5; border-radius: 8px; }
 .folder-import-heading { display: flex; align-items: center; gap: 7px; color: #416963; font-size: 11px; }
 .folder-import-panel > p { margin: 5px 0 12px; color: #78918c; font-size: 10px; }
-.folder-import-controls { display: flex; gap: 8px; align-items: center; }
+.folder-import-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .folder-import-controls > .tooltip:first-child { flex: 1; }
 .folder-import-controls input { width: 100%; height: 34px; border: 1px solid #dbe5e2; border-radius: 6px; padding: 0 10px; color: var(--ink); background: #fff; font-size: 11px; outline: none; }
 .folder-import-controls input:focus { border-color: #65a99c; box-shadow: 0 0 0 3px #dff0eb; }

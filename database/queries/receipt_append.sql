@@ -5,6 +5,16 @@ RETURNING id, connection_id, resource, started_at, finished_at, status,
           records_read, records_created, records_updated, records_failed,
           retry_count, error_code, error_message_sanitized, correlation_id;
 
+-- name: GetIntegrationConnectionByProvider :one
+SELECT id, provider, configured_by, status, external_account_id,
+       external_account_name, client_id, redirect_uri, secret_ref,
+       secret_store_scope, authorized_scopes, authorized_at, token_expires_at,
+       refresh_token_expires_at, credentials_updated_at, revoked_at,
+       last_test_at, last_test_status, last_success_at, last_attempt_at,
+       last_error_code, created_at, updated_at
+FROM integration_connections
+WHERE provider = $1;
+
 -- name: FinishIntegrationSyncBatch :exec
 UPDATE integration_sync_batches
 SET finished_at = clock_timestamp(),

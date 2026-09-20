@@ -12,10 +12,18 @@ import (
 	"majucau.local/financial-intelligence/internal/ipc"
 )
 
-type workerHandler struct{ health application.StaticHealth }
+type receiptImporter interface {
+	Import(context.Context, string) (bling.ReceiptImportResult, error)
+	Close()
+}
+
+type workerHandler struct {
+	health          application.StaticHealth
+	receiptImporter receiptImporter
+}
 
 func newWorkerHandler() workerHandler {
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}}
+	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: newReceiptImporterFromEnvironment()}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -29,9 +37,36 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		})
 	case ipc.MethodBlingReceiptsPreview:
 		return h.previewBlingReceipts(ctx, req)
+	case ipc.MethodBlingReceiptsImport:
+		return h.importBlingReceipts(ctx, req)
 	default:
 		return ipc.Response{}, ipc.ErrUnsupportedMethod
 	}
+}
+
+func (h workerHandler) importBlingReceipts(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	var input blingReceiptsPreviewRequest
+	if err := json.Unmarshal(req.Payload, &input); err != nil || strings.TrimSpace(input.Folder) == "" {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_IMPORT_FOLDER_REQUIRED", "Informe a pasta dos relatórios CSV do Bling."), nil
+	}
+	if h.receiptImporter == nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_DATABASE_NOT_CONFIGURED", "O banco local ainda não está configurado para gravar os recebimentos."), nil
+	}
+	result, err := h.receiptImporter.Import(ctx, input.Folder)
+	if err != nil {
+		code := "BLING_IMPORT_FAILED"
+		message := "Não foi possível gravar os recebimentos do Bling."
+		switch {
+		case errors.Is(err, bling.ErrReceiptDatabaseUnavailable):
+			code, message = "BLING_DATABASE_NOT_CONFIGURED", "O banco local ainda não está configurado para gravar os recebimentos."
+		case errors.Is(err, bling.ErrBlingConnectionMissing):
+			code, message = "BLING_CONNECTION_NOT_CONFIGURED", "Configure a conexão do Bling antes de importar os recebimentos."
+		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+			code, message = "BLING_IMPORT_CANCELLED", "A importação foi cancelada antes de terminar."
+		}
+		return ipc.NewErrorResponse(req.RequestID, code, message), nil
+	}
+	return ipc.NewResponse(req.RequestID, application.BlingReceiptImportResult{BatchID: result.BatchID, Status: result.Status, RecordsRead: result.RecordsRead, RecordsCreated: result.RecordsCreated, RecordsUpdated: result.RecordsUpdated, RecordsFailed: result.RecordsFailed, IgnoredCount: result.IgnoredCount})
 }
 
 type blingReceiptsPreviewRequest struct {

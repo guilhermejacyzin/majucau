@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createBlingPreviewAdapter, createBootstrapAdapter, unavailableBootstrap } from './bootstrap'
+import { createBlingImportAdapter, createBlingPreviewAdapter, createBootstrapAdapter, unavailableBootstrap } from './bootstrap'
 
 describe('bootstrap adapter', () => {
   it('consome contrato tipado sem acoplar ao runtime Wails', async () => {
@@ -35,5 +35,10 @@ describe('bootstrap adapter', () => {
     const preview = await adapter.preview('C:\\imports')
     expect(preview.error_code).toBe('WORKER_UNAVAILABLE')
     expect(preview.message).not.toContain('customer name leaked')
+  })
+
+  it('valida o resultado do lote persistido e oculta detalhes de transporte', async () => {
+    const adapter = createBlingImportAdapter(async () => ({ records_read: 3, records_created: 2, records_updated: 1, records_failed: 0, ignored_count: 0, status: 'SUCCESS', batch_id: 'batch-1' }))
+    await expect(adapter.import('C:\\imports')).resolves.toMatchObject({ status: 'SUCCESS', records_created: 2 })
   })
 })

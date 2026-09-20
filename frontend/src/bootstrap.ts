@@ -33,6 +33,19 @@ export type BootstrapSource = () => Promise<unknown>
 export type BootstrapAdapter = { getState: () => Promise<BootstrapState> }
 export type BlingPreviewSource = (folder: string) => Promise<unknown>
 export type BlingPreviewAdapter = { preview: (folder: string) => Promise<BlingReceiptImportPreview> }
+export type BlingReceiptImportResult = {
+  batch_id?: string
+  status?: string
+  records_read: number
+  records_created: number
+  records_updated: number
+  records_failed: number
+  ignored_count: number
+  error_code?: string
+  message?: string
+}
+export type BlingImportSource = (folder: string) => Promise<unknown>
+export type BlingImportAdapter = { import: (folder: string) => Promise<BlingReceiptImportResult> }
 
 const unavailableIntegration = (provider: IntegrationProvider, status: IntegrationState = 'NOT_CONFIGURED'): BootstrapIntegration => ({ provider, status })
 
@@ -90,6 +103,33 @@ export function createBlingPreviewAdapter(source: BlingPreviewSource = readWails
   }
 }
 
+const unavailableBlingImport = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingReceiptImportResult => ({ records_read: 0, records_created: 0, records_updated: 0, records_failed: 0, ignored_count: 0, error_code: errorCode, message })
+
+async function readWailsBlingImport(folder: string): Promise<unknown> {
+  const method = window.go?.main?.App?.ImportBlingReceipts
+  if (typeof method !== 'function') return unavailableBlingImport()
+  return method(folder)
+}
+
+function isBlingReceiptImportResult(value: unknown): value is BlingReceiptImportResult {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<BlingReceiptImportResult>
+  return typeof candidate.records_read === 'number' && typeof candidate.records_created === 'number' && typeof candidate.records_updated === 'number' && typeof candidate.records_failed === 'number' && typeof candidate.ignored_count === 'number'
+}
+
+export function createBlingImportAdapter(source: BlingImportSource = readWailsBlingImport): BlingImportAdapter {
+  return {
+    import: async (folder) => {
+      try {
+        const result = await source(folder)
+        return isBlingReceiptImportResult(result) ? result : unavailableBlingImport('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableBlingImport()
+      }
+    },
+  }
+}
+
 export function createBootstrapAdapter(source: BootstrapSource = readWailsBootstrap): BootstrapAdapter {
   return {
     getState: async () => {
@@ -105,6 +145,6 @@ export function createBootstrapAdapter(source: BootstrapSource = readWailsBootst
 
 declare global {
   interface Window {
-    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown> } } }
+    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown> } } }
   }
 }

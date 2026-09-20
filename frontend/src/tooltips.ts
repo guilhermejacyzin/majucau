@@ -51,6 +51,7 @@ export const tooltipCatalog = {
   'bling.syncNow': 'Solicita uma nova leitura. Registros repetidos não devem ser duplicados.',
   'bling.importFolder': 'Pasta local onde você coloca os relatórios CSV de recebimentos exportados do Bling.',
   'bling.preview': 'Valida a pasta, conta recebimentos pagos e mostra erros sem enviar linhas financeiras para a interface.',
+  'bling.import': 'Grava os recebimentos válidos em uma transação no PostgreSQL. Erros ficam no lote e não viram zero.',
   'nuvemshop.appId': 'Identificador do aplicativo cadastrado na Nuvemshop.',
   'nuvemshop.clientSecret': 'Chave secreta usada para concluir a autorização. Ela fica protegida no Windows.',
   'nuvemshop.redirectUri': 'Endereço HTTPS registrado para receber o retorno da autorização.',

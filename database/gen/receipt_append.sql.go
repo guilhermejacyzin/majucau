@@ -49,6 +49,48 @@ func (q *Queries) FinishIntegrationSyncBatch(ctx context.Context, arg FinishInte
 	return err
 }
 
+const getIntegrationConnectionByProvider = `-- name: GetIntegrationConnectionByProvider :one
+SELECT id, provider, configured_by, status, external_account_id,
+       external_account_name, client_id, redirect_uri, secret_ref,
+       secret_store_scope, authorized_scopes, authorized_at, token_expires_at,
+       refresh_token_expires_at, credentials_updated_at, revoked_at,
+       last_test_at, last_test_status, last_success_at, last_attempt_at,
+       last_error_code, created_at, updated_at
+FROM integration_connections
+WHERE provider = $1
+`
+
+func (q *Queries) GetIntegrationConnectionByProvider(ctx context.Context, provider string) (IntegrationConnection, error) {
+	row := q.db.QueryRow(ctx, getIntegrationConnectionByProvider, provider)
+	var i IntegrationConnection
+	err := row.Scan(
+		&i.ID,
+		&i.Provider,
+		&i.ConfiguredBy,
+		&i.Status,
+		&i.ExternalAccountID,
+		&i.ExternalAccountName,
+		&i.ClientID,
+		&i.RedirectUri,
+		&i.SecretRef,
+		&i.SecretStoreScope,
+		&i.AuthorizedScopes,
+		&i.AuthorizedAt,
+		&i.TokenExpiresAt,
+		&i.RefreshTokenExpiresAt,
+		&i.CredentialsUpdatedAt,
+		&i.RevokedAt,
+		&i.LastTestAt,
+		&i.LastTestStatus,
+		&i.LastSuccessAt,
+		&i.LastAttemptAt,
+		&i.LastErrorCode,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const insertIntegrationSyncBatch = `-- name: InsertIntegrationSyncBatch :one
 INSERT INTO integration_sync_batches (connection_id, resource)
 VALUES ($1, $2)

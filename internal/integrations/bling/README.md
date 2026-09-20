@@ -19,3 +19,5 @@ O PDF `Bling - Relatório de Contas a Receber` fornecido em 20/09/2026 foi usado
 O resultado da pasta é uma prévia determinística em memória. O worker deve abrir a transação, criar o lote, chamar `PersistReceipts`, finalizar o lote e somente então avançar o cursor/estado da integração.
 
 O método IPC `bling.receipts.preview` chama essa leitura pelo worker e retorna apenas nomes de arquivos, hashes, contagens e até 50 problemas sanitizados. A UI nunca recebe nomes de clientes, históricos ou valores de linhas.
+
+O método IPC `bling.receipts.import` só funciona quando o worker tem o PostgreSQL dedicado configurado em seu ambiente seguro (`MAJUCAU_DATABASE_URL`, sem senha em logs ou argumentos). Ele cria o lote e comita RAW + ledger atomicamente; sem banco ou conexão Bling configurada, retorna código estável e não altera arquivos nem dados.

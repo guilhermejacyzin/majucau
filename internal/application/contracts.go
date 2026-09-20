@@ -60,6 +60,18 @@ type BlingReceiptImportPreview struct {
 	ErrorCode    string                    `json:"error_code,omitempty"`
 	Message      string                    `json:"message,omitempty"`
 }
+
+type BlingReceiptImportResult struct {
+	BatchID        string `json:"batch_id,omitempty"`
+	Status         string `json:"status,omitempty"`
+	RecordsRead    int    `json:"records_read"`
+	RecordsCreated int    `json:"records_created"`
+	RecordsUpdated int    `json:"records_updated"`
+	RecordsFailed  int    `json:"records_failed"`
+	IgnoredCount   int    `json:"ignored_count"`
+	ErrorCode      string `json:"error_code,omitempty"`
+	Message        string `json:"message,omitempty"`
+}
 type HealthChecker interface {
 	CheckHealth(context.Context) HealthResponse
 }

@@ -45,3 +45,10 @@ func TestWorkerPreviewRejectsMissingFolder(t *testing.T) {
 		t.Fatalf("missing folder response: %#v %v", response, err)
 	}
 }
+
+func TestWorkerImportFailsClosedWhenDatabaseIsNotConfigured(t *testing.T) {
+	response, err := (workerHandler{health: application.StaticHealth{Service: "test"}}).Handle(context.Background(), ipc.Request{RequestID: "test", Method: ipc.MethodBlingReceiptsImport, Payload: []byte(`{"folder":"C:\\imports"}`)})
+	if err != nil || response.OK || response.Error == nil || response.Error.Code != "BLING_DATABASE_NOT_CONFIGURED" {
+		t.Fatalf("database-disabled import response: %#v %v", response, err)
+	}
+}

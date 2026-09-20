@@ -5,12 +5,12 @@
     {
       "path": ".gitattributes",
       "bytes": 116,
-      "sha256": "34cd0ee448001ad020f6e6c1635164e76e1d4a150d965beb0d3c84362c09dbd6"
+      "sha256": "69182250aeed3575519e5a7679c8889a586a0951ab2ce47888a1f751f52f933b"
     },
     {
       "path": ".gitignore",
       "bytes": 218,
-      "sha256": "34a0433fc05073290567964a4f9491db4c76fdd0eec4f1de0608fccf0572df40"
+      "sha256": "2b411ff86145d76ed8d88991392427bcf49f04aa8ae546d845c876f5c583132b"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -395,7 +395,7 @@
     {
       "path": "README.md",
       "bytes": 10688,
-      "sha256": "aefb74e6957290c24862c81c8483a50ad74686f61f3218e2e492df1b60f444d8"
+      "sha256": "0877607a560a7b3d3e24ee1662277652561802fca7fb75be13b3922428310368"
     },
     {
       "path": "tools/exportar_planejamento.py",

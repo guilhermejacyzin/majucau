@@ -51,6 +51,7 @@ try {
     }
 
     & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1')
+    & (Join-Path $PSScriptRoot 'package-portable.ps1')
 }
 finally {
     Pop-Location

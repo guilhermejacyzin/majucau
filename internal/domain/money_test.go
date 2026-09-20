@@ -39,6 +39,18 @@ func TestMoneyRoundHalfUp(t *testing.T) {
 		}
 	}
 }
+func TestMoneyMulRatioRoundHalfUp(t *testing.T) {
+	amount, _ := ParseMoney("100.01")
+	fee, err := amount.MulRatioRoundHalfUp(259, 10000)
+	if err != nil || fee.String() != "2.5903" {
+		t.Fatalf("fee rounding: %v %v", fee, err)
+	}
+	half, _ := ParseMoney("1.0050")
+	rounded, err := half.MulRatioRoundHalfUp(1, 1)
+	if err != nil || rounded.String() != "1.0050" {
+		t.Fatalf("identity must preserve scale: %v %v", rounded, err)
+	}
+}
 func TestMoneyOverflowAndDivision(t *testing.T) {
 	m, _ := ParseMoney("922337203685477.5807")
 	if _, err := m.Add(Money{units: 1}); !errors.Is(err, ErrMoneyOverflow) {

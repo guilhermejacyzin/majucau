@@ -27,6 +27,9 @@ describe('shell financeiro', () => {
     expect(screen.getAllByLabelText(/Client Secret/)).toHaveLength(2)
     expect(screen.getByRole('heading', { name: 'Nuvem Pago' })).toBeInTheDocument()
     expect(screen.getByText('Indisponível para confirmação financeira')).toBeInTheDocument()
+    expect(screen.getByText('Tarifário configurado')).toBeInTheDocument()
+    expect(screen.getByText('4,49% + R$ 0,35')).toBeInTheDocument()
+    expect(screen.getByText('Na hora')).toBeInTheDocument()
   })
 
   it('navega pelo aviso e mantém ações sem worker desabilitadas', async () => {

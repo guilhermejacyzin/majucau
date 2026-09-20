@@ -394,8 +394,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 10254,
-      "sha256": "7aee15f8b13a72c923217a92d7cb983c41d67cab53300f3c16fa5f7dbdc98291"
+      "bytes": 10498,
+      "sha256": "105e60484ed8cac866467edc270b3fb4c9fb8ca95fbb9a20af15b1a188272b63"
     },
     {
       "path": "tools/exportar_planejamento.py",

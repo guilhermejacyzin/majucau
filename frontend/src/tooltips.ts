@@ -59,6 +59,7 @@ export const tooltipCatalog = {
   'nuvemshop.syncNow': 'Solicita uma nova leitura da loja sem duplicar registros.',
   'nuvempago.availability': 'A confirmação financeira depende de uma API ou arquivo oficial com taxa, líquido e data de repasse.',
   'nuvempago.partial': 'Pedidos e status podem estar disponíveis, mas faltam dados oficiais para confirmar o recebimento líquido.',
+  'nuvempago.pricing': 'Tarifas aprovadas para estimativa. Elas não substituem taxa efetiva, líquido ou data de liquidação vindos de um ledger oficial.',
   'chart.projected': 'Valores futuros estimados pelo cenário selecionado.',
 } as const
 export type TooltipId = keyof typeof tooltipCatalog

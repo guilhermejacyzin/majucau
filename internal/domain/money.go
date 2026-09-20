@@ -189,6 +189,38 @@ func (m Money) MulRatio(numerator, denominator int64) (Money, error) {
 	return Money{units: quotient.Int64()}, nil
 }
 
+// MulRatioRoundHalfUp multiplies by an exact rational number and rounds the
+// result to the four decimal places used by Money. It is the safe boundary
+// for tariff calculations where truncation would understate a fee.
+func (m Money) MulRatioRoundHalfUp(numerator, denominator int64) (Money, error) {
+	if denominator == 0 {
+		return Money{}, ErrDivisionByZero
+	}
+	if numerator == 0 || m.units == 0 {
+		return ZeroMoney(), nil
+	}
+	product := new(big.Int).Mul(big.NewInt(m.units), big.NewInt(numerator))
+	den := big.NewInt(denominator)
+	quotient, remainder := new(big.Int), new(big.Int)
+	quotient.QuoRem(product, den, remainder)
+	if remainder.Sign() != 0 {
+		absRemainder := new(big.Int).Abs(remainder)
+		absDenominator := new(big.Int).Abs(den)
+		absRemainder.Lsh(absRemainder, 1)
+		if absRemainder.Cmp(absDenominator) >= 0 {
+			direction := int64(1)
+			if product.Sign() != den.Sign() {
+				direction = -1
+			}
+			quotient.Add(quotient, big.NewInt(direction))
+		}
+	}
+	if !quotient.IsInt64() {
+		return Money{}, ErrMoneyOverflow
+	}
+	return Money{units: quotient.Int64()}, nil
+}
+
 func (m Money) RoundHalfUp(places int) (Money, error) {
 	if places < 0 || places > 4 {
 		return Money{}, ErrInvalidMoney

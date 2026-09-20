@@ -184,6 +184,7 @@ Critérios:
 ### 7.3 Screen Configurações > Integrações
 
 - cards independentes Bling, Nuvemshop e Nuvem Pago;
+- Nuvem Pago exibe o tarifário aprovado como configuração/projeção identificada; taxa efetiva, líquido e liquidação continuam bloqueados sem ledger oficial;
 - campos mascarados;
 - salvar no worker/DPAPI;
 - Conectar, Testar, Reconectar e Desconectar;

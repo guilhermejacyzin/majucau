@@ -18,6 +18,8 @@ Aplicativo desktop de inteligência financeira para uso individual em Windows 10
 
 O tarifário Nuvem Pago aprovado está registrado em `docs/source/Nuvem-Pago-Taxas-2026-09-20.md`: cartão 1x/2x/3x sempre D+30 (2,59% + R$ 0,35; 4,49% + R$ 0,35; 5,44% + R$ 0,35), boleto D+2 (R$ 2,39) e PIX na hora (0,99%). A tabela anterior de cartão D+2/D+14 foi substituída e não é usada. O B2C financeiro confirmado continua desabilitado enquanto não existir fonte oficial do ledger para valor bruto, taxa efetiva, líquido, status e data de liquidação. O sistema nunca substitui uma fonte ausente por uma estimativa silenciosa.
 
+A screen de Integrações exibe esse tarifário como configuração/projeção identificada no card Nuvem Pago. O motor Go calcula a tarifa com decimal exato e `ROUND_HALF_UP`; nenhum desses valores é apresentado como recebimento confirmado.
+
 ## Stack fixada
 
 | Camada | Tecnologia |

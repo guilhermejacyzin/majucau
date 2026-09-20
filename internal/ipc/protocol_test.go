@@ -27,4 +27,13 @@ func TestProtocolRoundTripAndValidation(t *testing.T) {
 	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"bling.config.save","payload":{"client_id":"client","redirect_uri":"https://app.example.test/callback","client_secret":"secret"}}`)); err != nil {
 		t.Fatalf("Bling config method must be accepted: %v", err)
 	}
+	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"bling.oauth.start"}`)); err != nil {
+		t.Fatalf("Bling OAuth start method must be accepted: %v", err)
+	}
+	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"bling.oauth.status","payload":{"session_id":"session"}}`)); err != nil {
+		t.Fatalf("Bling OAuth status method must be accepted: %v", err)
+	}
+	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"bling.oauth.test","payload":{}}`)); err != nil {
+		t.Fatalf("Bling OAuth test method must be accepted: %v", err)
+	}
 }

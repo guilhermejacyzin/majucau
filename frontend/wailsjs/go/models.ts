@@ -38,6 +38,62 @@ export namespace application {
 	        this.message = source["message"];
 	    }
 	}
+	export class BlingOAuthStartResponse {
+	    session_id?: string;
+	    authorization_url?: string;
+	    status?: string;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingOAuthStartResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.session_id = source["session_id"];
+	        this.authorization_url = source["authorization_url"];
+	        this.status = source["status"];
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	}
+	export class BlingOAuthStatusResponse {
+	    session_id?: string;
+	    status?: string;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingOAuthStatusResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.session_id = source["session_id"];
+	        this.status = source["status"];
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	}
+	export class BlingOAuthTestResponse {
+	    status?: string;
+	    page_record_count: number;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingOAuthTestResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.page_record_count = source["page_record_count"];
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	}
 	export class BlingReceiptImportFile {
 	    name: string;
 	    sha256: string;

@@ -50,6 +50,7 @@ export const tooltipCatalog = {
   'bling.disconnect': 'Remove os tokens salvos e interrompe novas sincronizações. Os dados já importados são preservados.',
   'bling.syncNow': 'Solicita uma nova leitura. Registros repetidos não devem ser duplicados.',
   'bling.save': 'Salva Client ID e Redirect URI no banco local e protege o Client Secret no cofre do Windows. Não inicia a sincronização.',
+  'bling.oauth.status': 'Mostra se o retorno do navegador foi recebido e se a autorização passou no teste mínimo de leitura.',
   'bling.importFolder': 'Pasta local onde você coloca os relatórios CSV de recebimentos exportados do Bling.',
   'bling.preview': 'Valida a pasta, conta recebimentos pagos e mostra erros sem enviar linhas financeiras para a interface.',
   'bling.import': 'Grava os recebimentos válidos em uma transação no PostgreSQL. Erros ficam no lote e não viram zero.',

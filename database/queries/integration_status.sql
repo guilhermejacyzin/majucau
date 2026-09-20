@@ -44,3 +44,53 @@ SET status = 'AUTH_ERROR',
     updated_at = clock_timestamp(),
     last_error_code = 'CREDENTIALS_REVOKED'
 WHERE id = $1;
+
+-- name: MarkBlingAuthorizing :exec
+UPDATE integration_connections
+SET status = 'AUTHORIZING',
+    last_attempt_at = clock_timestamp(),
+    last_error_code = NULL,
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING';
+
+-- name: CompleteBlingOAuth :exec
+UPDATE integration_connections
+SET status = 'CONNECTED',
+    authorized_scopes = $1,
+    authorized_at = clock_timestamp(),
+    token_expires_at = $2,
+    refresh_token_expires_at = $3,
+    revoked_at = NULL,
+    last_error_code = NULL,
+    last_attempt_at = clock_timestamp(),
+    last_success_at = clock_timestamp(),
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING';
+
+-- name: MarkBlingOAuthError :exec
+UPDATE integration_connections
+SET status = 'AUTH_ERROR',
+    last_attempt_at = clock_timestamp(),
+    last_error_code = $1,
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING';
+
+-- name: RecordBlingTestSuccess :exec
+UPDATE integration_connections
+SET status = 'CONNECTED',
+    last_test_at = clock_timestamp(),
+    last_test_status = 'SUCCESS',
+    last_success_at = clock_timestamp(),
+    last_attempt_at = clock_timestamp(),
+    last_error_code = NULL,
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING';
+
+-- name: RecordBlingTestFailure :exec
+UPDATE integration_connections
+SET last_test_at = clock_timestamp(),
+    last_test_status = 'FAILED',
+    last_attempt_at = clock_timestamp(),
+    last_error_code = $1,
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING';

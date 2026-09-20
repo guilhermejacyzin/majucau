@@ -51,6 +51,14 @@ export type BlingConfigInput = { client_id: string; redirect_uri: string; client
 export type BlingConfigResult = { client_id?: string; redirect_uri?: string; secret_configured: boolean; status?: string; error_code?: string; message?: string }
 export type BlingConfigSource = (input: BlingConfigInput) => Promise<unknown>
 export type BlingConfigAdapter = { save: (input: BlingConfigInput) => Promise<BlingConfigResult> }
+export type BlingOAuthStartResult = { session_id?: string; authorization_url?: string; status?: string; error_code?: string; message?: string }
+export type BlingOAuthStatusResult = { session_id?: string; status?: string; error_code?: string; message?: string }
+export type BlingOAuthTestResult = { status?: string; page_record_count: number; error_code?: string; message?: string }
+export type BlingOAuthAdapter = {
+  start: () => Promise<BlingOAuthStartResult>
+  status: (sessionId: string) => Promise<BlingOAuthStatusResult>
+  test: () => Promise<BlingOAuthTestResult>
+}
 
 const unavailableIntegration = (provider: IntegrationProvider, status: IntegrationState = 'NOT_CONFIGURED'): BootstrapIntegration => ({ provider, status })
 
@@ -162,6 +170,75 @@ export function createBlingConfigAdapter(source: BlingConfigSource = readWailsBl
   }
 }
 
+const unavailableBlingOAuthStart = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingOAuthStartResult => ({ error_code: errorCode, message })
+const unavailableBlingOAuthStatus = (sessionId: string, errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingOAuthStatusResult => ({ session_id: sessionId, error_code: errorCode, message })
+const unavailableBlingOAuthTest = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingOAuthTestResult => ({ page_record_count: 0, error_code: errorCode, message })
+
+async function readWailsBlingOAuthStart(): Promise<unknown> {
+  const method = window.go?.main?.App?.StartBlingOAuth
+  if (typeof method !== 'function') return unavailableBlingOAuthStart()
+  return method()
+}
+
+async function readWailsBlingOAuthStatus(sessionId: string): Promise<unknown> {
+  const method = window.go?.main?.App?.GetBlingOAuthStatus
+  if (typeof method !== 'function') return unavailableBlingOAuthStatus(sessionId)
+  return method(sessionId)
+}
+
+async function readWailsBlingOAuthTest(): Promise<unknown> {
+  const method = window.go?.main?.App?.TestBlingConnection
+  if (typeof method !== 'function') return unavailableBlingOAuthTest()
+  return method()
+}
+
+function isBlingOAuthStartResult(value: unknown): value is BlingOAuthStartResult {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<BlingOAuthStartResult>
+  return (candidate.session_id === undefined || typeof candidate.session_id === 'string') && (candidate.status === undefined || typeof candidate.status === 'string')
+}
+
+function isBlingOAuthStatusResult(value: unknown): value is BlingOAuthStatusResult {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<BlingOAuthStatusResult>
+  return (candidate.session_id === undefined || typeof candidate.session_id === 'string') && (candidate.status === undefined || typeof candidate.status === 'string')
+}
+
+function isBlingOAuthTestResult(value: unknown): value is BlingOAuthTestResult {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<BlingOAuthTestResult>
+  return typeof candidate.page_record_count === 'number' && (candidate.status === undefined || typeof candidate.status === 'string')
+}
+
+export function createBlingOAuthAdapter(sources: { start?: () => Promise<unknown>; status?: (sessionId: string) => Promise<unknown>; test?: () => Promise<unknown> } = {}): BlingOAuthAdapter {
+  return {
+    start: async () => {
+      try {
+        const result = await (sources.start ?? readWailsBlingOAuthStart)()
+        return isBlingOAuthStartResult(result) ? result : unavailableBlingOAuthStart('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableBlingOAuthStart()
+      }
+    },
+    status: async (sessionId) => {
+      try {
+        const result = await (sources.status ?? readWailsBlingOAuthStatus)(sessionId)
+        return isBlingOAuthStatusResult(result) ? result : unavailableBlingOAuthStatus(sessionId, 'WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableBlingOAuthStatus(sessionId)
+      }
+    },
+    test: async () => {
+      try {
+        const result = await (sources.test ?? readWailsBlingOAuthTest)()
+        return isBlingOAuthTestResult(result) ? result : unavailableBlingOAuthTest('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableBlingOAuthTest()
+      }
+    },
+  }
+}
+
 export function createBootstrapAdapter(source: BootstrapSource = readWailsBootstrap): BootstrapAdapter {
   return {
     getState: async () => {
@@ -176,7 +253,7 @@ export function createBootstrapAdapter(source: BootstrapSource = readWailsBootst
 }
 
 declare global {
-  interface Window {
-    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown> } } }
-  }
+    interface Window {
+    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown> } } }
+}
 }

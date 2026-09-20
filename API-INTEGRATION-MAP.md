@@ -63,6 +63,11 @@ classificados sem devolver corpo de resposta ou segredo em mensagens. Ainda não
 há mapeamento de campos financeiros: ele só será ativado depois do BK-040 com
 uma resposta real sanitizada da conta autorizada.
 
+O início do OAuth desktop está em `internal/integrations/bling/oauth_service.go`:
+o worker cria sessão efêmera, valida `state`, escuta somente loopback registrado,
+troca o código, executa o teste mínimo de leitura e guarda os tokens no DPAPI.
+O botão de sincronização permanece separado e não é acionado por esse fluxo.
+
 ### 3.2 Recursos de leitura
 
 | Recurso interno | Endpoint Bling comprovado | Uso e regra |

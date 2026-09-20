@@ -37,7 +37,13 @@ type BlingConfigResult struct {
 }
 
 type blingSecretBundle struct {
-	ClientSecret string `json:"client_secret"`
+	ClientSecret            string `json:"client_secret"`
+	AccessToken             string `json:"access_token,omitempty"`
+	RefreshToken            string `json:"refresh_token,omitempty"`
+	TokenType               string `json:"token_type,omitempty"`
+	Scope                   string `json:"scope,omitempty"`
+	AccessTokenExpiresUnix  int64  `json:"access_token_expires_unix,omitempty"`
+	RefreshTokenExpiresUnix int64  `json:"refresh_token_expires_unix,omitempty"`
 }
 
 type BlingCredentialService struct {
@@ -74,7 +80,19 @@ func (s *BlingCredentialService) Save(ctx context.Context, input BlingConfigInpu
 			return BlingConfigResult{}, ErrBlingCredentialMissing
 		}
 	}
-	bundle, err := json.Marshal(blingSecretBundle{ClientSecret: secret})
+	bundleValue := blingSecretBundle{ClientSecret: secret}
+	if input.ClientSecret == "" && previousErr == nil {
+		var existing blingSecretBundle
+		if json.Unmarshal(previous, &existing) == nil {
+			bundleValue.AccessToken = existing.AccessToken
+			bundleValue.RefreshToken = existing.RefreshToken
+			bundleValue.TokenType = existing.TokenType
+			bundleValue.Scope = existing.Scope
+			bundleValue.AccessTokenExpiresUnix = existing.AccessTokenExpiresUnix
+			bundleValue.RefreshTokenExpiresUnix = existing.RefreshTokenExpiresUnix
+		}
+	}
+	bundle, err := json.Marshal(bundleValue)
 	if err != nil {
 		return BlingConfigResult{}, fmt.Errorf("%w: encode secret", ErrBlingCredentialVault)
 	}

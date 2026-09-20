@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/ipc"
@@ -152,6 +153,115 @@ func (a *App) SaveBlingConfig(input application.BlingConfigRequest) application.
 		return application.BlingConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
 	}
 	return result
+}
+
+// StartBlingOAuth asks the worker to create a short-lived loopback callback,
+// then opens the provider authorization page in the user's external browser.
+// The URL contains no client secret or token.
+func (a *App) StartBlingOAuth() application.BlingOAuthStartResponse {
+	fallback := application.BlingOAuthStartResponse{ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
+	defer cancel()
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-oauth-start"), Method: ipc.MethodBlingOAuthStart})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		return application.BlingOAuthStartResponse{ErrorCode: workerErrorCode(response), Message: workerErrorMessage(response)}
+	}
+	var result application.BlingOAuthStartResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.BlingOAuthStartResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	if result.AuthorizationURL != "" && a.ctx != nil {
+		runtime.BrowserOpenURL(a.ctx, result.AuthorizationURL)
+	}
+	return result
+}
+
+// GetBlingOAuthStatus returns only the sanitized state of a pending OAuth
+// session. Codes, tokens and callback details never cross this boundary.
+func (a *App) GetBlingOAuthStatus(sessionID string) application.BlingOAuthStatusResponse {
+	fallback := application.BlingOAuthStatusResponse{SessionID: sessionID, ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 5*time.Second)
+	defer cancel()
+	payload, err := json.Marshal(application.BlingOAuthStatusRequest{SessionID: sessionID})
+	if err != nil {
+		return application.BlingOAuthStatusResponse{SessionID: sessionID, ErrorCode: "BLING_OAUTH_SESSION_INVALID", Message: "A sessão de autorização não é válida."}
+	}
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-oauth-status"), Method: ipc.MethodBlingOAuthStatus, Payload: payload})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		return application.BlingOAuthStatusResponse{SessionID: sessionID, ErrorCode: workerErrorCode(response), Message: workerErrorMessage(response)}
+	}
+	var result application.BlingOAuthStatusResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.BlingOAuthStatusResponse{SessionID: sessionID, ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	return result
+}
+
+// TestBlingConnection performs the documented one-record read without
+// importing, changing or synchronizing any financial data.
+func (a *App) TestBlingConnection() application.BlingOAuthTestResponse {
+	fallback := application.BlingOAuthTestResponse{ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 30*time.Second)
+	defer cancel()
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-oauth-test"), Method: ipc.MethodBlingOAuthTest, Payload: json.RawMessage(`{}`)})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		return application.BlingOAuthTestResponse{ErrorCode: workerErrorCode(response), Message: workerErrorMessage(response)}
+	}
+	var result application.BlingOAuthTestResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.BlingOAuthTestResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	return result
+}
+
+func workerErrorCode(response ipc.Response) string {
+	if response.Error == nil || response.Error.Code == "" {
+		return "WORKER_INVALID_RESPONSE"
+	}
+	return response.Error.Code
+}
+
+func workerErrorMessage(response ipc.Response) string {
+	if response.Error == nil || response.Error.Message == "" {
+		return "O serviço local respondeu sem explicar o erro."
+	}
+	return response.Error.Message
 }
 
 // PreviewBlingReceipts asks the worker to validate a local Bling export folder.

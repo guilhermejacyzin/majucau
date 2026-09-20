@@ -45,7 +45,7 @@
 | INT-02 | Nuvemshop: OAuth, loja, escopos, pedidos, clientes, status, parcelas, cancelamento/reembolso | pp. 4–6, §§5.2, 6 | ADR §6.3; API §4; Registro D-002 | G2 | Redirect aceito, relay publicado, E2E, replay/TTL/PKCE | BLOCKED |
 | INT-03 | Nuvem Pago: taxa, líquido, repasse e data somente por fonte oficial | pp. 4–6, §§5.2, 6; quatro capturas de tarifas aprovadas em 2026-09-20 | ADR §6.4; API §5.1–5.2; `docs/source/Nuvem-Pago-Taxas-2026-09-20.md`; Registro D-004 | G2/G3/G7 | Tarifário aprovado e versionado + API/arquivo oficial de ledger, contrato e reconciliação R$ 0,01 | PARTIAL |
 | INT-04 | Polling incremental, paginação, limite, retry/backoff, schema mismatch e último dado válido | pp. 13, 22–23, §§20–21, 42–43 | ADR §8; API §§2–6; AGENTS | G2/G6 | Testes 429, timeout, cursor, schema incompatível e stale | NOT_STARTED |
-| INT-05 | Área frontend editável para configurar dados públicos e secrets de Bling/Nuvemshop, iniciar OAuth, testar, reconectar, desconectar e sincronizar; Nuvem Pago segue contrato oficial | solicitação da usuária + pp. 22–23 | ADR §6; API §§7.1–7.3; Functional Decomposition M13-F01–F12; Plano fase 4 | G2/G4/G7 | E2E de formulário/IPC/OAuth, DPAPI, ACL, acessibilidade, redaction e erros sanitizados | NOT_STARTED |
+| INT-05 | Área frontend editável para configurar dados públicos e secrets de Bling/Nuvemshop, iniciar OAuth, testar, reconectar, desconectar e sincronizar; Nuvem Pago segue contrato oficial | solicitação da usuária + pp. 22–23 | ADR §6; API §§7.1–7.3; Functional Decomposition M13-F01–F12; Plano fase 4 | G2/G4/G7 | E2E de formulário/IPC/OAuth, DPAPI, ACL, acessibilidade, redaction e erros sanitizados | PARTIAL |
 
 ## Tesouraria, recebíveis e obrigações
 
@@ -87,7 +87,7 @@
 
 | ID | Requisito | Fonte | Artefato/contrato | Gate | Evidência final | Estado atual |
 |---|---|---|---|---|---|---|
-| SEC-01 | Credenciais nunca no código, frontend, Git, logs ou backup comum; tokens protegidos no backend | pp. 1, 22, §39 | ADR §7; AGENTS “Segurança” | G2/G6/G7 | Scan, DPAPI, logs, dump, reboot, upgrade e reconexão | NOT_STARTED |
+| SEC-01 | Credenciais nunca no código, frontend, Git, logs ou backup comum; tokens protegidos no backend | pp. 1, 22, §39 | ADR §7; AGENTS “Segurança” | G2/G6/G7 | Scan, DPAPI, logs, dump, reboot, upgrade e reconexão | PARTIAL |
 | SEC-02 | RBAC ADMIN/DIRECTOR/FINANCE/ACCOUNTING/VIEWER e autorização no worker | p. 22, §40 | ERD §§3, 7; Plano §15.3 | G6/G7 | Catálogo, SID, matriz e testes negativos por ação | PARTIAL |
 | SEC-03 | LGPD: mínimo necessário, acesso, logs, criptografia e exclusão/anonimização | p. 22, §41 | ADR §§7, 10; Data §5; Registro D-005 | G6/G7 | Procedimento ponta a ponta em RAW, índices e backups | BLOCKED |
 

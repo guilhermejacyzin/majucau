@@ -11,6 +11,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const completeBlingOAuth = `-- name: CompleteBlingOAuth :exec
+UPDATE integration_connections
+SET status = 'CONNECTED',
+    authorized_scopes = $1,
+    authorized_at = clock_timestamp(),
+    token_expires_at = $2,
+    refresh_token_expires_at = $3,
+    revoked_at = NULL,
+    last_error_code = NULL,
+    last_attempt_at = clock_timestamp(),
+    last_success_at = clock_timestamp(),
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING'
+`
+
+type CompleteBlingOAuthParams struct {
+	AuthorizedScopes      []string           `json:"authorized_scopes"`
+	TokenExpiresAt        pgtype.Timestamptz `json:"token_expires_at"`
+	RefreshTokenExpiresAt pgtype.Timestamptz `json:"refresh_token_expires_at"`
+}
+
+func (q *Queries) CompleteBlingOAuth(ctx context.Context, arg CompleteBlingOAuthParams) error {
+	_, err := q.db.Exec(ctx, completeBlingOAuth, arg.AuthorizedScopes, arg.TokenExpiresAt, arg.RefreshTokenExpiresAt)
+	return err
+}
+
 const getIntegrationStatus = `-- name: GetIntegrationStatus :one
 SELECT
   id,
@@ -108,6 +134,34 @@ func (q *Queries) ListIntegrationStatus(ctx context.Context) ([]IntegrationStatu
 	return items, nil
 }
 
+const markBlingAuthorizing = `-- name: MarkBlingAuthorizing :exec
+UPDATE integration_connections
+SET status = 'AUTHORIZING',
+    last_attempt_at = clock_timestamp(),
+    last_error_code = NULL,
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING'
+`
+
+func (q *Queries) MarkBlingAuthorizing(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, markBlingAuthorizing)
+	return err
+}
+
+const markBlingOAuthError = `-- name: MarkBlingOAuthError :exec
+UPDATE integration_connections
+SET status = 'AUTH_ERROR',
+    last_attempt_at = clock_timestamp(),
+    last_error_code = $1,
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING'
+`
+
+func (q *Queries) MarkBlingOAuthError(ctx context.Context, lastErrorCode *string) error {
+	_, err := q.db.Exec(ctx, markBlingOAuthError, lastErrorCode)
+	return err
+}
+
 const markIntegrationRevoked = `-- name: MarkIntegrationRevoked :exec
 UPDATE integration_connections
 SET status = 'AUTH_ERROR',
@@ -120,5 +174,37 @@ WHERE id = $1
 
 func (q *Queries) MarkIntegrationRevoked(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, markIntegrationRevoked, id)
+	return err
+}
+
+const recordBlingTestFailure = `-- name: RecordBlingTestFailure :exec
+UPDATE integration_connections
+SET last_test_at = clock_timestamp(),
+    last_test_status = 'FAILED',
+    last_attempt_at = clock_timestamp(),
+    last_error_code = $1,
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING'
+`
+
+func (q *Queries) RecordBlingTestFailure(ctx context.Context, lastErrorCode *string) error {
+	_, err := q.db.Exec(ctx, recordBlingTestFailure, lastErrorCode)
+	return err
+}
+
+const recordBlingTestSuccess = `-- name: RecordBlingTestSuccess :exec
+UPDATE integration_connections
+SET status = 'CONNECTED',
+    last_test_at = clock_timestamp(),
+    last_test_status = 'SUCCESS',
+    last_success_at = clock_timestamp(),
+    last_attempt_at = clock_timestamp(),
+    last_error_code = NULL,
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING'
+`
+
+func (q *Queries) RecordBlingTestSuccess(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, recordBlingTestSuccess)
 	return err
 }

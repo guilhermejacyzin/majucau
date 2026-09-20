@@ -26,6 +26,18 @@ function Invoke-NativeChecked {
 
 Push-Location $projectRoot
 try {
+    # main.go embeds frontend/dist; create the ignored bundle before the first
+    # Go package scan when verification runs from a clean checkout.
+    if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'frontend\dist'))) {
+        Push-Location (Join-Path $projectRoot 'frontend')
+        try {
+            Write-Host 'frontend dist ausente; executando npm run build antes dos checks Go'
+            Invoke-NativeChecked -Command 'npm' -Arguments @('run', 'build')
+        }
+        finally {
+            Pop-Location
+        }
+    }
     Write-Host 'go test . ./cmd/... ./database/... ./internal/...'
     Invoke-NativeChecked -Command $goCommand -Arguments (@('test') + $goPackages)
 

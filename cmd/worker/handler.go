@@ -21,42 +21,153 @@ type blingConfigSaver interface {
 	Save(context.Context, bling.BlingConfigInput) (bling.BlingConfigResult, error)
 }
 
+type blingOAuthService interface {
+	Start(context.Context) (bling.BlingOAuthStartResult, error)
+	Status(context.Context, string) (bling.BlingOAuthStatusResult, error)
+	Test(context.Context) (bling.BlingOAuthTestResult, error)
+}
+
 type workerHandler struct {
 	health          application.StaticHealth
 	receiptImporter receiptImporter
 	blingConfig     blingConfigSaver
+	blingOAuth      blingOAuthService
+	statusReader    application.IntegrationStatusReader
 }
 
 func newWorkerHandler() workerHandler {
 	pool := newDatabasePoolFromEnvironment()
 	var importer receiptImporter
 	var configSaver blingConfigSaver
+	var oauthService blingOAuthService
+	var statusReader application.IntegrationStatusReader
 	if pool != nil {
 		importer = bling.NewReceiptImportService(pool)
+		statusReader = newIntegrationStatusReader(pool)
 		if store := newWorkerSecretStore(); store != nil {
 			configSaver = bling.NewBlingCredentialService(pool, store)
+			oauthService = bling.NewBlingOAuthService(pool, store)
 		}
 	}
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, blingConfig: configSaver}
+	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, blingConfig: configSaver, blingOAuth: oauthService, statusReader: statusReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
 	case ipc.MethodHealth:
 		return ipc.NewResponse(req.RequestID, h.health.CheckHealth(ctx))
 	case ipc.MethodIntegrationStatus:
-		return ipc.NewResponse(req.RequestID, []application.IntegrationStatus{
-			{Provider: domain.OriginBling, Status: domain.IntegrationNotConfigured},
-			{Provider: domain.OriginNuvemshop, Status: domain.IntegrationNotConfigured},
-			{Provider: domain.OriginNuvemPago, Status: domain.IntegrationUnavailable},
-		})
+		return h.integrationStatus(ctx, req)
 	case ipc.MethodBlingConfigSave:
 		return h.saveBlingConfig(ctx, req)
+	case ipc.MethodBlingOAuthStart:
+		return h.startBlingOAuth(ctx, req)
+	case ipc.MethodBlingOAuthStatus:
+		return h.statusBlingOAuth(ctx, req)
+	case ipc.MethodBlingOAuthTest:
+		return h.testBlingOAuth(ctx, req)
 	case ipc.MethodBlingReceiptsPreview:
 		return h.previewBlingReceipts(ctx, req)
 	case ipc.MethodBlingReceiptsImport:
 		return h.importBlingReceipts(ctx, req)
 	default:
 		return ipc.Response{}, ipc.ErrUnsupportedMethod
+	}
+}
+
+func (h workerHandler) integrationStatus(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	if h.statusReader == nil {
+		return ipc.NewResponse(req.RequestID, defaultIntegrationStatuses())
+	}
+	statuses, err := h.statusReader.IntegrationStatuses(ctx)
+	if err != nil {
+		return ipc.NewErrorResponse(req.RequestID, "INTEGRATION_STATUS_UNAVAILABLE", "O status das integrações não pôde ser consultado."), nil
+	}
+	return ipc.NewResponse(req.RequestID, statuses)
+}
+
+func defaultIntegrationStatuses() []application.IntegrationStatus {
+	return []application.IntegrationStatus{
+		{Provider: domain.OriginBling, Status: domain.IntegrationNotConfigured},
+		{Provider: domain.OriginNuvemshop, Status: domain.IntegrationNotConfigured},
+		{Provider: domain.OriginNuvemPago, Status: domain.IntegrationUnavailable},
+	}
+}
+
+func (h workerHandler) startBlingOAuth(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	if h.blingOAuth == nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
+	}
+	result, err := h.blingOAuth.Start(ctx)
+	if err != nil {
+		return ipc.NewErrorResponse(req.RequestID, blingOAuthErrorCode(err), blingOAuthErrorMessage(err)), nil
+	}
+	return ipc.NewResponse(req.RequestID, application.BlingOAuthStartResponse{SessionID: result.SessionID, AuthorizationURL: result.AuthorizationURL, Status: result.Status})
+}
+
+func (h workerHandler) statusBlingOAuth(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	var input application.BlingOAuthStatusRequest
+	if err := json.Unmarshal(req.Payload, &input); err != nil || strings.TrimSpace(input.SessionID) == "" {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_OAUTH_SESSION_INVALID", "A sessão de autorização não é válida."), nil
+	}
+	if h.blingOAuth == nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
+	}
+	result, err := h.blingOAuth.Status(ctx, input.SessionID)
+	if err != nil {
+		return ipc.NewErrorResponse(req.RequestID, blingOAuthErrorCode(err), blingOAuthErrorMessage(err)), nil
+	}
+	return ipc.NewResponse(req.RequestID, application.BlingOAuthStatusResponse{SessionID: result.SessionID, Status: result.Status, ErrorCode: result.ErrorCode, Message: result.Message})
+}
+
+func (h workerHandler) testBlingOAuth(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	if len(req.Payload) != 0 && string(req.Payload) != "null" && string(req.Payload) != "{}" {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_TEST_INVALID", "O teste do Bling não recebeu dados válidos."), nil
+	}
+	if h.blingOAuth == nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
+	}
+	result, err := h.blingOAuth.Test(ctx)
+	if err != nil {
+		return ipc.NewErrorResponse(req.RequestID, blingOAuthErrorCode(err), blingOAuthErrorMessage(err)), nil
+	}
+	return ipc.NewResponse(req.RequestID, application.BlingOAuthTestResponse{Status: result.Status, PageRecordCount: result.PageRecordCount})
+}
+
+func blingOAuthErrorCode(err error) string {
+	switch {
+	case errors.Is(err, bling.ErrBlingCredentialMissing):
+		return "BLING_SECRET_REQUIRED"
+	case errors.Is(err, bling.ErrBlingCredentialVault):
+		return "BLING_VAULT_UNAVAILABLE"
+	case errors.Is(err, bling.ErrBlingOAuthConfiguration):
+		return "BLING_OAUTH_CONFIG_INVALID"
+	case errors.Is(err, bling.ErrBlingOAuthSession):
+		return "BLING_OAUTH_SESSION_INVALID"
+	case errors.Is(err, bling.ErrBlingOAuthNotConnected):
+		return "BLING_NOT_CONNECTED"
+	case errors.Is(err, bling.ErrBlingOAuthStorage):
+		return "BLING_TOKEN_STORE_FAILED"
+	default:
+		return "BLING_OAUTH_FAILED"
+	}
+}
+
+func blingOAuthErrorMessage(err error) string {
+	switch blingOAuthErrorCode(err) {
+	case "BLING_SECRET_REQUIRED":
+		return "Informe e salve o Client Secret antes de conectar."
+	case "BLING_VAULT_UNAVAILABLE":
+		return "O cofre seguro do Windows não está disponível."
+	case "BLING_OAUTH_CONFIG_INVALID":
+		return "Use um Redirect URI loopback registrado no Bling: http://127.0.0.1:porta/caminho."
+	case "BLING_OAUTH_SESSION_INVALID":
+		return "A sessão de autorização expirou. Inicie a conexão novamente."
+	case "BLING_NOT_CONNECTED":
+		return "Autorize o Bling antes de testar a conexão."
+	case "BLING_TOKEN_STORE_FAILED":
+		return "O token não pôde ser protegido no cofre do Windows."
+	default:
+		return "Não foi possível concluir a operação do Bling."
 	}
 }
 

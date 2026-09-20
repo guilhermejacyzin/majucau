@@ -6,8 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"majucau.local/financial-intelligence/database/gen"
+	"majucau.local/financial-intelligence/internal/application"
+	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/integrations/bling"
 )
 
@@ -41,4 +45,61 @@ func newDatabasePoolFromEnvironment() *pgxpool.Pool {
 		return nil
 	}
 	return pool
+}
+
+type postgresIntegrationStatusReader struct {
+	queries *database.Queries
+}
+
+func newIntegrationStatusReader(pool *pgxpool.Pool) application.IntegrationStatusReader {
+	if pool == nil {
+		return nil
+	}
+	return &postgresIntegrationStatusReader{queries: database.New(pool)}
+}
+
+func (r *postgresIntegrationStatusReader) IntegrationStatuses(ctx context.Context) ([]application.IntegrationStatus, error) {
+	rows, err := r.queries.ListIntegrationStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]application.IntegrationStatus, 0, len(rows)+2)
+	seen := map[domain.Origin]bool{}
+	for _, row := range rows {
+		provider := domain.Origin(row.Provider)
+		if provider != domain.OriginBling && provider != domain.OriginNuvemshop && provider != domain.OriginNuvemPago {
+			continue
+		}
+		seen[provider] = true
+		status := domain.IntegrationStatus(row.Status)
+		if !status.Valid() {
+			status = domain.IntegrationSchemaMismatch
+		}
+		result = append(result, application.IntegrationStatus{Provider: provider, Status: status, LastSuccessAt: nullableTime(row.LastSuccessAt), LastAttemptAt: nullableTime(row.LastAttemptAt), ErrorCode: optionalString(row.LastErrorCode)})
+	}
+	if !seen[domain.OriginBling] {
+		result = append(result, application.IntegrationStatus{Provider: domain.OriginBling, Status: domain.IntegrationNotConfigured})
+	}
+	if !seen[domain.OriginNuvemshop] {
+		result = append(result, application.IntegrationStatus{Provider: domain.OriginNuvemshop, Status: domain.IntegrationNotConfigured})
+	}
+	if !seen[domain.OriginNuvemPago] {
+		result = append(result, application.IntegrationStatus{Provider: domain.OriginNuvemPago, Status: domain.IntegrationUnavailable})
+	}
+	return result, nil
+}
+
+func nullableTime(value pgtype.Timestamptz) *time.Time {
+	if !value.Valid {
+		return nil
+	}
+	copy := value.Time
+	return &copy
+}
+
+func optionalString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }

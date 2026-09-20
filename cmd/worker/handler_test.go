@@ -19,6 +19,18 @@ func (fakeBlingConfigSaver) Save(_ context.Context, input bling.BlingConfigInput
 	return bling.BlingConfigResult{ClientID: input.ClientID, RedirectURI: input.RedirectURI, SecretConfigured: input.ClientSecret != "", Status: "NOT_CONFIGURED"}, nil
 }
 
+type fakeBlingOAuthService struct{}
+
+func (fakeBlingOAuthService) Start(context.Context) (bling.BlingOAuthStartResult, error) {
+	return bling.BlingOAuthStartResult{SessionID: "session-1", AuthorizationURL: "https://www.bling.com.br/authorize?state=opaque", Status: "AUTHORIZING"}, nil
+}
+func (fakeBlingOAuthService) Status(context.Context, string) (bling.BlingOAuthStatusResult, error) {
+	return bling.BlingOAuthStatusResult{SessionID: "session-1", Status: "CONNECTED", Message: "Autorização concluída."}, nil
+}
+func (fakeBlingOAuthService) Test(context.Context) (bling.BlingOAuthTestResult, error) {
+	return bling.BlingOAuthTestResult{Status: "SUCCESS", PageRecordCount: 1}, nil
+}
+
 func TestWorkerPreviewReturnsSanitizedBlingSummary(t *testing.T) {
 	folder := t.TempDir()
 	csv := "Cliente;Histórico;Forma de pagamento;Nº documento;Vencimento;Liquidação;Situação;Valor taxa;Recebido\n" +
@@ -78,5 +90,21 @@ func TestWorkerBlingConfigNeverEchoesSecret(t *testing.T) {
 	}
 	if !result.SecretConfigured || result.ClientID != "client" {
 		t.Fatalf("unexpected result: %#v", result)
+	}
+}
+
+func TestWorkerOAuthMethodsReturnOnlySanitizedState(t *testing.T) {
+	handler := workerHandler{health: application.StaticHealth{Service: "test"}, blingOAuth: fakeBlingOAuthService{}}
+	start, err := handler.Handle(context.Background(), ipc.Request{RequestID: "start", Method: ipc.MethodBlingOAuthStart})
+	if err != nil || !start.OK || strings.Contains(string(start.Payload), "secret") {
+		t.Fatalf("unexpected OAuth start response: %#v %v", start, err)
+	}
+	status, err := handler.Handle(context.Background(), ipc.Request{RequestID: "status", Method: ipc.MethodBlingOAuthStatus, Payload: []byte(`{"session_id":"session-1"}`)})
+	if err != nil || !status.OK || !strings.Contains(string(status.Payload), "CONNECTED") {
+		t.Fatalf("unexpected OAuth status response: %#v %v", status, err)
+	}
+	testResponse, err := handler.Handle(context.Background(), ipc.Request{RequestID: "test", Method: ipc.MethodBlingOAuthTest, Payload: []byte(`{}`)})
+	if err != nil || !testResponse.OK || !strings.Contains(string(testResponse.Payload), "page_record_count") {
+		t.Fatalf("unexpected OAuth test response: %#v %v", testResponse, err)
 	}
 }

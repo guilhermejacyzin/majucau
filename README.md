@@ -10,7 +10,7 @@ Aplicativo desktop de inteligência financeira para uso individual em Windows 10
 - projeção diária contínua de D0 a D+60;
 - recebíveis B2B classificados de forma conservadora a partir do Bling;
 - pedidos Nuvemshop operacionais/provisórios;
-- tela de integrações preparada para Bling, Nuvemshop e Nuvem Pago, com ações bloqueadas até o protocolo seguro do worker existir;
+- tela de integrações editável, com configuração e OAuth/teste do Bling no worker; Nuvemshop e Nuvem Pago continuam condicionados às evidências oficiais aprovadas;
 - trilha de auditoria e lineage até o registro RAW de origem;
 - estados explícitos para dado confirmado, provisório, parcial, desatualizado ou indisponível;
 - aplicação desktop e worker nativos, sem Docker ou Node.js na máquina do usuário;
@@ -115,7 +115,7 @@ Qualquer mudança nessas regras exige versão, regressão financeira e aprovaç�
 
 ## Integrações e credenciais
 
-A tela **Configurações > Integrações** é a área editável para preencher os dados públicos e secrets das APIs de Bling, Nuvemshop e, quando houver fonte oficial, Nuvem Pago. O Bling já permite salvar Client ID, Redirect URI e Client Secret pelo IPC autenticado; o secret vai para DPAPI e os metadados públicos para PostgreSQL. Conectar, testar, reconectar, desconectar e sincronizar continuam separados e desabilitados até o fluxo OAuth completo estar homologado. Para a pessoa usuária, a experiência final será normal de aplicativo — editar, salvar, conectar no navegador externo e acompanhar o estado — sem o React persistir ou executar secrets.
+A tela **Configurações > Integrações** é a área editável para preencher os dados públicos e secrets das APIs de Bling, Nuvemshop e, quando houver fonte oficial, Nuvem Pago. O Bling permite salvar Client ID, Redirect URI e Client Secret pelo IPC autenticado, iniciar OAuth no navegador externo, acompanhar o callback loopback e testar uma leitura mínima; o secret e os tokens vão para DPAPI e os metadados públicos para PostgreSQL. Reconectar, desconectar e sincronizar continuam separados até suas etapas de homologação. Para a pessoa usuária, a experiência é normal de aplicativo — editar, salvar, conectar no navegador externo e acompanhar o estado — sem o React persistir ou executar secrets.
 
 - secrets e tokens não entram no frontend, Git, logs ou banco em texto aberto;
 - a UI envia a credencial ao worker por IPC local autenticado;
@@ -132,7 +132,7 @@ Não coloque credenciais reais em issues, commits, fixtures, `.env`, documentaç
 |---|---|---|
 | G0 | arquitetura e decisões | Aprovado |
 | G1 | build, banco, worker, desktop e CI | Em execução |
-| G2 | OAuth, credenciais, RAW e idempotência reais | Pendente/bloqueado por evidências externas |
+| G2 | OAuth, credenciais, RAW e idempotência reais | Bling OAuth implementado; credencial real, RAW/idempotência e reconciliação ainda pendentes |
 | G3 | tesouraria e reconciliações | Pendente |
 | G4 | dashboard, tooltips e drill-down | Pendente |
 | G5 | DRE/P&L/EBITDA e planejamento | Pendente |
@@ -165,6 +165,7 @@ Builds G1 são deliberadamente não assinados. O G7 exige certificado Authentico
 - [docs/evidence/G1-VALIDATION-2026-08-16.md](docs/evidence/G1-VALIDATION-2026-08-16.md) — comandos executados, resultados e riscos residuais da fundação G1.
 - [docs/WINDOWS-INSTALLATION-RESILIENCE.md](docs/WINDOWS-INSTALLATION-RESILIENCE.md) — matriz de falhas, recuperação e aceite em máquinas de terceiros.
 - [docs/evidence/INSTALLATION-RESILIENCE-2026-08-16.md](docs/evidence/INSTALLATION-RESILIENCE-2026-08-16.md) — execução local do preflight, build e runtime desktop/worker.
+- [docs/evidence/BLING-OAUTH-2026-09-20.md](docs/evidence/BLING-OAUTH-2026-09-20.md) — sessão OAuth desktop, callback loopback, teste mínimo e evidências automatizadas.
 
 ## Distribuição
 

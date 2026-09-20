@@ -79,3 +79,32 @@ func TestSaveBlingConfigForwardsSecretOnlyToWorker(t *testing.T) {
 		t.Fatalf("unexpected config result: %+v", result)
 	}
 }
+
+func TestBlingOAuthMethodsUseSanitizedWorkerContracts(t *testing.T) {
+	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+		switch req.Method {
+		case ipc.MethodBlingOAuthStart:
+			return ipc.NewResponse(req.RequestID, application.BlingOAuthStartResponse{SessionID: "session-1", AuthorizationURL: "https://www.bling.com.br/authorize?state=opaque", Status: "AUTHORIZING"})
+		case ipc.MethodBlingOAuthStatus:
+			return ipc.NewResponse(req.RequestID, application.BlingOAuthStatusResponse{SessionID: "session-1", Status: "CONNECTED", Message: "Autorização concluída."})
+		case ipc.MethodBlingOAuthTest:
+			return ipc.NewResponse(req.RequestID, application.BlingOAuthTestResponse{Status: "SUCCESS", PageRecordCount: 1})
+		default:
+			return ipc.Response{}, ipc.ErrUnsupportedMethod
+		}
+	})
+	app := NewApp()
+	app.clientFactory = func() (ipc.Client, error) { return ipc.NewFakeClient(handler), nil }
+	start := app.StartBlingOAuth()
+	if start.ErrorCode != "" || start.SessionID != "session-1" || start.AuthorizationURL == "" {
+		t.Fatalf("unexpected OAuth start result: %+v", start)
+	}
+	status := app.GetBlingOAuthStatus("session-1")
+	if status.ErrorCode != "" || status.Status != "CONNECTED" {
+		t.Fatalf("unexpected OAuth status result: %+v", status)
+	}
+	testResult := app.TestBlingConnection()
+	if testResult.ErrorCode != "" || testResult.PageRecordCount != 1 {
+		t.Fatalf("unexpected OAuth test result: %+v", testResult)
+	}
+}

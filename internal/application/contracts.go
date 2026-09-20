@@ -89,6 +89,32 @@ type BlingConfigResponse struct {
 	ErrorCode        string `json:"error_code,omitempty"`
 	Message          string `json:"message,omitempty"`
 }
+
+type BlingOAuthStartResponse struct {
+	SessionID        string `json:"session_id,omitempty"`
+	AuthorizationURL string `json:"authorization_url,omitempty"`
+	Status           string `json:"status,omitempty"`
+	ErrorCode        string `json:"error_code,omitempty"`
+	Message          string `json:"message,omitempty"`
+}
+
+type BlingOAuthStatusRequest struct {
+	SessionID string `json:"session_id"`
+}
+
+type BlingOAuthStatusResponse struct {
+	SessionID string `json:"session_id,omitempty"`
+	Status    string `json:"status,omitempty"`
+	ErrorCode string `json:"error_code,omitempty"`
+	Message   string `json:"message,omitempty"`
+}
+
+type BlingOAuthTestResponse struct {
+	Status          string `json:"status,omitempty"`
+	PageRecordCount int    `json:"page_record_count"`
+	ErrorCode       string `json:"error_code,omitempty"`
+	Message         string `json:"message,omitempty"`
+}
 type HealthChecker interface {
 	CheckHealth(context.Context) HealthResponse
 }

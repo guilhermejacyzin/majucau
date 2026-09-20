@@ -54,7 +54,7 @@ Somente recebimentos com fonte oficial e data válida participam.
 
 ### D-004-A — Nuvem Pago
 
-Construir contrato e painel, mas manter financeiro confirmado `UNAVAILABLE` ou `PARTIALLY_AVAILABLE` até API/exportação oficial fornecer bruto, taxa, líquido, parcela e data esperada. Pedido Nuvemshop não comprova liquidação.
+Construir contrato e painel. A tabela aprovada em 2026-09-20 define cartão 1x/2x/3x sempre em D+30, com tarifas de 2,59% + R$ 0,35, 4,49% + R$ 0,35 e 5,44% + R$ 0,35; boleto em D+2 por R$ 2,39; e PIX na hora por 0,99%, todos com TPV exibido como grátis. Ela não substitui um ledger. Manter financeiro confirmado `UNAVAILABLE` ou `PARTIALLY_AVAILABLE` até API/exportação oficial fornecer bruto, taxa efetiva, líquido, parcela, status e data esperada/efetiva. Pedido Nuvemshop ou tarifa de painel não comprovam liquidação.
 
 ### D-005-A — defaults
 

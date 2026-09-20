@@ -174,7 +174,21 @@ Não foi localizada documentação oficial pública que permita a um aplicativo 
 
 A API de Payment Provider é destinada a aplicativos que implementam um provedor de pagamento. Ela não será tratada como API de extrato do lojista.
 
-### 5.1 Decisão
+### 5.1 Evidência de tarifas recebida
+
+A evidência aprovada está registrada nas capturas [1x D30](docs/source/Nuvem-Pago-Taxas-1x-D30-2026-09-20.png), [2x D30](docs/source/Nuvem-Pago-Taxas-2x-D30-2026-09-20.png), [3x D30](docs/source/Nuvem-Pago-Taxas-3x-D30-2026-09-20.png) e [boleto/PIX](docs/source/Nuvem-Pago-Taxas-Boleto-PIX-2026-09-20.png):
+
+| Meio | Prazo anunciado | Tarifa | TPV |
+|---|---:|---:|---|
+| Cartão 1x | D+30 | 2,59% + R$ 0,35 | grátis |
+| Cartão 2x | D+30 | 4,49% + R$ 0,35 | grátis |
+| Cartão 3x | D+30 | 5,44% + R$ 0,35 | grátis |
+| Boleto | D+2 | R$ 2,39 | grátis |
+| PIX | na hora | 0,99% | grátis |
+
+Todo recebimento de cartão até 3x é configurado em D+30. Boleto e PIX são exceções válidas conforme suas capturas. A evidência resolve a referência de **tarifário configurável**, mas não comprova a existência de um ledger externo consultável. O produto não deve transformar percentual e prazo anunciados em liquidação confirmada sem transação, parcela, status, data efetiva e reconciliação. A tabela anterior com cartão D+2/D+14 foi substituída e não entra no cálculo.
+
+### 5.2 Decisão
 
 - manter conector `nuvempago` separado de `nuvemshop`;
 - disponibilizar painel com estado `UNAVAILABLE` ou `PARTIALLY_AVAILABLE`;

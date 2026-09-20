@@ -167,6 +167,23 @@ func TestListReceivablesStopsAfterRetryBudget(t *testing.T) {
 	}
 }
 
+func TestRetryAfterAcceptsSecondsAndHTTPDate(t *testing.T) {
+	now := time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
+	if got := retryAfterAt("7", now); got != 7*time.Second {
+		t.Fatalf("seconds retry-after = %v", got)
+	}
+	future := now.Add(15 * time.Second).Format(http.TimeFormat)
+	if got := retryAfterAt(future, now); got != 15*time.Second {
+		t.Fatalf("date retry-after = %v", got)
+	}
+	if got := retryAfterAt(now.Add(-time.Second).Format(http.TimeFormat), now); got != 0 {
+		t.Fatalf("past date retry-after = %v", got)
+	}
+	if got := retryAfterAt("not-a-date", now); got != 0 {
+		t.Fatalf("invalid retry-after = %v", got)
+	}
+}
+
 func TestListReceivablesRejectsUnhomologatedShapeAndOversizedBody(t *testing.T) {
 	tests := []struct {
 		name string

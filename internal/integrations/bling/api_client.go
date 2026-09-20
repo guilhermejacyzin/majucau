@@ -367,11 +367,22 @@ func setOptionalQuery(query url.Values, key, value string) {
 }
 
 func retryAfter(value string) time.Duration {
+	return retryAfterAt(value, time.Now())
+}
+
+func retryAfterAt(value string, now time.Time) time.Duration {
 	seconds, err := strconv.Atoi(strings.TrimSpace(value))
-	if err != nil || seconds < 0 {
+	if err == nil {
+		if seconds < 0 {
+			return 0
+		}
+		return time.Duration(seconds) * time.Second
+	}
+	when, err := http.ParseTime(strings.TrimSpace(value))
+	if err != nil || !when.After(now) {
 		return 0
 	}
-	return time.Duration(seconds) * time.Second
+	return when.Sub(now)
 }
 
 func readLimitedBody(reader io.Reader, limit int64) ([]byte, error) {

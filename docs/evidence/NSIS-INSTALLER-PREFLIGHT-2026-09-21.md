@@ -30,6 +30,23 @@ não está disponível. Portanto esta evidência comprova a integração no font
 o guard automatizado, mas não substitui a compilação do instalador e o smoke em
 VM Windows limpa.
 
+## Compilação independente
+
+Após a publicação do guard, o GitHub Actions executou o run **60** com sucesso:
+
+- Go tests, vet e `govulncheck` passaram;
+- bundle React, lint, typecheck, testes e audit passaram;
+- Wails produziu o executável desktop;
+- worker e `installer-helper.exe` foram compilados;
+- `test-installer-nsis.ps1` passou;
+- `makensis` produziu o instalador NSIS x64;
+- o artefato `majucau-g1-unsigned` foi publicado pelo workflow.
+
+Run verificável: https://github.com/guilhermejacyzin/majucau/actions/runs/35560415145
+
+O artefato ainda é **unsigned** e o run não substitui a instalação em VM limpa
+com reboot, upgrade, rollback e desinstalação.
+
 ## Próximo passo
 
 Disponibilizar `makensis`/Wails no pipeline de build, produzir o instalador

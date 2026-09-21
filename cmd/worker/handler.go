@@ -9,12 +9,18 @@ import (
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/integrations/bling"
+	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
 	"majucau.local/financial-intelligence/internal/integrations/nuvemshop"
 	"majucau.local/financial-intelligence/internal/ipc"
 )
 
 type receiptImporter interface {
 	Import(context.Context, string) (bling.ReceiptImportResult, error)
+	Close()
+}
+
+type futureImporter interface {
+	Import(context.Context, string) (nuvempago.FutureImportResult, error)
 	Close()
 }
 
@@ -39,6 +45,7 @@ type blingRawSyncer interface {
 type workerHandler struct {
 	health          application.StaticHealth
 	receiptImporter receiptImporter
+	futureImporter  futureImporter
 	blingConfig     blingConfigSaver
 	nuvemshopConfig nuvemshopConfigSaver
 	blingOAuth      blingOAuthService
@@ -49,6 +56,7 @@ type workerHandler struct {
 func newWorkerHandler() workerHandler {
 	pool := newDatabasePoolFromEnvironment()
 	var importer receiptImporter
+	var future futureImporter
 	var configSaver blingConfigSaver
 	var nuvemshopSaver nuvemshopConfigSaver
 	var oauthService blingOAuthService
@@ -56,6 +64,7 @@ func newWorkerHandler() workerHandler {
 	var statusReader application.IntegrationStatusReader
 	if pool != nil {
 		importer = bling.NewReceiptImportService(pool)
+		future = nuvempago.NewFutureImportService(pool)
 		statusReader = newIntegrationStatusReader(pool)
 		if store := newWorkerSecretStore(); store != nil {
 			configSaver = bling.NewBlingCredentialService(pool, store)
@@ -64,7 +73,7 @@ func newWorkerHandler() workerHandler {
 			rawSync = oauthService.(blingRawSyncer)
 		}
 	}
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader}
+	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -88,6 +97,10 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		return h.previewBlingReceipts(ctx, req)
 	case ipc.MethodBlingReceiptsImport:
 		return h.importBlingReceipts(ctx, req)
+	case ipc.MethodNuvemPagoFuturePreview:
+		return h.previewNuvemPagoFuture(ctx, req)
+	case ipc.MethodNuvemPagoFutureImport:
+		return h.importNuvemPagoFuture(ctx, req)
 	default:
 		return ipc.Response{}, ipc.ErrUnsupportedMethod
 	}
@@ -378,9 +391,67 @@ func (h workerHandler) previewBlingReceipts(ctx context.Context, req ipc.Request
 	return ipc.NewResponse(req.RequestID, preview)
 }
 
+func (h workerHandler) previewNuvemPagoFuture(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	var input blingReceiptsPreviewRequest
+	if err := json.Unmarshal(req.Payload, &input); err != nil || strings.TrimSpace(input.Folder) == "" {
+		return ipc.NewErrorResponse(req.RequestID, "NUVEM_PAGO_FUTURE_FOLDER_REQUIRED", "Informe a pasta dos recebimentos futuros do Nuvem Pago."), nil
+	}
+	report, err := nuvempago.ImportFutureFolder(ctx, input.Folder)
+	if err != nil {
+		code := "NUVEM_PAGO_FUTURE_PREVIEW_FAILED"
+		message := "Não foi possível ler a pasta de recebimentos futuros do Nuvem Pago."
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			code = "NUVEM_PAGO_FUTURE_CANCELLED"
+			message = "A leitura da pasta foi cancelada antes de terminar."
+		}
+		return ipc.NewErrorResponse(req.RequestID, code, message), nil
+	}
+	preview := application.NuvemPagoFutureImportPreview{
+		ReceivableCount: len(report.Receivables), ErrorCount: len(report.Errors), IgnoredCount: len(report.Ignored),
+		Files:  make([]application.NuvemPagoFutureImportFile, 0, len(report.Files)),
+		Issues: make([]application.NuvemPagoFutureImportIssue, 0, minInt(len(report.Errors), 50)),
+	}
+	for _, file := range report.Files {
+		preview.Files = append(preview.Files, application.NuvemPagoFutureImportFile{Name: file.Name, SHA256: file.SHA256, ReceivableCount: file.ReceivableCount, RejectedRowCount: file.RejectedRowCount})
+	}
+	for index, issue := range report.Errors {
+		if index >= 50 {
+			break
+		}
+		preview.Issues = append(preview.Issues, application.NuvemPagoFutureImportIssue{File: issue.File, Line: issue.Line, Code: issue.Code, Message: issue.Message})
+	}
+	return ipc.NewResponse(req.RequestID, preview)
+}
+
+func (h workerHandler) importNuvemPagoFuture(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	var input blingReceiptsPreviewRequest
+	if err := json.Unmarshal(req.Payload, &input); err != nil || strings.TrimSpace(input.Folder) == "" {
+		return ipc.NewErrorResponse(req.RequestID, "NUVEM_PAGO_FUTURE_FOLDER_REQUIRED", "Informe a pasta dos recebimentos futuros do Nuvem Pago."), nil
+	}
+	if h.futureImporter == nil {
+		return ipc.NewErrorResponse(req.RequestID, "NUVEM_PAGO_DATABASE_NOT_CONFIGURED", "O banco local ainda não está configurado para gravar os recebimentos futuros."), nil
+	}
+	result, err := h.futureImporter.Import(ctx, input.Folder)
+	if err != nil {
+		code := "NUVEM_PAGO_FUTURE_IMPORT_FAILED"
+		message := "Não foi possível gravar os recebimentos futuros do Nuvem Pago."
+		switch {
+		case errors.Is(err, nuvempago.ErrFutureDatabaseUnavailable):
+			code, message = "NUVEM_PAGO_DATABASE_NOT_CONFIGURED", "O banco local ainda não está configurado para gravar os recebimentos futuros."
+		case errors.Is(err, nuvempago.ErrNuvemPagoConnectionMissing):
+			code, message = "NUVEM_PAGO_CONNECTION_NOT_CONFIGURED", "Configure a conexão do Nuvem Pago antes de importar os recebimentos futuros."
+		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+			code, message = "NUVEM_PAGO_FUTURE_CANCELLED", "A importação foi cancelada antes de terminar."
+		}
+		return ipc.NewErrorResponse(req.RequestID, code, message), nil
+	}
+	return ipc.NewResponse(req.RequestID, application.NuvemPagoFutureImportResult{BatchID: result.BatchID, Status: result.Status, RecordsRead: result.RecordsRead, RecordsCreated: result.RecordsCreated, RecordsUpdated: result.RecordsUpdated, RecordsFailed: result.RecordsFailed, IgnoredCount: result.IgnoredCount})
+}
+
 func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
 }
+

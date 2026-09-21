@@ -145,6 +145,30 @@ jobs:
         run: |
           $installer = Get-ChildItem -LiteralPath build/bin -Filter '*-installer.exe' -File | Select-Object -First 1
           if (-not $installer) { throw 'Instalador NSIS não foi encontrado para o smoke.' }
+          $helper = (Resolve-Path -LiteralPath 'build/bin/installer-helper.exe').Path
+          $preflightRoot = Join-Path $env:RUNNER_TEMP 'majucau-install-preflight'
+          if (Test-Path -LiteralPath $preflightRoot) { Remove-Item -LiteralPath $preflightRoot -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $preflightRoot | Out-Null
+          $preflightPath = Join-Path $preflightRoot 'preflight.json'
+          & $helper preflight --install-dir (Join-Path $preflightRoot 'app') --data-dir (Join-Path $preflightRoot 'data') --free-space-path $env:ProgramData --min-free-bytes 1 --port 54329 |
+            Set-Content -LiteralPath $preflightPath -Encoding utf8
+          $preflightExit = $LASTEXITCODE
+          if ($preflightExit -notin @(0, 2)) { throw "Preflight do ambiente retornou código inesperado: $preflightExit" }
+          $preflight = Get-Content -LiteralPath $preflightPath -Raw | ConvertFrom-Json
+          $issueCodes = @($preflight.issues | ForEach-Object { $_.code })
+          if ($issueCodes -contains 'OS_UNSUPPORTED') {
+            $otherIssues = @($issueCodes | Where-Object { $_ -ne 'OS_UNSUPPORTED' })
+            if ($otherIssues.Count -gt 0) { throw "Runner não elegível e possui outros bloqueios: $($otherIssues -join ', ')" }
+            @(
+              '## Smoke NSIS de desktop não executado',
+              '',
+              'O runner hospedado é Windows Server e foi rejeitado corretamente por OS_UNSUPPORTED.',
+              'O smoke de instalação/desinstalação deve ser executado em uma VM Windows 10/11 x64 workstation limpa.',
+              "Códigos de preflight: $($issueCodes -join ', ')"
+            ) | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
+            Write-Warning 'Smoke de desktop não executado: runner Windows Server fora da política suportada.'
+            exit 0
+          }
           ./scripts/smoke-installer.ps1 -InstallerPath $installer.FullName -OutputRoot (Join-Path $env:RUNNER_TEMP 'majucau-install-smoke')
 
       - name: Upload unsigned G1 build
@@ -157,3 +181,4 @@ jobs:
             build/bin/installer-helper.exe
             build/bin/*-installer.exe
           if-no-files-found: error
+

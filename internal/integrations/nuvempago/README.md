@@ -36,3 +36,18 @@ O campo `open_balance` permanece nulo porque este export não fornece saldo
 aberto separado; nenhum valor foi inventado. Ainda faltam E2E contra
 PostgreSQL, homologação visual e teste do instalador em VM limpa.
 
+## Validação PostgreSQL
+
+O teste opt-in `TestFutureImportServicePostgresE2E` usa a mesma URL de banco
+descartável da validação Bling e uma pasta sanitizada de recebimentos futuros:
+
+```powershell
+$env:MAJUCAU_TEST_DATABASE_URL = 'postgres://postgres@127.0.0.1:55439/majucau_test?sslmode=disable'
+$env:MAJUCAU_TEST_FUTURE_FOLDER = (Resolve-Path 'internal/integrations/nuvempago/testdata/e2e').Path
+go test ./internal/integrations/nuvempago -run TestFutureImportServicePostgresE2E -count=1 -v
+```
+
+O E2E exige migration aplicada em PostgreSQL descartável. Ele verifica duas
+linhas `B2C/PROJECTED`, uma rejeição, reexecução idempotente, dois RAW atuais e
+zero linhas no ledger `receipts` do Bling.
+

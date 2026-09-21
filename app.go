@@ -406,6 +406,78 @@ func (a *App) ImportBlingReceipts(folder string) application.BlingReceiptImportR
 	return result
 }
 
+// PreviewNuvemPagoFuture asks the worker to validate the controlled future
+// receivables folder. Only file metadata and sanitized issues cross the pipe.
+func (a *App) PreviewNuvemPagoFuture(folder string) application.NuvemPagoFutureImportPreview {
+	fallback := application.NuvemPagoFutureImportPreview{ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 30*time.Second)
+	defer cancel()
+	payload, err := json.Marshal(map[string]string{"folder": folder})
+	if err != nil {
+		return application.NuvemPagoFutureImportPreview{ErrorCode: "IMPORT_REQUEST_INVALID", Message: "A pasta informada não pôde ser preparada."}
+	}
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("nuvem-future-preview"), Method: ipc.MethodNuvemPagoFuturePreview, Payload: payload})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		if response.Error == nil {
+			return application.NuvemPagoFutureImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+		}
+		return application.NuvemPagoFutureImportPreview{ErrorCode: response.Error.Code, Message: response.Error.Message}
+	}
+	var preview application.NuvemPagoFutureImportPreview
+	if err := json.Unmarshal(response.Payload, &preview); err != nil {
+		return application.NuvemPagoFutureImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	return preview
+}
+
+// ImportNuvemPagoFuture persists the controlled future folder in one worker
+// transaction. It never writes the Bling-only receipts ledger.
+func (a *App) ImportNuvemPagoFuture(folder string) application.NuvemPagoFutureImportResult {
+	fallback := application.NuvemPagoFutureImportResult{ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 60*time.Second)
+	defer cancel()
+	payload, err := json.Marshal(map[string]string{"folder": folder})
+	if err != nil {
+		return application.NuvemPagoFutureImportResult{ErrorCode: "IMPORT_REQUEST_INVALID", Message: "A pasta informada não pôde ser preparada."}
+	}
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("nuvem-future-import"), Method: ipc.MethodNuvemPagoFutureImport, Payload: payload})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		if response.Error == nil {
+			return application.NuvemPagoFutureImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+		}
+		return application.NuvemPagoFutureImportResult{ErrorCode: response.Error.Code, Message: response.Error.Message}
+	}
+	var result application.NuvemPagoFutureImportResult
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.NuvemPagoFutureImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	return result
+}
+
 func unavailableIntegrations() []application.IntegrationStatus {
 	return []application.IntegrationStatus{
 		{Provider: domain.OriginBling, Status: domain.IntegrationNotConfigured},
@@ -417,3 +489,4 @@ func unavailableIntegrations() []application.IntegrationStatus {
 func requestID(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UTC().UnixNano())
 }
+

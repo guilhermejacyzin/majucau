@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -42,6 +43,7 @@ func (r *Reader) ReadDashboardSnapshot(ctx context.Context) (application.Dashboa
 		receivablesCount, futureCount, receiptsTotalCount, receiptsMonthCount            int64
 		receivablesOverdueCount, payablesCount, payablesTodayCount, payablesOverdueCount int64
 		paymentsTotalCount, paymentsMonthCount                                           int64
+		receivableRowsJSON, payableRowsJSON                                              []byte
 	)
 
 	err := r.db.QueryRow(ctx, dashboardSnapshotSQL, asOf, monthStart, monthEnd).Scan(
@@ -53,7 +55,16 @@ func (r *Reader) ReadDashboardSnapshot(ctx context.Context) (application.Dashboa
 		&payablesTodayValue, &payablesTodayCount,
 		&payablesOverdueValue, &payablesOverdueCount,
 		&paymentsMonthValue, &paymentsMonthCount, &paymentsTotalCount,
+		&receivableRowsJSON, &payableRowsJSON,
 	)
+	if err != nil {
+		return application.DashboardSnapshot{}, err
+	}
+	receivableRows, err := decodeReceivableRows(receivableRowsJSON)
+	if err != nil {
+		return application.DashboardSnapshot{}, err
+	}
+	payableRows, err := decodePayableRows(payableRowsJSON)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
 	}
@@ -73,7 +84,31 @@ func (r *Reader) ReadDashboardSnapshot(ctx context.Context) (application.Dashboa
 		PayablesDueToday:   metric(payablesTodayValue, payablesTodayCount, stateForCount(payablesCount), "BLING"),
 		PayablesOverdue:    metric(payablesOverdueValue, payablesOverdueCount, stateForCount(payablesCount), "BLING"),
 		PaymentsMonth:      metric(paymentsMonthValue, paymentsMonthCount, stateForCount(paymentsTotalCount), "BLING"),
+		ReceivableRows:     receivableRows,
+		PayableRows:        payableRows,
 	}, nil
+}
+
+func decodeReceivableRows(payload []byte) ([]application.DashboardReceivableRow, error) {
+	if len(payload) == 0 {
+		return []application.DashboardReceivableRow{}, nil
+	}
+	rows := []application.DashboardReceivableRow{}
+	if err := json.Unmarshal(payload, &rows); err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func decodePayableRows(payload []byte) ([]application.DashboardPayableRow, error) {
+	if len(payload) == 0 {
+		return []application.DashboardPayableRow{}, nil
+	}
+	rows := []application.DashboardPayableRow{}
+	if err := json.Unmarshal(payload, &rows); err != nil {
+		return nil, err
+	}
+	return rows, nil
 }
 
 func metric(value string, count int64, state, source string) application.DashboardMetric {
@@ -98,7 +133,12 @@ func projectedState(count int64) string {
 }
 
 const dashboardSnapshotSQL = `
-WITH r AS (
+WITH eligible_receivables AS (
+  SELECT *
+    FROM receivables
+   WHERE (source_system = 'NUVEM_PAGO' AND business_type = 'B2C' AND status = 'PROJECTED')
+      OR (source_system = 'BLING' AND business_type = 'B2B')
+), r AS (
   SELECT
     COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)), 0)::text AS total_value,
     COUNT(id) AS total_count,
@@ -114,7 +154,7 @@ WITH r AS (
     ) AS future_count,
     COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND due_date < $1::date), 0)::text AS overdue_value,
     COUNT(id) FILTER (WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND due_date < $1::date) AS overdue_count
-  FROM receivables
+  FROM eligible_receivables
 ), rc AS (
   SELECT
     COALESCE(SUM(amount) FILTER (
@@ -140,6 +180,7 @@ WITH r AS (
     COALESCE(SUM(open_balance) FILTER (WHERE open_balance > 0 AND due_date < $1::date), 0)::text AS overdue_value,
     COUNT(id) FILTER (WHERE open_balance > 0 AND due_date < $1::date) AS overdue_count
   FROM payables
+ WHERE open_balance > 0
 ), pm AS (
   SELECT
     COALESCE(SUM(amount) FILTER (
@@ -160,7 +201,35 @@ SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        r.overdue_value, r.overdue_count,
        p.total_value, p.total_count, p.today_value, p.today_count,
        p.overdue_value, p.overdue_count,
-       pm.month_value, pm.month_count, pm.total_count
+       pm.month_value, pm.month_count, pm.total_count,
+       COALESCE((
+         SELECT jsonb_agg(jsonb_build_object(
+           'customer', COALESCE(c.name, ''),
+           'origin', CASE er.source_system WHEN 'NUVEM_PAGO' THEN 'Nuvem Pago' WHEN 'BLING' THEN 'Bling' ELSE er.source_system END,
+           'due_date', COALESCE(to_char(er.due_date, 'YYYY-MM-DD'), ''),
+           'gross_value', er.gross_amount::text,
+           'net_value', COALESCE(er.net_amount, er.gross_amount)::text,
+           'status', er.status
+         ) ORDER BY er.due_date NULLS LAST, er.source_id)
+           FROM (SELECT * FROM eligible_receivables
+                  WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
+                  ORDER BY due_date NULLS LAST, source_id
+                  LIMIT 50) er
+           LEFT JOIN contacts c ON c.id = er.customer_id
+       ), '[]'::jsonb),
+       COALESCE((
+         SELECT jsonb_agg(jsonb_build_object(
+           'supplier', COALESCE(c.name, ''),
+           'document', COALESCE(pw.document, ''),
+           'due_date', to_char(pw.due_date, 'YYYY-MM-DD'),
+           'value', pw.open_balance::text,
+           'category', COALESCE(pw.category, ''),
+           'status', pw.status
+         ) ORDER BY pw.due_date, pw.source_id)
+           FROM (SELECT * FROM payables WHERE open_balance > 0
+                  ORDER BY due_date, source_id
+                  LIMIT 50) pw
+           LEFT JOIN contacts c ON c.id = pw.supplier_id
+       ), '[]'::jsonb)
 FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm
 `
-

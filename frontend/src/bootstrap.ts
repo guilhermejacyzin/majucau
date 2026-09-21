@@ -20,6 +20,8 @@ export type BootstrapState = {
 }
 
 export type DashboardMetric = { value?: string; count?: number; state: 'CONFIRMED' | 'PROJECTED' | 'PARTIAL' | 'UNAVAILABLE'; source_system?: string }
+export type DashboardReceivableRow = { customer?: string; origin: string; due_date?: string; gross_value?: string; net_value?: string; status: string }
+export type DashboardPayableRow = { supplier?: string; document?: string; due_date: string; value: string; category?: string; status: string }
 export type DashboardSnapshot = {
   as_of: string
   data_state: 'CONFIRMED' | 'PARTIAL' | 'UNAVAILABLE'
@@ -31,6 +33,8 @@ export type DashboardSnapshot = {
   payables_due_today: DashboardMetric
   payables_overdue: DashboardMetric
   payments_month: DashboardMetric
+  receivable_rows?: DashboardReceivableRow[]
+  payable_rows?: DashboardPayableRow[]
   error_code?: string
   message?: string
 }
@@ -158,10 +162,22 @@ function isDashboardMetric(value: unknown): value is DashboardMetric {
   return typeof candidate.state === 'string' && ['CONFIRMED', 'PROJECTED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.state) && (candidate.value === undefined || typeof candidate.value === 'string') && (candidate.count === undefined || typeof candidate.count === 'number')
 }
 
+function isDashboardReceivableRow(value: unknown): value is DashboardReceivableRow {
+  if (!value || typeof value !== 'object') return false
+  const row = value as Partial<DashboardReceivableRow>
+  return typeof row.origin === 'string' && typeof row.status === 'string' && (row.customer === undefined || typeof row.customer === 'string') && (row.due_date === undefined || typeof row.due_date === 'string') && (row.gross_value === undefined || typeof row.gross_value === 'string') && (row.net_value === undefined || typeof row.net_value === 'string')
+}
+
+function isDashboardPayableRow(value: unknown): value is DashboardPayableRow {
+  if (!value || typeof value !== 'object') return false
+  const row = value as Partial<DashboardPayableRow>
+  return typeof row.due_date === 'string' && typeof row.value === 'string' && typeof row.status === 'string' && (row.supplier === undefined || typeof row.supplier === 'string') && (row.document === undefined || typeof row.document === 'string') && (row.category === undefined || typeof row.category === 'string')
+}
+
 function isDashboardSnapshot(value: unknown): value is DashboardSnapshot {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<DashboardSnapshot>
-  return typeof candidate.as_of === 'string' && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payments_month)
+  return typeof candidate.as_of === 'string' && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payments_month) && (candidate.receivable_rows === undefined || (Array.isArray(candidate.receivable_rows) && candidate.receivable_rows.every(isDashboardReceivableRow))) && (candidate.payable_rows === undefined || (Array.isArray(candidate.payable_rows) && candidate.payable_rows.every(isDashboardPayableRow)))
 }
 
 export function createDashboardSnapshotAdapter(source: DashboardSnapshotSource = readWailsDashboardSnapshot): DashboardSnapshotAdapter {
@@ -448,4 +464,3 @@ declare global {
     go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; GetDashboardSnapshot?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown>; PreviewNuvemPagoFuture?: (folder: string) => Promise<unknown>; ImportNuvemPagoFuture?: (folder: string) => Promise<unknown> } } }
 }
 }
-

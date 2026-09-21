@@ -27,6 +27,23 @@ describe('shell financeiro', () => {
     expect(await screen.findByText('R$ 100,00')).toBeInTheDocument()
   })
 
+  it('renderiza linhas normalizadas nas tabelas de recebíveis do mockup', async () => {
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => ({
+        ...await snapshotAdapterFor().getSnapshot(),
+        receivable_rows: [{ customer: 'Cliente real', origin: 'Nuvem Pago', due_date: '2026-09-22', gross_value: '40.0000', net_value: '39.0000', status: 'PROJECTED' }],
+      }),
+    }
+    const user = userEvent.setup()
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Contas a Receber' }))
+    expect(await screen.findByRole('heading', { name: 'CONTAS A RECEBER' })).toBeInTheDocument()
+    expect(screen.getByText('Cliente real')).toBeInTheDocument()
+    expect(screen.getByText('R$ 40,00')).toBeInTheDocument()
+    expect(screen.getByText('PROJECTED')).toBeInTheDocument()
+  })
+
   it('navega por teclado até integrações e mantém campos com labels visíveis', async () => {
     const user = userEvent.setup()
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
@@ -159,4 +176,3 @@ describe('shell financeiro', () => {
     expect(await screen.findByText(/Lote SUCCESS/)).toBeInTheDocument()
   })
 })
-

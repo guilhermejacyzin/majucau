@@ -435,6 +435,50 @@ export namespace application {
 	        this.source_system = source["source_system"];
 	    }
 	}
+	export class DashboardReceivableRow {
+	    customer?: string;
+	    origin: string;
+	    due_date?: string;
+	    gross_value?: string;
+	    net_value?: string;
+	    status: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DashboardReceivableRow(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.customer = source["customer"];
+	        this.origin = source["origin"];
+	        this.due_date = source["due_date"];
+	        this.gross_value = source["gross_value"];
+	        this.net_value = source["net_value"];
+	        this.status = source["status"];
+	    }
+	}
+	export class DashboardPayableRow {
+	    supplier?: string;
+	    document?: string;
+	    due_date: string;
+	    value: string;
+	    category?: string;
+	    status: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DashboardPayableRow(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.supplier = source["supplier"];
+	        this.document = source["document"];
+	        this.due_date = source["due_date"];
+	        this.value = source["value"];
+	        this.category = source["category"];
+	        this.status = source["status"];
+	    }
+	}
 	export class DashboardSnapshot {
 	    as_of: any;
 	    data_state: string;
@@ -446,6 +490,8 @@ export namespace application {
 	    payables_due_today: DashboardMetric;
 	    payables_overdue: DashboardMetric;
 	    payments_month: DashboardMetric;
+	    receivable_rows?: DashboardReceivableRow[];
+	    payable_rows?: DashboardPayableRow[];
 	    error_code?: string;
 	    message?: string;
 
@@ -465,6 +511,8 @@ export namespace application {
 	        this.payables_due_today = this.convertValues(source["payables_due_today"], DashboardMetric);
 	        this.payables_overdue = this.convertValues(source["payables_overdue"], DashboardMetric);
 	        this.payments_month = this.convertValues(source["payments_month"], DashboardMetric);
+	        this.receivable_rows = this.convertValues(source["receivable_rows"], DashboardReceivableRow);
+	        this.payable_rows = this.convertValues(source["payable_rows"], DashboardPayableRow);
 	        this.error_code = source["error_code"];
 	        this.message = source["message"];
 	    }
@@ -524,4 +572,3 @@ export namespace main {
 	}
 
 }
-

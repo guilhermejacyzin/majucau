@@ -208,22 +208,46 @@ type DashboardMetric struct {
 	SourceSystem string `json:"source_system,omitempty"`
 }
 
+// DashboardReceivableRow is a sanitized detail row for the T3 table. It is
+// read-only and comes from normalized data; RAW payloads never cross the UI
+// boundary through this contract.
+type DashboardReceivableRow struct {
+	Customer   string `json:"customer,omitempty"`
+	Origin     string `json:"origin"`
+	DueDate    string `json:"due_date,omitempty"`
+	GrossValue string `json:"gross_value,omitempty"`
+	NetValue   string `json:"net_value,omitempty"`
+	Status     string `json:"status"`
+}
+
+// DashboardPayableRow is a sanitized detail row for the T4 table.
+type DashboardPayableRow struct {
+	Supplier string `json:"supplier,omitempty"`
+	Document string `json:"document,omitempty"`
+	DueDate  string `json:"due_date"`
+	Value    string `json:"value"`
+	Category string `json:"category,omitempty"`
+	Status   string `json:"status"`
+}
+
 // DashboardSnapshot contains only metrics that are already normalized in the
 // local ledger. It deliberately does not manufacture cash balances, DRE,
 // inventory or forecast values from RAW payloads.
 type DashboardSnapshot struct {
-	AsOf               time.Time       `json:"as_of"`
-	DataState          string          `json:"data_state"`
-	Receivables        DashboardMetric `json:"receivables"`
-	FutureB2C          DashboardMetric `json:"future_b2c"`
-	ReceiptsMonth      DashboardMetric `json:"receipts_month"`
-	ReceivablesOverdue DashboardMetric `json:"receivables_overdue"`
-	Payables           DashboardMetric `json:"payables"`
-	PayablesDueToday   DashboardMetric `json:"payables_due_today"`
-	PayablesOverdue    DashboardMetric `json:"payables_overdue"`
-	PaymentsMonth      DashboardMetric `json:"payments_month"`
-	ErrorCode          string          `json:"error_code,omitempty"`
-	Message            string          `json:"message,omitempty"`
+	AsOf               time.Time                `json:"as_of"`
+	DataState          string                   `json:"data_state"`
+	Receivables        DashboardMetric          `json:"receivables"`
+	FutureB2C          DashboardMetric          `json:"future_b2c"`
+	ReceiptsMonth      DashboardMetric          `json:"receipts_month"`
+	ReceivablesOverdue DashboardMetric          `json:"receivables_overdue"`
+	Payables           DashboardMetric          `json:"payables"`
+	PayablesDueToday   DashboardMetric          `json:"payables_due_today"`
+	PayablesOverdue    DashboardMetric          `json:"payables_overdue"`
+	PaymentsMonth      DashboardMetric          `json:"payments_month"`
+	ReceivableRows     []DashboardReceivableRow `json:"receivable_rows,omitempty"`
+	PayableRows        []DashboardPayableRow    `json:"payable_rows,omitempty"`
+	ErrorCode          string                   `json:"error_code,omitempty"`
+	Message            string                   `json:"message,omitempty"`
 }
 
 type DashboardSnapshotReader interface {
@@ -254,4 +278,3 @@ func (h StaticHealth) CheckHealth(_ context.Context) HealthResponse {
 	}
 	return HealthResponse{Service: h.Service, Version: h.Version, State: state, CheckedAt: time.Now().UTC(), Dependencies: append([]DependencyHealth(nil), h.Dependencies...)}
 }
-

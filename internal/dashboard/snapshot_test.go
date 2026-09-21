@@ -28,6 +28,8 @@ func (r fakeRow) Scan(dest ...any) error {
 			*target = value.(string)
 		case *int64:
 			*target = value.(int64)
+		case *[]byte:
+			*target = append((*target)[:0], value.([]byte)...)
 		default:
 			return errors.New("unsupported scan target")
 		}
@@ -57,6 +59,8 @@ func TestReadDashboardSnapshotUsesNormalizedRowsAndExplicitStates(t *testing.T) 
 		"25.0000", int64(1), int64(3), "5.0000", int64(1),
 		"80.0000", int64(2), "10.0000", int64(1), "4.0000", int64(1),
 		"30.0000", int64(1), int64(2),
+		[]byte(`[{"customer":"Cliente","origin":"Nuvem Pago","due_date":"2026-09-22","gross_value":"40.0000","net_value":"39.0000","status":"PROJECTED"}]`),
+		[]byte(`[{"supplier":"Fornecedor","document":"NF-1","due_date":"2026-09-23","value":"80.0000","category":"Insumos","status":"OPEN"}]`),
 	}}}
 	reader := &Reader{db: db, now: func() time.Time { return time.Date(2026, 9, 21, 12, 0, 0, 0, time.FixedZone("BRT", -3*60*60)) }}
 
@@ -73,6 +77,12 @@ func TestReadDashboardSnapshotUsesNormalizedRowsAndExplicitStates(t *testing.T) 
 	if snapshot.FutureB2C.State != "PROJECTED" || snapshot.ReceiptsMonth.State != "CONFIRMED" || snapshot.PayablesOverdue.Value != "4.0000" {
 		t.Fatalf("unexpected source states: %+v", snapshot)
 	}
+	if len(snapshot.ReceivableRows) != 1 || snapshot.ReceivableRows[0].Customer != "Cliente" {
+		t.Fatalf("unexpected receivable rows: %+v", snapshot.ReceivableRows)
+	}
+	if len(snapshot.PayableRows) != 1 || snapshot.PayableRows[0].Supplier != "Fornecedor" {
+		t.Fatalf("unexpected payable rows: %+v", snapshot.PayableRows)
+	}
 	if len(db.args) != 3 || !reflect.DeepEqual(db.args[0], snapshot.AsOf) {
 		t.Fatalf("expected as-of/date query arguments, got %#v", db.args)
 	}
@@ -84,4 +94,3 @@ func TestReadDashboardSnapshotFailsClosedWithoutDatabase(t *testing.T) {
 		t.Fatalf("expected database unavailable, got %v", err)
 	}
 }
-

@@ -25,6 +25,11 @@ Incremento adicional validado nesta revisão:
   ainda não existe; detalhes em
   `docs/evidence/DASHBOARD-SNAPSHOT-2026-09-21.md`;
 
+- T3/T4 agora expõem linhas sanitizadas das tabelas normalizadas de recebíveis
+  e obrigações no snapshot do dashboard, mantendo os filtros de origem
+  (Nuvem Pago B2C projetado e Bling B2B classificado; obrigações Bling com
+  saldo aberto) e sem transportar RAW para a UI;
+
 - parser e importação determinística da pasta controlada `02_nuvem_pago/recebimentos_futuros`;
 - contrato `nuvem_pago_recebimentos_futuros_csv_v1`, origem `NUVEM_PAGO` e status `PROJECTED`;
 - preservação de datas, parcelas, bruto, taxas, juros, custos totais e líquido;
@@ -63,6 +68,10 @@ Incremento adicional validado nesta revisão:
   runner Server. Isso confirma build, testes, contrato NSIS e artefato, mas
   não substitui a evidência de instalação/desinstalação em Windows 10/11
   workstation.
+- GitHub Actions run 86: `success` após o incremento das tabelas T3/T4,
+  cobrindo novamente Go/frontend, vulnerabilidades, migrations, sqlc, build
+  Wails/worker/helper e contrato NSIS; o smoke desktop continua exigindo
+  workstation Windows 10/11 limpa.
 - nenhum arquivo real ou dado pessoal foi versionado.
 
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
@@ -87,4 +96,3 @@ Só será possível declarar “pronto para produção” depois de G2–G7 prod
 Próximo incremento técnico: executar o E2E PostgreSQL e o smoke visual do
 fluxo no instalador, sem alterar a origem exclusiva Bling para recebimentos
 realizados.
-

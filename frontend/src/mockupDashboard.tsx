@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Tooltip } from './components/Tooltip'
 import type { TooltipId } from './tooltips'
-import type { DashboardMetric, DashboardSnapshot } from './bootstrap'
+import type { DashboardMetric, DashboardPayableRow, DashboardReceivableRow, DashboardSnapshot } from './bootstrap'
 import sidebarReference from './assets/images/mocap-sidebar.png'
 
 export type MockupScreenKey = 'executive' | 'cashflow' | 'receivables' | 'payables' | 'conciliation' | 'dre' | 'trial-balance' | 'investment-calculator' | 'inventory' | 'production' | 'purchases' | 'forecast' | 'pending' | 'alerts' | 'integrations'
@@ -79,6 +79,18 @@ function formatMoney(value: string): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed)
 }
 
+function displayMoney(value?: string): string {
+  return value && value.trim() !== '' ? formatMoney(value) : '—'
+}
+
+function receivableTableRow(row: DashboardReceivableRow): string[] {
+  return [row.customer || '—', row.origin, row.due_date || '—', displayMoney(row.gross_value), displayMoney(row.net_value), row.status]
+}
+
+function payableTableRow(row: DashboardPayableRow): string[] {
+  return [row.supplier || '—', row.document || '—', row.due_date, displayMoney(row.value), row.category || '—', row.status]
+}
+
 function metricForCard(screen: MockupScreenKey, label: string, snapshot?: DashboardSnapshot): DashboardMetric | undefined {
   if (!snapshot) return undefined
   if (screen === 'executive' && label === 'A RECEBER') return snapshot.receivables
@@ -107,8 +119,8 @@ function EmptyDistribution({ title, subtitle }: { title: string; subtitle: strin
   return <section className="mocap-panel mocap-distribution"><div className="mocap-panel-heading"><div><Icon icon="pie" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div><div className="mocap-donut-wrap"><div className="mocap-donut"><span>Sem dados</span></div><div className="mocap-legend-list"><span><i className="tone-dot dot-teal" />Confirmado <b>—</b></span><span><i className="tone-dot dot-blue" />Provisório <b>—</b></span><span><i className="tone-dot dot-orange" />Pendente <b>—</b></span><span><i className="tone-dot dot-purple" />Divergente <b>—</b></span></div></div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled>Ver detalhes <span>→</span></button></Tooltip></section>
 }
 
-function EmptyTable({ title, subtitle, columns }: { title: string; subtitle: string; columns: string[] }) {
-  return <section className="mocap-panel mocap-table-panel"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div><div className="mocap-table-scroll"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody><tr><td colSpan={columns.length}><span>Sem dados confirmados</span></td></tr></tbody></table></div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled>Ver detalhes <span>→</span></button></Tooltip></section>
+function EmptyTable({ title, subtitle, columns, rows = [] }: { title: string; subtitle: string; columns: string[]; rows?: string[][] }) {
+  return <section className="mocap-panel mocap-table-panel"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div><div className="mocap-table-scroll"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.length === 0 ? <tr><td colSpan={columns.length}><span>Sem dados confirmados</span></td></tr> : rows.map((row, rowIndex) => <tr key={`${rowIndex}-${row[0]}`}>{columns.map((column, columnIndex) => <td key={`${column}-${columnIndex}`}>{row[columnIndex] ?? '—'}</td>)}</tr>)}</tbody></table></div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled>Ver detalhes <span>→</span></button></Tooltip></section>
 }
 
 function EmptyRightPanel({ title, subtitle }: { title: string; subtitle: string }) {
@@ -158,9 +170,11 @@ export function MockupDashboard({ screen, snapshot, onNavigate }: { screen: Mock
   const config = configs[screen === 'integrations' ? 'executive' : screen]
   const cards = config.cards.map((card) => withSnapshot(screen, card, snapshot))
   const lowerCards = config.lower.map((card) => withSnapshot(screen, card, snapshot))
-  const middleLeft = config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} /> : config.chart ? <EmptyChart title={config.middleTitle} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
+  const receivableRows = screen === 'receivables' ? (snapshot?.receivable_rows ?? []).map(receivableTableRow) : []
+  const payableRows = screen === 'payables' ? (snapshot?.payable_rows ?? []).map(payableTableRow) : []
+  const tableRows = screen === 'receivables' ? receivableRows : screen === 'payables' ? payableRows : []
+  const middleLeft = config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} rows={tableRows} /> : config.chart ? <EmptyChart title={config.middleTitle} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
   const middleRight = config.layout === 'market' ? <EmptyRiskPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'critical' ? <EmptyCriticalPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'calculation' ? <EmptyRulesPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'forecast' ? <EmptyMetadataPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} />
   const lower = config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section>
   return <div className="mocap-page"><MocapHeader config={config} /><section className="mocap-top-cards">{cards.map((card) => <MocapCard key={card.label} card={card} />)}</section><section className={`mocap-middle ${config.layout ? `layout-${config.layout}` : ''}`}>{middleLeft}{middleRight}</section>{lower}{config.layout !== 'market' && <AlertPanel messages={config.alerts} onNavigate={onNavigate} />}</div>
 }
-

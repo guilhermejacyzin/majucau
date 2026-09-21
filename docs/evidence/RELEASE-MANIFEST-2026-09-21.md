@@ -15,7 +15,7 @@ artefatos.
 - schema atual fora da janela declarada (`SCHEMA_INCOMPATIBLE`);
 - JSON/identidade inválidos, path traversal, duplicidade case-insensitive e
   caminhos protegidos de token/secret/credencial/senha (`PACKAGE_INVALID`);
-- arquivos ausentes, diretórios e links que escapem da raiz são rejeitados.
+- arquivos ausentes, diretórios e links simbólicos são rejeitados.
 
 ## Limite da evidência
 

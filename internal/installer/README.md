@@ -45,7 +45,7 @@ Os códigos de bloqueio estáveis incluem `OS_UNSUPPORTED`,
 colaterais, de um `release-manifest.json` dentro de um pacote. O contrato
 versionado registra a versão do aplicativo, a janela compatível de schema,
 os checksums das migrations e o inventário de artefatos. A validação rejeita
-entradas duplicadas, traversal, links que escapem da raiz, diretórios,
+entradas duplicadas, traversal, links simbólicos, diretórios,
 checksums/tamanhos divergentes e caminhos que indiquem token, secret,
 credencial ou senha.
 

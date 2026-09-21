@@ -151,25 +151,9 @@ func validSHA256(value string) bool {
 
 func validateManifestFile(root, relativePath string, expected ManifestFile) error {
 	fullPath := filepath.Join(root, filepath.FromSlash(relativePath))
-	info, err := os.Stat(fullPath)
-	if err != nil || !info.Mode().IsRegular() {
+	info, err := os.Lstat(fullPath)
+	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
 		return os.ErrNotExist
-	}
-	rootAbs, err := filepath.Abs(root)
-	if err != nil {
-		return err
-	}
-	resolved, err := filepath.EvalSymlinks(fullPath)
-	if err != nil {
-		return err
-	}
-	resolved, err = filepath.Abs(resolved)
-	if err != nil {
-		return err
-	}
-	rel, err := filepath.Rel(rootAbs, resolved)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
-		return os.ErrPermission
 	}
 	payload, err := os.ReadFile(fullPath)
 	if err != nil {

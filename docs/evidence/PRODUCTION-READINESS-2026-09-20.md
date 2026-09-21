@@ -96,6 +96,18 @@ Incremento adicional validado nesta revisão:
   inseguras documentados em `docs/evidence/RELEASE-MANIFEST-2026-09-21.md`;
   evidência publicada no run 92.
 
+- pacote inicial de backup PostgreSQL em `*.mjbk`: `pg_dump`/`pg_dumpall` sem
+  senha em argumentos, payloads AES-GCM com chave derivada por Argon2id,
+  manifesto com hashes e política explícita de tokens excluídos, e verificador
+  contra schema incompatível, duplicidades e entradas inesperadas;
+  detalhes em `docs/evidence/BACKUP-PACKAGE-2026-09-21.md`;
+- o pacote ainda não restaura nem altera um cluster: integração com worker/UI,
+  restore controlado, backup do estado anterior e rollback permanecem gates
+  abertos;
+- o run 98 falhou corretamente ao detectar que o binário oficial do WebView2
+  mudou; o pin foi atualizado para o SHA-256 observado no download oficial e o
+  run 99 está em execução para confirmar o instalador.
+
 Esses incrementos melhoram a cobertura de INT-05 e de OPS-02/OPS-03, mas não
 alteram a conclusão de produção: ainda faltam fonte/payload oficial, regras
 financeiras, resultados, backup/restore, assinatura e a matriz real de
@@ -120,7 +132,14 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 
 Só será possível declarar “pronto para produção” depois de G2–G7 produzirem as evidências correspondentes, incluindo fonte oficial ou decisão formal sobre os pontos bloqueados. Telas que abrem, compilação verde ou dados provisórios não substituem esses gates.
 
-Próximo incremento técnico: integrar a validação do manifesto ao
-`installer-helper` como gate `PACKAGE_VERIFIED`, sem alterar a origem
-exclusiva Bling para recebimentos realizados. Backup/restore, update/rollback,
-assinatura e VMs Windows limpas continuam gates posteriores.
+Reavaliação de planejamento em 2026-09-21: aproximadamente **36–40% do
+trabalho ainda falta**. O intervalo é deliberado: 36% é a estimativa de
+execução do backlog técnico, enquanto 40% é a margem conservadora até os gates
+de aceite externo. Isso não significa 60% de aceite de produção; a matriz
+continua com somente 2 requisitos `VERIFIED` de 47.
+
+Próximo incremento técnico: integrar o pacote de backup ao worker sem alterar a
+origem exclusiva Bling para recebimentos realizados, implementar restore
+controlado em staging e obter a evidência de instalação em VM Windows 10/11
+limpa. Assinatura, update/rollback e módulos financeiros G5 continuam gates
+posteriores.

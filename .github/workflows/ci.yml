@@ -130,7 +130,11 @@ jobs:
           if (Test-Path -LiteralPath $smokeRoot) { Remove-Item -LiteralPath $smokeRoot -Recurse -Force }
           New-Item -ItemType Directory -Force -Path $smokeRoot | Out-Null
 
-          $installProcess = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$installDir") -Wait -PassThru
+          $installProcess = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$installDir") -PassThru
+          if (-not $installProcess.WaitForExit(120000)) {
+            $installProcess.Kill()
+            throw 'Instalação silenciosa excedeu o timeout de 120 segundos.'
+          }
           if ($installProcess.ExitCode -ne 0) { throw "Instalação silenciosa falhou: $($installProcess.ExitCode)" }
           foreach ($name in @('Majucau Financial Intelligence.exe', 'majucau-worker.exe', 'installer-helper.exe')) {
             if (-not (Test-Path -LiteralPath (Join-Path $installDir $name) -PathType Leaf)) {
@@ -148,7 +152,11 @@ jobs:
 
           $uninstaller = Join-Path $installDir 'uninstall.exe'
           if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) { throw 'Uninstaller ausente.' }
-          $uninstallProcess = Start-Process -FilePath $uninstaller -ArgumentList @('/S') -Wait -PassThru
+          $uninstallProcess = Start-Process -FilePath $uninstaller -ArgumentList @('/S') -PassThru
+          if (-not $uninstallProcess.WaitForExit(120000)) {
+            $uninstallProcess.Kill()
+            throw 'Desinstalação silenciosa excedeu o timeout de 120 segundos.'
+          }
           if ($uninstallProcess.ExitCode -ne 0) { throw "Desinstalação silenciosa falhou: $($uninstallProcess.ExitCode)" }
           if (Test-Path -LiteralPath $installDir) { throw 'Diretório da aplicação permaneceu após desinstalação.' }
 

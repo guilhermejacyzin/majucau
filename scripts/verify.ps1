@@ -69,6 +69,7 @@ try {
     Write-Host 'sqlc generate determinístico: PASS'
 
     & (Join-Path $PSScriptRoot 'scan-secrets.ps1')
+    & (Join-Path $PSScriptRoot 'test-installer-nsis.ps1')
 
     Push-Location (Join-Path $projectRoot 'frontend')
     try {
@@ -96,3 +97,4 @@ finally {
 }
 
 Write-Host 'Verificações locais concluídas.'
+

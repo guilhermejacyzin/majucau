@@ -92,6 +92,10 @@ jobs:
       - name: Install NSIS
         run: choco install nsis --yes --no-progress
 
+      - name: Verify installer source contract
+        shell: pwsh
+        run: ./scripts/test-installer-nsis.ps1
+
       - name: Build unsigned NSIS installer
         run: wails build -s -skipbindings -trimpath -nsis
 
@@ -105,3 +109,4 @@ jobs:
             build/bin/installer-helper.exe
             build/bin/*-installer.exe
           if-no-files-found: error
+

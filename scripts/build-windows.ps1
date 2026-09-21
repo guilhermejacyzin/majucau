@@ -43,6 +43,7 @@ try {
         Invoke-NativeChecked $wailsCommand @('build', '-s', '-skipbindings', '-trimpath')
         & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1') -KeepSourceOutputs
         & (Join-Path $PSScriptRoot 'write-release-manifest.ps1')
+        & (Join-Path $PSScriptRoot 'prepare-webview2.ps1')
         $makensisCommand = (Get-Command makensis -ErrorAction Stop).Source
         Push-Location (Join-Path $projectRoot 'build\windows\installer')
         try {

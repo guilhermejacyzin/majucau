@@ -144,6 +144,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "PACKAGE_VERIFIED falhou: $LASTEXITCODE" }
           $manifestResult = Get-Content -LiteralPath $manifestVerification -Raw | ConvertFrom-Json
           if ($manifestResult.status -ne 'PACKAGE_VERIFIED') { throw 'Manifesto não retornou PACKAGE_VERIFIED.' }
+          ./scripts/prepare-webview2.ps1
           Push-Location 'build/windows/installer'
           try { makensis project.nsi } finally { Pop-Location }
           $installer = Get-ChildItem -LiteralPath build/bin -Filter '*-installer.exe' -File | Select-Object -First 1

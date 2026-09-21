@@ -94,14 +94,30 @@ jobs:
         run: go build -trimpath -o build/bin/installer-helper.exe ./cmd/installer-helper
 
       - name: Install NSIS
-        run: choco install nsis --yes --no-progress
+        shell: pwsh
+        run: |
+          choco install nsis --yes --no-progress
+          $nsisRoots = @(
+            (Join-Path ${env:ProgramFiles(x86)} 'NSIS'),
+            (Join-Path $env:ProgramFiles 'NSIS')
+          )
+          $nsisRoot = $nsisRoots | Where-Object { Test-Path -LiteralPath (Join-Path $_ 'makensis.exe') } | Select-Object -First 1
+          if (-not $nsisRoot) { throw 'makensis.exe não foi localizado após a instalação do NSIS.' }
+          $nsisRoot | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Output "NSIS: $nsisRoot"
 
       - name: Verify installer source contract
         shell: pwsh
         run: ./scripts/test-installer-nsis.ps1
 
       - name: Build unsigned NSIS installer
-        run: wails build -s -skipbindings -trimpath -nsis
+        shell: pwsh
+        run: |
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { throw 'makensis não está no PATH do job.' }
+          wails build -s -skipbindings -trimpath -nsis
+          $installer = Get-ChildItem -LiteralPath build/bin -Filter '*-installer.exe' -File | Select-Object -First 1
+          if (-not $installer) { throw 'Wails não produziu um instalador NSIS; nenhum warning pode ser tratado como sucesso.' }
+          Write-Output "Installer: $($installer.FullName)"
 
       - name: Smoke install and uninstall unsigned installer
         shell: pwsh

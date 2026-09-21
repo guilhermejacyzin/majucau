@@ -11,6 +11,8 @@
   recebimento anterior ao pagamento e IDs repetidos;
 - leitura da pasta controlada em ordem lexical, SHA-256 por arquivo e
   deduplicação entre arquivos;
+- persistência transacional opcional no worker: lote, RAW versionado e upsert
+  idempotente em `receivables` com `business_type=B2C` e `status=PROJECTED`;
 - testes unitários sem os arquivos reais e sem PII.
 
 ## Regra de origem
@@ -26,12 +28,14 @@ futuro exportado; a persistência RAW ainda é o próximo passo.
 ```text
 go test ./internal/integrations/nuvempago     PASS
 go vet ./internal/integrations/nuvempago      PASS
+go test . ./cmd/... ./database/... ./internal/... PASS
+go vet . ./cmd/... ./database/... ./internal/... PASS
 git diff --check                              PASS
 ```
 
 ## Limitação restante
 
-O resultado ainda é uma prévia em memória. Faltam a transação PostgreSQL com
-`raw_records` append-only, upsert idempotente em `receivables`, integração IPC
-da tela de Importações/Integrações e um fixture sanitizado homologado pela
-operação. Nenhum valor do arquivo real foi versionado.
+O serviço de persistência está implementado, mas ainda falta executar um E2E
+contra PostgreSQL descartável, ligar o serviço ao IPC e à tela de
+Importações/Integrações e homologar um fixture sanitizado pela operação.
+Nenhum valor do arquivo real foi versionado.

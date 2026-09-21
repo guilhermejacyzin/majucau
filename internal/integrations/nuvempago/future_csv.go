@@ -29,22 +29,25 @@ var (
 // remain available in the source file that will be stored as RAW by the next
 // persistence increment.
 type FutureReceivableCandidate struct {
-	SourceSystem        domain.Origin
-	SourceEntity        string
-	SourceID            string
-	CustomerName        string
-	PaymentMethod       string
-	Brand               string
-	PaymentDate         time.Time
-	ExpectedReceiptDate time.Time
-	InstallmentNumber   *int
-	InstallmentCount    *int
-	GrossAmount         domain.Money
-	FeeAmount           domain.Money
-	InterestAmount      domain.Money
-	TotalCostAmount     domain.Money
-	NetAmount           domain.Money
-	Status              domain.DataStatus
+	SourceSystem          domain.Origin
+	SourceEntity          string
+	SourceID              string
+	CustomerName          string
+	PaymentMethod         string
+	Brand                 string
+	PaymentDate           time.Time
+	ExpectedReceiptDate   time.Time
+	InstallmentNumber     *int
+	InstallmentCount      *int
+	GrossAmount           domain.Money
+	FeeAmount             domain.Money
+	FeeAmountSigned       domain.Money
+	InterestAmount        domain.Money
+	InterestAmountSigned  domain.Money
+	TotalCostAmount       domain.Money
+	TotalCostAmountSigned domain.Money
+	NetAmount             domain.Money
+	Status                domain.DataStatus
 }
 
 type RowError struct {
@@ -138,11 +141,13 @@ func parseFutureRow(row []string, columns map[string]int) (FutureReceivableCandi
 		return FutureReceivableCandidate{}, &rowParseError{code: "RECEIPT_DATE_BEFORE_PAYMENT", message: "data prevista de recebimento anterior ao pagamento"}
 	}
 	amounts := make(map[string]domain.Money, 5)
+	signedAmounts := make(map[string]domain.Money, 5)
 	for _, name := range []string{"gross", "fee", "interest", "costs", "net"} {
 		parsed, parseErr := parseFutureMoney(value(name))
 		if parseErr != nil {
 			return FutureReceivableCandidate{}, &rowParseError{code: "INVALID_" + strings.ToUpper(name), message: "valor monetário inválido"}
 		}
+		signedAmounts[name] = parsed
 		if parsed.IsNegative() {
 			parsed, parseErr = parsed.AbsExact()
 			if parseErr != nil {
@@ -163,7 +168,8 @@ func parseFutureRow(row []string, columns map[string]int) (FutureReceivableCandi
 		CustomerName: value("customer"), PaymentMethod: value("payment_method"), Brand: value("brand"),
 		PaymentDate: paymentDate, ExpectedReceiptDate: expectedDate,
 		InstallmentCount: installmentCount, GrossAmount: amounts["gross"], FeeAmount: amounts["fee"],
-		InterestAmount: amounts["interest"], TotalCostAmount: amounts["costs"], NetAmount: amounts["net"],
+		FeeAmountSigned: signedAmounts["fee"], InterestAmount: amounts["interest"], InterestAmountSigned: signedAmounts["interest"],
+		TotalCostAmount: amounts["costs"], TotalCostAmountSigned: signedAmounts["costs"], NetAmount: amounts["net"],
 		Status: domain.StatusProjected,
 	}, nil
 }

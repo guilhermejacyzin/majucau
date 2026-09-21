@@ -22,6 +22,8 @@ Incremento adicional validado nesta revisão:
 - preservação de datas, parcelas, bruto, taxas, juros, custos totais e líquido;
 - rejeição de linhas fora de `Entrada`/`Venda`, datas inválidas, datas invertidas e duplicidades;
 - `go test` e `go vet` do pacote `internal/integrations/nuvempago`: PASS;
+- serviço de persistência transacional implementado para lote, RAW versionado
+  e upsert idempotente em `receivables` (`B2C`/`PROJECTED`);
 - nenhum arquivo real ou dado pessoal foi versionado.
 
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
@@ -43,6 +45,6 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 
 Só será possível declarar “pronto para produção” depois de G2–G7 produzirem as evidências correspondentes, incluindo fonte oficial ou decisão formal sobre os pontos bloqueados. Telas que abrem, compilação verde ou dados provisórios não substituem esses gates.
 
-Próximo incremento técnico: persistir o resultado futuro em `raw_records` e
-`receivables` dentro de uma transação idempotente do worker, sem alterar a
-origem exclusiva Bling para recebimentos realizados.
+Próximo incremento técnico: ligar o serviço futuro ao IPC/tela de
+Importações/Integrações e executar o E2E PostgreSQL, sem alterar a origem
+exclusiva Bling para recebimentos realizados.

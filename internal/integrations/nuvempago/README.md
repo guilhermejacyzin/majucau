@@ -26,7 +26,9 @@ Somente linhas `Entrada` e `Venda` são aceitas. Transações repetidas dentro
 da mesma pasta são rejeitadas. O processamento é lexicalmente determinístico
 e cada arquivo recebe SHA-256 para o lote posterior.
 
-`ParseFutureCSV` e `ImportFutureFolder` são prévias em memória. Ainda falta
-ligar o resultado ao worker e à transação PostgreSQL que grava RAW append-only
-e faz upsert idempotente em `receivables`; esse é o próximo incremento antes
-de considerar o fluxo homologado.
+`ParseFutureCSV` e `ImportFutureFolder` alimentam `FutureImportService`, que
+abre uma transação PostgreSQL, cria o lote, grava o payload RAW versionado e
+faz upsert idempotente em `receivables` como B2C/PROJECTED. O serviço não está
+ainda ligado ao IPC ou à tela; esse é o próximo incremento antes de considerar
+o fluxo operacional homologado. O campo `open_balance` permanece nulo porque
+este export não fornece saldo aberto separado; nenhum valor foi inventado.

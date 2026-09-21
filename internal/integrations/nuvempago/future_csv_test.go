@@ -23,7 +23,7 @@ func TestParseFutureCSVNormalizesProjectedNuvemPagoRows(t *testing.T) {
 	if first.SourceSystem != "NUVEM_PAGO" || first.SourceEntity != FutureSourceEntity || first.SourceID != "9483" || first.Status != "PROJECTED" {
 		t.Fatalf("identity/status mapping: %#v", first)
 	}
-	if first.GrossAmount.String() != "236.3600" || first.FeeAmount.String() != "8.1300" || first.InterestAmount.String() != "13.5300" || first.TotalCostAmount.String() != "21.6600" || first.NetAmount.String() != "214.7000" {
+	if first.GrossAmount.String() != "236.3600" || first.FeeAmount.String() != "8.1300" || first.FeeAmountSigned.String() != "-8.1300" || first.InterestAmount.String() != "13.5300" || first.InterestAmountSigned.String() != "-13.5300" || first.TotalCostAmount.String() != "21.6600" || first.TotalCostAmountSigned.String() != "-21.6600" || first.NetAmount.String() != "214.7000" {
 		t.Fatalf("amount mapping: %#v", first)
 	}
 	if first.InstallmentCount == nil || *first.InstallmentCount != 2 || first.PaymentDate.Format("2006-01-02") != "2026-08-20" || first.ExpectedReceiptDate.Format("2006-01-02") != "2026-09-21" {

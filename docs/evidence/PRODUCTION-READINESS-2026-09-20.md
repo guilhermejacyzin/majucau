@@ -10,6 +10,8 @@ Não existe uma data responsável de lançamento enquanto os gates externos e os
 
 - `go test . ./cmd/... ./database/... ./internal/...`: PASS.
 - `go vet . ./cmd/... ./database/... ./internal/...`: PASS.
+- `frontend/npm run typecheck`: PASS.
+- `frontend/npm run lint`: PASS.
 - `frontend/npm run test -- --run`: PASS — 3 arquivos, 19 testes.
 - `frontend/npm run build`: PASS — bundle Vite produzido.
 - `git diff --check`: PASS.
@@ -24,6 +26,8 @@ Incremento adicional validado nesta revisão:
 - `go test` e `go vet` do pacote `internal/integrations/nuvempago`: PASS;
 - serviço de persistência transacional implementado para lote, RAW versionado
   e upsert idempotente em `receivables` (`B2C`/`PROJECTED`);
+- preview/importação de futuros ligado ao worker IPC, Wails e painel de
+  Integrações, com resposta sanitizada e fail-closed sem configuração;
 - nenhum arquivo real ou dado pessoal foi versionado.
 
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
@@ -34,7 +38,7 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 |---|---|---|---|
 | G0 — Arquitetura | Aprovado | decisões e artefatos versionados | nenhuma no escopo aprovado |
 | G1 — Fundação | Parcial | testes Go, frontend, build e artefatos locais | PostgreSQL/worker/desktop e CI em instalação limpa |
-| G2 — Integrações | Parcial/bloqueado | adapters, DPAPI, contratos Bling e parser controlado de futuro Nuvem Pago | credencial/payload oficial, persistência RAW/idempotente, OAuth Nuvemshop e ledger Nuvem Pago |
+| G2 — Integrações | Parcial/bloqueado | adapters, DPAPI, contratos Bling, parser/persistência e IPC/UI do futuro Nuvem Pago | credencial/payload oficial, E2E PostgreSQL, OAuth Nuvemshop e ledger Nuvem Pago |
 | G3 — Tesouraria | Parcial | contrato D0–D+60 e menor saldo | saldo D-1 do Bling, persistência, cenários, lineage e reconciliação |
 | G4 — Executivo | Parcial | shell T1–T15 e tooltips estruturais | dados reais, drill-down e comparação visual/funcional por tela |
 | G5 — Resultado | Bloqueado | contratos e decisões documentados | DRE/P&L/EBITDA, folha e contabilidade próprios |
@@ -45,6 +49,7 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 
 Só será possível declarar “pronto para produção” depois de G2–G7 produzirem as evidências correspondentes, incluindo fonte oficial ou decisão formal sobre os pontos bloqueados. Telas que abrem, compilação verde ou dados provisórios não substituem esses gates.
 
-Próximo incremento técnico: ligar o serviço futuro ao IPC/tela de
-Importações/Integrações e executar o E2E PostgreSQL, sem alterar a origem
-exclusiva Bling para recebimentos realizados.
+Próximo incremento técnico: executar o E2E PostgreSQL e o smoke visual do
+fluxo no instalador, sem alterar a origem exclusiva Bling para recebimentos
+realizados.
+

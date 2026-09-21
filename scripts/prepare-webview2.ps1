@@ -12,7 +12,7 @@ if ([string]::IsNullOrWhiteSpace($Destination)) {
 # Wails' generated NSIS macro embeds this official Evergreen Bootstrapper. The
 # hash is pinned so a changed or substituted download fails the build closed.
 $uri = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703'
-$expectedSha256 = '7EBC4CE80143EF89CEA86A61EA151502868DB6CAAA678B8B43660A66ACE11C3A'
+$expectedSha256 = '81C01751C8CC385A5991ABB104205D42AC70094350EE8FB9E8EA580B51BB9554'
 $destinationDirectory = Split-Path -Parent $Destination
 New-Item -ItemType Directory -Force -Path $destinationDirectory | Out-Null
 

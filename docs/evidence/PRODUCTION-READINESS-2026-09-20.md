@@ -28,6 +28,8 @@ Incremento adicional validado nesta revisão:
   e upsert idempotente em `receivables` (`B2C`/`PROJECTED`);
 - preview/importação de futuros ligado ao worker IPC, Wails e painel de
   Integrações, com resposta sanitizada e fail-closed sem configuração;
+- teste E2E opt-in criado para PostgreSQL: duas linhas projetadas, uma rejeição,
+  reexecução idempotente, RAW corrente e zero escrita em `receipts`;
 - nenhum arquivo real ou dado pessoal foi versionado.
 
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
@@ -37,8 +39,8 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 | Gate | Estado | Evidência atual | Falta para aceite |
 |---|---|---|---|
 | G0 — Arquitetura | Aprovado | decisões e artefatos versionados | nenhuma no escopo aprovado |
-| G1 — Fundação | Parcial | testes Go, frontend, build e artefatos locais | PostgreSQL/worker/desktop e CI em instalação limpa |
-| G2 — Integrações | Parcial/bloqueado | adapters, DPAPI, contratos Bling, parser/persistência e IPC/UI do futuro Nuvem Pago | credencial/payload oficial, E2E PostgreSQL, OAuth Nuvemshop e ledger Nuvem Pago |
+| G1 — Fundação | Parcial | testes Go, frontend, build e E2E opt-in versionado | executar E2E PostgreSQL/worker/desktop e CI em instalação limpa |
+| G2 — Integrações | Parcial/bloqueado | adapters, DPAPI, contratos Bling, parser/persistência, IPC/UI e E2E opt-in do futuro Nuvem Pago | executar E2E em banco descartável, credencial/payload oficial, OAuth Nuvemshop e ledger Nuvem Pago |
 | G3 — Tesouraria | Parcial | contrato D0–D+60 e menor saldo | saldo D-1 do Bling, persistência, cenários, lineage e reconciliação |
 | G4 — Executivo | Parcial | shell T1–T15 e tooltips estruturais | dados reais, drill-down e comparação visual/funcional por tela |
 | G5 — Resultado | Bloqueado | contratos e decisões documentados | DRE/P&L/EBITDA, folha e contabilidade próprios |

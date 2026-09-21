@@ -30,7 +30,7 @@
 | ARC-02 | Worker continua com UI fechada; Named Pipe autenticado, ACL, SID e protocolo versionado | pp. 11, 22, §§16, 39–42 | ADR §§3.2–3.3, 7; ERD §3; AGENTS | G1/G6 | Testes janela fechada, reboot, SID inválido, DACL e concorrência | NOT_STARTED |
 | ARC-03 | Dashboard nunca consulta APIs diretamente; usar sincronização, banco local e última atualização por fonte | pp. 22–23, §§42–43 | ADR §§3, 8; API §2; Plano fases 5–8 | G2/G4 | Teste offline/cache, network inspection e UI por fonte | NOT_STARTED |
 | OPS-01 | NSIS x64 assinado, WebView2, PostgreSQL dedicado, porta sob lock, serviços, migrations, atalho, upgrade/uninstall | pp. 24–25, §§46–47 | ADR §9; Plano fases 2 e 12 | G1/G6/G7 | Matriz Windows online/offline, UAC, porta ocupada, upgrade e uninstall | NOT_STARTED |
-| OPS-02 | Backup/restore com dump, globals, manifesto, hash, criptografia, retenção e validação pós-restore | pp. 24–25, §§46–47 | ADR §10; Plano §15.1 | G6/G7 | Backup e restore reais, incluindo RAW, snapshots, roles e continuidade | NOT_STARTED |
+| OPS-02 | Backup/restore com dump, globals, manifesto, hash, criptografia, retenção e validação pós-restore | pp. 24–25, §§46–47 | ADR §10; Plano §15.1; `internal/backup`; `docs/evidence/BACKUP-PACKAGE-2026-09-21.md` | G6/G7 | Pacote criptografado, verificação, restore controlado e backup pré-restore possuem testes; ainda falta integração worker/UI/instalador, restore real com RAW/snapshots/roles, retenção e continuidade em VM | PARTIAL |
 | OPS-03 | Atualização aceita somente pacote assinado e mantém compatibilidade binário/schema | criticidade e operação do handoff | ADR §9.2; Plano §15.2 | G6/G7 | Assinatura/hash, migration, smoke, falha e restore conjunto | NOT_STARTED |
 | OPS-04 | Instalação em máquina de terceiro detecta, recupera ou bloqueia com segurança falhas conhecidas e produz diagnóstico sanitizado para falhas desconhecidas | solicitação explícita da usuária em 2026-08-16 | AGENTS “Instalação em máquinas de terceiros”; matriz de resiliência Windows; helper de preflight | G1/G6/G7 | Casos automatizados + matriz executada em VMs para install/repair/upgrade/rollback/uninstall e falhas parciais | PARTIAL |
 
@@ -117,4 +117,3 @@ Permanecem pendentes:
 9. Arquivo do wireframe aprovado da Visão Executiva para comparação visual.
 
 Nenhum desses itens deve ser reinterpretado como concluído por existir uma intenção no plano. O estado muda somente quando a evidência correspondente for produzida e revisada.
-

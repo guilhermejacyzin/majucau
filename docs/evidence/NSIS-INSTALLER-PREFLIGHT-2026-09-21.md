@@ -9,7 +9,9 @@ Integração do `installer-helper.exe` ao fluxo do instalador Windows x64.
 - `build/windows/installer/project.nsi` agora extrai o helper para o diretório
   temporário do NSIS antes da primeira escrita no computador;
 - `.onInit` executa `diagnostics`, que aplica o mesmo preflight usado no smoke
-  portátil e grava um ZIP sanitizado em `%TEMP%\Majucau\installer-preflight.zip`;
+  portátil somente quando o preflight rápido retorna bloqueio; em sucesso o
+  caminho normal não gera arquivo de diagnóstico. O ZIP sanitizado é gravado em
+  `%TEMP%\Majucau\installer-preflight.zip`;
 - qualquer retorno diferente de zero interrompe a instalação; retorno `2`
   (`BLOCKED`) recebe mensagem operacional específica;
 - o helper também é instalado junto ao aplicativo para diagnóstico posterior;
@@ -23,7 +25,7 @@ Integração do `installer-helper.exe` ao fluxo do instalador Windows x64.
 ./scripts/test-installer-nsis.ps1
 ```
 
-Resultado: `PASS` (8 invariantes do instalador).
+Resultado: `PASS` (9 invariantes do instalador, incluindo a ordem preflight → diagnóstico).
 
 O binário NSIS final ainda não foi compilado neste ambiente porque `makensis`
 não está disponível. Portanto esta evidência comprova a integração no fonte e

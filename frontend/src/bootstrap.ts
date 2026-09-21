@@ -47,6 +47,31 @@ export type BlingReceiptImportResult = {
 export type BlingImportSource = (folder: string) => Promise<unknown>
 export type BlingImportAdapter = { import: (folder: string) => Promise<BlingReceiptImportResult> }
 
+export type NuvemPagoFutureImportPreview = {
+  files: Array<{ name: string; sha256: string; receivable_count: number; rejected_row_count: number }>
+  receivable_count: number
+  error_count: number
+  ignored_count: number
+  issues?: Array<{ file: string; line: number; code: string; message: string }>
+  error_code?: string
+  message?: string
+}
+export type NuvemPagoFuturePreviewSource = (folder: string) => Promise<unknown>
+export type NuvemPagoFuturePreviewAdapter = { preview: (folder: string) => Promise<NuvemPagoFutureImportPreview> }
+export type NuvemPagoFutureImportResult = {
+  batch_id?: string
+  status?: string
+  records_read: number
+  records_created: number
+  records_updated: number
+  records_failed: number
+  ignored_count: number
+  error_code?: string
+  message?: string
+}
+export type NuvemPagoFutureImportSource = (folder: string) => Promise<unknown>
+export type NuvemPagoFutureImportAdapter = { import: (folder: string) => Promise<NuvemPagoFutureImportResult> }
+
 export type BlingConfigInput = { client_id: string; redirect_uri: string; client_secret: string }
 export type BlingConfigResult = { client_id?: string; redirect_uri?: string; secret_configured: boolean; status?: string; error_code?: string; message?: string }
 export type BlingConfigSource = (input: BlingConfigInput) => Promise<unknown>
@@ -146,6 +171,60 @@ export function createBlingImportAdapter(source: BlingImportSource = readWailsBl
         return isBlingReceiptImportResult(result) ? result : unavailableBlingImport('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
       } catch {
         return unavailableBlingImport()
+      }
+    },
+  }
+}
+
+const unavailableNuvemPagoFuturePreview = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): NuvemPagoFutureImportPreview => ({ files: [], receivable_count: 0, error_count: 0, ignored_count: 0, error_code: errorCode, message })
+
+async function readWailsNuvemPagoFuturePreview(folder: string): Promise<unknown> {
+  const method = window.go?.main?.App?.PreviewNuvemPagoFuture
+  if (typeof method !== 'function') return unavailableNuvemPagoFuturePreview()
+  return method(folder)
+}
+
+function isNuvemPagoFuturePreview(value: unknown): value is NuvemPagoFutureImportPreview {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<NuvemPagoFutureImportPreview>
+  return Array.isArray(candidate.files) && typeof candidate.receivable_count === 'number' && typeof candidate.error_count === 'number' && typeof candidate.ignored_count === 'number'
+}
+
+export function createNuvemPagoFuturePreviewAdapter(source: NuvemPagoFuturePreviewSource = readWailsNuvemPagoFuturePreview): NuvemPagoFuturePreviewAdapter {
+  return {
+    preview: async (folder) => {
+      try {
+        const result = await source(folder)
+        return isNuvemPagoFuturePreview(result) ? result : unavailableNuvemPagoFuturePreview('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableNuvemPagoFuturePreview()
+      }
+    },
+  }
+}
+
+const unavailableNuvemPagoFutureImport = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): NuvemPagoFutureImportResult => ({ records_read: 0, records_created: 0, records_updated: 0, records_failed: 0, ignored_count: 0, error_code: errorCode, message })
+
+async function readWailsNuvemPagoFutureImport(folder: string): Promise<unknown> {
+  const method = window.go?.main?.App?.ImportNuvemPagoFuture
+  if (typeof method !== 'function') return unavailableNuvemPagoFutureImport()
+  return method(folder)
+}
+
+function isNuvemPagoFutureImportResult(value: unknown): value is NuvemPagoFutureImportResult {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<NuvemPagoFutureImportResult>
+  return typeof candidate.records_read === 'number' && typeof candidate.records_created === 'number' && typeof candidate.records_updated === 'number' && typeof candidate.records_failed === 'number' && typeof candidate.ignored_count === 'number'
+}
+
+export function createNuvemPagoFutureImportAdapter(source: NuvemPagoFutureImportSource = readWailsNuvemPagoFutureImport): NuvemPagoFutureImportAdapter {
+  return {
+    import: async (folder) => {
+      try {
+        const result = await source(folder)
+        return isNuvemPagoFutureImportResult(result) ? result : unavailableNuvemPagoFutureImport('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableNuvemPagoFutureImport()
       }
     },
   }
@@ -311,6 +390,7 @@ export function createBootstrapAdapter(source: BootstrapSource = readWailsBootst
 
 declare global {
     interface Window {
-    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown> } } }
+    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown>; PreviewNuvemPagoFuture?: (folder: string) => Promise<unknown>; ImportNuvemPagoFuture?: (folder: string) => Promise<unknown> } } }
 }
 }
+

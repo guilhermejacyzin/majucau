@@ -17,6 +17,7 @@ $required = [ordered]@{
     preflight_data_dir = '--data-dir "${MAJUCAU_DATA_DIR}"'
     preflight_port = '--port ${MAJUCAU_PREFERRED_PORT}'
     blocked_exit_handling = '${If} $1 == 2'
+    silent_block_handling = 'IfSilent MajuauPreflightSilent MajuauPreflightInteractive'
     abort_on_failed_preflight = 'Quit'
     installed_helper = 'File "/oname=installer-helper.exe"'
 }

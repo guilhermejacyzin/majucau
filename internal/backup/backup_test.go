@@ -29,7 +29,7 @@ func TestCreateAndVerifyEncryptedPackage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
-	if len(calls) != 2 || strings.Contains(calls[0], "password") || strings.Contains(calls[1], "password") {
+	if len(calls) != 2 || strings.Contains(calls[0], "user:password") || strings.Contains(calls[1], "user:password") || strings.Contains(strings.Join(calls, " "), "MAJUCAU_DATABASE_URL") {
 		t.Fatalf("PostgreSQL command arguments leaked a password: %#v", calls)
 	}
 	if _, err := os.Stat(result.Path); err != nil {

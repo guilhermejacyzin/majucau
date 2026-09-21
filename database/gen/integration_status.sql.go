@@ -229,4 +229,3 @@ func (q *Queries) RecordBlingTestSuccess(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, recordBlingTestSuccess)
 	return err
 }
-

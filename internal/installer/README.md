@@ -39,6 +39,23 @@ Os códigos de bloqueio estáveis incluem `OS_UNSUPPORTED`,
 `PATH_UNAVAILABLE`, `PATH_UNSAFE_LOCATION`, `DB_PORT_CONFLICT` e
 `WEBVIEW2_MISSING`.
 
+## Manifesto de pacote
+
+`ValidateReleaseManifest` faz a validação determinística, sem efeitos
+colaterais, de um `release-manifest.json` dentro de um pacote. O contrato
+versionado registra a versão do aplicativo, a janela compatível de schema,
+os checksums das migrations e o inventário de artefatos. A validação rejeita
+entradas duplicadas, traversal, links que escapem da raiz, diretórios,
+checksums/tamanhos divergentes e caminhos que indiquem token, secret,
+credencial ou senha.
+
+Os códigos públicos são `PACKAGE_INVALID`, `CHECKSUM_MISMATCH` e
+`SCHEMA_INCOMPATIBLE`. Essa etapa somente prova que o pacote é consistente e
+compatível com o schema informado pelo chamador; ela **não** executa
+`pg_dump`/`pg_restore`, não cifra backup, não instala serviço e não prova
+restore, upgrade ou rollback. Esses fluxos continuam pendentes dos gates
+OPS-02/OPS-03 e G6/G7.
+
 O piso do fresh install é 4 GiB livres. Upgrade e restore devem substituir
 esse piso por uma necessidade calculada que inclua dados atuais, backup,
 temporários e conjunto completo de rollback.

@@ -25,7 +25,7 @@ describe('shell financeiro', () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={snapshotAdapterFor()} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     expect(await screen.findByText('R$ 100,00')).toBeInTheDocument()
-    expect(screen.getByText(/Última sincronização: 21\/09\/2026, 09:00/)).toBeInTheDocument()
+    expect(screen.getByText('21/09/2026, 09:00')).toBeInTheDocument()
   })
 
   it('renderiza linhas normalizadas nas tabelas de recebíveis do mockup', async () => {

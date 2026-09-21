@@ -72,6 +72,11 @@ Incremento adicional validado nesta revisão:
   cobrindo novamente Go/frontend, vulnerabilidades, migrations, sqlc, build
   Wails/worker/helper e contrato NSIS; o smoke desktop continua exigindo
   workstation Windows 10/11 limpa.
+- GitHub Actions run 92: `success` após a fundação do manifesto de pacote e a
+  correção específica do runner Windows. O CI executou os testes do validador
+  com checksum, schema, duplicidade, traversal e caminhos protegidos, além de
+  repetir a cadeia completa de build e contrato NSIS. Isso comprova a fatia
+  determinística do manifesto, mas não backup/restore ou update/rollback reais.
 - nenhum arquivo real ou dado pessoal foi versionado.
 
 ### Incremento de 2026-09-21
@@ -86,9 +91,15 @@ Incremento adicional validado nesta revisão:
 - testes Go, vet, TypeScript, lint, Vitest (23 testes) e build Vite passaram;
 - evidência detalhada em `docs/evidence/BLING-DISCONNECT-2026-09-21.md`.
 
-Esse incremento melhora a cobertura de INT-05, mas não altera a conclusão de
-produção: ainda faltam fonte/payload oficial, regras financeiras, resultados,
-backup/restore, assinatura e a matriz real de instalação Windows.
+- validador de manifesto de release/backup implementado sem efeitos colaterais;
+  checksums de migrations e artefatos, janela de schema e rejeição de entradas
+  inseguras documentados em `docs/evidence/RELEASE-MANIFEST-2026-09-21.md`;
+  evidência publicada no run 92.
+
+Esses incrementos melhoram a cobertura de INT-05 e de OPS-02/OPS-03, mas não
+alteram a conclusão de produção: ainda faltam fonte/payload oficial, regras
+financeiras, resultados, backup/restore, assinatura e a matriz real de
+instalação Windows.
 
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
 
@@ -109,7 +120,7 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 
 Só será possível declarar “pronto para produção” depois de G2–G7 produzirem as evidências correspondentes, incluindo fonte oficial ou decisão formal sobre os pontos bloqueados. Telas que abrem, compilação verde ou dados provisórios não substituem esses gates.
 
-Próximo incremento técnico: executar o E2E PostgreSQL e o smoke visual do
-fluxo no instalador, sem alterar a origem exclusiva Bling para recebimentos
-realizados.
-
+Próximo incremento técnico: integrar a validação do manifesto ao
+`installer-helper` como gate `PACKAGE_VERIFIED`, sem alterar a origem
+exclusiva Bling para recebimentos realizados. Backup/restore, update/rollback,
+assinatura e VMs Windows limpas continuam gates posteriores.

@@ -41,6 +41,12 @@ Incremento adicional validado nesta revisão:
   `scripts/test-installer-nsis.ps1`: PASS;
 - GitHub Actions run 60 PASS: Go/frontend/Wails/worker/helper, `makensis`,
   guard NSIS e upload do artefato `majucau-g1-unsigned`.
+- GitHub Actions runs 76 e 77: toda a cadeia até o NSIS passou; o smoke de
+  instalação/desinstalação encerrou com código `2` (`BLOCKED`) no preflight.
+  O run 77 registrou explicitamente `PREFLIGHT_DIAGNOSTIC_NOT_FOUND`; isso
+  mantém o gate fechado até uma VM Windows limpa com elevação real e captura
+  do diagnóstico sanitizado. Detalhes em
+  `docs/evidence/NSIS-INSTALL-SMOKE-2026-09-21.md`.
 - nenhum arquivo real ou dado pessoal foi versionado.
 
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
@@ -50,13 +56,13 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 | Gate | Estado | Evidência atual | Falta para aceite |
 |---|---|---|---|
 | G0 — Arquitetura | Aprovado | decisões e artefatos versionados | nenhuma no escopo aprovado |
-| G1 — Fundação | Parcial | testes Go, frontend, build, E2E PostgreSQL real e CI Windows completo com Wails/worker/helper/NSIS | E2E desktop em instalação limpa e validação operacional pós-instalação |
+| G1 — Fundação | Parcial | testes Go, frontend, build, E2E PostgreSQL real e CI Windows completo até o NSIS; smoke real bloqueado pelo preflight | E2E desktop em instalação limpa e validação operacional pós-instalação |
 | G2 — Integrações | Parcial/bloqueado | adapters, DPAPI, contratos Bling, parser/persistência, IPC/UI e E2E real Bling/Nuvem Pago | credencial/payload oficial, OAuth Nuvemshop e ledger Nuvem Pago |
 | G3 — Tesouraria | Parcial | contrato D0–D+60 e menor saldo | saldo D-1 do Bling, persistência, cenários, lineage e reconciliação |
 | G4 — Executivo | Parcial | shell T1–T15 e tooltips estruturais | dados reais, drill-down e comparação visual/funcional por tela |
 | G5 — Resultado | Bloqueado | contratos e decisões documentados | DRE/P&L/EBITDA, folha e contabilidade próprios |
-| G6 — Operação | Parcial | preflight, journal, diagnóstico, bundle local, smoke automatizado e guard NSIS | backup/restore, update/rollback, assinatura e matriz Windows completa |
-| G7 — Produção | Parcial inicial | CI produz instalador NSIS x64 unsigned | assinatura, Windows 10/11 limpo, primeiro uso, reboot, upgrade, rollback, uninstall e aceite final |
+| G6 — Operação | Parcial | preflight, journal, diagnóstico, bundle local, smoke automatizado, guard NSIS e smoke de instalação fail-closed | validar diagnóstico no runner/VM, backup/restore, update/rollback, assinatura e matriz Windows completa |
+| G7 — Produção | Parcial inicial | CI produz instalador NSIS x64 unsigned e bloqueia corretamente preflight não aceito | assinatura, Windows 10/11 limpo, primeiro uso, reboot, upgrade, rollback, uninstall e aceite final |
 
 ## Critério para mudar a conclusão
 

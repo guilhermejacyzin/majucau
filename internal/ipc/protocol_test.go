@@ -45,5 +45,8 @@ func TestProtocolRoundTripAndValidation(t *testing.T) {
 	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"bling.sync","payload":{"received_date_from":"2026-09-01","received_date_to":"2026-09-30"}}`)); err != nil {
 		t.Fatalf("Bling sync method must be accepted: %v", err)
 	}
+	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"dashboard.snapshot","payload":{}}`)); err != nil {
+		t.Fatalf("dashboard snapshot method must be accepted: %v", err)
+	}
 }
 

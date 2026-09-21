@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Tooltip } from './components/Tooltip'
 import { type TooltipId } from './tooltips'
-import { createBlingConfigAdapter, createBlingImportAdapter, createBlingOAuthAdapter, createBlingPreviewAdapter, createBootstrapAdapter, createNuvemPagoFutureImportAdapter, createNuvemPagoFuturePreviewAdapter, createNuvemshopConfigAdapter, type BlingConfigAdapter, type BlingConfigResult, type BlingImportAdapter, type BlingOAuthAdapter, type BlingPreviewAdapter, type BlingSyncInput, type BootstrapAdapter, type BootstrapIntegration, type BootstrapState, type NuvemPagoFutureImportAdapter, type NuvemPagoFuturePreviewAdapter, type NuvemshopConfigAdapter, type NuvemshopConfigResult } from './bootstrap'
+import { createBlingConfigAdapter, createBlingImportAdapter, createBlingOAuthAdapter, createBlingPreviewAdapter, createBootstrapAdapter, createDashboardSnapshotAdapter, createNuvemPagoFutureImportAdapter, createNuvemPagoFuturePreviewAdapter, createNuvemshopConfigAdapter, type BlingConfigAdapter, type BlingConfigResult, type BlingImportAdapter, type BlingOAuthAdapter, type BlingPreviewAdapter, type BlingSyncInput, type BootstrapAdapter, type BootstrapIntegration, type BootstrapState, type DashboardSnapshot, type DashboardSnapshotAdapter, type NuvemPagoFutureImportAdapter, type NuvemPagoFuturePreviewAdapter, type NuvemshopConfigAdapter, type NuvemshopConfigResult } from './bootstrap'
 import { MockupDashboard, MockupSidebar, type MockupScreenKey } from './mockupDashboard'
 import './App.css'
 import './mockup.css'
@@ -324,10 +324,11 @@ function Sidebar({ screen, onNavigate }: { screen: Screen; onNavigate: (screen: 
   return <aside className="sidebar"><div className="brand"><CocoaMark /><div><strong>MAJUCAU</strong><span>CHOCOLATE BRASILEIRO</span></div><Tooltip id="settings.open"><button type="button" className="sidebar-collapse" aria-label="Recolher menu">‹</button></Tooltip></div><nav aria-label="Navegação principal"><p className="nav-label">MENU PRINCIPAL</p>{navItems.map((item) => <Tooltip id={item.tooltip} key={item.label}><button type="button" className={`nav-item ${item.id && screen === item.id ? 'active' : ''}`} onClick={() => item.id && onNavigate(item.id)} disabled={!item.id} aria-disabled={!item.id || undefined} aria-current={item.id && screen === item.id ? 'page' : undefined} aria-label={item.ariaLabel}><MetricGlyph icon={item.icon} /><span>{item.label}</span></button></Tooltip>)}</nav><section className="global-filters" aria-label="Filtros globais"><h2>FILTROS GLOBAIS</h2><label htmlFor="global-base-date">Período base</label><Tooltip id="filter.referenceDate"><input id="global-base-date" type="date" aria-label="Período base" /></Tooltip><label htmlFor="global-company">Empresa</label><Tooltip id="field.value"><select id="global-company" defaultValue=""><option value="">Selecione a empresa</option></select></Tooltip><label htmlFor="global-scenario">Cenário</label><Tooltip id="treasury.scenario"><select id="global-scenario" defaultValue="BASE"><option>BASE</option><option>CONSERVATIVE</option><option>STRESS</option><option>OPTIMISTIC</option></select></Tooltip><Tooltip id="filter.referenceDate"><button type="button" className="clear-filters">›&nbsp; Limpar filtros</button></Tooltip></section><div className="sidebar-footer"><Tooltip id="settings.open"><button type="button" className="nav-item sidebar-settings" onClick={() => onNavigate('integrations')}><MetricGlyph icon="settings" /><span>Configurações</span></button></Tooltip><div className="user-profile"><span className="user-avatar">G</span><div><strong>Gisele</strong><span>Administradora</span></div><span className="more" aria-hidden="true">•••</span></div></div></aside>
 }
 
-type AppProps = { bootstrapAdapter?: BootstrapAdapter; blingPreviewAdapter?: BlingPreviewAdapter; blingImportAdapter?: BlingImportAdapter; futurePreviewAdapter?: NuvemPagoFuturePreviewAdapter; futureImportAdapter?: NuvemPagoFutureImportAdapter; blingConfigAdapter?: BlingConfigAdapter; nuvemshopConfigAdapter?: NuvemshopConfigAdapter; blingOAuthAdapter?: BlingOAuthAdapter }
-function App({ bootstrapAdapter, blingPreviewAdapter, blingImportAdapter, futurePreviewAdapter, futureImportAdapter, blingConfigAdapter, nuvemshopConfigAdapter, blingOAuthAdapter }: AppProps = {}) {
+type AppProps = { bootstrapAdapter?: BootstrapAdapter; dashboardSnapshotAdapter?: DashboardSnapshotAdapter; blingPreviewAdapter?: BlingPreviewAdapter; blingImportAdapter?: BlingImportAdapter; futurePreviewAdapter?: NuvemPagoFuturePreviewAdapter; futureImportAdapter?: NuvemPagoFutureImportAdapter; blingConfigAdapter?: BlingConfigAdapter; nuvemshopConfigAdapter?: NuvemshopConfigAdapter; blingOAuthAdapter?: BlingOAuthAdapter }
+function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, blingImportAdapter, futurePreviewAdapter, futureImportAdapter, blingConfigAdapter, nuvemshopConfigAdapter, blingOAuthAdapter }: AppProps = {}) {
   const [screen, setScreen] = useState<Screen>('executive')
   const adapter = useMemo(() => bootstrapAdapter ?? createBootstrapAdapter(), [bootstrapAdapter])
+  const snapshotAdapter = useMemo(() => dashboardSnapshotAdapter ?? createDashboardSnapshotAdapter(), [dashboardSnapshotAdapter])
   const blingPreview = useMemo(() => blingPreviewAdapter ?? createBlingPreviewAdapter(), [blingPreviewAdapter])
   const blingImporter = useMemo(() => blingImportAdapter ?? createBlingImportAdapter(), [blingImportAdapter])
   const futurePreview = useMemo(() => futurePreviewAdapter ?? createNuvemPagoFuturePreviewAdapter(), [futurePreviewAdapter])
@@ -336,14 +337,20 @@ function App({ bootstrapAdapter, blingPreviewAdapter, blingImportAdapter, future
   const nuvemshopConfig = useMemo(() => nuvemshopConfigAdapter ?? createNuvemshopConfigAdapter(), [nuvemshopConfigAdapter])
   const blingOAuth = useMemo(() => blingOAuthAdapter ?? createBlingOAuthAdapter(), [blingOAuthAdapter])
   const [bootstrap, setBootstrap] = useState<BootstrapState | null>(null)
+  const [dashboardSnapshot, setDashboardSnapshot] = useState<DashboardSnapshot | null>(null)
   const mainRef = useRef<HTMLElement>(null)
   useEffect(() => {
     let active = true
     void adapter.getState().then((state) => { if (active) setBootstrap(state) })
     return () => { active = false }
   }, [adapter])
+  useEffect(() => {
+    let active = true
+    void snapshotAdapter.getSnapshot().then((snapshot) => { if (active) setDashboardSnapshot(snapshot) })
+    return () => { active = false }
+  }, [snapshotAdapter])
   const navigate = (next: Screen) => { setScreen(next); window.requestAnimationFrame(() => mainRef.current?.focus()) }
-  return <div className="app-shell"><MockupSidebar screen={screen} onNavigate={navigate} /><main className="main-area" ref={mainRef} tabIndex={-1}>{bootstrap === null ? <BootstrapLoading /> : screen === 'integrations' ? <IntegrationsView bootstrap={bootstrap} blingPreview={blingPreview} blingImporter={blingImporter} futurePreview={futurePreview} futureImporter={futureImporter} blingConfig={blingConfig} nuvemshopConfig={nuvemshopConfig} blingOAuth={blingOAuth} /> : <MockupDashboard screen={screen} onNavigate={navigate} />} {bootstrap && <WorkerFooter bootstrap={bootstrap} />}</main></div>
+  return <div className="app-shell"><MockupSidebar screen={screen} onNavigate={navigate} /><main className="main-area" ref={mainRef} tabIndex={-1}>{bootstrap === null ? <BootstrapLoading /> : screen === 'integrations' ? <IntegrationsView bootstrap={bootstrap} blingPreview={blingPreview} blingImporter={blingImporter} futurePreview={futurePreview} futureImporter={futureImporter} blingConfig={blingConfig} nuvemshopConfig={nuvemshopConfig} blingOAuth={blingOAuth} /> : <MockupDashboard screen={screen} snapshot={dashboardSnapshot ?? undefined} onNavigate={navigate} />} {bootstrap && <WorkerFooter bootstrap={bootstrap} />}</main></div>
 }
 
 export { App }

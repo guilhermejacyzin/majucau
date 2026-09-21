@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"majucau.local/financial-intelligence/internal/application"
+	"majucau.local/financial-intelligence/internal/dashboard"
 	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/integrations/bling"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
@@ -51,6 +52,7 @@ type workerHandler struct {
 	blingOAuth      blingOAuthService
 	blingSync       blingRawSyncer
 	statusReader    application.IntegrationStatusReader
+	dashboardReader application.DashboardSnapshotReader
 }
 
 func newWorkerHandler() workerHandler {
@@ -62,10 +64,12 @@ func newWorkerHandler() workerHandler {
 	var oauthService blingOAuthService
 	var rawSync blingRawSyncer
 	var statusReader application.IntegrationStatusReader
+	var dashboardReader application.DashboardSnapshotReader
 	if pool != nil {
 		importer = bling.NewReceiptImportService(pool)
 		future = nuvempago.NewFutureImportService(pool)
 		statusReader = newIntegrationStatusReader(pool)
+		dashboardReader = dashboard.NewReader(pool)
 		if store := newWorkerSecretStore(); store != nil {
 			configSaver = bling.NewBlingCredentialService(pool, store)
 			nuvemshopSaver = nuvemshop.NewCredentialService(pool, store)
@@ -73,7 +77,7 @@ func newWorkerHandler() workerHandler {
 			rawSync = oauthService.(blingRawSyncer)
 		}
 	}
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader}
+	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader, dashboardReader: dashboardReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -101,9 +105,25 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		return h.previewNuvemPagoFuture(ctx, req)
 	case ipc.MethodNuvemPagoFutureImport:
 		return h.importNuvemPagoFuture(ctx, req)
+	case ipc.MethodDashboardSnapshot:
+		return h.dashboardSnapshot(ctx, req)
 	default:
 		return ipc.Response{}, ipc.ErrUnsupportedMethod
 	}
+}
+
+func (h workerHandler) dashboardSnapshot(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	if len(req.Payload) != 0 && string(req.Payload) != "null" && string(req.Payload) != "{}" {
+		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_REQUEST_INVALID", "A consulta do painel não recebeu dados válidos."), nil
+	}
+	if h.dashboardReader == nil {
+		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_DATABASE_NOT_CONFIGURED", "O banco local ainda não está configurado para consultar o painel."), nil
+	}
+	snapshot, err := h.dashboardReader.ReadDashboardSnapshot(ctx)
+	if err != nil {
+		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_UNAVAILABLE", "Os dados normalizados do painel ainda não estão disponíveis."), nil
+	}
+	return ipc.NewResponse(req.RequestID, snapshot)
 }
 
 func (h workerHandler) saveNuvemshopConfig(ctx context.Context, req ipc.Request) (ipc.Response, error) {

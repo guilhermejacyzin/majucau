@@ -197,6 +197,38 @@ type BlingSyncResponse struct {
 	ErrorCode   string                  `json:"error_code,omitempty"`
 	Message     string                  `json:"message,omitempty"`
 }
+
+// DashboardMetric is a fail-closed, read-only projection of one normalized
+// ledger metric. Value is serialized as text so the worker/UI boundary never
+// rounds PostgreSQL numeric values through a binary floating-point type.
+type DashboardMetric struct {
+	Value        string `json:"value,omitempty"`
+	Count        int64  `json:"count,omitempty"`
+	State        string `json:"state"`
+	SourceSystem string `json:"source_system,omitempty"`
+}
+
+// DashboardSnapshot contains only metrics that are already normalized in the
+// local ledger. It deliberately does not manufacture cash balances, DRE,
+// inventory or forecast values from RAW payloads.
+type DashboardSnapshot struct {
+	AsOf               time.Time       `json:"as_of"`
+	DataState          string          `json:"data_state"`
+	Receivables        DashboardMetric `json:"receivables"`
+	FutureB2C          DashboardMetric `json:"future_b2c"`
+	ReceiptsMonth      DashboardMetric `json:"receipts_month"`
+	ReceivablesOverdue DashboardMetric `json:"receivables_overdue"`
+	Payables           DashboardMetric `json:"payables"`
+	PayablesDueToday   DashboardMetric `json:"payables_due_today"`
+	PayablesOverdue    DashboardMetric `json:"payables_overdue"`
+	PaymentsMonth      DashboardMetric `json:"payments_month"`
+	ErrorCode          string          `json:"error_code,omitempty"`
+	Message            string          `json:"message,omitempty"`
+}
+
+type DashboardSnapshotReader interface {
+	ReadDashboardSnapshot(context.Context) (DashboardSnapshot, error)
+}
 type HealthChecker interface {
 	CheckHealth(context.Context) HealthResponse
 }

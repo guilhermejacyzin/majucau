@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Tooltip } from './components/Tooltip'
 import type { TooltipId } from './tooltips'
+import type { DashboardMetric, DashboardSnapshot } from './bootstrap'
 import sidebarReference from './assets/images/mocap-sidebar.png'
 
 export type MockupScreenKey = 'executive' | 'cashflow' | 'receivables' | 'payables' | 'conciliation' | 'dre' | 'trial-balance' | 'investment-calculator' | 'inventory' | 'production' | 'purchases' | 'forecast' | 'pending' | 'alerts' | 'integrations'
@@ -41,7 +42,7 @@ export function MockupSidebar({ screen, onNavigate }: { screen: string; onNaviga
   return <aside className="mocap-sidebar"><div className="mocap-people" style={{ backgroundImage: `url(${sidebarReference})` }} aria-hidden="true" /><nav aria-label="Navegação principal" className="mocap-nav">{navItems.map((item, index) => <span key={`${item.label}-${index}`} className="mocap-nav-wrap">{item.section && <span className="mocap-nav-section">{item.section}</span>}<Tooltip id={item.tooltip}><button type="button" className={`mocap-nav-item ${screen === item.key ? 'active' : ''}`} onClick={() => onNavigate(item.key)} aria-current={screen === item.key ? 'page' : undefined} aria-label={item.label === 'Importações / Integrações' ? 'Integrações' : undefined}><Icon icon={item.icon} /><span>{item.label}</span></button></Tooltip></span>)}</nav></aside>
 }
 
-type Card = { label: string; icon: MockupIcon; tone: 'green' | 'blue' | 'orange' | 'red' | 'purple'; supporting?: string; action?: string; variant?: 'minimum-balance' }
+type Card = { label: string; icon: MockupIcon; tone: 'green' | 'blue' | 'orange' | 'red' | 'purple'; supporting?: string; action?: string; variant?: 'minimum-balance'; value?: string }
 type ScreenLayout = 'standard' | 'critical' | 'calculation' | 'market' | 'forecast'
 type ScreenConfig = { number: string; title: string; subtitle: string; cards: Card[]; middleTitle: string; middleSubtitle: string; rightTitle: string; rightSubtitle: string; lower: Card[]; alerts: string[]; table?: string[]; chart?: boolean; layout?: ScreenLayout }
 
@@ -69,7 +70,33 @@ function MocapHeader({ config }: { config: ScreenConfig }) {
 }
 
 function MocapCard({ card }: { card: Card }) {
-  return <article className={`mocap-card tone-${card.tone} ${card.variant ? `variant-${card.variant}` : ''}`}><div className="mocap-card-icon"><Icon icon={card.icon} /></div><div className="mocap-card-body"><Tooltip id="metric.details"><span className="mocap-card-label">{card.label}</span></Tooltip>{card.variant === 'minimum-balance' ? <div className="mocap-minimum-values"><div><strong>30 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div><div><strong>60 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div></div> : <><EmptyValue />{card.supporting && <span className="mocap-card-support">{card.supporting}</span>}</>}<Tooltip id="metric.details"><button type="button" className="mocap-card-action">{card.variant === 'minimum-balance' ? 'Ver detalhes' : 'Ver detalhes'} <span>⌄</span></button></Tooltip></div></article>
+  return <article className={`mocap-card tone-${card.tone} ${card.variant ? `variant-${card.variant}` : ''}`}><div className="mocap-card-icon"><Icon icon={card.icon} /></div><div className="mocap-card-body"><Tooltip id="metric.details"><span className="mocap-card-label">{card.label}</span></Tooltip>{card.variant === 'minimum-balance' ? <div className="mocap-minimum-values"><div><strong>30 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div><div><strong>60 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div></div> : <><span className="mocap-empty-value">{card.value ? formatMoney(card.value) : '—'}</span>{card.supporting && <span className="mocap-card-support">{card.supporting}</span>}</>}<Tooltip id="metric.details"><button type="button" className="mocap-card-action">{card.variant === 'minimum-balance' ? 'Ver detalhes' : 'Ver detalhes'} <span>⌄</span></button></Tooltip></div></article>
+}
+
+function formatMoney(value: string): string {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return '—'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed)
+}
+
+function metricForCard(screen: MockupScreenKey, label: string, snapshot?: DashboardSnapshot): DashboardMetric | undefined {
+  if (!snapshot) return undefined
+  if (screen === 'executive' && label === 'A RECEBER') return snapshot.receivables
+  if (screen === 'executive' && label === 'A PAGAR') return snapshot.payables
+  if (screen === 'receivables' && label === 'TOTAL A RECEBER') return snapshot.receivables
+  if (screen === 'receivables' && label === 'RECEBIDO NO MÊS') return snapshot.receipts_month
+  if (screen === 'receivables' && label === 'EM ATRASO') return snapshot.receivables_overdue
+  if (screen === 'payables' && label === 'TOTAL A PAGAR') return snapshot.payables
+  if (screen === 'payables' && label === 'VENCE HOJE') return snapshot.payables_due_today
+  if (screen === 'payables' && label === 'EM ATRASO') return snapshot.payables_overdue
+  if (screen === 'cashflow' && label === 'RECEBIDO NO MÊS') return snapshot.receipts_month
+  if (screen === 'cashflow' && label === 'PAGO NO MÊS') return snapshot.payments_month
+  return undefined
+}
+
+function withSnapshot(screen: MockupScreenKey, card: Card, snapshot?: DashboardSnapshot): Card {
+  const metric = metricForCard(screen, card.label, snapshot)
+  return metric?.state !== 'UNAVAILABLE' && metric?.value ? { ...card, value: metric.value } : card
 }
 
 function EmptyChart({ title }: { title: string }) {
@@ -127,10 +154,13 @@ function AlertPanel({ messages, onNavigate }: { messages: string[]; onNavigate?:
   return <section className="mocap-alerts"><div className="mocap-alerts-heading"><Icon icon="warning" /><h2>ALERTAS IMPORTANTES</h2></div><div className="mocap-alert-grid">{messages.map((message, index) => <article key={message} className={`mocap-alert alert-${index % 4}`}><div className="mocap-alert-icon"><Icon icon={index === 0 ? 'warning' : index === 1 ? 'document' : index === 2 ? 'clock' : 'refresh'} /></div><div><strong>{message}</strong><span>Sem dados confirmados</span>{index === 0 && onNavigate ? <Tooltip id="notice.integrations"><button type="button" onClick={() => onNavigate('integrations')}>Ir para Integrações <span>→</span></button></Tooltip> : <Tooltip id="metric.details"><button type="button" disabled>Ver detalhes <span>→</span></button></Tooltip>}</div></article>)}</div></section>
 }
 
-export function MockupDashboard({ screen, onNavigate }: { screen: MockupScreenKey; onNavigate?: (screen: MockupScreenKey) => void }) {
+export function MockupDashboard({ screen, snapshot, onNavigate }: { screen: MockupScreenKey; snapshot?: DashboardSnapshot; onNavigate?: (screen: MockupScreenKey) => void }) {
   const config = configs[screen === 'integrations' ? 'executive' : screen]
+  const cards = config.cards.map((card) => withSnapshot(screen, card, snapshot))
+  const lowerCards = config.lower.map((card) => withSnapshot(screen, card, snapshot))
   const middleLeft = config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} /> : config.chart ? <EmptyChart title={config.middleTitle} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
   const middleRight = config.layout === 'market' ? <EmptyRiskPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'critical' ? <EmptyCriticalPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'calculation' ? <EmptyRulesPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'forecast' ? <EmptyMetadataPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} />
-  const lower = config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{config.lower.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{config.lower.map((card) => <MocapCard key={card.label} card={card} />)}</section>
-  return <div className="mocap-page"><MocapHeader config={config} /><section className="mocap-top-cards">{config.cards.map((card) => <MocapCard key={card.label} card={card} />)}</section><section className={`mocap-middle ${config.layout ? `layout-${config.layout}` : ''}`}>{middleLeft}{middleRight}</section>{lower}{config.layout !== 'market' && <AlertPanel messages={config.alerts} onNavigate={onNavigate} />}</div>
+  const lower = config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section>
+  return <div className="mocap-page"><MocapHeader config={config} /><section className="mocap-top-cards">{cards.map((card) => <MocapCard key={card.label} card={card} />)}</section><section className={`mocap-middle ${config.layout ? `layout-${config.layout}` : ''}`}>{middleLeft}{middleRight}</section>{lower}{config.layout !== 'market' && <AlertPanel messages={config.alerts} onNavigate={onNavigate} />}</div>
 }
+

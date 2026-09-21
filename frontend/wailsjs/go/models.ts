@@ -417,6 +417,65 @@ export namespace application {
 	        this.message = source["message"];
 	    }
 	}
+	export class DashboardMetric {
+	    value?: string;
+	    count?: number;
+	    state: string;
+	    source_system?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DashboardMetric(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.value = source["value"];
+	        this.count = source["count"];
+	        this.state = source["state"];
+	        this.source_system = source["source_system"];
+	    }
+	}
+	export class DashboardSnapshot {
+	    as_of: any;
+	    data_state: string;
+	    receivables: DashboardMetric;
+	    future_b2c: DashboardMetric;
+	    receipts_month: DashboardMetric;
+	    receivables_overdue: DashboardMetric;
+	    payables: DashboardMetric;
+	    payables_due_today: DashboardMetric;
+	    payables_overdue: DashboardMetric;
+	    payments_month: DashboardMetric;
+	    error_code?: string;
+	    message?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DashboardSnapshot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.as_of = this.convertValues(source["as_of"], null);
+	        this.data_state = source["data_state"];
+	        this.receivables = this.convertValues(source["receivables"], DashboardMetric);
+	        this.future_b2c = this.convertValues(source["future_b2c"], DashboardMetric);
+	        this.receipts_month = this.convertValues(source["receipts_month"], DashboardMetric);
+	        this.receivables_overdue = this.convertValues(source["receivables_overdue"], DashboardMetric);
+	        this.payables = this.convertValues(source["payables"], DashboardMetric);
+	        this.payables_due_today = this.convertValues(source["payables_due_today"], DashboardMetric);
+	        this.payables_overdue = this.convertValues(source["payables_overdue"], DashboardMetric);
+	        this.payments_month = this.convertValues(source["payments_month"], DashboardMetric);
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) return a;
+		    if (a.slice && a.map) return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    if ("object" === typeof a) return new classs(a);
+		    return a;
+		}
+	}
 
 }
 

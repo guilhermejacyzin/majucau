@@ -19,6 +19,12 @@ Não existe uma data responsável de lançamento enquanto os gates externos e os
 
 Incremento adicional validado nesta revisão:
 
+- primeiro snapshot real do dashboard ligado por IPC/Wails ao PostgreSQL;
+  cards de recebíveis, recebido no mês e pagamentos/obrigações só exibem
+  métricas normalizadas, com estado `UNAVAILABLE` explícito quando a fonte
+  ainda não existe; detalhes em
+  `docs/evidence/DASHBOARD-SNAPSHOT-2026-09-21.md`;
+
 - parser e importação determinística da pasta controlada `02_nuvem_pago/recebimentos_futuros`;
 - contrato `nuvem_pago_recebimentos_futuros_csv_v1`, origem `NUVEM_PAGO` e status `PROJECTED`;
 - preservação de datas, parcelas, bruto, taxas, juros, custos totais e líquido;

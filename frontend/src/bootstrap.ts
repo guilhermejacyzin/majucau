@@ -19,6 +19,24 @@ export type BootstrapState = {
   checked_at: string
 }
 
+export type DashboardMetric = { value?: string; count?: number; state: 'CONFIRMED' | 'PROJECTED' | 'PARTIAL' | 'UNAVAILABLE'; source_system?: string }
+export type DashboardSnapshot = {
+  as_of: string
+  data_state: 'CONFIRMED' | 'PARTIAL' | 'UNAVAILABLE'
+  receivables: DashboardMetric
+  future_b2c: DashboardMetric
+  receipts_month: DashboardMetric
+  receivables_overdue: DashboardMetric
+  payables: DashboardMetric
+  payables_due_today: DashboardMetric
+  payables_overdue: DashboardMetric
+  payments_month: DashboardMetric
+  error_code?: string
+  message?: string
+}
+export type DashboardSnapshotSource = () => Promise<unknown>
+export type DashboardSnapshotAdapter = { getSnapshot: () => Promise<DashboardSnapshot> }
+
 export type BlingReceiptImportPreview = {
   files: Array<{ name: string; sha256: string; receipt_count: number; error_count: number }>
   receipt_count: number
@@ -120,6 +138,43 @@ async function readWailsBootstrap(): Promise<unknown> {
   const wailsApp = window.go?.main?.App
   if (typeof wailsApp?.GetBootstrapState !== 'function') return unavailableBootstrap()
   return wailsApp.GetBootstrapState()
+}
+
+const unavailableDashboardSnapshot = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): DashboardSnapshot => {
+  const asOf = new Date().toISOString()
+  const unavailable = (): DashboardMetric => ({ state: 'UNAVAILABLE' })
+  return { as_of: asOf, data_state: 'UNAVAILABLE', receivables: unavailable(), future_b2c: unavailable(), receipts_month: unavailable(), receivables_overdue: unavailable(), payables: unavailable(), payables_due_today: unavailable(), payables_overdue: unavailable(), payments_month: unavailable(), error_code: errorCode, message }
+}
+
+async function readWailsDashboardSnapshot(): Promise<unknown> {
+  const method = window.go?.main?.App?.GetDashboardSnapshot
+  if (typeof method !== 'function') return unavailableDashboardSnapshot()
+  return method()
+}
+
+function isDashboardMetric(value: unknown): value is DashboardMetric {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<DashboardMetric>
+  return typeof candidate.state === 'string' && ['CONFIRMED', 'PROJECTED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.state) && (candidate.value === undefined || typeof candidate.value === 'string') && (candidate.count === undefined || typeof candidate.count === 'number')
+}
+
+function isDashboardSnapshot(value: unknown): value is DashboardSnapshot {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<DashboardSnapshot>
+  return typeof candidate.as_of === 'string' && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payments_month)
+}
+
+export function createDashboardSnapshotAdapter(source: DashboardSnapshotSource = readWailsDashboardSnapshot): DashboardSnapshotAdapter {
+  return {
+    getSnapshot: async () => {
+      try {
+        const snapshot = await source()
+        return isDashboardSnapshot(snapshot) ? snapshot : unavailableDashboardSnapshot('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableDashboardSnapshot()
+      }
+    },
+  }
 }
 
 const unavailableBlingPreview = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingReceiptImportPreview => ({ files: [], receipt_count: 0, error_count: 0, ignored_count: 0, error_code: errorCode, message })
@@ -390,7 +445,7 @@ export function createBootstrapAdapter(source: BootstrapSource = readWailsBootst
 
 declare global {
     interface Window {
-    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown>; PreviewNuvemPagoFuture?: (folder: string) => Promise<unknown>; ImportNuvemPagoFuture?: (folder: string) => Promise<unknown> } } }
+    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; GetDashboardSnapshot?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown>; PreviewNuvemPagoFuture?: (folder: string) => Promise<unknown>; ImportNuvemPagoFuture?: (folder: string) => Promise<unknown> } } }
 }
 }
 

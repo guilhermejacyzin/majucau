@@ -118,6 +118,45 @@ func (a *App) GetBootstrapState() BootstrapState {
 	}
 }
 
+// GetDashboardSnapshot asks the worker for normalized financial metrics. The
+// worker is the only component allowed to query PostgreSQL; failures remain
+// explicit so the frontend cannot turn missing data into zeros.
+func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
+	fallback := application.DashboardSnapshot{
+		AsOf:      time.Now().UTC(),
+		DataState: "UNAVAILABLE",
+		ErrorCode: "WORKER_UNAVAILABLE",
+		Message:   "O serviço local ainda não está disponível.",
+	}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 5*time.Second)
+	defer cancel()
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("dashboard-snapshot"), Method: ipc.MethodDashboardSnapshot, Payload: json.RawMessage(`{}`)})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		fallback.ErrorCode = workerErrorCode(response)
+		fallback.Message = workerErrorMessage(response)
+		return fallback
+	}
+	var snapshot application.DashboardSnapshot
+	if err := json.Unmarshal(response.Payload, &snapshot); err != nil {
+		fallback.ErrorCode = "WORKER_INVALID_RESPONSE"
+		fallback.Message = "O serviço local respondeu em formato inválido."
+		return fallback
+	}
+	return snapshot
+}
+
 // SaveBlingConfig forwards the editable Bling configuration to the worker.
 // The Wails boundary does not persist or echo the secret; the worker owns the
 // DPAPI write and returns only sanitized metadata.

@@ -7,6 +7,8 @@ export function GetBlingOAuthStatus(arg1:string):Promise<application.BlingOAuthS
 
 export function GetBootstrapState():Promise<main.BootstrapState>;
 
+export function GetDashboardSnapshot():Promise<application.DashboardSnapshot>;
+
 export function ImportBlingReceipts(arg1:string):Promise<application.BlingReceiptImportResult>;
 
 export function PreviewBlingReceipts(arg1:string):Promise<application.BlingReceiptImportPreview>;
@@ -20,3 +22,4 @@ export function StartBlingOAuth():Promise<application.BlingOAuthStartResponse>;
 export function SyncBling(arg1:application.BlingSyncRequest):Promise<application.BlingSyncResponse>;
 
 export function TestBlingConnection():Promise<application.BlingOAuthTestResponse>;
+

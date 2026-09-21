@@ -7,7 +7,11 @@ export function GetBlingOAuthStatus(arg1) {
 }
 
 export function GetBootstrapState() {
-  return window['go']['main']['App']['GetBootstrapState']();
+	return window['go']['main']['App']['GetBootstrapState']();
+}
+
+export function GetDashboardSnapshot() {
+	return window['go']['main']['App']['GetDashboardSnapshot']();
 }
 
 export function ImportBlingReceipts(arg1) {
@@ -37,3 +41,4 @@ export function SyncBling(arg1) {
 export function TestBlingConnection() {
   return window['go']['main']['App']['TestBlingConnection']();
 }
+

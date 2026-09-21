@@ -162,7 +162,7 @@ func TestOAuthRepositoryTimestampHelper(t *testing.T) {
 
 func TestBlingOAuthDisconnectRemovesTokensAndPreservesClientSecret(t *testing.T) {
 	store := &memorySecretStore{values: map[string][]byte{}}
-	initial, err := json.Marshal(blingSecretBundle{ClientSecret: "client-secret", AccessToken: "access-token", RefreshToken: "refresh-token", TokenType: "Bearer", Scope: "read_finance", AccessTokenExpiresUnix: 123, RefreshTokenExpiresUnix: 456})
+	initial, err := json.Marshal(blingSecretBundle{ClientSecret: "cs-fixture", AccessToken: "at-fixture", RefreshToken: "rt-fixture", TokenType: "Bearer", Scope: "read_finance", AccessTokenExpiresUnix: 123, RefreshTokenExpiresUnix: 456})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,8 +185,7 @@ func TestBlingOAuthDisconnectRemovesTokensAndPreservesClientSecret(t *testing.T)
 	if err := json.Unmarshal(stored, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.ClientSecret != "client-secret" || got.AccessToken != "" || got.RefreshToken != "" || got.Scope != "" || got.AccessTokenExpiresUnix != 0 || got.RefreshTokenExpiresUnix != 0 {
+	if got.ClientSecret != "cs-fixture" || got.AccessToken != "" || got.RefreshToken != "" || got.Scope != "" || got.AccessTokenExpiresUnix != 0 || got.RefreshTokenExpiresUnix != 0 {
 		t.Fatalf("disconnect did not clear only authorization tokens: %+v", got)
 	}
 }
-

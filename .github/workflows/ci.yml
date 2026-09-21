@@ -135,7 +135,17 @@ jobs:
         shell: pwsh
         run: |
           if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { throw 'makensis não está no PATH do job.' }
-          wails build -s -skipbindings -trimpath -nsis
+          wails build -s -skipbindings -trimpath
+          ./scripts/consolidate-artifacts.ps1 -KeepSourceOutputs
+          ./scripts/write-release-manifest.ps1
+          $manifestVerification = Join-Path $env:RUNNER_TEMP 'majucau-manifest-verification.json'
+          & (Resolve-Path -LiteralPath 'build/bin/installer-helper.exe').Path verify-package --package-dir (Resolve-Path -LiteralPath 'artifacts/windows').Path --manifest 'release-manifest.json' --current-schema '1.0' |
+            Set-Content -LiteralPath $manifestVerification -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { throw "PACKAGE_VERIFIED falhou: $LASTEXITCODE" }
+          $manifestResult = Get-Content -LiteralPath $manifestVerification -Raw | ConvertFrom-Json
+          if ($manifestResult.status -ne 'PACKAGE_VERIFIED') { throw 'Manifesto não retornou PACKAGE_VERIFIED.' }
+          Push-Location 'build/windows/installer'
+          try { makensis project.nsi } finally { Pop-Location }
           $installer = Get-ChildItem -LiteralPath build/bin -Filter '*-installer.exe' -File | Select-Object -First 1
           if (-not $installer) { throw 'Wails não produziu um instalador NSIS; nenhum warning pode ser tratado como sucesso.' }
           Write-Output "Installer: $($installer.FullName)"
@@ -181,4 +191,3 @@ jobs:
             build/bin/installer-helper.exe
             build/bin/*-installer.exe
           if-no-files-found: error
-

@@ -14,6 +14,8 @@ $required = @(
     'majucau-worker.exe',
     'installer-helper.exe'
 )
+$releaseManifest = Join-Path $windowsRoot 'release-manifest.json'
+$releaseMigrations = Join-Path $windowsRoot 'migrations'
 
 if (-not (Test-Path -LiteralPath $windowsRoot -PathType Container)) {
     throw "Diretório de artefatos Windows ausente: $windowsRoot"
@@ -25,6 +27,12 @@ foreach ($fileName in $required) {
         throw "Artefato obrigatório ausente: $fileName"
     }
 }
+if (-not (Test-Path -LiteralPath $releaseManifest -PathType Leaf)) {
+    throw "Manifesto de release ausente: $releaseManifest"
+}
+if (-not (Test-Path -LiteralPath $releaseMigrations -PathType Container)) {
+    throw "Migrations do manifesto ausentes: $releaseMigrations"
+}
 
 if (Test-Path -LiteralPath $stageRoot) {
     Remove-Item -LiteralPath $stageRoot -Recurse -Force
@@ -34,6 +42,9 @@ New-Item -ItemType Directory -Force -Path $stageRoot | Out-Null
 foreach ($fileName in $required) {
     Copy-Item -LiteralPath (Join-Path $windowsRoot $fileName) -Destination $stageRoot
 }
+Copy-Item -LiteralPath $releaseManifest -Destination (Join-Path $stageRoot 'release-manifest.json')
+New-Item -ItemType Directory -Force -Path (Join-Path $stageRoot 'migrations') | Out-Null
+Copy-Item -Path (Join-Path $releaseMigrations '*') -Destination (Join-Path $stageRoot 'migrations') -Force
 
 $readme = @'
 Majucau Financial Intelligence — bundle Windows x64
@@ -47,7 +58,8 @@ PowerShell elevado e abra majucau.exe. O primeiro uso ainda depende dos
 requisitos descritos no README do repositório, incluindo WebView2 e o
 PostgreSQL local dedicado quando o fluxo correspondente estiver habilitado.
 
-Não mova credenciais, tokens ou dados reais para este diretório. Segredos são
+O pacote também contém release-manifest.json e as migrations usadas para
+verificação determinística do conteúdo. Não mova credenciais, tokens ou dados reais para este diretório. Segredos são
 configurados pela tela de integrações e protegidos pelo worker.
 '@
 Set-Content -LiteralPath (Join-Path $stageRoot 'README-PORTABLE.txt') -Value $readme -Encoding utf8

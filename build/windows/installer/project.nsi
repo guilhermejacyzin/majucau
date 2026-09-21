@@ -69,6 +69,18 @@ ManifestDPIAware true
 !ifndef MAJUCAU_PREFERRED_PORT
   !define MAJUCAU_PREFERRED_PORT "54329"
 !endif
+!ifndef MAJUCAU_MANIFEST_SOURCE
+  !define MAJUCAU_MANIFEST_SOURCE "..\..\..\artifacts\windows\release-manifest.json"
+!endif
+!ifndef MAJUCAU_MIGRATION_SOURCE
+  !define MAJUCAU_MIGRATION_SOURCE "..\..\..\artifacts\windows\migrations"
+!endif
+!ifndef MAJUCAU_DESKTOP_SOURCE
+  !define MAJUCAU_DESKTOP_SOURCE "..\..\bin\majucau.exe"
+!endif
+!ifndef MAJUCAU_WORKER_SOURCE
+  !define MAJUCAU_WORKER_SOURCE "..\..\bin\majucau-worker.exe"
+!endif
 
 !insertmacro MUI_PAGE_WELCOME # Welcome to the installer page.
 # !insertmacro MUI_PAGE_LICENSE "resources\eula.txt" # Adds a EULA page to the installer
@@ -121,6 +133,27 @@ Function .onInit
        ${EndIf}
        Quit
    ${EndIf}
+
+   ; Verify the exact embedded package before any installation side effect.
+   ; The manifest contains only hashes, schema compatibility and migration
+   ; inventory; it never contains credentials or user data.
+   CreateDirectory "$PLUGINSDIR\package"
+   CreateDirectory "$PLUGINSDIR\package\migrations"
+   File /oname=$PLUGINSDIR\package\release-manifest.json "${MAJUCAU_MANIFEST_SOURCE}"
+   File /oname=$PLUGINSDIR\package\majucau.exe "${MAJUCAU_DESKTOP_SOURCE}"
+   File /oname=$PLUGINSDIR\package\majucau-worker.exe "${MAJUCAU_WORKER_SOURCE}"
+   File /oname=$PLUGINSDIR\package\installer-helper.exe "${MAJUCAU_HELPER_SOURCE}"
+   File /oname=$PLUGINSDIR\package\migrations\000001_init.up.sql "${MAJUCAU_MIGRATION_SOURCE}\000001_init.up.sql"
+   ExecWait '"$PLUGINSDIR\majucau-installer-helper.exe" verify-package --package-dir "$PLUGINSDIR\package" --manifest "release-manifest.json" --current-schema "1.0"' $3
+   ${If} $3 != 0
+       IfSilent MajuauPackageSilent MajuauPackageInteractive
+       MajuauPackageSilent:
+           SetErrorLevel $3
+           Quit
+       MajuauPackageInteractive:
+           MessageBox MB_ICONSTOP|MB_OK "O pacote do instalador não passou na verificação de integridade (código $3).\n\nO instalador foi bloqueado para proteger a instalação."
+           Quit
+   ${EndIf}
 FunctionEnd
 
 Section
@@ -131,7 +164,7 @@ Section
     SetOutPath $INSTDIR
 
     !insertmacro wails.files
-    File "/oname=majucau-worker.exe" "..\..\bin\majucau-worker.exe"
+    File "/oname=majucau-worker.exe" "${MAJUCAU_WORKER_SOURCE}"
     File "/oname=installer-helper.exe" "${MAJUCAU_HELPER_SOURCE}"
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
@@ -158,4 +191,3 @@ Section "uninstall"
 
     !insertmacro wails.deleteUninstaller
 SectionEnd
-

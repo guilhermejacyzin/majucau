@@ -14,6 +14,10 @@ $required = [ordered]@{
     helper_embedded_before_install = 'File /oname=$PLUGINSDIR\majucau-installer-helper.exe'
     preflight_command = 'preflight --install-dir'
     diagnostics_command = 'diagnostics --output'
+    package_verify_command = 'verify-package --package-dir'
+    package_manifest_source = 'MAJUCAU_MANIFEST_SOURCE'
+    package_migration_source = 'MAJUCAU_MIGRATION_SOURCE'
+    package_integrity_failure = 'O pacote do instalador não passou na verificação de integridade'
     preflight_data_dir = '--data-dir "${MAJUCAU_DATA_DIR}"'
     preflight_port = '--port ${MAJUCAU_PREFERRED_PORT}'
     blocked_exit_handling = '${If} $1 == 2'
@@ -40,6 +44,11 @@ $initBlock = $source.Substring($initStart, $sectionStart - $initStart)
 if ($initBlock.IndexOf('diagnostics --output', [System.StringComparison]::Ordinal) -lt 0) {
     throw 'O diagnóstico precisa ocorrer dentro de .onInit, antes da Section de instalação.'
 }
+$packageIndex = $initBlock.IndexOf('verify-package --package-dir', [System.StringComparison]::Ordinal)
+$sectionIndex = $initBlock.IndexOf('FunctionEnd', [System.StringComparison]::Ordinal)
+if ($packageIndex -lt 0 -or $sectionIndex -lt 0 -or $packageIndex -gt $sectionIndex) {
+    throw 'A verificação de integridade do pacote precisa ocorrer dentro de .onInit.'
+}
 $preflightIndex = $initBlock.IndexOf('preflight --install-dir', [System.StringComparison]::Ordinal)
 $diagnosticsIndex = $initBlock.IndexOf('diagnostics --output', [System.StringComparison]::Ordinal)
 if ($preflightIndex -lt 0 -or $diagnosticsIndex -lt 0 -or $preflightIndex -gt $diagnosticsIndex) {
@@ -53,4 +62,3 @@ $result = [ordered]@{
     checks = @($required.Keys)
 }
 $result | ConvertTo-Json -Depth 4
-

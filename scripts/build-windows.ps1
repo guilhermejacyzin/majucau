@@ -40,14 +40,25 @@ try {
     Invoke-NativeChecked $goCommand @('build', '-trimpath', '-o', (Join-Path $projectRoot 'build\bin\installer-helper.exe'), './cmd/installer-helper')
 
     if ($Installer) {
-        $installerStartedAt = Get-Date
-        Invoke-NativeChecked $wailsCommand @('build', '-s', '-skipbindings', '-trimpath', '-nsis')
+        Invoke-NativeChecked $wailsCommand @('build', '-s', '-skipbindings', '-trimpath')
+        & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1') -KeepSourceOutputs
+        & (Join-Path $PSScriptRoot 'write-release-manifest.ps1')
+        $makensisCommand = (Get-Command makensis -ErrorAction Stop).Source
+        Push-Location (Join-Path $projectRoot 'build\windows\installer')
+        try {
+            Invoke-NativeChecked $makensisCommand @('project.nsi')
+        }
+        finally {
+            Pop-Location
+        }
         $installer = Get-ChildItem -LiteralPath (Join-Path $projectRoot 'build\bin') -Filter '*-installer.exe' -File |
-            Where-Object { $_.LastWriteTime -ge $installerStartedAt } |
             Select-Object -First 1
         if (-not $installer) {
             throw 'O Wails não produziu o instalador NSIS. Verifique se makensis está instalado e disponível no PATH.'
         }
+    } else {
+        & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1') -KeepSourceOutputs
+        & (Join-Path $PSScriptRoot 'write-release-manifest.ps1')
     }
 
     & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1')

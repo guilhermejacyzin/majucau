@@ -62,6 +62,14 @@ Assert-Condition ($preflight.status -in @('READY', 'BLOCKED')) "Status de prefli
 Assert-Condition ($preflight.checks.platform.architecture -eq 'amd64') 'Artefato não reportou arquitetura x64.'
 Assert-Condition ($preflight.checks.preferred_port.available -eq $true) 'Porta local de smoke não está disponível.'
 
+$packageVerificationPath = Join-Path $smokeRoot 'package-verification.json'
+& $helper verify-package --package-dir $portableRoot --manifest 'release-manifest.json' --current-schema '1.0' |
+    Set-Content -LiteralPath $packageVerificationPath -Encoding utf8
+$packageVerificationExit = $LASTEXITCODE
+Assert-Condition ($packageVerificationExit -eq 0) "Manifesto do bundle não foi verificado: $packageVerificationExit"
+$packageVerification = Get-Content -LiteralPath $packageVerificationPath -Raw | ConvertFrom-Json
+Assert-Condition ($packageVerification.status -eq 'PACKAGE_VERIFIED' -and $packageVerification.valid -eq $true) 'Bundle portátil não passou no gate PACKAGE_VERIFIED.'
+
 & $helper diagnostics --output $diagnosticZip --install-dir $installPath --data-dir $dataPath --free-space-path $freePath --min-free-bytes 1 --port 55439 |
     Set-Content -LiteralPath (Join-Path $smokeRoot 'diagnostics-result.json') -Encoding utf8
 $diagnosticsExit = $LASTEXITCODE
@@ -95,6 +103,7 @@ $result = [ordered]@{
     preflight_status = $preflight.status
     preflight_exit_code = $preflightExit
     diagnostics_exit_code = $diagnosticsExit
+    package_verification_exit_code = $packageVerificationExit
     worker_health = $workerHealth.state
     portable_files = $required + @('README-PORTABLE.txt', 'SHA256SUMS.txt')
     diagnostic_entries = @('diagnostic.json', 'README.txt')
@@ -102,4 +111,3 @@ $result = [ordered]@{
 $resultPath = Join-Path $smokeRoot 'SMOKE-RESULT.json'
 $result | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $resultPath -Encoding utf8
 Write-Output "Windows smoke PASS: $resultPath"
-

@@ -148,6 +148,27 @@ func (q *Queries) MarkBlingAuthorizing(ctx context.Context) error {
 	return err
 }
 
+const markBlingDisconnected = `-- name: MarkBlingDisconnected :exec
+UPDATE integration_connections
+SET status = 'NOT_CONFIGURED',
+    external_account_id = NULL,
+    external_account_name = NULL,
+    authorized_scopes = ARRAY[]::text[],
+    authorized_at = NULL,
+    token_expires_at = NULL,
+    refresh_token_expires_at = NULL,
+    revoked_at = clock_timestamp(),
+    last_error_code = NULL,
+    last_attempt_at = clock_timestamp(),
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING'
+`
+
+func (q *Queries) MarkBlingDisconnected(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, markBlingDisconnected)
+	return err
+}
+
 const markBlingOAuthError = `-- name: MarkBlingOAuthError :exec
 UPDATE integration_connections
 SET status = 'AUTH_ERROR',
@@ -208,3 +229,4 @@ func (q *Queries) RecordBlingTestSuccess(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, recordBlingTestSuccess)
 	return err
 }
+

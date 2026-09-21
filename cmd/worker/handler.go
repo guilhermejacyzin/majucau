@@ -37,6 +37,7 @@ type blingOAuthService interface {
 	Start(context.Context) (bling.BlingOAuthStartResult, error)
 	Status(context.Context, string) (bling.BlingOAuthStatusResult, error)
 	Test(context.Context) (bling.BlingOAuthTestResult, error)
+	Disconnect(context.Context) error
 }
 
 type blingRawSyncer interface {
@@ -95,6 +96,8 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		return h.statusBlingOAuth(ctx, req)
 	case ipc.MethodBlingOAuthTest:
 		return h.testBlingOAuth(ctx, req)
+	case ipc.MethodBlingOAuthDisconnect:
+		return h.disconnectBlingOAuth(ctx, req)
 	case ipc.MethodBlingSync:
 		return h.syncBling(ctx, req)
 	case ipc.MethodBlingReceiptsPreview:
@@ -286,6 +289,19 @@ func (h workerHandler) testBlingOAuth(ctx context.Context, req ipc.Request) (ipc
 	return ipc.NewResponse(req.RequestID, application.BlingOAuthTestResponse{Status: result.Status, PageRecordCount: result.PageRecordCount})
 }
 
+func (h workerHandler) disconnectBlingOAuth(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	if len(req.Payload) != 0 && string(req.Payload) != "null" && string(req.Payload) != "{}" {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_DISCONNECT_INVALID", "A desconexão do Bling não recebeu dados válidos."), nil
+	}
+	if h.blingOAuth == nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
+	}
+	if err := h.blingOAuth.Disconnect(ctx); err != nil {
+		return ipc.NewErrorResponse(req.RequestID, blingOAuthErrorCode(err), blingOAuthErrorMessage(err)), nil
+	}
+	return ipc.NewResponse(req.RequestID, application.BlingOAuthDisconnectResponse{Status: "NOT_CONFIGURED", Message: "Autorização removida. Os dados importados foram preservados."})
+}
+
 func blingOAuthErrorCode(err error) string {
 	switch {
 	case errors.Is(err, bling.ErrBlingCredentialMissing):
@@ -300,6 +316,8 @@ func blingOAuthErrorCode(err error) string {
 		return "BLING_NOT_CONNECTED"
 	case errors.Is(err, bling.ErrBlingOAuthStorage):
 		return "BLING_TOKEN_STORE_FAILED"
+	case errors.Is(err, bling.ErrBlingOAuthDisconnect):
+		return "BLING_DISCONNECT_FAILED"
 	default:
 		return "BLING_OAUTH_FAILED"
 	}
@@ -319,6 +337,8 @@ func blingOAuthErrorMessage(err error) string {
 		return "Autorize o Bling antes de testar a conexão."
 	case "BLING_TOKEN_STORE_FAILED":
 		return "O token não pôde ser protegido no cofre do Windows."
+	case "BLING_DISCONNECT_FAILED":
+		return "A autorização não pôde ser removida com segurança; os dados foram preservados."
 	default:
 		return "Não foi possível concluir a operação do Bling."
 	}

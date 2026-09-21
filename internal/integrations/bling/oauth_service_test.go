@@ -19,6 +19,7 @@ type fakeBlingOAuthRepository struct {
 	connection       database.IntegrationConnection
 	authorizing      bool
 	completed        bool
+	disconnected     bool
 	testSucceeded    bool
 	lastErrorCode    string
 	scopes           []string
@@ -35,6 +36,10 @@ func (r *fakeBlingOAuthRepository) MarkAuthorizing(context.Context) error {
 }
 func (r *fakeBlingOAuthRepository) CompleteOAuth(_ context.Context, scopes []string, accessExpiresAt, refreshExpiresAt *time.Time) error {
 	r.completed, r.scopes, r.accessExpiresAt, r.refreshExpiresAt = true, scopes, accessExpiresAt, refreshExpiresAt
+	return nil
+}
+func (r *fakeBlingOAuthRepository) MarkDisconnected(context.Context) error {
+	r.disconnected = true
 	return nil
 }
 func (r *fakeBlingOAuthRepository) MarkOAuthError(_ context.Context, code string) error {
@@ -154,3 +159,34 @@ func TestOAuthRepositoryTimestampHelper(t *testing.T) {
 		t.Fatalf("unexpected timestamp: %+v", got)
 	}
 }
+
+func TestBlingOAuthDisconnectRemovesTokensAndPreservesClientSecret(t *testing.T) {
+	store := &memorySecretStore{values: map[string][]byte{}}
+	initial, err := json.Marshal(blingSecretBundle{ClientSecret: "client-secret", AccessToken: "access-token", RefreshToken: "refresh-token", TokenType: "Bearer", Scope: "read_finance", AccessTokenExpiresUnix: 123, RefreshTokenExpiresUnix: 456})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Put(context.Background(), BlingCredentialSecretRef, initial); err != nil {
+		t.Fatal(err)
+	}
+	repo := &fakeBlingOAuthRepository{}
+	service := newBlingOAuthService(repo, store, fakeOAuthHTTPDoer(func(*http.Request) (*http.Response, error) { return nil, fmt.Errorf("unused") }))
+	if err := service.Disconnect(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !repo.disconnected {
+		t.Fatal("repository was not marked disconnected")
+	}
+	stored, err := store.Get(context.Background(), BlingCredentialSecretRef)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got blingSecretBundle
+	if err := json.Unmarshal(stored, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.ClientSecret != "client-secret" || got.AccessToken != "" || got.RefreshToken != "" || got.Scope != "" || got.AccessTokenExpiresUnix != 0 || got.RefreshTokenExpiresUnix != 0 {
+		t.Fatalf("disconnect did not clear only authorization tokens: %+v", got)
+	}
+}
+

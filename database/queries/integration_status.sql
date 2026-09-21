@@ -94,3 +94,19 @@ SET last_test_at = clock_timestamp(),
     last_error_code = $1,
     updated_at = clock_timestamp()
 WHERE provider = 'BLING';
+
+-- name: MarkBlingDisconnected :exec
+UPDATE integration_connections
+SET status = 'NOT_CONFIGURED',
+    external_account_id = NULL,
+    external_account_name = NULL,
+    authorized_scopes = ARRAY[]::text[],
+    authorized_at = NULL,
+    token_expires_at = NULL,
+    refresh_token_expires_at = NULL,
+    revoked_at = clock_timestamp(),
+    last_error_code = NULL,
+    last_attempt_at = clock_timestamp(),
+    updated_at = clock_timestamp()
+WHERE provider = 'BLING';
+

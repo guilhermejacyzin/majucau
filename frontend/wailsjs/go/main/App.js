@@ -10,6 +10,10 @@ export function GetBootstrapState() {
 	return window['go']['main']['App']['GetBootstrapState']();
 }
 
+export function DisconnectBlingOAuth() {
+	return window['go']['main']['App']['DisconnectBlingOAuth']();
+}
+
 export function GetDashboardSnapshot() {
 	return window['go']['main']['App']['GetDashboardSnapshot']();
 }

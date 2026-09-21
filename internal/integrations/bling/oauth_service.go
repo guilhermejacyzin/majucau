@@ -38,6 +38,7 @@ var (
 	ErrBlingOAuthCallback      = errors.New("bling oauth callback is invalid")
 	ErrBlingOAuthNotConnected  = errors.New("bling oauth connection is not authorized")
 	ErrBlingOAuthStorage       = errors.New("bling oauth token storage failed")
+	ErrBlingOAuthDisconnect    = errors.New("bling oauth disconnect failed")
 )
 
 type BlingOAuthStartResult struct {
@@ -68,6 +69,7 @@ type blingOAuthRepository interface {
 	Connection(context.Context) (database.IntegrationConnection, error)
 	MarkAuthorizing(context.Context) error
 	CompleteOAuth(context.Context, []string, *time.Time, *time.Time) error
+	MarkDisconnected(context.Context) error
 	MarkOAuthError(context.Context, string) error
 	RecordTestSuccess(context.Context) error
 	RecordTestFailure(context.Context, string) error
@@ -101,6 +103,10 @@ func (r *postgresBlingOAuthRepository) CompleteOAuth(ctx context.Context, scopes
 		TokenExpiresAt:        nullableTimestamp(accessExpiresAt),
 		RefreshTokenExpiresAt: nullableTimestamp(refreshExpiresAt),
 	})
+}
+
+func (r *postgresBlingOAuthRepository) MarkDisconnected(ctx context.Context) error {
+	return r.queries.MarkBlingDisconnected(ctx)
 }
 
 func (r *postgresBlingOAuthRepository) MarkOAuthError(ctx context.Context, code string) error {
@@ -290,6 +296,50 @@ func (s *BlingOAuthService) Test(ctx context.Context) (BlingOAuthTestResult, err
 		return BlingOAuthTestResult{}, ErrBlingOAuthStorage
 	}
 	return BlingOAuthTestResult{Status: "SUCCESS", PageRecordCount: probe.PageRecordCount}, nil
+}
+
+// Disconnect revokes the local authorization state without deleting imported
+// financial data. The client secret remains protected so the user can
+// reconnect later; access and refresh tokens are removed from the vault.
+func (s *BlingOAuthService) Disconnect(ctx context.Context) error {
+	if s == nil || s.repo == nil || s.store == nil {
+		return ErrBlingOAuthDisconnect
+	}
+	previous, previousErr := s.store.Get(ctx, BlingCredentialSecretRef)
+	if previousErr != nil && !errors.Is(previousErr, fs.ErrNotExist) {
+		return ErrBlingOAuthDisconnect
+	}
+	if previousErr == nil && len(previous) > 0 {
+		var bundle blingSecretBundle
+		if err := json.Unmarshal(previous, &bundle); err != nil || strings.TrimSpace(bundle.ClientSecret) == "" {
+			return ErrBlingOAuthDisconnect
+		}
+		bundle.AccessToken = ""
+		bundle.RefreshToken = ""
+		bundle.TokenType = ""
+		bundle.Scope = ""
+		bundle.AccessTokenExpiresUnix = 0
+		bundle.RefreshTokenExpiresUnix = 0
+		encoded, err := json.Marshal(bundle)
+		if err != nil || s.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
+			return ErrBlingOAuthDisconnect
+		}
+	}
+	if err := s.repo.MarkDisconnected(ctx); err != nil {
+		if previousErr == nil && len(previous) > 0 {
+			_ = s.store.Put(ctx, BlingCredentialSecretRef, previous)
+		}
+		return ErrBlingOAuthDisconnect
+	}
+	s.mu.Lock()
+	for id, session := range s.sessions {
+		if session.listener != nil {
+			_ = session.listener.Close()
+		}
+		delete(s.sessions, id)
+	}
+	s.mu.Unlock()
+	return nil
 }
 
 // Sync performs an explicit, read-only RAW synchronization for both primary
@@ -593,3 +643,4 @@ func oauthErrorMessage(err error) string {
 		return "Não foi possível concluir a autorização do Bling."
 	}
 }
+

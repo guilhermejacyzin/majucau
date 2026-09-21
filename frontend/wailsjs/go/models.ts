@@ -94,6 +94,22 @@ export namespace application {
 	        this.message = source["message"];
 	    }
 	}
+	export class BlingOAuthDisconnectResponse {
+	    status?: string;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingOAuthDisconnectResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	}
 	export class BlingReceiptImportFile {
 	    name: string;
 	    sha256: string;
@@ -572,3 +588,4 @@ export namespace main {
 	}
 
 }
+

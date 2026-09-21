@@ -125,6 +125,7 @@ describe('shell financeiro', () => {
       start: async () => ({ session_id: 'session-1', status: 'AUTHORIZING', authorization_url: 'https://www.bling.com.br/authorize?...' }),
       status: async () => { statusCalls += 1; return { session_id: 'session-1', status: 'CONNECTED', message: 'Bling autorizado e testado com sucesso.' } },
       test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      disconnect: async () => ({ status: 'NOT_CONFIGURED', message: 'Autorização removida.' }),
       sync: async () => ({ status: 'SUCCESS', receivables: { pages_read: 1, records_read: 1 }, payables: { pages_read: 1, records_read: 1 } }),
     }
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingOAuthAdapter={blingOAuthAdapter} />)
@@ -136,6 +137,25 @@ describe('shell financeiro', () => {
     expect(screen.queryByText('session-1')).not.toBeInTheDocument()
   })
 
+  it('desconecta o Bling sem apagar os dados importados', async () => {
+    const user = userEvent.setup()
+    let disconnectCalls = 0
+    const blingOAuthAdapter: BlingOAuthAdapter = {
+      start: async () => ({ status: 'AUTHORIZING' }),
+      status: async () => ({ status: 'CONNECTED' }),
+      test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      disconnect: async () => { disconnectCalls += 1; return { status: 'NOT_CONFIGURED', message: 'Autorização removida. Os dados importados foram preservados.' } },
+      sync: async () => ({ status: 'SUCCESS', receivables: { pages_read: 1, records_read: 1 }, payables: { pages_read: 1, records_read: 1 } }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingOAuthAdapter={blingOAuthAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    await user.click(screen.getAllByRole('button', { name: 'Desconectar' })[0])
+    expect(disconnectCalls).toBe(1)
+    expect(await screen.findByText('Autorização removida. Os dados importados foram preservados.')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Desconectar' })[0]).toBeDisabled()
+  })
+
   it('exige filtro explícito antes de executar a sincronização do Bling', async () => {
     const user = userEvent.setup()
     let receivedInput: Record<string, unknown> | null = null
@@ -143,6 +163,7 @@ describe('shell financeiro', () => {
       start: async () => ({ status: 'AUTHORIZING' }),
       status: async () => ({ status: 'CONNECTED' }),
       test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      disconnect: async () => ({ status: 'NOT_CONFIGURED' }),
       sync: async (input) => { receivedInput = input; return { status: 'SUCCESS', receivables: { pages_read: 2, records_read: 4 }, payables: { pages_read: 1, records_read: 2 } } },
     }
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingOAuthAdapter={blingOAuthAdapter} />)
@@ -176,3 +197,4 @@ describe('shell financeiro', () => {
     expect(await screen.findByText(/Lote SUCCESS/)).toBeInTheDocument()
   })
 })
+

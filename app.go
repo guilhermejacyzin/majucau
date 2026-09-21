@@ -326,6 +326,35 @@ func (a *App) TestBlingConnection() application.BlingOAuthTestResponse {
 	return result
 }
 
+// DisconnectBlingOAuth removes the local authorization tokens while keeping
+// the editable client configuration and all imported financial records.
+func (a *App) DisconnectBlingOAuth() application.BlingOAuthDisconnectResponse {
+	fallback := application.BlingOAuthDisconnectResponse{ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
+	defer cancel()
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-oauth-disconnect"), Method: ipc.MethodBlingOAuthDisconnect, Payload: json.RawMessage(`{}`)})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		return application.BlingOAuthDisconnectResponse{ErrorCode: workerErrorCode(response), Message: workerErrorMessage(response)}
+	}
+	var result application.BlingOAuthDisconnectResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.BlingOAuthDisconnectResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	return result
+}
+
 // SyncBling starts an explicit, filtered RAW synchronization. It never
 // chooses a financial window implicitly and returns only sanitized counters.
 func (a *App) SyncBling(input application.BlingSyncRequest) application.BlingSyncResponse {

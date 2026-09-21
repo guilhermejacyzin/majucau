@@ -38,6 +38,7 @@ func (fakeBlingOAuthService) Status(context.Context, string) (bling.BlingOAuthSt
 func (fakeBlingOAuthService) Test(context.Context) (bling.BlingOAuthTestResult, error) {
 	return bling.BlingOAuthTestResult{Status: "SUCCESS", PageRecordCount: 1}, nil
 }
+func (fakeBlingOAuthService) Disconnect(context.Context) error { return nil }
 
 type fakeBlingRawSyncer struct {
 	called bool
@@ -180,6 +181,10 @@ func TestWorkerOAuthMethodsReturnOnlySanitizedState(t *testing.T) {
 	testResponse, err := handler.Handle(context.Background(), ipc.Request{RequestID: "test", Method: ipc.MethodBlingOAuthTest, Payload: []byte(`{}`)})
 	if err != nil || !testResponse.OK || !strings.Contains(string(testResponse.Payload), "page_record_count") {
 		t.Fatalf("unexpected OAuth test response: %#v %v", testResponse, err)
+	}
+	disconnect, err := handler.Handle(context.Background(), ipc.Request{RequestID: "disconnect", Method: ipc.MethodBlingOAuthDisconnect, Payload: []byte(`{}`)})
+	if err != nil || !disconnect.OK || strings.Contains(string(disconnect.Payload), "secret") || !strings.Contains(string(disconnect.Payload), "NOT_CONFIGURED") {
+		t.Fatalf("unexpected OAuth disconnect response: %#v %v", disconnect, err)
 	}
 }
 

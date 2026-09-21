@@ -171,6 +171,12 @@ type BlingOAuthTestResponse struct {
 	Message         string `json:"message,omitempty"`
 }
 
+type BlingOAuthDisconnectResponse struct {
+	Status    string `json:"status,omitempty"`
+	ErrorCode string `json:"error_code,omitempty"`
+	Message   string `json:"message,omitempty"`
+}
+
 type BlingSyncRequest struct {
 	Page             int    `json:"page,omitempty"`
 	Limit            int    `json:"limit,omitempty"`
@@ -278,3 +284,4 @@ func (h StaticHealth) CheckHealth(_ context.Context) HealthResponse {
 	}
 	return HealthResponse{Service: h.Service, Version: h.Version, State: state, CheckedAt: time.Now().UTC(), Dependencies: append([]DependencyHealth(nil), h.Dependencies...)}
 }
+

@@ -7,6 +7,8 @@ export function GetBlingOAuthStatus(arg1:string):Promise<application.BlingOAuthS
 
 export function GetBootstrapState():Promise<main.BootstrapState>;
 
+export function DisconnectBlingOAuth():Promise<application.BlingOAuthDisconnectResponse>;
+
 export function GetDashboardSnapshot():Promise<application.DashboardSnapshot>;
 
 export function ImportBlingReceipts(arg1:string):Promise<application.BlingReceiptImportResult>;

@@ -48,5 +48,8 @@ func TestProtocolRoundTripAndValidation(t *testing.T) {
 	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"dashboard.snapshot","payload":{}}`)); err != nil {
 		t.Fatalf("dashboard snapshot method must be accepted: %v", err)
 	}
+	if _, err := DecodeRequest([]byte(`{"version":"1","request_id":"x","method":"bling.oauth.disconnect","payload":{}}`)); err != nil {
+		t.Fatalf("bling OAuth disconnect method must be accepted: %v", err)
+	}
 }
 

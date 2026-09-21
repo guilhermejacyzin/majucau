@@ -74,6 +74,22 @@ Incremento adicional validado nesta revisão:
   workstation Windows 10/11 limpa.
 - nenhum arquivo real ou dado pessoal foi versionado.
 
+### Incremento de 2026-09-21
+
+- fluxo Bling de **Reconectar** e **Desconectar** habilitado na tela de
+  Integrações;
+- desconexão remove somente tokens/escopos/expirações protegidos, preserva
+  Client ID/Redirect/segredo protegido e mantém todos os dados financeiros
+  importados;
+- estado persistido como `NOT_CONFIGURED`, sessões OAuth pendentes encerradas
+  e resposta sanitizada no worker/Wails;
+- testes Go, vet, TypeScript, lint, Vitest (23 testes) e build Vite passaram;
+- evidência detalhada em `docs/evidence/BLING-DISCONNECT-2026-09-21.md`.
+
+Esse incremento melhora a cobertura de INT-05, mas não altera a conclusão de
+produção: ainda faltam fonte/payload oficial, regras financeiras, resultados,
+backup/restore, assinatura e a matriz real de instalação Windows.
+
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
 
 ## Estado dos gates
@@ -96,3 +112,4 @@ Só será possível declarar “pronto para produção” depois de G2–G7 prod
 Próximo incremento técnico: executar o E2E PostgreSQL e o smoke visual do
 fluxo no instalador, sem alterar a origem exclusiva Bling para recebimentos
 realizados.
+

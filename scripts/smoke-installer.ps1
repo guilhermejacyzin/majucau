@@ -18,6 +18,7 @@ function Assert-Condition {
 }
 
 function Get-PreflightIssueCodes {
+    param([string]$FallbackPath = '')
     $candidates = @(
         (Join-Path $env:TEMP 'Majucau\installer-preflight.zip'),
         (Join-Path ([System.IO.Path]::GetTempPath()) 'Majucau\installer-preflight.zip'),
@@ -32,6 +33,10 @@ function Get-PreflightIssueCodes {
         if (-not $jsonPath) { continue }
         $json = Get-Content -LiteralPath $jsonPath.FullName -Raw | ConvertFrom-Json
         return @($json.issues | ForEach-Object { $_.code })
+    }
+    if (-not [string]::IsNullOrWhiteSpace($FallbackPath) -and (Test-Path -LiteralPath $FallbackPath -PathType Leaf)) {
+        $fallback = Get-Content -LiteralPath $FallbackPath -Raw | ConvertFrom-Json
+        return @($fallback.issues | ForEach-Object { $_.code })
     }
     return @('PREFLIGHT_DIAGNOSTIC_NOT_FOUND')
 }
@@ -97,12 +102,21 @@ New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
 $installDir = Join-Path $OutputRoot 'app'
 $dataDir = Join-Path $OutputRoot 'data'
 $helper = Join-Path $installDir 'installer-helper.exe'
+$sourceHelper = Join-Path $projectRoot 'build\bin\installer-helper.exe'
+$preflightBeforePath = Join-Path $OutputRoot 'preflight-before-install.json'
 $preflightPath = Join-Path $OutputRoot 'preflight.json'
 $resultPath = Join-Path $OutputRoot 'INSTALL-SMOKE-RESULT.json'
 
+$sourcePreflightExit = $null
+if (Test-Path -LiteralPath $sourceHelper -PathType Leaf) {
+    & $sourceHelper preflight --install-dir $installDir --data-dir $dataDir --free-space-path $env:ProgramData --min-free-bytes 1 --port 54329 2> (Join-Path $OutputRoot 'preflight-before-install.error') |
+        Set-Content -LiteralPath $preflightBeforePath -Encoding utf8
+    $sourcePreflightExit = $LASTEXITCODE
+}
+
 $installExit = Invoke-ElevatedExecutable -FilePath $InstallerPath -Arguments @('/S', "/D=$installDir") -TaskRoot $OutputRoot
 if ($installExit -ne 0) {
-    $issueCodes = Get-PreflightIssueCodes
+    $issueCodes = Get-PreflightIssueCodes -FallbackPath $preflightBeforePath
     $issueSummary = ($issueCodes -join ', ')
     throw "Instalação elevada retornou código $installExit; preflight: $issueSummary."
 }
@@ -128,6 +142,7 @@ $result = [ordered]@{
     install_exit_code = $installExit
     preflight_exit_code = $preflightExit
     preflight_status = $preflight.status
+    source_preflight_exit_code = $sourcePreflightExit
     uninstall_exit_code = $uninstallExit
     installer = [System.IO.Path]::GetFileName($InstallerPath)
     mode = 'scheduled-task-runlevel-highest'

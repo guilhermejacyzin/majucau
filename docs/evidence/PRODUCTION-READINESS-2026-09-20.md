@@ -32,6 +32,10 @@ Incremento adicional validado nesta revisão:
   reexecução idempotente, RAW corrente e zero escrita em `receipts`;
 - execução real PASS do E2E Nuvem Pago em PostgreSQL 18.3 descartável e
   execução real PASS do E2E Bling no mesmo cluster isolado;
+- smoke automatizado do bundle portátil Windows x64 PASS: hashes, preflight,
+  WebView2, porta, health do worker em console e diagnóstico sanitizado; o
+  preflight corretamente reportou `BLOCKED` por elevação/reboot da máquina de
+  validação;
 - nenhum arquivo real ou dado pessoal foi versionado.
 
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
@@ -46,7 +50,7 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 | G3 — Tesouraria | Parcial | contrato D0–D+60 e menor saldo | saldo D-1 do Bling, persistência, cenários, lineage e reconciliação |
 | G4 — Executivo | Parcial | shell T1–T15 e tooltips estruturais | dados reais, drill-down e comparação visual/funcional por tela |
 | G5 — Resultado | Bloqueado | contratos e decisões documentados | DRE/P&L/EBITDA, folha e contabilidade próprios |
-| G6 — Operação | Parcial | preflight, journal, diagnóstico e bundle local | backup/restore, update/rollback, assinatura e matriz Windows completa |
+| G6 — Operação | Parcial | preflight, journal, diagnóstico, bundle local e smoke automatizado | backup/restore, update/rollback, assinatura e matriz Windows completa |
 | G7 — Produção | Não iniciado | nenhum aceite em VM limpa | instalador assinado, Windows 10/11, primeiro uso, reboot, upgrade, uninstall e aceite final |
 
 ## Critério para mudar a conclusão

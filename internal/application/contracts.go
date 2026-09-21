@@ -73,6 +73,44 @@ type BlingReceiptImportResult struct {
 	Message        string `json:"message,omitempty"`
 }
 
+type NuvemPagoFutureImportFile struct {
+	Name             string `json:"name"`
+	SHA256           string `json:"sha256"`
+	ReceivableCount  int    `json:"receivable_count"`
+	RejectedRowCount int    `json:"rejected_row_count"`
+}
+
+type NuvemPagoFutureImportIssue struct {
+	File    string `json:"file"`
+	Line    int    `json:"line"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// NuvemPagoFutureImportPreview is summary-only. Customer names and financial
+// rows remain in the worker and are never returned to the frontend preview.
+type NuvemPagoFutureImportPreview struct {
+	Files           []NuvemPagoFutureImportFile  `json:"files"`
+	ReceivableCount int                          `json:"receivable_count"`
+	ErrorCount      int                          `json:"error_count"`
+	IgnoredCount    int                          `json:"ignored_count"`
+	Issues          []NuvemPagoFutureImportIssue `json:"issues,omitempty"`
+	ErrorCode       string                       `json:"error_code,omitempty"`
+	Message         string                       `json:"message,omitempty"`
+}
+
+type NuvemPagoFutureImportResult struct {
+	BatchID        string `json:"batch_id,omitempty"`
+	Status         string `json:"status,omitempty"`
+	RecordsRead    int    `json:"records_read"`
+	RecordsCreated int    `json:"records_created"`
+	RecordsUpdated int    `json:"records_updated"`
+	RecordsFailed  int    `json:"records_failed"`
+	IgnoredCount   int    `json:"ignored_count"`
+	ErrorCode      string `json:"error_code,omitempty"`
+	Message        string `json:"message,omitempty"`
+}
+
 // BlingConfigRequest crosses the authenticated local pipe only. The worker
 // consumes ClientSecret immediately and never echoes it back.
 type BlingConfigRequest struct {
@@ -184,3 +222,4 @@ func (h StaticHealth) CheckHealth(_ context.Context) HealthResponse {
 	}
 	return HealthResponse{Service: h.Service, Version: h.Version, State: state, CheckedAt: time.Now().UTC(), Dependencies: append([]DependencyHealth(nil), h.Dependencies...)}
 }
+

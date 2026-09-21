@@ -103,6 +103,39 @@ jobs:
       - name: Build unsigned NSIS installer
         run: wails build -s -skipbindings -trimpath -nsis
 
+      - name: Smoke install and uninstall unsigned installer
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -LiteralPath build/bin -Filter '*-installer.exe' -File | Select-Object -First 1
+          if (-not $installer) { throw 'Instalador NSIS não foi encontrado para o smoke.' }
+          $smokeRoot = Join-Path $env:RUNNER_TEMP 'majucau-install-smoke'
+          $installDir = Join-Path $smokeRoot 'app'
+          $dataDir = Join-Path $smokeRoot 'data'
+          if (Test-Path -LiteralPath $smokeRoot) { Remove-Item -LiteralPath $smokeRoot -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $smokeRoot | Out-Null
+
+          & $installer.FullName /S "/D=$installDir"
+          if ($LASTEXITCODE -ne 0) { throw "Instalação silenciosa falhou: $LASTEXITCODE" }
+          foreach ($name in @('Majucau Financial Intelligence.exe', 'majucau-worker.exe', 'installer-helper.exe')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $installDir $name) -PathType Leaf)) {
+              throw "Arquivo ausente após instalação: $name"
+            }
+          }
+
+          $helper = Join-Path $installDir 'installer-helper.exe'
+          $preflightPath = Join-Path $smokeRoot 'preflight.json'
+          & $helper preflight --install-dir $installDir --data-dir $dataDir --free-space-path $smokeRoot --min-free-bytes 1 --port 55439 |
+            Set-Content -LiteralPath $preflightPath -Encoding utf8
+          if ($LASTEXITCODE -notin @(0, 2)) { throw "Preflight pós-instalação falhou: $LASTEXITCODE" }
+          $preflight = Get-Content -LiteralPath $preflightPath -Raw | ConvertFrom-Json
+          if ($preflight.schema_version -ne '1.0') { throw 'Preflight pós-instalação sem schema esperado.' }
+
+          $uninstaller = Join-Path $installDir 'uninstall.exe'
+          if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) { throw 'Uninstaller ausente.' }
+          & $uninstaller /S
+          if ($LASTEXITCODE -ne 0) { throw "Desinstalação silenciosa falhou: $LASTEXITCODE" }
+          if (Test-Path -LiteralPath $installDir) { throw 'Diretório da aplicação permaneceu após desinstalação.' }
+
       - name: Upload unsigned G1 build
         uses: actions/upload-artifact@v4
         with:

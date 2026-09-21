@@ -151,7 +151,7 @@ jobs:
           if (Test-Path -LiteralPath $smokeRoot) { Remove-Item -LiteralPath $smokeRoot -Recurse -Force }
           New-Item -ItemType Directory -Force -Path $smokeRoot | Out-Null
 
-          $installProcess = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$installDir") -PassThru
+          $installProcess = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$installDir") -Verb RunAs -PassThru
           if (-not $installProcess.WaitForExit(120000)) {
             $installProcess.Kill()
             throw 'Instalação silenciosa excedeu o timeout de 120 segundos.'
@@ -173,7 +173,7 @@ jobs:
 
           $uninstaller = Join-Path $installDir 'uninstall.exe'
           if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) { throw 'Uninstaller ausente.' }
-          $uninstallProcess = Start-Process -FilePath $uninstaller -ArgumentList @('/S') -PassThru
+          $uninstallProcess = Start-Process -FilePath $uninstaller -ArgumentList @('/S') -Verb RunAs -PassThru
           if (-not $uninstallProcess.WaitForExit(120000)) {
             $uninstallProcess.Kill()
             throw 'Desinstalação silenciosa excedeu o timeout de 120 segundos.'

@@ -89,6 +89,12 @@ jobs:
       - name: Build installer preflight helper
         run: go build -trimpath -o build/bin/installer-helper.exe ./cmd/installer-helper
 
+      - name: Install NSIS
+        run: choco install nsis --yes --no-progress
+
+      - name: Build unsigned NSIS installer
+        run: wails build -s -skipbindings -trimpath -nsis
+
       - name: Upload unsigned G1 build
         uses: actions/upload-artifact@v4
         with:
@@ -97,4 +103,5 @@ jobs:
             build/bin/majucau.exe
             build/bin/majucau-worker.exe
             build/bin/installer-helper.exe
+            build/bin/*-installer.exe
           if-no-files-found: error

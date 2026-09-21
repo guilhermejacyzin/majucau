@@ -52,7 +52,7 @@
 | ID | Requisito | Fonte | Artefato/contrato | Gate | Evidência final | Estado atual |
 |---|---|---|---|---|---|---|
 | FIN-00 | Saldo Inicial D0 nasce do saldo financeiro conciliado D-1 do Bling no mesmo conjunto de contas e filtros | pp. 4, 6, §§5.1, 7 | Data §6.3; ERD §4; Plano fase 5 | G2/G3 | Fixture por conta, composição, RAW e reconciliação com Bling em R$ 0,01 | NOT_STARTED |
-| FIN-01 | B2C futuro somente Nuvem; B2B futuro somente Bling; excluir B2C Bling; total = B2C + B2B | pp. 5–6, §6 | API §3.5; Data §7; `internal/integrations/nuvempago/README.md`; `docs/evidence/NUVEM-PAGO-FUTURE-CSV-2026-09-20.md`; Registro D-001/D-004 | G2/G3 | D-001/D-004 aprovadas; parser e persistência controlados validados; faltam E2E, fonte oficial B2C e reconciliação | PARTIAL |
+| FIN-01 | B2C futuro somente Nuvem; B2B futuro somente Bling; excluir B2C Bling; total = B2C + B2B | pp. 5–6, §6 | API §3.5; Data §7; `internal/integrations/nuvempago/README.md`; `docs/evidence/NUVEM-PAGO-FUTURE-CSV-2026-09-20.md`; Registro D-001/D-004 | G2/G3 | D-001/D-004 aprovadas; parser, persistência, IPC e UI controlados validados; faltam E2E PostgreSQL, fonte oficial B2C e reconciliação | PARTIAL |
 | FIN-02 | Realizados e contas a pagar vêm do Bling e reconciliam | pp. 2–6, §§3, 6 | API §3.2; Data §§7.2, 8; Plano fase 5 | G2/G3 | Recebimentos/pagamentos/obrigações R$ 0,01 | NOT_STARTED |
 | FIN-03 | Aging vencido, hoje, 7, 15, 30, 45 e 60 dias sem dupla contagem | pp. 2–3, §3 | Data §7; Plano fase 5; Registro D-005 | G3 | D-005 aprovada; faltam casos executados de limites, parciais, cancelados, timezone e totais | PARTIAL |
 | FIN-04 | Saldo inicial D = final D-1; saldo final = inicial + entradas - saídas ± ajustes; D0 provisório; D+1–D+60 projetado | pp. 6–7, §§7–9, 25–26 | Data §9; ERD §5; Plano fase 7; `docs/evidence/TREASURY-PROJECTION-MINIMUM-2026-09-20.md` | G3 | Núcleo D0–D60, viradas, continuidade e validação da equação; persistência, fontes e cenários ainda pendentes | PARTIAL |
@@ -117,3 +117,4 @@ Permanecem pendentes:
 9. Arquivo do wireframe aprovado da Visão Executiva para comparação visual.
 
 Nenhum desses itens deve ser reinterpretado como concluído por existir uma intenção no plano. O estado muda somente quando a evidência correspondente for produzida e revisada.
+

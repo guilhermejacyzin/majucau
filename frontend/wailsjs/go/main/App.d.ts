@@ -13,6 +13,8 @@ export function PreviewBlingReceipts(arg1:string):Promise<application.BlingRecei
 
 export function SaveBlingConfig(arg1:application.BlingConfigRequest):Promise<application.BlingConfigResponse>;
 
+export function SaveNuvemshopConfig(arg1:application.NuvemshopConfigRequest):Promise<application.NuvemshopConfigResponse>;
+
 export function StartBlingOAuth():Promise<application.BlingOAuthStartResponse>;
 
 export function SyncBling(arg1:application.BlingSyncRequest):Promise<application.BlingSyncResponse>;

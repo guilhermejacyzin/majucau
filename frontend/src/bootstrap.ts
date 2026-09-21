@@ -51,6 +51,10 @@ export type BlingConfigInput = { client_id: string; redirect_uri: string; client
 export type BlingConfigResult = { client_id?: string; redirect_uri?: string; secret_configured: boolean; status?: string; error_code?: string; message?: string }
 export type BlingConfigSource = (input: BlingConfigInput) => Promise<unknown>
 export type BlingConfigAdapter = { save: (input: BlingConfigInput) => Promise<BlingConfigResult> }
+export type NuvemshopConfigInput = { app_id: string; redirect_uri: string; client_secret: string }
+export type NuvemshopConfigResult = { app_id?: string; redirect_uri?: string; secret_configured: boolean; status?: string; error_code?: string; message?: string }
+export type NuvemshopConfigSource = (input: NuvemshopConfigInput) => Promise<unknown>
+export type NuvemshopConfigAdapter = { save: (input: NuvemshopConfigInput) => Promise<NuvemshopConfigResult> }
 export type BlingOAuthStartResult = { session_id?: string; authorization_url?: string; status?: string; error_code?: string; message?: string }
 export type BlingOAuthStatusResult = { session_id?: string; status?: string; error_code?: string; message?: string }
 export type BlingOAuthTestResult = { status?: string; page_record_count: number; error_code?: string; message?: string }
@@ -174,6 +178,33 @@ export function createBlingConfigAdapter(source: BlingConfigSource = readWailsBl
   }
 }
 
+const unavailableNuvemshopConfig = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): NuvemshopConfigResult => ({ secret_configured: false, error_code: errorCode, message })
+
+async function readWailsNuvemshopConfig(input: NuvemshopConfigInput): Promise<unknown> {
+  const method = window.go?.main?.App?.SaveNuvemshopConfig
+  if (typeof method !== 'function') return unavailableNuvemshopConfig()
+  return method(input)
+}
+
+function isNuvemshopConfigResult(value: unknown): value is NuvemshopConfigResult {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<NuvemshopConfigResult>
+  return typeof candidate.secret_configured === 'boolean'
+}
+
+export function createNuvemshopConfigAdapter(source: NuvemshopConfigSource = readWailsNuvemshopConfig): NuvemshopConfigAdapter {
+  return {
+    save: async (input) => {
+      try {
+        const result = await source(input)
+        return isNuvemshopConfigResult(result) ? result : unavailableNuvemshopConfig('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableNuvemshopConfig()
+      }
+    },
+  }
+}
+
 const unavailableBlingOAuthStart = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingOAuthStartResult => ({ error_code: errorCode, message })
 const unavailableBlingOAuthStatus = (sessionId: string, errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingOAuthStatusResult => ({ session_id: sessionId, error_code: errorCode, message })
 const unavailableBlingOAuthTest = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingOAuthTestResult => ({ page_record_count: 0, error_code: errorCode, message })
@@ -280,6 +311,6 @@ export function createBootstrapAdapter(source: BootstrapSource = readWailsBootst
 
 declare global {
     interface Window {
-    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown> } } }
+    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown> } } }
 }
 }

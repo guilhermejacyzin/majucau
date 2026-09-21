@@ -379,6 +379,44 @@ export namespace application {
 		    return a;
 		}
 	}
+	export class NuvemshopConfigRequest {
+	    app_id: string;
+	    redirect_uri: string;
+	    client_secret: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NuvemshopConfigRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.app_id = source["app_id"];
+	        this.redirect_uri = source["redirect_uri"];
+	        this.client_secret = source["client_secret"];
+	    }
+	}
+	export class NuvemshopConfigResponse {
+	    app_id?: string;
+	    redirect_uri?: string;
+	    secret_configured: boolean;
+	    status?: string;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NuvemshopConfigResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.app_id = source["app_id"];
+	        this.redirect_uri = source["redirect_uri"];
+	        this.secret_configured = source["secret_configured"];
+	        this.status = source["status"];
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	}
 
 }
 

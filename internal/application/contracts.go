@@ -90,6 +90,23 @@ type BlingConfigResponse struct {
 	Message          string `json:"message,omitempty"`
 }
 
+// NuvemshopConfigRequest carries the editable app metadata and transient
+// client secret to the worker. The secret is never echoed or persisted here.
+type NuvemshopConfigRequest struct {
+	AppID        string `json:"app_id"`
+	RedirectURI  string `json:"redirect_uri"`
+	ClientSecret string `json:"client_secret"`
+}
+
+type NuvemshopConfigResponse struct {
+	AppID            string `json:"app_id,omitempty"`
+	RedirectURI      string `json:"redirect_uri,omitempty"`
+	SecretConfigured bool   `json:"secret_configured"`
+	Status           string `json:"status,omitempty"`
+	ErrorCode        string `json:"error_code,omitempty"`
+	Message          string `json:"message,omitempty"`
+}
+
 type BlingOAuthStartResponse struct {
 	SessionID        string `json:"session_id,omitempty"`
 	AuthorizationURL string `json:"authorization_url,omitempty"`

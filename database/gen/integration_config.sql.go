@@ -52,3 +52,47 @@ func (q *Queries) UpsertBlingConnectionConfig(ctx context.Context, arg UpsertBli
 	_, err := q.db.Exec(ctx, upsertBlingConnectionConfig, arg.ClientID, arg.RedirectUri, arg.SecretRef)
 	return err
 }
+
+const upsertNuvemshopConnectionConfig = `-- name: UpsertNuvemshopConnectionConfig :exec
+INSERT INTO integration_connections (
+  provider,
+  client_id,
+  redirect_uri,
+  secret_ref,
+  status,
+  credentials_updated_at,
+  updated_at
+) VALUES (
+  'NUVEMSHOP', $1, $2, $3, 'NOT_CONFIGURED', clock_timestamp(), clock_timestamp()
+)
+ON CONFLICT (provider)
+DO UPDATE SET
+  client_id = EXCLUDED.client_id,
+  redirect_uri = EXCLUDED.redirect_uri,
+  secret_ref = EXCLUDED.secret_ref,
+  status = CASE
+    WHEN integration_connections.status IN ('CONNECTED', 'SYNCING') THEN 'AUTH_ERROR'
+    ELSE 'NOT_CONFIGURED'
+  END,
+  revoked_at = CASE
+    WHEN integration_connections.status IN ('CONNECTED', 'SYNCING') THEN clock_timestamp()
+    ELSE integration_connections.revoked_at
+  END,
+  last_error_code = CASE
+    WHEN integration_connections.status IN ('CONNECTED', 'SYNCING') THEN 'CREDENTIALS_CHANGED'
+    ELSE integration_connections.last_error_code
+  END,
+  credentials_updated_at = clock_timestamp(),
+  updated_at = clock_timestamp()
+`
+
+type UpsertNuvemshopConnectionConfigParams struct {
+	ClientID    *string `json:"client_id"`
+	RedirectUri *string `json:"redirect_uri"`
+	SecretRef   *string `json:"secret_ref"`
+}
+
+func (q *Queries) UpsertNuvemshopConnectionConfig(ctx context.Context, arg UpsertNuvemshopConnectionConfigParams) error {
+	_, err := q.db.Exec(ctx, upsertNuvemshopConnectionConfig, arg.ClientID, arg.RedirectUri, arg.SecretRef)
+	return err
+}

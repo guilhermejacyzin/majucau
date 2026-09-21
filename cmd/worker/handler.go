@@ -9,6 +9,7 @@ import (
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/integrations/bling"
+	"majucau.local/financial-intelligence/internal/integrations/nuvemshop"
 	"majucau.local/financial-intelligence/internal/ipc"
 )
 
@@ -19,6 +20,10 @@ type receiptImporter interface {
 
 type blingConfigSaver interface {
 	Save(context.Context, bling.BlingConfigInput) (bling.BlingConfigResult, error)
+}
+
+type nuvemshopConfigSaver interface {
+	Save(context.Context, nuvemshop.ConfigInput) (nuvemshop.ConfigResult, error)
 }
 
 type blingOAuthService interface {
@@ -35,6 +40,7 @@ type workerHandler struct {
 	health          application.StaticHealth
 	receiptImporter receiptImporter
 	blingConfig     blingConfigSaver
+	nuvemshopConfig nuvemshopConfigSaver
 	blingOAuth      blingOAuthService
 	blingSync       blingRawSyncer
 	statusReader    application.IntegrationStatusReader
@@ -44,6 +50,7 @@ func newWorkerHandler() workerHandler {
 	pool := newDatabasePoolFromEnvironment()
 	var importer receiptImporter
 	var configSaver blingConfigSaver
+	var nuvemshopSaver nuvemshopConfigSaver
 	var oauthService blingOAuthService
 	var rawSync blingRawSyncer
 	var statusReader application.IntegrationStatusReader
@@ -52,11 +59,12 @@ func newWorkerHandler() workerHandler {
 		statusReader = newIntegrationStatusReader(pool)
 		if store := newWorkerSecretStore(); store != nil {
 			configSaver = bling.NewBlingCredentialService(pool, store)
+			nuvemshopSaver = nuvemshop.NewCredentialService(pool, store)
 			oauthService = bling.NewBlingOAuthService(pool, store)
 			rawSync = oauthService.(blingRawSyncer)
 		}
 	}
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, blingConfig: configSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader}
+	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -66,6 +74,8 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		return h.integrationStatus(ctx, req)
 	case ipc.MethodBlingConfigSave:
 		return h.saveBlingConfig(ctx, req)
+	case ipc.MethodNuvemshopConfigSave:
+		return h.saveNuvemshopConfig(ctx, req)
 	case ipc.MethodBlingOAuthStart:
 		return h.startBlingOAuth(ctx, req)
 	case ipc.MethodBlingOAuthStatus:
@@ -81,6 +91,32 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 	default:
 		return ipc.Response{}, ipc.ErrUnsupportedMethod
 	}
+}
+
+func (h workerHandler) saveNuvemshopConfig(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	var input application.NuvemshopConfigRequest
+	if err := json.Unmarshal(req.Payload, &input); err != nil {
+		return ipc.NewErrorResponse(req.RequestID, "NUVEMSHOP_CONFIG_INVALID", "Os dados da configuração da Nuvemshop são inválidos."), nil
+	}
+	if h.nuvemshopConfig == nil {
+		return ipc.NewErrorResponse(req.RequestID, "NUVEMSHOP_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
+	}
+	result, err := h.nuvemshopConfig.Save(ctx, nuvemshop.ConfigInput{AppID: input.AppID, RedirectURI: input.RedirectURI, ClientSecret: input.ClientSecret})
+	if err != nil {
+		code, message := "NUVEMSHOP_CONFIG_SAVE_FAILED", "Não foi possível salvar a configuração da Nuvemshop."
+		switch {
+		case errors.Is(err, nuvemshop.ErrNuvemshopCredentialValidation):
+			code, message = "NUVEMSHOP_CONFIG_INVALID", "Confira o App ID e use o Redirect URI HTTPS do relay homologado."
+		case errors.Is(err, nuvemshop.ErrNuvemshopCredentialMissing):
+			code, message = "NUVEMSHOP_SECRET_REQUIRED", "Informe o Client Secret na primeira configuração."
+		case errors.Is(err, nuvemshop.ErrNuvemshopCredentialVault):
+			code, message = "NUVEMSHOP_VAULT_UNAVAILABLE", "O cofre seguro do Windows não está disponível."
+		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+			code, message = "NUVEMSHOP_CONFIG_CANCELLED", "A configuração foi cancelada antes de terminar."
+		}
+		return ipc.NewErrorResponse(req.RequestID, code, message), nil
+	}
+	return ipc.NewResponse(req.RequestID, application.NuvemshopConfigResponse{AppID: result.AppID, RedirectURI: result.RedirectURI, SecretConfigured: result.SecretConfigured, Status: result.Status})
 }
 
 func (h workerHandler) syncBling(ctx context.Context, req ipc.Request) (ipc.Response, error) {

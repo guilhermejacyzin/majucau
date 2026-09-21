@@ -155,6 +155,43 @@ func (a *App) SaveBlingConfig(input application.BlingConfigRequest) application.
 	return result
 }
 
+// SaveNuvemshopConfig forwards editable Nuvemshop app metadata to the worker.
+// OAuth and synchronization remain separate until the HTTPS relay is
+// homologated; the client secret is never returned to the WebView.
+func (a *App) SaveNuvemshopConfig(input application.NuvemshopConfigRequest) application.NuvemshopConfigResponse {
+	fallback := application.NuvemshopConfigResponse{ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
+	defer cancel()
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return application.NuvemshopConfigResponse{ErrorCode: "NUVEMSHOP_CONFIG_INVALID", Message: "A configuração da Nuvemshop não pôde ser preparada."}
+	}
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("nuvemshop-config"), Method: ipc.MethodNuvemshopConfigSave, Payload: payload})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		if response.Error == nil {
+			return application.NuvemshopConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+		}
+		return application.NuvemshopConfigResponse{ErrorCode: response.Error.Code, Message: response.Error.Message}
+	}
+	var result application.NuvemshopConfigResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.NuvemshopConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+	}
+	return result
+}
+
 // StartBlingOAuth asks the worker to create a short-lived loopback callback,
 // then opens the provider authorization page in the user's external browser.
 // The URL contains no client secret or token.

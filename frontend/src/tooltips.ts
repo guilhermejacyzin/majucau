@@ -62,6 +62,7 @@ export const tooltipCatalog = {
   'nuvemshop.appId': 'Identificador do aplicativo cadastrado na Nuvemshop.',
   'nuvemshop.clientSecret': 'Chave secreta usada para concluir a autorização. Ela fica protegida no Windows.',
   'nuvemshop.redirectUri': 'Endereço HTTPS registrado para receber o retorno da autorização.',
+  'nuvemshop.save': 'Salva o App ID e o Redirect URI e protege o Client Secret no cofre do Windows. Não inicia OAuth nem sincronização.',
   'nuvemshop.connect': 'Abre a Nuvemshop no navegador e inicia uma autorização temporária e protegida.',
   'nuvemshop.test': 'Confirma que a loja e a permissão de pedidos podem ser lidas sem alterar dados.',
   'nuvemshop.reconnect': 'Faz uma nova autorização da loja quando a anterior expirou ou foi revogada.',

@@ -11,6 +11,7 @@ import (
 
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/integrations/bling"
+	"majucau.local/financial-intelligence/internal/integrations/nuvemshop"
 	"majucau.local/financial-intelligence/internal/ipc"
 )
 
@@ -18,6 +19,12 @@ type fakeBlingConfigSaver struct{}
 
 func (fakeBlingConfigSaver) Save(_ context.Context, input bling.BlingConfigInput) (bling.BlingConfigResult, error) {
 	return bling.BlingConfigResult{ClientID: input.ClientID, RedirectURI: input.RedirectURI, SecretConfigured: input.ClientSecret != "", Status: "NOT_CONFIGURED"}, nil
+}
+
+type fakeNuvemshopConfigSaver struct{}
+
+func (fakeNuvemshopConfigSaver) Save(_ context.Context, input nuvemshop.ConfigInput) (nuvemshop.ConfigResult, error) {
+	return nuvemshop.ConfigResult{AppID: input.AppID, RedirectURI: input.RedirectURI, SecretConfigured: input.ClientSecret != "", Status: "NOT_CONFIGURED"}, nil
 }
 
 type fakeBlingOAuthService struct{}
@@ -101,6 +108,27 @@ func TestWorkerBlingConfigNeverEchoesSecret(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !result.SecretConfigured || result.ClientID != "client" {
+		t.Fatalf("unexpected result: %#v", result)
+	}
+}
+
+func TestWorkerNuvemshopConfigNeverEchoesSecret(t *testing.T) {
+	payload, err := json.Marshal(application.NuvemshopConfigRequest{AppID: "app-id", RedirectURI: "https://relay.example.test/nuvemshop/callback", ClientSecret: "secret-do-not-echo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := (workerHandler{health: application.StaticHealth{Service: "test"}, nuvemshopConfig: fakeNuvemshopConfigSaver{}}).Handle(context.Background(), ipc.Request{RequestID: "test", Method: ipc.MethodNuvemshopConfigSave, Payload: payload})
+	if err != nil || !response.OK {
+		t.Fatalf("config response: %#v %v", response, err)
+	}
+	if strings.Contains(string(response.Payload), "secret-do-not-echo") {
+		t.Fatalf("secret leaked in response: %s", response.Payload)
+	}
+	var result application.NuvemshopConfigResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		t.Fatal(err)
+	}
+	if !result.SecretConfigured || result.AppID != "app-id" || result.RedirectURI == "" {
 		t.Fatalf("unexpected result: %#v", result)
 	}
 }

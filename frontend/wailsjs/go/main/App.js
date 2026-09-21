@@ -22,6 +22,10 @@ export function SaveBlingConfig(arg1) {
   return window['go']['main']['App']['SaveBlingConfig'](arg1);
 }
 
+export function SaveNuvemshopConfig(arg1) {
+  return window['go']['main']['App']['SaveNuvemshopConfig'](arg1);
+}
+
 export function StartBlingOAuth() {
   return window['go']['main']['App']['StartBlingOAuth']();
 }

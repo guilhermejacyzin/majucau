@@ -80,6 +80,25 @@ func TestSaveBlingConfigForwardsSecretOnlyToWorker(t *testing.T) {
 	}
 }
 
+func TestSaveNuvemshopConfigForwardsSecretOnlyToWorker(t *testing.T) {
+	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+		if req.Method != ipc.MethodNuvemshopConfigSave {
+			return ipc.Response{}, ipc.ErrUnsupportedMethod
+		}
+		var input application.NuvemshopConfigRequest
+		if err := json.Unmarshal(req.Payload, &input); err != nil || input.ClientSecret != "secret-only-in-worker-call" {
+			t.Fatalf("unexpected config payload: %#v %v", input, err)
+		}
+		return ipc.NewResponse(req.RequestID, application.NuvemshopConfigResponse{AppID: input.AppID, RedirectURI: input.RedirectURI, SecretConfigured: true, Status: "NOT_CONFIGURED"})
+	})
+	app := NewApp()
+	app.clientFactory = func() (ipc.Client, error) { return ipc.NewFakeClient(handler), nil }
+	result := app.SaveNuvemshopConfig(application.NuvemshopConfigRequest{AppID: "app-id", RedirectURI: "https://relay.example.test/nuvemshop/callback", ClientSecret: "secret-only-in-worker-call"})
+	if result.ErrorCode != "" || !result.SecretConfigured || result.AppID != "app-id" || result.RedirectURI == "" {
+		t.Fatalf("unexpected config result: %+v", result)
+	}
+}
+
 func TestBlingOAuthMethodsUseSanitizedWorkerContracts(t *testing.T) {
 	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 		switch req.Method {

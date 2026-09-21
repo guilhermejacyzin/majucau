@@ -47,6 +47,12 @@ Incremento adicional validado nesta revisão:
   mantém o gate fechado até uma VM Windows limpa com elevação real e captura
   do diagnóstico sanitizado. Detalhes em
   `docs/evidence/NSIS-INSTALL-SMOKE-2026-09-21.md`.
+- GitHub Actions run 80: a cadeia de build continuou passando e o diagnóstico
+  determinístico identificou `OS_UNSUPPORTED`. O runner hospedado é Windows
+  Server, mas o produto aceita somente Windows 10/11 workstation x64; o CI
+  passou a registrar esse ambiente como inelegível para smoke desktop sem
+  enfraquecer a política. O gate continua exigindo VM Windows workstation
+  limpa.
 - nenhum arquivo real ou dado pessoal foi versionado.
 
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
@@ -61,7 +67,7 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 | G3 — Tesouraria | Parcial | contrato D0–D+60 e menor saldo | saldo D-1 do Bling, persistência, cenários, lineage e reconciliação |
 | G4 — Executivo | Parcial | shell T1–T15 e tooltips estruturais | dados reais, drill-down e comparação visual/funcional por tela |
 | G5 — Resultado | Bloqueado | contratos e decisões documentados | DRE/P&L/EBITDA, folha e contabilidade próprios |
-| G6 — Operação | Parcial | preflight, journal, diagnóstico, bundle local, smoke automatizado, guard NSIS e smoke de instalação fail-closed | validar diagnóstico no runner/VM, backup/restore, update/rollback, assinatura e matriz Windows completa |
+| G6 — Operação | Parcial | preflight, journal, diagnóstico, bundle local, smoke automatizado, guard NSIS e CI com classificação explícita de runner Server | smoke em VM Windows workstation, backup/restore, update/rollback, assinatura e matriz Windows completa |
 | G7 — Produção | Parcial inicial | CI produz instalador NSIS x64 unsigned e bloqueia corretamente preflight não aceito | assinatura, Windows 10/11 limpo, primeiro uso, reboot, upgrade, rollback, uninstall e aceite final |
 
 ## Critério para mudar a conclusão

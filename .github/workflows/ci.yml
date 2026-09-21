@@ -130,8 +130,8 @@ jobs:
           if (Test-Path -LiteralPath $smokeRoot) { Remove-Item -LiteralPath $smokeRoot -Recurse -Force }
           New-Item -ItemType Directory -Force -Path $smokeRoot | Out-Null
 
-          & $installer.FullName /S "/D=$installDir"
-          if ($LASTEXITCODE -ne 0) { throw "Instalação silenciosa falhou: $LASTEXITCODE" }
+          $installProcess = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$installDir") -Wait -PassThru
+          if ($installProcess.ExitCode -ne 0) { throw "Instalação silenciosa falhou: $($installProcess.ExitCode)" }
           foreach ($name in @('Majucau Financial Intelligence.exe', 'majucau-worker.exe', 'installer-helper.exe')) {
             if (-not (Test-Path -LiteralPath (Join-Path $installDir $name) -PathType Leaf)) {
               throw "Arquivo ausente após instalação: $name"
@@ -148,8 +148,8 @@ jobs:
 
           $uninstaller = Join-Path $installDir 'uninstall.exe'
           if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) { throw 'Uninstaller ausente.' }
-          & $uninstaller /S
-          if ($LASTEXITCODE -ne 0) { throw "Desinstalação silenciosa falhou: $LASTEXITCODE" }
+          $uninstallProcess = Start-Process -FilePath $uninstaller -ArgumentList @('/S') -Wait -PassThru
+          if ($uninstallProcess.ExitCode -ne 0) { throw "Desinstalação silenciosa falhou: $($uninstallProcess.ExitCode)" }
           if (Test-Path -LiteralPath $installDir) { throw 'Diretório da aplicação permaneceu após desinstalação.' }
 
       - name: Upload unsigned G1 build

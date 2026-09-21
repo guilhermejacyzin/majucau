@@ -93,6 +93,27 @@ jobs:
       - name: Build installer preflight helper
         run: go build -trimpath -o build/bin/installer-helper.exe ./cmd/installer-helper
 
+      - name: Smoke installer helper directly
+        shell: pwsh
+        run: |
+          $helper = (Resolve-Path -LiteralPath 'build/bin/installer-helper.exe').Path
+          $helperRoot = Join-Path $env:RUNNER_TEMP 'majucau-helper-smoke'
+          if (Test-Path -LiteralPath $helperRoot) { Remove-Item -LiteralPath $helperRoot -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path $helperRoot | Out-Null
+          $preflightOut = Join-Path $helperRoot 'preflight.json'
+          $preflight = Start-Process -FilePath $helper -ArgumentList @('preflight', '--install-dir', (Join-Path $helperRoot 'app'), '--data-dir', (Join-Path $helperRoot 'data'), '--free-space-path', $helperRoot, '--min-free-bytes', '1', '--port', '55439') -RedirectStandardOutput $preflightOut -PassThru
+          if (-not $preflight.WaitForExit(30000)) { $preflight.Kill(); throw 'installer-helper preflight excedeu 30 segundos.' }
+          if ($preflight.ExitCode -notin @(0, 2)) { throw "installer-helper preflight retornou $($preflight.ExitCode)." }
+          $preflightJson = Get-Content -LiteralPath $preflightOut -Raw | ConvertFrom-Json
+          if ($preflightJson.schema_version -ne '1.0') { throw 'installer-helper preflight sem schema.' }
+
+          $diagnosticOut = Join-Path $helperRoot 'diagnostic.zip'
+          $diagnosticsJsonOut = Join-Path $helperRoot 'diagnostics.json'
+          $diagnostics = Start-Process -FilePath $helper -ArgumentList @('diagnostics', '--output', $diagnosticOut, '--install-dir', (Join-Path $helperRoot 'app'), '--data-dir', (Join-Path $helperRoot 'data'), '--free-space-path', $helperRoot, '--min-free-bytes', '1', '--port', '55439') -RedirectStandardOutput $diagnosticsJsonOut -PassThru
+          if (-not $diagnostics.WaitForExit(30000)) { $diagnostics.Kill(); throw 'installer-helper diagnostics excedeu 30 segundos.' }
+          if ($diagnostics.ExitCode -notin @(0, 2)) { throw "installer-helper diagnostics retornou $($diagnostics.ExitCode)." }
+          if (-not (Test-Path -LiteralPath $diagnosticOut -PathType Leaf)) { throw 'installer-helper não produziu diagnóstico.' }
+
       - name: Install NSIS
         shell: pwsh
         run: |

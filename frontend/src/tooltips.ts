@@ -82,6 +82,10 @@ export const tooltipCatalog = {
   'nuvempago.availability': 'A confirmação financeira depende de uma API ou arquivo oficial com taxa, líquido e data de repasse.',
   'nuvempago.partial': 'Pedidos e status podem estar disponíveis, mas faltam dados oficiais para confirmar o recebimento líquido.',
   'nuvempago.pricing': 'Tarifas aprovadas para estimativa. Elas não substituem taxa efetiva, líquido ou data de liquidação vindos de um ledger oficial.',
+  'nuvempago.futureFolder': 'Pasta controlada com o extrato de recebimentos futuros B2C. Ela alimenta projeções e nunca baixa um recebimento realizado.',
+  'nuvempago.futurePreview': 'Valida cabeçalho, datas, valores e duplicidades antes de gravar o lote no banco local.',
+  'nuvempago.futureImport': 'Grava os recebíveis futuros válidos como B2C projetado, mantendo o arquivo original no RAW.',
   'chart.projected': 'Valores futuros estimados pelo cenário selecionado.',
 } as const
 export type TooltipId = keyof typeof tooltipCatalog
+

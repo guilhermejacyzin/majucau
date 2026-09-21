@@ -109,6 +109,11 @@ Function .onInit
    ExecWait '"$PLUGINSDIR\majucau-installer-helper.exe" preflight --install-dir "$INSTDIR" --data-dir "${MAJUCAU_DATA_DIR}" --free-space-path "$PROGRAMDATA" --port ${MAJUCAU_PREFERRED_PORT}' $1
    ${If} $1 != 0
        ExecWait '"$PLUGINSDIR\majucau-installer-helper.exe" diagnostics --output "$0" --install-dir "$INSTDIR" --data-dir "${MAJUCAU_DATA_DIR}" --free-space-path "$PROGRAMDATA" --port ${MAJUCAU_PREFERRED_PORT}' $2
+       IfSilent MajuauPreflightSilent MajuauPreflightInteractive
+       MajuauPreflightSilent:
+           SetErrorLevel $1
+           Quit
+       MajuauPreflightInteractive:
        ${If} $1 == 2
            MessageBox MB_ICONSTOP|MB_OK "A instalação não pode continuar porque a máquina não passou no preflight.\n\nO diagnóstico sanitizado foi salvo em:\n$0\n\nCorrija os itens indicados e execute o instalador novamente."
        ${Else}

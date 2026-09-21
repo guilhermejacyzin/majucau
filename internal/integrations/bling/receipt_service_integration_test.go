@@ -29,6 +29,14 @@ func TestReceiptImportServicePostgresE2E(t *testing.T) {
 	if err := pool.Ping(ctx); err != nil {
 		t.Fatalf("ping PostgreSQL: %v", err)
 	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO integration_connections (provider, status, external_account_id)
+		VALUES ('BLING', 'CONNECTED', 'e2e-bling')
+		ON CONFLICT (provider) DO UPDATE
+		SET status = EXCLUDED.status, external_account_id = EXCLUDED.external_account_id,
+		    updated_at = clock_timestamp()`); err != nil {
+		t.Fatalf("prepare Bling connection: %v", err)
+	}
 
 	service := NewReceiptImportService(pool)
 	result, err := service.Import(ctx, folder)
@@ -55,3 +63,4 @@ func TestReceiptImportServicePostgresE2E(t *testing.T) {
 		t.Fatalf("expected two persisted receipts, got %d", persisted)
 	}
 }
+

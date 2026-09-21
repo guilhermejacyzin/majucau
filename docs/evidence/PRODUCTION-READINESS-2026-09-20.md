@@ -15,6 +15,15 @@ Não existe uma data responsável de lançamento enquanto os gates externos e os
 - `git diff --check`: PASS.
 - Matriz atual: `VERIFIED 2`, `PARTIAL 16`, `BLOCKED 10`, `NOT_STARTED 14`, `DOCUMENTED 5`.
 
+Incremento adicional validado nesta revisão:
+
+- parser e importação determinística da pasta controlada `02_nuvem_pago/recebimentos_futuros`;
+- contrato `nuvem_pago_recebimentos_futuros_csv_v1`, origem `NUVEM_PAGO` e status `PROJECTED`;
+- preservação de datas, parcelas, bruto, taxas, juros, custos totais e líquido;
+- rejeição de linhas fora de `Entrada`/`Venda`, datas inválidas, datas invertidas e duplicidades;
+- `go test` e `go vet` do pacote `internal/integrations/nuvempago`: PASS;
+- nenhum arquivo real ou dado pessoal foi versionado.
+
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.
 
 ## Estado dos gates
@@ -23,7 +32,7 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 |---|---|---|---|
 | G0 — Arquitetura | Aprovado | decisões e artefatos versionados | nenhuma no escopo aprovado |
 | G1 — Fundação | Parcial | testes Go, frontend, build e artefatos locais | PostgreSQL/worker/desktop e CI em instalação limpa |
-| G2 — Integrações | Parcial/bloqueado | adapters, DPAPI e contratos Bling | credencial/payload oficial, RAW, idempotência, OAuth Nuvemshop e ledger Nuvem Pago |
+| G2 — Integrações | Parcial/bloqueado | adapters, DPAPI, contratos Bling e parser controlado de futuro Nuvem Pago | credencial/payload oficial, persistência RAW/idempotente, OAuth Nuvemshop e ledger Nuvem Pago |
 | G3 — Tesouraria | Parcial | contrato D0–D+60 e menor saldo | saldo D-1 do Bling, persistência, cenários, lineage e reconciliação |
 | G4 — Executivo | Parcial | shell T1–T15 e tooltips estruturais | dados reais, drill-down e comparação visual/funcional por tela |
 | G5 — Resultado | Bloqueado | contratos e decisões documentados | DRE/P&L/EBITDA, folha e contabilidade próprios |
@@ -34,3 +43,6 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 
 Só será possível declarar “pronto para produção” depois de G2–G7 produzirem as evidências correspondentes, incluindo fonte oficial ou decisão formal sobre os pontos bloqueados. Telas que abrem, compilação verde ou dados provisórios não substituem esses gates.
 
+Próximo incremento técnico: persistir o resultado futuro em `raw_records` e
+`receivables` dentro de uma transação idempotente do worker, sem alterar a
+origem exclusiva Bling para recebimentos realizados.

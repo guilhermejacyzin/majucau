@@ -43,7 +43,7 @@
 | DATA-03 | Separar caixa/competência, realizado/projetado, datas e decimal exato | pp. 1, 6–7, 16 | ADR §4; Data §§2, 9, 15; Registro D-005 | G0/G3/G5 | D-005 aprovada; faltam casos executados de timezone, limites, precisão e arredondamento | PARTIAL |
 | INT-01 | Bling: contas a pagar, realizados, B2B, contatos/fornecedores, notas, categorias, compras, contas financeiras e caixa/banco | pp. 4–5, §5.1 | API §3; Data §§6–8; Plano fase 5 | G2/G3 | Credencial real, OpenAPI/fixtures, reconciliação e RAW | PARTIAL |
 | INT-02 | Nuvemshop: OAuth, loja, escopos, pedidos, clientes, status, parcelas, cancelamento/reembolso | pp. 4–6, §§5.2, 6 | ADR §6.3; API §4; Registro D-002 | G2 | Redirect aceito, relay publicado, E2E, replay/TTL/PKCE | BLOCKED |
-| INT-03 | Nuvem Pago: taxa, líquido, repasse e data somente por fonte oficial | pp. 4–6, §§5.2, 6; quatro capturas de tarifas aprovadas em 2026-09-20 | ADR §6.4; API §5.1–5.2; `docs/source/Nuvem-Pago-Taxas-2026-09-20.md`; Registro D-004 | G2/G3/G7 | Tarifário aprovado e versionado + API/arquivo oficial de ledger, contrato e reconciliação R$ 0,01 | PARTIAL |
+| INT-03 | Nuvem Pago: taxa, líquido, repasse e data somente por fonte oficial | pp. 4–6, §§5.2, 6; quatro capturas de tarifas aprovadas em 2026-09-20 | ADR §6.4; API §5.1–5.2; `docs/source/Nuvem-Pago-Taxas-2026-09-20.md`; `internal/integrations/nuvempago/README.md`; `docs/evidence/NUVEM-PAGO-FUTURE-CSV-2026-09-20.md`; Registro D-004 | G2/G3/G7 | Tarifário aprovado e versionado + API/arquivo oficial de ledger, contrato e reconciliação R$ 0,01 | PARTIAL |
 | INT-04 | Polling incremental, paginação, limite, retry/backoff, schema mismatch e último dado válido | pp. 13, 22–23, §§20–21, 42–43 | ADR §8; API §§2–6; AGENTS | G2/G6 | Testes 429, timeout, cursor, schema incompatível e stale | PARTIAL |
 | INT-05 | Área frontend editável para configurar dados públicos e secrets de Bling/Nuvemshop, iniciar OAuth, testar, reconectar, desconectar e sincronizar; Nuvem Pago segue contrato oficial | solicitação da usuária + pp. 22–23 | ADR §6; API §§7.1–7.3; Functional Decomposition M13-F01–F12; Plano fase 4; evidência `docs/evidence/NUVEMSHOP-CREDENTIAL-CONFIG-2026-09-20.md` | G2/G4/G7 | Formulários Bling/Nuvemshop e IPC/DPAPI/redaction cobertos; OAuth Nuvemshop, E2E real, ACL e reconciliação ainda pendentes | PARTIAL |
 
@@ -52,7 +52,7 @@
 | ID | Requisito | Fonte | Artefato/contrato | Gate | Evidência final | Estado atual |
 |---|---|---|---|---|---|---|
 | FIN-00 | Saldo Inicial D0 nasce do saldo financeiro conciliado D-1 do Bling no mesmo conjunto de contas e filtros | pp. 4, 6, §§5.1, 7 | Data §6.3; ERD §4; Plano fase 5 | G2/G3 | Fixture por conta, composição, RAW e reconciliação com Bling em R$ 0,01 | NOT_STARTED |
-| FIN-01 | B2C futuro somente Nuvem; B2B futuro somente Bling; excluir B2C Bling; total = B2C + B2B | pp. 5–6, §6 | API §3.5; Data §7; Registro D-001/D-004 | G2/G3 | D-001/D-004 aprovadas; faltam fixtures, fonte oficial B2C e reconciliação | PARTIAL |
+| FIN-01 | B2C futuro somente Nuvem; B2B futuro somente Bling; excluir B2C Bling; total = B2C + B2B | pp. 5–6, §6 | API §3.5; Data §7; `internal/integrations/nuvempago/README.md`; `docs/evidence/NUVEM-PAGO-FUTURE-CSV-2026-09-20.md`; Registro D-001/D-004 | G2/G3 | D-001/D-004 aprovadas; parser controlado validado; faltam persistência, fonte oficial B2C e reconciliação | PARTIAL |
 | FIN-02 | Realizados e contas a pagar vêm do Bling e reconciliam | pp. 2–6, §§3, 6 | API §3.2; Data §§7.2, 8; Plano fase 5 | G2/G3 | Recebimentos/pagamentos/obrigações R$ 0,01 | NOT_STARTED |
 | FIN-03 | Aging vencido, hoje, 7, 15, 30, 45 e 60 dias sem dupla contagem | pp. 2–3, §3 | Data §7; Plano fase 5; Registro D-005 | G3 | D-005 aprovada; faltam casos executados de limites, parciais, cancelados, timezone e totais | PARTIAL |
 | FIN-04 | Saldo inicial D = final D-1; saldo final = inicial + entradas - saídas ± ajustes; D0 provisório; D+1–D+60 projetado | pp. 6–7, §§7–9, 25–26 | Data §9; ERD §5; Plano fase 7; `docs/evidence/TREASURY-PROJECTION-MINIMUM-2026-09-20.md` | G3 | Núcleo D0–D60, viradas, continuidade e validação da equação; persistência, fontes e cenários ainda pendentes | PARTIAL |
@@ -117,4 +117,3 @@ Permanecem pendentes:
 9. Arquivo do wireframe aprovado da Visão Executiva para comparação visual.
 
 Nenhum desses itens deve ser reinterpretado como concluído por existir uma intenção no plano. O estado muda somente quando a evidência correspondente for produzida e revisada.
-

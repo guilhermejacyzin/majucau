@@ -56,6 +56,20 @@ ManifestDPIAware true
 !define MUI_FINISHPAGE_NOAUTOCLOSE # Wait on the INSTFILES page so the user can take a look into the details of the installation steps
 !define MUI_ABORTWARNING # This will warn the user if they exit from the installer.
 
+; Embedded helper used for read-only machine validation before installation.
+!ifndef MAJUCAU_HELPER_SOURCE
+  !define MAJUCAU_HELPER_SOURCE "..\..\bin\installer-helper.exe"
+!endif
+!ifndef MAJUCAU_DIAGNOSTICS_DIR
+  !define MAJUCAU_DIAGNOSTICS_DIR "$TEMP\Majucau"
+!endif
+!ifndef MAJUCAU_DATA_DIR
+  !define MAJUCAU_DATA_DIR "$PROGRAMDATA\Majucau"
+!endif
+!ifndef MAJUCAU_PREFERRED_PORT
+  !define MAJUCAU_PREFERRED_PORT "54329"
+!endif
+
 !insertmacro MUI_PAGE_WELCOME # Welcome to the installer page.
 # !insertmacro MUI_PAGE_LICENSE "resources\eula.txt" # Adds a EULA page to the installer
 !insertmacro MUI_PAGE_DIRECTORY # In which folder install page.
@@ -85,6 +99,22 @@ ShowInstDetails show # This will always show the installation details.
 
 Function .onInit
    !insertmacro wails.checkArchitecture
+
+   ; Run the same read-only checks used by the portable smoke test. A failed
+   ; preflight stops installation and leaves a sanitized diagnostic bundle.
+   InitPluginsDir
+   File /oname=$PLUGINSDIR\majucau-installer-helper.exe "${MAJUCAU_HELPER_SOURCE}"
+   CreateDirectory "${MAJUCAU_DIAGNOSTICS_DIR}"
+   StrCpy $0 "${MAJUCAU_DIAGNOSTICS_DIR}\installer-preflight.zip"
+   ExecWait '"$PLUGINSDIR\majucau-installer-helper.exe" diagnostics --output "$0" --install-dir "$INSTDIR" --data-dir "${MAJUCAU_DATA_DIR}" --free-space-path "$PROGRAMDATA" --port ${MAJUCAU_PREFERRED_PORT}' $1
+   ${If} $1 != 0
+       ${If} $1 == 2
+           MessageBox MB_ICONSTOP|MB_OK "A instalação não pode continuar porque a máquina não passou no preflight.\n\nO diagnóstico sanitizado foi salvo em:\n$0\n\nCorrija os itens indicados e execute o instalador novamente."
+       ${Else}
+           MessageBox MB_ICONSTOP|MB_OK "Não foi possível validar a máquina para a instalação (código $1).\n\nO diagnóstico sanitizado foi salvo em:\n$0"
+       ${EndIf}
+       Quit
+   ${EndIf}
 FunctionEnd
 
 Section
@@ -96,6 +126,7 @@ Section
 
     !insertmacro wails.files
     File "/oname=majucau-worker.exe" "..\..\bin\majucau-worker.exe"
+    File "/oname=installer-helper.exe" "${MAJUCAU_HELPER_SOURCE}"
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
@@ -121,3 +152,4 @@ Section "uninstall"
 
     !insertmacro wails.deleteUninstaller
 SectionEnd
+

@@ -1,0 +1,5 @@
+Data do pagamento;Data de recebimento;Tipo de movimentação;Tipo de transação;Nº transação;Nome;Forma de pagamento;Bandeira;Nº Parcelas;Valor Bruto (R$);Taxas (R$);Juros (R$);Custos Totais (R$);Valor Liquido (R$)
+20/09/2026;20/10/2026;Entrada;Venda;NVP-E2E-001;Cliente E2E A;Cartão de crédito;Mastercard;1;100,00;-2,99;0,00;-2,99;97,01
+21/09/2026;21/10/2026;Entrada;Venda;NVP-E2E-002;Cliente E2E B;PIX;;1;200,00;-1,98;0,00;-1,98;198,02
+21/09/2026;21/10/2026;Saída;Venda;NVP-E2E-003;Linha rejeitada;PIX;;1;50,00;0,00;0,00;0,00;50,00
+

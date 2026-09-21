@@ -12,6 +12,7 @@ $source = Get-Content -LiteralPath $installerPath -Raw
 $required = [ordered]@{
     helper_source_define = 'MAJUCAU_HELPER_SOURCE'
     helper_embedded_before_install = 'File /oname=$PLUGINSDIR\majucau-installer-helper.exe'
+    preflight_command = 'preflight --install-dir'
     diagnostics_command = 'diagnostics --output'
     preflight_data_dir = '--data-dir "${MAJUCAU_DATA_DIR}"'
     preflight_port = '--port ${MAJUCAU_PREFERRED_PORT}'
@@ -37,6 +38,11 @@ if ($initStart -lt 0 -or $sectionStart -lt 0 -or $initStart -gt $sectionStart) {
 $initBlock = $source.Substring($initStart, $sectionStart - $initStart)
 if ($initBlock.IndexOf('diagnostics --output', [System.StringComparison]::Ordinal) -lt 0) {
     throw 'O diagnóstico precisa ocorrer dentro de .onInit, antes da Section de instalação.'
+}
+$preflightIndex = $initBlock.IndexOf('preflight --install-dir', [System.StringComparison]::Ordinal)
+$diagnosticsIndex = $initBlock.IndexOf('diagnostics --output', [System.StringComparison]::Ordinal)
+if ($preflightIndex -lt 0 -or $diagnosticsIndex -lt 0 -or $preflightIndex -gt $diagnosticsIndex) {
+    throw 'O preflight precisa ocorrer antes da geração do diagnóstico.'
 }
 
 $result = [ordered]@{

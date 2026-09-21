@@ -17,6 +17,8 @@ const ReleaseManifestVersion = "1"
 
 const defaultReleaseManifestPath = "release-manifest.json"
 
+const ManifestValidationSchemaVersion = "1.0"
+
 const (
 	ManifestIssuePackageInvalid     = "PACKAGE_INVALID"
 	ManifestIssueChecksumMismatch   = "CHECKSUM_MISMATCH"
@@ -77,7 +79,7 @@ func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) Ma
 	}
 	cleanManifestPath, ok := cleanManifestRelativePath(manifestPath)
 	if !ok {
-		result.add(ManifestIssuePackageInvalid, manifestPath, "manifest path is unsafe")
+		result.add(ManifestIssuePackageInvalid, "", "manifest path is unsafe")
 		return result
 	}
 	manifestBytes, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(cleanManifestPath)))
@@ -109,8 +111,12 @@ func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) Ma
 		}
 		for _, file := range files {
 			cleanPath, pathOK := cleanManifestRelativePath(file.Path)
-			if !pathOK || prohibitedManifestPath(cleanPath) {
-				result.add(ManifestIssuePackageInvalid, file.Path, "package entry path is unsafe or contains protected material")
+			if !pathOK {
+				result.add(ManifestIssuePackageInvalid, "", "package entry path is unsafe or contains protected material")
+				continue
+			}
+			if prohibitedManifestPath(cleanPath) {
+				result.add(ManifestIssuePackageInvalid, cleanPath, "package entry path is unsafe or contains protected material")
 				continue
 			}
 			key := strings.ToLower(cleanPath)

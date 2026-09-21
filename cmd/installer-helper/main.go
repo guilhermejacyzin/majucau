@@ -25,6 +25,9 @@ func run(args []string, output io.Writer) int {
 	if args[0] == "diagnostics" {
 		return runDiagnostics(args[1:], output)
 	}
+	if args[0] == "verify-package" {
+		return runVerifyPackage(args[1:], output)
+	}
 	if args[0] != "preflight" {
 		return writeResult(output, invalidArgumentResult())
 	}
@@ -56,6 +59,52 @@ func run(args []string, output io.Writer) int {
 	config.PreferredPort = uint16(*port)
 	config.FreeSpacePath = *freePath
 	return writeResult(output, installer.Evaluate(config, installer.DefaultProbes()))
+}
+
+type manifestResponse struct {
+	SchemaVersion string                     `json:"schema_version"`
+	Status        string                     `json:"status"`
+	ExitCode      int                        `json:"exit_code"`
+	Valid         bool                       `json:"valid"`
+	Issues        []installer.ManifestIssue  `json:"issues,omitempty"`
+	Manifest      installer.ReleaseManifest  `json:"manifest"`
+}
+
+func runVerifyPackage(args []string, output io.Writer) int {
+	flags := flag.NewFlagSet("verify-package", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	packageDir := flags.String("package-dir", "", "absolute package directory")
+	manifestPath := flags.String("manifest", "release-manifest.json", "manifest path relative to the package")
+	currentSchema := flags.String("current-schema", "1.0", "currently installed database schema version")
+	if err := flags.Parse(args); err != nil || flags.NArg() != 0 || strings.TrimSpace(*packageDir) == "" || !filepath.IsAbs(*packageDir) || strings.TrimSpace(*currentSchema) == "" {
+		return writeManifestResponse(output, manifestResponse{
+			SchemaVersion: installer.ManifestValidationSchemaVersion,
+			Status:        "PACKAGE_INVALID",
+			ExitCode:      installer.ExitInternal,
+			Issues:        []installer.ManifestIssue{{Code: installer.ManifestIssuePackageInvalid, Detail: "invalid verify-package arguments"}},
+		})
+	}
+	validation := installer.ValidateReleaseManifest(*packageDir, *manifestPath, *currentSchema)
+	response := manifestResponse{
+		SchemaVersion: installer.ManifestValidationSchemaVersion,
+		Status:        "PACKAGE_VERIFIED",
+		ExitCode:      installer.ExitReady,
+		Valid:         validation.Valid,
+		Issues:        validation.Issues,
+		Manifest:      validation.Manifest,
+	}
+	if !validation.Valid {
+		response.Status = "PACKAGE_INVALID"
+		response.ExitCode = installer.ExitBlocked
+	}
+	return writeManifestResponse(output, response)
+}
+
+func writeManifestResponse(output io.Writer, response manifestResponse) int {
+	if err := json.NewEncoder(output).Encode(response); err != nil {
+		return installer.ExitInternal
+	}
+	return response.ExitCode
 }
 
 type diagnosticResponse struct {

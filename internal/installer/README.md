@@ -56,6 +56,12 @@ compatível com o schema informado pelo chamador; ela **não** executa
 restore, upgrade ou rollback. Esses fluxos continuam pendentes dos gates
 OPS-02/OPS-03 e G6/G7.
 
+O `installer-helper verify-package --package-dir PATH [--manifest PATH]
+--current-schema VERSION` expõe essa validação como gate operacional. Emite
+`PACKAGE_VERIFIED` e código `0` quando todos os arquivos conferem, ou
+`PACKAGE_INVALID` e código `2` quando o pacote deve ser bloqueado. O JSON de
+erro nunca devolve caminhos absolutos.
+
 O piso do fresh install é 4 GiB livres. Upgrade e restore devem substituir
 esse piso por uma necessidade calculada que inclua dados atuais, backup,
 temporários e conjunto completo de rollback.

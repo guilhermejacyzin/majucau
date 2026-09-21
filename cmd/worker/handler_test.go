@@ -84,6 +84,40 @@ func TestWorkerPreviewRejectsMissingFolder(t *testing.T) {
 	}
 }
 
+func TestWorkerPreviewReturnsSanitizedNuvemPagoFutureSummary(t *testing.T) {
+	folder := t.TempDir()
+	csv := "Data do pagamento;Data de recebimento;Tipo de movimentação;Tipo de transação;Nº transação;Nome;Forma de pagamento;Bandeira;Nº Parcelas;Valor Bruto (R$);Taxas (R$);Juros (R$);Custos Totais (R$);Valor Liquido (R$)\n" +
+		"20/08/2026;21/09/2026;Entrada;Venda;9483;Cliente Interno;Cartão de crédito;visa;2;236,36;-8,13;-13,53;-21,66;214,70\n"
+	if err := os.WriteFile(filepath.Join(folder, "futuros.csv"), []byte(csv), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	payload, err := json.Marshal(map[string]string{"folder": folder})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := (newWorkerHandler()).Handle(context.Background(), ipc.Request{RequestID: "future-preview", Method: ipc.MethodNuvemPagoFuturePreview, Payload: payload})
+	if err != nil || !response.OK {
+		t.Fatalf("future preview response: %#v %v", response, err)
+	}
+	var preview application.NuvemPagoFutureImportPreview
+	if err := json.Unmarshal(response.Payload, &preview); err != nil {
+		t.Fatal(err)
+	}
+	if preview.ReceivableCount != 1 || preview.ErrorCount != 0 || len(preview.Files) != 1 {
+		t.Fatalf("unexpected future preview: %#v", preview)
+	}
+	if strings.Contains(string(response.Payload), "Cliente Interno") {
+		t.Fatalf("future preview leaked customer data: %s", response.Payload)
+	}
+}
+
+func TestWorkerFutureImportFailsClosedWhenDatabaseIsNotConfigured(t *testing.T) {
+	response, err := (workerHandler{health: application.StaticHealth{Service: "test"}}).Handle(context.Background(), ipc.Request{RequestID: "future-import", Method: ipc.MethodNuvemPagoFutureImport, Payload: []byte(`{"folder":"C:\\imports"}`)})
+	if err != nil || response.OK || response.Error == nil || response.Error.Code != "NUVEM_PAGO_DATABASE_NOT_CONFIGURED" {
+		t.Fatalf("future database-disabled import response: %#v %v", response, err)
+	}
+}
+
 func TestWorkerImportFailsClosedWhenDatabaseIsNotConfigured(t *testing.T) {
 	response, err := (workerHandler{health: application.StaticHealth{Service: "test"}}).Handle(context.Background(), ipc.Request{RequestID: "test", Method: ipc.MethodBlingReceiptsImport, Payload: []byte(`{"folder":"C:\\imports"}`)})
 	if err != nil || response.OK || response.Error == nil || response.Error.Code != "BLING_DATABASE_NOT_CONFIGURED" {
@@ -188,3 +222,4 @@ func TestBlingSyncErrorClassificationIsSanitized(t *testing.T) {
 		})
 	}
 }
+

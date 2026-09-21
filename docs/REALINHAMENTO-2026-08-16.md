@@ -112,7 +112,7 @@ O cabeçalho deve exibir:
 - empresa/workspace atual;
 - cenário `BASE`, `CONSERVATIVE`, `STRESS` ou `OPTIMISTIC`;
 - filtros globais de período e data de referência;
-- ação de ajuda acessível.
+- orientação contextual por tooltips acessíveis; o botão global `Ajuda` não é renderizado no shell vigente.
 
 Nenhum horário deve ser hardcoded. A última atualização deve vir dos lotes de sincronização concluídos, com distinção entre tentativa e sucesso.
 

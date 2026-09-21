@@ -83,6 +83,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Links e ações pertencem a popover/dialog acessível, nunca ao tooltip.
 - Labels visíveis continuam obrigatórios.
 - Informação crítica deve permanecer visível fora do tooltip.
+- O botão global `Ajuda` não faz parte do contrato visual vigente; não renderizar esse botão em nenhuma tela. A orientação contextual permanece somente por tooltips simples e acessíveis.
 - Testar teclado, foco, leitor de tela, axe, contraste e zoom de 200%.
 - Usar nomenclaturas oficiais do handoff; não criar card principal genérico chamado “Caixa”.
 

@@ -106,7 +106,7 @@ Garantir que a aplicação saiba para qual empresa, período, cenário e instala
 | M00-F05 | Saúde do worker | IPC health | OK/DEGRADED/UNAVAILABLE e dependências | §§16, 21, 39, 46 |
 | M00-F06 | Estado de atualização | sync logs por provedor | última tentativa, último sucesso, stale | §§20–21, 43 |
 | M00-F07 | Filtros globais | período, empresa, cenário | `GlobalFilterState` propagado aos módulos | §§11, 35, 43 |
-| M00-F08 | Ajuda e glossário | foco/hover/teclado | tooltip em linguagem simples | §44, solicitação da usuária |
+| M00-F08 | Orientação contextual | foco/hover/teclado | tooltips em linguagem simples; sem botão global `Ajuda` | regra visual vigente, confirmada em 20/09/2026 |
 
 ### Critérios de aceite
 

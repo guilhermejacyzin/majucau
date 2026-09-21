@@ -9,12 +9,15 @@ const connectedBootstrap: BootstrapState = { app_version: '0.1.0-g1', worker: { 
 const adapterFor = (state: BootstrapState): BootstrapAdapter => ({ getState: () => Promise.resolve(state) })
 
 describe('shell financeiro', () => {
-  it('exibe todos os cards oficiais sem números inventados', async () => {
+  it('exibe a composição oficial do mockup T1 sem números inventados', async () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
-    for (const label of ['Saldo Inicial do Dia', 'Saldo Final Projetado Hoje', 'Saldo Projetado em 30 Dias', 'Saldo Projetado em 60 Dias', 'Menor Saldo Projetado — 60 Dias', 'Reserva Mínima', 'Valor Máximo para Aplicação', 'A Receber B2C — Nuvem', 'A Receber B2B — Bling', 'Total a Receber', 'Recebido no Mês', 'A Pagar', 'Obrigações Vencidas', 'Pago no Mês', 'DRE / P&L', 'EBITDA', 'Orçado x Realizado', 'Forecast', 'Capital de Giro', 'Alertas']) expect(screen.getByText(label)).toBeInTheDocument()
-    expect(screen.getAllByText('Sem dados confirmados')).toHaveLength(20)
-    expect(screen.getByText(/Nenhum valor foi estimado/)).toBeInTheDocument()
+    for (const label of ['SALDO ATUAL', 'A RECEBER', 'A PAGAR', 'MENOR SALDO 30 / 60 DIAS', 'FLUXO DE CAIXA PROJETADO', 'DISTRIBUIÇÃO DO SALDO', 'VENDAS DO MÊS', 'MARGEM BRUTA', 'ESTOQUE / COBERTURA', 'PRODUÇÃO PREVISTA', 'COMPRAS PREVISTAS', 'ALERTAS IMPORTANTES']) expect(screen.getByText(label)).toBeInTheDocument()
+    expect(screen.getByText('30 dias')).toBeInTheDocument()
+    expect(screen.getByText('60 dias')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ajuda' })).not.toBeInTheDocument()
+    expect(screen.getAllByText('Sem dados confirmados').length).toBeGreaterThan(0)
+    expect(screen.queryByText('R$ 258.420,00')).not.toBeInTheDocument()
   })
 
   it('navega por teclado até integrações e mantém campos com labels visíveis', async () => {

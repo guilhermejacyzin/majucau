@@ -16,6 +16,7 @@ Não há base para declarar produção pronta a partir desse run.
 |---|---|---|---|
 | 76 | `b4f40bc` | PASS: Go, frontend, Wails, worker, helper, NSIS e guard | `BLOCKED`/código 2; smoke inicial não localizou o bundle sanitizado |
 | 77 | `6ec1ed0` | PASS: Go, frontend, Wails, worker, helper, NSIS e guard | `BLOCKED`/código 2; script registrou `PREFLIGHT_DIAGNOSTIC_NOT_FOUND` |
+| 80 | `d1791aa` | PASS: Go, frontend, Wails, worker, helper, NSIS e guard | `BLOCKED`/código 2; diagnóstico determinístico `OS_UNSUPPORTED` |
 
 O log público do job 77 confirma que as etapas 1–26 passaram e somente a
 etapa “Smoke install and uninstall unsigned installer” falhou. A falha não
@@ -32,7 +33,12 @@ foi mascarada como sucesso.
 - sem evidência em Windows limpo com elevação real não se aceita instalação,
   primeiro uso e desinstalação como gates de produção;
 - o smoke foi extraído para `scripts/smoke-installer.ps1` e agora retorna os
-  códigos de bloqueio sanitizados quando o diagnóstico é localizado.
+  códigos de bloqueio sanitizados quando o diagnóstico é localizado;
+- o run 80 confirmou que o bloqueio não é perda do ZIP: o runner hospedado é
+  Windows Server (`ProductType != workstation`) e a política do produto o
+  rejeita corretamente com `OS_UNSUPPORTED`;
+- o CI passou a registrar esse caso como ambiente não elegível para o smoke
+  desktop, sem enfraquecer a política nem declarar o gate de produção fechado.
 
 ## Próximo gate
 

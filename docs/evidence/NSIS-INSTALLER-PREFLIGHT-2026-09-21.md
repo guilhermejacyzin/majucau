@@ -14,6 +14,8 @@ Integração do `installer-helper.exe` ao fluxo do instalador Windows x64.
   `%TEMP%\Majucau\installer-preflight.zip`;
 - qualquer retorno diferente de zero interrompe a instalação; retorno `2`
   (`BLOCKED`) recebe mensagem operacional específica;
+- em instalação silenciosa (`/S`), o mesmo bloqueio encerra sem abrir janela
+  modal invisível e preserva o código de saída para automação;
 - o helper também é instalado junto ao aplicativo para diagnóstico posterior;
 - `scripts/test-installer-nsis.ps1` verifica o contrato textual e a ordem
   `.onInit -> Section`;
@@ -25,7 +27,7 @@ Integração do `installer-helper.exe` ao fluxo do instalador Windows x64.
 ./scripts/test-installer-nsis.ps1
 ```
 
-Resultado: `PASS` (9 invariantes do instalador, incluindo a ordem preflight → diagnóstico).
+Resultado: `PASS` (10 invariantes do instalador, incluindo a ordem preflight → diagnóstico e o caminho silencioso).
 
 O binário NSIS final ainda não foi compilado neste ambiente porque `makensis`
 não está disponível. Portanto esta evidência comprova a integração no fonte e

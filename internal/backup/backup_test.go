@@ -74,6 +74,56 @@ func TestCreateRequiresStrongPassphraseAndAbsoluteOutput(t *testing.T) {
 	}
 }
 
+func TestRestoreCreatesPreRestoreBackupAndRequiresLifecycleHooks(t *testing.T) {
+	root := t.TempDir()
+	backupDir := filepath.Join(root, "pre-restore")
+	passphrase := []byte("uma-frase-local-forte")
+	var calls []string
+	runner := func(_ context.Context, name string, args []string, _ []string) error {
+		calls = append(calls, name+" "+strings.Join(args, " "))
+		return writeFakeDump(name, args)
+	}
+	created, err := Create(context.Background(), Options{
+		DatabaseURL: "postgres://user:password@127.0.0.1:54329/majucau?sslmode=disable", OutputDir: root,
+		AppVersion: "0.1.0", SchemaVersion: "1.0", InstallID: "install-1", Passphrase: passphrase, RunCommand: runner,
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	events := []string{}
+	result, err := Restore(context.Background(), RestoreOptions{
+		PackagePath: created.Path, DatabaseURL: "postgres://user:password@127.0.0.1:54329/majucau?sslmode=disable", BackupDir: backupDir,
+		CurrentSchema: "1.0", AppVersion: "0.1.0", InstallID: "install-1", Passphrase: passphrase, RunCommand: runner,
+		StopWorker: func(context.Context) error { events = append(events, "stop"); return nil },
+		Validate: func(context.Context) error { events = append(events, "validate"); return nil },
+		StartWorker: func(context.Context) error { events = append(events, "start"); return nil },
+	})
+	if err != nil {
+		t.Fatalf("Restore() error = %v", err)
+	}
+	if result.Status != "RESTORED_NEEDS_RECONNECT" || result.Manifest.SchemaVersion != "1.0" {
+		t.Fatalf("unexpected restore result: %#v", result)
+	}
+	if _, err := os.Stat(result.PreRestoreBackup.Path); err != nil {
+		t.Fatalf("pre-restore backup missing: %v", err)
+	}
+	if strings.Join(events, ",") != "stop,validate,start" {
+		t.Fatalf("unexpected lifecycle order: %#v", events)
+	}
+	if len(calls) != 6 || !strings.Contains(calls[4], "--clean") || !strings.Contains(calls[4], "--exit-on-error") || !strings.Contains(calls[5], "--set=ON_ERROR_STOP=1") {
+		t.Fatalf("restore commands were not guarded: %#v", calls)
+	}
+	if strings.Contains(strings.Join(calls, " "), "user:password") {
+		t.Fatalf("restore command arguments leaked the password: %#v", calls)
+	}
+}
+
+func TestRestoreRequiresLifecycleHooks(t *testing.T) {
+	if _, err := Restore(context.Background(), RestoreOptions{PackagePath: "C:\\backup.mjbk", BackupDir: "C:\\backups", DatabaseURL: "postgres://user@127.0.0.1/majucau", CurrentSchema: "1.0", AppVersion: "0.1.0", InstallID: "install-1", Passphrase: []byte("uma-frase-local-forte")}); err != ErrRestoreHooksRequired {
+		t.Fatalf("Restore() error = %v, want ErrRestoreHooksRequired", err)
+	}
+}
+
 func fakeDumpRunner(_ context.Context, name string, args []string, _ []string) error {
 	return writeFakeDump(name, args)
 }

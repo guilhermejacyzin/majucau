@@ -48,6 +48,7 @@ var (
 	ErrInvalidPackage       = errors.New("invalid backup package")
 	ErrWrongPassphrase      = errors.New("backup passphrase is invalid")
 	ErrUnsupportedSchema    = errors.New("backup schema is incompatible")
+	ErrRestoreHooksRequired = errors.New("restore worker lifecycle hooks are required")
 )
 
 // CommandRunner is injectable so package tests never require PostgreSQL.
@@ -105,6 +106,32 @@ type Verification struct {
 	Valid    bool
 	Manifest Manifest
 	Issues   []string
+}
+
+// RestoreOptions makes the destructive boundary explicit. Callers must own
+// the worker lifecycle and provide a validation hook; this package never
+// guesses which Windows service is safe to stop or starts a worker before the
+// restored database has been validated.
+type RestoreOptions struct {
+	PackagePath    string
+	DatabaseURL    string
+	BackupDir      string
+	CurrentSchema  string
+	AppVersion     string
+	InstallID      string
+	Passphrase     []byte
+	PGRestorePath  string
+	PSQLPath       string
+	RunCommand     CommandRunner
+	StopWorker     func(context.Context) error
+	Validate       func(context.Context) error
+	StartWorker    func(context.Context) error
+}
+
+type RestoreResult struct {
+	Manifest          Manifest
+	PreRestoreBackup  Result
+	Status             string
 }
 
 func Create(ctx context.Context, options Options) (Result, error) {
@@ -299,6 +326,143 @@ func Verify(path string, passphrase []byte, currentSchema string) Verification {
 	}
 	result.Valid = len(result.Issues) == 0
 	return result
+}
+
+// Restore validates and restores a package into the explicitly supplied
+// PostgreSQL database. It creates a fresh backup before stopping the worker,
+// never runs pg_restore for an invalid package, and leaves the caller in
+// RECOVERY_REQUIRED when a destructive step or post-restore validation fails.
+func Restore(ctx context.Context, options RestoreOptions) (RestoreResult, error) {
+	if err := validateRestoreOptions(options); err != nil {
+		return RestoreResult{}, err
+	}
+	verification := Verify(options.PackagePath, options.Passphrase, options.CurrentSchema)
+	if !verification.Valid {
+		return RestoreResult{Manifest: verification.Manifest, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("%w: %s", ErrInvalidPackage, strings.Join(verification.Issues, "; "))
+	}
+	databaseDump, globalsDump, err := decryptPackage(options.PackagePath, options.Passphrase, verification.Manifest)
+	if err != nil {
+		return RestoreResult{Manifest: verification.Manifest, Status: "RECOVERY_REQUIRED"}, err
+	}
+	preRestore, err := Create(ctx, Options{
+		DatabaseURL: options.DatabaseURL, OutputDir: options.BackupDir,
+		AppVersion: options.AppVersion, SchemaVersion: options.CurrentSchema,
+		InstallID: options.InstallID, Passphrase: options.Passphrase,
+		PGDumpPath: "pg_dump", PGDumpAllPath: "pg_dumpall", RunCommand: options.RunCommand,
+	})
+	if err != nil {
+		return RestoreResult{Manifest: verification.Manifest, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("create pre-restore backup: %w", err)
+	}
+	if err := options.StopWorker(ctx); err != nil {
+		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("stop worker before restore: %w", err)
+	}
+	temporary, err := os.MkdirTemp(options.BackupDir, ".restore-")
+	if err != nil {
+		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("create restore workspace: %w", err)
+	}
+	defer os.RemoveAll(temporary)
+	databasePath := filepath.Join(temporary, "database.dump")
+	globalsPath := filepath.Join(temporary, "globals.sql")
+	if err := os.WriteFile(databasePath, databaseDump, 0600); err != nil {
+		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("write database restore payload: %w", err)
+	}
+	if err := os.WriteFile(globalsPath, globalsDump, 0600); err != nil {
+		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("write globals restore payload: %w", err)
+	}
+	config, err := pgx.ParseConfig(options.DatabaseURL)
+	if err != nil || config.Host == "" || config.Database == "" || config.User == "" {
+		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, ErrInvalidOptions
+	}
+	_, env, err := connectionEnvironment(config, temporary)
+	if err != nil {
+		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, err
+	}
+	run := options.RunCommand
+	if run == nil {
+		run = runExternalCommand
+	}
+	pgRestore := options.PGRestorePath
+	if pgRestore == "" {
+		pgRestore = "pg_restore"
+	}
+	psql := options.PSQLPath
+	if psql == "" {
+		psql = "psql"
+	}
+	common := []string{"--host", config.Host, "--port", fmt.Sprintf("%d", config.Port), "--username", config.User, "--dbname", config.Database}
+	restoreArgs := append([]string{"--clean", "--if-exists", "--no-owner", "--no-privileges", "--exit-on-error"}, append(common, databasePath)...)
+	if err := run(ctx, pgRestore, restoreArgs, env); err != nil {
+		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("pg_restore failed: %w", err)
+	}
+	globalsArgs := append([]string{"--set=ON_ERROR_STOP=1", "--file", globalsPath}, common...)
+	if err := run(ctx, psql, globalsArgs, env); err != nil {
+		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("restore globals failed: %w", err)
+	}
+	if options.Validate != nil {
+		if err := options.Validate(ctx); err != nil {
+			return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("validate restored database: %w", err)
+		}
+	}
+	if err := options.StartWorker(ctx); err != nil {
+		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("start worker after restore: %w", err)
+	}
+	return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RESTORED_NEEDS_RECONNECT"}, nil
+}
+
+func validateRestoreOptions(options RestoreOptions) error {
+	if !filepath.IsAbs(options.PackagePath) || !filepath.IsAbs(options.BackupDir) || strings.TrimSpace(options.DatabaseURL) == "" || strings.TrimSpace(options.CurrentSchema) == "" || strings.TrimSpace(options.AppVersion) == "" || strings.TrimSpace(options.InstallID) == "" || len(options.Passphrase) < 12 {
+		return ErrInvalidOptions
+	}
+	if options.StopWorker == nil || options.Validate == nil || options.StartWorker == nil {
+		return ErrRestoreHooksRequired
+	}
+	return nil
+}
+
+func decryptPackage(path string, passphrase []byte, manifest Manifest) ([]byte, []byte, error) {
+	reader, err := zip.OpenReader(path)
+	if err != nil {
+		return nil, nil, fmt.Errorf("open backup package for restore: %w", err)
+	}
+	defer reader.Close()
+	entries := make(map[string]*zip.File, len(reader.File))
+	for _, entry := range reader.File {
+		if _, exists := entries[entry.Name]; exists {
+			return nil, nil, ErrInvalidPackage
+		}
+		entries[entry.Name] = entry
+	}
+	salt := mustDecodeSalt(manifest.KDF.Salt)
+	key := deriveKey(passphrase, salt, manifest.KDF)
+	read := func(path string) ([]byte, error) {
+		entry, ok := entries[path]
+		if !ok {
+			return nil, ErrInvalidPackage
+		}
+		file, err := entry.Open()
+		if err != nil {
+			return nil, ErrInvalidPackage
+		}
+		payload, readErr := io.ReadAll(file)
+		_ = file.Close()
+		if readErr != nil {
+			return nil, ErrInvalidPackage
+		}
+		plain, err := decrypt(key, []byte(path), payload)
+		if err != nil {
+			return nil, ErrWrongPassphrase
+		}
+		return plain, nil
+	}
+	databaseDump, err := read(databaseDumpEntry)
+	if err != nil {
+		return nil, nil, err
+	}
+	globalsDump, err := read(globalsDumpEntry)
+	if err != nil {
+		return nil, nil, err
+	}
+	return databaseDump, globalsDump, nil
 }
 
 func validateOptions(options Options) error {

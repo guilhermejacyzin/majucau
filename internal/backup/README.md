@@ -16,7 +16,10 @@ A proteção usa Argon2id para derivação de chave e AES-GCM com dados associad
 ao caminho de cada payload. A verificação rejeita schema incompatível, hash
 divergente, entrada duplicada, caminho inesperado e passphrase incorreta.
 
-Esta primeira fatia deliberadamente **não restaura nem altera um cluster**. O
-restore de produção deve ser uma operação separada, com backup do estado atual,
-checagem de compatibilidade/migrations, validação de constraints e auditoria,
-e estado `RESTORED_NEEDS_RECONNECT` antes de reconectar os provedores.
+`Restore` é uma operação destrutiva protegida por contrato: valida o pacote
+antes de mutar, cria um novo backup do estado atual, exige hooks explícitos
+para parar/iniciar o worker, executa `pg_restore`/`psql` com credenciais fora
+dos argumentos, valida o banco restaurado e só então retorna
+`RESTORED_NEEDS_RECONNECT`. Falhas deixam o chamador em
+`RECOVERY_REQUIRED`; o pacote nunca apaga ou recria um cluster por conta
+própria.

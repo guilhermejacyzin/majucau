@@ -12,11 +12,16 @@
   gravado em temporário e renomeado atomicamente.
 - `internal/backup.Verify` valida formato, schema, política de tokens, lista
   exata de entradas, duplicidades, hashes e passphrase.
+- `internal/backup.Restore` valida antes de mutar, cria backup pré-restore,
+  exige hooks de ciclo de vida do worker, executa `pg_restore --clean
+  --if-exists --exit-on-error` e `psql` com `PGPASSFILE`, chama validação do
+  banco e só inicia o worker com status `RESTORED_NEEDS_RECONNECT`.
 
 ## Limite atual do gate
 
-Esta entrega fecha apenas a geração e a verificação criptográfica. Ainda falta
-integrar a operação ao worker/UI, implementar restore controlado, backup do
-estado anterior, validação em VM Windows limpa e evidência de rollback/update.
-Portanto o gate de instalação/continuidade operacional permanece `PARTIAL` e o
-produto não deve ser anunciado como pronto para produção.
+Esta entrega fecha a biblioteca de geração, verificação e restore controlado,
+mas ainda falta integrar a operação ao worker/UI, exercitar um PostgreSQL real
+em staging, validar constraints/RAW/snapshots/auditoria, e obter evidência em
+VM Windows limpa de backup, update e rollback. Portanto o gate de
+instalação/continuidade operacional permanece `PARTIAL` e o produto não deve
+ser anunciado como pronto para produção.

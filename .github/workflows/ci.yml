@@ -145,7 +145,7 @@ jobs:
           $manifestResult = Get-Content -LiteralPath $manifestVerification -Raw | ConvertFrom-Json
           if ($manifestResult.status -ne 'PACKAGE_VERIFIED') { throw 'Manifesto não retornou PACKAGE_VERIFIED.' }
           Push-Location 'build/windows/installer'
-          try { makensis project.nsi '-DARG_WAILS_AMD64_BINARY=..\..\bin\majucau.exe' } finally { Pop-Location }
+          try { makensis project.nsi } finally { Pop-Location }
           $installer = Get-ChildItem -LiteralPath build/bin -Filter '*-installer.exe' -File | Select-Object -First 1
           if (-not $installer) { throw 'Wails não produziu um instalador NSIS; nenhum warning pode ser tratado como sucesso.' }
           Write-Output "Installer: $($installer.FullName)"

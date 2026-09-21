@@ -30,6 +30,11 @@ Unicode true
 ####
 ## !define REQUEST_EXECUTION_LEVEL "admin"            # Default "admin"  see also https://nsis.sourceforge.io/Docs/Chapter4.html
 ####
+## Provide a deterministic default for direct makensis invocations. CI and
+## local callers can still override it with ARG_WAILS_AMD64_BINARY.
+!ifndef ARG_WAILS_AMD64_BINARY
+  !define ARG_WAILS_AMD64_BINARY "..\..\bin\majucau.exe"
+!endif
 ## Include the wails tools
 ####
 !include "wails_tools.nsh"

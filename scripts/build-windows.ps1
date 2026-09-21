@@ -46,7 +46,7 @@ try {
         $makensisCommand = (Get-Command makensis -ErrorAction Stop).Source
         Push-Location (Join-Path $projectRoot 'build\windows\installer')
         try {
-            Invoke-NativeChecked $makensisCommand @('project.nsi', '-DARG_WAILS_AMD64_BINARY=..\..\bin\majucau.exe')
+            Invoke-NativeChecked $makensisCommand @('project.nsi')
         }
         finally {
             Pop-Location

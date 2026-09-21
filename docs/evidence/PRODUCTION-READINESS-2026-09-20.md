@@ -101,12 +101,21 @@ Incremento adicional validado nesta revisão:
   manifesto com hashes e política explícita de tokens excluídos, e verificador
   contra schema incompatível, duplicidades e entradas inesperadas;
   detalhes em `docs/evidence/BACKUP-PACKAGE-2026-09-21.md`;
-- o pacote ainda não restaura nem altera um cluster: integração com worker/UI,
-  restore controlado, backup do estado anterior e rollback permanecem gates
-  abertos;
+- restore controlado implementado na biblioteca: verifica o pacote antes de
+  mutar, cria backup pré-restore obrigatório, executa `pg_restore`/`psql` com
+  `PGPASSFILE` temporário, exige hooks explícitos de ciclo de vida e validação
+  pós-restore; o estado final exige reconexão (`RESTORED_NEEDS_RECONNECT`);
+- GitHub Actions run 104: `success` em Windows, cobrindo Go tests/vet,
+  vulnerabilidades, migrations/sqlc, secret scan, lint/typecheck/testes/build
+  frontend, Wails, worker, helper, contrato NSIS, build unsigned e smoke de
+  instalação/desinstalação; isso inclui os testes unitários do backup/restore;
+- ainda faltam a integração do restore ao worker/UI/instalador, restore real em
+  PostgreSQL descartável, rollback/update e evidência em VM Windows 10/11
+  workstation limpa;
 - o run 98 falhou corretamente ao detectar que o binário oficial do WebView2
   mudou; o pin foi atualizado para o SHA-256 observado no download oficial e o
-  run 99 está em execução para confirmar o instalador.
+  run 101 confirmou o instalador e o run 104 repetiu a cadeia completa após a
+  correção do teste do cabeçalho de sincronização.
 
 Esses incrementos melhoram a cobertura de INT-05 e de OPS-02/OPS-03, mas não
 alteram a conclusão de produção: ainda faltam fonte/payload oficial, regras
@@ -125,7 +134,7 @@ O comando amplo `go test ./...` não é usado como gate neste checkout: os cache
 | G3 — Tesouraria | Parcial | contrato D0–D+60 e menor saldo | saldo D-1 do Bling, persistência, cenários, lineage e reconciliação |
 | G4 — Executivo | Parcial | shell T1–T15 e tooltips estruturais | dados reais, drill-down e comparação visual/funcional por tela |
 | G5 — Resultado | Bloqueado | contratos e decisões documentados | DRE/P&L/EBITDA, folha e contabilidade próprios |
-| G6 — Operação | Parcial | preflight, journal, diagnóstico, bundle local, smoke automatizado, guard NSIS e CI com classificação explícita de runner Server | smoke em VM Windows workstation, backup/restore, update/rollback, assinatura e matriz Windows completa |
+| G6 — Operação | Parcial | preflight, journal, diagnóstico, bundle local, smoke automatizado, guard NSIS, pacote/restore unitariamente testado e CI com classificação explícita de runner Server | integração operacional do restore, smoke em VM Windows workstation, update/rollback, assinatura e matriz Windows completa |
 | G7 — Produção | Parcial inicial | CI produz instalador NSIS x64 unsigned e bloqueia corretamente preflight não aceito | assinatura, Windows 10/11 limpo, primeiro uso, reboot, upgrade, rollback, uninstall e aceite final |
 
 ## Critério para mudar a conclusão

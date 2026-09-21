@@ -17,6 +17,25 @@ function Assert-Condition {
     if (-not $Condition) { throw $Message }
 }
 
+function Get-PreflightIssueCodes {
+    $candidates = @(
+        (Join-Path $env:TEMP 'Majucau\installer-preflight.zip'),
+        (Join-Path ([System.IO.Path]::GetTempPath()) 'Majucau\installer-preflight.zip'),
+        (Join-Path $env:WINDIR 'Temp\Majucau\installer-preflight.zip')
+    ) | Select-Object -Unique
+    foreach ($candidate in $candidates) {
+        if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { continue }
+        $extractRoot = Join-Path $OutputRoot 'installer-preflight'
+        if (Test-Path -LiteralPath $extractRoot) { Remove-Item -LiteralPath $extractRoot -Recurse -Force }
+        Expand-Archive -LiteralPath $candidate -DestinationPath $extractRoot -Force
+        $jsonPath = Get-ChildItem -LiteralPath $extractRoot -Filter 'preflight.json' -File -Recurse | Select-Object -First 1
+        if (-not $jsonPath) { continue }
+        $json = Get-Content -LiteralPath $jsonPath.FullName -Raw | ConvertFrom-Json
+        return @($json.issues | ForEach-Object { $_.code })
+    }
+    return @('PREFLIGHT_DIAGNOSTIC_NOT_FOUND')
+}
+
 function Invoke-ElevatedExecutable {
     param(
         [Parameter(Mandatory)] [string]$FilePath,
@@ -82,7 +101,11 @@ $preflightPath = Join-Path $OutputRoot 'preflight.json'
 $resultPath = Join-Path $OutputRoot 'INSTALL-SMOKE-RESULT.json'
 
 $installExit = Invoke-ElevatedExecutable -FilePath $InstallerPath -Arguments @('/S', "/D=$installDir") -TaskRoot $OutputRoot
-Assert-Condition ($installExit -eq 0) "Instalação elevada retornou código $installExit."
+if ($installExit -ne 0) {
+    $issueCodes = Get-PreflightIssueCodes
+    $issueSummary = ($issueCodes -join ', ')
+    throw "Instalação elevada retornou código $installExit; preflight: $issueSummary."
+}
 foreach ($name in @('Majucau Financial Intelligence.exe', 'majucau-worker.exe', 'installer-helper.exe', 'uninstall.exe')) {
     Assert-Condition (Test-Path -LiteralPath (Join-Path $installDir $name) -PathType Leaf) "Arquivo ausente após instalação: $name"
 }

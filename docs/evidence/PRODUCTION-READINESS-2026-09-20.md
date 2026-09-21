@@ -53,6 +53,10 @@ Incremento adicional validado nesta revisão:
   passou a registrar esse ambiente como inelegível para smoke desktop sem
   enfraquecer a política. O gate continua exigindo VM Windows workstation
   limpa.
+- GitHub Actions runs 81–83: `success` após a classificação explícita do
+  runner Server. Isso confirma build, testes, contrato NSIS e artefato, mas
+  não substitui a evidência de instalação/desinstalação em Windows 10/11
+  workstation.
 - nenhum arquivo real ou dado pessoal foi versionado.
 
 O comando amplo `go test ./...` não é usado como gate neste checkout: os caches consolidados em `artifacts/cache/` e dependências locais contêm fontes Go auxiliares, que não pertencem ao módulo do produto. O CI e `scripts/verify.ps1` usam o conjunto explícito de pacotes acima.

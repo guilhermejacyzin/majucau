@@ -35,13 +35,13 @@ go test . ./cmd/... ./database/... ./internal/... PASS
 go vet . ./cmd/... ./database/... ./internal/... PASS
 frontend: typecheck, lint, 3 arquivos/19 testes e build Vite PASS
 git diff --check                              PASS
-E2E PostgreSQL opt-in                        IMPLEMENTADO, ainda sem ambiente executado neste checkout
+E2E PostgreSQL opt-in                        PASS (PostgreSQL descartável em loopback; duas linhas, uma rejeição, reexecução idempotente)
 ```
 
 ## Limitação restante
 
-O fluxo de preview/importação está ligado ao IPC, Wails e à tela, mas ainda
-falta executar o teste opt-in contra PostgreSQL descartável, homologar fixture
-sanitizado pela operação e validar o fluxo em instalador/VM limpa. O teste e o
-fixture foram versionados sem PII; nenhum valor do arquivo real foi versionado.
+O fluxo de preview/importação está ligado ao IPC, Wails e à tela, e o teste
+opt-in passou em PostgreSQL descartável. Ainda falta homologar o fixture pela
+operação e validar o fluxo em instalador/VM limpa. O teste e o fixture foram
+versionados sem PII; nenhum valor do arquivo real foi versionado.
 

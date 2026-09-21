@@ -28,6 +28,62 @@ func TestProjectionHasD0ThroughD60AndContinuity(t *testing.T) {
 		t.Fatal("date/type contract broken")
 	}
 }
+
+func TestFindMinimumProjectedBalanceKeepsDateAndComposition(t *testing.T) {
+	start := time.Date(2026, 9, 20, 18, 45, 0, 0, time.FixedZone("BRT", -3*60*60))
+	rows, err := DailyProjection(start, money(t, "100.00"), []Movement{
+		{Date: start, Inflows: money(t, "10.00"), Adjustments: money(t, "1.00")},
+		{Date: start.AddDate(0, 0, 2), Outflows: money(t, "101.00")},
+		{Date: start.AddDate(0, 0, 4), Inflows: money(t, "20.00")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	minimum, err := FindMinimumProjectedBalance(rows)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !minimum.Date.Equal(time.Date(2026, 9, 22, 0, 0, 0, 0, time.UTC)) ||
+		minimum.ClosingBalance.String() != "10.0000" ||
+		minimum.Inflows.String() != "0.0000" ||
+		minimum.Outflows.String() != "101.0000" ||
+		minimum.Adjustments.String() != "0.0000" {
+		t.Fatalf("minimum balance lost date/composition: %#v", minimum)
+	}
+}
+
+func TestFindMinimumProjectedBalanceRejectsInvalidSeries(t *testing.T) {
+	rows, err := DailyProjection(time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC), money(t, "100"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := FindMinimumProjectedBalance(rows[:60]); err != ErrInvalidProjection {
+		t.Fatalf("truncated projection must be rejected, got %v", err)
+	}
+	rows[1].Date = rows[1].Date.AddDate(0, 0, 1)
+	if _, err := FindMinimumProjectedBalance(rows); err != ErrInvalidProjection {
+		t.Fatalf("non-continuous projection must be rejected, got %v", err)
+	}
+}
+
+func TestFindMinimumProjectedBalanceUsesEarliestTie(t *testing.T) {
+	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	rows, err := DailyProjection(start, money(t, "100"), []Movement{
+		{Date: start, Outflows: money(t, "10")},
+		{Date: start.AddDate(0, 0, 1), Inflows: money(t, "10")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	minimum, err := FindMinimumProjectedBalance(rows)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !minimum.Date.Equal(start) || minimum.ClosingBalance.String() != "90.0000" {
+		t.Fatalf("tie must choose earliest date: %#v", minimum)
+	}
+}
+
 func TestAgingBoundariesAndExclusions(t *testing.T) {
 	r := time.Date(2026, 2, 10, 12, 0, 0, 0, time.UTC)
 	for _, tc := range []struct {
@@ -171,3 +227,4 @@ func TestB2BRuleAndCNPJ(t *testing.T) {
 		t.Fatal("override without reason must remain conservative")
 	}
 }
+

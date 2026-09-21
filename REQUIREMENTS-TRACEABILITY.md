@@ -55,8 +55,8 @@
 | FIN-01 | B2C futuro somente Nuvem; B2B futuro somente Bling; excluir B2C Bling; total = B2C + B2B | pp. 5–6, §6 | API §3.5; Data §7; Registro D-001/D-004 | G2/G3 | D-001/D-004 aprovadas; faltam fixtures, fonte oficial B2C e reconciliação | PARTIAL |
 | FIN-02 | Realizados e contas a pagar vêm do Bling e reconciliam | pp. 2–6, §§3, 6 | API §3.2; Data §§7.2, 8; Plano fase 5 | G2/G3 | Recebimentos/pagamentos/obrigações R$ 0,01 | NOT_STARTED |
 | FIN-03 | Aging vencido, hoje, 7, 15, 30, 45 e 60 dias sem dupla contagem | pp. 2–3, §3 | Data §7; Plano fase 5; Registro D-005 | G3 | D-005 aprovada; faltam casos executados de limites, parciais, cancelados, timezone e totais | PARTIAL |
-| FIN-04 | Saldo inicial D = final D-1; saldo final = inicial + entradas - saídas ± ajustes; D0 provisório; D+1–D+60 projetado | pp. 6–7, §§7–9, 25–26 | Data §9; ERD §5; Plano fase 7 | G3 | D0–D60, viradas, continuidade R$ 0,00 e cenários | NOT_STARTED |
-| FIN-05 | Menor saldo diário D0–D60 com data, cenário e composição | p. 7, §9 | ERD §5; Plano fase 7 | G3 | Caso dourado e drill-down de entradas/saídas | NOT_STARTED |
+| FIN-04 | Saldo inicial D = final D-1; saldo final = inicial + entradas - saídas ± ajustes; D0 provisório; D+1–D+60 projetado | pp. 6–7, §§7–9, 25–26 | Data §9; ERD §5; Plano fase 7; `docs/evidence/TREASURY-PROJECTION-MINIMUM-2026-09-20.md` | G3 | Núcleo D0–D60, viradas, continuidade e validação da equação; persistência, fontes e cenários ainda pendentes | PARTIAL |
+| FIN-05 | Menor saldo diário D0–D60 com data, cenário e composição | p. 7, §9 | ERD §5; Plano fase 7; `docs/evidence/TREASURY-PROJECTION-MINIMUM-2026-09-20.md` | G3 | Caso dourado valida data/saldo/composição e rejeita série inválida; cenário, persistência e drill-down ainda pendentes | PARTIAL |
 | FIN-06 | Valor Máximo para Aplicação reproduz planilha ou regra formalmente aprovada | pp. 19–20, §§33–34 | Data §12; Registro D-003; `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md` | G5/G7 | D-003-A aprovada e casos dourados executados com decimal exato; equivalência com planilha histórica só será exigida se o arquivo for entregue | VERIFIED |
 
 ## Experiência executiva e acessibilidade
@@ -117,3 +117,4 @@ Permanecem pendentes:
 9. Arquivo do wireframe aprovado da Visão Executiva para comparação visual.
 
 Nenhum desses itens deve ser reinterpretado como concluído por existir uma intenção no plano. O estado muda somente quando a evidência correspondente for produzida e revisada.
+

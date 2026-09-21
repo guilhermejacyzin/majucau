@@ -17,6 +17,7 @@ Não há base para declarar produção pronta a partir desse run.
 | 76 | `b4f40bc` | PASS: Go, frontend, Wails, worker, helper, NSIS e guard | `BLOCKED`/código 2; smoke inicial não localizou o bundle sanitizado |
 | 77 | `6ec1ed0` | PASS: Go, frontend, Wails, worker, helper, NSIS e guard | `BLOCKED`/código 2; script registrou `PREFLIGHT_DIAGNOSTIC_NOT_FOUND` |
 | 80 | `d1791aa` | PASS: Go, frontend, Wails, worker, helper, NSIS e guard | `BLOCKED`/código 2; diagnóstico determinístico `OS_UNSUPPORTED` |
+| 81–83 | `685785a`–`2586c63` | PASS: cadeia completa de build, testes, NSIS e guard | PASS no CI; smoke desktop classificado como não elegível por `OS_UNSUPPORTED` |
 
 O log público do job 77 confirma que as etapas 1–26 passaram e somente a
 etapa “Smoke install and uninstall unsigned installer” falhou. A falha não
@@ -39,6 +40,9 @@ foi mascarada como sucesso.
   rejeita corretamente com `OS_UNSUPPORTED`;
 - o CI passou a registrar esse caso como ambiente não elegível para o smoke
   desktop, sem enfraquecer a política nem declarar o gate de produção fechado.
+- os runs 81–83 terminaram `success` porque o CI comprovou a cadeia de build e
+  tratou o runner Server como inelegível; eles não são evidência de instalação,
+  primeiro uso ou desinstalação em workstation.
 
 ## Próximo gate
 

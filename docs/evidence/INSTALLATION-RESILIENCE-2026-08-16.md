@@ -15,6 +15,9 @@ O requisito de lidar defensivamente com máquinas Windows de terceiros foi regis
 - build Wails, worker e installer-helper Windows: aprovado;
 - execução real `installer-helper.exe preflight`: contrato JSON válido, exit code `2`/`BLOCKED`;
 - execução real `installer-helper.exe diagnostics`: produziu ZIP sanitizado mesmo com preflight `BLOCKED`, contendo somente `diagnostic.json` e `README.txt`;
+- `scripts/smoke-windows.ps1`: PASS com bundle portátil real, hashes verificados,
+  preflight x64/WebView2/porta, health do worker em console e diagnóstico sem
+  caminhos completos ou segredos;
 - `JournalStore` e `AcquireInstallLock`: testes de round-trip, validação de fase/hash e segunda instância aprovados;
 - execução real `majucau-worker.exe --console`: health `OK`;
 - execução real `majucau.exe`: processo permaneceu ativo e abriu a janela `Majucau Financial Intelligence`.
@@ -55,3 +58,4 @@ Os executáveis ficam ignorados pelo Git e precisam ser reconstruídos e assinad
 8. assinar e verificar todos os binários e o instalador.
 
 Até esses itens passarem, o helper é uma fundação de detecção/diagnóstico, não uma alegação de instalação pronta para terceiros.
+

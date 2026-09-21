@@ -120,6 +120,8 @@ type RestoreOptions struct {
 	AppVersion     string
 	InstallID      string
 	Passphrase     []byte
+	PGDumpPath     string
+	PGDumpAllPath  string
 	PGRestorePath  string
 	PSQLPath       string
 	RunCommand     CommandRunner
@@ -348,7 +350,7 @@ func Restore(ctx context.Context, options RestoreOptions) (RestoreResult, error)
 		DatabaseURL: options.DatabaseURL, OutputDir: options.BackupDir,
 		AppVersion: options.AppVersion, SchemaVersion: options.CurrentSchema,
 		InstallID: options.InstallID, Passphrase: options.Passphrase,
-		PGDumpPath: "pg_dump", PGDumpAllPath: "pg_dumpall", RunCommand: options.RunCommand,
+		PGDumpPath: options.PGDumpPath, PGDumpAllPath: options.PGDumpAllPath, RunCommand: options.RunCommand,
 	})
 	if err != nil {
 		return RestoreResult{Manifest: verification.Manifest, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("create pre-restore backup: %w", err)
@@ -599,3 +601,4 @@ func mustDecodeSalt(value string) []byte {
 	}
 	return salt
 }
+

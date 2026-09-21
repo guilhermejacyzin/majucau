@@ -93,7 +93,11 @@ func TestRestoreCreatesPreRestoreBackupAndRequiresLifecycleHooks(t *testing.T) {
 	events := []string{}
 	result, err := Restore(context.Background(), RestoreOptions{
 		PackagePath: created.Path, DatabaseURL: "postgres://user:password@127.0.0.1:54329/majucau?sslmode=disable", BackupDir: backupDir,
-		CurrentSchema: "1.0", AppVersion: "0.1.0", InstallID: "install-1", Passphrase: passphrase, RunCommand: runner,
+		CurrentSchema: "1.0", AppVersion: "0.1.0", InstallID: "install-1", Passphrase: passphrase,
+		PGDumpPath: "C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe",
+		PGDumpAllPath: "C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dumpall.exe",
+		PGRestorePath: "C:\\Program Files\\PostgreSQL\\16\\bin\\pg_restore.exe",
+		PSQLPath: "C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe", RunCommand: runner,
 		StopWorker: func(context.Context) error { events = append(events, "stop"); return nil },
 		Validate: func(context.Context) error { events = append(events, "validate"); return nil },
 		StartWorker: func(context.Context) error { events = append(events, "start"); return nil },
@@ -110,7 +114,7 @@ func TestRestoreCreatesPreRestoreBackupAndRequiresLifecycleHooks(t *testing.T) {
 	if strings.Join(events, ",") != "stop,validate,start" {
 		t.Fatalf("unexpected lifecycle order: %#v", events)
 	}
-	if len(calls) != 6 || !strings.Contains(calls[4], "--clean") || !strings.Contains(calls[4], "--exit-on-error") || !strings.Contains(calls[5], "--set=ON_ERROR_STOP=1") {
+	if len(calls) != 6 || !strings.Contains(calls[2], "pg_dump.exe") || !strings.Contains(calls[3], "pg_dumpall.exe") || !strings.Contains(calls[4], "pg_restore.exe") || !strings.Contains(calls[4], "--clean") || !strings.Contains(calls[4], "--exit-on-error") || !strings.Contains(calls[5], "psql.exe") || !strings.Contains(calls[5], "--set=ON_ERROR_STOP=1") {
 		t.Fatalf("restore commands were not guarded: %#v", calls)
 	}
 	if strings.Contains(strings.Join(calls, " "), "user:password") {
@@ -151,3 +155,4 @@ func containsIssue(issues []string, expected string) bool {
 	}
 	return false
 }
+

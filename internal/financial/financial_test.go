@@ -54,6 +54,51 @@ func TestApplicationConservativeLimits(t *testing.T) {
 	}
 }
 
+func TestApplicationGoldenFormulaD003A(t *testing.T) {
+	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	rows, err := DailyProjection(start, money(t, "250.00"), []Movement{{
+		Date: start.AddDate(0, 0, 10), Outflows: money(t, "70.00"),
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := MaximumApplication(ApplicationInput{
+		EligibleAccumulatedProfit: money(t, "200.00"),
+		AlreadyInvested:           money(t, "40.00"),
+		MinimumReserve:            money(t, "50.00"),
+		Balances:                  rows,
+		RuleVersion:               "D-003-A",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.AvailableProfit.String() != "160.0000" || got.WorstWeekCash.String() != "180.0000" ||
+		got.FinancialLimit.String() != "130.0000" || got.MaximumInvestment.String() != "130.0000" {
+		t.Fatalf("golden D-003-A mismatch: %#v", got)
+	}
+}
+
+func TestApplicationFloorsInsufficientProfitAndReserveBreach(t *testing.T) {
+	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	rows, err := DailyProjection(start, money(t, "20.00"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := MaximumApplication(ApplicationInput{
+		EligibleAccumulatedProfit: money(t, "30.00"),
+		AlreadyInvested:           money(t, "40.00"),
+		MinimumReserve:            money(t, "50.00"),
+		Balances:                  rows,
+		RuleVersion:               "D-003-A",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.AvailableProfit.String() != "0.0000" || got.FinancialLimit.String() != "0.0000" || got.MaximumInvestment.String() != "0.0000" {
+		t.Fatalf("negative application inputs must floor at zero: %#v", got)
+	}
+}
+
 func TestApplicationRejectsInvalidHorizonAndNegativeParameters(t *testing.T) {
 	rows, err := DailyProjection(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), money(t, "100"), nil)
 	if err != nil {

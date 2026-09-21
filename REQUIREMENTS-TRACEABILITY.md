@@ -57,7 +57,7 @@
 | FIN-03 | Aging vencido, hoje, 7, 15, 30, 45 e 60 dias sem dupla contagem | pp. 2–3, §3 | Data §7; Plano fase 5; Registro D-005 | G3 | D-005 aprovada; faltam casos executados de limites, parciais, cancelados, timezone e totais | PARTIAL |
 | FIN-04 | Saldo inicial D = final D-1; saldo final = inicial + entradas - saídas ± ajustes; D0 provisório; D+1–D+60 projetado | pp. 6–7, §§7–9, 25–26 | Data §9; ERD §5; Plano fase 7 | G3 | D0–D60, viradas, continuidade R$ 0,00 e cenários | NOT_STARTED |
 | FIN-05 | Menor saldo diário D0–D60 com data, cenário e composição | p. 7, §9 | ERD §5; Plano fase 7 | G3 | Caso dourado e drill-down de entradas/saídas | NOT_STARTED |
-| FIN-06 | Valor Máximo para Aplicação reproduz planilha ou regra formalmente aprovada | pp. 19–20, §§33–34 | Data §12; Registro D-003 | G5/G7 | Fórmula D-003-A aprovada; faltam casos dourados e reconciliação de R$ 0,01 | PARTIAL |
+| FIN-06 | Valor Máximo para Aplicação reproduz planilha ou regra formalmente aprovada | pp. 19–20, §§33–34 | Data §12; Registro D-003; `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md` | G5/G7 | D-003-A aprovada e casos dourados executados com decimal exato; equivalência com planilha histórica só será exigida se o arquivo for entregue | VERIFIED |
 
 ## Experiência executiva e acessibilidade
 

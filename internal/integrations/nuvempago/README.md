@@ -49,5 +49,6 @@ go test ./internal/integrations/nuvempago -run TestFutureImportServicePostgresE2
 
 O E2E exige migration aplicada em PostgreSQL descartável. Ele verifica duas
 linhas `B2C/PROJECTED`, uma rejeição, reexecução idempotente, dois RAW atuais e
-zero linhas no ledger `receipts` do Bling.
+zero linhas no ledger `receipts` do Bling. Em 21/09/2026 ele passou em um
+cluster PostgreSQL 18.3 isolado em loopback.
 

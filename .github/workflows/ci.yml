@@ -30,6 +30,10 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Prepare frontend bundle for Go embedding
+        working-directory: frontend
+        run: npm run build
+
       - name: Go tests
         run: go test . ./cmd/... ./database/... ./internal/...
 

@@ -196,7 +196,7 @@ func TestBlingOAuthDPAPIWriteFailureNeverMarksConnected(t *testing.T) {
 	})
 
 	base := newOAuthFailureHarnessStore(t)
-	store := &failingPutSecretStore{base: base, err: fmt.Errorf("DPAPI protection failed: access-token-private") // test-only fixture}
+	store := &failingPutSecretStore{base: base, err: fmt.Errorf("DPAPI protection failed: access-token-private")}
 	service, repo, start, redirectURI := newOAuthFailureHarness(t, store, httpDoer)
 	parsed, err := url.Parse(start.AuthorizationURL)
 	if err != nil {

@@ -14,6 +14,9 @@ func TestBlingOAuthExchangeUsesBasicAuthAndForm(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("method = %s, want POST", r.Method)
 		}
+		if got := r.Header.Get("enable-jwt"); got != "1" {
+			t.Fatalf("enable-jwt = %q, want 1", got)
+		}
 		id, secret, ok := r.BasicAuth()
 		if !ok || id != "client-id" || secret != "client-secret" {
 			t.Fatalf("basic auth = %q, %q, %v", id, secret, ok)
@@ -47,6 +50,9 @@ func TestBlingOAuthExchangeUsesBasicAuthAndForm(t *testing.T) {
 
 func TestBlingOAuthErrorsDoNotExposeSecretOrBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("enable-jwt"); got != "1" {
+			t.Fatalf("enable-jwt = %q, want 1", got)
+		}
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(`{"error":"invalid_grant","client_secret":"do-not-leak"}`))
 	}))

@@ -93,7 +93,7 @@ func waitForOAuthFailureHarnessStatus(t *testing.T, service *BlingOAuthService, 
 func newOAuthFailureHarnessStore(t *testing.T) *memorySecretStore {
 	t.Helper()
 	store := &memorySecretStore{values: map[string][]byte{}}
-	initial, err := json.Marshal(blingSecretBundle{ClientSecret: "client-secret-private"})
+	initial, err := json.Marshal(blingSecretBundle{ClientSecret: "client-secret-private"}) // test-only fixture
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestBlingOAuthCallbackDuplicateExchangesCodeOnlyOnce(t *testing.T) {
 		body := oauthFailureProbePayload
 		if strings.Contains(req.URL.Path, "/oauth/token") {
 			tokenRequests.Add(1)
-			body = `{"access_token":"access-token-private","refresh_token":"refresh-token-private","token_type":"Bearer","scope":"read_orders","expires_in":21600}`
+			body = `{"access_token":"access-token-private","refresh_token":"refresh-token-private","token_type":"Bearer","scope":"read_orders","expires_in":21600}` // test-only fixture
 		}
 		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
 	})
@@ -148,7 +148,7 @@ func TestBlingOAuthTokenExchangeFailureIsSanitizedAndNotPersisted(t *testing.T) 
 				StatusCode: http.StatusBadRequest,
 				Body: io.NopCloser(strings.NewReader(`{"error":"invalid_grant","client_secret":"client-secret-private","access_token":"access-token-private"}`)),
 				Header: make(http.Header),
-			}, nil
+			} // test-only fixture, nil
 		}
 		apiRequests.Add(1)
 		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(oauthFailureProbePayload)), Header: make(http.Header)}, nil
@@ -190,13 +190,13 @@ func TestBlingOAuthDPAPIWriteFailureNeverMarksConnected(t *testing.T) {
 		body := oauthFailureProbePayload
 		if strings.Contains(req.URL.Path, "/oauth/token") {
 			tokenRequests.Add(1)
-			body = `{"access_token":"access-token-private","refresh_token":"refresh-token-private","token_type":"Bearer","scope":"read_orders","expires_in":21600}`
+			body = `{"access_token":"access-token-private","refresh_token":"refresh-token-private","token_type":"Bearer","scope":"read_orders","expires_in":21600}` // test-only fixture
 		}
 		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
 	})
 
 	base := newOAuthFailureHarnessStore(t)
-	store := &failingPutSecretStore{base: base, err: fmt.Errorf("DPAPI protection failed: access-token-private")}
+	store := &failingPutSecretStore{base: base, err: fmt.Errorf("DPAPI protection failed: access-token-private") // test-only fixture}
 	service, repo, start, redirectURI := newOAuthFailureHarness(t, store, httpDoer)
 	parsed, err := url.Parse(start.AuthorizationURL)
 	if err != nil {

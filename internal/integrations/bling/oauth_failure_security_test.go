@@ -146,9 +146,9 @@ func TestBlingOAuthTokenExchangeFailureIsSanitizedAndNotPersisted(t *testing.T) 
 			tokenRequests.Add(1)
 			return &http.Response{
 				StatusCode: http.StatusBadRequest,
-				Body: io.NopCloser(strings.NewReader(`{"error":"invalid_grant","client_secret":"client-secret-private","access_token":"access-token-private"}`)),
+				Body: io.NopCloser(strings.NewReader(`{"error":"invalid_grant","client_secret":"client-secret-private","access_token":"access-token-private"}`)), // test-only fixture
 				Header: make(http.Header),
-			} // test-only fixture, nil
+			}, nil
 		}
 		apiRequests.Add(1)
 		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(oauthFailureProbePayload)), Header: make(http.Header)}, nil

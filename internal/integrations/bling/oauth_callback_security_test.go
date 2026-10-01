@@ -26,8 +26,8 @@ func startOAuthCallbackTest(t *testing.T, state string) (func(url.Values) (int, 
 	}
 	t.Cleanup(func() { _ = listener.Close() })
 
-	session := &blingOAuthSession{state: state, path: "/callback", listener: listener}
-	service := &BlingOAuthService{}
+	session := &blingOAuthSession{state: state, path: "/callback", listener: listener, expiresAt: time.Now().Add(time.Minute)}
+	service := &BlingOAuthService{now: time.Now}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	t.Cleanup(cancel)
 

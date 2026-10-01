@@ -83,6 +83,7 @@ func (c *BlingOAuthClient) exchange(ctx context.Context, clientID, clientSecret 
 	req.SetBasicAuth(clientID, clientSecret)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("enable-jwt", "1")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		if ctx.Err() != nil {

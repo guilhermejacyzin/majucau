@@ -30,7 +30,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Saldo Final = Saldo Inicial + Entradas - Saídas +/- Ajustes Autorizados.
 - D0 é provisório/em andamento; D+1 a D+60 é projetado.
 - Cada saldo final alimenta o saldo inicial do dia seguinte.
-- DRE, P&L, EBITDA, forecast, capital de giro e aplicação são calculados pelo motor Majucau; demonstrativos prontos do Bling não são verdade contábil.
+- DRE por competência usa como fonte primária o demonstrativo e as classificações existentes no Bling; não reclassificar por inferência nem trocar competência. O balancete usa os recursos contábeis disponíveis no Bling, preservando campos e classificações e validando totais contra a origem. Campo indisponível permanece `UNAVAILABLE`; ausência nunca vira zero. P&L, EBITDA, forecast, capital de giro e aplicação continuam no motor Majucau conforme regras aprovadas. Aplicação/resgate do principal não é receita/despesa automaticamente; rendimentos seguem classificação e competência do Bling. Conforme `docs/source/Fechamento-Questoes-Majucau-2026-09-13.md`.
 - Débitos = créditos; Ativo = Passivo + Patrimônio Líquido. Diferença diferente de zero é `DIVERGENT`.
 - Nenhuma dessas regras pode ser alterada sem nova versão, casos de regressão e aprovação funcional registrada.
 

@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"majucau.local/financial-intelligence/database/gen"
 	"majucau.local/financial-intelligence/internal/security"
 )
 

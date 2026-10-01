@@ -375,6 +375,10 @@ func (s *BlingOAuthService) runSession(session *blingOAuthSession, clientID, red
 	ctx, cancel := context.WithTimeout(context.Background(), blingOAuthSessionTTL)
 	defer cancel()
 	code, err := s.awaitCallback(ctx, session)
+	if err == nil && (!s.now().Before(session.expiresAt) || ctx.Err() != nil) {
+		code = ""
+		err = context.DeadlineExceeded
+	}
 	if err != nil {
 		s.failSession(session, oauthErrorCode(err), oauthErrorMessage(err))
 		_ = s.repo.MarkOAuthError(ctx, oauthErrorCode(err))
@@ -449,6 +453,14 @@ func (s *BlingOAuthService) awaitCallback(ctx context.Context, session *blingOAu
 		query := r.URL.Query()
 		if query.Get("state") != session.state {
 			http.Error(w, "estado inválido", http.StatusBadRequest)
+			return
+		}
+		if !s.now().Before(session.expiresAt) || ctx.Err() != nil {
+			sendCallback(struct {
+				code string
+				err  error
+			}{err: context.DeadlineExceeded})
+			http.Error(w, "A autorização expirou. Inicie a conexão novamente.", http.StatusGone)
 			return
 		}
 		if query.Get("error") != "" || strings.TrimSpace(query.Get("code")) == "" {

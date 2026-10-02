@@ -5,10 +5,21 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 )
+
+type errorHTTPDoer struct {
+	err   error
+	calls int
+}
+
+func (d *errorHTTPDoer) Do(_ *http.Request) (*http.Response, error) {
+	d.calls++
+	return nil, d.err
+}
 
 func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -164,6 +175,48 @@ func TestListReceivablesStopsAfterRetryBudget(t *testing.T) {
 	}
 	if attempts != defaultBlingMaxAttempts {
 		t.Fatalf("attempts = %d, want %d", attempts, defaultBlingMaxAttempts)
+	}
+}
+
+func TestListReceivablesRetriesTransportTimeoutsWithinBudget(t *testing.T) {
+	doer := &errorHTTPDoer{err: &url.Error{
+		Op: "Get", URL: "http://127.0.0.1/Api/v3/contas/receber", Err: context.DeadlineExceeded,
+	}}
+	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.maxAttempts = 3
+	waits := 0
+	client.wait = func(context.Context, time.Duration) error { waits++; return nil }
+	client.random = func() float64 { return 0 }
+
+	_, err = client.ListReceivables(context.Background(), ReceivablesFilter{})
+	if !errors.Is(err, ErrBlingAPIUnavailable) {
+		t.Fatalf("transport timeout error = %v, want unavailable", err)
+	}
+	if doer.calls != client.maxAttempts || waits != client.maxAttempts-1 {
+		t.Fatalf("timeout retries = %d attempts, %d waits; want %d attempts and %d waits", doer.calls, waits, client.maxAttempts, client.maxAttempts-1)
+	}
+}
+
+func TestListReceivablesDoesNotRetryCallerCancellation(t *testing.T) {
+	doer := &errorHTTPDoer{err: context.Canceled}
+	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waits := 0
+	client.wait = func(context.Context, time.Duration) error { waits++; return nil }
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err = client.ListReceivables(ctx, ReceivablesFilter{})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("caller cancellation error = %v, want context.Canceled", err)
+	}
+	if doer.calls != 1 || waits != 0 {
+		t.Fatalf("caller cancellation made %d attempts and %d waits; want 1 attempt and no wait", doer.calls, waits)
 	}
 }
 

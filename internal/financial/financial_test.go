@@ -94,6 +94,16 @@ func TestAgingBoundariesAndExclusions(t *testing.T) {
 			t.Errorf("d=%d got %s want %s", tc.d, got, tc.want)
 		}
 	}
+	for _, day := range []int{4, 5} { // Saturday and Sunday are calendar days in D-005-A.
+		if got := AgingBucketFor(r, r.AddDate(0, 0, day)); got != Days1To7 {
+			t.Errorf("weekend due date at D+%d got %s want %s", day, got, Days1To7)
+		}
+	}
+	holidayReference := time.Date(2026, 12, 31, 15, 0, 0, 0, time.UTC)
+	newYearDueDate := time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)
+	if got := AgingBucketFor(holidayReference, newYearDueDate); got != Days1To7 {
+		t.Errorf("holiday due date is still one calendar day ahead: got %s want %s", got, Days1To7)
+	}
 	totals, err := CalculateAging(r, []OpenReceivable{{DueDate: r, OpenBalance: money(t, "10")}, {DueDate: r, OpenBalance: money(t, "5"), Status: "CANCELLED"}})
 	if err != nil || totals[Today].Amount.String() != "10.0000" {
 		t.Fatalf("aging exclusions: %#v %v", totals, err)
@@ -102,6 +112,76 @@ func TestAgingBoundariesAndExclusions(t *testing.T) {
 		t.Fatal("negative open balance must fail")
 	}
 }
+
+func TestAgingUsesSaoPauloBusinessDateWithoutShiftingDueDate(t *testing.T) {
+	// 02:30 UTC on February 11 is still February 10 in Sao Paulo.
+	reference := time.Date(2026, 2, 11, 2, 30, 0, 0, time.UTC)
+	localDueDate := time.Date(2026, 2, 10, 0, 0, 0, 0, time.UTC)
+	if got := AgingBucketFor(reference, localDueDate); got != Today {
+		t.Fatalf("date-only due date should be compared to Sao Paulo's reference date: got %s want %s", got, Today)
+	}
+
+	// At midnight in Sao Paulo the same persisted due date becomes overdue.
+	afterBusinessMidnight := time.Date(2026, 2, 11, 3, 0, 0, 0, time.UTC)
+	if got := AgingBucketFor(afterBusinessMidnight, localDueDate); got != Overdue {
+		t.Fatalf("due date should become overdue after Sao Paulo midnight: got %s want %s", got, Overdue)
+	}
+
+	// The database DATE remains February 11; it is not an instant to convert.
+	dueOnReferenceDate := time.Date(2026, 2, 11, 0, 0, 0, 0, time.UTC)
+	if got := AgingBucketFor(afterBusinessMidnight, dueOnReferenceDate); got != Today {
+		t.Fatalf("persisted due date must not shift with timezone conversion: got %s want %s", got, Today)
+	}
+}
+
+func TestCalculateAgingTotalsAreMutuallyExclusiveAndUseOpenBalance(t *testing.T) {
+	reference := time.Date(2026, 2, 10, 14, 0, 0, 0, time.UTC)
+	records := []OpenReceivable{
+		{DueDate: reference.AddDate(0, 0, -1), OpenBalance: money(t, "1.00")},
+		{DueDate: reference, OpenBalance: money(t, "2.00")},
+		{DueDate: reference.AddDate(0, 0, 1), OpenBalance: money(t, "3.00")},
+		{DueDate: reference.AddDate(0, 0, 7), OpenBalance: money(t, "4.00")},
+		{DueDate: reference.AddDate(0, 0, 8), OpenBalance: money(t, "5.00")},
+		{DueDate: reference.AddDate(0, 0, 15), OpenBalance: money(t, "6.00")},
+		{DueDate: reference.AddDate(0, 0, 16), OpenBalance: money(t, "7.00")},
+		{DueDate: reference.AddDate(0, 0, 30), OpenBalance: money(t, "8.00")},
+		{DueDate: reference.AddDate(0, 0, 31), OpenBalance: money(t, "9.00")},
+		{DueDate: reference.AddDate(0, 0, 45), OpenBalance: money(t, "10.00")},
+		{DueDate: reference.AddDate(0, 0, 46), OpenBalance: money(t, "11.00")},
+		{DueDate: reference.AddDate(0, 0, 60), OpenBalance: money(t, "12.00")},
+		{DueDate: reference.AddDate(0, 0, 61), OpenBalance: money(t, "13.00")},
+		{DueDate: reference, OpenBalance: money(t, "100.00"), Status: "CANCELLED"},
+		{DueDate: reference, OpenBalance: money(t, "100.00"), Status: "ESTORNADO"},
+	}
+
+	totals, err := CalculateAging(reference, records)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[AgingBucket]struct {
+		amount string
+		count  int
+	}{
+		Overdue:        {"1.0000", 1},
+		Today:          {"2.0000", 1},
+		Days1To7:       {"7.0000", 2},
+		Days8To15:      {"11.0000", 2},
+		Days16To30:     {"15.0000", 2},
+		Days31To45:     {"19.0000", 2},
+		Days46To60:     {"23.0000", 2},
+		OutsideHorizon: {"13.0000", 1},
+	}
+	if len(totals) != len(want) {
+		t.Fatalf("unexpected bucket count: got %d want %d (%#v)", len(totals), len(want), totals)
+	}
+	for bucket, expected := range want {
+		got := totals[bucket]
+		if got.Amount.String() != expected.amount || got.Count != expected.count || got.Bucket != bucket {
+			t.Errorf("%s totals = %#v; want amount=%s count=%d", bucket, got, expected.amount, expected.count)
+		}
+	}
+}
+
 func TestApplicationConservativeLimits(t *testing.T) {
 	rows, _ := DailyProjection(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), money(t, "100"), []Movement{{Date: time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC), Outflows: money(t, "80")}})
 	got, err := MaximumApplication(ApplicationInput{EligibleAccumulatedProfit: money(t, "100"), AlreadyInvested: money(t, "20"), MinimumReserve: money(t, "30"), Balances: rows, RuleVersion: "D-003-A"})

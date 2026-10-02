@@ -63,6 +63,16 @@ if (-not $KeepSourceOutputs) {
             Remove-Item -LiteralPath $sourcePath -Recurse -Force
         }
     }
+
+    $webview2StagingFile = Join-Path $projectRoot 'build\windows\installer\tmp\MicrosoftEdgeWebview2Setup.exe'
+    if (Test-Path -LiteralPath $webview2StagingFile -PathType Leaf) {
+        Remove-Item -LiteralPath $webview2StagingFile -Force
+    }
+    $webview2StagingRoot = Split-Path -Parent $webview2StagingFile
+    if ((Test-Path -LiteralPath $webview2StagingRoot -PathType Container) -and
+        -not (Get-ChildItem -LiteralPath $webview2StagingRoot -Force | Select-Object -First 1)) {
+        Remove-Item -LiteralPath $webview2StagingRoot -Force
+    }
 }
 
 Write-Host "Artefatos consolidados em: $artifactRoot"

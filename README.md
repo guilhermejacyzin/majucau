@@ -94,7 +94,7 @@ Pré-requisitos: Windows 10/11 x64, Go 1.26.6, Node.js 24.x, Wails CLI 2.13.0, `
 ./scripts/build-windows.ps1 -Installer
 ```
 
-Os executáveis e instaladores finais são consolidados em `artifacts/windows/`, com o inventário em `artifacts/MANIFEST.txt`. O pipeline também gera `majucau-windows-x64-portable.zip` com hashes para validação local; esse bundle não é o instalador de produção. Os caches de Go/npm ficam em `artifacts/cache/`; após a consolidação, as saídas intermediárias (`build/bin`, `frontend/dist` e `tmp`) são removidas por padrão. Use `-KeepSourceOutputs` somente para diagnóstico local.
+Os executáveis e instaladores finais são consolidados em `artifacts/windows/`, com o inventário em `artifacts/MANIFEST.txt`. O pipeline também gera `majucau-windows-x64-portable.zip` com hashes para validação local; esse bundle não é o instalador de produção. Os caches de Go, npm e WebView2 ficam em `artifacts/cache/`; bundles de verificação e relatórios de smoke ficam em `artifacts/verification/`. A CI usa os mesmos diretórios e publica os resultados a partir de `artifacts/`, inclusive quando uma etapa falha. Após a consolidação, as saídas intermediárias (`build/bin`, `build/windows/installer/tmp/MicrosoftEdgeWebview2Setup.exe`, `frontend/dist` e `tmp`) são removidas por padrão. Use `-KeepSourceOutputs` somente para diagnóstico local.
 
 O script de validação não transforma automaticamente uma checagem externa em aprovada. PostgreSQL real, assinatura Authenticode, VM limpa e backup/restore exigem evidências próprias.
 

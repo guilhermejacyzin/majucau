@@ -4,6 +4,7 @@ param()
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $artifactRoot = Join-Path $projectRoot 'artifacts'
+$verificationRoot = Join-Path $artifactRoot 'verification'
 $env:GOCACHE = Join-Path $artifactRoot 'cache\go-build'
 $goModCacheRoot = Join-Path $artifactRoot 'cache\go-mod'
 $env:GOMODCACHE = $goModCacheRoot
@@ -94,6 +95,39 @@ try {
 }
 finally {
     Pop-Location
+    $frontendDist = Join-Path $projectRoot 'frontend\dist'
+    if (Test-Path -LiteralPath $frontendDist -PathType Container) {
+        $projectRootFull = [System.IO.Path]::GetFullPath($projectRoot).TrimEnd([System.IO.Path]::DirectorySeparatorChar)
+        $projectPrefix = $projectRootFull + [System.IO.Path]::DirectorySeparatorChar
+        $artifactRootFull = [System.IO.Path]::GetFullPath($artifactRoot)
+        $frontendDistFull = [System.IO.Path]::GetFullPath($frontendDist)
+        $verificationRootFull = [System.IO.Path]::GetFullPath($verificationRoot)
+        if (-not $frontendDistFull.StartsWith($projectPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
+            -not $verificationRootFull.StartsWith($projectPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw 'O bundle frontend ou o destino de verificação saiu da raiz do projeto.'
+        }
+        foreach ($path in @($projectRootFull, $artifactRootFull, $verificationRootFull, $frontendDistFull)) {
+            if (Test-Path -LiteralPath $path) {
+                $item = Get-Item -LiteralPath $path -ErrorAction Stop
+                if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+                    throw "Não vou mover bundle através de um caminho reparse: $path"
+                }
+            }
+        }
+        New-Item -ItemType Directory -Force -Path $verificationRootFull | Out-Null
+        foreach ($path in @($artifactRootFull, $verificationRootFull)) {
+            $item = Get-Item -LiteralPath $path -ErrorAction Stop
+            if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw "Não vou mover bundle através de um caminho reparse: $path"
+            }
+        }
+        $runId = [guid]::NewGuid().ToString('N')
+        $destination = Join-Path $verificationRootFull "frontend-dist-$runId"
+        if (-not $destination.StartsWith($verificationRootFull + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw 'O destino de verificação saiu da raiz de artifacts/verification.'
+        }
+        Move-Item -LiteralPath $frontendDistFull -Destination $destination
+    }
 }
 
 Write-Host 'Verificações locais concluídas.'

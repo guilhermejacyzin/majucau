@@ -12,19 +12,31 @@ jobs:
   verify-windows:
     runs-on: windows-latest
     timeout-minutes: 30
+    env:
+      GOCACHE: '${{ github.workspace }}\artifacts\cache\go-build'
+      GOMODCACHE: '${{ github.workspace }}\artifacts\cache\go-mod'
+      GOBIN: '${{ github.workspace }}\artifacts\cache\bin'
+      npm_config_cache: '${{ github.workspace }}\artifacts\cache\npm'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Prepare centralized caches
+        shell: pwsh
+        run: |
+          $cacheRoot = Join-Path $env:GITHUB_WORKSPACE 'artifacts\cache'
+          foreach ($name in @('go-build', 'go-mod', 'bin', 'npm')) {
+            New-Item -ItemType Directory -Force -Path (Join-Path $cacheRoot $name) | Out-Null
+          }
+          (Join-Path $cacheRoot 'bin') | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26.6'
-          cache: true
+          cache: false
 
       - uses: actions/setup-node@v4
         with:
           node-version: '24.14.0'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -97,8 +109,8 @@ jobs:
         shell: pwsh
         run: |
           $helper = (Resolve-Path -LiteralPath 'build/bin/installer-helper.exe').Path
-          $helperRoot = Join-Path $env:RUNNER_TEMP 'majucau-helper-smoke'
-          if (Test-Path -LiteralPath $helperRoot) { Remove-Item -LiteralPath $helperRoot -Recurse -Force }
+          $runSuffix = "$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          $helperRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/verification/helper-smoke-$runSuffix"
           New-Item -ItemType Directory -Force -Path $helperRoot | Out-Null
           $preflightOut = Join-Path $helperRoot 'preflight.json'
           $preflight = Start-Process -FilePath $helper -ArgumentList @('preflight', '--install-dir', (Join-Path $helperRoot 'app'), '--data-dir', (Join-Path $helperRoot 'data'), '--free-space-path', $helperRoot, '--min-free-bytes', '1', '--port', '55439') -RedirectStandardOutput $preflightOut -PassThru
@@ -138,7 +150,10 @@ jobs:
           wails build -s -skipbindings -trimpath
           ./scripts/consolidate-artifacts.ps1 -KeepSourceOutputs
           ./scripts/write-release-manifest.ps1
-          $manifestVerification = Join-Path $env:RUNNER_TEMP 'majucau-manifest-verification.json'
+          $runSuffix = "$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          $verificationRoot = Join-Path $env:GITHUB_WORKSPACE 'artifacts/verification'
+          New-Item -ItemType Directory -Force -Path $verificationRoot | Out-Null
+          $manifestVerification = Join-Path $verificationRoot "manifest-verification-$runSuffix.json"
           & (Resolve-Path -LiteralPath 'build/bin/installer-helper.exe').Path verify-package --package-dir (Resolve-Path -LiteralPath 'artifacts/windows').Path --manifest 'release-manifest.json' --current-schema '1.0' |
             Set-Content -LiteralPath $manifestVerification -Encoding utf8
           if ($LASTEXITCODE -ne 0) { throw "PACKAGE_VERIFIED falhou: $LASTEXITCODE" }
@@ -157,8 +172,8 @@ jobs:
           $installer = Get-ChildItem -LiteralPath build/bin -Filter '*-installer.exe' -File | Select-Object -First 1
           if (-not $installer) { throw 'Instalador NSIS não foi encontrado para o smoke.' }
           $helper = (Resolve-Path -LiteralPath 'build/bin/installer-helper.exe').Path
-          $preflightRoot = Join-Path $env:RUNNER_TEMP 'majucau-install-preflight'
-          if (Test-Path -LiteralPath $preflightRoot) { Remove-Item -LiteralPath $preflightRoot -Recurse -Force }
+          $runSuffix = "$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          $preflightRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts/verification/install-preflight-$runSuffix"
           New-Item -ItemType Directory -Force -Path $preflightRoot | Out-Null
           $preflightPath = Join-Path $preflightRoot 'preflight.json'
           & $helper preflight --install-dir (Join-Path $preflightRoot 'app') --data-dir (Join-Path $preflightRoot 'data') --free-space-path $env:ProgramData --min-free-bytes 1 --port 54329 |
@@ -180,15 +195,49 @@ jobs:
             Write-Warning 'Smoke de desktop não executado: runner Windows Server fora da política suportada.'
             exit 0
           }
-          ./scripts/smoke-installer.ps1 -InstallerPath $installer.FullName -OutputRoot (Join-Path $env:RUNNER_TEMP 'majucau-install-smoke')
+          $runSuffix = "$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          ./scripts/smoke-installer.ps1 -InstallerPath $installer.FullName -OutputRoot (Join-Path $env:GITHUB_WORKSPACE "artifacts/verification/install-smoke-$runSuffix")
+
+      - name: Consolidate generated outputs
+        if: always()
+        shell: pwsh
+        run: ./scripts/consolidate-artifacts.ps1
+
+      - name: Verify output consolidation
+        shell: pwsh
+        run: |
+          $artifactRoot = Join-Path $env:GITHUB_WORKSPACE 'artifacts'
+          $windowsRoot = Join-Path $artifactRoot 'windows'
+          $required = @('majucau.exe', 'majucau-worker.exe', 'installer-helper.exe')
+          foreach ($name in $required) {
+            if (-not (Test-Path -LiteralPath (Join-Path $windowsRoot $name) -PathType Leaf)) {
+              throw "Artefato final ausente em artifacts/windows: $name"
+            }
+          }
+          if (-not (Get-ChildItem -LiteralPath $windowsRoot -Filter '*-installer.exe' -File)) {
+            throw 'Instalador final ausente em artifacts/windows.'
+          }
+          foreach ($relativePath in @('build\bin', 'frontend\dist', 'tmp', 'build\windows\installer\tmp\MicrosoftEdgeWebview2Setup.exe')) {
+            if (Test-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $relativePath)) {
+              throw "Saída intermediária permaneceu fora de artifacts: $relativePath"
+            }
+          }
+          foreach ($cachePath in @($env:GOCACHE, $env:GOMODCACHE, $env:GOBIN, $env:npm_config_cache)) {
+            $resolved = [System.IO.Path]::GetFullPath($cachePath)
+            if (-not $resolved.StartsWith($artifactRoot + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+              throw "Cache fora de artifacts: $resolved"
+            }
+          }
+          if (-not (Test-Path -LiteralPath (Join-Path $artifactRoot 'MANIFEST.txt') -PathType Leaf)) {
+            throw 'Inventário artifacts/MANIFEST.txt ausente.'
+          }
 
       - name: Upload unsigned G1 build
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: majucau-g1-unsigned
           path: |
-            build/bin/majucau.exe
-            build/bin/majucau-worker.exe
-            build/bin/installer-helper.exe
-            build/bin/*-installer.exe
-          if-no-files-found: error
+            artifacts/windows/
+            artifacts/verification/
+          if-no-files-found: ignore

@@ -6,8 +6,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 if ([string]::IsNullOrWhiteSpace($Destination)) {
-    $Destination = Join-Path $projectRoot 'build\windows\installer\tmp\MicrosoftEdgeWebview2Setup.exe'
+    $Destination = Join-Path $projectRoot 'artifacts\cache\webview2\MicrosoftEdgeWebview2Setup.exe'
 }
+$installerSource = Join-Path $projectRoot 'build\windows\installer\tmp\MicrosoftEdgeWebview2Setup.exe'
 
 # Wails' generated NSIS macro embeds this official Evergreen Bootstrapper. The
 # hash is pinned so a changed or substituted download fails the build closed.
@@ -32,4 +33,11 @@ if ($actualHash -ne $expectedSha256) {
     throw "WebView2 Bootstrapper rejeitado: SHA-256 inesperado ($actualHash)."
 }
 
-Write-Output "WebView2 Bootstrapper validado: $Destination"
+$destinationFull = [System.IO.Path]::GetFullPath($Destination)
+$installerSourceFull = [System.IO.Path]::GetFullPath($installerSource)
+if (-not [string]::Equals($destinationFull, $installerSourceFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $installerSourceFull) | Out-Null
+    Copy-Item -LiteralPath $destinationFull -Destination $installerSourceFull -Force
+}
+
+Write-Output "WebView2 Bootstrapper validado e centralizado em artifacts/cache: $destinationFull"

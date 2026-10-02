@@ -31,14 +31,51 @@ func TestMoneyExactArithmeticAndParsing(t *testing.T) {
 	}
 }
 func TestMoneyRoundHalfUp(t *testing.T) {
-	for input, expected := range map[string]string{"1.2345": "1.2300", "1.2350": "1.2400", "-1.2350": "-1.2400"} {
-		m, _ := ParseMoney(input)
-		got, err := m.RoundHalfUp(2)
-		if err != nil || got.String() != expected {
-			t.Errorf("%s => %v (%v), want %s", input, got, err, expected)
+	cases := []struct {
+		input    string
+		places   int
+		expected string
+	}{
+		{input: "1.2345", places: 2, expected: "1.2300"},
+		{input: "1.2350", places: 2, expected: "1.2400"},
+		{input: "-1.2350", places: 2, expected: "-1.2400"},
+		{input: "-1.0050", places: 2, expected: "-1.0100"},
+		{input: "1.5000", places: 0, expected: "2.0000"},
+		{input: "-1.5000", places: 0, expected: "-2.0000"},
+		{input: "1.2345", places: 3, expected: "1.2350"},
+		{input: "1.2345", places: 4, expected: "1.2345"},
+	}
+	for _, tc := range cases {
+		m, err := ParseMoney(tc.input)
+		if err != nil {
+			t.Fatalf("parse %s: %v", tc.input, err)
+		}
+		got, err := m.RoundHalfUp(tc.places)
+		if err != nil || got.String() != tc.expected {
+			t.Errorf("%s rounded to %d places => %v (%v), want %s", tc.input, tc.places, got, err, tc.expected)
 		}
 	}
 }
+
+func TestMoneyKeepsPrecisionUntilApprovedRoundingBoundary(t *testing.T) {
+	first, err := ParseMoney("0.0049")
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := ParseMoney("0.0049")
+	if err != nil {
+		t.Fatal(err)
+	}
+	total, err := first.Add(second)
+	if err != nil || total.String() != "0.0098" {
+		t.Fatalf("intermediate addition rounded or lost precision: %v %v", total, err)
+	}
+	rounded, err := total.RoundHalfUp(2)
+	if err != nil || rounded.String() != "0.0100" {
+		t.Fatalf("final approved boundary rounding: %v %v", rounded, err)
+	}
+}
+
 func TestMoneyMulRatioRoundHalfUp(t *testing.T) {
 	amount, _ := ParseMoney("100.01")
 	fee, err := amount.MulRatioRoundHalfUp(259, 10000)

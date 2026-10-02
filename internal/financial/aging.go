@@ -3,7 +3,6 @@ package financial
 import (
 	"errors"
 	"time"
-	_ "time/tzdata"
 
 	"majucau.local/financial-intelligence/internal/domain"
 )
@@ -32,18 +31,10 @@ type AgingTotal struct {
 	Count  int
 }
 
-var saoPauloBusinessTimezone = func() *time.Location {
-	location, err := time.LoadLocation("America/Sao_Paulo")
-	if err != nil {
-		panic("load America/Sao_Paulo business timezone: " + err.Error())
-	}
-	return location
-}()
-
 func AgingBucketFor(reference, due time.Time) AgingBucket {
 	// D-005-A treats the reference as an instant and due as a persisted business
 	// date. Convert only the instant; converting a SQL DATE would shift its day.
-	referenceDate := dateOnly(reference.In(saoPauloBusinessTimezone))
+	referenceDate := domain.BusinessDate(reference)
 	dueDate := dateOnly(due)
 	days := int(dueDate.Sub(referenceDate).Hours() / 24)
 	switch {

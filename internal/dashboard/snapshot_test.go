@@ -83,8 +83,52 @@ func TestReadDashboardSnapshotUsesNormalizedRowsAndExplicitStates(t *testing.T) 
 	if len(snapshot.PayableRows) != 1 || snapshot.PayableRows[0].Supplier != "Fornecedor" {
 		t.Fatalf("unexpected payable rows: %+v", snapshot.PayableRows)
 	}
-	if len(db.args) != 3 || !reflect.DeepEqual(db.args[0], snapshot.AsOf) {
-		t.Fatalf("expected as-of/date query arguments, got %#v", db.args)
+	wantDateArgs := []any{"2026-09-21", "2026-09-01", "2026-10-01"}
+	if len(db.args) != 3 || !reflect.DeepEqual(db.args, wantDateArgs) {
+		t.Fatalf("expected business-date query arguments %#v, got %#v", wantDateArgs, db.args)
+	}
+}
+
+func TestReadDashboardSnapshotUsesBusinessDateAtUtcMonthBoundary(t *testing.T) {
+	cases := []struct {
+		instant   time.Time
+		date      string
+		monthFrom string
+		monthTo   string
+	}{
+		{
+			instant:   time.Date(2026, 3, 1, 2, 59, 0, 0, time.UTC),
+			date:      "2026-02-28",
+			monthFrom: "2026-02-01",
+			monthTo:   "2026-03-01",
+		},
+		{
+			instant:   time.Date(2026, 3, 1, 3, 0, 0, 0, time.UTC),
+			date:      "2026-03-01",
+			monthFrom: "2026-03-01",
+			monthTo:   "2026-04-01",
+		},
+	}
+	for _, tc := range cases {
+		db := &fakeDB{row: fakeRow{values: []any{
+			"0.0000", int64(0), "0.0000", int64(0),
+			"0.0000", int64(0), int64(0), "0.0000", int64(0),
+			"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
+			"0.0000", int64(0), int64(0), []byte(`[]`), []byte(`[]`),
+		}}}
+		reader := &Reader{db: db, now: func() time.Time { return tc.instant }}
+
+		snapshot, err := reader.ReadDashboardSnapshot(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantDateArgs := []any{tc.date, tc.monthFrom, tc.monthTo}
+		if !reflect.DeepEqual(db.args, wantDateArgs) {
+			t.Errorf("instant %s query args = %#v; want %#v", tc.instant, db.args, wantDateArgs)
+		}
+		if !snapshot.AsOf.Equal(tc.instant) || snapshot.AsOf.Location() != time.UTC {
+			t.Errorf("as_of must remain the UTC technical instant: got %s (%s)", snapshot.AsOf, snapshot.AsOf.Location())
+		}
 	}
 }
 

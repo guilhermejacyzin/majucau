@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/internal/application"
+	"majucau.local/financial-intelligence/internal/domain"
 )
 
 var ErrDatabaseUnavailable = errors.New("dashboard database is unavailable")
@@ -34,7 +35,8 @@ func (r *Reader) ReadDashboardSnapshot(ctx context.Context) (application.Dashboa
 		return application.DashboardSnapshot{}, ErrDatabaseUnavailable
 	}
 	asOf := r.now().UTC()
-	monthStart := time.Date(asOf.Year(), asOf.Month(), 1, 0, 0, 0, 0, time.UTC)
+	businessDate := domain.BusinessDate(asOf)
+	monthStart := time.Date(businessDate.Year(), businessDate.Month(), 1, 0, 0, 0, 0, time.UTC)
 	monthEnd := monthStart.AddDate(0, 1, 0)
 
 	var (
@@ -46,7 +48,11 @@ func (r *Reader) ReadDashboardSnapshot(ctx context.Context) (application.Dashboa
 		receivableRowsJSON, payableRowsJSON                                              []byte
 	)
 
-	err := r.db.QueryRow(ctx, dashboardSnapshotSQL, asOf, monthStart, monthEnd).Scan(
+	err := r.db.QueryRow(ctx, dashboardSnapshotSQL,
+		businessDate.Format("2006-01-02"),
+		monthStart.Format("2006-01-02"),
+		monthEnd.Format("2006-01-02"),
+	).Scan(
 		&receivablesValue, &receivablesCount,
 		&futureValue, &futureCount,
 		&receiptsMonthValue, &receiptsMonthCount, &receiptsTotalCount,

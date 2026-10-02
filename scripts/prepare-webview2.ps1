@@ -13,7 +13,7 @@ $installerSource = Join-Path $projectRoot 'build\windows\installer\tmp\Microsoft
 # Wails' generated NSIS macro embeds this official Evergreen Bootstrapper. The
 # hash is pinned so a changed or substituted download fails the build closed.
 $uri = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703'
-$expectedSha256 = '81C01751C8CC385A5991ABB104205D42AC70094350EE8FB9E8EA580B51BB9554'
+$expectedSha256 = '48A7B31419A8EB4FFFDC7B6A02F6B4DFDA60687FC897116BE15370E10C2B66A7'
 $destinationDirectory = Split-Path -Parent $Destination
 New-Item -ItemType Directory -Force -Path $destinationDirectory | Out-Null
 

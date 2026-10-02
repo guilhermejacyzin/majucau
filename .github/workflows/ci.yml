@@ -241,3 +241,48 @@ jobs:
             artifacts/windows/
             artifacts/verification/
           if-no-files-found: ignore
+
+  verify-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_USER: majucau
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: majucau_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U majucau -d majucau_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      GOCACHE: '${{ github.workspace }}/artifacts/cache/go-build'
+      GOMODCACHE: '${{ github.workspace }}/artifacts/cache/go-mod'
+      MAJUCAU_TEST_DATABASE_URL: postgres://majucau:ci-only-password@localhost:5432/majucau_test?sslmode=disable
+      MAJUCAU_TEST_RECEIPTS_FOLDER: '${{ github.workspace }}/internal/integrations/bling/testdata/e2e'
+      MAJUCAU_TEST_FUTURE_FOLDER: '${{ github.workspace }}/internal/integrations/nuvempago/testdata/e2e'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare centralized Go caches
+        run: mkdir -p artifacts/cache/go-build artifacts/cache/go-mod
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.6'
+          cache: false
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client
+
+      - name: Apply schema to disposable PostgreSQL
+        run: psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f database/migrations/000001_init.up.sql
+
+      - name: Run PostgreSQL integration tests
+        run: go test ./internal/integrations/bling ./internal/integrations/nuvempago

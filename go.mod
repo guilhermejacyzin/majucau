@@ -4,6 +4,8 @@ go 1.26.0
 
 toolchain go1.26.6
 
+ignore ./artifacts
+
 require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.9.2

@@ -281,10 +281,17 @@ jobs:
           go-version: '1.26.6'
           cache: false
 
-      - name: Install PostgreSQL client
+      - name: Install PostgreSQL 18 client
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends postgresql-client
+          sudo apt-get install --yes --no-install-recommends postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client-18
+          printf '%s\n' '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
+          export PATH="/usr/lib/postgresql/18/bin:$PATH"
+          pg_dump --version | grep -Eq '^pg_dump \(PostgreSQL\) 18\.'
+          pg_dumpall --version | grep -Eq '^pg_dumpall \(PostgreSQL\) 18\.'
 
       - name: Apply schema to disposable PostgreSQL
         run: |
@@ -292,5 +299,8 @@ jobs:
             psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
 
+      - name: Run backup creation and verification against disposable PostgreSQL
+        run: go test ./internal/backup -run '^TestCreateAndVerifyAgainstDisposablePostgres$' -count=1
+
       - name: Run PostgreSQL integration tests
-        run: go test ./internal/backup ./internal/integrations/bling ./internal/integrations/nuvempago
+        run: go test ./internal/integrations/bling ./internal/integrations/nuvempago

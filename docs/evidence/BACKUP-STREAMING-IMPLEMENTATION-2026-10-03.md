@@ -154,3 +154,32 @@ integração operacional e ensaio em VM limpa.
   leitores/escritores em fluxo: <https://pkg.go.dev/github.com/tink-crypto/tink-go/v2/streamingaead>.
 - O keyset Tink é gravado/lido com AEAD e dados associados:
   <https://pkg.go.dev/github.com/tink-crypto/tink-go/v2/keyset>.
+- `pg_dumpall --database` seleciona o banco da conexão inicial usada para
+  extrair objetos globais: <https://www.postgresql.org/docs/18/app-pg-dumpall.html>.
+
+## Geração e verificação em PostgreSQL descartável — CI em 2026-10-03
+
+O run [37142318615](https://github.com/guilhermejacyzin/majucau/actions/runs/37142318615)
+passou nos jobs `verify-postgres` e `verify-windows`. O job PostgreSQL aplicou
+as migrations a um serviço descartável PostgreSQL 18.6 e executou
+`TestCreateAndVerifyAgainstDisposablePostgres` com `pg_dump` e `pg_dumpall`
+reais do cliente 18. O teste confirma os payloads de banco e globals, o formato
+V2, e a autenticação completa do pacote por `VerifyContext`. O arquivo fica em
+`t.TempDir()` e é removido ao término. O teste não faz restore nem altera dados
+do banco.
+
+`pg_dumpall` agora recebe `--database` com o banco selecionado na conexão. Isso
+mantém compatibilidade com o `PGPASSFILE` temporário, que continua limitado a
+esse banco em vez de conceder correspondência a todos os bancos. O teste
+unitário também verifica esse argumento e continua verificando que a senha não
+é passada na linha de comando.
+
+No mesmo run, o job Windows passou pela suíte Go, `go vet`, análise de
+vulnerabilidades, verificações de migrations/SQL/secrets, lint/typecheck/teste/
+build frontend, builds desktop/worker/helper e build do instalador unsigned.
+O smoke real de instalação/desinstalação foi corretamente pulado: o runner
+hospedado é Windows Server (`OS_UNSUPPORTED`), e esse ensaio exige uma VM limpa
+Windows 10/11. Esta evidência comprova geração e verificação criptográfica V2
+com dumps reais; ela não comprova restore PostgreSQL real com RAW/snapshots/roles,
+integração com worker/UI/instalador, retenção, nem continuidade operacional.
+`OPS-02` e `DATA-04` seguem `PARTIAL`.

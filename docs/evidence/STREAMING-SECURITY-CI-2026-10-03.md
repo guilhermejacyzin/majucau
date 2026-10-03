@@ -30,3 +30,10 @@
 - A leitura do manifesto e dos arquivos referenciados usa `os.Root`, rejeita links simbólicos e componentes que não sejam diretórios, e compara o arquivo aberto com o item previamente inspecionado.
 - A CI [37117232676](https://github.com/guilhermejacyzin/majucau/actions/runs/37117232676) passou nos jobs Windows e PostgreSQL. Incluiu testes Go, `go vet`, verificações de vulnerabilidades e segredos, lint/typecheck/test/build do frontend, builds do desktop/worker/helper, smoke de instalação e desinstalação e consolidação dos outputs.
 - A CI confirma os testes/builds no runner, não substitui a validação de instalação, links simbólicos e permissões numa VM limpa Windows 10/11. OPS-04, DATA-04 e SEC-01 permanecem `PARTIAL` onde essas evidências operacionais ainda faltam.
+
+## Snapshot do painel e limite IPC — auditoria estática
+
+- A consulta do painel retorna métricas agregadas e no máximo 50 linhas de recebíveis mais 50 de contas a pagar. Os nomes em `contacts.name` e os campos `payables.document`/`payables.category` são `text` sem limite de bytes no schema atual.
+- O PostgreSQL agrega as linhas em JSON; o worker lê e decodifica esse JSON, `NewResponse` o serializa e o servidor serializa a resposta novamente. O limite de 1 MiB do IPC só é aplicado ao frame final, depois dessas alocações.
+- Portanto, a quantidade de linhas é limitada, mas o tamanho da resposta em memória ainda depende do conteúdo textual armazenado. Um payload grande falha ao ultrapassar o frame, porém pode consumir memória antes da rejeição.
+- Nenhuma regra financeira ou tela foi alterada. Foi solicitada decisão sobre carregar os detalhes em partes mantendo a mesma aparência, ou definir limites por campo e rejeitar entradas acima deles. DATA-04 permanece `PARTIAL` até fechar esse contrato e validar o fluxo.

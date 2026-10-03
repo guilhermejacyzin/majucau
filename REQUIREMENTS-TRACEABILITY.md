@@ -117,5 +117,6 @@ Permanecem pendentes:
 7. Certificado/serviço Authenticode.
 8. VMs limpas Windows 10/11 e evidências de instalação, atualização, backup e restore.
 9. Arquivo do wireframe aprovado da Visão Executiva para comparação visual.
+10. Decisão de limite/entrega em partes para textos do detalhe do painel; ver auditoria estática em `docs/evidence/STREAMING-SECURITY-CI-2026-10-03.md`.
 
 Nenhum desses itens deve ser reinterpretado como concluído por existir uma intenção no plano. O estado muda somente quando a evidência correspondente for produzida e revisada.

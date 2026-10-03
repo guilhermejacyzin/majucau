@@ -26,6 +26,36 @@ inteiro nessa busca. `security.RedactJSON` tinha decodificação JSON sem limite
 agora rejeita entradas acima de 1 MiB com saída totalmente redigida. A busca
 encontrou apenas um chamador de teste, portanto nenhum fluxo de produção mudou.
 
+## Varredura complementar — filas de arquivos e respostas de prévia
+
+- A enumeração das pastas CSV lê até 256 entradas por vez. Na importação, os
+  nomes entram em uma tabela temporária PostgreSQL e são consultados de volta
+  em blocos de até 256; `work_mem` e `maintenance_work_mem` da transação ficam
+  em 16 MiB. A tabela é descartada no commit/rollback. A listagem completa não
+  é mantida em uma fatia Go.
+- Na prévia sem banco, a ordenação externa usa blocos de 256 nomes e intercala
+  no máximo 64 arquivos temporários por vez. O índice mantém HMACs dos IDs; os
+  nomes/locais temporários da prévia são cifrados. A prévia percorre todos os
+  arquivos, mas só devolve até 50 metadados e 50 detalhes de erro, junto dos
+  totais completos.
+- As duas rotas de prévia montam respostas apenas a partir desses arrays
+  limitados. Já o snapshot do painel monta os arrays de recebíveis/pagáveis no
+  servidor antes do quadro IPC validar o limite de 1 MiB; a consulta limita a
+  50 linhas, mas textos vindos do banco não têm tamanho máximo. Esse ponto
+  continua aguardando uma decisão de contrato, pois pode exigir apresentação
+  de erro ou mudança na forma de consulta exibida.
+- A listagem de integrações usa `rows.Next`, mas a tabela de conexões limita
+  `provider` a quatro valores únicos; portanto, essa consulta tem teto de
+  quatro linhas. Os demais fluxos de cópia de backup e hash de pacote usam
+  `io.Copy`, sem materializar o arquivo inteiro.
+
+Esta varredura é estática e não prova limites de disco do PostgreSQL, ACLs ou
+remoção de temporários em uma instalação real. A importação guarda nomes de
+arquivo nas tabelas temporárias PostgreSQL; a revisão não verificou se a ACL
+do diretório de dados protege os arquivos temporários do servidor durante a
+execução. Esses pontos continuam dependentes de validação em VM Windows; não
+houve alteração de comportamento, tela ou regra de negócio nesta etapa.
+
 ## Pendência: resposta do snapshot do painel
 
 O SQL do dashboard limita a 50 linhas de contas a receber e 50 de contas a

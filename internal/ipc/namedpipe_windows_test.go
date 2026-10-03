@@ -68,6 +68,81 @@ func TestNamedPipeHealthRoundTripAndCancellation(t *testing.T) {
 	_ = server.Close()
 }
 
+func TestNamedPipeConcurrentClientHealthRequests(t *testing.T) {
+	name := fmt.Sprintf(`\\.\pipe\Majucau-concurrent-%d`, time.Now().UnixNano())
+	server, err := NewNamedPipeServer(NamedPipeConfig{Name: name, IOTimeout: 3 * time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	serveErr := make(chan error, 1)
+	go func() {
+		serveErr <- server.Serve(ctx, HandlerFunc(func(_ context.Context, req Request) (Response, error) {
+			return NewResponse(req.RequestID, map[string]string{"request_id": req.RequestID})
+		}))
+	}()
+
+	const clientCount = 8
+	type callResult struct {
+		requestID string
+		response  Response
+		err       error
+	}
+	start := make(chan struct{})
+	results := make(chan callResult, clientCount)
+	for index := 0; index < clientCount; index++ {
+		requestID := fmt.Sprintf("concurrent-%02d", index)
+		go func(requestID string) {
+			<-start
+			client, err := NewNamedPipeClient(NamedPipeConfig{Name: name, IOTimeout: 8 * time.Second})
+			if err != nil {
+				results <- callResult{requestID: requestID, err: err}
+				return
+			}
+			defer client.Close()
+			response, err := client.Call(ctx, Request{Version: ProtocolVersion, RequestID: requestID, Method: MethodHealth})
+			results <- callResult{requestID: requestID, response: response, err: err}
+		}(requestID)
+	}
+	close(start)
+
+	seen := make(map[string]bool, clientCount)
+	for index := 0; index < clientCount; index++ {
+		select {
+		case result := <-results:
+			if result.err != nil {
+				t.Fatalf("concurrent IPC request %q failed: %v", result.requestID, result.err)
+			}
+			if seen[result.requestID] {
+				t.Fatalf("duplicate IPC response for request %q", result.requestID)
+			}
+			seen[result.requestID] = true
+			expected := fmt.Sprintf(`{"request_id":%q}`, result.requestID)
+			if !result.response.OK || string(result.response.Payload) != expected {
+				t.Fatalf("unexpected IPC response for %q: %#v", result.requestID, result.response)
+			}
+		case <-ctx.Done():
+			t.Fatalf("timed out waiting for concurrent IPC requests: %v", ctx.Err())
+		}
+	}
+	if len(seen) != clientCount {
+		t.Fatalf("received %d distinct IPC responses; want %d", len(seen), clientCount)
+	}
+
+	cancel()
+	_ = server.Close()
+	select {
+	case err := <-serveErr:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("server stopped with unexpected error: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("server did not stop after concurrent clients finished")
+	}
+}
+
 func TestNamedPipeAppliesProtectedDACLToCreatedPipe(t *testing.T) {
 	name := fmt.Sprintf(`\\.\pipe\Majucau-dacl-%d`, time.Now().UnixNano())
 	clientSID, err := currentProcessSID()

@@ -293,4 +293,4 @@ jobs:
           done
 
       - name: Run PostgreSQL integration tests
-        run: go test ./internal/integrations/bling ./internal/integrations/nuvempago
+        run: go test ./internal/backup ./internal/integrations/bling ./internal/integrations/nuvempago

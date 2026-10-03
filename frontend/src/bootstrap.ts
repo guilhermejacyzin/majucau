@@ -43,6 +43,7 @@ export type DashboardSnapshotAdapter = { getSnapshot: () => Promise<DashboardSna
 
 export type BlingReceiptImportPreview = {
   files: Array<{ name: string; sha256: string; receipt_count: number; error_count: number }>
+  file_count?: number
   receipt_count: number
   error_count: number
   ignored_count: number
@@ -71,6 +72,7 @@ export type BlingImportAdapter = { import: (folder: string) => Promise<BlingRece
 
 export type NuvemPagoFutureImportPreview = {
   files: Array<{ name: string; sha256: string; receivable_count: number; rejected_row_count: number }>
+  file_count?: number
   receivable_count: number
   error_count: number
   ignored_count: number

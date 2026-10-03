@@ -148,6 +148,7 @@ export namespace application {
 	}
 	export class BlingReceiptImportPreview {
 	    files: BlingReceiptImportFile[];
+	    file_count: number;
 	    receipt_count: number;
 	    error_count: number;
 	    ignored_count: number;
@@ -162,6 +163,7 @@ export namespace application {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.files = this.convertValues(source["files"], BlingReceiptImportFile);
+	        this.file_count = source["file_count"];
 	        this.receipt_count = source["receipt_count"];
 	        this.error_count = source["error_count"];
 	        this.ignored_count = source["ignored_count"];

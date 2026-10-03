@@ -404,7 +404,7 @@ func (h workerHandler) previewBlingReceipts(ctx context.Context, req ipc.Request
 	if err := json.Unmarshal(req.Payload, &input); err != nil || strings.TrimSpace(input.Folder) == "" {
 		return ipc.NewErrorResponse(req.RequestID, "BLING_IMPORT_FOLDER_REQUIRED", "Informe a pasta dos relatórios CSV do Bling."), nil
 	}
-	report, err := bling.ImportReceiptsFolder(ctx, input.Folder)
+	report, err := bling.PreviewReceiptsFolder(ctx, input.Folder)
 	if err != nil {
 		code := "BLING_IMPORT_FAILED"
 		message := "Não foi possível ler a pasta dos relatórios do Bling."
@@ -415,17 +415,14 @@ func (h workerHandler) previewBlingReceipts(ctx context.Context, req ipc.Request
 		return ipc.NewErrorResponse(req.RequestID, code, message), nil
 	}
 	preview := application.BlingReceiptImportPreview{
-		ReceiptCount: len(report.Receipts), ErrorCount: len(report.Errors), IgnoredCount: len(report.Ignored),
+		FileCount: report.FileCount, ReceiptCount: report.ReceiptCount, ErrorCount: report.ErrorCount, IgnoredCount: report.IgnoredCount,
 		Files:  make([]application.BlingReceiptImportFile, 0, len(report.Files)),
-		Issues: make([]application.BlingReceiptImportIssue, 0, minInt(len(report.Errors), 50)),
+		Issues: make([]application.BlingReceiptImportIssue, 0, len(report.Issues)),
 	}
 	for _, file := range report.Files {
 		preview.Files = append(preview.Files, application.BlingReceiptImportFile{Name: file.Name, SHA256: file.SHA256, ReceiptCount: file.ReceiptCount, ErrorCount: file.ErrorCount})
 	}
-	for index, issue := range report.Errors {
-		if index >= 50 {
-			break
-		}
+	for _, issue := range report.Issues {
 		preview.Issues = append(preview.Issues, application.BlingReceiptImportIssue{File: issue.File, Line: issue.Line, Code: issue.Code, Message: issue.Message})
 	}
 	return ipc.NewResponse(req.RequestID, preview)
@@ -436,7 +433,7 @@ func (h workerHandler) previewNuvemPagoFuture(ctx context.Context, req ipc.Reque
 	if err := json.Unmarshal(req.Payload, &input); err != nil || strings.TrimSpace(input.Folder) == "" {
 		return ipc.NewErrorResponse(req.RequestID, "NUVEM_PAGO_FUTURE_FOLDER_REQUIRED", "Informe a pasta dos recebimentos futuros do Nuvem Pago."), nil
 	}
-	report, err := nuvempago.ImportFutureFolder(ctx, input.Folder)
+	report, err := nuvempago.PreviewFutureFolder(ctx, input.Folder)
 	if err != nil {
 		code := "NUVEM_PAGO_FUTURE_PREVIEW_FAILED"
 		message := "Não foi possível ler a pasta de recebimentos futuros do Nuvem Pago."
@@ -447,17 +444,14 @@ func (h workerHandler) previewNuvemPagoFuture(ctx context.Context, req ipc.Reque
 		return ipc.NewErrorResponse(req.RequestID, code, message), nil
 	}
 	preview := application.NuvemPagoFutureImportPreview{
-		ReceivableCount: len(report.Receivables), ErrorCount: len(report.Errors), IgnoredCount: len(report.Ignored),
+		FileCount: report.FileCount, ReceivableCount: report.ReceivableCount, ErrorCount: report.ErrorCount, IgnoredCount: report.IgnoredCount,
 		Files:  make([]application.NuvemPagoFutureImportFile, 0, len(report.Files)),
-		Issues: make([]application.NuvemPagoFutureImportIssue, 0, minInt(len(report.Errors), 50)),
+		Issues: make([]application.NuvemPagoFutureImportIssue, 0, len(report.Issues)),
 	}
 	for _, file := range report.Files {
 		preview.Files = append(preview.Files, application.NuvemPagoFutureImportFile{Name: file.Name, SHA256: file.SHA256, ReceivableCount: file.ReceivableCount, RejectedRowCount: file.RejectedRowCount})
 	}
-	for index, issue := range report.Errors {
-		if index >= 50 {
-			break
-		}
+	for _, issue := range report.Issues {
 		preview.Issues = append(preview.Issues, application.NuvemPagoFutureImportIssue{File: issue.File, Line: issue.Line, Code: issue.Code, Message: issue.Message})
 	}
 	return ipc.NewResponse(req.RequestID, preview)
@@ -487,11 +481,3 @@ func (h workerHandler) importNuvemPagoFuture(ctx context.Context, req ipc.Reques
 	}
 	return ipc.NewResponse(req.RequestID, application.NuvemPagoFutureImportResult{BatchID: result.BatchID, Status: result.Status, RecordsRead: result.RecordsRead, RecordsCreated: result.RecordsCreated, RecordsUpdated: result.RecordsUpdated, RecordsFailed: result.RecordsFailed, IgnoredCount: result.IgnoredCount})
 }
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-

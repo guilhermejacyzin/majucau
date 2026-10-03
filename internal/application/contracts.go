@@ -53,6 +53,7 @@ type BlingReceiptImportIssue struct {
 // histories and financial rows never cross the worker/UI boundary in preview.
 type BlingReceiptImportPreview struct {
 	Files        []BlingReceiptImportFile  `json:"files"`
+	FileCount    int                       `json:"file_count"`
 	ReceiptCount int                       `json:"receipt_count"`
 	ErrorCount   int                       `json:"error_count"`
 	IgnoredCount int                       `json:"ignored_count"`
@@ -91,6 +92,7 @@ type NuvemPagoFutureImportIssue struct {
 // rows remain in the worker and are never returned to the frontend preview.
 type NuvemPagoFutureImportPreview struct {
 	Files           []NuvemPagoFutureImportFile  `json:"files"`
+	FileCount       int                          `json:"file_count"`
 	ReceivableCount int                          `json:"receivable_count"`
 	ErrorCount      int                          `json:"error_count"`
 	IgnoredCount    int                          `json:"ignored_count"`

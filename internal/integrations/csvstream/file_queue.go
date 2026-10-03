@@ -35,7 +35,7 @@ type queuedFile struct {
 	name    string
 }
 
-func (s *SourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (*FileQueue, error) {
+func (s *SourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (CSVFileQueue, error) {
 	if s == nil || s.tx == nil {
 		return nil, errors.New("CSV source ID set is not initialized")
 	}

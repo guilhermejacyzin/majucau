@@ -31,17 +31,21 @@ técnica: a pasta inteira é recusada antes de gravar dados. Erros de validaçã
 comuns por linha continuam permitindo salvar as linhas válidas e fechar o
 lote como `PARTIAL`.
 
-`ParseFutureCSV` e `ImportFutureFolder` continuam atendendo a prévia atual.
+`PreviewFutureFolder` atende a prévia local sem depender de PostgreSQL. Ela
+processa linhas em streaming, deduplica com HMAC em índice temporário cifrado,
+ordena arquivos por runs cifrados e remove o diretório ao final. Mantém no
+máximo 50 metadados de arquivo e 50 problemas, com `file_count` e contagens
+totais para preservar a mesma apresentação na tela. Um preflight em streaming
+mantém a validação de arquivo inteiro e detecta mudanças durante a leitura.
+`ParseFutureCSV` e `ImportFutureFolder` permanecem como helpers internos.
 `FutureImportService` usa `StreamFutureFolder` e `StreamFutureCSV`: valida cada
 linha e grava payload RAW versionado e upsert idempotente em `receivables`
-como B2C/PROJECTED dentro da transação do lote. A deduplicação entre arquivos
+como B2C/PROJECTED dentro da transação do lote. A deduplicação de produção
 fica numa tabela temporária do PostgreSQL com HMAC por execução; o identificador
 externo em texto puro não é gravado nela, e a tabela some no commit ou rollback.
 Falhas técnicas, cancelamento ou limite excedido revertem todo o lote; erros de
 validação por linha preservam as válidas e fecham como `PARTIAL`. Na importação,
-os nomes CSV são lidos em blocos de 256 e ordenados em tabela temporária. A
-prévia ainda materializa linhas/erros e usa `os.ReadDir`, mantendo nomes dos
-arquivos em memória; essa prévia permanece no backlog DATA-04. O worker expõe
+os nomes CSV são lidos em blocos de 256 e ordenados em tabela temporária. O worker expõe
 preview e importação pelos métodos IPC `nuvem_pago.future.preview` e
 `nuvem_pago.future.import`; a tela de Importações/Integrações usa esses métodos
 e apresenta apenas metadados sanitizados, sem nome ou PII. A importação falha

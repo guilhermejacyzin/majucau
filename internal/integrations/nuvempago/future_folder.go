@@ -1,6 +1,7 @@
 package nuvempago
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -46,6 +47,13 @@ type FutureFolderStreamSummary struct {
 	ReceivableCount int
 	ErrorCount      int
 	IgnoredCount    int
+}
+
+type FutureFolderPreview struct {
+	FutureFolderStreamSummary
+	Files     []ImportedFutureFile
+	FileCount int
+	Issues    []FutureFileRowError
 }
 
 type StreamFutureHandler func(file string, line int, candidate FutureReceivableCandidate) error
@@ -133,7 +141,17 @@ func validateFutureFolder(folder string) error {
 
 // StreamFutureFolder processes valid rows one at a time. Deduplication lives
 // in the caller's transaction; the folder walker retains only file metadata.
-func StreamFutureFolder(ctx context.Context, folder string, seen *csvstream.SourceIDSet, accept StreamFutureHandler, reject StreamFutureIssueHandler, onFile StreamFutureFileHandler) (FutureFolderStreamSummary, error) {
+func StreamFutureFolder(ctx context.Context, folder string, seen csvstream.SourceIDIndex, accept StreamFutureHandler, reject StreamFutureIssueHandler, onFile StreamFutureFileHandler) (FutureFolderStreamSummary, error) {
+	return streamFutureFolder(ctx, folder, seen, accept, reject, onFile, false)
+}
+
+// StreamFutureFolderPreview preserves whole-file validation in the current
+// preview while processing rows incrementally.
+func StreamFutureFolderPreview(ctx context.Context, folder string, seen csvstream.SourceIDIndex, reject StreamFutureIssueHandler, onFile StreamFutureFileHandler) (FutureFolderStreamSummary, error) {
+	return streamFutureFolder(ctx, folder, seen, nil, reject, onFile, true)
+}
+
+func streamFutureFolder(ctx context.Context, folder string, seen csvstream.SourceIDIndex, accept StreamFutureHandler, reject StreamFutureIssueHandler, onFile StreamFutureFileHandler, preview bool) (FutureFolderStreamSummary, error) {
 	if seen == nil {
 		return FutureFolderStreamSummary{}, errors.New("future import deduplication is required")
 	}
@@ -168,7 +186,55 @@ func StreamFutureFolder(ctx context.Context, folder string, seen *csvstream.Sour
 		}
 		file, err := root.Open(name)
 		if err != nil {
+			if preview {
+				summary.ErrorCount++
+				if reject != nil {
+					if err := reject(FutureFileRowError{File: name, Code: "FILE_READ", Message: "não foi possível abrir o arquivo"}); err != nil {
+						return FutureFolderStreamSummary{}, err
+					}
+				}
+				continue
+			}
 			return FutureFolderStreamSummary{}, fmt.Errorf("open future CSV %q: %w", name, err)
+		}
+		var validationHash []byte
+		if preview {
+			validationHasher := sha256.New()
+			validationErr := StreamFutureCSV(io.TeeReader(file, validationHasher), func(_ int, _ FutureReceivableCandidate) error {
+				return ctx.Err()
+			}, func(RowError) error {
+				return ctx.Err()
+			})
+			if err := ctx.Err(); err != nil {
+				_ = file.Close()
+				return FutureFolderStreamSummary{}, err
+			}
+			if errors.Is(validationErr, csvlimit.ErrLimitExceeded) {
+				_ = file.Close()
+				return FutureFolderStreamSummary{}, validationErr
+			}
+			if validationErr != nil {
+				closeErr := file.Close()
+				if closeErr != nil {
+					return FutureFolderStreamSummary{}, fmt.Errorf("close invalid future CSV %q: %w", name, closeErr)
+				}
+				metadata := ImportedFutureFile{Name: name, SHA256: hex.EncodeToString(validationHasher.Sum(nil)), RejectedRowCount: 1}
+				summary.ErrorCount++
+				if reject != nil {
+					if err := reject(FutureFileRowError{File: name, Line: 1, Code: "INVALID_FUTURE_EXPORT", Message: "arquivo não corresponde ao extrato de recebimentos futuros do Nuvem Pago"}); err != nil {
+						return FutureFolderStreamSummary{}, err
+					}
+				}
+				if onFile != nil {
+					onFile(metadata)
+				}
+				continue
+			}
+			validationHash = validationHasher.Sum(nil)
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				_ = file.Close()
+				return FutureFolderStreamSummary{}, fmt.Errorf("rewind future CSV for preview: %w", err)
+			}
 		}
 		hasher := sha256.New()
 		metadata := ImportedFutureFile{Name: name}
@@ -220,6 +286,9 @@ func StreamFutureFolder(ctx context.Context, folder string, seen *csvstream.Sour
 		if err := ctx.Err(); err != nil {
 			return FutureFolderStreamSummary{}, err
 		}
+		if preview && !bytes.Equal(validationHash, hasher.Sum(nil)) {
+			return FutureFolderStreamSummary{}, fmt.Errorf("future CSV %q changed during preview", name)
+		}
 		if errors.Is(parseErr, ErrMissingFutureColumn) || errors.Is(parseErr, ErrInvalidFutureHeader) {
 			summary.ErrorCount++
 			metadata.RejectedRowCount++
@@ -237,4 +306,33 @@ func StreamFutureFolder(ctx context.Context, folder string, seen *csvstream.Sour
 		}
 	}
 	return summary, nil
+}
+
+// PreviewFutureFolder returns a bounded summary without requiring PostgreSQL.
+func PreviewFutureFolder(ctx context.Context, folder string) (preview FutureFolderPreview, err error) {
+	if err := validateFutureFolder(folder); err != nil {
+		return FutureFolderPreview{}, err
+	}
+	seen, err := csvstream.NewDiskSourceIDSet(ctx)
+	if err != nil {
+		return FutureFolderPreview{}, err
+	}
+	defer func() { err = errors.Join(err, seen.Close()) }()
+	preview.Files = make([]ImportedFutureFile, 0, 50)
+	preview.Issues = make([]FutureFileRowError, 0, 50)
+	preview.FutureFolderStreamSummary, err = StreamFutureFolderPreview(ctx, folder, seen, func(issue FutureFileRowError) error {
+		if len(preview.Issues) < 50 {
+			preview.Issues = append(preview.Issues, issue)
+		}
+		return nil
+	}, func(file ImportedFutureFile) {
+		preview.FileCount++
+		if len(preview.Files) < 50 {
+			preview.Files = append(preview.Files, file)
+		}
+	})
+	if err != nil {
+		return FutureFolderPreview{}, err
+	}
+	return preview, nil
 }

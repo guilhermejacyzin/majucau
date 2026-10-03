@@ -34,6 +34,22 @@ type SourceIDSet struct {
 	key [32]byte
 }
 
+// SourceIDIndex provides exact, bounded-heap deduplication and an ordered
+// stream of CSV filenames. Implementations may use a database transaction or
+// a private, short-lived local index for previews.
+type SourceIDIndex interface {
+	CheckAndAdd(ctx context.Context, sourceID, file string, line int) (firstFile string, firstLine int64, duplicate bool, err error)
+	QueueCSVFiles(ctx context.Context, folder string) (CSVFileQueue, error)
+}
+
+// CSVFileQueue yields ordered CSV filenames without materializing a folder's
+// complete directory listing in memory.
+type CSVFileQueue interface {
+	Next() (string, bool, error)
+	IgnoredCount() int
+	Close()
+}
+
 func NewSourceIDSet(ctx context.Context, tx pgx.Tx) (*SourceIDSet, error) {
 	if tx == nil {
 		return nil, errors.New("CSV source ID transaction is required")

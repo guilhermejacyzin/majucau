@@ -1,6 +1,7 @@
 package bling
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -49,6 +50,13 @@ type FolderStreamSummary struct {
 	ReceiptCount int
 	ErrorCount   int
 	IgnoredCount int
+}
+
+type FolderPreview struct {
+	FolderStreamSummary
+	Files     []ImportedFile
+	FileCount int
+	Issues    []FileRowError
 }
 
 type StreamReceiptHandler func(file string, line int, candidate ReceiptCandidate) error
@@ -142,7 +150,18 @@ func validateReceiptsFolder(folder string) error {
 // StreamReceiptsFolder processes valid CSV rows one at a time. Deduplication
 // is kept in the caller's transaction, and callbacks decide whether each
 // candidate can be persisted. Only per-file summary metadata is retained.
-func StreamReceiptsFolder(ctx context.Context, folder string, seen *csvstream.SourceIDSet, accept StreamReceiptHandler, reject StreamReceiptIssueHandler, onFile StreamReceiptFileHandler) (FolderStreamSummary, error) {
+func StreamReceiptsFolder(ctx context.Context, folder string, seen csvstream.SourceIDIndex, accept StreamReceiptHandler, reject StreamReceiptIssueHandler, onFile StreamReceiptFileHandler) (FolderStreamSummary, error) {
+	return streamReceiptsFolder(ctx, folder, seen, accept, reject, onFile, false)
+}
+
+// StreamReceiptsFolderPreview keeps whole-file validation compatible with the
+// current preview while scanning each CSV incrementally. A short preflight
+// prevents a malformed file from contributing rows before it is rejected.
+func StreamReceiptsFolderPreview(ctx context.Context, folder string, seen csvstream.SourceIDIndex, reject StreamReceiptIssueHandler, onFile StreamReceiptFileHandler) (FolderStreamSummary, error) {
+	return streamReceiptsFolder(ctx, folder, seen, nil, reject, onFile, true)
+}
+
+func streamReceiptsFolder(ctx context.Context, folder string, seen csvstream.SourceIDIndex, accept StreamReceiptHandler, reject StreamReceiptIssueHandler, onFile StreamReceiptFileHandler, preview bool) (FolderStreamSummary, error) {
 	if seen == nil {
 		return FolderStreamSummary{}, errors.New("receipt import deduplication is required")
 	}
@@ -177,7 +196,55 @@ func StreamReceiptsFolder(ctx context.Context, folder string, seen *csvstream.So
 		}
 		file, err := root.Open(name)
 		if err != nil {
+			if preview {
+				summary.ErrorCount++
+				if reject != nil {
+					if err := reject(FileRowError{File: name, Code: "FILE_READ", Message: "não foi possível abrir o arquivo"}); err != nil {
+						return FolderStreamSummary{}, err
+					}
+				}
+				continue
+			}
 			return FolderStreamSummary{}, fmt.Errorf("open receipt CSV %q: %w", name, err)
+		}
+		var validationHash []byte
+		if preview {
+			validationHasher := sha256.New()
+			validationErr := StreamReceiptsCSV(io.TeeReader(file, validationHasher), func(_ int, _ ReceiptCandidate) error {
+				return ctx.Err()
+			}, func(RowError) error {
+				return ctx.Err()
+			})
+			if err := ctx.Err(); err != nil {
+				_ = file.Close()
+				return FolderStreamSummary{}, err
+			}
+			if errors.Is(validationErr, csvlimit.ErrLimitExceeded) {
+				_ = file.Close()
+				return FolderStreamSummary{}, validationErr
+			}
+			if validationErr != nil {
+				closeErr := file.Close()
+				if closeErr != nil {
+					return FolderStreamSummary{}, fmt.Errorf("close invalid receipt CSV %q: %w", name, closeErr)
+				}
+				metadata := ImportedFile{Name: name, SHA256: hex.EncodeToString(validationHasher.Sum(nil)), ErrorCount: 1}
+				summary.ErrorCount++
+				if reject != nil {
+					if err := reject(FileRowError{File: name, Line: 1, Code: "INVALID_REPORT", Message: "arquivo não corresponde ao relatório de recebimentos do Bling"}); err != nil {
+						return FolderStreamSummary{}, err
+					}
+				}
+				if onFile != nil {
+					onFile(metadata)
+				}
+				continue
+			}
+			validationHash = validationHasher.Sum(nil)
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				_ = file.Close()
+				return FolderStreamSummary{}, fmt.Errorf("rewind receipt CSV for preview: %w", err)
+			}
 		}
 		hasher := sha256.New()
 		metadata := ImportedFile{Name: name}
@@ -227,6 +294,9 @@ func StreamReceiptsFolder(ctx context.Context, folder string, seen *csvstream.So
 		if err := ctx.Err(); err != nil {
 			return FolderStreamSummary{}, err
 		}
+		if preview && !bytes.Equal(validationHash, hasher.Sum(nil)) {
+			return FolderStreamSummary{}, fmt.Errorf("receipt CSV %q changed during preview", name)
+		}
 		if errors.Is(parseErr, ErrMissingReportColumn) || errors.Is(parseErr, ErrInvalidReportHeader) {
 			summary.ErrorCount++
 			metadata.ErrorCount++
@@ -244,4 +314,35 @@ func StreamReceiptsFolder(ctx context.Context, folder string, seen *csvstream.So
 		}
 	}
 	return summary, nil
+}
+
+// PreviewReceiptsFolder returns a bounded summary without requiring
+// PostgreSQL. Temporary fingerprints and encrypted filenames are removed when
+// the scan completes.
+func PreviewReceiptsFolder(ctx context.Context, folder string) (preview FolderPreview, err error) {
+	if err := validateReceiptsFolder(folder); err != nil {
+		return FolderPreview{}, err
+	}
+	seen, err := csvstream.NewDiskSourceIDSet(ctx)
+	if err != nil {
+		return FolderPreview{}, err
+	}
+	defer func() { err = errors.Join(err, seen.Close()) }()
+	preview.Files = make([]ImportedFile, 0, 50)
+	preview.Issues = make([]FileRowError, 0, 50)
+	preview.FolderStreamSummary, err = StreamReceiptsFolderPreview(ctx, folder, seen, func(issue FileRowError) error {
+		if len(preview.Issues) < 50 {
+			preview.Issues = append(preview.Issues, issue)
+		}
+		return nil
+	}, func(file ImportedFile) {
+		preview.FileCount++
+		if len(preview.Files) < 50 {
+			preview.Files = append(preview.Files, file)
+		}
+	})
+	if err != nil {
+		return FolderPreview{}, err
+	}
+	return preview, nil
 }

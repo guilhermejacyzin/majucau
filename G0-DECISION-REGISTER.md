@@ -174,3 +174,10 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 | D-004 | D-004-A — B2C confirmado diferido; adapter oficial mantido |
 | D-005 | D-005-A — defaults financeiros e operacionais aprovados |
 | Observações | Aprovação explícita recebida no task Codex. Libera G1 e módulos não bloqueados; não libera B2C confirmado nem produção integral sem as evidências externas. |
+
+## Decisão posterior aprovada — importação parcial atômica
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-02 (America/Sao_Paulo).
+- Linhas que falham na validação são contadas em `records_failed`; as linhas válidas do mesmo arquivo são persistidas e o lote termina como `PARTIAL`.
+- A persistência das linhas válidas e a finalização da auditoria do lote pertencem à mesma transação PostgreSQL. Falha técnica ou cancelamento durante a gravação reverte todas as escritas dessa transação.
+- Esta decisão trata importação de arquivos com erros de validação por linha. Ela não define a contagem de páginas RAW da API Bling nem o filtro/cursor incremental dos endpoints, que continuam pendentes de confirmação.

@@ -42,6 +42,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Redação LGPD é a única exceção de mutação RAW e exige tombstone, hash anterior, motivo, ator, timestamp e auditoria.
 - Toda sincronização deve ser idempotente: replay do mesmo evento/página não duplica fatos nem versões RAW sem mudança.
 - RAW, dados normalizados, cursor e sucesso do lote são confirmados atomicamente; falha ou cancelamento não avança cursor nem substitui último dado válido.
+- Em importação de arquivo com erros de validação por linha, persistir as linhas válidas e fechar o lote como `PARTIAL`; contar em `records_failed` as linhas rejeitadas. Persistência e auditoria ficam na mesma transação, que reverte por inteiro em falha técnica ou cancelamento.
 - Toda transformação material deve permitir: valor/card -> regra -> snapshot/linha -> contribuição tipada -> entidade -> RAW -> fonte original.
 - FKs polimórficas não são fonte de integridade; use tabelas de contribuição tipadas.
 - Snapshots, forecasts e regras aprovadas são imutáveis; correção cria nova versão.

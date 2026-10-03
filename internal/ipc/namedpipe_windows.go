@@ -43,8 +43,25 @@ func (c NamedPipeConfig) validate() error {
 type NamedPipeServer struct {
 	config  NamedPipeConfig
 	mu      sync.Mutex
-	handles map[syscall.Handle]struct{}
+	handles map[syscall.Handle]*serverPipeHandle
 	closed  bool
+}
+
+type serverPipeHandle struct {
+	handle syscall.Handle
+	file   *os.File
+	once   sync.Once
+}
+
+func (p *serverPipeHandle) close() {
+	p.once.Do(func() {
+		disconnectPipe(p.handle)
+		if p.file != nil {
+			_ = p.file.Close()
+			return
+		}
+		_ = syscall.CloseHandle(p.handle)
+	})
 }
 
 func NewNamedPipeServer(config NamedPipeConfig) (*NamedPipeServer, error) {
@@ -57,29 +74,29 @@ func NewNamedPipeServer(config NamedPipeConfig) (*NamedPipeServer, error) {
 	if err := config.validate(); err != nil {
 		return nil, err
 	}
-	return &NamedPipeServer{config: config, handles: make(map[syscall.Handle]struct{})}, nil
+	return &NamedPipeServer{config: config, handles: make(map[syscall.Handle]*serverPipeHandle)}, nil
 }
 func (s *NamedPipeServer) Close() error {
 	s.mu.Lock()
 	s.closed = true
-	handles := make([]syscall.Handle, 0, len(s.handles))
-	for h := range s.handles {
-		handles = append(handles, h)
+	handles := make([]*serverPipeHandle, 0, len(s.handles))
+	for _, pipe := range s.handles {
+		handles = append(handles, pipe)
 	}
-	s.handles = make(map[syscall.Handle]struct{})
+	s.handles = make(map[syscall.Handle]*serverPipeHandle)
 	s.mu.Unlock()
-	for _, h := range handles {
-		go closePipeHandle(h)
+	for _, pipe := range handles {
+		go pipe.close()
 	}
 	return nil
 }
-func (s *NamedPipeServer) track(h syscall.Handle) bool {
+func (s *NamedPipeServer) track(pipe *serverPipeHandle) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.closed {
 		return false
 	}
-	s.handles[h] = struct{}{}
+	s.handles[pipe.handle] = pipe
 	return true
 }
 func (s *NamedPipeServer) untrack(h syscall.Handle) { s.mu.Lock(); delete(s.handles, h); s.mu.Unlock() }
@@ -101,8 +118,13 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) error {
 		if err != nil {
 			return err
 		}
-		if !s.track(h) {
+		pipe := &serverPipeHandle{handle: h, file: os.NewFile(uintptr(h), "majucau-pipe-server")}
+		if pipe.file == nil {
 			syscall.CloseHandle(h)
+			return ErrTransportUnavailable
+		}
+		if !s.track(pipe) {
+			pipe.close()
 			return context.Canceled
 		}
 		connected := make(chan error, 1)
@@ -110,24 +132,27 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) error {
 		select {
 		case err = <-connected:
 		case <-ctx.Done():
-			go closePipeHandle(h)
+			go pipe.close()
 			s.untrack(h)
 			return ctx.Err()
 		}
 		if err == nil {
 			if authErr := authorizePipeClient(h, s.config); authErr == nil {
-				_ = s.handleConnection(ctx, h, handler)
+				_ = s.handleConnection(ctx, pipe, handler)
 			}
 		}
-		go closePipeHandle(h)
+		// Finish disconnecting this instance before creating the next one. If
+		// the close runs asynchronously, CreateFile may briefly open the stale
+		// disconnected instance and observe EOF instead of reaching the worker.
+		pipe.close()
 		s.untrack(h)
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 	}
 }
-func (s *NamedPipeServer) handleConnection(ctx context.Context, h syscall.Handle, handler Handler) error {
-	f := os.NewFile(uintptr(h), "majucau-pipe")
+func (s *NamedPipeServer) handleConnection(ctx context.Context, pipe *serverPipeHandle, handler Handler) error {
+	f := pipe.file
 	if f == nil {
 		return ErrTransportUnavailable
 	}

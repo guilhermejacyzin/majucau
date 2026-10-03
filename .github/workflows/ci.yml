@@ -244,6 +244,8 @@ jobs:
             artifacts/windows/
             artifacts/verification/
           if-no-files-found: ignore
+          # This unsigned, reproducible CI output is retained only briefly.
+          retention-days: 1
 
   verify-postgres:
     runs-on: ubuntu-latest

@@ -18,9 +18,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tink-crypto/tink-go/v2"
 	"github.com/tink-crypto/tink-go/v2/keyset"
 	"github.com/tink-crypto/tink-go/v2/streamingaead"
+	"github.com/tink-crypto/tink-go/v2/tink"
 )
 
 const (

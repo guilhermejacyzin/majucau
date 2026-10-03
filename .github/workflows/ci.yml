@@ -46,6 +46,9 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      - name: Verify Go module files are tidy
+        run: go mod tidy -diff
+
       - name: Go tests
         run: go test . ./cmd/... ./database/... ./internal/...
 

@@ -110,7 +110,7 @@ func WriteDiagnosticBundle(outputPath string, result Result, metadata Diagnostic
 	}
 	removeTemporary = false
 
-	info, err := os.Stat(clean)
+	fileInfo, err := os.Stat(clean)
 	if err != nil {
 		return DiagnosticBundleInfo{}, fmt.Errorf("%w: inspect bundle", ErrDiagnosticOutput)
 	}
@@ -118,7 +118,7 @@ func WriteDiagnosticBundle(outputPath string, result Result, metadata Diagnostic
 	if err != nil {
 		return DiagnosticBundleInfo{}, fmt.Errorf("%w: hash bundle", ErrDiagnosticOutput)
 	}
-	return DiagnosticBundleInfo{SchemaVersion: SchemaVersion, Entries: []string{"diagnostic.json", "README.txt"}, Bytes: info.Size(), SHA256: digest}, nil
+	return DiagnosticBundleInfo{SchemaVersion: SchemaVersion, Entries: []string{"diagnostic.json", "README.txt"}, Bytes: fileInfo.Size(), SHA256: digest}, nil
 }
 
 func validateDiagnosticPath(path string) (string, error) {

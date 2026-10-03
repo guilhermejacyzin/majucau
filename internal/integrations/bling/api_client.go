@@ -77,7 +77,7 @@ func (e *BlingAPIError) Unwrap() error {
 		return ErrBlingAPIUnauthorized
 	case e.StatusCode == http.StatusTooManyRequests:
 		return ErrBlingAPIRateLimited
-	case e.StatusCode >= http.StatusInternalServerError || e.StatusCode == http.StatusRequestTimeout:
+	case isBlingServerError(e.StatusCode) || e.StatusCode == http.StatusRequestTimeout:
 		return ErrBlingAPIUnavailable
 	default:
 		return nil
@@ -424,9 +424,13 @@ func decodeBlingReceivablesEnvelope(reader io.Reader, limit int64) (blingReceiva
 func retryableBlingError(err error) bool {
 	var apiErr *BlingAPIError
 	if errors.As(err, &apiErr) {
-		return apiErr.StatusCode == http.StatusRequestTimeout || apiErr.StatusCode == http.StatusTooManyRequests || apiErr.StatusCode >= http.StatusInternalServerError
+		return apiErr.StatusCode == http.StatusRequestTimeout || apiErr.StatusCode == http.StatusTooManyRequests || isBlingServerError(apiErr.StatusCode)
 	}
 	return errors.Is(err, ErrBlingAPIUnavailable)
+}
+
+func isBlingServerError(statusCode int) bool {
+	return statusCode >= http.StatusInternalServerError && statusCode < 600
 }
 
 func (c *BlingAPIClient) retryDelay(attempt int, retryAfter time.Duration) time.Duration {

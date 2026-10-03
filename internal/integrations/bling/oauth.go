@@ -98,7 +98,7 @@ func (c *BlingOAuthClient) exchange(ctx context.Context, clientID, clientSecret 
 		if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
 			return BlingOAuthToken{}, fmt.Errorf("%w: status %d", ErrBlingOAuthRejected, resp.StatusCode)
 		}
-		if resp.StatusCode >= http.StatusInternalServerError || resp.StatusCode == http.StatusRequestTimeout {
+		if isBlingServerError(resp.StatusCode) || resp.StatusCode == http.StatusRequestTimeout {
 			return BlingOAuthToken{}, &BlingAPIError{StatusCode: resp.StatusCode, Code: "BLING_OAUTH_UNAVAILABLE"}
 		}
 		return BlingOAuthToken{}, fmt.Errorf("%w: status %d", ErrBlingOAuthRejected, resp.StatusCode)

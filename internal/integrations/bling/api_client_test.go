@@ -156,6 +156,74 @@ func TestListReceivablesRetriesTransientFailuresWithJitter(t *testing.T) {
 	}
 }
 
+func TestRetryableBlingErrorUsesApprovedStatusRange(t *testing.T) {
+	for _, test := range []struct {
+		status    int
+		wantRetry bool
+		wantDown  bool
+	}{
+		{status: http.StatusRequestTimeout, wantRetry: true, wantDown: true},
+		{status: http.StatusTooManyRequests, wantRetry: true},
+		{status: 499},
+		{status: http.StatusInternalServerError, wantRetry: true, wantDown: true},
+		{status: 599, wantRetry: true, wantDown: true},
+		{status: 600},
+	} {
+		err := &BlingAPIError{StatusCode: test.status}
+		if got := retryableBlingError(err); got != test.wantRetry {
+			t.Errorf("status %d retryable = %t, want %t", test.status, got, test.wantRetry)
+		}
+		if got := errors.Is(err, ErrBlingAPIUnavailable); got != test.wantDown {
+			t.Errorf("status %d unavailable = %t, want %t", test.status, got, test.wantDown)
+		}
+	}
+}
+
+func TestListReceivablesDoesNotRetryPermanentOrInvalidResponses(t *testing.T) {
+	for _, test := range []struct {
+		name          string
+		status        int
+		body          string
+		want          error
+		wantAPIStatus int
+	}{
+		{name: "bad request", status: http.StatusBadRequest, body: `{"error":"invalid"}`, wantAPIStatus: http.StatusBadRequest},
+		{name: "unauthorized", status: http.StatusUnauthorized, body: `{"error":"invalid"}`, want: ErrBlingAPIUnauthorized, wantAPIStatus: http.StatusUnauthorized},
+		{name: "forbidden", status: http.StatusForbidden, body: `{"error":"invalid"}`, want: ErrBlingAPIUnauthorized, wantAPIStatus: http.StatusForbidden},
+		{name: "invalid JSON", status: http.StatusOK, body: "not json", want: ErrBlingAPIInvalidResponse},
+		{name: "unexpected schema", status: http.StatusOK, body: `{"data":{"id":1}}`, want: ErrBlingAPISchemaMismatch},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			attempts := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				attempts++
+				w.WriteHeader(test.status)
+				_, _ = w.Write([]byte(test.body))
+			}))
+			defer server.Close()
+			client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+			if err != nil {
+				t.Fatal(err)
+			}
+			waits := 0
+			client.wait = func(context.Context, time.Duration) error { waits++; return nil }
+			_, err = client.ListReceivables(context.Background(), ReceivablesFilter{})
+			if err == nil || (test.want != nil && !errors.Is(err, test.want)) {
+				t.Fatalf("error = %v, want non-nil error matching %v", err, test.want)
+			}
+			if test.wantAPIStatus != 0 {
+				var apiErr *BlingAPIError
+				if !errors.As(err, &apiErr) || apiErr.StatusCode != test.wantAPIStatus {
+					t.Fatalf("API error = %v, want status %d", err, test.wantAPIStatus)
+				}
+			}
+			if attempts != 1 || waits != 0 {
+				t.Fatalf("permanent response made %d attempts and %d waits, want 1 attempt and no waits", attempts, waits)
+			}
+		})
+	}
+}
+
 func TestListReceivablesStopsAfterRetryBudget(t *testing.T) {
 	attempts := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

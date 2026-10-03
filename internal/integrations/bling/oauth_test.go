@@ -64,6 +64,27 @@ func TestBlingOAuthErrorsDoNotExposeSecretOrBody(t *testing.T) {
 	}
 }
 
+func TestBlingOAuthTokenExchangeDoesNotRetryOneTimeRequest(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		attempts++
+		w.Header().Set("Retry-After", "0")
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+	client, err := NewBlingOAuthClient(server.Client(), server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.RefreshAccessToken(context.Background(), "client-id", "client-secret", "one-time-refresh")
+	if !errors.Is(err, ErrBlingAPIUnavailable) {
+		t.Fatalf("error = %v, want unavailable", err)
+	}
+	if attempts != 1 {
+		t.Fatalf("one-time token request made %d attempts, want 1", attempts)
+	}
+}
+
 func TestBlingOAuthRejectsMissingAccessToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"token_type":"Bearer"}`))

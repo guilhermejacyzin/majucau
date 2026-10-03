@@ -41,17 +41,29 @@ com 36,939,538 bytes e SHA-256
 sendo um artefato unsigned, não uma release assinada.
 
 Foi adicionado ao job Windows um fixture que reproduz o ZIP/envelope V1 das
-versões anteriores. O teste cobre restauração de dumps com vários blocos CNG e
-confirma que uma tag adulterada, mesmo com o SHA-256 do manifesto atualizado, é
-rejeitada antes de parar o worker. O primeiro run desse fixture,
+versões anteriores. O primeiro run desse fixture,
 [37103043862](https://github.com/guilhermejacyzin/majucau/actions/runs/37103043862),
 detectou uma access violation na chamada encadeada a `BCryptDecrypt`; o job
-PostgreSQL passou. A rotina agora mantém um buffer IV de bloco entre chamadas,
-aplica AAD somente no primeiro bloco e mantém vivos os buffers enviados à API.
-A correção aguarda a próxima execução da CI.
-O status do trabalho de backup segue `PARTIAL` até a CI confirmar esse teste e
-haver validação de restauração em VM Windows 10/11 limpa. O ambiente local não
-possui Go/gofmt; a validação de compilação e testes veio da CI.
+PostgreSQL passou. A correção passou na CI seguinte,
+[37103530380](https://github.com/guilhermejacyzin/majucau/actions/runs/37103530380),
+nos dois jobs Windows e PostgreSQL. O teste restaura dumps V1 com vários blocos
+CNG e confirma que uma tag adulterada, mesmo com SHA-256 do manifesto atualizado,
+é rejeitada antes de parar o worker. A chamada mantém um buffer IV mutável entre
+blocos, aplica AAD na primeira chamada da cadeia e mantém vivos os buffers Go
+usados pela API.
+
+O run `37103530380` executou `go mod tidy -diff`, testes Go, `go vet`,
+govulncheck, checksums de migrations, secret scan, frontend lint/typecheck/tests/
+build, auditoria de dependências, builds desktop/worker/helper, smoke do helper,
+contrato e build NSIS e smoke de instalação/desinstalação. O job PostgreSQL
+também passou. O artefato unsigned G1 `11267780358` tem 36,939,552 bytes e SHA-256
+`08521b50fdd2edf8964b35038868816bf1d05217f66ed00b696b43ebd3840aa1`; continua
+sendo um artefato unsigned, não uma release assinada.
+
+O status do trabalho de backup segue `PARTIAL` até haver validação de restauração
+em VM Windows 10/11 limpa, restore real de PostgreSQL e integração com
+worker/UI/instalador. O ambiente local não possui Go/gofmt; a validação de
+compilação e testes veio da CI.
 
 ## Referências técnicas
 

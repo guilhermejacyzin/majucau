@@ -188,7 +188,7 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Preservar leitura/restauração dos pacotes V1 existentes e gravar novos pacotes como V2 em blocos autenticados.
 - A implementação mantém V1 no AES-GCM legado e usa Streaming AEAD AES-256-GCM-HKDF do Tink no V2, com segmentos de 1 MiB. Temporários de plaintext exigem DACL privada e nenhuma restauração pode usar plaintext antes da autenticação completa.
 - Esta decisão aprova formato/compatibilidade criptográfica; não altera telas aprovadas, regras financeiras ou regras de negócio.
-- A prova dedicada de compatibilidade V1 foi adicionada ao job Windows: ela restaura fixture no formato legado em blocos maiores que 64 KiB e rejeita tag adulterada antes de parar o worker. O resultado ainda depende da próxima CI; validação de restauração em VM Windows 10/11 limpa permanece gate operacional.
+- A prova dedicada de compatibilidade V1 passou na CI Windows `37103530380`: ela restaura fixture no formato legado em blocos maiores que 64 KiB e rejeita tag adulterada antes de parar o worker. A validação de restauração em VM Windows 10/11 limpa permanece gate operacional.
 
 ## Decisão operacional validada — integridade do Evergreen WebView2
 

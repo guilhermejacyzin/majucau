@@ -10,8 +10,9 @@ if ([string]::IsNullOrWhiteSpace($Destination)) {
 }
 $installerSource = Join-Path $projectRoot 'build\windows\installer\tmp\MicrosoftEdgeWebview2Setup.exe'
 
-# Wails' generated NSIS macro embeds this official Evergreen Bootstrapper. The
-# hash is pinned so a changed or substituted download fails the build closed.
+# Wails' generated NSIS macro embeds this official Evergreen Bootstrapper. Keep
+# the known hash pinned, but authenticate Microsoft's rolling bootstrapper with
+# Authenticode so legitimate Evergreen updates do not permanently break builds.
 $uri = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703'
 $expectedSha256 = '48A7B31419A8EB4FFFDC7B6A02F6B4DFDA60687FC897116BE15370E10C2B66A7'
 $destinationDirectory = Split-Path -Parent $Destination
@@ -28,9 +29,35 @@ if ($needsDownload) {
 }
 
 $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $Destination).Hash.ToUpperInvariant()
-if ($actualHash -ne $expectedSha256) {
+$signature = Get-AuthenticodeSignature -FilePath $Destination
+$publisher = $null
+$hasCodeSigningEku = $false
+if ($null -ne $signature.SignerCertificate) {
+    $publisher = $signature.SignerCertificate.GetNameInfo(
+        [System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName,
+        $false
+    )
+    foreach ($extension in $signature.SignerCertificate.Extensions) {
+        if ($extension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
+            $hasCodeSigningEku = @(
+                $extension.EnhancedKeyUsages |
+                    Where-Object { $_.Value -eq '1.3.6.1.5.5.7.3.3' }
+            ).Count -gt 0
+        }
+    }
+}
+
+if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid -or
+    $publisher -cne 'Microsoft Corporation' -or
+    -not $hasCodeSigningEku) {
     Remove-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
-    throw "WebView2 Bootstrapper rejeitado: SHA-256 inesperado ($actualHash)."
+    $signatureStatus = [string]$signature.Status
+    if ([string]::IsNullOrWhiteSpace($publisher)) { $publisher = '<ausente>' }
+    throw "WebView2 Bootstrapper rejeitado: Authenticode=$signatureStatus; signatário=$publisher; EKU de assinatura de código=$hasCodeSigningEku."
+}
+
+if ($actualHash -ne $expectedSha256) {
+    Write-Warning "O SHA-256 do Bootstrapper Evergreen mudou; aceito somente após Authenticode válido de Microsoft Corporation. SHA-256 atual: $actualHash; certificado: $($signature.SignerCertificate.Thumbprint)."
 }
 
 $destinationFull = [System.IO.Path]::GetFullPath($Destination)

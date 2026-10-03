@@ -21,14 +21,22 @@ regra financeira/de negócio foi alterada.
   proprietário, LocalSystem e administradores. O cancelamento é propagado pela
   cópia, criptografia, verificação e preparação dos arquivos.
 
-## Validação pendente
+## Validação CI em 2026-10-03
 
-Esta evidência descreve o estado local antes da CI: o ambiente atual não possui
-Go/gofmt, portanto a mudança ainda não foi compilada aqui. O status permanece
-`PARTIAL` até a CI Windows/PostgreSQL e a validação em VM Windows 10/11. A suíte
-existente exercita criação, verificação e restauração do formato gravado; ainda
-falta uma prova automatizada dedicada de compatibilidade V1 e autenticação de
-blocos CNG.
+No run [37100892358](https://github.com/guilhermejacyzin/majucau/actions/runs/37100892358),
+passaram `go mod tidy -diff`, os testes Go (incluindo `internal/backup`), `go vet`,
+govulncheck, secret scan, frontend lint/typecheck/tests/build, auditoria de
+dependências, os builds desktop/worker/helper, smoke do helper e a integração
+PostgreSQL. O job Windows falhou depois, ao preparar o WebView2 Bootstrapper:
+o hash recebido (`AA38A8CFCE6179B87181609B1C730A29EAF26138FC833AF5759E67576770F3A3`)
+não coincide com o hash fixado. A execução rejeitou o arquivo e o smoke NSIS de
+instalar/desinstalar foi pulado.
+
+O script agora exige assinatura Authenticode válida, signatário Microsoft e
+EKU de assinatura de código para aceitar atualizações legítimas do bootstrapper;
+essa mudança ainda aguarda CI. O status segue `PARTIAL` até a nova CI e a validação
+em VM Windows 10/11. Também falta uma prova automatizada dedicada de restauração
+V1 e autenticação de blocos CNG. O ambiente local não possui Go/gofmt.
 
 ## Referências técnicas
 

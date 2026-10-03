@@ -189,3 +189,10 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - A implementação mantém V1 no AES-GCM legado e usa Streaming AEAD AES-256-GCM-HKDF do Tink no V2, com segmentos de 1 MiB. Temporários de plaintext exigem DACL privada e nenhuma restauração pode usar plaintext antes da autenticação completa.
 - Esta decisão aprova formato/compatibilidade criptográfica; não altera telas aprovadas, regras financeiras ou regras de negócio.
 - CI, prova dedicada de compatibilidade V1 e validação de restauração em VM limpa continuam gates obrigatórios.
+
+## Decisão operacional em validação — integridade do Evergreen WebView2
+
+- A CI 37100892358 recebeu pela URL oficial um bootstrapper com SHA-256 diferente do valor conhecido fixado no repositório. O build foi interrompido e rejeitou o arquivo; o hash novo, isoladamente, não foi tratado como prova de autenticidade.
+- Como o Bootstrapper Evergreen é distribuído por link programático e pode ser atualizado pela Microsoft ([documentação oficial](https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution?form=MT00J1)), a preparação mantém o hash conhecido e exige, para qualquer download, Authenticode `Valid`, nome simples do signatário exatamente `Microsoft Corporation` e EKU de assinatura de código `1.3.6.1.5.5.7.3.3`.
+- Divergência de hash só pode prosseguir após essa validação de assinatura; assinaturas ausentes, inválidas ou de outro signatário removem o temporário e bloqueiam o build. A próxima CI precisa comprovar esse comportamento antes de fechar a decisão.
+- Este controle afeta apenas a cadeia de build/empacotamento; não altera telas aprovadas nem regras de negócio.

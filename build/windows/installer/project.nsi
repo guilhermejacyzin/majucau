@@ -69,7 +69,7 @@ ManifestDPIAware true
   !define MAJUCAU_DIAGNOSTICS_DIR "$TEMP\Majucau"
 !endif
 !ifndef MAJUCAU_DATA_DIR
-  !define MAJUCAU_DATA_DIR "$PROGRAMDATA\Majucau"
+  !define MAJUCAU_DATA_DIR "$COMMONPROGRAMDATA\Majucau"
 !endif
 !ifndef MAJUCAU_PREFERRED_PORT
   !define MAJUCAU_PREFERRED_PORT "54329"
@@ -123,9 +123,9 @@ Function .onInit
    File /oname=$PLUGINSDIR\majucau-installer-helper.exe "${MAJUCAU_HELPER_SOURCE}"
    CreateDirectory "${MAJUCAU_DIAGNOSTICS_DIR}"
    StrCpy $0 "${MAJUCAU_DIAGNOSTICS_DIR}\installer-preflight.zip"
-   ExecWait '"$PLUGINSDIR\majucau-installer-helper.exe" preflight --install-dir "$INSTDIR" --data-dir "${MAJUCAU_DATA_DIR}" --free-space-path "$PROGRAMDATA" --port ${MAJUCAU_PREFERRED_PORT}' $1
+   ExecWait '"$PLUGINSDIR\majucau-installer-helper.exe" preflight --install-dir "$INSTDIR" --data-dir "${MAJUCAU_DATA_DIR}" --free-space-path "$COMMONPROGRAMDATA" --port ${MAJUCAU_PREFERRED_PORT}' $1
    ${If} $1 != 0
-       ExecWait '"$PLUGINSDIR\majucau-installer-helper.exe" diagnostics --output "$0" --install-dir "$INSTDIR" --data-dir "${MAJUCAU_DATA_DIR}" --free-space-path "$PROGRAMDATA" --port ${MAJUCAU_PREFERRED_PORT}' $2
+       ExecWait '"$PLUGINSDIR\majucau-installer-helper.exe" diagnostics --output "$0" --install-dir "$INSTDIR" --data-dir "${MAJUCAU_DATA_DIR}" --free-space-path "$COMMONPROGRAMDATA" --port ${MAJUCAU_PREFERRED_PORT}' $2
        IfSilent MajuauPreflightSilent MajuauPreflightInteractive
        MajuauPreflightSilent:
            SetErrorLevel $1

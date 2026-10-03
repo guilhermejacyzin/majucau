@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -58,5 +59,30 @@ func TestDPAPIStoreRoundTripAndPersistence(t *testing.T) {
 	}
 	if _, err := reopenedAgain.Get(ctx, "bling_test"); !os.IsNotExist(err) {
 		t.Fatalf("expected deleted secret to be absent, got %v", err)
+	}
+}
+
+func TestDPAPIStoreRejectsOversizedEntropyAndSecretFiles(t *testing.T) {
+	ctx := context.Background()
+	badEntropyDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(badEntropyDir, ".entropy"), bytes.Repeat([]byte{0xA5}, dpapiEntropyBytes+1), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewDPAPIStore(badEntropyDir); err == nil {
+		t.Fatal("entropy file larger than its fixed 32-byte format must be rejected")
+	}
+
+	store, err := NewDPAPIStore(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Put(ctx, "bling_test", make([]byte, maxDPAPISecretValueBytes+1)); err == nil {
+		t.Fatal("secret value larger than the IPC payload limit must be rejected")
+	}
+	if err := os.WriteFile(store.path("bling_test"), make([]byte, maxDPAPISecretBlobBytes+1), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Get(ctx, "bling_test"); err == nil {
+		t.Fatal("oversized encrypted secret file must be rejected before DPAPI processing")
 	}
 }

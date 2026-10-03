@@ -6,10 +6,19 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"syscall"
 	"unsafe"
+)
+
+const (
+	// IPC frames are capped at 1 MiB; secret bundles are control data, not a bulk-data channel.
+	maxDPAPISecretValueBytes = 1 << 20
+	// Leave bounded room for the DPAPI ciphertext wrapper while rejecting corrupt oversized files.
+	maxDPAPISecretBlobBytes  = maxDPAPISecretValueBytes + (64 << 10)
+	dpapiEntropyBytes        = 32
 )
 
 type DPAPIStore struct {
@@ -25,12 +34,12 @@ func NewDPAPIStore(dir string) (*DPAPIStore, error) {
 		return nil, err
 	}
 	entropyPath := filepath.Join(dir, ".entropy")
-	e, err := os.ReadFile(entropyPath)
+	e, err := readBoundedSecretFile(entropyPath, dpapiEntropyBytes)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 	if os.IsNotExist(err) {
-		candidate := make([]byte, 32)
+		candidate := make([]byte, dpapiEntropyBytes)
 		if _, err := rand.Read(candidate); err != nil {
 			return nil, err
 		}
@@ -52,7 +61,7 @@ func NewDPAPIStore(dir string) (*DPAPIStore, error) {
 		} else if os.IsExist(createErr) {
 			// Another worker initialization won the race. Both instances must use
 			// the persisted winner so they never encrypt with different entropy.
-			e, err = os.ReadFile(entropyPath)
+			e, err = readBoundedSecretFile(entropyPath, dpapiEntropyBytes)
 			if err != nil {
 				return nil, err
 			}
@@ -60,7 +69,7 @@ func NewDPAPIStore(dir string) (*DPAPIStore, error) {
 			return nil, createErr
 		}
 	}
-	if len(e) != 32 {
+	if len(e) != dpapiEntropyBytes {
 		return nil, errors.New("invalid DPAPI entropy")
 	}
 	return &DPAPIStore{dir: dir, entropy: e}, nil
@@ -69,6 +78,9 @@ func (s *DPAPIStore) path(ref string) string { return filepath.Join(s.dir, ref+"
 func (s *DPAPIStore) Put(_ context.Context, ref string, value []byte) error {
 	if err := ValidateSecretRef(ref); err != nil {
 		return err
+	}
+	if len(value) > maxDPAPISecretValueBytes {
+		return errors.New("secret value exceeds size limit")
 	}
 	blob, err := protect(value, s.entropy)
 	if err != nil {
@@ -80,12 +92,38 @@ func (s *DPAPIStore) Get(_ context.Context, ref string) ([]byte, error) {
 	if err := ValidateSecretRef(ref); err != nil {
 		return nil, err
 	}
-	b, err := os.ReadFile(s.path(ref))
+	b, err := readBoundedSecretFile(s.path(ref), maxDPAPISecretBlobBytes)
 	if err != nil {
 		return nil, err
 	}
 	return unprotect(b, s.entropy)
 }
+
+func readBoundedSecretFile(path string, limit int) ([]byte, error) {
+	if limit < 0 {
+		return nil, errors.New("invalid secret file size limit")
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	data, readErr := io.ReadAll(io.LimitReader(file, int64(limit)+1))
+	closeErr := file.Close()
+	if readErr != nil || closeErr != nil {
+		for index := range data {
+			data[index] = 0
+		}
+		return nil, errors.Join(readErr, closeErr)
+	}
+	if len(data) > limit {
+		for index := range data {
+			data[index] = 0
+		}
+		return nil, errors.New("secret file exceeds size limit")
+	}
+	return data, nil
+}
+
 func (s *DPAPIStore) Delete(_ context.Context, ref string) error {
 	if err := ValidateSecretRef(ref); err != nil {
 		return err

@@ -87,12 +87,22 @@ func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) Ma
 	if manifestPath == "" {
 		manifestPath = defaultReleaseManifestPath
 	}
+	if len(manifestPath) > maxReleaseManifestPathBytes {
+		result.add(ManifestIssuePackageInvalid, "", "manifest path exceeds the supported size")
+		return result
+	}
 	cleanManifestPath, ok := cleanManifestRelativePath(manifestPath)
 	if !ok {
 		result.add(ManifestIssuePackageInvalid, "", "manifest path is unsafe")
 		return result
 	}
-	manifestFile, err := os.Open(filepath.Join(root, filepath.FromSlash(cleanManifestPath)))
+	packageRoot, err := os.OpenRoot(root)
+	if err != nil {
+		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "package root is unavailable")
+		return result
+	}
+	defer packageRoot.Close()
+	manifestFile, err := openRegularPackageFile(packageRoot, cleanManifestPath)
 	if err != nil {
 		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest is unavailable")
 		return result
@@ -165,7 +175,7 @@ func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) Ma
 				result.add(ManifestIssuePackageInvalid, cleanPath, "package entry digest or size is invalid")
 				continue
 			}
-			if err := validateManifestFile(root, cleanPath, file); err != nil {
+			if err := validateManifestFile(packageRoot, cleanPath, file); err != nil {
 				result.add(ManifestIssueChecksumMismatch, cleanPath, "package entry does not match its manifest")
 			}
 		}
@@ -195,13 +205,8 @@ func validSHA256(value string) bool {
 	return err == nil
 }
 
-func validateManifestFile(root, relativePath string, expected ManifestFile) error {
-	fullPath := filepath.Join(root, filepath.FromSlash(relativePath))
-	info, err := os.Lstat(fullPath)
-	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
-		return os.ErrNotExist
-	}
-	file, err := os.Open(fullPath)
+func validateManifestFile(root *os.Root, relativePath string, expected ManifestFile) error {
+	file, err := openRegularPackageFile(root, relativePath)
 	if err != nil {
 		return err
 	}
@@ -219,6 +224,58 @@ func validateManifestFile(root, relativePath string, expected ManifestFile) erro
 		return os.ErrInvalid
 	}
 	return nil
+}
+
+func openRegularPackageFile(root *os.Root, relativePath string) (*os.File, error) {
+	parts := strings.Split(relativePath, "/")
+	if root == nil || len(parts) == 0 {
+		return nil, os.ErrNotExist
+	}
+	current := root
+	currentOwned := false
+	defer func() {
+		if currentOwned {
+			_ = current.Close()
+		}
+	}()
+	for _, segment := range parts[:len(parts)-1] {
+		info, err := current.Lstat(segment)
+		if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+			return nil, os.ErrNotExist
+		}
+		next, err := current.OpenRoot(segment)
+		if err != nil {
+			return nil, err
+		}
+		if currentOwned {
+			if err := current.Close(); err != nil {
+				_ = next.Close()
+				return nil, err
+			}
+		}
+		current = next
+		currentOwned = true
+	}
+
+	name := parts[len(parts)-1]
+	info, err := current.Lstat(name)
+	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+		return nil, os.ErrNotExist
+	}
+	file, err := current.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	openedInfo, err := file.Stat()
+	if err != nil {
+		_ = file.Close()
+		return nil, err
+	}
+	if !os.SameFile(info, openedInfo) {
+		_ = file.Close()
+		return nil, os.ErrNotExist
+	}
+	return file, nil
 }
 
 func cleanManifestRelativePath(value string) (string, bool) {

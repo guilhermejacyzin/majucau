@@ -13,7 +13,7 @@ import (
 
 func TestValidateReleaseManifestAcceptsPackageAndMigration(t *testing.T) {
 	root := t.TempDir()
-	writeManifestFile(t, root, "000001_init.up.sql", []byte("create table smoke(id integer);\n"))
+	writeManifestFile(t, root, "migrations/000001_init.up.sql", []byte("create table smoke(id integer);\n"))
 	writeManifestFile(t, root, "majucau.exe", []byte("binary"))
 	manifest := ReleaseManifest{
 		ManifestVersion: ReleaseManifestVersion,
@@ -22,7 +22,7 @@ func TestValidateReleaseManifestAcceptsPackageAndMigration(t *testing.T) {
 		MinSchema:       "1.0",
 		MaxSchema:       "2.0",
 		Migrations: []ManifestFile{{
-			Path:   "000001_init.up.sql",
+			Path:   "migrations/000001_init.up.sql",
 			SHA256: digestFor([]byte("create table smoke(id integer);\n")),
 		}},
 		Artifacts: []ManifestFile{{
@@ -128,6 +128,33 @@ func TestValidateReleaseManifestRejectsTooManyEntries(t *testing.T) {
 func TestParseSchemaVersionRejectsIntegerOverflow(t *testing.T) {
 	if _, ok := parseSchemaVersion(strings.Repeat("9", maxManifestVersionFieldBytes)); ok {
 		t.Fatal("schema version with an overflowing integer component was accepted")
+	}
+}
+
+func TestValidateReleaseManifestRejectsSymlinkedDirectory(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	payload := []byte("outside package")
+	writeManifestFile(t, outside, "artifact.bin", payload)
+	if err := os.Symlink(outside, filepath.Join(root, "linked")); err != nil {
+		t.Skipf("cannot create directory symlink on this runner: %v", err)
+	}
+	writeManifest(t, root, ReleaseManifest{
+		ManifestVersion: ReleaseManifestVersion,
+		AppVersion:      "0.1.0",
+		SchemaVersion:   "1.0",
+		MinSchema:       "1.0",
+		MaxSchema:       "1.0",
+		Artifacts: []ManifestFile{{
+			Path:      "linked/artifact.bin",
+			SHA256:    digestFor(payload),
+			SizeBytes: int64(len(payload)),
+		}},
+	})
+
+	result := ValidateReleaseManifest(root, "release-manifest.json", "1.0")
+	if result.Valid || !hasManifestIssue(result, ManifestIssueChecksumMismatch) {
+		t.Fatalf("expected linked directory rejection, got valid=%v issues=%+v", result.Valid, result.Issues)
 	}
 }
 

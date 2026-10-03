@@ -75,7 +75,11 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 	if err != nil {
 		return APISyncResult{}, fmt.Errorf("begin Bling API sync: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		rollbackCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		_ = tx.Rollback(rollbackCtx)
+	}()
 	queries := database.New(tx)
 	connection, err := queries.GetIntegrationConnectionByProvider(ctx, string(domain.OriginBling))
 	if err != nil {
@@ -92,6 +96,13 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 		return APISyncResult{}, fmt.Errorf("create Bling API sync batch: %w", err)
 	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
+	if _, err := tx.Exec(ctx, "SAVEPOINT bling_api_sync_data"); err != nil {
+		return result, fmt.Errorf("create Bling API sync savepoint: %w", err)
+	}
+	fail := func(code string, cause error) (APISyncResult, error) {
+		result.Status = "FAILED"
+		return result, s.finishFailed(ctx, tx, queries, batch.ID, result, code, cause)
+	}
 	current := filter
 	if current.Page == 0 {
 		current.Page = 1
@@ -99,19 +110,19 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 	completed := false
 	for result.PagesRead < s.maxPages {
 		if err := ctx.Err(); err != nil {
-			return result, s.finishFailed(ctx, queries, batch.ID, result, "SYNC_CANCELLED", err)
+			return fail("SYNC_CANCELLED", err)
 		}
 		page, err := s.list(ctx, current)
 		if err != nil {
-			return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_API_READ_FAILED", err)
+			return fail("BLING_API_READ_FAILED", err)
 		}
 		payload, err := marshalReceivablesPage(page)
 		if err != nil {
-			return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_API_PAYLOAD_INVALID", err)
+			return fail("BLING_API_PAYLOAD_INVALID", err)
 		}
 		created, updated, err := persistResourcePage(ctx, queries, connection.ID, batch.ID, page.Page, s.sourceEntity, payload)
 		if err != nil {
-			return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_API_RAW_FAILED", err)
+			return fail("BLING_API_RAW_FAILED", err)
 		}
 		result.PagesRead++
 		result.RecordsRead += len(page.Records)
@@ -129,17 +140,17 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 		current.Limit = page.Limit
 	}
 	if !completed {
-		return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_API_PAGE_LIMIT", ErrBlingAPISyncPageLimit)
+		return fail("BLING_API_PAGE_LIMIT", ErrBlingAPISyncPageLimit)
 	}
 	cursorValue := fmt.Sprintf("page:%d", current.Page)
 	watermark := pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}
 	if err := queries.UpsertSyncCursor(ctx, database.UpsertSyncCursorParams{ConnectionID: connection.ID, Resource: s.resource, CursorValue: &cursorValue, WatermarkAt: watermark}); err != nil {
-		return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_SYNC_CURSOR_FAILED", err)
+		return fail("BLING_SYNC_CURSOR_FAILED", err)
 	}
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
 		ID: batch.ID, Status: "SUCCESS", RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated),
 	}); err != nil {
-		return result, fmt.Errorf("finish Bling API sync batch: %w", err)
+		return fail("BLING_SYNC_BATCH_FINISH_FAILED", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return result, fmt.Errorf("commit Bling API sync: %w", err)
@@ -148,13 +159,27 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 	return result, nil
 }
 
-func (s *apiResourceSyncService) finishFailed(ctx context.Context, queries *database.Queries, batchID pgtype.UUID, result APISyncResult, code string, cause error) error {
+func (s *apiResourceSyncService) finishFailed(ctx context.Context, tx pgx.Tx, queries *database.Queries, batchID pgtype.UUID, result APISyncResult, code string, cause error) error {
+	// Keep the failure audit while rolling back all RAW and cursor mutations from
+	// the attempted sync. A detached, bounded context also lets cancellation be
+	// recorded after the caller's context has ended.
+	auditCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer cancel()
+	if _, err := tx.Exec(auditCtx, "ROLLBACK TO SAVEPOINT bling_api_sync_data"); err != nil {
+		return fmt.Errorf("%w: rollback failed Bling sync data: %v", cause, err)
+	}
+	if _, err := tx.Exec(auditCtx, "RELEASE SAVEPOINT bling_api_sync_data"); err != nil {
+		return fmt.Errorf("%w: release failed Bling sync savepoint: %v", cause, err)
+	}
 	message := code
-	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
+	if err := queries.FinishIntegrationSyncBatch(auditCtx, database.FinishIntegrationSyncBatchParams{
 		ID: batchID, Status: "FAILED", RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated),
 		ErrorCode: &code, ErrorMessageSanitized: &message,
 	}); err != nil {
-		return fmt.Errorf("%w: %v; finish batch: %v", cause, cause, err)
+		return fmt.Errorf("%w: finish failed Bling sync batch: %v", cause, err)
+	}
+	if err := tx.Commit(auditCtx); err != nil {
+		return fmt.Errorf("%w: commit failed Bling sync audit: %v", cause, err)
 	}
 	return cause
 }

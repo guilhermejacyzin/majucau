@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -161,15 +162,21 @@ func validateManifestFile(root, relativePath string, expected ManifestFile) erro
 	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
 		return os.ErrNotExist
 	}
-	payload, err := os.ReadFile(fullPath)
+	file, err := os.Open(fullPath)
 	if err != nil {
 		return err
 	}
-	digest := sha256.Sum256(payload)
-	if !strings.EqualFold(hex.EncodeToString(digest[:]), strings.TrimSpace(expected.SHA256)) {
+	defer file.Close()
+
+	digest := sha256.New()
+	size, err := io.Copy(digest, file)
+	if err != nil {
+		return err
+	}
+	if !strings.EqualFold(hex.EncodeToString(digest.Sum(nil)), strings.TrimSpace(expected.SHA256)) {
 		return os.ErrInvalid
 	}
-	if expected.SizeBytes != 0 && int64(len(payload)) != expected.SizeBytes {
+	if expected.SizeBytes != 0 && size != expected.SizeBytes {
 		return os.ErrInvalid
 	}
 	return nil

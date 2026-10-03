@@ -40,7 +40,8 @@ conta própria.
 
 ## Estado de validação
 
-A mudança V1/V2 está em implementação e aguarda a execução da CI Windows e
-PostgreSQL. Ainda são necessárias evidências de restauração V1 em Windows 10/11
-limpo, restore real de PostgreSQL e integração com worker/UI/instalador antes
-de fechar os gates operacionais.
+A implementação V1/V2 passou pela CI Windows e PostgreSQL de 2026-10-03
+(run `37101826025`). A prova dedicada de restauração V1 em blocos CNG foi
+adicionada ao próximo job Windows e ainda aguarda execução. Permanecem necessárias
+evidências de restauração em VM Windows 10/11 limpa, restore real de PostgreSQL e
+integração com worker/UI/instalador antes de fechar os gates operacionais.

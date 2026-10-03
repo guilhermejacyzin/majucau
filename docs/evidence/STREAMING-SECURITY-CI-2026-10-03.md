@@ -66,3 +66,11 @@
 - `TestNamedPipeHealthRoundTripAndCancellation` executa chamadas de saúde em sequência. O cliente aguarda 10 ms e tenta abrir novamente somente quando o pipe ainda está ocupado ou a instância seguinte ainda não foi criada; a espera respeita cancelamento. O retry ocorre antes de enviar o frame da solicitação, então não repete uma operação de negócio.
 - A CI [37136211472](https://github.com/guilhermejacyzin/majucau/actions/runs/37136211472) passou nos jobs Windows e PostgreSQL, incluindo testes Go, vet, govulncheck, secret scan, frontend, builds desktop/worker/instalador, smoke de instalação/desinstalação e consolidação de outputs.
 - O runner é Windows Server 2025. Ainda faltam usuário autorizado em processo separado, UI fechada, reboot, ensaio de concorrência e instalação em VM Windows 10/11 limpa; `ARC-02` e `SEC-01` permanecem `PARTIAL`.
+
+## Cliente autorizado em processo separado — CI Windows em 2026-10-03
+
+- `TestNamedPipeAcceptsAuthorizedClientProcess` inicia uma cópia separada do executável de teste. O servidor consulta o PID conectado, lê o SID do token desse processo e aceita somente o SID de teste explicitamente autorizado; o filho completa uma chamada de saúde pelo Named Pipe.
+- O teste também cancela o servidor e confirma seu encerramento após a chamada. A execução separada valida o caminho de autenticação por PID/token, enquanto o teste da DACL verifica em separado os SIDs e máscaras de menor privilégio.
+- O filho e o servidor usam o mesmo SID de teste no runner. Isso não substitui o ensaio do par instalado com UI e serviço sob identidades distintas nem verifica a conta `NT SERVICE\MajucauWorker` e seu ciclo após reboot.
+- A CI [37137961615](https://github.com/guilhermejacyzin/majucau/actions/runs/37137961615) passou nos jobs Windows e PostgreSQL, incluindo Go tests, vet, govulncheck, secret scan, frontend, builds, smoke do instalador e consolidação de outputs.
+- O runner é Windows Server 2025. Ainda faltam UI fechada, reboot, concorrência e validação em VMs limpas Windows 10/11; `ARC-02` e `SEC-01` permanecem `PARTIAL`.

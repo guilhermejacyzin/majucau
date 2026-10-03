@@ -21,7 +21,7 @@ regra financeira/de negócio foi alterada.
   proprietário, LocalSystem e administradores. O cancelamento é propagado pela
   cópia, criptografia, verificação e preparação dos arquivos.
 
-## Limite dos metadados ZIP — implementação em revisão
+## Limite dos metadados ZIP — CI aprovada
 
 A biblioteca padrão Go não valida previamente o número total de entradas do
 diretório ZIP; ela percorre os registros centrais e os mantém em memória. A
@@ -36,8 +36,21 @@ Referência primária: [fonte oficial `archive/zip` do Go](https://go.dev/src/ar
 que explica que a contagem do diretório não é validada antes da leitura e da
 montagem da lista de arquivos.
 
-A CI ainda precisa validar esta alteração. O ambiente local não disponibiliza
-Go/gofmt, então não houve compilação nem execução de testes locais.
+A CI do commit `f19e74df7dc21060f69ee48569e5e57ff0bb2635` passou nos jobs
+Windows e PostgreSQL no run
+[37127616830](https://github.com/guilhermejacyzin/majucau/actions/runs/37127616830).
+O job Windows executou a suíte existente, `go vet`, análise de vulnerabilidades,
+builds do aplicativo/worker/instalador, smoke de instalação e consolidação dos
+outputs. O job PostgreSQL também passou. A suíte existente validou pacotes V1
+legítimos e restauração V2 em vários segmentos; ela ainda não tem um fixture
+adversarial dedicado para diretórios ZIP malformados/ZIP64, que fica como
+próxima melhoria de cobertura.
+
+O artefato G1 unsigned `11275408170` tem 37.431.446 bytes, SHA-256
+`2c95f90e5801bc7472b8811107504237627e522f44f99bdb681501c184818457` e expira
+em 2026-10-04 13:59:31 UTC. A conexão GitHub não oferece exclusão remota; o item
+foi registrado em `artifacts/retained/cleanup-register.md`. O ambiente local
+não disponibiliza Go/gofmt; a compilação e os testes foram executados pela CI.
 
 ## Validação CI em 2026-10-03
 

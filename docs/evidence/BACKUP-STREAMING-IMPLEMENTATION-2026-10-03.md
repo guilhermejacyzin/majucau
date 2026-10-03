@@ -1,4 +1,4 @@
-# Backups em fluxo — decisão e implementação em revisão — 2026-10-03
+# Backups em fluxo — decisão, implementação e evidências — 2026-10-03
 
 ## Decisão aprovada
 
@@ -6,7 +6,7 @@ Gisele aprovou manter a leitura/restauração dos pacotes V1 existentes e gravar
 novos pacotes no formato V2 com blocos autenticados. Nenhuma tela aprovada ou
 regra financeira/de negócio foi alterada.
 
-## Escopo implementado localmente
+## Implementação
 
 - Nova geração V2 usa Tink Streaming AEAD AES-256-GCM-HKDF com segmentos de
   1 MiB; o keyset aleatório do pacote é cifrado sob chave derivada por Argon2id.
@@ -42,17 +42,24 @@ Windows e PostgreSQL no run
 O job Windows executou a suíte Go, `go vet`, análise de vulnerabilidades,
 builds do aplicativo/worker/instalador, smoke de instalação e consolidação dos
 outputs. O job PostgreSQL também passou. A suíte validou pacotes V1 legítimos e
-restauração V2 em vários segmentos. Foram adicionados em
-`backup_archive_preflight_test.go` casos para ZIP clássico/ZIP64 válidos com 3 e
-4 arquivos, contagem declarada incorreta, excesso de entradas, diretório acima
-de 1 MiB, cabeçalho central truncado e ponteiro ZIP64 adulterado. A validação
-pela CI será registrada depois do próximo push.
+restauração V2 em vários segmentos. Os testes adversariais em
+`backup_archive_preflight_test.go` passaram no run
+[37129222768](https://github.com/guilhermejacyzin/majucau/actions/runs/37129222768),
+nos jobs Windows e PostgreSQL. Eles cobrem ZIP clássico/ZIP64 válidos com 3 e 4
+arquivos, contagem declarada incorreta, excesso de entradas, diretório acima de
+1 MiB, cabeçalho central truncado e ponteiro ZIP64 adulterado. A CI executou a
+suíte, `go vet`, análise de vulnerabilidades, builds, smoke do instalador e
+consolidação de outputs. O ambiente local não disponibiliza Go/gofmt; a
+compilação e os testes foram executados pela CI.
 
 O artefato G1 unsigned `11275408170` tem 37.431.446 bytes, SHA-256
 `2c95f90e5801bc7472b8811107504237627e522f44f99bdb681501c184818457` e expira
 em 2026-10-04 13:59:31 UTC. A conexão GitHub não oferece exclusão remota; o item
-foi registrado em `artifacts/retained/cleanup-register.md`. O ambiente local
-não disponibiliza Go/gofmt; a compilação e os testes foram executados pela CI.
+foi registrado em `artifacts/retained/cleanup-register.md`.
+O artefato G1 unsigned `11276600949` do run `37129222768` tem 37.431.125 bytes,
+SHA-256 `c87e010d76ee7c4fc6960ca3a2433396df340a52cf32ef790aa3238c684cd2dd` e
+expira em 2026-10-04 14:27:52 UTC. Como a conexão GitHub não oferece exclusão
+remota, ele também foi registrado em `artifacts/retained/cleanup-register.md`.
 
 ## Validação CI em 2026-10-03
 

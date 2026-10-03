@@ -38,6 +38,13 @@ e retorna `RESTORED_NEEDS_RECONNECT`. Falhas após o início da restauração
 retornam `RECOVERY_REQUIRED`; o pacote nunca apaga ou recria um cluster por
 conta própria.
 
+As pastas privadas temporárias de backup e restauração são removidas antes do
+retorno. Se o sistema operacional impedir a remoção, a operação devolve um
+`TemporaryWorkspaceCleanupError`; o resultado e o status da operação continuam
+disponíveis, e o caminho fica no campo `Path` do erro para limpeza manual
+autorizada. A mensagem do erro omite o caminho para evitar que nomes de conta
+sejam copiados para logs comuns.
+
 ## Estado de validação
 
 A implementação V1/V2 passou pela CI Windows e PostgreSQL de 2026-10-03

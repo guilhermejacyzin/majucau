@@ -106,6 +106,21 @@ type Result struct {
 	Manifest Manifest
 }
 
+// TemporaryWorkspaceCleanupError reports that a private workspace could not
+// be removed. Path is provided to authorized callers for manual cleanup; it is
+// intentionally omitted from Error so paths containing account names are not
+// copied into ordinary logs.
+type TemporaryWorkspaceCleanupError struct {
+	Path  string
+	Cause error
+}
+
+func (e *TemporaryWorkspaceCleanupError) Error() string {
+	return "private backup workspace cleanup failed; manual cleanup is required"
+}
+
+func (e *TemporaryWorkspaceCleanupError) Unwrap() error { return e.Cause }
+
 type Verification struct {
 	Valid    bool
 	Manifest Manifest
@@ -140,7 +155,7 @@ type RestoreResult struct {
 	Status             string
 }
 
-func Create(ctx context.Context, options Options) (Result, error) {
+func Create(ctx context.Context, options Options) (result Result, retErr error) {
 	if ctx == nil {
 		return Result{}, ErrInvalidOptions
 	}
@@ -178,7 +193,11 @@ func Create(ctx context.Context, options Options) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("create temporary backup directory: %w", err)
 	}
-	defer os.RemoveAll(temporary)
+	defer func() {
+		if cleanupErr := os.RemoveAll(temporary); cleanupErr != nil {
+			retErr = errors.Join(retErr, &TemporaryWorkspaceCleanupError{Path: temporary, Cause: cleanupErr})
+		}
+	}()
 	passwordFile, env, err := connectionEnvironment(config, temporary)
 	if err != nil {
 		return Result{}, err
@@ -241,7 +260,7 @@ func VerifyContext(ctx context.Context, path string, passphrase []byte, currentS
 // PostgreSQL database. It creates a fresh backup before stopping the worker,
 // never runs pg_restore for an invalid package, and leaves the caller in
 // RECOVERY_REQUIRED when a destructive step or post-restore validation fails.
-func Restore(ctx context.Context, options RestoreOptions) (RestoreResult, error) {
+func Restore(ctx context.Context, options RestoreOptions) (result RestoreResult, retErr error) {
 	if ctx == nil {
 		return RestoreResult{}, ErrInvalidOptions
 	}
@@ -258,7 +277,11 @@ func Restore(ctx context.Context, options RestoreOptions) (RestoreResult, error)
 	if err != nil {
 		return RestoreResult{Status: "RECOVERY_REQUIRED"}, fmt.Errorf("create private restore workspace: %w", err)
 	}
-	defer os.RemoveAll(temporary)
+	defer func() {
+		if cleanupErr := os.RemoveAll(temporary); cleanupErr != nil {
+			retErr = errors.Join(retErr, &TemporaryWorkspaceCleanupError{Path: temporary, Cause: cleanupErr})
+		}
+	}()
 	stagedPackage := filepath.Join(temporary, "input.mjbk")
 	if err := copyEncryptedPackage(ctx, options.PackagePath, stagedPackage); err != nil {
 		return RestoreResult{Status: "RECOVERY_REQUIRED"}, fmt.Errorf("stage encrypted backup: %w", err)

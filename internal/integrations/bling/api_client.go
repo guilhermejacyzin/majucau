@@ -19,9 +19,11 @@ const (
 	BlingAuthorizeURL = "https://www.bling.com.br/Api/v3/oauth/authorize"
 	BlingTokenURL     = "https://api.bling.com.br/Api/v3/oauth/token"
 
-	// Bling documents a maximum of 100 records per page for the resources used
-	// by the financial integration. This is deliberately a hard contract here;
-	// callers must not silently ask the API for an unsupported page size.
+	// The adapter deliberately caps each page at 100 records as a memory and
+	// batch safety bound. Bling's general guide says 100 is the default and that
+	// callers may configure the limit; it does not establish 100 as the maximum
+	// for these specific endpoints. Raising this application cap requires
+	// endpoint and account homologation.
 	BlingMaxPageSize = 100
 
 	defaultBlingResponseLimit int64 = 4 << 20 // 4 MiB; protects the worker from an unexpected payload.

@@ -6,8 +6,10 @@ O Bling/API v3 é a fonte de verdade para fatos financeiros operacionais, em
 modo somente leitura. O pacote agora contém um cliente técnico para:
 
 - OAuth 2 Authorization Code e renovação por `refresh_token`;
-- `GET /contas/receber` com paginação (`pagina`/`limite`), filtros explícitos e
-  limite máximo de 100 registros;
+- `GET /contas/receber` com paginação (`pagina`/`limite`) e filtros explícitos;
+  o adapter usa até 100 registros por página como limite local de segurança.
+  A documentação geral do Bling informa 100 como padrão configurável, não como
+  máximo comprovado para esses endpoints;
 - classificação segura de 401/403, 429, timeout, indisponibilidade e resposta
   fora do contrato;
 - preservação dos itens retornados como JSON bruto até a homologação dos
@@ -23,6 +25,11 @@ Isso prova transporte, autorização e formato básico, mas não equivale à
 homologação funcional dos campos. A homologação BK-040 ainda precisa registrar
 endpoint, campo, significado, ausência, limites e uma amostra sanitizada da
 conta autorizada antes da normalização contábil.
+
+A documentação geral confirma os parâmetros de paginação `pagina` e `limite`,
+mas não homologa o objeto de paginação da resposta nem um cursor incremental
+específico de `contas/receber`. O contrato observado e a lacuna estão registrados
+em `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-03.md`.
 
 O `ReceivablesAPISyncService` já fecha a etapa seguinte de infraestrutura: lê
 as páginas e grava cada página como evidência RAW append-only em uma transação

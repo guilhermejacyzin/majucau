@@ -161,6 +161,9 @@ func TestValidateReleaseManifestRejectsSymlinkedDirectory(t *testing.T) {
 func writeManifestFile(t *testing.T, root, relative string, payload []byte) {
 	t.Helper()
 	path := filepath.Join(root, filepath.FromSlash(relative))
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(path, payload, 0o600); err != nil {
 		t.Fatal(err)
 	}

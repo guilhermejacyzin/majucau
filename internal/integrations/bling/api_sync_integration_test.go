@@ -165,4 +165,20 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if currentPages != 2 || allPages != 3 {
 		t.Fatalf("successful sync RAW current/total counts = %d/%d, want 2/3", currentPages, allPages)
 	}
+
+	replayed, err := service.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
+	if err != nil {
+		t.Fatalf("idempotent API sync replay: %v", err)
+	}
+	if replayed.Status != "SUCCESS" || replayed.PagesRead != 2 || replayed.PagesCreated != 0 || replayed.PagesUpdated != 0 {
+		t.Fatalf("idempotent replay result = %+v", replayed)
+	}
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FILTER (WHERE is_current), count(*)
+		FROM raw_records WHERE connection_id = $1 AND source_entity = $2`, connection.ID, sourceEntity).Scan(&currentPages, &allPages); err != nil {
+		t.Fatalf("count RAW pages after idempotent replay: %v", err)
+	}
+	if currentPages != 2 || allPages != 3 {
+		t.Fatalf("idempotent replay changed RAW current/total counts to %d/%d, want 2/3", currentPages, allPages)
+	}
 }

@@ -87,6 +87,24 @@ Esta prova cobre autenticação e verificação V2 em payload maior que os segme
 não substitui restore real PostgreSQL, integração do worker/UI/instalador nem
 ensaio em VM limpa. `OPS-02` e `DATA-04` continuam `PARTIAL`.
 
+## Restauração V2 com payload de vários segmentos — CI em 2026-10-03
+
+O run [37106348029](https://github.com/guilhermejacyzin/majucau/actions/runs/37106348029)
+passou nos jobs `verify-windows` e `verify-postgres`. O teste
+`TestV2StreamingBackupAuthenticatesAndRestoresLargeSegmentedPayload` cria um
+dump de 3 MiB, verifica o pacote e passa pela preparação da restauração V2. O
+`CommandRunner` de teste compara os bytes entregues a `pg_restore` e `psql` com
+os dois payloads originais, e verifica a sequência parar worker → validar banco
+→ iniciar worker. O caso também altera o texto cifrado e atualiza o hash no
+manifesto para provar rejeição pela autenticação.
+
+Os comandos PostgreSQL e hooks do ciclo de vida são simulados neste teste; ele
+não conecta a um banco real nem controla o serviço Windows. O run completo
+também passou por testes Go, `go vet`, govulncheck, migrations, SQL, secrets,
+frontend, builds e smoke do instalador. Portanto a evidência fortalece o caminho
+da biblioteca, mas `OPS-02` segue `PARTIAL` até restore PostgreSQL real,
+integração operacional e ensaio em VM limpa.
+
 ## Referências técnicas
 
 - Microsoft CNG documenta a cadeia de chamadas BCrypt para autenticação de

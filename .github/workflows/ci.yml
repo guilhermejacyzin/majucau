@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   verify-windows:
-    runs-on: windows-latest
+    # Pin runner images so platform migrations are reviewed explicitly.
+    runs-on: windows-2025
     timeout-minutes: 30
     env:
       GOCACHE: '${{ github.workspace }}\artifacts\cache\go-build'
@@ -18,7 +19,7 @@ jobs:
       GOBIN: '${{ github.workspace }}\artifacts\cache\bin'
       npm_config_cache: '${{ github.workspace }}\artifacts\cache\npm'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Prepare centralized caches
         shell: pwsh
@@ -29,14 +30,15 @@ jobs:
           }
           (Join-Path $cacheRoot 'bin') | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.26.6'
           cache: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24.14.0'
+          package-manager-cache: false
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -236,7 +238,7 @@ jobs:
           }
 
       - name: Upload unsigned G1 build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: majucau-g1-unsigned
@@ -248,7 +250,7 @@ jobs:
           retention-days: 1
 
   verify-postgres:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
       postgres:
@@ -271,12 +273,12 @@ jobs:
       MAJUCAU_TEST_RECEIPTS_FOLDER: '${{ github.workspace }}/internal/integrations/bling/testdata/e2e'
       MAJUCAU_TEST_FUTURE_FOLDER: '${{ github.workspace }}/internal/integrations/nuvempago/testdata/e2e'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Prepare centralized Go caches
         run: mkdir -p artifacts/cache/go-build artifacts/cache/go-mod
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.26.6'
           cache: false

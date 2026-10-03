@@ -46,3 +46,11 @@ A maior parte dos caminhos revisados já tem streaming ou limite de tamanho
 explícito. `DATA-04` continua `PARTIAL` até resolver e validar o contrato de
 resposta IPC do dashboard, terminar a auditoria dos demais fluxos fora deste
 recorte e comprovar a limpeza/ACL em VM Windows real.
+
+## Regressão do limite de redação — CI #241
+
+A CI [37144902549](https://github.com/guilhermejacyzin/majucau/actions/runs/37144902549)
+passou em Windows e PostgreSQL após `security.RedactJSON` passar a rejeitar
+entradas acima de 1 MiB com substituição integral por `[REDACTED]`. O helper
+segue sem chamadores de produção; esta prova não substitui limites nos fluxos
+produtivos. `DATA-04` permanece `PARTIAL` pelas pendências listadas acima.

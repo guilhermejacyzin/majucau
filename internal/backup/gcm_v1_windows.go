@@ -91,8 +91,17 @@ func decryptV1Stream(source io.Reader, encryptedSize int64, key, associatedData 
 	defer bcryptCloseAlgorithm.Call(algorithm, 0)
 
 	modeName, _ := syscallUTF16(bcryptChainingMode)
-	mode, _ := syscallUTF16(bcryptGCMMode)
-	status, _, _ = bcryptSetProperty.Call(algorithm, uintptr(unsafe.Pointer(modeName)), uintptr(unsafe.Pointer(&mode[0])), uintptr(len(mode)*2), 0)
+	modeValue, err := windows.UTF16FromString(bcryptGCMMode)
+	if err != nil {
+		return fmt.Errorf("encode Windows AES-GCM mode: %w", err)
+	}
+	status, _, _ = bcryptSetProperty.Call(
+		algorithm,
+		uintptr(unsafe.Pointer(modeName)),
+		uintptr(unsafe.Pointer(&modeValue[0])),
+		uintptr(len(modeValue)*2),
+		0,
+	)
 	if status != 0 {
 		return fmt.Errorf("configure Windows AES-GCM provider (NTSTATUS 0x%x)", status)
 	}

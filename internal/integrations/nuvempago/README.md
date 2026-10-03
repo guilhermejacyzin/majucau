@@ -25,6 +25,12 @@ Somente linhas `Entrada` e `Venda` são aceitas. Transações repetidas dentro
 da mesma pasta são rejeitadas. O processamento é lexicalmente determinístico
 e cada arquivo recebe SHA-256 para o lote posterior.
 
+O leitor impõe 1 MiB por campo, 4 MiB por registro e 256 campos enquanto
+consome o fluxo, sem limite total de linhas. Exceder qualquer teto é falha
+técnica: a pasta inteira é recusada antes de gravar dados. Erros de validação
+comuns por linha continuam permitindo salvar as linhas válidas e fechar o
+lote como `PARTIAL`.
+
 `ParseFutureCSV` e `ImportFutureFolder` alimentam `FutureImportService`, que
 abre uma transação PostgreSQL, cria o lote, grava o payload RAW versionado e
 faz upsert idempotente em `receivables` como B2C/PROJECTED. O worker expõe

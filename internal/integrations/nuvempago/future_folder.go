@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
 )
 
 var ErrFutureFolderRequired = errors.New("nuvem pago future import folder is required")
@@ -82,6 +84,9 @@ func ImportFutureFolder(ctx context.Context, folder string) (FutureFolderImport,
 		metadata := ImportedFutureFile{Name: entry.Name(), SHA256: hex.EncodeToString(hasher.Sum(nil))}
 		if closeErr != nil && parseErr == nil {
 			parseErr = closeErr
+		}
+		if errors.Is(parseErr, csvlimit.ErrLimitExceeded) {
+			return FutureFolderImport{}, parseErr
 		}
 		if parseErr != nil {
 			metadata.RejectedRowCount = 1

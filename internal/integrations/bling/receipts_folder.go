@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
 )
 
 var ErrImportFolderRequired = errors.New("bling receipts import folder is required")
@@ -90,6 +92,9 @@ func ImportReceiptsFolder(ctx context.Context, folder string) (FolderImport, err
 		metadata := ImportedFile{Name: entry.Name(), SHA256: hex.EncodeToString(hasher.Sum(nil))}
 		if closeErr != nil && parseErr == nil {
 			parseErr = closeErr
+		}
+		if errors.Is(parseErr, csvlimit.ErrLimitExceeded) {
+			return FolderImport{}, parseErr
 		}
 		if parseErr != nil {
 			metadata.ErrorCount = 1

@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"majucau.local/financial-intelligence/internal/domain"
+	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
 )
 
 const ReceiptsReportSourceEntity = "bling_contas_recebidas_report_v1"
@@ -50,7 +51,7 @@ type ReceiptsReport struct {
 // source of truth even when the payment method mentions NuvemPago/Nuvemshop.
 // The parser never turns an unpaid row into a receipt.
 func ParseReceiptsCSV(input io.Reader) (ReceiptsReport, error) {
-	reader := csv.NewReader(input)
+	reader := csv.NewReader(csvlimit.NewReader(input))
 	reader.Comma = ';'
 	reader.FieldsPerRecord = -1
 	reader.TrimLeadingSpace = true
@@ -73,6 +74,9 @@ func ParseReceiptsCSV(input io.Reader) (ReceiptsReport, error) {
 		row, readErr := reader.Read()
 		if errors.Is(readErr, io.EOF) {
 			break
+		}
+		if errors.Is(readErr, csvlimit.ErrLimitExceeded) {
+			return ReceiptsReport{}, readErr
 		}
 		if readErr != nil {
 			result.Errors = append(result.Errors, RowError{Line: line, Code: "CSV_READ", Message: "não foi possível ler a linha do relatório"})

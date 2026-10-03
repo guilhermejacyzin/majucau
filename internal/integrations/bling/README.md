@@ -46,6 +46,8 @@ O parser espera exportação CSV separada por ponto e vírgula com os campos equ
 
 Somente `Situação=pago` vira `ReceiptCandidate` confirmado. Linhas abertas, canceladas ou sem documento ficam em `RowError`; não são convertidas em zero nem entram no total. Documentos duplicados no mesmo lote também ficam em erro para impedir dupla contagem.
 
+O leitor impõe 1 MiB por campo, 4 MiB por registro e 256 campos enquanto consome o fluxo, sem limite total de linhas. Exceder qualquer teto é falha técnica do arquivo: a pasta não é importada. Erros de validação comuns por linha continuam permitindo salvar as linhas válidas e fechar o lote como `PARTIAL`.
+
 O PDF `Bling - Relatório de Contas a Receber` fornecido em 20/09/2026 foi usado para confirmar visualmente os nomes e a semântica das colunas. O serviço `ReceiptImportService` abre a transação, carrega a conexão Bling, grava `raw_records`/`receipts` e finaliza o lote de sincronização de forma atômica.
 
 ## Pasta de entrada

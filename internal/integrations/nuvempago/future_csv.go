@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"majucau.local/financial-intelligence/internal/domain"
+	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
 )
 
 // FutureSourceEntity is the stable contract name for the controlled export
@@ -66,7 +67,7 @@ type FutureReport struct {
 // does not calculate a tariff from the pricing table: exported tax, costs and
 // net value are preserved as facts from the file.
 func ParseFutureCSV(input io.Reader) (FutureReport, error) {
-	reader := csv.NewReader(input)
+	reader := csv.NewReader(csvlimit.NewReader(input))
 	reader.Comma = ';'
 	reader.FieldsPerRecord = -1
 	reader.TrimLeadingSpace = true
@@ -89,6 +90,9 @@ func ParseFutureCSV(input io.Reader) (FutureReport, error) {
 		row, readErr := reader.Read()
 		if errors.Is(readErr, io.EOF) {
 			break
+		}
+		if errors.Is(readErr, csvlimit.ErrLimitExceeded) {
+			return FutureReport{}, readErr
 		}
 		if readErr != nil {
 			result.Errors = append(result.Errors, RowError{Line: line, Code: "CSV_READ", Message: "não foi possível ler a linha do extrato"})

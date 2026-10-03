@@ -65,6 +65,28 @@ em VM Windows 10/11 limpa, restore real de PostgreSQL e integração com
 worker/UI/instalador. O ambiente local não possui Go/gofmt; a validação de
 compilação e testes veio da CI.
 
+## Validação adicional V2 — CI em 2026-10-03
+
+O run [37105079618](https://github.com/guilhermejacyzin/majucau/actions/runs/37105079618)
+passou nos jobs `verify-windows` e `verify-postgres`. O teste
+`TestV2StreamingBackupAuthenticatesLargeSegmentedPayload` gera um dump de 3 MiB,
+confirma que a verificação aceita o pacote V2 com vários segmentos e depois
+altera o texto cifrado, atualiza o SHA-256 no manifesto e confirma que a
+autenticação rejeita o pacote. Isso prova que a validação não depende somente
+do hash do manifesto.
+
+No mesmo run passaram testes Go, `go vet`, govulncheck, checksums de migrations,
+geração SQL, secret scan, lint/typecheck/testes/build frontend, auditoria de
+dependências, builds de desktop/worker/helper, smoke do helper e NSIS, smoke de
+instalação/desinstalação e consolidação de outputs. O artefato G1 unsigned
+`11267901629` tem 36,939,597 bytes, SHA-256
+`29c117d5a72a320ccce30651a340965801cc6aae719fa6814350cfe71364864d` e expira em
+2027-01-01. Ele continua sendo um artefato unsigned, não uma release assinada.
+
+Esta prova cobre autenticação e verificação V2 em payload maior que os segmentos;
+não substitui restore real PostgreSQL, integração do worker/UI/instalador nem
+ensaio em VM limpa. `OPS-02` e `DATA-04` continuam `PARTIAL`.
+
 ## Referências técnicas
 
 - Microsoft CNG documenta a cadeia de chamadas BCrypt para autenticação de

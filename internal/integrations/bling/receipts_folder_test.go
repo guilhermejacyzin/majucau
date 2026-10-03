@@ -2,6 +2,7 @@ package bling
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,5 +68,47 @@ func TestImportReceiptsFolderRejectsDuplicateAcrossFiles(t *testing.T) {
 	}
 	if len(result.Receipts) != 1 || len(result.Errors) != 1 || result.Errors[0].Code != "DUPLICATE_SOURCE_ID" {
 		t.Fatalf("cross-file duplicate was not rejected: %#v", result)
+	}
+}
+
+func TestPreviewReceiptsFolderBoundsMetadataAndIssuesAndCleansTemporaryData(t *testing.T) {
+	folder := t.TempDir()
+	tempRoot := t.TempDir()
+	t.Setenv("TMPDIR", tempRoot)
+	t.Setenv("TEMP", tempRoot)
+	t.Setenv("TMP", tempRoot)
+
+	for index := 0; index < 51; index++ {
+		content := strings.ReplaceAll(sampleReceiptsCSV, "016223/01", fmt.Sprintf("%06d/01", 100000+index))
+		content = strings.ReplaceAll(content, "007882/01", fmt.Sprintf("%06d/01", 200000+index))
+		content = strings.ReplaceAll(content, "017785/01", fmt.Sprintf("%06d/01", 300000+index))
+		name := fmt.Sprintf("%02d.csv", index)
+		if err := os.WriteFile(filepath.Join(folder, name), []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(folder, "readme.txt"), []byte("ignorado"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	preview, err := PreviewReceiptsFolder(context.Background(), folder)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if preview.FileCount != 51 || len(preview.Files) != 50 || preview.ReceiptCount != 153 || preview.ErrorCount != 102 || preview.IgnoredCount != 1 || len(preview.Issues) != 50 {
+		t.Fatalf("preview did not preserve total counts while bounding details: files=%d/%d receipts=%d errors=%d ignored=%d issues=%d", preview.FileCount, len(preview.Files), preview.ReceiptCount, preview.ErrorCount, preview.IgnoredCount, len(preview.Issues))
+	}
+	if preview.Files[0].Name != "00.csv" || preview.Files[49].Name != "49.csv" || preview.Files[0].ReceiptCount != 3 || preview.Files[0].ErrorCount != 2 || len(preview.Files[0].SHA256) != 64 {
+		t.Fatalf("unexpected bounded file metadata: first=%#v last=%#v", preview.Files[0], preview.Files[49])
+	}
+	if preview.Issues[0].File != "00.csv" || preview.Issues[49].File != "24.csv" {
+		t.Fatalf("issues should be collected in stable filename order: first=%#v last=%#v", preview.Issues[0], preview.Issues[49])
+	}
+	entries, err := os.ReadDir(tempRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("preview left temporary files behind: %v", entries)
 	}
 }

@@ -22,9 +22,9 @@ memória e não substitui a validação em VM Windows.
 Na busca dos fontes Go, os demais usos produtivos de `io.ReadAll` encontrados
 são os leitores acima e permanecem limitados. As ocorrências de `os.ReadFile`
 encontradas eram testes; não apareceu leitura produtiva arbitrária de arquivo
-inteiro nessa busca. `security.RedactJSON` usa `json.Unmarshal` sem limite, mas
-a busca encontrou apenas um chamador de teste; antes de ligá-lo a conteúdo
-arbitrário de log/rede, será necessário impor um limite de entrada.
+inteiro nessa busca. `security.RedactJSON` tinha decodificação JSON sem limite;
+agora rejeita entradas acima de 1 MiB com saída totalmente redigida. A busca
+encontrou apenas um chamador de teste, portanto nenhum fluxo de produção mudou.
 
 ## Pendência: resposta do snapshot do painel
 

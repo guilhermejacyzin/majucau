@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+const maxRedactJSONBytes = 1 << 20
+
 var sensitiveNames = map[string]bool{"token": true, "access_token": true, "refresh_token": true, "client_secret": true, "secret": true, "password": true, "authorization": true, "cookie": true}
 
 func RedactValue(v any) any {
@@ -39,6 +41,9 @@ func RedactString(value string) string {
 	return "[REDACTED]" + value[len(value)-4:]
 }
 func RedactJSON(data []byte) []byte {
+	if len(data) > maxRedactJSONBytes {
+		return []byte(`"[REDACTED]"`)
+	}
 	var v any
 	if json.Unmarshal(data, &v) != nil {
 		return []byte(`"[REDACTED]"`)

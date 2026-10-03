@@ -2,6 +2,7 @@ package security
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -22,5 +23,15 @@ func TestRedactionAndFakeStore(t *testing.T) {
 	again, _ := s.Get(context.Background(), "bling_token")
 	if string(again) != "secret" {
 		t.Fatal("fake store leaked mutable buffer")
+	}
+}
+
+func TestRedactJSONBoundsInputAndFailsClosed(t *testing.T) {
+	input := `{"access_token":"private","padding":"` + strings.Repeat("x", maxRedactJSONBytes) + `"}`
+	if len(input) <= maxRedactJSONBytes {
+		t.Fatal("test input must exceed the redaction limit")
+	}
+	if got := string(RedactJSON([]byte(input))); got != `"[REDACTED]"` {
+		t.Fatalf("oversized JSON was not fully redacted: got %q", got)
 	}
 }

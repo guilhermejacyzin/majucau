@@ -63,6 +63,23 @@ jobs:
           go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
           go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
 
+      - name: Install pinned CycloneDX validator
+        shell: pwsh
+        run: |
+          $validatorPath = Join-Path $env:GOBIN 'cyclonedx.exe'
+          $validatorUrl = 'https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.33.1/cyclonedx-win-x64.exe'
+          curl.exe --fail --location --silent --show-error $validatorUrl --output $validatorPath
+          if ($LASTEXITCODE -ne 0) { throw "Download do CycloneDX CLI falhou: $LASTEXITCODE" }
+
+          $expectedSha256 = '9b360974c41a5d612eb026fb5e3bb1fa28e08865f7a4f915665b8bc94bd3bc31'
+          $actualSha256 = (Get-FileHash -LiteralPath $validatorPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) {
+            Remove-Item -LiteralPath $validatorPath -Force
+            throw "Hash do CycloneDX CLI divergente: $actualSha256"
+          }
+          & $validatorPath --version
+          if ($LASTEXITCODE -ne 0) { throw "CycloneDX CLI não iniciou: $LASTEXITCODE" }
+
       - name: Go vulnerability scan
         run: govulncheck . ./cmd/... ./database/... ./internal/...
 
@@ -197,11 +214,18 @@ jobs:
               throw "SBOM vazio ou acima do limite de 64 MiB: $path"
             }
           }
+
+          & (Join-Path $env:GOBIN 'cyclonedx.exe') validate --input-file $goSbomPath --input-format json --input-version v1_6 --fail-on-errors
+          if ($LASTEXITCODE -ne 0) { throw "Schema CycloneDX 1.6 inválido no SBOM Go: $LASTEXITCODE" }
+          & (Join-Path $env:GOBIN 'cyclonedx.exe') validate --input-file $npmSbomPath --input-format json --input-version v1_5 --fail-on-errors
+          if ($LASTEXITCODE -ne 0) { throw "Schema CycloneDX 1.5 inválido no SBOM npm: $LASTEXITCODE" }
+
           @(
             '## Inventário de dependências',
             '',
             'SBOM Go CycloneDX gerado com evidências de licença quando detectadas.',
-            'SBOM npm CycloneDX gerado a partir de frontend/package-lock.json.'
+            'SBOM npm CycloneDX gerado a partir de frontend/package-lock.json.',
+            'Ambos os arquivos passaram pela validação do schema CycloneDX.'
           ) | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
 
       - name: Smoke install and uninstall unsigned installer

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -283,8 +284,8 @@ const (
 	pipeReadModeMessage                          = 0x00000002
 	pipeWait                                     = 0x00000000
 	pipeUnlimitedInstances                       = 255
-	genericRead                                  = 0x80000000
-	genericWrite                                 = 0x40000000
+	pipeClientAccessMask                         = 0x00100003 // FILE_READ_DATA | FILE_WRITE_DATA | SYNCHRONIZE.
+	pipeServerAccessMask                         = 0x00100007 // Client I/O rights plus FILE_CREATE_PIPE_INSTANCE.
 	openExisting                                 = 3
 	processQueryLimitedInformation               = 0x1000
 	tokenQuery                                   = 0x0008
@@ -295,7 +296,7 @@ const (
 
 func openPipeFile(name string) (*os.File, error) {
 	n, _ := syscall.UTF16PtrFromString(name)
-	r, _, err := createFileW.Call(uintptr(unsafe.Pointer(n)), genericRead|genericWrite, 0, 0, openExisting, 0, 0)
+	r, _, err := createFileW.Call(uintptr(unsafe.Pointer(n)), pipeClientAccessMask, 0, 0, openExisting, 0, 0)
 	if syscall.Handle(r) == syscall.InvalidHandle {
 		return nil, err
 	}
@@ -334,23 +335,46 @@ func disconnectPipe(h syscall.Handle)  { disconnectNamedPipe.Call(uintptr(h)) }
 func closePipeHandle(h syscall.Handle) { disconnectPipe(h); syscall.CloseHandle(h) }
 
 func makePipeSecurity(c NamedPipeConfig) (uintptr, func(), error) {
-	sids := append([]string(nil), c.AllowedClientSIDs...)
-	if len(sids) == 0 {
+	clientSIDs := append([]string(nil), c.AllowedClientSIDs...)
+	serviceSID := c.ServiceSID
+	if len(clientSIDs) == 0 {
 		sid, err := currentProcessSID()
 		if err != nil {
 			return 0, func() {}, err
 		}
-		sids = []string{sid}
+		clientSIDs = []string{sid}
+		if serviceSID == "" {
+			// Development fallback: the same identity hosts and connects to the pipe.
+			serviceSID = sid
+		}
 	}
-	if c.ServiceSID != "" {
-		sids = append(sids, c.ServiceSID)
+	accessBySID := make(map[string]uint32, len(clientSIDs)+1)
+	orderedSIDs := make([]string, 0, len(clientSIDs)+1)
+	addSID := func(sid string, access uint32) error {
+		if !validSID(sid) {
+			return errors.New("invalid authorized SID")
+		}
+		if _, ok := accessBySID[sid]; !ok {
+			orderedSIDs = append(orderedSIDs, sid)
+		}
+		accessBySID[sid] |= access
+		return nil
+	}
+	for _, sid := range clientSIDs {
+		if err := addSID(sid, pipeClientAccessMask); err != nil {
+			return 0, func() {}, err
+		}
+	}
+	if serviceSID != "" {
+		if err := addSID(serviceSID, pipeServerAccessMask); err != nil {
+			return 0, func() {}, err
+		}
 	}
 	sddl := "D:P"
-	for _, sid := range sids {
-		if !validSID(sid) {
-			return 0, func() {}, errors.New("invalid authorized SID")
-		}
-		sddl += "(A;;GA;;;" + sid + ")"
+	for _, sid := range orderedSIDs {
+		// The client receives only the data rights needed for framed I/O. The
+		// service SID also receives FILE_CREATE_PIPE_INSTANCE to serve clients.
+		sddl += "(A;;0x" + strconv.FormatUint(uint64(accessBySID[sid]), 16) + ";;;" + sid + ")"
 	}
 	sddl += "(A;;GA;;;BA)(A;;GA;;;SY)"
 	p, _ := syscall.UTF16PtrFromString(sddl)

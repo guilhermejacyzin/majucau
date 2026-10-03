@@ -53,6 +53,13 @@ func TestNamedPipeHealthRoundTripAndCancellation(t *testing.T) {
 	if !response.OK || string(response.Payload) != `{"state":"ok"}` {
 		t.Fatalf("response: %#v", response)
 	}
+	response, err = client.Call(callCtx, Request{Version: ProtocolVersion, RequestID: "test-second-instance", Method: MethodHealth})
+	if err != nil {
+		t.Fatalf("second server pipe instance: %v", err)
+	}
+	if !response.OK || string(response.Payload) != `{"state":"ok"}` {
+		t.Fatalf("second response: %#v", response)
+	}
 	cancel()
 	_ = server.Close()
 }
@@ -63,7 +70,8 @@ func TestNamedPipeAppliesProtectedDACLToCreatedPipe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read current process SID: %v", err)
 	}
-	security, release, err := makePipeSecurity(NamedPipeConfig{AllowedClientSIDs: []string{clientSID}})
+	serviceSID := "S-1-5-19" // LocalService.
+	security, release, err := makePipeSecurity(NamedPipeConfig{AllowedClientSIDs: []string{clientSID}, ServiceSID: serviceSID})
 	if err != nil {
 		t.Fatalf("build named pipe security descriptor: %v", err)
 	}
@@ -97,15 +105,16 @@ func TestNamedPipeAppliesProtectedDACLToCreatedPipe(t *testing.T) {
 	if control&windows.SE_DACL_PRESENT == 0 || dacl == nil {
 		t.Fatal("created named pipe has no DACL")
 	}
-	if dacl.AceCount != 3 {
-		t.Fatalf("named pipe DACL contains %d ACEs; want only the configured client, administrators, and SYSTEM", dacl.AceCount)
+	if dacl.AceCount != 4 {
+		t.Fatalf("named pipe DACL contains %d ACEs; want only the client, service, administrators, and SYSTEM", dacl.AceCount)
 	}
 	// The pipe object maps GENERIC_ALL to FILE_ALL_ACCESS when applying its DACL.
 	const fileAllAccessMask = windows.ACCESS_MASK(0x001F01FF)
-	allowedSIDs := map[string]bool{
-		clientSID:      true,
-		"S-1-5-32-544": true, // BUILTIN\Administrators
-		"S-1-5-18":     true, // LocalSystem
+	allowedSIDs := map[string]windows.ACCESS_MASK{
+		clientSID:      windows.ACCESS_MASK(pipeClientAccessMask),
+		serviceSID:     windows.ACCESS_MASK(pipeServerAccessMask),
+		"S-1-5-32-544": fileAllAccessMask, // BUILTIN\Administrators
+		"S-1-5-18":     fileAllAccessMask, // LocalSystem
 	}
 	for index := uint32(0); index < uint32(dacl.AceCount); index++ {
 		var ace *windows.ACCESS_ALLOWED_ACE
@@ -118,12 +127,12 @@ func TestNamedPipeAppliesProtectedDACLToCreatedPipe(t *testing.T) {
 		if ace.Header.AceFlags != 0 {
 			t.Errorf("named pipe ACE %d unexpectedly has inheritance flags %#x", index, ace.Header.AceFlags)
 		}
-		if ace.Mask != fileAllAccessMask {
-			t.Errorf("named pipe ACE %d has mask %#x; want FILE_ALL_ACCESS %#x", index, ace.Mask, fileAllAccessMask)
-		}
 		sid := (*windows.SID)(unsafe.Pointer(&ace.SidStart)).String()
-		if !allowedSIDs[sid] {
+		wantMask, allowed := allowedSIDs[sid]
+		if !allowed {
 			t.Errorf("named pipe DACL contains unexpected trustee SID %q", sid)
+		} else if ace.Mask != wantMask {
+			t.Errorf("named pipe ACE %d for SID %q has mask %#x; want %#x", index, sid, ace.Mask, wantMask)
 		}
 		delete(allowedSIDs, sid)
 	}

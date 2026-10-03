@@ -18,6 +18,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"majucau.local/financial-intelligence/internal/securetemp"
 )
 
 const (
@@ -58,7 +60,7 @@ func NewDiskSourceIDSet(ctx context.Context) (*DiskSourceIDSet, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	dir, err := os.MkdirTemp("", "majucau-csv-preview-")
+	dir, err := securetemp.NewDir(os.TempDir(), "majucau-csv-preview-")
 	if err != nil {
 		return nil, fmt.Errorf("create private CSV preview workspace: %w", err)
 	}

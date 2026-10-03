@@ -1,6 +1,6 @@
 //go:build windows
 
-package backup
+package securetemp
 
 import (
 	"crypto/rand"
@@ -13,10 +13,9 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// newPrivateTempDir creates the directory with a protected DACL at creation
-// time. It never relies on the ACL inherited from a shared ProgramData or TEMP
-// parent for plaintext dumps, passfiles, or restore workspaces.
-func newPrivateTempDir(parent, prefix string) (string, error) {
+// NewDir creates a temporary directory with a protected DACL. The owner,
+// LocalSystem, and administrators can access the directory and its contents.
+func NewDir(parent, prefix string) (string, error) {
 	if !filepath.IsAbs(parent) {
 		return "", fmt.Errorf("private temporary directory parent must be absolute")
 	}
@@ -33,8 +32,6 @@ func newPrivateTempDir(parent, prefix string) (string, error) {
 		return "", err
 	}
 
-	// Protected DACL: only the directory owner, LocalSystem, and administrators
-	// can access the tree. OICI passes the same restriction to every child.
 	sddl, err := syscall.UTF16PtrFromString("D:P(A;OICI;FA;;;OW)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)")
 	if err != nil {
 		return "", err

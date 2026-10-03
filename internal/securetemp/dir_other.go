@@ -1,6 +1,6 @@
 //go:build !windows
 
-package backup
+package securetemp
 
 import (
 	"fmt"
@@ -8,9 +8,8 @@ import (
 	"path/filepath"
 )
 
-// The desktop product is Windows-only. This fallback keeps non-Windows CI and
-// package tooling buildable while restricting temporary files to their owner.
-func newPrivateTempDir(parent, prefix string) (string, error) {
+// NewDir creates a temporary directory restricted to its owner.
+func NewDir(parent, prefix string) (string, error) {
 	if !filepath.IsAbs(parent) {
 		return "", fmt.Errorf("private temporary directory parent must be absolute")
 	}

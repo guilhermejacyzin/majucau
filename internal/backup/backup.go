@@ -19,6 +19,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/argon2"
+
+	"majucau.local/financial-intelligence/internal/securetemp"
 )
 
 const (
@@ -172,7 +174,7 @@ func Create(ctx context.Context, options Options) (Result, error) {
 	if err != nil || config.Host == "" || config.Database == "" || config.User == "" {
 		return Result{}, ErrInvalidOptions
 	}
-	temporary, err := newPrivateTempDir(options.OutputDir, ".backup-")
+	temporary, err := securetemp.NewDir(options.OutputDir, ".backup-")
 	if err != nil {
 		return Result{}, fmt.Errorf("create temporary backup directory: %w", err)
 	}
@@ -252,7 +254,7 @@ func Restore(ctx context.Context, options RestoreOptions) (RestoreResult, error)
 	if err := os.MkdirAll(options.BackupDir, 0700); err != nil {
 		return RestoreResult{}, fmt.Errorf("create restore parent directory: %w", err)
 	}
-	temporary, err := newPrivateTempDir(options.BackupDir, ".restore-")
+	temporary, err := securetemp.NewDir(options.BackupDir, ".restore-")
 	if err != nil {
 		return RestoreResult{Status: "RECOVERY_REQUIRED"}, fmt.Errorf("create private restore workspace: %w", err)
 	}

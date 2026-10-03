@@ -200,7 +200,11 @@ func Create(ctx context.Context, options Options) (result Result, retErr error) 
 	if err := run(ctx, pgDump, append([]string{"--format=custom", "--no-owner", "--no-privileges", "--file", dumpPath}, common...), env); err != nil {
 		return Result{}, fmt.Errorf("pg_dump failed: %w", err)
 	}
-	if err := run(ctx, pgDumpAll, append([]string{"--globals-only", "--no-role-passwords", "--file", globalsPath}, common[:len(common)-2]...), env); err != nil {
+	// pg_dumpall defaults to the "postgres" database. Select the configured
+	// database so the scoped PGPASSFILE entry can authenticate this connection.
+	pgDumpAllArgs := []string{"--globals-only", "--no-role-passwords", "--database", config.Database, "--file", globalsPath}
+	pgDumpAllArgs = append(pgDumpAllArgs, common[:len(common)-2]...)
+	if err := run(ctx, pgDumpAll, pgDumpAllArgs, env); err != nil {
 		return Result{}, fmt.Errorf("pg_dumpall failed: %w", err)
 	}
 	salt := make([]byte, argonSaltLength)

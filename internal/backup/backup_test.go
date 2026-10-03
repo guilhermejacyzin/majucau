@@ -38,6 +38,9 @@ func TestCreateAndVerifyEncryptedPackage(t *testing.T) {
 	if len(calls) != 2 || strings.Contains(calls[0], "user:password") || strings.Contains(calls[1], "user:password") || strings.Contains(strings.Join(calls, " "), "MAJUCAU_DATABASE_URL") {
 		t.Fatalf("PostgreSQL command arguments leaked a password: %#v", calls)
 	}
+	if !strings.Contains(calls[1], "--database majucau") {
+		t.Fatalf("pg_dumpall must connect through the configured database for scoped password authentication: %#v", calls[1])
+	}
 	if _, err := os.Stat(result.Path); err != nil {
 		t.Fatalf("backup package missing: %v", err)
 	}

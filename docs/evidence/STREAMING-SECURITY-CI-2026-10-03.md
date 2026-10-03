@@ -44,3 +44,10 @@
 - Backup/restauração, writes DPAPI, bundles de diagnóstico, journal do instalador e preview CSV propagam falhas de limpeza; o pacote V2 incompleto é montado dentro do workspace privado antes do rename final.
 - A CI [37123188191](https://github.com/guilhermejacyzin/majucau/actions/runs/37123188191) passou nos jobs Windows e PostgreSQL, incluindo Go tests/vet, verificações de segurança, build e smoke do instalador.
 - A execução não força uma falha de permissão/remoção e não substitui ensaio de DACL e limpeza numa VM Windows 10/11 limpa. `OPS-02`, `SEC-01` e `DATA-04` permanecem `PARTIAL` até as evidências operacionais correspondentes.
+
+## DACL efetiva de temporários privados — CI Windows em 2026-10-03
+
+- O teste `TestNewDirAppliesProtectedDACLAndRestrictsInheritedAccess` lê o descritor real do diretório criado por `securetemp.NewDir`, confirma DACL protegida e exatamente três ACEs `FA` para Owner Rights, LocalSystem e Administrators.
+- O teste também cria um arquivo filho e verifica que as permissões esperadas foram herdadas; permissões mais amplas ou ausentes fazem o teste falhar.
+- A CI [37132621657](https://github.com/guilhermejacyzin/majucau/actions/runs/37132621657) passou nos jobs Windows e PostgreSQL, incluindo testes Go, vet, scans de segurança, build e smoke de instalação/desinstalação.
+- Esta prova cobre a ACL efetiva no runner Windows. Não substitui a validação da instalação e limpeza numa VM Windows 10/11 limpa nem verifica toda a configuração operacional de DPAPI/serviço; `SEC-01` e `DATA-04` continuam `PARTIAL`.

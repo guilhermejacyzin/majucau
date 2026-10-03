@@ -21,42 +21,6 @@ var (
 	ErrFutureRawHistoricalVersion       = errors.New("future raw payload hash already exists as a historical version")
 )
 
-type FuturePersistenceSummary struct {
-	RecordsRead    int `json:"records_read"`
-	RecordsCreated int `json:"records_created"`
-	RecordsUpdated int `json:"records_updated"`
-	RecordsFailed  int `json:"records_failed"`
-}
-
-// PersistFutureReceivables writes Nuvem Pago projected rights to receive. It
-// never touches the Bling-only receipts table. The caller owns the transaction
-// so RAW and the normalized upsert commit atomically.
-func PersistFutureReceivables(ctx context.Context, tx pgx.Tx, connectionID, syncBatchID pgtype.UUID, report FutureReport) (FuturePersistenceSummary, error) {
-	if !connectionID.Valid || !syncBatchID.Valid {
-		return FuturePersistenceSummary{}, ErrInvalidFuturePersistenceIdentity
-	}
-	if tx == nil {
-		return FuturePersistenceSummary{}, errors.New("future receivable persistence transaction is required")
-	}
-	queries := database.New(tx)
-	summary := FuturePersistenceSummary{RecordsRead: len(report.Receivables) + len(report.Errors), RecordsFailed: len(report.Errors)}
-	for _, candidate := range report.Receivables {
-		if err := ctx.Err(); err != nil {
-			return summary, err
-		}
-		exists, err := persistFutureCandidate(ctx, tx, queries, connectionID, syncBatchID, candidate)
-		if err != nil {
-			return summary, err
-		}
-		if exists {
-			summary.RecordsUpdated++
-		} else {
-			summary.RecordsCreated++
-		}
-	}
-	return summary, nil
-}
-
 func persistFutureCandidate(ctx context.Context, tx pgx.Tx, queries *database.Queries, connectionID, syncBatchID pgtype.UUID, candidate FutureReceivableCandidate) (bool, error) {
 	if candidate.SourceSystem != domain.OriginNuvemPago || candidate.SourceEntity != FutureSourceEntity || candidate.Status != domain.StatusProjected || candidate.SourceID == "" {
 		return false, fmt.Errorf("%w: source=%s entity=%s status=%s id=%s", ErrInvalidFuturePersistenceIdentity, candidate.SourceSystem, candidate.SourceEntity, candidate.Status, candidate.SourceID)

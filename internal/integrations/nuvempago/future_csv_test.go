@@ -11,15 +11,25 @@ const sampleFutureCSV = "\ufeffData do pagamento;Data de recebimento;Tipo de mov
 	"20/08/2026;21/09/2026;Saída;Venda;9485;Não importar;Cartão de crédito;visa;1;10,00;0,00;0,00;0,00;10,00\n" +
 	"20/08/2026;21/09/2026;Entrada;Venda;9483;Duplicado;Cartão de crédito;visa;2;236,36;-8,13;-13,53;-21,66;214,70\n"
 
-func TestParseFutureCSVNormalizesProjectedNuvemPagoRows(t *testing.T) {
-	report, err := ParseFutureCSV(strings.NewReader(sampleFutureCSV))
+func TestStreamFutureCSVNormalizesProjectedNuvemPagoRows(t *testing.T) {
+	var first FutureReceivableCandidate
+	accepted, rejected := 0, 0
+	err := StreamFutureCSV(strings.NewReader(sampleFutureCSV), func(_ int, candidate FutureReceivableCandidate) error {
+		accepted++
+		if accepted == 1 {
+			first = candidate
+		}
+		return nil
+	}, func(RowError) error {
+		rejected++
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Receivables) != 2 || len(report.Errors) != 2 {
-		t.Fatalf("receivables=%d errors=%d report=%#v", len(report.Receivables), len(report.Errors), report)
+	if accepted != 3 || rejected != 1 {
+		t.Fatalf("stream accepted=%d rejected=%d", accepted, rejected)
 	}
-	first := report.Receivables[0]
 	if first.SourceSystem != "NUVEM_PAGO" || first.SourceEntity != FutureSourceEntity || first.SourceID != "9483" || first.Status != "PROJECTED" {
 		t.Fatalf("identity/status mapping: %#v", first)
 	}
@@ -31,20 +41,31 @@ func TestParseFutureCSVNormalizesProjectedNuvemPagoRows(t *testing.T) {
 	}
 }
 
-func TestParseFutureCSVRejectsInvalidContractBeforeRows(t *testing.T) {
-	_, err := ParseFutureCSV(strings.NewReader("Cliente;Recebido\nA;10,00\n"))
+func TestStreamFutureCSVRejectsInvalidContractBeforeRows(t *testing.T) {
+	err := StreamFutureCSV(strings.NewReader("Cliente;Recebido\nA;10,00\n"), nil, nil)
 	if err == nil {
 		t.Fatal("missing future columns must fail before import")
 	}
 }
 
-func TestParseFutureCSVRejectsReceiptDateBeforePayment(t *testing.T) {
+func TestStreamFutureCSVRejectsReceiptDateBeforePayment(t *testing.T) {
 	input := strings.Replace(sampleFutureCSV, "20/08/2026;21/09/2026;Entrada;Venda;9483", "20/08/2026;19/08/2026;Entrada;Venda;9999", 1)
-	report, err := ParseFutureCSV(strings.NewReader(input))
+	firstRejected := ""
+	accepted, rejected := 0, 0
+	err := StreamFutureCSV(strings.NewReader(input), func(_ int, _ FutureReceivableCandidate) error {
+		accepted++
+		return nil
+	}, func(issue RowError) error {
+		rejected++
+		if firstRejected == "" {
+			firstRejected = issue.Code
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Receivables) != 2 || len(report.Errors) != 2 || report.Errors[0].Code != "RECEIPT_DATE_BEFORE_PAYMENT" {
-		t.Fatalf("unexpected validation result: %#v", report)
+	if accepted != 2 || rejected != 2 || firstRejected != "RECEIPT_DATE_BEFORE_PAYMENT" {
+		t.Fatalf("unexpected stream result: accepted=%d rejected=%d first rejection=%q", accepted, rejected, firstRejected)
 	}
 }

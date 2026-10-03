@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestImportReceiptsFolderIsDeterministicAndRejectsNuvemExport(t *testing.T) {
+func TestPreviewReceiptsFolderIsDeterministicAndRejectsNuvemExport(t *testing.T) {
 	folder := t.TempDir()
 	if err := os.WriteFile(filepath.Join(folder, "01-bling.csv"), []byte(sampleReceiptsCSV), 0o600); err != nil {
 		t.Fatal(err)
@@ -23,15 +23,15 @@ func TestImportReceiptsFolderIsDeterministicAndRejectsNuvemExport(t *testing.T) 
 		t.Fatal(err)
 	}
 
-	result, err := ImportReceiptsFolder(context.Background(), folder)
+	result, err := PreviewReceiptsFolder(context.Background(), folder)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.Files) != 2 || len(result.Receipts) != 3 || len(result.Errors) != 3 {
-		t.Fatalf("files=%d receipts=%d errors=%d ignored=%#v", len(result.Files), len(result.Receipts), len(result.Errors), result.Ignored)
+	if result.FileCount != 2 || len(result.Files) != 2 || result.ReceiptCount != 3 || result.ErrorCount != 3 || len(result.Issues) != 3 {
+		t.Fatalf("files=%d/%d receipts=%d errors=%d issues=%#v", result.FileCount, len(result.Files), result.ReceiptCount, result.ErrorCount, result.Issues)
 	}
-	if len(result.Ignored) != 1 || result.Ignored[0] != "leia-me.txt" {
-		t.Fatalf("ignored files: %#v", result.Ignored)
+	if result.IgnoredCount != 1 {
+		t.Fatalf("ignored file count: %d", result.IgnoredCount)
 	}
 	if result.Files[0].Name != "01-bling.csv" || result.Files[0].ReceiptCount != 3 || len(result.Files[0].SHA256) != 64 {
 		t.Fatalf("first file metadata: %#v", result.Files[0])
@@ -39,21 +39,21 @@ func TestImportReceiptsFolderIsDeterministicAndRejectsNuvemExport(t *testing.T) 
 	if result.Files[1].Name != "02-nuvem.csv" || result.Files[1].ErrorCount != 1 {
 		t.Fatalf("second file metadata: %#v", result.Files[1])
 	}
-	if !strings.Contains(result.Errors[len(result.Errors)-1].Message, "Bling") {
-		t.Fatalf("header error must identify the accepted contract: %#v", result.Errors)
+	if !strings.Contains(result.Issues[len(result.Issues)-1].Message, "Bling") {
+		t.Fatalf("header error must identify the accepted contract: %#v", result.Issues)
 	}
 }
 
-func TestImportReceiptsFolderHonorsCancellation(t *testing.T) {
+func TestPreviewReceiptsFolderHonorsCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := ImportReceiptsFolder(ctx, t.TempDir())
+	_, err := PreviewReceiptsFolder(ctx, t.TempDir())
 	if err == nil {
 		t.Fatal("cancelled import must fail")
 	}
 }
 
-func TestImportReceiptsFolderRejectsDuplicateAcrossFiles(t *testing.T) {
+func TestPreviewReceiptsFolderRejectsDuplicateAcrossFiles(t *testing.T) {
 	folder := t.TempDir()
 	row := "Cliente;Histórico;Forma de pagamento;Nº documento;Vencimento;Liquidação;Situação;Valor taxa;Recebido\n" +
 		"Cliente;Pedido;NUVEMPAGO 1X;DUP-1;01/08/2026;03/08/2026;pago;1,00;100,00\n"
@@ -62,11 +62,11 @@ func TestImportReceiptsFolderRejectsDuplicateAcrossFiles(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	result, err := ImportReceiptsFolder(context.Background(), folder)
+	result, err := PreviewReceiptsFolder(context.Background(), folder)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.Receipts) != 1 || len(result.Errors) != 1 || result.Errors[0].Code != "DUPLICATE_SOURCE_ID" {
+	if result.ReceiptCount != 1 || result.ErrorCount != 1 || len(result.Issues) != 1 || result.Issues[0].Code != "DUPLICATE_SOURCE_ID" {
 		t.Fatalf("cross-file duplicate was not rejected: %#v", result)
 	}
 }

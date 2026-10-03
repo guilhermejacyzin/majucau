@@ -42,38 +42,8 @@ type RowError struct {
 	Message string `json:"message"`
 }
 
-type ReceiptsReport struct {
-	Receipts []ReceiptCandidate
-	Errors   []RowError
-}
-
 type ReceiptRowHandler func(line int, candidate ReceiptCandidate) error
 type ReceiptErrorHandler func(issue RowError) error
-
-// ParseReceiptsCSV parses the semicolon-delimited export of Bling's
-// "Relatório de Contas Recebidas". It intentionally treats Bling as the
-// source of truth even when the payment method mentions NuvemPago/Nuvemshop.
-// The parser never turns an unpaid row into a receipt.
-func ParseReceiptsCSV(input io.Reader) (ReceiptsReport, error) {
-	result := ReceiptsReport{}
-	seen := make(map[string]int)
-	err := StreamReceiptsCSV(input, func(line int, candidate ReceiptCandidate) error {
-		if previousLine, exists := seen[candidate.SourceID]; exists {
-			result.Errors = append(result.Errors, RowError{Line: line, Code: "DUPLICATE_SOURCE_ID", Message: fmt.Sprintf("documento repetido; primeira ocorrência na linha %d", previousLine)})
-			return nil
-		}
-		seen[candidate.SourceID] = line
-		result.Receipts = append(result.Receipts, candidate)
-		return nil
-	}, func(issue RowError) error {
-		result.Errors = append(result.Errors, issue)
-		return nil
-	})
-	if err != nil {
-		return ReceiptsReport{}, err
-	}
-	return result, nil
-}
 
 // StreamReceiptsCSV validates one row at a time and delivers it to the caller.
 // It does not retain candidates, row errors, or source identifiers. The caller

@@ -40,35 +40,6 @@ type receiptRawPayload struct {
 	Status           string `json:"status"`
 }
 
-// PersistReceipts appends the source payload and upserts the normalized Bling
-// receipt in the caller-owned transaction. A caller can commit the returned
-// summary as SUCCESS/PARTIAL or roll the transaction back on any DB error.
-func PersistReceipts(ctx context.Context, tx pgx.Tx, connectionID, syncBatchID pgtype.UUID, report ReceiptsReport) (PersistenceSummary, error) {
-	if !connectionID.Valid || !syncBatchID.Valid {
-		return PersistenceSummary{}, ErrInvalidPersistenceIdentity
-	}
-	if tx == nil {
-		return PersistenceSummary{}, errors.New("receipt persistence transaction is required")
-	}
-	q := database.New(tx)
-	summary := PersistenceSummary{RecordsRead: len(report.Receipts) + len(report.Errors), RecordsFailed: len(report.Errors)}
-	for _, candidate := range report.Receipts {
-		if err := ctx.Err(); err != nil {
-			return summary, err
-		}
-		exists, err := persistReceiptCandidate(ctx, q, connectionID, syncBatchID, candidate)
-		if err != nil {
-			return summary, err
-		}
-		if exists {
-			summary.RecordsUpdated++
-		} else {
-			summary.RecordsCreated++
-		}
-	}
-	return summary, nil
-}
-
 func persistReceiptCandidate(ctx context.Context, q *database.Queries, connectionID, syncBatchID pgtype.UUID, candidate ReceiptCandidate) (bool, error) {
 	if candidate.SourceSystem != domain.OriginBling || candidate.SourceEntity != ReceiptsReportSourceEntity || candidate.Status != domain.StatusConfirmed {
 		return false, fmt.Errorf("%w: source=%s entity=%s status=%s", ErrInvalidPersistenceIdentity, candidate.SourceSystem, candidate.SourceEntity, candidate.Status)

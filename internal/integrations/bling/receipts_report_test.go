@@ -12,15 +12,25 @@ const sampleReceiptsCSV = "\ufeffCliente;Histórico;Forma de pagamento;Nº docum
 	"Cliente D;Ref. ao pedido nº 17786;NUVEMPAGO 1X;017786/01;02/08/2026;;aberto;5,00;100,00\n" +
 	"Cliente E;Ref. duplicado;NUVEMPAGO 2X;016223/01;02/08/2026;03/08/2026;pago;10,00;100,00\n"
 
-func TestParseReceiptsCSVUsesBlingAsSourceForNuvemPaymentMethods(t *testing.T) {
-	report, err := ParseReceiptsCSV(strings.NewReader(sampleReceiptsCSV))
+func TestStreamReceiptsCSVUsesBlingAsSourceForNuvemPaymentMethods(t *testing.T) {
+	var first ReceiptCandidate
+	accepted, rejected := 0, 0
+	err := StreamReceiptsCSV(strings.NewReader(sampleReceiptsCSV), func(_ int, candidate ReceiptCandidate) error {
+		accepted++
+		if accepted == 1 {
+			first = candidate
+		}
+		return nil
+	}, func(RowError) error {
+		rejected++
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Receipts) != 3 || len(report.Errors) != 2 {
-		t.Fatalf("receipts=%d errors=%d report=%#v", len(report.Receipts), len(report.Errors), report)
+	if accepted != 4 || rejected != 1 {
+		t.Fatalf("stream accepted=%d rejected=%d", accepted, rejected)
 	}
-	first := report.Receipts[0]
 	if string(first.SourceSystem) != "BLING" || first.Status != "CONFIRMED" || first.Amount.String() != "461.4500" || first.Fee.String() != "53.4300" {
 		t.Fatalf("source/amount mapping: %#v", first)
 	}
@@ -29,8 +39,8 @@ func TestParseReceiptsCSVUsesBlingAsSourceForNuvemPaymentMethods(t *testing.T) {
 	}
 }
 
-func TestParseReceiptsCSVRejectsMissingColumn(t *testing.T) {
-	_, err := ParseReceiptsCSV(strings.NewReader("Cliente;Recebido\nA;10,00\n"))
+func TestStreamReceiptsCSVRejectsMissingColumn(t *testing.T) {
+	err := StreamReceiptsCSV(strings.NewReader("Cliente;Recebido\nA;10,00\n"), nil, nil)
 	if err == nil {
 		t.Fatal("missing report columns must fail before import")
 	}

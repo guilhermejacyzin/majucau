@@ -57,38 +57,8 @@ type RowError struct {
 	Message string `json:"message"`
 }
 
-type FutureReport struct {
-	Receivables []FutureReceivableCandidate
-	Errors      []RowError
-}
-
 type FutureRowHandler func(line int, candidate FutureReceivableCandidate) error
 type FutureErrorHandler func(issue RowError) error
-
-// ParseFutureCSV parses the semicolon-delimited Nuvem Pago future-receivables
-// export supplied by the operator. It never emits a confirmed receipt and it
-// does not calculate a tariff from the pricing table: exported tax, costs and
-// net value are preserved as facts from the file.
-func ParseFutureCSV(input io.Reader) (FutureReport, error) {
-	result := FutureReport{}
-	seen := make(map[string]int)
-	err := StreamFutureCSV(input, func(line int, candidate FutureReceivableCandidate) error {
-		if previousLine, exists := seen[candidate.SourceID]; exists {
-			result.Errors = append(result.Errors, RowError{Line: line, Code: "DUPLICATE_SOURCE_ID", Message: fmt.Sprintf("transação repetida; primeira ocorrência na linha %d", previousLine)})
-			return nil
-		}
-		seen[candidate.SourceID] = line
-		result.Receivables = append(result.Receivables, candidate)
-		return nil
-	}, func(issue RowError) error {
-		result.Errors = append(result.Errors, issue)
-		return nil
-	})
-	if err != nil {
-		return FutureReport{}, err
-	}
-	return result, nil
-}
 
 // StreamFutureCSV validates and delivers one row at a time without retaining
 // candidates, row errors, or source identifiers. The caller owns

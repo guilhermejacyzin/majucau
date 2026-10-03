@@ -223,7 +223,7 @@ func (c *NamedPipeClient) Call(ctx context.Context, request Request) (Response, 
 		err      error
 	}, 1)
 	go func() {
-		f, err := openPipeFile(c.name)
+		f, err := openPipeFile(callCtx, c.name)
 		if err != nil {
 			result <- struct {
 				response Response
@@ -286,21 +286,39 @@ const (
 	pipeUnlimitedInstances                       = 255
 	pipeClientAccessMask                         = 0x00100003 // FILE_READ_DATA | FILE_WRITE_DATA | SYNCHRONIZE.
 	pipeServerAccessMask                         = 0x00100007 // Client I/O rights plus FILE_CREATE_PIPE_INSTANCE.
+	pipeOpenRetryDelay                           = 10 * time.Millisecond
 	openExisting                                 = 3
 	processQueryLimitedInformation               = 0x1000
 	tokenQuery                                   = 0x0008
 	tokenUser                                    = 1
 	errorPipeConnected             syscall.Errno = 535
+	errorPipeBusy                  syscall.Errno = 231
+	errorFileNotFound              syscall.Errno = 2
 	errorInsufficientBuffer        syscall.Errno = 122
 )
 
-func openPipeFile(name string) (*os.File, error) {
+func openPipeFile(ctx context.Context, name string) (*os.File, error) {
 	n, _ := syscall.UTF16PtrFromString(name)
-	r, _, err := createFileW.Call(uintptr(unsafe.Pointer(n)), pipeClientAccessMask, 0, 0, openExisting, 0, 0)
-	if syscall.Handle(r) == syscall.InvalidHandle {
-		return nil, err
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		r, _, err := createFileW.Call(uintptr(unsafe.Pointer(n)), pipeClientAccessMask, 0, 0, openExisting, 0, 0)
+		if syscall.Handle(r) != syscall.InvalidHandle {
+			return os.NewFile(r, "majucau-pipe-client"), nil
+		}
+		var errno syscall.Errno
+		if !errors.As(err, &errno) || (errno != errorPipeBusy && errno != errorFileNotFound) {
+			return nil, err
+		}
+		timer := time.NewTimer(pipeOpenRetryDelay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, ctx.Err()
+		case <-timer.C:
+		}
 	}
-	return os.NewFile(r, "majucau-pipe-client"), nil
 }
 
 type securityAttributes struct {

@@ -42,6 +42,9 @@ conta própria.
 
 A implementação V1/V2 passou pela CI Windows e PostgreSQL de 2026-10-03
 (run `37101826025`). A prova dedicada de restauração V1 em blocos CNG foi
-adicionada ao próximo job Windows e ainda aguarda execução. Permanecem necessárias
-evidências de restauração em VM Windows 10/11 limpa, restore real de PostgreSQL e
-integração com worker/UI/instalador antes de fechar os gates operacionais.
+adicionada e executada no job Windows do run `37103043862`, mas revelou uma
+access violation durante a chamada encadeada a `BCryptDecrypt`. A rotina foi
+ajustada para fornecer um buffer IV mutável e manter estado/AAD conforme a cadeia;
+essa correção aguarda CI. Permanecem necessárias evidências de restauração em VM
+Windows 10/11 limpa, restore real de PostgreSQL e integração com worker/UI/
+instalador antes de fechar os gates operacionais.

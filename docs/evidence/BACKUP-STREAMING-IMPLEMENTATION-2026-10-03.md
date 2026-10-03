@@ -43,7 +43,12 @@ sendo um artefato unsigned, não uma release assinada.
 Foi adicionado ao job Windows um fixture que reproduz o ZIP/envelope V1 das
 versões anteriores. O teste cobre restauração de dumps com vários blocos CNG e
 confirma que uma tag adulterada, mesmo com o SHA-256 do manifesto atualizado, é
-rejeitada antes de parar o worker. A prova aguarda a próxima execução da CI.
+rejeitada antes de parar o worker. O primeiro run desse fixture,
+[37103043862](https://github.com/guilhermejacyzin/majucau/actions/runs/37103043862),
+detectou uma access violation na chamada encadeada a `BCryptDecrypt`; o job
+PostgreSQL passou. A rotina agora mantém um buffer IV de bloco entre chamadas,
+aplica AAD somente no primeiro bloco e mantém vivos os buffers enviados à API.
+A correção aguarda a próxima execução da CI.
 O status do trabalho de backup segue `PARTIAL` até a CI confirmar esse teste e
 haver validação de restauração em VM Windows 10/11 limpa. O ambiente local não
 possui Go/gofmt; a validação de compilação e testes veio da CI.

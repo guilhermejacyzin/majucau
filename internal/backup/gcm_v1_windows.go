@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"runtime"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -18,7 +19,9 @@ const (
 	bcryptGCMMode            = "ChainingModeGCM"
 	bcryptObjectLength       = "ObjectLength"
 	bcryptChainCallsFlag     = uint32(0x00000001)
+	bcryptInProgressFlag     = uint32(0x00000002)
 	bcryptAuthTagLength      = 16
+	bcryptAESBlockLength     = 16
 	bcryptStreamChunkSize    = 64 * 1024
 	legacyGCMNonceLength     = 12
 	legacyGCMAuthenticationTagLength = 16
@@ -71,6 +74,10 @@ func decryptV1Stream(source io.Reader, encryptedSize int64, key, associatedData 
 	if _, err := io.ReadFull(source, nonce); err != nil {
 		return ErrWrongPassphrase
 	}
+	// BCryptDecrypt treats pbIV as mutable in/out state. Keep a full AES block
+	// buffer for the whole chained operation while pbNonce retains the V1 nonce.
+	iv := make([]byte, bcryptAESBlockLength)
+	copy(iv, nonce)
 	ciphertextSize := encryptedSize - int64(len(encryptedHeader)+1+legacyGCMNonceLength+legacyGCMAuthenticationTagLength)
 	if ciphertextSize < 0 {
 		return ErrWrongPassphrase
@@ -136,15 +143,22 @@ func decryptV1Stream(source io.Reader, encryptedSize int64, key, associatedData 
 	info := bcryptAuthInfo{
 		cbSize: uint32(unsafe.Sizeof(bcryptAuthInfo{})), dwInfoVersion: 1,
 		pbNonce: bytePointer(nonce), cbNonce: uint32(len(nonce)),
-		pbAuthData: aadPointer, cbAuthData: uint32(len(associatedData)),
-		pbTag: &tag[0], cbTag: uint32(len(tag)),
+		cbTag: uint32(len(tag)),
 		pbMacContext: macContextPointer, cbMacContext: macContextLength,
 		dwFlags: initialFlags,
 	}
 
 	decryptChunk := func(ciphertext []byte, final bool) error {
+		if info.dwFlags&bcryptInProgressFlag == 0 {
+			info.pbAuthData = aadPointer
+			info.cbAuthData = uint32(len(associatedData))
+		} else {
+			info.pbAuthData = nil
+			info.cbAuthData = 0
+		}
 		if final {
 			info.dwFlags &^= bcryptChainCallsFlag
+			info.pbTag = &tag[0]
 		} else {
 			info.dwFlags |= bcryptChainCallsFlag
 		}
@@ -164,8 +178,19 @@ func decryptV1Stream(source io.Reader, encryptedSize int64, key, associatedData 
 		var written uint32
 		status, _, _ := bcryptDecrypt.Call(
 			symmetricKey, uintptr(unsafe.Pointer(input)), uintptr(len(ciphertext)), uintptr(unsafe.Pointer(&info)),
-			0, 0, uintptr(unsafe.Pointer(output)), outputLength, uintptr(unsafe.Pointer(&written)), 0,
+			uintptr(unsafe.Pointer(&iv[0])), uintptr(len(iv)), uintptr(unsafe.Pointer(output)), outputLength,
+			uintptr(unsafe.Pointer(&written)), 0,
 		)
+		info.pbAuthData = nil
+		info.cbAuthData = 0
+		runtime.KeepAlive(ciphertext)
+		runtime.KeepAlive(plaintext)
+		runtime.KeepAlive(associatedData)
+		runtime.KeepAlive(nonce)
+		runtime.KeepAlive(iv)
+		runtime.KeepAlive(tag[:])
+		runtime.KeepAlive(macContext)
+		runtime.KeepAlive(&info)
 		if status != 0 {
 			if final {
 				return ErrWrongPassphrase

@@ -24,6 +24,14 @@
 4. Só marcar `VERIFIED` quando a evidência requerida pelo requisito estiver registrada; uma CI verde não aprova automaticamente um módulo inteiro.
 5. Após cada execução, resumir em linguagem simples o que foi feito, o que falta, percentual restante da tarefa, percentual restante do projeto e estimativa de conclusão. Se o prazo total depender de credenciais, fonte oficial, decisão funcional ou VM indisponível, registrar a dependência e não inventar uma data.
 
+## Atualização de dependências
+
+- Dependabot verifica semanalmente GitHub Actions, módulos Go e npm em `frontend/`.
+- Atualizações de versão minor/patch são agrupadas por ecossistema; atualizações major ficam em PRs separados para facilitar a revisão do impacto.
+- O CI precisa passar e uma pessoa deve revisar cada PR. Não há merge automático de dependências.
+- Para GitHub Actions, manter o SHA completo imutável e o comentário de versão na mesma linha; revisar ambos ao receber um PR do Dependabot.
+- Essa configuração agenda atualizações de versão. Alertas e PRs de segurança continuam sujeitos às configurações próprias do GitHub; os verificadores `govulncheck` e `npm audit` do CI permanecem como controles adicionais.
+
 ## Mensagem obrigatória de commit
 
 Cada commit deve conter estes campos:

@@ -101,7 +101,7 @@ O conector não utilizará endpoints de baixa ou escrita. O Majucau é consumido
 - limite adicional de token informado: 20 requisições em 60 segundos;
 - HTTP 429: respeitar headers disponíveis, aplicar backoff e não avançar checkpoint.
 
-Usar janelas temporais pequenas e sobrepostas. A sobreposição é segura porque a ingestão é idempotente.
+Janelas temporais pequenas e sobrepostas são uma estratégia candidata, ainda não homologada para esses endpoints. Aplicá-las somente após confirmar na referência específica de cada endpoint que os filtros são aceitos e compreender a estabilidade da paginação durante alterações concorrentes. Idempotência evita duplicação de fatos em replays, mas não prova que uma paginação instável não possa deixar registros de fora. Até essa confirmação, não tratar `dataAlteracaoInicial`/`dataAlteracaoFinal` como filtros disponíveis em `contas/receber` ou `contas/pagar`, nem avançar um cursor incremental presumido.
 
 O cliente inicial valida `pagina >= 1`, `1 <= limite <= 100`, envia somente
 `GET`, respeita cancelamento do contexto e reconhece `Retry-After` em 429. A

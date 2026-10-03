@@ -35,3 +35,11 @@ A tela de integrações agora abre um painel explícito com tipo de data (vencim
 ## Limites
 
 Ainda faltam rate limiter por conta, definição oficial da janela/marcador incremental, testes de avanço transacional do cursor, normalização idempotente de negócio, reconciliação de R$ 0,01 e execução com credencial real. O retry HTTP limitado descrito acima está implementado no adapter Bling; adapters futuros devem seguir o contrato comum em `AGENTS.md`, respeitando a segurança de replay de cada operação.
+
+## Verificação adicional da documentação de paginação — 2026-10-03
+
+A página oficial [Limites da API](https://developer.bling.com.br/limites) informa que filtros GET por período com intervalo maior que um ano retornam HTTP 400, cita os sufixos `Inicial`/`Final` — incluindo `dataAlteracaoInicial` e `dataAlteracaoFinal` — e limita a conta a 3 requisições por segundo e 120.000 por dia. A [referência interativa](https://developer.bling.com.br/referencia) não expôs, nesta consulta, os parâmetros específicos de `GET /contas/receber` e `GET /contas/pagar`.
+
+Essa página genérica não comprova que cada um desses endpoints aceite filtros por data de alteração, nem define ordenação estável, semântica de páginas durante alterações concorrentes ou como retomar após falha. O valor persistido `page:N` continua sendo apenas um marcador técnico da execução; não é tratado como cursor oficial do Bling. Nenhuma alteração de filtro, janela, checkpoint ou regra financeira fica autorizada por essa descoberta.
+
+Para fechar INT-04 ainda é necessária a seção oficial de cada endpoint com seus filtros e paginação ou uma resposta sanitizada obtida com a credencial autorizada. Depois disso, homologar cada endpoint separadamente, inclusive a retomada após falha e a política `stale`, antes de alterar o sync incremental.

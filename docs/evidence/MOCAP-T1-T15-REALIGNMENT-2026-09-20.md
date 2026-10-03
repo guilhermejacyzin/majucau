@@ -4,6 +4,11 @@
 
 As referências entregues pelo usuário foram incorporadas em `docs/source` e são a fonte de verdade visual deste incremento:
 
+O inventário dos nomes e hashes SHA-256 das imagens preservadas está em
+[`docs/source/README.md`](../source/README.md). Ele também registra cópias exatas
+entre os arquivos T1 e T1-Visão Executiva e entre T11/C11, sem substituir os
+originais.
+
 - `T1-mockup-2026-09-20.png` — Visão Executiva;
 - `T2-mockup-2026-09-20.png` — Fluxo de Caixa;
 - `T3-mockup-2026-09-20.png` — Contas a Receber;

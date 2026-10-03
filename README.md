@@ -1,6 +1,6 @@
 # Majucau Financial Intelligence
 
-Aplicativo desktop de inteligência financeira para uso individual em Windows 10/11 x64. O produto consolida tesouraria, recebíveis, obrigações, projeções, resultado e alertas em uma interface executiva, preservando a origem e a rastreabilidade de cada valor.
+Aplicativo Wails de inteligência financeira para Windows 10/11 x64. A implementação atual usa banco local; a direção aprovada para consulta em mais de um local é hospedagem privada centralizada conforme `ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md`. O produto consolida tesouraria, recebíveis, obrigações, projeções, resultado e alertas em uma interface executiva, preservando a origem e a rastreabilidade de cada valor.
 
 > **Estado atual:** G0 aprovado em 2026-08-16; fundação G1 em implementação. Este repositório ainda não representa um release aprovado para produção.
 
@@ -14,7 +14,7 @@ Aplicativo desktop de inteligência financeira para uso individual em Windows 10
 - trilha de auditoria e lineage até o registro RAW de origem;
 - estados explícitos para dado confirmado, provisório, parcial, desatualizado ou indisponível;
 - aplicação desktop e worker nativos, sem Docker ou Node.js na máquina do usuário;
-- PostgreSQL local dedicado e instalador Windows NSIS.
+- PostgreSQL dedicado e instalador Windows NSIS; destino atual local e alvo futuro centralizado privado.
 
 O tarifário Nuvem Pago aprovado está registrado em `docs/source/Nuvem-Pago-Taxas-2026-09-20.md`: cartão 1x/2x/3x sempre D+30 (2,59% + R$ 0,35; 4,49% + R$ 0,35; 5,44% + R$ 0,35), boleto D+2 (R$ 2,39) e PIX na hora (0,99%). A tabela anterior de cartão D+2/D+14 foi substituída e não é usada. O B2C financeiro confirmado continua desabilitado enquanto não existir fonte oficial do ledger para valor bruto, taxa efetiva, líquido, status e data de liquidação. O sistema nunca substitui uma fonte ausente por uma estimativa silenciosa.
 
@@ -27,7 +27,7 @@ A screen de Integrações exibe esse tarifário como configuração/projeção i
 | Desktop | Wails v2.13.0 |
 | Interface | React 19 + TypeScript + Vite |
 | Backend e worker | Go 1.26.6 |
-| Banco local | PostgreSQL x64 |
+| Banco | PostgreSQL x64 — local na implementação atual; privado centralizado no alvo ADR-002 |
 | Acesso SQL | `pgx/v5` + código gerado por `sqlc` |
 | Segredos | Windows DPAPI sob a identidade do worker |
 | IPC local | Windows Named Pipe autenticado e versionado |
@@ -53,6 +53,10 @@ majucau-worker.exe (Windows Service)
 
 O frontend nunca acessa PostgreSQL nem APIs externas diretamente. O worker é a fronteira de autorização, persistência, credenciais, sincronização e auditoria.
 
+## Direção de hospedagem aprovada
+
+A decisão de 2026-10-03 é usar um serviço central autenticado com PostgreSQL em rede privada, para alimentar os dados diariamente e atender dois locais de consulta. A implementação atual permanece local até a migração G8. A prévia CSV continua local e sem banco; a gravação remota terá validação no serviço. Provedor, identidade e canal dos arquivos externos ainda não foram escolhidos.
+
 ## Decisões G0 aprovadas
 
 - **D-001-A:** B2B conservador; ambiguidades ficam `UNCLASSIFIED` e fora do total confirmado.
@@ -62,6 +66,8 @@ O frontend nunca acessa PostgreSQL nem APIs externas diretamente. O worker é a 
 - **D-005-A:** BRL, `America/Sao_Paulo`, decimal exato com quatro casas, `ROUND_HALF_UP`, aging exclusivo e sync padrão de 15 minutos.
 
 Leia [PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) antes de implementar ou revisar qualquer módulo. As regras de engenharia obrigatórias estão em [AGENTS.md](AGENTS.md).
+
+Decisões: [ADR-001 — arquitetura local aprovada no G0](ADR-001-ARQUITETURA-E-EMPACOTAMENTO.md) e [ADR-002 — hospedagem privada centralizada](ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md).
 
 ## Estrutura do repositório
 

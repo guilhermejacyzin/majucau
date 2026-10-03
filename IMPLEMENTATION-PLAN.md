@@ -2,7 +2,7 @@
 
 - **Status:** G0 aprovado; execução G1 em andamento
 - **Gate G0:** aprovado em 2026-08-16 com D-001-A, D-002-A, D-003-A, D-004-A e D-005-A
-- **Objetivo final:** instalador Windows assinado, testado e pronto para produção
+- **Objetivo final:** cliente Windows aprovado e serviço privado centralizado, ambos testados e prontos para a operação multi-site após G8
 - **Método:** entregas verticais com gates; nenhum gate é aprovado apenas porque “aparece na tela”
 
 ## 1. Escala relativa
@@ -32,6 +32,7 @@ Não implementar nesta entrega: previsão comercial por SKU, previsão de demand
 | G5 - Resultado | DRE/P&L/EBITDA com regras aprovadas e rastreáveis |
 | G6 - Operação | backup, restore, update, logs e segurança validados |
 | G7 - Produção | instalador assinado aprovado em VMs limpas e aceite funcional concluído |
+| G8 - Hospedagem compartilhada | implantação central privada, identidade individual, API autenticada, PostgreSQL privado, ingestão diária, backup/restore e acesso do local externo validados conforme ADR-002 |
 
 G0 não será aprovado apenas por existir documentação. Cada P0 abaixo precisa de uma disposição explícita: resolvido por evidência, retirado do release por decisão de escopo ou diferido mantendo todos os módulos/resultados dependentes desabilitados. O diferimento permite construir a fundação, mas continua bloqueando G2/G3/G5/G7 conforme a dependência. Até G0, não há código de produção; somente pesquisa, protótipos descartáveis e artefatos de decisão.
 
@@ -481,6 +482,7 @@ O produto só será classificado como pronto quando:
 - vulnerabilidades críticas/altas conhecidas estiverem corrigidas ou formalmente aceitas;
 - documentação de instalação, operação, atualização, backup e recuperação estiver concluída;
 - riscos externos remanescentes estiverem explicitamente aceitos.
+- G8 validar serviço central autenticado, PostgreSQL privado, ingestão diária, usuários individuais, recuperação e acesso do local externo conforme ADR-002.
 - matriz de casos executáveis cobrir timezone, limites inclusivos, parcial, cancelamento, estorno, chargeback, atraso e atualização tardia, com payload/oráculo e saída esperada.
 - a suíte obrigatória terá casos nominados de duplicidade, idempotência, datas, valores negativos, cancelamentos, estornos, recebível vencido, obrigação vencida, ausência de sincronização, mudança de status, projeção diária, mudança de cenário, cálculo de aplicação e arredondamento.
 
@@ -497,3 +499,20 @@ O produto só será classificado como pronto quando:
 9. Ambiente de teste Windows 10/11.
 
 Esses itens não impedem o desenvolvimento da fundação e dos módulos independentes, mas condicionam o aceite final de produção.
+
+## 18. Fase 13 - Hospedagem privada centralizada
+
+**Tamanho:** XL  
+**Decisão de direção:** aprovada em 2026-10-03; detalhes operacionais continuam pendentes em `ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md`  
+**Gate:** G8
+
+- manter as telas e regras já aprovadas;
+- definir API/serviço central autenticado e manter PostgreSQL em rede privada;
+- encaminhar sincronização diária, credenciais, auditoria e idempotência ao serviço autorizado;
+- definir acesso individual das duas pessoas e começar com consulta somente de leitura;
+- validar os CSVs no cliente para prévia local sem banco e validar de novo no serviço antes da persistência;
+- aprovar canal de envio, retenção e limpeza dos arquivos externos;
+- definir provedor, região, orçamento, disponibilidade, MFA, backups cifrados, observabilidade e resposta a incidentes;
+- validar falhas de rede, replay, processamento concorrente, permissões, restore e indisponibilidade do host sem mudar as telas ou regras financeiras.
+
+O código de produção do G8 aguarda fechamento das decisões de provedor, identidade, canal de acesso e ingestão. A hospedagem aprovada é uma direção de arquitetura e não significa que o serviço central já exista ou esteja pronto para receber dados.

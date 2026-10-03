@@ -4,12 +4,12 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 
 ## Produto e plataforma
 
-- Aplicativo desktop single-user para Windows 10/11 x64.
-- Frontend React + TypeScript + Vite dentro de Wails v2 estável.
-- Backend, worker e integrações em Go.
-- PostgreSQL local dedicado; acesso por `pgx/v5` e SQL gerado por `sqlc`.
-- `majucau.exe` é a UI; `majucau-worker.exe` é o serviço Windows responsável por sincronização, cálculo, migrations, credenciais, backup e jobs.
-- Empacotamento NSIS nativo, sem Docker e sem runtime Node em produção.
+- A interface aprovada é React + TypeScript + Vite dentro do aplicativo Wails v2 para Windows 10/11 x64.
+- A implementação atual usa `majucau.exe`, worker local e PostgreSQL dedicado local; preservar esse modo até o gate de migração.
+- A direção-alvo aprovada é hospedagem privada centralizada conforme `ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md`.
+- No alvo centralizado, serviço Go autenticado acessa PostgreSQL privado; clientes não recebem credencial e não conectam ao banco diretamente.
+- Provedor, região, identidade, canal dos CSVs, modelo de acesso e segredos no host continuam pendentes; não os escolher por suposição.
+- Empacotamento NSIS nativo continua necessário para o cliente Wails; Docker ou runtime Node não serão exigidos na máquina do usuário.
 
 ## Gates
 
@@ -56,7 +56,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 
 ## Governança de execução
 
-- `IMPLEMENTATION-PLAN.md` é o plano-raiz; `REQUIREMENTS-TRACEABILITY.md` registra estado e evidência; `G0-DECISION-REGISTER.md` e decisões aprovadas são autoridade para regras de negócio. Artefatos de planejamento v2 conflitantes não substituem esses documentos sem aprovação.
+- `IMPLEMENTATION-PLAN.md` é o plano-raiz; `REQUIREMENTS-TRACEABILITY.md` registra estado e evidência; `G0-DECISION-REGISTER.md` e decisões aprovadas são autoridade para regras de negócio. `ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md` registra a direção-alvo aprovada; decisões operacionais pendentes não devem ser presumidas. Artefatos de planejamento v2 conflitantes não substituem esses documentos sem aprovação.
 - Telas aprovadas e regras de negócio são protegidas. Dúvida que possa alterar comportamento, apresentação, importação ou contrato persistente exige pergunta antes da mudança.
 - Commits pequenos devem informar `O que é`, `O que foi feito`, `Próximo passo`, percentual restante da tarefa e percentual restante do projeto. Cada execução reporta em linguagem simples progresso, pendências e estimativa.
 - Caches e outputs gerados ficam em `artifacts/`. Ao fim de cada execução, remover o que puder ser recriado sem risco nem dependência ativa. O que precisar permanecer fica em `artifacts/retained/` e no registro local de limpeza, com motivo, origem e caminho para exclusão manual.

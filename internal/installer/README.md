@@ -50,8 +50,11 @@ entradas duplicadas, traversal, links simbólicos, diretórios,
 checksums/tamanhos divergentes e caminhos que indiquem token, secret,
 credencial ou senha.
 
-O manifesto é decodificado em fluxo, com limite de 4 MiB; os arquivos listados
-são lidos em fluxo para calcular o SHA-256 e conferir o tamanho.
+O manifesto é decodificado em fluxo, com limite de 4 MiB e no máximo 4.096
+arquivos no total. Cada caminho pode ter até 1.024 bytes; os campos de versão
+têm até 128 bytes, e componentes numéricos que excedem o tipo inteiro são
+rejeitados. Os arquivos listados são lidos em fluxo para calcular o SHA-256 e
+conferir o tamanho.
 
 Os códigos públicos são `PACKAGE_INVALID`, `CHECKSUM_MISMATCH` e
 `SCHEMA_INCOMPATIBLE`. Essa etapa somente prova que o pacote é consistente e

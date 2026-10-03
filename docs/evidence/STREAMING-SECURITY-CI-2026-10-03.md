@@ -17,3 +17,9 @@
 - A página da API fica limitada a 100 registros e 4 MiB; não se mantém o histórico inteiro em memória. Os `json.RawMessage` de uma única página ainda ficam retidos juntos para gravar o RAW transacionalmente.
 - O DPAPI é uma API de sistema baseada em buffer; o código agora limita estritamente o bloco antes de chamá-la. Ainda faltam validar ACL/SDDL e recuperação de credenciais em instalação Windows limpa.
 - Esta auditoria cobre os fluxos citados e não certifica todos os formatos, integrações nem a operação completa. DATA-04 e SEC-01 permanecem `PARTIAL`; resta auditar os demais caminhos e executar os gates em VMs reais.
+
+## Temporários privados — commit `d17b66f`
+
+- A prévia CSV e os fluxos de backup/restauração compartilham agora `internal/securetemp`: no Windows a pasta nasce com DACL protegida e herança restrita aos arquivos; nos demais sistemas recebe permissão de proprietário (`0700`).
+- A CI [37116232138](https://github.com/guilhermejacyzin/majucau/actions/runs/37116232138) passou nos jobs Windows e PostgreSQL e executou os testes existentes do projeto.
+- A CI valida compilação e regressões dos fluxos que usam o helper, mas não verifica as ACEs efetivas numa VM Windows limpa. A prova de ACL/limpeza operacional continua pendente em VM Windows 10/11; DATA-04 e SEC-01 permanecem `PARTIAL`.

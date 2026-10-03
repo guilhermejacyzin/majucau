@@ -20,7 +20,12 @@ const defaultReleaseManifestPath = "release-manifest.json"
 
 // Release manifests are control data and must stay small enough to parse with
 // a bounded amount of memory, even when a package is untrusted.
-const maxReleaseManifestBytes int64 = 4 << 20
+const (
+	maxReleaseManifestBytes        int64 = 4 << 20
+	maxReleaseManifestEntries            = 4096
+	maxReleaseManifestPathBytes          = 1024
+	maxManifestVersionFieldBytes         = 128
+)
 
 const ManifestValidationSchemaVersion = "1.0"
 
@@ -114,14 +119,21 @@ func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) Ma
 		return result
 	}
 	if result.Manifest.ManifestVersion != ReleaseManifestVersion ||
-		strings.TrimSpace(result.Manifest.AppVersion) == "" ||
-		strings.TrimSpace(result.Manifest.SchemaVersion) == "" {
+		!validManifestVersionText(result.Manifest.AppVersion) ||
+		!validManifestVersionText(result.Manifest.SchemaVersion) ||
+		!validManifestVersionText(result.Manifest.MinSchema) ||
+		!validManifestVersionText(result.Manifest.MaxSchema) {
 		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest identity is incomplete or unsupported")
 	}
 	if !validSchemaRange(result.Manifest.MinSchema, result.Manifest.MaxSchema) {
 		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "schema compatibility range is invalid")
 	} else if !schemaInRange(currentSchemaVersion, result.Manifest.MinSchema, result.Manifest.MaxSchema) {
 		result.add(ManifestIssueSchemaIncompatible, cleanManifestPath, "current database schema is outside the package compatibility range")
+	}
+	if len(result.Manifest.Migrations) > maxReleaseManifestEntries ||
+		len(result.Manifest.Artifacts) > maxReleaseManifestEntries-len(result.Manifest.Migrations) {
+		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest contains too many files")
+		return result
 	}
 
 	seen := map[string]struct{}{strings.ToLower(cleanManifestPath): {}}
@@ -130,6 +142,10 @@ func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) Ma
 			result.add(ManifestIssuePackageInvalid, "", "manifest has no artifacts")
 		}
 		for _, file := range files {
+			if len(file.Path) > maxReleaseManifestPathBytes {
+				result.add(ManifestIssuePackageInvalid, "", "package entry path exceeds the supported size")
+				continue
+			}
 			cleanPath, pathOK := cleanManifestRelativePath(file.Path)
 			if !pathOK {
 				result.add(ManifestIssuePackageInvalid, "", "package entry path is unsafe or contains protected material")
@@ -165,7 +181,11 @@ func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) Ma
 
 func (r *ManifestValidation) add(code, entryPath, detail string) {
 	r.Issues = append(r.Issues, ManifestIssue{Code: code, Path: entryPath, Detail: detail})
-	}
+}
+
+func validManifestVersionText(value string) bool {
+	return len(value) > 0 && len(value) <= maxManifestVersionFieldBytes && strings.TrimSpace(value) != ""
+}
 
 func validSHA256(value string) bool {
 	if len(strings.TrimSpace(value)) != sha256.Size*2 {
@@ -247,11 +267,16 @@ func schemaInRange(current, minimum, maximum string) bool {
 }
 
 func parseSchemaVersion(value string) ([]int, bool) {
-	parts := strings.Split(strings.TrimSpace(value), ".")
+	value = strings.TrimSpace(value)
+	if len(value) == 0 || len(value) > maxManifestVersionFieldBytes {
+		return nil, false
+	}
+	parts := strings.Split(value, ".")
 	if len(parts) == 0 {
 		return nil, false
 	}
 	result := make([]int, len(parts))
+	maxInt := int(^uint(0) >> 1)
 	for index, part := range parts {
 		if part == "" {
 			return nil, false
@@ -261,7 +286,11 @@ func parseSchemaVersion(value string) ([]int, bool) {
 			if char < '0' || char > '9' {
 				return nil, false
 			}
-			number = number*10 + int(char-'0')
+			digit := int(char - '0')
+			if number > (maxInt-digit)/10 {
+				return nil, false
+			}
+			number = number*10 + digit
 		}
 		result[index] = number
 	}

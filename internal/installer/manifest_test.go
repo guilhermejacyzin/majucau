@@ -4,8 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -96,6 +98,36 @@ func TestValidateReleaseManifestRejectsUnsafeDuplicateAndProtectedEntries(t *tes
 	}
 	if len(result.Issues) < 3 {
 		t.Fatalf("expected duplicate, unsafe and protected entry issues, got %+v", result.Issues)
+	}
+}
+
+func TestValidateReleaseManifestRejectsTooManyEntries(t *testing.T) {
+	root := t.TempDir()
+	entries := make([]ManifestFile, maxReleaseManifestEntries+1)
+	for index := range entries {
+		entries[index] = ManifestFile{
+			Path:   fmt.Sprintf("artifact-%04d.exe", index),
+			SHA256: digestFor([]byte("binary")),
+		}
+	}
+	writeManifest(t, root, ReleaseManifest{
+		ManifestVersion: ReleaseManifestVersion,
+		AppVersion:      "0.1.0",
+		SchemaVersion:   "1.0",
+		MinSchema:       "1.0",
+		MaxSchema:       "1.0",
+		Artifacts:       entries,
+	})
+
+	result := ValidateReleaseManifest(root, "release-manifest.json", "1.0")
+	if result.Valid || len(result.Issues) != 1 || result.Issues[0].Detail != "manifest contains too many files" {
+		t.Fatalf("expected one bounded entry-count issue, got valid=%v issues=%+v", result.Valid, result.Issues)
+	}
+}
+
+func TestParseSchemaVersionRejectsIntegerOverflow(t *testing.T) {
+	if _, ok := parseSchemaVersion(strings.Repeat("9", maxManifestVersionFieldBytes)); ok {
+		t.Fatal("schema version with an overflowing integer component was accepted")
 	}
 }
 

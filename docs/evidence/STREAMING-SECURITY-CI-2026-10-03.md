@@ -37,3 +37,10 @@
 - O PostgreSQL agrega as linhas em JSON; o worker lê e decodifica esse JSON, `NewResponse` o serializa e o servidor serializa a resposta novamente. O limite de 1 MiB do IPC só é aplicado ao frame final, depois dessas alocações.
 - Portanto, a quantidade de linhas é limitada, mas o tamanho da resposta em memória ainda depende do conteúdo textual armazenado. Um payload grande falha ao ultrapassar o frame, porém pode consumir memória antes da rejeição.
 - Nenhuma regra financeira ou tela foi alterada. Foi solicitada decisão sobre carregar os detalhes em partes mantendo a mesma aparência, ou definir limites por campo e rejeitar entradas acima deles. DATA-04 permanece `PARTIAL` até fechar esse contrato e validar o fluxo.
+
+## Propagação de falhas de limpeza temporária — CI em 2026-10-03
+
+- `internal/securetemp.CleanupError` conserva o caminho para operador autorizado e omite esse caminho da mensagem comum. A remoção abrangente recusa caminhos relativos e a raiz do volume.
+- Backup/restauração, writes DPAPI, bundles de diagnóstico, journal do instalador e preview CSV propagam falhas de limpeza; o pacote V2 incompleto é montado dentro do workspace privado antes do rename final.
+- A CI [37123188191](https://github.com/guilhermejacyzin/majucau/actions/runs/37123188191) passou nos jobs Windows e PostgreSQL, incluindo Go tests/vet, verificações de segurança, build e smoke do instalador.
+- A execução não força uma falha de permissão/remoção e não substitui ensaio de DACL e limpeza numa VM Windows 10/11 limpa. `OPS-02`, `SEC-01` e `DATA-04` permanecem `PARTIAL` até as evidências operacionais correspondentes.

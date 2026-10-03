@@ -4,7 +4,10 @@ package ipc
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +22,7 @@ func TestNamedPipeHealthRoundTripAndCancellation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer server.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	serveErr := make(chan error, 1)
@@ -161,5 +165,79 @@ func TestNamedPipeRejectsUnauthorizedSID(t *testing.T) {
 	_, err = client.Call(context.Background(), Request{Version: ProtocolVersion, RequestID: "unauthorized", Method: MethodHealth})
 	if err == nil || strings.Contains(strings.ToLower(err.Error()), "success") {
 		t.Fatalf("unauthorized call unexpectedly succeeded: %v", err)
+	}
+}
+
+func TestNamedPipeAcceptsAuthorizedClientProcess(t *testing.T) {
+	name := fmt.Sprintf(`\\.\pipe\Majucau-process-%d`, time.Now().UnixNano())
+	processSID, err := currentProcessSID()
+	if err != nil {
+		t.Fatalf("read current process SID: %v", err)
+	}
+	server, err := NewNamedPipeServer(NamedPipeConfig{
+		Name:              name,
+		AllowedClientSIDs: []string{processSID},
+		ServiceSID:        processSID,
+		IOTimeout:         3 * time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	serveErr := make(chan error, 1)
+	go func() {
+		serveErr <- server.Serve(ctx, HandlerFunc(func(_ context.Context, req Request) (Response, error) {
+			return NewResponse(req.RequestID, map[string]string{"state": "authorized-child"})
+		}))
+	}()
+
+	childCtx, childCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer childCancel()
+	command := exec.CommandContext(childCtx, os.Args[0], "-test.run=^TestNamedPipeAuthorizedClientProcessHelper$")
+	const helperEnv = "MAJUCAU_NAMED_PIPE_HELPER"
+	command.Env = make([]string, 0, len(os.Environ())+1)
+	for _, entry := range os.Environ() {
+		if !strings.HasPrefix(entry, helperEnv+"=") {
+			command.Env = append(command.Env, entry)
+		}
+	}
+	command.Env = append(command.Env, helperEnv+"="+name)
+	output, err := command.CombinedOutput()
+	if err != nil {
+		t.Fatalf("authorized client process failed: %v\n%s", err, output)
+	}
+
+	cancel()
+	_ = server.Close()
+	select {
+	case err := <-serveErr:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("server stopped with unexpected error: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("server did not stop after the authorized client process finished")
+	}
+}
+
+func TestNamedPipeAuthorizedClientProcessHelper(t *testing.T) {
+	name := os.Getenv("MAJUCAU_NAMED_PIPE_HELPER")
+	if name == "" {
+		return
+	}
+	client, err := NewNamedPipeClient(NamedPipeConfig{Name: name, IOTimeout: 3 * time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	response, err := client.Call(ctx, Request{Version: ProtocolVersion, RequestID: "authorized-child", Method: MethodHealth})
+	if err != nil {
+		t.Fatalf("health request from authorized client process: %v", err)
+	}
+	if !response.OK || string(response.Payload) != `{"state":"authorized-child"}` {
+		t.Fatalf("unexpected health response from authorized client process: %#v", response)
 	}
 }

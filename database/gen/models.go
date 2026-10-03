@@ -351,10 +351,10 @@ type IntegrationSyncBatch struct {
 	StartedAt             pgtype.Timestamptz `json:"started_at"`
 	FinishedAt            pgtype.Timestamptz `json:"finished_at"`
 	Status                string             `json:"status"`
-	RecordsRead           int32              `json:"records_read"`
-	RecordsCreated        int32              `json:"records_created"`
-	RecordsUpdated        int32              `json:"records_updated"`
-	RecordsFailed         int32              `json:"records_failed"`
+	RecordsRead           int64              `json:"records_read"`
+	RecordsCreated        int64              `json:"records_created"`
+	RecordsUpdated        int64              `json:"records_updated"`
+	RecordsFailed         int64              `json:"records_failed"`
 	RetryCount            int32              `json:"retry_count"`
 	ErrorCode             *string            `json:"error_code"`
 	ErrorMessageSanitized *string            `json:"error_message_sanitized"`
@@ -369,10 +369,10 @@ type IntegrationSyncLog struct {
 	StartedAt             pgtype.Timestamptz `json:"started_at"`
 	FinishedAt            pgtype.Timestamptz `json:"finished_at"`
 	Status                string             `json:"status"`
-	RecordsRead           int32              `json:"records_read"`
-	RecordsCreated        int32              `json:"records_created"`
-	RecordsUpdated        int32              `json:"records_updated"`
-	RecordsFailed         int32              `json:"records_failed"`
+	RecordsRead           int64              `json:"records_read"`
+	RecordsCreated        int64              `json:"records_created"`
+	RecordsUpdated        int64              `json:"records_updated"`
+	RecordsFailed         int64              `json:"records_failed"`
 	RetryCount            int32              `json:"retry_count"`
 	ErrorCode             *string            `json:"error_code"`
 	ErrorMessageSanitized *string            `json:"error_message_sanitized"`

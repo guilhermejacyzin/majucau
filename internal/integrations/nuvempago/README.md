@@ -31,21 +31,31 @@ técnica: a pasta inteira é recusada antes de gravar dados. Erros de validaçã
 comuns por linha continuam permitindo salvar as linhas válidas e fechar o
 lote como `PARTIAL`.
 
-`ParseFutureCSV` e `ImportFutureFolder` alimentam `FutureImportService`, que
-abre uma transação PostgreSQL, cria o lote, grava o payload RAW versionado e
-faz upsert idempotente em `receivables` como B2C/PROJECTED. O worker expõe
+`ParseFutureCSV` e `ImportFutureFolder` continuam atendendo a prévia atual.
+`FutureImportService` usa `StreamFutureFolder` e `StreamFutureCSV`: valida cada
+linha e grava payload RAW versionado e upsert idempotente em `receivables`
+como B2C/PROJECTED dentro da transação do lote. A deduplicação entre arquivos
+fica numa tabela temporária do PostgreSQL com HMAC por execução; o identificador
+externo em texto puro não é gravado nela, e a tabela some no commit ou rollback.
+Falhas técnicas, cancelamento ou limite excedido revertem todo o lote; erros de
+validação por linha preservam as válidas e fecham como `PARTIAL`. Na importação,
+os nomes CSV são lidos em blocos de 256 e ordenados em tabela temporária. A
+prévia ainda materializa linhas/erros e usa `os.ReadDir`, mantendo nomes dos
+arquivos em memória; essa prévia permanece no backlog DATA-04. O worker expõe
 preview e importação pelos métodos IPC `nuvem_pago.future.preview` e
 `nuvem_pago.future.import`; a tela de Importações/Integrações usa esses métodos
 e apresenta apenas metadados sanitizados, sem nome ou PII. A importação falha
 fechada quando banco, conexão ou confirmação operacional não estão configurados.
 O campo `open_balance` permanece nulo porque este export não fornece saldo
-aberto separado; nenhum valor foi inventado. Ainda faltam E2E contra
-PostgreSQL, homologação visual e teste do instalador em VM limpa.
+aberto separado; nenhum valor foi inventado. O E2E PostgreSQL roda na CI com
+fixture sanitizada; homologação visual e teste do instalador em VM limpa ainda
+faltam.
 
 ## Validação PostgreSQL
 
-O teste opt-in `TestFutureImportServicePostgresE2E` usa a mesma URL de banco
-descartável da validação Bling e uma pasta sanitizada de recebimentos futuros:
+O teste opt-in `TestFutureImportServicePostgresE2E` roda na CI contra o mesmo
+banco descartável da validação Bling. Para executá-lo manualmente, use uma
+pasta sanitizada de recebimentos futuros:
 
 ```powershell
 $env:MAJUCAU_TEST_DATABASE_URL = 'postgres://postgres@127.0.0.1:55439/majucau_test?sslmode=disable'

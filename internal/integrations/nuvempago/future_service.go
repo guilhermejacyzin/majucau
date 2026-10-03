@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/database/gen"
+	"majucau.local/financial-intelligence/internal/integrations/csvstream"
 )
 
 var (
@@ -44,15 +45,14 @@ func (s *FutureImportService) Import(ctx context.Context, folder string) (Future
 	if s == nil || s.pool == nil {
 		return FutureImportResult{}, ErrFutureDatabaseUnavailable
 	}
-	report, err := ImportFutureFolder(ctx, folder)
-	if err != nil {
+	if err := validateFutureFolder(folder); err != nil {
 		return FutureImportResult{}, err
 	}
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return FutureImportResult{}, fmt.Errorf("begin future import: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(context.Background())
 	queries := database.New(tx)
 	connection, err := queries.GetIntegrationConnectionByProvider(ctx, "NUVEM_PAGO")
 	if err != nil {
@@ -68,10 +68,29 @@ func (s *FutureImportService) Import(ctx context.Context, folder string) (Future
 	if err != nil {
 		return FutureImportResult{}, fmt.Errorf("create future import batch: %w", err)
 	}
-	summary, err := PersistFutureReceivables(ctx, tx, connection.ID, batch.ID, FutureReport{Receivables: report.Receivables, Errors: toRowErrors(report.Errors)})
+	seen, err := csvstream.NewSourceIDSet(ctx, tx)
 	if err != nil {
 		return FutureImportResult{}, err
 	}
+	defer seen.Close()
+	var summary FuturePersistenceSummary
+	streamSummary, err := StreamFutureFolder(ctx, folder, seen, func(_ string, _ int, candidate FutureReceivableCandidate) error {
+		exists, err := persistFutureCandidate(ctx, tx, queries, connection.ID, batch.ID, candidate)
+		if err != nil {
+			return err
+		}
+		if exists {
+			summary.RecordsUpdated++
+		} else {
+			summary.RecordsCreated++
+		}
+		return nil
+	}, nil, nil)
+	if err != nil {
+		return FutureImportResult{}, err
+	}
+	summary.RecordsRead = streamSummary.ReceivableCount + streamSummary.ErrorCount
+	summary.RecordsFailed = streamSummary.ErrorCount
 	status := "SUCCESS"
 	if summary.RecordsFailed > 0 {
 		status = "PARTIAL"
@@ -83,23 +102,15 @@ func (s *FutureImportService) Import(ctx context.Context, folder string) (Future
 		errorCode, errorMessage = &code, &message
 	}
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
-		ID: batch.ID, Status: status, RecordsRead: int32(summary.RecordsRead), RecordsCreated: int32(summary.RecordsCreated),
-		RecordsUpdated: int32(summary.RecordsUpdated), RecordsFailed: int32(summary.RecordsFailed), ErrorCode: errorCode, ErrorMessageSanitized: errorMessage,
+		ID: batch.ID, Status: status, RecordsRead: int64(summary.RecordsRead), RecordsCreated: int64(summary.RecordsCreated),
+		RecordsUpdated: int64(summary.RecordsUpdated), RecordsFailed: int64(summary.RecordsFailed), ErrorCode: errorCode, ErrorMessageSanitized: errorMessage,
 	}); err != nil {
 		return FutureImportResult{}, fmt.Errorf("finish future import batch: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return FutureImportResult{}, fmt.Errorf("commit future import: %w", err)
 	}
-	return FutureImportResult{BatchID: futureBatchIDString(batch.ID), Status: status, RecordsRead: summary.RecordsRead, RecordsCreated: summary.RecordsCreated, RecordsUpdated: summary.RecordsUpdated, RecordsFailed: summary.RecordsFailed, IgnoredCount: len(report.Ignored)}, nil
-}
-
-func toRowErrors(input []FutureFileRowError) []RowError {
-	result := make([]RowError, 0, len(input))
-	for _, issue := range input {
-		result = append(result, RowError{Line: issue.Line, Code: issue.Code, Message: issue.Message})
-	}
-	return result
+	return FutureImportResult{BatchID: futureBatchIDString(batch.ID), Status: status, RecordsRead: summary.RecordsRead, RecordsCreated: summary.RecordsCreated, RecordsUpdated: summary.RecordsUpdated, RecordsFailed: summary.RecordsFailed, IgnoredCount: streamSummary.IgnoredCount}, nil
 }
 
 func futureBatchIDString(value pgtype.UUID) string {

@@ -137,7 +137,7 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 		return result, s.finishFailed(ctx, queries, batch.ID, result, "BLING_SYNC_CURSOR_FAILED", err)
 	}
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
-		ID: batch.ID, Status: "SUCCESS", RecordsRead: int32(result.RecordsRead), RecordsCreated: int32(result.PagesCreated), RecordsUpdated: int32(result.PagesUpdated),
+		ID: batch.ID, Status: "SUCCESS", RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated),
 	}); err != nil {
 		return result, fmt.Errorf("finish Bling API sync batch: %w", err)
 	}
@@ -151,7 +151,7 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 func (s *apiResourceSyncService) finishFailed(ctx context.Context, queries *database.Queries, batchID pgtype.UUID, result APISyncResult, code string, cause error) error {
 	message := code
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
-		ID: batchID, Status: "FAILED", RecordsRead: int32(result.RecordsRead), RecordsCreated: int32(result.PagesCreated), RecordsUpdated: int32(result.PagesUpdated),
+		ID: batchID, Status: "FAILED", RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated),
 		ErrorCode: &code, ErrorMessageSanitized: &message,
 	}); err != nil {
 		return fmt.Errorf("%w: %v; finish batch: %v", cause, cause, err)

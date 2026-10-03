@@ -4,7 +4,7 @@ This directory is the SQL-first persistence boundary for Majucau Financial Intel
 
 ## Layout
 
-- `migrations/000001_init.up.sql`: initial forward-only schema.
+- `migrations/*.up.sql`: ordered, forward-only schema changes. `000001_init.up.sql` creates the schema; `000002_streaming_batch_counts.up.sql` widens sync-batch counters to `bigint` for large streaming imports.
 - `queries/`: SQL consumed by `sqlc` for health, integration status/revocation, RAW ingestion and idempotent receipt batches.
 - `privileges/runtime.sql`: least-privilege grants applied after migrations.
 - `sqlc.yaml`: PostgreSQL + `pgx/v5` generation configuration.
@@ -27,7 +27,9 @@ This directory is the SQL-first persistence boundary for Majucau Financial Intel
 Run against a disposable PostgreSQL 14+ database first:
 
 ```text
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/000001_init.up.sql
+for migration in migrations/*.up.sql; do
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
+done
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f privileges/runtime.sql
 sqlc generate
 go test ./...

@@ -44,42 +44,9 @@ func PersistFutureReceivables(ctx context.Context, tx pgx.Tx, connectionID, sync
 		if err := ctx.Err(); err != nil {
 			return summary, err
 		}
-		if candidate.SourceSystem != domain.OriginNuvemPago || candidate.SourceEntity != FutureSourceEntity || candidate.Status != domain.StatusProjected || candidate.SourceID == "" {
-			return summary, fmt.Errorf("%w: source=%s entity=%s status=%s id=%s", ErrInvalidFuturePersistenceIdentity, candidate.SourceSystem, candidate.SourceEntity, candidate.Status, candidate.SourceID)
-		}
-		if candidate.PaymentDate.IsZero() || candidate.ExpectedReceiptDate.IsZero() || candidate.GrossAmount.IsNegative() || candidate.FeeAmount.IsNegative() || candidate.NetAmount.IsNegative() {
-			return summary, fmt.Errorf("%w: dates and non-negative amounts are required", ErrInvalidFuturePersistenceIdentity)
-		}
-		rawID, err := ensureCurrentFutureRaw(ctx, queries, connectionID, syncBatchID, candidate)
+		exists, err := persistFutureCandidate(ctx, tx, queries, connectionID, syncBatchID, candidate)
 		if err != nil {
-			return summary, fmt.Errorf("persist future raw %s: %w", candidate.SourceID, err)
-		}
-		exists, err := futureReceivableExists(ctx, tx, connectionID, candidate.SourceID)
-		if err != nil {
-			return summary, fmt.Errorf("check future receivable %s: %w", candidate.SourceID, err)
-		}
-		gross, err := futureNumeric(candidate.GrossAmount)
-		if err != nil {
-			return summary, fmt.Errorf("gross amount %s: %w", candidate.SourceID, err)
-		}
-		fee, err := futureNumeric(candidate.FeeAmount)
-		if err != nil {
-			return summary, fmt.Errorf("fee amount %s: %w", candidate.SourceID, err)
-		}
-		net, err := futureNumeric(candidate.NetAmount)
-		if err != nil {
-			return summary, fmt.Errorf("net amount %s: %w", candidate.SourceID, err)
-		}
-		var installmentCount any
-		if candidate.InstallmentCount != nil {
-			installmentCount = int32(*candidate.InstallmentCount)
-		}
-		if _, err := tx.Exec(ctx, upsertFutureReceivableSQL,
-			connectionID, candidate.SourceEntity, candidate.SourceID,
-			date(candidate.PaymentDate), date(candidate.ExpectedReceiptDate), gross, fee, net,
-			string(candidate.Status), candidate.PaymentMethod, installmentCount, rawID,
-		); err != nil {
-			return summary, fmt.Errorf("upsert future receivable %s: %w", candidate.SourceID, err)
+			return summary, err
 		}
 		if exists {
 			summary.RecordsUpdated++
@@ -88,6 +55,47 @@ func PersistFutureReceivables(ctx context.Context, tx pgx.Tx, connectionID, sync
 		}
 	}
 	return summary, nil
+}
+
+func persistFutureCandidate(ctx context.Context, tx pgx.Tx, queries *database.Queries, connectionID, syncBatchID pgtype.UUID, candidate FutureReceivableCandidate) (bool, error) {
+	if candidate.SourceSystem != domain.OriginNuvemPago || candidate.SourceEntity != FutureSourceEntity || candidate.Status != domain.StatusProjected || candidate.SourceID == "" {
+		return false, fmt.Errorf("%w: source=%s entity=%s status=%s id=%s", ErrInvalidFuturePersistenceIdentity, candidate.SourceSystem, candidate.SourceEntity, candidate.Status, candidate.SourceID)
+	}
+	if candidate.PaymentDate.IsZero() || candidate.ExpectedReceiptDate.IsZero() || candidate.GrossAmount.IsNegative() || candidate.FeeAmount.IsNegative() || candidate.NetAmount.IsNegative() {
+		return false, fmt.Errorf("%w: dates and non-negative amounts are required", ErrInvalidFuturePersistenceIdentity)
+	}
+	rawID, err := ensureCurrentFutureRaw(ctx, queries, connectionID, syncBatchID, candidate)
+	if err != nil {
+		return false, fmt.Errorf("persist future raw %s: %w", candidate.SourceID, err)
+	}
+	exists, err := futureReceivableExists(ctx, tx, connectionID, candidate.SourceID)
+	if err != nil {
+		return false, fmt.Errorf("check future receivable %s: %w", candidate.SourceID, err)
+	}
+	gross, err := futureNumeric(candidate.GrossAmount)
+	if err != nil {
+		return false, fmt.Errorf("gross amount %s: %w", candidate.SourceID, err)
+	}
+	fee, err := futureNumeric(candidate.FeeAmount)
+	if err != nil {
+		return false, fmt.Errorf("fee amount %s: %w", candidate.SourceID, err)
+	}
+	net, err := futureNumeric(candidate.NetAmount)
+	if err != nil {
+		return false, fmt.Errorf("net amount %s: %w", candidate.SourceID, err)
+	}
+	var installmentCount any
+	if candidate.InstallmentCount != nil {
+		installmentCount = int32(*candidate.InstallmentCount)
+	}
+	if _, err := tx.Exec(ctx, upsertFutureReceivableSQL,
+		connectionID, candidate.SourceEntity, candidate.SourceID,
+		date(candidate.PaymentDate), date(candidate.ExpectedReceiptDate), gross, fee, net,
+		string(candidate.Status), candidate.PaymentMethod, installmentCount, rawID,
+	); err != nil {
+		return false, fmt.Errorf("upsert future receivable %s: %w", candidate.SourceID, err)
+	}
+	return exists, nil
 }
 
 const upsertFutureReceivableSQL = `

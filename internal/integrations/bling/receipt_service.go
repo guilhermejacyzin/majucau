@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/database/gen"
+	"majucau.local/financial-intelligence/internal/integrations/csvstream"
 )
 
 var (
@@ -49,15 +50,14 @@ func (s *ReceiptImportService) Import(ctx context.Context, folder string) (Recei
 	if s == nil || s.pool == nil {
 		return ReceiptImportResult{}, ErrReceiptDatabaseUnavailable
 	}
-	report, err := ImportReceiptsFolder(ctx, folder)
-	if err != nil {
+	if err := validateReceiptsFolder(folder); err != nil {
 		return ReceiptImportResult{}, err
 	}
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return ReceiptImportResult{}, fmt.Errorf("begin receipt import: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(context.Background())
 	queries := database.New(tx)
 	connection, err := queries.GetIntegrationConnectionByProvider(ctx, "BLING")
 	if err != nil {
@@ -73,14 +73,29 @@ func (s *ReceiptImportService) Import(ctx context.Context, folder string) (Recei
 	if err != nil {
 		return ReceiptImportResult{}, fmt.Errorf("create receipt import batch: %w", err)
 	}
-	receiptsReport := ReceiptsReport{Receipts: report.Receipts, Errors: make([]RowError, 0, len(report.Errors))}
-	for _, issue := range report.Errors {
-		receiptsReport.Errors = append(receiptsReport.Errors, RowError{Line: issue.Line, Code: issue.Code, Message: issue.Message})
-	}
-	summary, err := PersistReceipts(ctx, tx, connection.ID, batch.ID, receiptsReport)
+	seen, err := csvstream.NewSourceIDSet(ctx, tx)
 	if err != nil {
 		return ReceiptImportResult{}, err
 	}
+	defer seen.Close()
+	var summary PersistenceSummary
+	streamSummary, err := StreamReceiptsFolder(ctx, folder, seen, func(_ string, _ int, candidate ReceiptCandidate) error {
+		exists, err := persistReceiptCandidate(ctx, queries, connection.ID, batch.ID, candidate)
+		if err != nil {
+			return err
+		}
+		if exists {
+			summary.RecordsUpdated++
+		} else {
+			summary.RecordsCreated++
+		}
+		return nil
+	}, nil, nil)
+	if err != nil {
+		return ReceiptImportResult{}, err
+	}
+	summary.RecordsRead = streamSummary.ReceiptCount + streamSummary.ErrorCount
+	summary.RecordsFailed = streamSummary.ErrorCount
 	status := "SUCCESS"
 	if summary.RecordsFailed > 0 {
 		status = "PARTIAL"
@@ -92,8 +107,8 @@ func (s *ReceiptImportService) Import(ctx context.Context, folder string) (Recei
 		errorCode, errorMessage = &code, &message
 	}
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
-		ID: batch.ID, Status: status, RecordsRead: int32(summary.RecordsRead), RecordsCreated: int32(summary.RecordsCreated),
-		RecordsUpdated: int32(summary.RecordsUpdated), RecordsFailed: int32(summary.RecordsFailed), ErrorCode: errorCode, ErrorMessageSanitized: errorMessage,
+		ID: batch.ID, Status: status, RecordsRead: int64(summary.RecordsRead), RecordsCreated: int64(summary.RecordsCreated),
+		RecordsUpdated: int64(summary.RecordsUpdated), RecordsFailed: int64(summary.RecordsFailed), ErrorCode: errorCode, ErrorMessageSanitized: errorMessage,
 	}); err != nil {
 		return ReceiptImportResult{}, fmt.Errorf("finish receipt import batch: %w", err)
 	}
@@ -102,7 +117,7 @@ func (s *ReceiptImportService) Import(ctx context.Context, folder string) (Recei
 	}
 	return ReceiptImportResult{
 		BatchID: batchIDString(batch.ID), Status: status, RecordsRead: summary.RecordsRead, RecordsCreated: summary.RecordsCreated,
-		RecordsUpdated: summary.RecordsUpdated, RecordsFailed: summary.RecordsFailed, IgnoredCount: len(report.Ignored),
+		RecordsUpdated: summary.RecordsUpdated, RecordsFailed: summary.RecordsFailed, IgnoredCount: streamSummary.IgnoredCount,
 	}, nil
 }
 

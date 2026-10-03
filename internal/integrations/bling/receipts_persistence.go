@@ -56,34 +56,9 @@ func PersistReceipts(ctx context.Context, tx pgx.Tx, connectionID, syncBatchID p
 		if err := ctx.Err(); err != nil {
 			return summary, err
 		}
-		if candidate.SourceSystem != domain.OriginBling || candidate.SourceEntity != ReceiptsReportSourceEntity || candidate.Status != domain.StatusConfirmed {
-			return summary, fmt.Errorf("%w: source=%s entity=%s status=%s", ErrInvalidPersistenceIdentity, candidate.SourceSystem, candidate.SourceEntity, candidate.Status)
-		}
-		if candidate.SourceID == "" || candidate.ReceiptDate.IsZero() || candidate.Amount.IsNegative() || candidate.Fee.IsNegative() {
-			return summary, fmt.Errorf("%w: source_id, date and non-negative amounts are required", ErrInvalidPersistenceIdentity)
-		}
-		rawID, err := ensureCurrentRaw(ctx, q, connectionID, syncBatchID, candidate)
+		exists, err := persistReceiptCandidate(ctx, q, connectionID, syncBatchID, candidate)
 		if err != nil {
-			return summary, fmt.Errorf("persist raw receipt %s: %w", candidate.SourceID, err)
-		}
-		exists, err := q.ReceiptExists(ctx, database.ReceiptExistsParams{ConnectionID: connectionID, SourceEntity: candidate.SourceEntity, SourceID: candidate.SourceID})
-		if err != nil {
-			return summary, fmt.Errorf("check receipt %s: %w", candidate.SourceID, err)
-		}
-		amount, err := numeric(candidate.Amount)
-		if err != nil {
-			return summary, fmt.Errorf("amount %s: %w", candidate.SourceID, err)
-		}
-		if _, err := q.UpsertReceipt(ctx, database.UpsertReceiptParams{
-			ConnectionID: connectionID,
-			SourceEntity: candidate.SourceEntity,
-			SourceID:     candidate.SourceID,
-			ReceiptDate:  date(candidate.ReceiptDate),
-			Amount:       amount,
-			Status:       string(candidate.Status),
-			RawRecordID:  rawID,
-		}); err != nil {
-			return summary, fmt.Errorf("upsert receipt %s: %w", candidate.SourceID, err)
+			return summary, err
 		}
 		if exists {
 			summary.RecordsUpdated++
@@ -92,6 +67,39 @@ func PersistReceipts(ctx context.Context, tx pgx.Tx, connectionID, syncBatchID p
 		}
 	}
 	return summary, nil
+}
+
+func persistReceiptCandidate(ctx context.Context, q *database.Queries, connectionID, syncBatchID pgtype.UUID, candidate ReceiptCandidate) (bool, error) {
+	if candidate.SourceSystem != domain.OriginBling || candidate.SourceEntity != ReceiptsReportSourceEntity || candidate.Status != domain.StatusConfirmed {
+		return false, fmt.Errorf("%w: source=%s entity=%s status=%s", ErrInvalidPersistenceIdentity, candidate.SourceSystem, candidate.SourceEntity, candidate.Status)
+	}
+	if candidate.SourceID == "" || candidate.ReceiptDate.IsZero() || candidate.Amount.IsNegative() || candidate.Fee.IsNegative() {
+		return false, fmt.Errorf("%w: source_id, date and non-negative amounts are required", ErrInvalidPersistenceIdentity)
+	}
+	rawID, err := ensureCurrentRaw(ctx, q, connectionID, syncBatchID, candidate)
+	if err != nil {
+		return false, fmt.Errorf("persist raw receipt %s: %w", candidate.SourceID, err)
+	}
+	exists, err := q.ReceiptExists(ctx, database.ReceiptExistsParams{ConnectionID: connectionID, SourceEntity: candidate.SourceEntity, SourceID: candidate.SourceID})
+	if err != nil {
+		return false, fmt.Errorf("check receipt %s: %w", candidate.SourceID, err)
+	}
+	amount, err := numeric(candidate.Amount)
+	if err != nil {
+		return false, fmt.Errorf("amount %s: %w", candidate.SourceID, err)
+	}
+	if _, err := q.UpsertReceipt(ctx, database.UpsertReceiptParams{
+		ConnectionID: connectionID,
+		SourceEntity: candidate.SourceEntity,
+		SourceID:     candidate.SourceID,
+		ReceiptDate:  date(candidate.ReceiptDate),
+		Amount:       amount,
+		Status:       string(candidate.Status),
+		RawRecordID:  rawID,
+	}); err != nil {
+		return false, fmt.Errorf("upsert receipt %s: %w", candidate.SourceID, err)
+	}
+	return exists, nil
 }
 
 func ensureCurrentRaw(ctx context.Context, q *database.Queries, connectionID, syncBatchID pgtype.UUID, candidate ReceiptCandidate) (pgtype.UUID, error) {

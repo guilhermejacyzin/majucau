@@ -11,6 +11,7 @@ import (
 
 	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
+	"majucau.local/financial-intelligence/internal/integrations/csvstream"
 )
 
 const ReceiptsReportSourceEntity = "bling_contas_recebidas_report_v1"
@@ -46,11 +47,39 @@ type ReceiptsReport struct {
 	Errors   []RowError
 }
 
+type ReceiptRowHandler func(line int, candidate ReceiptCandidate) error
+type ReceiptErrorHandler func(issue RowError) error
+
 // ParseReceiptsCSV parses the semicolon-delimited export of Bling's
 // "Relatório de Contas Recebidas". It intentionally treats Bling as the
 // source of truth even when the payment method mentions NuvemPago/Nuvemshop.
 // The parser never turns an unpaid row into a receipt.
 func ParseReceiptsCSV(input io.Reader) (ReceiptsReport, error) {
+	result := ReceiptsReport{}
+	seen := make(map[string]int)
+	err := StreamReceiptsCSV(input, func(line int, candidate ReceiptCandidate) error {
+		if previousLine, exists := seen[candidate.SourceID]; exists {
+			result.Errors = append(result.Errors, RowError{Line: line, Code: "DUPLICATE_SOURCE_ID", Message: fmt.Sprintf("documento repetido; primeira ocorrência na linha %d", previousLine)})
+			return nil
+		}
+		seen[candidate.SourceID] = line
+		result.Receipts = append(result.Receipts, candidate)
+		return nil
+	}, func(issue RowError) error {
+		result.Errors = append(result.Errors, issue)
+		return nil
+	})
+	if err != nil {
+		return ReceiptsReport{}, err
+	}
+	return result, nil
+}
+
+// StreamReceiptsCSV validates one row at a time and delivers it to the caller.
+// It does not retain candidates, row errors, or source identifiers. The caller
+// owns deduplication and persistence so it can use bounded or transactional
+// storage appropriate to its workflow.
+func StreamReceiptsCSV(input io.Reader, accept ReceiptRowHandler, reject ReceiptErrorHandler) error {
 	reader := csv.NewReader(csvlimit.NewReader(input))
 	reader.Comma = ';'
 	reader.FieldsPerRecord = -1
@@ -59,42 +88,50 @@ func ParseReceiptsCSV(input io.Reader) (ReceiptsReport, error) {
 	header, err := reader.Read()
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			return ReceiptsReport{}, ErrInvalidReportHeader
+			return ErrInvalidReportHeader
 		}
-		return ReceiptsReport{}, err
+		return err
 	}
 	columns, err := requiredColumns(header)
 	if err != nil {
-		return ReceiptsReport{}, err
+		return err
 	}
 
-	result := ReceiptsReport{}
-	seen := make(map[string]int)
 	for line := 2; ; line++ {
 		row, readErr := reader.Read()
 		if errors.Is(readErr, io.EOF) {
 			break
 		}
 		if errors.Is(readErr, csvlimit.ErrLimitExceeded) {
-			return ReceiptsReport{}, readErr
+			return readErr
 		}
 		if readErr != nil {
-			result.Errors = append(result.Errors, RowError{Line: line, Code: "CSV_READ", Message: "não foi possível ler a linha do relatório"})
+			if !csvstream.RecoverableRowError(readErr) {
+				return readErr
+			}
+			if reject != nil {
+				if err := reject(RowError{Line: line, Code: "CSV_READ", Message: "não foi possível ler a linha do relatório"}); err != nil {
+					return err
+				}
+			}
 			continue
 		}
 		candidate, rowErr := parseReceiptRow(row, columns)
 		if rowErr != nil {
-			result.Errors = append(result.Errors, RowError{Line: line, Code: rowErr.code, Message: rowErr.message})
+			if reject != nil {
+				if err := reject(RowError{Line: line, Code: rowErr.code, Message: rowErr.message}); err != nil {
+					return err
+				}
+			}
 			continue
 		}
-		if previousLine, exists := seen[candidate.SourceID]; exists {
-			result.Errors = append(result.Errors, RowError{Line: line, Code: "DUPLICATE_SOURCE_ID", Message: fmt.Sprintf("documento repetido; primeira ocorrência na linha %d", previousLine)})
-			continue
+		if accept != nil {
+			if err := accept(line, candidate); err != nil {
+				return err
+			}
 		}
-		seen[candidate.SourceID] = line
-		result.Receipts = append(result.Receipts, candidate)
 	}
-	return result, nil
+	return nil
 }
 
 type rowParseError struct{ code, message string }

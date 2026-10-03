@@ -13,13 +13,14 @@ import (
 	"strings"
 
 	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
+	"majucau.local/financial-intelligence/internal/integrations/csvstream"
 )
 
 var ErrImportFolderRequired = errors.New("bling receipts import folder is required")
 
 // ImportedFile describes one input file without exposing its absolute path.
-// The SHA-256 is the stable identity used by the later persistence worker for
-// idempotent batch tracking.
+// SHA-256 identifies the content in preview metadata; persistence idempotency
+// is enforced by the normalized source identity and RAW payload hash.
 type ImportedFile struct {
 	Name         string `json:"name"`
 	SHA256       string `json:"sha256"`
@@ -44,24 +45,27 @@ type FolderImport struct {
 	Ignored  []string           `json:"ignored"`
 }
 
+type FolderStreamSummary struct {
+	ReceiptCount int
+	ErrorCount   int
+	IgnoredCount int
+}
+
+type StreamReceiptHandler func(file string, line int, candidate ReceiptCandidate) error
+type StreamReceiptIssueHandler func(issue FileRowError) error
+type StreamReceiptFileHandler func(file ImportedFile)
+
 // ImportReceiptsFolder reads only CSV files in a single directory. Files are
 // processed in lexical order, making previews and retries reproducible. A
 // Nuvem/Nuvem Pago export does not match the Bling report contract and is
 // returned as an explicit header error; it is never reclassified as a Bling
 // receipt.
 func ImportReceiptsFolder(ctx context.Context, folder string) (FolderImport, error) {
-	if strings.TrimSpace(folder) == "" {
-		return FolderImport{}, ErrImportFolderRequired
-	}
 	if err := ctx.Err(); err != nil {
 		return FolderImport{}, err
 	}
-	info, err := os.Stat(folder)
-	if err != nil {
-		return FolderImport{}, fmt.Errorf("inspect import folder: %w", err)
-	}
-	if !info.IsDir() {
-		return FolderImport{}, fmt.Errorf("import path is not a folder: %s", filepath.Base(folder))
+	if err := validateReceiptsFolder(folder); err != nil {
+		return FolderImport{}, err
 	}
 	entries, err := os.ReadDir(folder)
 	if err != nil {
@@ -119,4 +123,125 @@ func ImportReceiptsFolder(ctx context.Context, folder string) (FolderImport, err
 		}
 	}
 	return result, nil
+}
+
+func validateReceiptsFolder(folder string) error {
+	if strings.TrimSpace(folder) == "" {
+		return ErrImportFolderRequired
+	}
+	info, err := os.Stat(folder)
+	if err != nil {
+		return fmt.Errorf("inspect import folder: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("import path is not a folder: %s", filepath.Base(folder))
+	}
+	return nil
+}
+
+// StreamReceiptsFolder processes valid CSV rows one at a time. Deduplication
+// is kept in the caller's transaction, and callbacks decide whether each
+// candidate can be persisted. Only per-file summary metadata is retained.
+func StreamReceiptsFolder(ctx context.Context, folder string, seen *csvstream.SourceIDSet, accept StreamReceiptHandler, reject StreamReceiptIssueHandler, onFile StreamReceiptFileHandler) (FolderStreamSummary, error) {
+	if seen == nil {
+		return FolderStreamSummary{}, errors.New("receipt import deduplication is required")
+	}
+	if err := ctx.Err(); err != nil {
+		return FolderStreamSummary{}, err
+	}
+	if err := validateReceiptsFolder(folder); err != nil {
+		return FolderStreamSummary{}, err
+	}
+	queue, err := seen.QueueCSVFiles(ctx, folder)
+	if err != nil {
+		return FolderStreamSummary{}, err
+	}
+	defer queue.Close()
+	root, err := os.OpenRoot(folder)
+	if err != nil {
+		return FolderStreamSummary{}, fmt.Errorf("open receipt import root: %w", err)
+	}
+	defer root.Close()
+
+	summary := FolderStreamSummary{IgnoredCount: queue.IgnoredCount()}
+	for {
+		if err := ctx.Err(); err != nil {
+			return FolderStreamSummary{}, err
+		}
+		name, ok, err := queue.Next()
+		if err != nil {
+			return FolderStreamSummary{}, fmt.Errorf("read ordered receipt filenames: %w", err)
+		}
+		if !ok {
+			break
+		}
+		file, err := root.Open(name)
+		if err != nil {
+			return FolderStreamSummary{}, fmt.Errorf("open receipt CSV %q: %w", name, err)
+		}
+		hasher := sha256.New()
+		metadata := ImportedFile{Name: name}
+		parseErr := StreamReceiptsCSV(io.TeeReader(file, hasher), func(line int, candidate ReceiptCandidate) error {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if previousFile, previousLine, duplicate, err := seen.CheckAndAdd(ctx, candidate.SourceID, name, line); err != nil {
+				return err
+			} else if duplicate {
+				summary.ErrorCount++
+				metadata.ErrorCount++
+				issue := FileRowError{File: name, Line: line, Code: "DUPLICATE_SOURCE_ID"}
+				if previousFile == name {
+					issue.Message = fmt.Sprintf("documento repetido; primeira ocorrência na linha %d", previousLine)
+				} else {
+					issue.Message = fmt.Sprintf("documento repetido; primeira ocorrência no arquivo %s", previousFile)
+				}
+				if reject != nil {
+					return reject(issue)
+				}
+				return nil
+			}
+			if accept != nil {
+				if err := accept(name, line, candidate); err != nil {
+					return err
+				}
+			}
+			summary.ReceiptCount++
+			metadata.ReceiptCount++
+			return nil
+		}, func(rowErr RowError) error {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			summary.ErrorCount++
+			metadata.ErrorCount++
+			if reject != nil {
+				return reject(FileRowError{File: name, Line: rowErr.Line, Code: rowErr.Code, Message: rowErr.Message})
+			}
+			return nil
+		})
+		closeErr := file.Close()
+		if closeErr != nil {
+			return FolderStreamSummary{}, fmt.Errorf("close receipt CSV %q: %w", name, closeErr)
+		}
+		if err := ctx.Err(); err != nil {
+			return FolderStreamSummary{}, err
+		}
+		if errors.Is(parseErr, ErrMissingReportColumn) || errors.Is(parseErr, ErrInvalidReportHeader) {
+			summary.ErrorCount++
+			metadata.ErrorCount++
+			if reject != nil {
+				if err := reject(FileRowError{File: name, Line: 1, Code: "INVALID_REPORT", Message: "arquivo não corresponde ao relatório de recebimentos do Bling"}); err != nil {
+					return FolderStreamSummary{}, err
+				}
+			}
+		} else if parseErr != nil {
+			return FolderStreamSummary{}, fmt.Errorf("read receipt CSV %q: %w", name, parseErr)
+		}
+		metadata.SHA256 = hex.EncodeToString(hasher.Sum(nil))
+		if onFile != nil {
+			onFile(metadata)
+		}
+	}
+	return summary, nil
 }

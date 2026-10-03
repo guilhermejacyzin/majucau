@@ -54,7 +54,9 @@ O PDF `Bling - Relatório de Contas a Receber` fornecido em 20/09/2026 foi usado
 
 `ImportReceiptsFolder` percorre uma pasta local em ordem alfabética e processa somente arquivos `.csv`. Cada arquivo recebe SHA-256 e contagens de importados/erros. Arquivos de Nuvemshop/Nuvem Pago não atendem ao cabeçalho Bling e são rejeitados explicitamente; nunca são reinterpretados como recebimentos realizados. Arquivos que não são CSV são ignorados e listados no resultado.
 
-O resultado da pasta é uma prévia determinística em memória. O worker deve abrir a transação, criar o lote, chamar `PersistReceipts`, finalizar o lote e somente então avançar o cursor/estado da integração.
+`ImportReceiptsFolder` continua sendo o adaptador de prévia legado e materializa o relatório para manter o contrato atual da tela. A importação de produção usa `StreamReceiptsFolder` e `StreamReceiptsCSV`: valida e persiste cada linha válida dentro da mesma transação do lote, sem guardar todas as linhas no heap. A deduplicação entre arquivos fica numa tabela temporária do PostgreSQL com HMAC por execução; o identificador externo em texto puro não é gravado nessa tabela, e ela é removida no commit ou rollback.
+
+Falha técnica, cancelamento ou limite excedido reverte o lote inteiro. Erros de validação por linha continuam rejeitando somente as linhas inválidas e fechando o lote como `PARTIAL`, conforme a regra aprovada. Na importação, a lista de CSVs é lida em blocos de 256 nomes e ordenada numa tabela temporária, sem crescer no heap. A prévia ainda usa `os.ReadDir` e coleta linhas/erros em memória; esse fluxo permanece no backlog DATA-04.
 
 O método IPC `bling.receipts.preview` chama essa leitura pelo worker e retorna apenas nomes de arquivos, hashes, contagens e até 50 problemas sanitizados. A UI nunca recebe nomes de clientes, históricos ou valores de linhas.
 
@@ -62,7 +64,7 @@ O método IPC `bling.receipts.import` só funciona quando o worker tem o Postgre
 
 ## Validação PostgreSQL
 
-O teste opt-in `TestReceiptImportServicePostgresE2E` não abre banco no fluxo normal de CI. Para executá-lo contra um PostgreSQL descartável com o schema aplicado:
+O teste opt-in `TestReceiptImportServicePostgresE2E` roda no job PostgreSQL da CI com banco descartável e fixture sanitizada. Para executá-lo manualmente com o schema aplicado:
 
 ```powershell
 $env:MAJUCAU_TEST_DATABASE_URL = 'postgres://postgres@127.0.0.1:55439/majucau_test?sslmode=disable'

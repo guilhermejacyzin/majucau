@@ -11,6 +11,7 @@ import (
 
 	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
+	"majucau.local/financial-intelligence/internal/integrations/csvstream"
 )
 
 // FutureSourceEntity is the stable contract name for the controlled export
@@ -27,8 +28,7 @@ var (
 // FutureReceivableCandidate is the normalized, non-persistent representation
 // of one Nuvem Pago future-export row. Monetary deductions are normalized to
 // non-negative amounts for the receivables schema; the original signed values
-// remain available in the source file that will be stored as RAW by the next
-// persistence increment.
+// remain in the normalized RAW payload persisted by FutureImportService.
 type FutureReceivableCandidate struct {
 	SourceSystem          domain.Origin
 	SourceEntity          string
@@ -62,11 +62,38 @@ type FutureReport struct {
 	Errors      []RowError
 }
 
+type FutureRowHandler func(line int, candidate FutureReceivableCandidate) error
+type FutureErrorHandler func(issue RowError) error
+
 // ParseFutureCSV parses the semicolon-delimited Nuvem Pago future-receivables
 // export supplied by the operator. It never emits a confirmed receipt and it
 // does not calculate a tariff from the pricing table: exported tax, costs and
 // net value are preserved as facts from the file.
 func ParseFutureCSV(input io.Reader) (FutureReport, error) {
+	result := FutureReport{}
+	seen := make(map[string]int)
+	err := StreamFutureCSV(input, func(line int, candidate FutureReceivableCandidate) error {
+		if previousLine, exists := seen[candidate.SourceID]; exists {
+			result.Errors = append(result.Errors, RowError{Line: line, Code: "DUPLICATE_SOURCE_ID", Message: fmt.Sprintf("transação repetida; primeira ocorrência na linha %d", previousLine)})
+			return nil
+		}
+		seen[candidate.SourceID] = line
+		result.Receivables = append(result.Receivables, candidate)
+		return nil
+	}, func(issue RowError) error {
+		result.Errors = append(result.Errors, issue)
+		return nil
+	})
+	if err != nil {
+		return FutureReport{}, err
+	}
+	return result, nil
+}
+
+// StreamFutureCSV validates and delivers one row at a time without retaining
+// candidates, row errors, or source identifiers. The caller owns
+// deduplication and persistence.
+func StreamFutureCSV(input io.Reader, accept FutureRowHandler, reject FutureErrorHandler) error {
 	reader := csv.NewReader(csvlimit.NewReader(input))
 	reader.Comma = ';'
 	reader.FieldsPerRecord = -1
@@ -75,42 +102,50 @@ func ParseFutureCSV(input io.Reader) (FutureReport, error) {
 	header, err := reader.Read()
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			return FutureReport{}, ErrInvalidFutureHeader
+			return ErrInvalidFutureHeader
 		}
-		return FutureReport{}, err
+		return err
 	}
 	columns, err := requiredFutureColumns(header)
 	if err != nil {
-		return FutureReport{}, err
+		return err
 	}
 
-	result := FutureReport{}
-	seen := make(map[string]int)
 	for line := 2; ; line++ {
 		row, readErr := reader.Read()
 		if errors.Is(readErr, io.EOF) {
 			break
 		}
 		if errors.Is(readErr, csvlimit.ErrLimitExceeded) {
-			return FutureReport{}, readErr
+			return readErr
 		}
 		if readErr != nil {
-			result.Errors = append(result.Errors, RowError{Line: line, Code: "CSV_READ", Message: "não foi possível ler a linha do extrato"})
+			if !csvstream.RecoverableRowError(readErr) {
+				return readErr
+			}
+			if reject != nil {
+				if err := reject(RowError{Line: line, Code: "CSV_READ", Message: "não foi possível ler a linha do extrato"}); err != nil {
+					return err
+				}
+			}
 			continue
 		}
 		candidate, rowErr := parseFutureRow(row, columns)
 		if rowErr != nil {
-			result.Errors = append(result.Errors, RowError{Line: line, Code: rowErr.code, Message: rowErr.message})
+			if reject != nil {
+				if err := reject(RowError{Line: line, Code: rowErr.code, Message: rowErr.message}); err != nil {
+					return err
+				}
+			}
 			continue
 		}
-		if previousLine, exists := seen[candidate.SourceID]; exists {
-			result.Errors = append(result.Errors, RowError{Line: line, Code: "DUPLICATE_SOURCE_ID", Message: fmt.Sprintf("transação repetida; primeira ocorrência na linha %d", previousLine)})
-			continue
+		if accept != nil {
+			if err := accept(line, candidate); err != nil {
+				return err
+			}
 		}
-		seen[candidate.SourceID] = line
-		result.Receivables = append(result.Receivables, candidate)
 	}
-	return result, nil
+	return nil
 }
 
 type rowParseError struct{ code, message string }

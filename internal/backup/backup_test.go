@@ -1,7 +1,13 @@
 package backup
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -64,6 +70,57 @@ func TestVerifyRejectsWrongPassphraseAndSchema(t *testing.T) {
 	schema := Verify(result.Path, []byte("uma-frase-local-forte"), "2.0")
 	if schema.Valid || !containsIssue(schema.Issues, ErrUnsupportedSchema.Error()) {
 		t.Fatalf("incompatible schema was accepted: %#v", schema)
+	}
+}
+
+func TestV2StreamingBackupAuthenticatesLargeSegmentedPayload(t *testing.T) {
+	root := t.TempDir()
+	passphrase := []byte("uma-frase-local-forte")
+	largeDump := bytes.Repeat([]byte("D"), 3<<20)
+	runner := func(_ context.Context, name string, args []string, _ []string) error {
+		for index, arg := range args {
+			if arg != "--file" || index+1 >= len(args) {
+				continue
+			}
+			payload := largeDump
+			if strings.Contains(name, "pg_dumpall") {
+				payload = []byte("CREATE ROLE majucau_runtime;\n")
+			}
+			return os.WriteFile(args[index+1], payload, 0600)
+		}
+		t.Fatalf("PostgreSQL command did not specify an output file: %q", name)
+		return nil
+	}
+
+	created, err := Create(context.Background(), Options{
+		DatabaseURL: "postgres://user:password@127.0.0.1:54329/majucau?sslmode=disable",
+		OutputDir: root, AppVersion: "0.1.0", SchemaVersion: "1.0", InstallID: "install-1",
+		Passphrase: passphrase, RunCommand: runner,
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if created.Manifest.FormatVersion != FormatVersion || created.Manifest.Cipher != streamCipher {
+		t.Fatalf("Create() did not use the streaming format: %#v", created.Manifest)
+	}
+	var databaseRecord File
+	for _, record := range created.Manifest.Files {
+		if record.Path == databaseDumpEntry {
+			databaseRecord = record
+		}
+	}
+	if databaseRecord.Path == "" || databaseRecord.SizeBytes <= int64(len(largeDump)) {
+		t.Fatalf("database payload did not cross streaming segment boundaries: %#v", databaseRecord)
+	}
+	if verification := Verify(created.Path, passphrase, "1.0"); !verification.Valid {
+		t.Fatalf("Verify() rejected valid multi-segment V2 package: %#v", verification)
+	}
+
+	tamperedPath := filepath.Join(root, "tampered.mjbk")
+	rewriteTamperedV2Backup(t, created.Path, tamperedPath, databaseDumpEntry)
+	tampered := Verify(tamperedPath, passphrase, "1.0")
+	if tampered.Valid || !containsIssue(tampered.Issues, "backup payload authentication or checksum validation failed") {
+		t.Fatalf("Verify() accepted a payload tampered after updating the manifest hash: %#v", tampered)
 	}
 }
 
@@ -145,6 +202,87 @@ func writeFakeDump(name string, args []string) error {
 		}
 	}
 	return nil
+}
+
+// rewriteTamperedV2Backup changes ciphertext and updates the manifest digest,
+// proving verification relies on authenticated encryption and not only SHA-256.
+func rewriteTamperedV2Backup(t *testing.T, sourcePath, destinationPath, payloadName string) {
+	t.Helper()
+	archive, err := zip.OpenReader(sourcePath)
+	if err != nil {
+		t.Fatalf("open backup package: %v", err)
+	}
+	defer archive.Close()
+
+	entries := make(map[string][]byte, len(archive.File))
+	var manifest Manifest
+	for _, entry := range archive.File {
+		reader, err := entry.Open()
+		if err != nil {
+			t.Fatalf("open backup entry %q: %v", entry.Name, err)
+		}
+		data, readErr := io.ReadAll(reader)
+		closeErr := reader.Close()
+		if readErr != nil {
+			t.Fatalf("read backup entry %q: %v", entry.Name, readErr)
+		}
+		if closeErr != nil {
+			t.Fatalf("close backup entry %q: %v", entry.Name, closeErr)
+		}
+		entries[entry.Name] = data
+		if entry.Name == manifestEntry {
+			if err := json.Unmarshal(data, &manifest); err != nil {
+				t.Fatalf("decode backup manifest: %v", err)
+			}
+		}
+	}
+
+	ciphertext, ok := entries[payloadName]
+	if !ok || len(ciphertext) < 2 {
+		t.Fatalf("backup payload %q is missing or too small", payloadName)
+	}
+	ciphertext[len(ciphertext)*3/4] ^= 0x01
+	entries[payloadName] = ciphertext
+	digest := sha256.Sum256(ciphertext)
+	updated := false
+	for index := range manifest.Files {
+		if manifest.Files[index].Path == payloadName {
+			manifest.Files[index].SHA256 = hex.EncodeToString(digest[:])
+			manifest.Files[index].SizeBytes = int64(len(ciphertext))
+			updated = true
+		}
+	}
+	if !updated {
+		t.Fatalf("manifest has no record for payload %q", payloadName)
+	}
+	manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		t.Fatalf("encode tampered manifest: %v", err)
+	}
+	entries[manifestEntry] = append(manifestBytes, '\n')
+
+	output, err := os.OpenFile(destinationPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		t.Fatalf("create tampered package: %v", err)
+	}
+	writer := zip.NewWriter(output)
+	for _, entry := range archive.File {
+		header := &zip.FileHeader{Name: entry.Name, Method: zip.Store}
+		header.SetMode(0600)
+		entryWriter, err := writer.CreateHeader(header)
+		if err != nil {
+			t.Fatalf("create tampered package entry %q: %v", entry.Name, err)
+		}
+		if _, err := entryWriter.Write(entries[entry.Name]); err != nil {
+			t.Fatalf("write tampered package entry %q: %v", entry.Name, err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("finish tampered package: %v", err)
+	}
+	if err := output.Close(); err != nil {
+		t.Fatalf("close tampered package: %v", err)
+	}
 }
 
 func containsIssue(issues []string, expected string) bool {

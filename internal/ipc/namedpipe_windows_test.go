@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
@@ -89,15 +90,45 @@ func TestNamedPipeAppliesProtectedDACLToCreatedPipe(t *testing.T) {
 		t.Fatalf("named pipe DACL is not protected: %s", descriptor)
 	}
 
-	sddl := descriptor.String()
-	for _, sid := range []string{clientSID, "BA", "SY"} {
-		ace := "(A;;GA;;;" + sid + ")"
-		if !strings.Contains(sddl, ace) {
-			t.Errorf("named pipe DACL %q is missing required ACE %q", sddl, ace)
-		}
+	dacl, present, err := descriptor.DACL()
+	if err != nil {
+		t.Fatalf("read named pipe DACL: %v", err)
 	}
-	if got := strings.Count(sddl, "("); got != 3 {
-		t.Errorf("named pipe DACL %q contains %d ACEs; want only the configured client, administrators, and SYSTEM", sddl, got)
+	if !present || dacl == nil {
+		t.Fatal("created named pipe has no DACL")
+	}
+	if dacl.AceCount != 3 {
+		t.Fatalf("named pipe DACL contains %d ACEs; want only the configured client, administrators, and SYSTEM", dacl.AceCount)
+	}
+	// The pipe object maps GENERIC_ALL to FILE_ALL_ACCESS when applying its DACL.
+	const fileAllAccessMask = windows.ACCESS_MASK(0x001F01FF)
+	allowedSIDs := map[string]bool{
+		clientSID:      true,
+		"S-1-5-32-544": true, // BUILTIN\Administrators
+		"S-1-5-18":     true, // LocalSystem
+	}
+	for index := uint32(0); index < uint32(dacl.AceCount); index++ {
+		var ace *windows.ACCESS_ALLOWED_ACE
+		if err := windows.GetAce(dacl, index, &ace); err != nil {
+			t.Fatalf("read named pipe ACE %d: %v", index, err)
+		}
+		if ace == nil || ace.Header.AceType != windows.ACCESS_ALLOWED_ACE_TYPE {
+			t.Fatalf("named pipe ACE %d is not an access-allowed ACE", index)
+		}
+		if ace.Header.AceFlags != 0 {
+			t.Errorf("named pipe ACE %d unexpectedly has inheritance flags %#x", index, ace.Header.AceFlags)
+		}
+		if ace.Mask != fileAllAccessMask {
+			t.Errorf("named pipe ACE %d has mask %#x; want FILE_ALL_ACCESS %#x", index, ace.Mask, fileAllAccessMask)
+		}
+		sid := (*windows.SID)(unsafe.Pointer(&ace.SidStart)).String()
+		if !allowedSIDs[sid] {
+			t.Errorf("named pipe DACL contains unexpected trustee SID %q", sid)
+		}
+		delete(allowedSIDs, sid)
+	}
+	if len(allowedSIDs) != 0 {
+		t.Errorf("named pipe DACL is missing authorized SIDs: %v", allowedSIDs)
 	}
 }
 

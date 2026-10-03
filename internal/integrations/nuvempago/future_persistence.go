@@ -21,6 +21,13 @@ var (
 	ErrFutureRawHistoricalVersion       = errors.New("future raw payload hash already exists as a historical version")
 )
 
+type FuturePersistenceSummary struct {
+	RecordsRead    int `json:"records_read"`
+	RecordsCreated int `json:"records_created"`
+	RecordsUpdated int `json:"records_updated"`
+	RecordsFailed  int `json:"records_failed"`
+}
+
 func persistFutureCandidate(ctx context.Context, tx pgx.Tx, queries *database.Queries, connectionID, syncBatchID pgtype.UUID, candidate FutureReceivableCandidate) (bool, error) {
 	if candidate.SourceSystem != domain.OriginNuvemPago || candidate.SourceEntity != FutureSourceEntity || candidate.Status != domain.StatusProjected || candidate.SourceID == "" {
 		return false, fmt.Errorf("%w: source=%s entity=%s status=%s id=%s", ErrInvalidFuturePersistenceIdentity, candidate.SourceSystem, candidate.SourceEntity, candidate.Status, candidate.SourceID)

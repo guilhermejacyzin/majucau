@@ -66,6 +66,8 @@ O método IPC `bling.receipts.import` só funciona quando o worker tem o Postgre
 
 O teste opt-in `TestReceiptImportServicePostgresE2E` roda no job PostgreSQL da CI com banco descartável e fixture sanitizada. Para executá-lo manualmente com o schema aplicado:
 
+Evidência da execução aprovada em CI: `docs/evidence/CSV-STREAMING-CI-2026-10-02.md`.
+
 ```powershell
 $env:MAJUCAU_TEST_DATABASE_URL = 'postgres://postgres@127.0.0.1:55439/majucau_test?sslmode=disable'
 $env:MAJUCAU_TEST_RECEIPTS_FOLDER = (Resolve-Path 'internal/integrations/bling/testdata/e2e').Path

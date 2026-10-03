@@ -57,6 +57,8 @@ O teste opt-in `TestFutureImportServicePostgresE2E` roda na CI contra o mesmo
 banco descartável da validação Bling. Para executá-lo manualmente, use uma
 pasta sanitizada de recebimentos futuros:
 
+Evidência da execução aprovada em CI: `docs/evidence/CSV-STREAMING-CI-2026-10-02.md`.
+
 ```powershell
 $env:MAJUCAU_TEST_DATABASE_URL = 'postgres://postgres@127.0.0.1:55439/majucau_test?sslmode=disable'
 $env:MAJUCAU_TEST_FUTURE_FOLDER = (Resolve-Path 'internal/integrations/nuvempago/testdata/e2e').Path

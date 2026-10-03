@@ -73,7 +73,7 @@ func TestVerifyRejectsWrongPassphraseAndSchema(t *testing.T) {
 	}
 }
 
-func TestV2StreamingBackupAuthenticatesLargeSegmentedPayload(t *testing.T) {
+func TestV2StreamingBackupAuthenticatesAndRestoresLargeSegmentedPayload(t *testing.T) {
 	root := t.TempDir()
 	passphrase := []byte("uma-frase-local-forte")
 	largeDump := bytes.Repeat([]byte("D"), 3<<20)
@@ -114,6 +114,60 @@ func TestV2StreamingBackupAuthenticatesLargeSegmentedPayload(t *testing.T) {
 	}
 	if verification := Verify(created.Path, passphrase, "1.0"); !verification.Valid {
 		t.Fatalf("Verify() rejected valid multi-segment V2 package: %#v", verification)
+	}
+
+	var restoreEvents []string
+	databaseDumpRestored := false
+	globalsDumpRestored := false
+	restoreRunner := func(_ context.Context, name string, args []string, _ []string) error {
+		switch {
+		case strings.Contains(name, "pg_restore"):
+			if len(args) == 0 {
+				t.Error("pg_restore did not receive the staged database dump")
+				return nil
+			}
+			payload, err := os.ReadFile(args[len(args)-1])
+			if err != nil {
+				t.Errorf("read staged database dump: %v", err)
+				return nil
+			}
+			databaseDumpRestored = bytes.Equal(payload, largeDump)
+		case strings.Contains(name, "psql"):
+			for index, arg := range args {
+				if arg == "--file" && index+1 < len(args) {
+					payload, err := os.ReadFile(args[index+1])
+					if err != nil {
+						t.Errorf("read staged globals dump: %v", err)
+						return nil
+					}
+					globalsDumpRestored = bytes.Equal(payload, []byte("CREATE ROLE majucau_runtime;\n"))
+					break
+				}
+			}
+		case strings.Contains(name, "pg_dump"):
+			return writeFakeDump(name, args)
+		}
+		return nil
+	}
+	restored, err := Restore(context.Background(), RestoreOptions{
+		PackagePath: created.Path, DatabaseURL: "postgres://user:password@127.0.0.1:54329/majucau?sslmode=disable",
+		BackupDir: filepath.Join(root, "pre-restore"), CurrentSchema: "1.0", AppVersion: "0.1.0", InstallID: "install-1",
+		Passphrase: passphrase, RunCommand: restoreRunner,
+		StopWorker: func(context.Context) error { restoreEvents = append(restoreEvents, "stop"); return nil },
+		Validate:   func(context.Context) error { restoreEvents = append(restoreEvents, "validate"); return nil },
+		StartWorker: func(context.Context) error {
+			restoreEvents = append(restoreEvents, "start")
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("Restore() rejected valid multi-segment V2 package: %v", err)
+	}
+	if restored.Manifest.FormatVersion != FormatVersion || restored.Status != "RESTORED_NEEDS_RECONNECT" || !databaseDumpRestored || !globalsDumpRestored {
+		t.Fatalf("V2 restore did not preserve both payloads: result=%#v database=%t globals=%t", restored, databaseDumpRestored, globalsDumpRestored)
+	}
+	if strings.Join(restoreEvents, ",") != "stop,validate,start" {
+		t.Fatalf("unexpected V2 restore lifecycle: %#v", restoreEvents)
 	}
 
 	tamperedPath := filepath.Join(root, "tampered.mjbk")

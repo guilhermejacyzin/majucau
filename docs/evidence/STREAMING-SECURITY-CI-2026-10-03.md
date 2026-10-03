@@ -23,3 +23,10 @@
 - A prévia CSV e os fluxos de backup/restauração compartilham agora `internal/securetemp`: no Windows a pasta nasce com DACL protegida e herança restrita aos arquivos; nos demais sistemas recebe permissão de proprietário (`0700`).
 - A CI [37116232138](https://github.com/guilhermejacyzin/majucau/actions/runs/37116232138) passou nos jobs Windows e PostgreSQL e executou os testes existentes do projeto.
 - A CI valida compilação e regressões dos fluxos que usam o helper, mas não verifica as ACEs efetivas numa VM Windows limpa. A prova de ACL/limpeza operacional continua pendente em VM Windows 10/11; DATA-04 e SEC-01 permanecem `PARTIAL`.
+
+## Manifesto de pacote — commits `3b43388`, `27c990b` e `2f4e022`
+
+- O manifesto limita a 4.096 entradas, 1.024 bytes por caminho e 128 bytes para cada versão de schema; o parser rejeita componentes numéricos que excedam o tipo inteiro.
+- A leitura do manifesto e dos arquivos referenciados usa `os.Root`, rejeita links simbólicos e componentes que não sejam diretórios, e compara o arquivo aberto com o item previamente inspecionado.
+- A CI [37117232676](https://github.com/guilhermejacyzin/majucau/actions/runs/37117232676) passou nos jobs Windows e PostgreSQL. Incluiu testes Go, `go vet`, verificações de vulnerabilidades e segredos, lint/typecheck/test/build do frontend, builds do desktop/worker/helper, smoke de instalação e desinstalação e consolidação dos outputs.
+- A CI confirma os testes/builds no runner, não substitui a validação de instalação, links simbólicos e permissões numa VM limpa Windows 10/11. OPS-04, DATA-04 e SEC-01 permanecem `PARTIAL` onde essas evidências operacionais ainda faltam.

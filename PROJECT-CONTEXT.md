@@ -4,21 +4,22 @@ Este arquivo é o ponto de retomada técnico-funcional do projeto. Ele descreve 
 
 ## 1. Objetivo, usuária e estado
 
-O objetivo é entregar um aplicativo desktop single-user para Windows 10/11 x64 que forneça inteligência financeira executiva, sincronize fontes oficiais, calcule regras próprias deterministicamente e permita rastrear cada número até sua origem.
+O objetivo é entregar inteligência financeira executiva com dados de fontes oficiais, regras determinísticas e rastreabilidade até a origem. A direção-alvo aprovada é hospedagem privada centralizada para ingestão diária e consulta por duas pessoas em locais diferentes. As telas aprovadas e as regras financeiras/de negócio permanecem protegidas.
 
-- uma pessoa utiliza a instalação;
-- o fluxo final não exige terminal, Docker, Node.js ou configuração manual do PostgreSQL;
-- o aplicativo abre pelo atalho após a instalação;
-- integrações são configuradas por tela segura no first-run ou depois;
-- PostgreSQL, worker, jobs, backup e migrations são internos.
+- O aplicativo Wails para Windows 10/11 x64 e o PostgreSQL local continuam como modo de transição e base de desenvolvimento; não representam a implantação multi-site.
+- No destino, clientes autenticados acessam um serviço Majucau por TLS; somente o serviço acessa o PostgreSQL privado. Cada pessoa terá identidade individual e a consulta começa com privilégio de leitura.
+- A prévia CSV permanece local e sem dependência de banco. O serviço central deverá validar novamente o conteúdo antes de persistir; canal de envio e retenção ainda dependem de decisão.
+- O fluxo do cliente continua sem terminal, Docker, Node.js ou configuração manual do PostgreSQL.
+- A escolha do provedor, orçamento, região, identidade/MFA, forma final do cliente e operação de sincronização diária ainda não foi aprovada.
 
-Estado verificável em 2026-08-16:
+Estado verificável em 2026-10-03:
 
 - G0 aprovado com D-001-A, D-002-A, D-003-A, D-004-A e D-005-A;
-- G1 em implementação e ainda sem aceite;
-- sincronização autorizada para o repositório GitHub privado indicado pela usuária;
-- sem credenciais, aplicativos cadastrados, payloads reais ou teste ponta a ponta;
-- produção bloqueada pelos gates G1–G7 e evidências externas.
+- fundação G1 em implementação e ainda sem aceite;
+- arquitetura-alvo centralizada aprovada, mas ainda não implantada;
+- decisões técnicas de compatibilidade V1/V2 dos backups aprovadas; validação operacional em VM continua pendente;
+- permanecem pendentes credenciais, contratos reais de provedores, identidade, hospedagem e evidências ponta a ponta;
+- produção e operação multi-site permanecem bloqueadas pelos gates e evidências externas aplicáveis.
 
 ## 2. Escopo
 
@@ -69,20 +70,27 @@ Construir contrato e painel. A tabela aprovada em 2026-09-20 define cartão 1x/2
 
 ## 4. Arquitetura e trust boundaries
 
+Modo local atual, usado como transição e base de desenvolvimento:
+
 ```text
-Usuária
-  │
-React/TypeScript em WebView2
-  │ bindings Wails
-majucau.exe
-  │ Named Pipe + SID/DACL + protocolo versionado
-majucau-worker.exe — NT SERVICE\MajucauWorker
-  ├── DPAPI/ACL ─► vault
-  ├── SCRAM/loopback ─► PostgreSQL dedicado
-  └── TLS/OAuth/read-only ─► provedores
+Usuária → React/TypeScript em WebView2 → bindings Wails → majucau.exe
+  → Named Pipe autenticado → worker local → PostgreSQL dedicado local
+                                             ├── DPAPI/ACL → vault
+                                             └── TLS/OAuth somente leitura → provedores
 ```
 
-`majucau.exe` apresenta a UI, não persiste secrets e não acessa banco/APIs. O worker autentica e autoriza IPC, controla OAuth/tokens/sync, executa cálculos, migrations, jobs, backup/restore e auditoria. PostgreSQL aceita apenas loopback, usa SCRAM e migrations forward-only checksumadas sob advisory lock.
+Destino multi-site aprovado, ainda pendente de implementação e escolhas operacionais:
+
+```text
+Pessoa no local principal ─┐
+                           ├→ cliente ainda a decidir → TLS/API autenticada
+Pessoa no local externo ──┘                           → serviço Majucau hospedado
+                                                       ├→ cofre de segredos do host
+                                                       ├→ jobs de sincronização diária → provedores
+                                                       └→ PostgreSQL em rede privada
+```
+
+No modo local, `majucau.exe` apresenta a UI, não persiste secrets e não acessa banco/APIs. O worker autentica e autoriza IPC, controla OAuth/tokens/sync, executa cálculos, migrations, jobs, backup/restore e auditoria. No destino central, clientes não recebem credenciais de banco e o PostgreSQL não fica exposto publicamente; somente o serviço autenticado o acessa. O canal de envio dos CSVs do local externo, retenção e eliminação dos temporários ainda precisam de desenho e aceite.
 
 O relay OAuth é externo e mínimo: pareia `code/state` curto, nunca recebe token, client secret ou dado financeiro; exige hospedagem, observabilidade, limpeza, proteção contra replay e homologação Nuvemshop.
 

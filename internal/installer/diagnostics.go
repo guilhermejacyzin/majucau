@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"majucau.local/financial-intelligence/internal/securetemp"
 )
 
 var ErrDiagnosticOutput = errors.New("diagnostic output is invalid")
@@ -41,7 +43,7 @@ type diagnosticDocument struct {
 // sanitized preflight contract and operator instructions. It intentionally
 // does not read environment variables, logs, registry values or command-line
 // arguments beyond the already-sanitized Result supplied by the caller.
-func WriteDiagnosticBundle(outputPath string, result Result, metadata DiagnosticMetadata) (DiagnosticBundleInfo, error) {
+func WriteDiagnosticBundle(outputPath string, result Result, metadata DiagnosticMetadata) (info DiagnosticBundleInfo, returnErr error) {
 	clean, err := validateDiagnosticPath(outputPath)
 	if err != nil {
 		return DiagnosticBundleInfo{}, err
@@ -73,13 +75,15 @@ func WriteDiagnosticBundle(outputPath string, result Result, metadata Diagnostic
 	}
 	temporaryPath := temporary.Name()
 	removeTemporary := true
+	temporaryClosed := false
 	defer func() {
-		_ = temporary.Close()
+		if !temporaryClosed {
+			returnErr = errors.Join(returnErr, temporary.Close())
+		}
 		if removeTemporary {
-			_ = os.Remove(temporaryPath)
+			returnErr = errors.Join(returnErr, securetemp.RemoveFile(temporaryPath))
 		}
 	}()
-	_ = temporary.Chmod(0600)
 
 	archive := zip.NewWriter(temporary)
 	if err := writeZipEntry(archive, "diagnostic.json", document); err != nil {
@@ -97,8 +101,10 @@ func WriteDiagnosticBundle(outputPath string, result Result, metadata Diagnostic
 		return DiagnosticBundleInfo{}, fmt.Errorf("%w: flush bundle", ErrDiagnosticOutput)
 	}
 	if err := temporary.Close(); err != nil {
+		temporaryClosed = true
 		return DiagnosticBundleInfo{}, fmt.Errorf("%w: close temporary bundle", ErrDiagnosticOutput)
 	}
+	temporaryClosed = true
 	if err := os.Rename(temporaryPath, clean); err != nil {
 		return DiagnosticBundleInfo{}, fmt.Errorf("%w: commit bundle", ErrDiagnosticOutput)
 	}

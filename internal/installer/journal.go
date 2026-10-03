@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"majucau.local/financial-intelligence/internal/securetemp"
 )
 
 const JournalSchemaVersion = "1.0"
@@ -105,7 +107,7 @@ func (s *JournalStore) Load() (JournalState, error) {
 	return state, nil
 }
 
-func (s *JournalStore) Save(state JournalState) error {
+func (s *JournalStore) Save(state JournalState) (returnErr error) {
 	if s == nil || s.path == "" {
 		return ErrJournalInvalid
 	}
@@ -134,13 +136,15 @@ func (s *JournalStore) Save(state JournalState) error {
 	}
 	temporaryPath := temporary.Name()
 	removeTemporary := true
+	temporaryClosed := false
 	defer func() {
-		_ = temporary.Close()
+		if !temporaryClosed {
+			returnErr = errors.Join(returnErr, temporary.Close())
+		}
 		if removeTemporary {
-			_ = os.Remove(temporaryPath)
+			returnErr = errors.Join(returnErr, securetemp.RemoveFile(temporaryPath))
 		}
 	}()
-	_ = temporary.Chmod(0600)
 	if _, err := temporary.Write(payload); err != nil {
 		return fmt.Errorf("%w: write", ErrJournalInvalid)
 	}
@@ -148,8 +152,10 @@ func (s *JournalStore) Save(state JournalState) error {
 		return fmt.Errorf("%w: flush", ErrJournalInvalid)
 	}
 	if err := temporary.Close(); err != nil {
+		temporaryClosed = true
 		return fmt.Errorf("%w: close temporary", ErrJournalInvalid)
 	}
+	temporaryClosed = true
 	if err := os.Rename(temporaryPath, s.path); err != nil {
 		return fmt.Errorf("%w: commit", ErrJournalInvalid)
 	}

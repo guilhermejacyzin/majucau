@@ -106,20 +106,9 @@ type Result struct {
 	Manifest Manifest
 }
 
-// TemporaryWorkspaceCleanupError reports that a private workspace could not
-// be removed. Path is provided to authorized callers for manual cleanup; it is
-// intentionally omitted from Error so paths containing account names are not
-// copied into ordinary logs.
-type TemporaryWorkspaceCleanupError struct {
-	Path  string
-	Cause error
-}
-
-func (e *TemporaryWorkspaceCleanupError) Error() string {
-	return "private backup workspace cleanup failed; manual cleanup is required"
-}
-
-func (e *TemporaryWorkspaceCleanupError) Unwrap() error { return e.Cause }
+// TemporaryWorkspaceCleanupError retains the backup-specific public name for
+// callers while sharing the path-safe cleanup error contract.
+type TemporaryWorkspaceCleanupError = securetemp.CleanupError
 
 type Verification struct {
 	Valid    bool
@@ -194,8 +183,8 @@ func Create(ctx context.Context, options Options) (result Result, retErr error) 
 		return Result{}, fmt.Errorf("create temporary backup directory: %w", err)
 	}
 	defer func() {
-		if cleanupErr := os.RemoveAll(temporary); cleanupErr != nil {
-			retErr = errors.Join(retErr, &TemporaryWorkspaceCleanupError{Path: temporary, Cause: cleanupErr})
+		if cleanupErr := securetemp.RemoveAll(temporary); cleanupErr != nil {
+			retErr = errors.Join(retErr, cleanupErr)
 		}
 	}()
 	passwordFile, env, err := connectionEnvironment(config, temporary)
@@ -276,8 +265,8 @@ func Restore(ctx context.Context, options RestoreOptions) (result RestoreResult,
 		return RestoreResult{Status: "RECOVERY_REQUIRED"}, fmt.Errorf("create private restore workspace: %w", err)
 	}
 	defer func() {
-		if cleanupErr := os.RemoveAll(temporary); cleanupErr != nil {
-			retErr = errors.Join(retErr, &TemporaryWorkspaceCleanupError{Path: temporary, Cause: cleanupErr})
+		if cleanupErr := securetemp.RemoveAll(temporary); cleanupErr != nil {
+			retErr = errors.Join(retErr, cleanupErr)
 		}
 	}()
 	stagedPackage := filepath.Join(temporary, "input.mjbk")

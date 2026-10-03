@@ -3,6 +3,7 @@
 package securetemp
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,8 +19,7 @@ func NewDir(parent, prefix string) (string, error) {
 		return "", err
 	}
 	if err := os.Chmod(path, 0700); err != nil {
-		_ = os.RemoveAll(path)
-		return "", err
+		return "", errors.Join(err, RemoveAll(path))
 	}
 	return path, nil
 }

@@ -266,7 +266,7 @@ func (s *DiskSourceIDSet) Close() error {
 	}
 	s.gcm = nil
 	if s.dir != "" {
-		if err := os.RemoveAll(s.dir); err != nil {
+		if err := securetemp.RemoveAll(s.dir); err != nil {
 			closeErrors = append(closeErrors, fmt.Errorf("remove temporary CSV preview workspace: %w", err))
 		}
 		s.dir = ""

@@ -52,7 +52,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Ingestão, transformação, consulta e exportação de dados que podem crescer com o histórico devem fluir registro a registro ou em blocos limitados; não carregar arquivo, resposta HTTP, dump, arquivo compactado ou conjunto de linhas inteiro na memória.
 - Para envelopes de controle pequenos (por exemplo, estado do instalador), usar decoder em stream e um limite explícito de bytes. Todo caminho precisa limitar tamanho de registro/campo, quantidade de entradas e conteúdo descompactado; exceder o limite deve falhar sem gravar dados parciais.
 - Propagar cancelamento e timeout até a leitura e a persistência. Calcular hash enquanto o conteúdo passa pelo stream; validar cada registro antes de persistir e preservar atomicidade/idempotência.
-- Entrada externa é não confiável. Não registrar payload, segredos ou PII; arquivos temporários com dados sensíveis ficam em diretório privado, têm limpeza garantida e não entram em caches ou outputs de CI.
+- Entrada externa é não confiável. Não registrar payload, segredos ou PII; arquivos temporários com dados sensíveis ficam em diretório privado, têm limpeza garantida e não entram em caches ou outputs de CI. A falha de limpeza deve ser propagada como `securetemp.CleanupError`, com o caminho acessível para operador autorizado e omitido da mensagem comum/log. Não descartar erros de remoção de temporários; se um workspace contiver o arquivo, a remoção do workspace deve reportar qualquer resíduo.
 
 ## Governança de execução
 

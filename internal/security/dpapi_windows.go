@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"syscall"
 	"unsafe"
+
+	"majucau.local/financial-intelligence/internal/securetemp"
 )
 
 const (
@@ -47,15 +49,15 @@ func NewDPAPIStore(dir string) (*DPAPIStore, error) {
 		// directory. It is persisted so a worker restart can decrypt its vault.
 		file, createErr := os.OpenFile(entropyPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 		if createErr == nil {
-			if _, createErr = file.Write(candidate); createErr == nil {
+			if _, writeErr := file.Write(candidate); writeErr != nil {
+				createErr = writeErr
+			}
+			if createErr == nil {
 				createErr = file.Sync()
 			}
-			if closeErr := file.Close(); createErr == nil {
-				createErr = closeErr
-			}
+			createErr = errors.Join(createErr, file.Close())
 			if createErr != nil {
-				_ = os.Remove(entropyPath)
-				return nil, createErr
+				return nil, errors.Join(createErr, securetemp.RemoveFile(entropyPath))
 			}
 			e = candidate
 		} else if os.IsExist(createErr) {
@@ -158,10 +160,14 @@ func atomicWrite(path string, value []byte, mode os.FileMode) (returnErr error) 
 		return err
 	}
 	temporaryPath := temporary.Name()
+	temporaryClosed := false
+	removeTemporary := true
 	defer func() {
-		_ = temporary.Close()
-		if returnErr != nil {
-			_ = os.Remove(temporaryPath)
+		if !temporaryClosed {
+			returnErr = errors.Join(returnErr, temporary.Close())
+		}
+		if removeTemporary {
+			returnErr = errors.Join(returnErr, securetemp.RemoveFile(temporaryPath))
 		}
 	}()
 
@@ -175,8 +181,10 @@ func atomicWrite(path string, value []byte, mode os.FileMode) (returnErr error) 
 		return err
 	}
 	if err := temporary.Close(); err != nil {
+		temporaryClosed = true
 		return err
 	}
+	temporaryClosed = true
 
 	from, err := syscall.UTF16PtrFromString(temporaryPath)
 	if err != nil {
@@ -194,6 +202,7 @@ func atomicWrite(path string, value []byte, mode os.FileMode) (returnErr error) 
 	if result == 0 {
 		return callErr
 	}
+	removeTemporary = false
 	return nil
 }
 

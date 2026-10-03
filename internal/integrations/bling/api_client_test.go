@@ -237,6 +237,15 @@ func TestRetryAfterAcceptsSecondsAndHTTPDate(t *testing.T) {
 	}
 }
 
+func TestRetryAfterClampsHugeNumericValuesWithoutOverflow(t *testing.T) {
+	now := time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
+	for _, value := range []string{"30", "9223372036854775807", "999999999999999999999999999999999999999999"} {
+		if got := retryAfterAt(value, now); got != defaultBlingMaxRetryAfter {
+			t.Errorf("retry-after %q = %v, want %v", value, got, defaultBlingMaxRetryAfter)
+		}
+	}
+}
+
 func TestListReceivablesRejectsUnhomologatedShapeAndOversizedBody(t *testing.T) {
 	tests := []struct {
 		name string

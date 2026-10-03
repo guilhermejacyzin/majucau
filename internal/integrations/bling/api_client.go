@@ -490,18 +490,38 @@ func retryAfter(value string) time.Duration {
 }
 
 func retryAfterAt(value string, now time.Time) time.Duration {
-	seconds, err := strconv.Atoi(strings.TrimSpace(value))
+	trimmed := strings.TrimSpace(value)
+	seconds, err := strconv.ParseInt(trimmed, 10, 64)
 	if err == nil {
 		if seconds < 0 {
 			return 0
 		}
+		maxSeconds := int64(defaultBlingMaxRetryAfter / time.Second)
+		if seconds >= maxSeconds {
+			return defaultBlingMaxRetryAfter
+		}
 		return time.Duration(seconds) * time.Second
+	}
+	if isDecimalRetryAfter(trimmed) {
+		return defaultBlingMaxRetryAfter
 	}
 	when, err := http.ParseTime(strings.TrimSpace(value))
 	if err != nil || !when.After(now) {
 		return 0
 	}
 	return when.Sub(now)
+}
+
+func isDecimalRetryAfter(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, digit := range value {
+		if digit < '0' || digit > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func readLimitedBody(reader io.Reader, limit int64) ([]byte, error) {

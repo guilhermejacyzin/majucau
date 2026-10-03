@@ -40,16 +40,32 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Chave normalizada externa: `(connection_id, source_system, source_entity, source_id)`.
 - Versão RAW: acrescentar `payload_hash`; sincronização nunca sobrescreve payload anterior.
 - Redação LGPD é a única exceção de mutação RAW e exige tombstone, hash anterior, motivo, ator, timestamp e auditoria.
-- Cursor só avança após commit integral do lote.
+- Toda sincronização deve ser idempotente: replay do mesmo evento/página não duplica fatos nem versões RAW sem mudança.
+- RAW, dados normalizados, cursor e sucesso do lote são confirmados atomicamente; falha ou cancelamento não avança cursor nem substitui último dado válido.
 - Toda transformação material deve permitir: valor/card -> regra -> snapshot/linha -> contribuição tipada -> entidade -> RAW -> fonte original.
 - FKs polimórficas não são fonte de integridade; use tabelas de contribuição tipadas.
 - Snapshots, forecasts e regras aprovadas são imutáveis; correção cria nova versão.
+
+## Streaming e limites de dados
+
+- Ingestão, transformação, consulta e exportação de dados que podem crescer com o histórico devem fluir registro a registro ou em blocos limitados; não carregar arquivo, resposta HTTP, dump, arquivo compactado ou conjunto de linhas inteiro na memória.
+- Para envelopes de controle pequenos (por exemplo, estado do instalador), usar decoder em stream e um limite explícito de bytes. Todo caminho precisa limitar tamanho de registro/campo, quantidade de entradas e conteúdo descompactado; exceder o limite deve falhar sem gravar dados parciais.
+- Propagar cancelamento e timeout até a leitura e a persistência. Calcular hash enquanto o conteúdo passa pelo stream; validar cada registro antes de persistir e preservar atomicidade/idempotência.
+- Entrada externa é não confiável. Não registrar payload, segredos ou PII; arquivos temporários com dados sensíveis ficam em diretório privado, têm limpeza garantida e não entram em caches ou outputs de CI.
+
+## Governança de execução
+
+- `IMPLEMENTATION-PLAN.md` é o plano-raiz; `REQUIREMENTS-TRACEABILITY.md` registra estado e evidência; `G0-DECISION-REGISTER.md` e decisões aprovadas são autoridade para regras de negócio. Artefatos de planejamento v2 conflitantes não substituem esses documentos sem aprovação.
+- Telas aprovadas e regras de negócio são protegidas. Dúvida que possa alterar comportamento, apresentação, importação ou contrato persistente exige pergunta antes da mudança.
+- Commits pequenos devem informar `O que é`, `O que foi feito`, `Próximo passo`, percentual restante da tarefa e percentual restante do projeto. Cada execução reporta em linguagem simples progresso, pendências e estimativa.
+- Caches e outputs gerados ficam em `artifacts/`. Ao fim de cada execução, remover o que puder ser recriado sem risco nem dependência ativa. O que precisar permanecer fica em `artifacts/retained/` e no registro local de limpeza, com motivo, origem e caminho para exclusão manual.
 
 ## Integrações
 
 - APIs externas são somente leitura no MVP.
 - Frontend nunca chama Bling/Nuvemshop/Nuvem Pago nem PostgreSQL diretamente.
-- Aplicar timeout, cancelamento, paginação, rate limit, backoff com jitter, retry apenas transitório e checkpoint transacional.
+- Retry limitado é o padrão nas integrações HTTP repetíveis e idempotentes: até 3 tentativas no total, para falhas transitórias de transporte, HTTP 408, 429 e 5xx; usar backoff exponencial com jitter e respeitar `Retry-After` até 30 segundos. Não repetir cancelamento do chamador, falha de autenticação/autorização, erro de validação/schema ou resposta inválida. Operação que altera estado externo só pode ser repetida quando o contrato oficial garantir replay seguro ou oferecer chave de idempotência; chamadas OAuth de uso único não herdam retry automaticamente.
+- Cada adapter deve testar a classificação de retry, o limite, `Retry-After` e a não repetição de cancelamento/erros permanentes. Aplicar timeout, cancelamento, paginação, rate limit e checkpoint transacional; cursor só avança depois do commit atômico do lote.
 - Preservar último dado válido em falha; nunca substituir falha por zero.
 - Nuvem Pago permanece `UNAVAILABLE`/`PARTIALLY_AVAILABLE` até existir fonte oficial de taxa, líquido, agenda e data prevista.
 - OAuth abre navegador externo. Não capturar login em WebView, não usar clipboard para token e não embutir client secret.

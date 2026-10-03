@@ -30,7 +30,9 @@ pasta criada já com DACL protegida para o proprietário, LocalSystem e
 administradores. O restore primeiro copia e valida a mesma cópia criptografada,
 depois grava os dumps descriptografados nessa área privada e só os entrega a
 `pg_restore`/`psql` após autenticar todos os payloads. As saídas temporárias são
-removidas ao encerrar a operação.
+removidas ao encerrar a operação. O pacote cifrado de saída também é montado
+dentro dessa área e só é movido para o destino final após conclusão; falhas de
+gravação/cancelamento não deixam um `.tmp` ao lado dos backups finais.
 
 `Restore` valida o pacote antes de alterar o banco, cria um backup pré-restore,
 exige hooks explícitos para parar/iniciar o worker, valida o banco restaurado

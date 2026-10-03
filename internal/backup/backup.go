@@ -230,17 +230,15 @@ func Create(ctx context.Context, options Options) (result Result, retErr error) 
 	defer clearBytes(key)
 	stamp := now().UTC().Format("20060102T150405.000000000Z")
 	finalPath := filepath.Join(options.OutputDir, "majucau-backup-"+stamp+".mjbk")
-	temporaryPackage := finalPath + ".tmp"
+	temporaryPackage := filepath.Join(temporary, "backup-package.tmp")
 	manifest, err = writeV2Package(ctx, temporaryPackage, manifest, key, dumpPath, globalsPath)
 	if err != nil {
 		return Result{}, err
 	}
 	if err := ctx.Err(); err != nil {
-		_ = os.Remove(temporaryPackage)
 		return Result{}, err
 	}
 	if err := os.Rename(temporaryPackage, finalPath); err != nil {
-		_ = os.Remove(temporaryPackage)
 		return Result{}, fmt.Errorf("commit backup package: %w", err)
 	}
 	return Result{Path: finalPath, Manifest: manifest}, nil

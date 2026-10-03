@@ -30,7 +30,8 @@ segredos, tokens, DSNs ou payloads.
 
 O pacote também fornece `JournalStore` para o `Install\\state.json`, com
 escrita temporária, `fsync`, rename atômico, fases versionadas e validação de
-hash/estado. `AcquireInstallLock` usa mutex nomeado no Windows (`Global\\MajucauInstaller`)
+hash/estado. A leitura do journal é em fluxo e rejeita arquivos acima de 128 KiB.
+`AcquireInstallLock` usa mutex nomeado no Windows (`Global\\MajucauInstaller`)
 para impedir duas instalações simultâneas; a UI do instalador ainda precisa
 integrar essas primitivas ao fluxo NSIS antes do gate G7.
 
@@ -48,6 +49,9 @@ os checksums das migrations e o inventário de artefatos. A validação rejeita
 entradas duplicadas, traversal, links simbólicos, diretórios,
 checksums/tamanhos divergentes e caminhos que indiquem token, secret,
 credencial ou senha.
+
+O manifesto é decodificado em fluxo, com limite de 4 MiB; os arquivos listados
+são lidos em fluxo para calcular o SHA-256 e conferir o tamanho.
 
 Os códigos públicos são `PACKAGE_INVALID`, `CHECKSUM_MISMATCH` e
 `SCHEMA_INCOMPATIBLE`. Essa etapa somente prova que o pacote é consistente e

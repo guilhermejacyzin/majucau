@@ -18,6 +18,10 @@ const ReleaseManifestVersion = "1"
 
 const defaultReleaseManifestPath = "release-manifest.json"
 
+// Release manifests are control data and must stay small enough to parse with
+// a bounded amount of memory, even when a package is untrusted.
+const maxReleaseManifestBytes int64 = 4 << 20
+
 const ManifestValidationSchemaVersion = "1.0"
 
 const (
@@ -83,15 +87,30 @@ func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) Ma
 		result.add(ManifestIssuePackageInvalid, "", "manifest path is unsafe")
 		return result
 	}
-	manifestBytes, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(cleanManifestPath)))
+	manifestFile, err := os.Open(filepath.Join(root, filepath.FromSlash(cleanManifestPath)))
 	if err != nil {
 		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest is unavailable")
 		return result
 	}
-	decoder := json.NewDecoder(strings.NewReader(string(manifestBytes)))
+	defer manifestFile.Close()
+	manifestReader := &io.LimitedReader{R: manifestFile, N: maxReleaseManifestBytes + 1}
+	decoder := json.NewDecoder(manifestReader)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&result.Manifest); err != nil {
 		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest JSON is invalid")
+		return result
+	}
+	if manifestReader.N == 0 {
+		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest exceeds the supported size")
+		return result
+	}
+	var trailingData struct{}
+	if err := decoder.Decode(&trailingData); err != io.EOF {
+		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest JSON is invalid")
+		return result
+	}
+	if manifestReader.N == 0 {
+		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest exceeds the supported size")
 		return result
 	}
 	if result.Manifest.ManifestVersion != ReleaseManifestVersion ||

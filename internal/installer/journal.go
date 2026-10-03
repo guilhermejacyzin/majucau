@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +14,9 @@ import (
 )
 
 const JournalSchemaVersion = "1.0"
+
+// The installer journal is a bounded control file, not a data store.
+const maxInstallerJournalBytes int64 = 128 << 10
 
 type InstallPhase string
 
@@ -74,15 +78,25 @@ func (s *JournalStore) Load() (JournalState, error) {
 	if s == nil || s.path == "" {
 		return JournalState{}, ErrJournalInvalid
 	}
-	payload, err := os.ReadFile(s.path)
+	journalFile, err := os.Open(s.path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return JournalState{SchemaVersion: JournalSchemaVersion, Phase: PhaseNew}, nil
 		}
 		return JournalState{}, fmt.Errorf("%w: read", ErrJournalCorrupt)
 	}
+	defer journalFile.Close()
+	limitedReader := &io.LimitedReader{R: journalFile, N: maxInstallerJournalBytes + 1}
+	decoder := json.NewDecoder(limitedReader)
 	var state JournalState
-	if err := json.Unmarshal(payload, &state); err != nil {
+	if err := decoder.Decode(&state); err != nil {
+		return JournalState{}, fmt.Errorf("%w: decode", ErrJournalCorrupt)
+	}
+	if limitedReader.N == 0 {
+		return JournalState{}, fmt.Errorf("%w: size", ErrJournalCorrupt)
+	}
+	var trailingData struct{}
+	if err := decoder.Decode(&trailingData); err != io.EOF || limitedReader.N == 0 {
 		return JournalState{}, fmt.Errorf("%w: decode", ErrJournalCorrupt)
 	}
 	if err := validateJournalState(state); err != nil {

@@ -39,12 +39,14 @@ montagem da lista de arquivos.
 A CI do commit `f19e74df7dc21060f69ee48569e5e57ff0bb2635` passou nos jobs
 Windows e PostgreSQL no run
 [37127616830](https://github.com/guilhermejacyzin/majucau/actions/runs/37127616830).
-O job Windows executou a suíte existente, `go vet`, análise de vulnerabilidades,
+O job Windows executou a suíte Go, `go vet`, análise de vulnerabilidades,
 builds do aplicativo/worker/instalador, smoke de instalação e consolidação dos
-outputs. O job PostgreSQL também passou. A suíte existente validou pacotes V1
-legítimos e restauração V2 em vários segmentos; ela ainda não tem um fixture
-adversarial dedicado para diretórios ZIP malformados/ZIP64, que fica como
-próxima melhoria de cobertura.
+outputs. O job PostgreSQL também passou. A suíte validou pacotes V1 legítimos e
+restauração V2 em vários segmentos. Foram adicionados em
+`backup_archive_preflight_test.go` casos para ZIP clássico/ZIP64 válidos com 3 e
+4 arquivos, contagem declarada incorreta, excesso de entradas, diretório acima
+de 1 MiB, cabeçalho central truncado e ponteiro ZIP64 adulterado. A validação
+pela CI será registrada depois do próximo push.
 
 O artefato G1 unsigned `11275408170` tem 37.431.446 bytes, SHA-256
 `2c95f90e5801bc7472b8811107504237627e522f44f99bdb681501c184818457` e expira

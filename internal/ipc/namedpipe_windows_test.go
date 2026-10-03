@@ -90,11 +90,11 @@ func TestNamedPipeAppliesProtectedDACLToCreatedPipe(t *testing.T) {
 		t.Fatalf("named pipe DACL is not protected: %s", descriptor)
 	}
 
-	dacl, present, err := descriptor.DACL()
+	dacl, _, err := descriptor.DACL()
 	if err != nil {
 		t.Fatalf("read named pipe DACL: %v", err)
 	}
-	if !present || dacl == nil {
+	if control&windows.SE_DACL_PRESENT == 0 || dacl == nil {
 		t.Fatal("created named pipe has no DACL")
 	}
 	if dacl.AceCount != 3 {

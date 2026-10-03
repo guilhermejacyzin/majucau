@@ -8,6 +8,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -24,16 +25,21 @@ import (
 )
 
 const (
-	maxManifestBytes = 1 << 20
-	maxKeysetBytes   = 64 << 10
-	keysetAAD        = "MAJUCAU-BACKUP-2:keyset"
-	wrappedKeysetHeader = "MAJUCAU-KEYSET-2"
+	maxManifestBytes         = 1 << 20
+	maxKeysetBytes           = 64 << 10
+	maxArchiveDirectoryBytes = 1 << 20
+	keysetAAD                = "MAJUCAU-BACKUP-2:keyset"
+	wrappedKeysetHeader      = "MAJUCAU-KEYSET-2"
 )
 
 type packageArchive struct {
-	reader   *zip.ReadCloser
+	closer   io.Closer
 	entries  map[string]*zip.File
 	manifest Manifest
+}
+
+func (archive *packageArchive) Close() error {
+	return archive.closer.Close()
 }
 
 func writeV2Package(ctx context.Context, path string, manifest Manifest, masterKey []byte, databasePath, globalsPath string) (Manifest, error) {
@@ -165,7 +171,7 @@ func verifyPackage(ctx context.Context, path string, passphrase []byte, currentS
 		result.Issues = append(result.Issues, "backup package is unreadable or invalid")
 		return result
 	}
-	defer archive.reader.Close()
+	defer archive.Close()
 	result.Manifest = archive.manifest
 	if result.Manifest.SchemaVersion != currentSchema {
 		result.Issues = append(result.Issues, ErrUnsupportedSchema.Error())
@@ -197,55 +203,188 @@ func verifyPackage(ctx context.Context, path string, passphrase []byte, currentS
 }
 
 func openPackage(path string) (*packageArchive, error) {
-	reader, err := zip.OpenReader(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	archive := &packageArchive{reader: reader, entries: make(map[string]*zip.File, len(reader.File))}
+	info, err := file.Stat()
+	if err != nil {
+		_ = file.Close()
+		return nil, err
+	}
+	if err := preflightArchiveDirectory(file, info.Size()); err != nil {
+		_ = file.Close()
+		return nil, ErrInvalidPackage
+	}
+	reader, err := zip.NewReader(file, info.Size())
+	if err != nil {
+		_ = file.Close()
+		return nil, err
+	}
+	archive := &packageArchive{closer: file, entries: make(map[string]*zip.File, len(reader.File))}
 	if len(reader.File) < 3 || len(reader.File) > 4 {
-		_ = reader.Close()
+		_ = archive.Close()
 		return nil, ErrInvalidPackage
 	}
 	for _, entry := range reader.File {
 		if _, exists := archive.entries[entry.Name]; exists {
-			_ = reader.Close()
+			_ = archive.Close()
 			return nil, ErrInvalidPackage
 		}
 		archive.entries[entry.Name] = entry
 	}
 	manifestEntryFile, ok := archive.entries[manifestEntry]
 	if !ok || (manifestEntryFile.Method != zip.Store && manifestEntryFile.Method != zip.Deflate) || manifestEntryFile.UncompressedSize64 > maxManifestBytes {
-		_ = reader.Close()
+		_ = archive.Close()
 		return nil, ErrInvalidPackage
 	}
 	manifestBytes, err := readZipEntryBounded(manifestEntryFile, maxManifestBytes)
 	if err != nil {
-		_ = reader.Close()
+		_ = archive.Close()
 		return nil, ErrInvalidPackage
 	}
 	decoder := json.NewDecoder(bytes.NewReader(manifestBytes))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&archive.manifest); err != nil {
-		_ = reader.Close()
+		_ = archive.Close()
 		return nil, ErrInvalidPackage
 	}
 	var trailing any
 	if err := decoder.Decode(&trailing); err != io.EOF {
-		_ = reader.Close()
+		_ = archive.Close()
 		return nil, ErrInvalidPackage
 	}
 	allowed := expectedArchiveEntries(archive.manifest.FormatVersion)
 	if len(allowed) != len(archive.entries) {
-		_ = reader.Close()
+		_ = archive.Close()
 		return nil, ErrInvalidPackage
 	}
 	for name, entry := range archive.entries {
 		if !allowed[name] || !validEntryCompression(entry, archive.manifest.FormatVersion) {
-			_ = reader.Close()
+			_ = archive.Close()
 			return nil, ErrInvalidPackage
 		}
 	}
 	return archive, nil
+}
+
+// preflightArchiveDirectory bounds ZIP metadata before archive/zip builds its
+// in-memory list of entries. Payload size is deliberately not capped here.
+func preflightArchiveDirectory(source io.ReaderAt, size int64) error {
+	const (
+		endSignature       = uint32(0x06054b50)
+		zip64LocatorSig    = uint32(0x07064b50)
+		zip64EndSig        = uint32(0x06064b50)
+		centralHeaderSig   = uint32(0x02014b50)
+		centralDigitalSig  = uint32(0x05054b50)
+		endRecordBytes     = 22
+		maxCommentBytes    = 65 * 1024
+		zip64LocatorBytes  = 20
+		zip64EndFixedBytes = 56
+	)
+	if size < endRecordBytes {
+		return ErrInvalidPackage
+	}
+	tailSize := size
+	if tailSize > maxCommentBytes {
+		tailSize = maxCommentBytes
+	}
+	tail := make([]byte, int(tailSize))
+	if _, err := source.ReadAt(tail, size-tailSize); err != nil {
+		return ErrInvalidPackage
+	}
+	endOffset := -1
+	for index := len(tail) - endRecordBytes; index >= 0; index-- {
+		if binary.LittleEndian.Uint32(tail[index:index+4]) == endSignature {
+			endOffset = index
+			break
+		}
+	}
+	if endOffset < 0 {
+		return ErrInvalidPackage
+	}
+	end := tail[endOffset:]
+	if len(end) < endRecordBytes || int(binary.LittleEndian.Uint16(end[20:22])) > len(end)-endRecordBytes {
+		return ErrInvalidPackage
+	}
+	eocdFileOffset := size - tailSize + int64(endOffset)
+	if binary.LittleEndian.Uint16(end[4:6]) != 0 || binary.LittleEndian.Uint16(end[6:8]) != 0 {
+		return ErrInvalidPackage
+	}
+	recordsThisDisk := uint64(binary.LittleEndian.Uint16(end[8:10]))
+	records := uint64(binary.LittleEndian.Uint16(end[10:12]))
+	directorySize := uint64(binary.LittleEndian.Uint32(end[12:16]))
+	directoryOffset := uint64(binary.LittleEndian.Uint32(end[16:20]))
+	directoryEndOffset := eocdFileOffset
+	if records == 0xffff || directorySize == 0xffffffff || directoryOffset == 0xffffffff {
+		locatorOffset := eocdFileOffset - zip64LocatorBytes
+		if locatorOffset < 0 {
+			return ErrInvalidPackage
+		}
+		var locator [zip64LocatorBytes]byte
+		if _, err := source.ReadAt(locator[:], locatorOffset); err != nil || binary.LittleEndian.Uint32(locator[0:4]) != zip64LocatorSig || binary.LittleEndian.Uint32(locator[4:8]) != 0 || binary.LittleEndian.Uint32(locator[16:20]) != 1 {
+			return ErrInvalidPackage
+		}
+		zip64Offset := binary.LittleEndian.Uint64(locator[8:16])
+		if zip64Offset > uint64(size) || zip64Offset > uint64(^uint64(0)>>1) || zip64Offset+zip64EndFixedBytes > uint64(size) {
+			return ErrInvalidPackage
+		}
+		var zip64End [zip64EndFixedBytes]byte
+		if _, err := source.ReadAt(zip64End[:], int64(zip64Offset)); err != nil || binary.LittleEndian.Uint32(zip64End[0:4]) != zip64EndSig || binary.LittleEndian.Uint64(zip64End[4:12]) < zip64EndFixedBytes-12 {
+			return ErrInvalidPackage
+		}
+		zip64RecordSize := binary.LittleEndian.Uint64(zip64End[4:12])
+		if zip64RecordSize > uint64(size)-zip64Offset-12 {
+			return ErrInvalidPackage
+		}
+		if zip64Offset > uint64(locatorOffset) || uint64(locatorOffset)-zip64Offset < 12 || zip64RecordSize > uint64(locatorOffset)-zip64Offset-12 {
+			return ErrInvalidPackage
+		}
+		if binary.LittleEndian.Uint32(zip64End[16:20]) != 0 || binary.LittleEndian.Uint32(zip64End[20:24]) != 0 {
+			return ErrInvalidPackage
+		}
+		recordsThisDisk = binary.LittleEndian.Uint64(zip64End[24:32])
+		records = binary.LittleEndian.Uint64(zip64End[32:40])
+		directorySize = binary.LittleEndian.Uint64(zip64End[40:48])
+		directoryOffset = binary.LittleEndian.Uint64(zip64End[48:56])
+		directoryEndOffset = int64(zip64Offset)
+	}
+	if records < 3 || records > 4 || recordsThisDisk != records || directorySize > maxArchiveDirectoryBytes || directorySize > uint64(directoryEndOffset) || directoryOffset > uint64(directoryEndOffset)-directorySize {
+		return ErrInvalidPackage
+	}
+	directoryStart := directoryEndOffset - int64(directorySize)
+	directory := make([]byte, int(directorySize))
+	if _, err := source.ReadAt(directory, directoryStart); err != nil {
+		return ErrInvalidPackage
+	}
+	actualRecords := uint64(0)
+	for offset := 0; offset < len(directory); {
+		remaining := len(directory) - offset
+		if remaining >= 46 && binary.LittleEndian.Uint32(directory[offset:offset+4]) == centralHeaderSig {
+			nameBytes := int(binary.LittleEndian.Uint16(directory[offset+28 : offset+30]))
+			extraBytes := int(binary.LittleEndian.Uint16(directory[offset+30 : offset+32]))
+			commentBytes := int(binary.LittleEndian.Uint16(directory[offset+32 : offset+34]))
+			headerBytes := 46 + nameBytes + extraBytes + commentBytes
+			if headerBytes > remaining {
+				return ErrInvalidPackage
+			}
+			actualRecords++
+			if actualRecords > 4 {
+				return ErrInvalidPackage
+			}
+			offset += headerBytes
+			continue
+		}
+		if remaining >= 6 && binary.LittleEndian.Uint32(directory[offset:offset+4]) == centralDigitalSig && offset+6+int(binary.LittleEndian.Uint16(directory[offset+4:offset+6])) == len(directory) {
+			offset = len(directory)
+			continue
+		}
+		return ErrInvalidPackage
+	}
+	if actualRecords != records {
+		return ErrInvalidPackage
+	}
+	return nil
 }
 
 func validEntryCompression(entry *zip.File, version string) bool {
@@ -417,7 +556,7 @@ func decryptPackageToFiles(ctx context.Context, path string, passphrase []byte, 
 	if err != nil {
 		return "", "", ErrInvalidPackage
 	}
-	defer archive.reader.Close()
+	defer archive.Close()
 	if archive.manifest.FormatVersion != expected.FormatVersion || !validPackageManifest(archive.manifest) {
 		return "", "", ErrInvalidPackage
 	}

@@ -23,6 +23,12 @@ manifesto (até 1 MiB) e o keyset cifrado (até 64 KiB) são carregados como
 blocos pequenos em memória. Entradas inesperadas, duplicadas, compactação não
 permitida, hashes divergentes e tags inválidas são rejeitados.
 
+Antes de `archive/zip` interpretar o diretório central, a aplicação valida os
+metadados do ZIP em fluxo limitado: aceita os três arquivos do V1 ou os quatro
+do V2 e limita o diretório a 1 MiB. Isso limita o uso de memória causado pelos
+metadados, sem impor teto ao tamanho total do backup. O preflight entende
+ZIP64 para manter compatibilidade com arquivos grandes e com backups V1 antigos.
+
 ## Proteção temporária e restauração
 
 No Windows, dumps temporários, senha PostgreSQL e área de restauração usam uma

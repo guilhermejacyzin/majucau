@@ -21,6 +21,24 @@ regra financeira/de negócio foi alterada.
   proprietário, LocalSystem e administradores. O cancelamento é propagado pela
   cópia, criptografia, verificação e preparação dos arquivos.
 
+## Limite dos metadados ZIP — implementação em revisão
+
+A biblioteca padrão Go não valida previamente o número total de entradas do
+diretório ZIP; ela percorre os registros centrais e os mantém em memória. A
+implementação adiciona uma pré-validação antes de `zip.NewReader`: lê os
+registros EOCD/ZIP64, aceita somente as contagens dos formatos V1/V2 (3 ou 4),
+conta as entradas centrais reais e limita seus metadados a 1 MiB. O arquivo é
+aberto uma vez e o mesmo handle é usado pelo preflight e pelo parser. O limite
+se aplica apenas aos metadados: nenhum teto total novo foi imposto ao backup,
+e ZIP64 continua aceito para payloads grandes.
+
+Referência primária: [fonte oficial `archive/zip` do Go](https://go.dev/src/archive/zip/reader.go),
+que explica que a contagem do diretório não é validada antes da leitura e da
+montagem da lista de arquivos.
+
+A CI ainda precisa validar esta alteração. O ambiente local não disponibiliza
+Go/gofmt, então não houve compilação nem execução de testes locais.
+
 ## Validação CI em 2026-10-03
 
 O run [37101826025](https://github.com/guilhermejacyzin/majucau/actions/runs/37101826025)

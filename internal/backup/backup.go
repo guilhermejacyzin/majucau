@@ -4,22 +4,16 @@
 package backup
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -28,19 +22,25 @@ import (
 )
 
 const (
-	FormatVersion           = "1"
-	ManifestSchemaVersion   = "1.0"
-	BackupSource             = "MAJUCAU_LOCAL_POSTGRESQL"
-	TokenExportPolicy        = "EXCLUDED"
-	databaseDumpEntry        = "payload/database.dump.gcm"
-	globalsDumpEntry         = "payload/globals.sql.gcm"
-	manifestEntry            = "backup-manifest.json"
-	encryptedHeader           = "MAJUCAU-BACKUP-1"
-	argonMemoryKB             = 64 * 1024
-	argonIterations           = 1
-	argonParallelism          = 4
-	argonKeyLength            = 32
-	argonSaltLength            = 16
+	FormatVersion               = "2"
+	ManifestSchemaVersion       = "2.0"
+	legacyFormatVersion         = "1"
+	legacyManifestSchemaVersion = "1.0"
+	BackupSource                = "MAJUCAU_LOCAL_POSTGRESQL"
+	TokenExportPolicy           = "EXCLUDED"
+	databaseDumpEntry           = "payload/database.dump.saead"
+	globalsDumpEntry            = "payload/globals.sql.saead"
+	legacyDatabaseDumpEntry     = "payload/database.dump.gcm"
+	legacyGlobalsDumpEntry      = "payload/globals.sql.gcm"
+	streamKeysetEntry           = "metadata/streaming-keyset.gcm"
+	streamCipher                = "TINK_AES256_GCM_HKDF_SEGMENT_1_MIB"
+	manifestEntry               = "backup-manifest.json"
+	encryptedHeader             = "MAJUCAU-BACKUP-1"
+	argonMemoryKB               = 64 * 1024
+	argonIterations             = 1
+	argonParallelism            = 4
+	argonKeyLength              = 32
+	argonSaltLength             = 16
 )
 
 var (
@@ -86,6 +86,8 @@ type Manifest struct {
 	TokenPolicy       string `json:"token_policy"`
 	KDF               KDFParameters `json:"kdf"`
 	Files             []File `json:"files"`
+	Cipher            string `json:"cipher,omitempty"`
+	KeysetFile        File `json:"keyset_file,omitempty"`
 }
 
 type KDFParameters struct {
@@ -137,6 +139,12 @@ type RestoreResult struct {
 }
 
 func Create(ctx context.Context, options Options) (Result, error) {
+	if ctx == nil {
+		return Result{}, ErrInvalidOptions
+	}
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
+	}
 	if err := validateOptions(options); err != nil {
 		return Result{}, err
 	}
@@ -164,7 +172,7 @@ func Create(ctx context.Context, options Options) (Result, error) {
 	if err != nil || config.Host == "" || config.Database == "" || config.User == "" {
 		return Result{}, ErrInvalidOptions
 	}
-	temporary, err := os.MkdirTemp(options.OutputDir, ".backup-")
+	temporary, err := newPrivateTempDir(options.OutputDir, ".backup-")
 	if err != nil {
 		return Result{}, fmt.Errorf("create temporary backup directory: %w", err)
 	}
@@ -185,14 +193,6 @@ func Create(ctx context.Context, options Options) (Result, error) {
 	if err := run(ctx, pgDumpAll, append([]string{"--globals-only", "--no-role-passwords", "--file", globalsPath}, common[:len(common)-2]...), env); err != nil {
 		return Result{}, fmt.Errorf("pg_dumpall failed: %w", err)
 	}
-	dump, err := os.ReadFile(dumpPath)
-	if err != nil {
-		return Result{}, fmt.Errorf("read database dump: %w", err)
-	}
-	globals, err := os.ReadFile(globalsPath)
-	if err != nil {
-		return Result{}, fmt.Errorf("read globals dump: %w", err)
-	}
 	salt := make([]byte, argonSaltLength)
 	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
 		return Result{}, fmt.Errorf("generate backup salt: %w", err)
@@ -203,26 +203,18 @@ func Create(ctx context.Context, options Options) (Result, error) {
 		InstallID: options.InstallID, Source: BackupSource, CreatedAt: now().UTC(),
 		TokensExported: false, TokenPolicy: TokenExportPolicy,
 		KDF: KDFParameters{Name: "argon2id", Salt: hex.EncodeToString(salt), MemoryKB: argonMemoryKB, Iterations: argonIterations, Parallelism: argonParallelism, KeyLength: argonKeyLength},
+		Cipher: streamCipher,
 	}
 	key := deriveKey(options.Passphrase, salt, manifest.KDF)
-	databaseEncrypted, err := encrypt(key, []byte(databaseDumpEntry), dump)
-	if err != nil {
-		return Result{}, err
-	}
-	globalsEncrypted, err := encrypt(key, []byte(globalsDumpEntry), globals)
-	if err != nil {
-		return Result{}, err
-	}
-	manifest.Files = []File{fileRecord(databaseDumpEntry, databaseEncrypted), fileRecord(globalsDumpEntry, globalsEncrypted)}
-	manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
-	if err != nil {
-		return Result{}, fmt.Errorf("encode backup manifest: %w", err)
-	}
-	manifestBytes = append(manifestBytes, '\n')
+	defer clearBytes(key)
 	stamp := now().UTC().Format("20060102T150405.000000000Z")
 	finalPath := filepath.Join(options.OutputDir, "majucau-backup-"+stamp+".mjbk")
 	temporaryPackage := finalPath + ".tmp"
-	if err := writePackage(temporaryPackage, manifestBytes, databaseEncrypted, globalsEncrypted); err != nil {
+	manifest, err = writeV2Package(ctx, temporaryPackage, manifest, key, dumpPath, globalsPath)
+	if err != nil {
+		return Result{}, err
+	}
+	if err := ctx.Err(); err != nil {
 		_ = os.Remove(temporaryPackage)
 		return Result{}, err
 	}
@@ -234,100 +226,13 @@ func Create(ctx context.Context, options Options) (Result, error) {
 }
 
 func Verify(path string, passphrase []byte, currentSchema string) Verification {
-	result := Verification{}
-	if !filepath.IsAbs(path) || strings.TrimSpace(currentSchema) == "" || len(passphrase) == 0 {
-		result.Issues = append(result.Issues, "invalid verification arguments")
-		return result
-	}
-	reader, err := zip.OpenReader(path)
-	if err != nil {
-		result.Issues = append(result.Issues, "backup package is unreadable")
-		return result
-	}
-	defer reader.Close()
-	entries := make(map[string][]byte, len(reader.File))
-	seenEntries := make(map[string]bool, len(reader.File))
-	expectedEntries := map[string]bool{manifestEntry: true, databaseDumpEntry: true, globalsDumpEntry: true}
-	for _, entry := range reader.File {
-		if !expectedEntries[entry.Name] {
-			result.Issues = append(result.Issues, "backup package contains an unexpected entry")
-			continue
-		}
-		if seenEntries[entry.Name] {
-			result.Issues = append(result.Issues, "backup package contains a duplicate entry")
-			continue
-		}
-		seenEntries[entry.Name] = true
-		file, openErr := entry.Open()
-		if openErr != nil {
-			result.Issues = append(result.Issues, "backup package entry is unreadable")
-			continue
-		}
-		payload, readErr := io.ReadAll(file)
-		_ = file.Close()
-		if readErr != nil {
-			result.Issues = append(result.Issues, "backup package entry is unreadable")
-			continue
-		}
-		entries[entry.Name] = payload
-	}
-	for expected := range expectedEntries {
-		if !seenEntries[expected] {
-			result.Issues = append(result.Issues, "backup package entry is missing")
-		}
-	}
-	manifestBytes, ok := entries[manifestEntry]
-	if !ok {
-		result.Issues = append(result.Issues, "backup manifest is missing")
-		return result
-	}
-	decoder := json.NewDecoder(bytes.NewReader(manifestBytes))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&result.Manifest); err != nil {
-		result.Issues = append(result.Issues, "backup manifest is invalid")
-		return result
-	}
-	if result.Manifest.FormatVersion != FormatVersion || result.Manifest.ManifestSchema != ManifestSchemaVersion || result.Manifest.Source != BackupSource || result.Manifest.TokensExported || result.Manifest.TokenPolicy != TokenExportPolicy {
-		result.Issues = append(result.Issues, "backup manifest identity or token policy is invalid")
-	}
-	if result.Manifest.SchemaVersion != currentSchema {
-		result.Issues = append(result.Issues, ErrUnsupportedSchema.Error())
-	}
-	if len(result.Manifest.Files) != 2 {
-		result.Issues = append(result.Issues, "backup manifest file list is invalid")
-	}
-	seenManifestFiles := make(map[string]bool, len(result.Manifest.Files))
-	for _, expected := range result.Manifest.Files {
-		if expected.Path != databaseDumpEntry && expected.Path != globalsDumpEntry {
-			result.Issues = append(result.Issues, "backup manifest contains an unexpected file")
-			continue
-		}
-		if seenManifestFiles[expected.Path] {
-			result.Issues = append(result.Issues, "backup manifest contains a duplicate file")
-			continue
-		}
-		seenManifestFiles[expected.Path] = true
-	}
-	if !seenManifestFiles[databaseDumpEntry] || !seenManifestFiles[globalsDumpEntry] {
-		result.Issues = append(result.Issues, "backup manifest file list is incomplete")
-	}
-	if !validKDF(result.Manifest.KDF) {
-		result.Issues = append(result.Issues, "backup key derivation parameters are invalid")
-		return result
-	}
-	key := deriveKey(passphrase, mustDecodeSalt(result.Manifest.KDF.Salt), result.Manifest.KDF)
-	for _, expected := range result.Manifest.Files {
-		payload, found := entries[expected.Path]
-		if !found || !validFileDigest(expected, payload) {
-			result.Issues = append(result.Issues, "backup checksum mismatch")
-			continue
-		}
-		if _, err := decrypt(key, []byte(expected.Path), payload); err != nil {
-			result.Issues = append(result.Issues, ErrWrongPassphrase.Error())
-		}
-	}
-	result.Valid = len(result.Issues) == 0
-	return result
+	return VerifyContext(context.Background(), path, passphrase, currentSchema)
+}
+
+// VerifyContext authenticates the complete archive while allowing callers to
+// cancel long-running verification of large packages.
+func VerifyContext(ctx context.Context, path string, passphrase []byte, currentSchema string) Verification {
+	return verifyPackage(ctx, path, passphrase, currentSchema)
 }
 
 // Restore validates and restores a package into the explicitly supplied
@@ -335,16 +240,34 @@ func Verify(path string, passphrase []byte, currentSchema string) Verification {
 // never runs pg_restore for an invalid package, and leaves the caller in
 // RECOVERY_REQUIRED when a destructive step or post-restore validation fails.
 func Restore(ctx context.Context, options RestoreOptions) (RestoreResult, error) {
+	if ctx == nil {
+		return RestoreResult{}, ErrInvalidOptions
+	}
+	if err := ctx.Err(); err != nil {
+		return RestoreResult{}, err
+	}
 	if err := validateRestoreOptions(options); err != nil {
 		return RestoreResult{}, err
 	}
-	verification := Verify(options.PackagePath, options.Passphrase, options.CurrentSchema)
+	if err := os.MkdirAll(options.BackupDir, 0700); err != nil {
+		return RestoreResult{}, fmt.Errorf("create restore parent directory: %w", err)
+	}
+	temporary, err := newPrivateTempDir(options.BackupDir, ".restore-")
+	if err != nil {
+		return RestoreResult{Status: "RECOVERY_REQUIRED"}, fmt.Errorf("create private restore workspace: %w", err)
+	}
+	defer os.RemoveAll(temporary)
+	stagedPackage := filepath.Join(temporary, "input.mjbk")
+	if err := copyEncryptedPackage(ctx, options.PackagePath, stagedPackage); err != nil {
+		return RestoreResult{Status: "RECOVERY_REQUIRED"}, fmt.Errorf("stage encrypted backup: %w", err)
+	}
+	verification := VerifyContext(ctx, stagedPackage, options.Passphrase, options.CurrentSchema)
 	if !verification.Valid {
 		return RestoreResult{Manifest: verification.Manifest, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("%w: %s", ErrInvalidPackage, strings.Join(verification.Issues, "; "))
 	}
-	databaseDump, globalsDump, err := decryptPackage(options.PackagePath, options.Passphrase, verification.Manifest)
+	databasePath, globalsPath, err := decryptPackageToFiles(ctx, stagedPackage, options.Passphrase, verification.Manifest, temporary)
 	if err != nil {
-		return RestoreResult{Manifest: verification.Manifest, Status: "RECOVERY_REQUIRED"}, err
+		return RestoreResult{Manifest: verification.Manifest, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("authenticate and stage restore payloads: %w", err)
 	}
 	preRestore, err := Create(ctx, Options{
 		DatabaseURL: options.DatabaseURL, OutputDir: options.BackupDir,
@@ -357,19 +280,6 @@ func Restore(ctx context.Context, options RestoreOptions) (RestoreResult, error)
 	}
 	if err := options.StopWorker(ctx); err != nil {
 		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("stop worker before restore: %w", err)
-	}
-	temporary, err := os.MkdirTemp(options.BackupDir, ".restore-")
-	if err != nil {
-		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("create restore workspace: %w", err)
-	}
-	defer os.RemoveAll(temporary)
-	databasePath := filepath.Join(temporary, "database.dump")
-	globalsPath := filepath.Join(temporary, "globals.sql")
-	if err := os.WriteFile(databasePath, databaseDump, 0600); err != nil {
-		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("write database restore payload: %w", err)
-	}
-	if err := os.WriteFile(globalsPath, globalsDump, 0600); err != nil {
-		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("write globals restore payload: %w", err)
 	}
 	config, err := pgx.ParseConfig(options.DatabaseURL)
 	if err != nil || config.Host == "" || config.Database == "" || config.User == "" {
@@ -421,52 +331,6 @@ func validateRestoreOptions(options RestoreOptions) error {
 	return nil
 }
 
-func decryptPackage(path string, passphrase []byte, manifest Manifest) ([]byte, []byte, error) {
-	reader, err := zip.OpenReader(path)
-	if err != nil {
-		return nil, nil, fmt.Errorf("open backup package for restore: %w", err)
-	}
-	defer reader.Close()
-	entries := make(map[string]*zip.File, len(reader.File))
-	for _, entry := range reader.File {
-		if _, exists := entries[entry.Name]; exists {
-			return nil, nil, ErrInvalidPackage
-		}
-		entries[entry.Name] = entry
-	}
-	salt := mustDecodeSalt(manifest.KDF.Salt)
-	key := deriveKey(passphrase, salt, manifest.KDF)
-	read := func(path string) ([]byte, error) {
-		entry, ok := entries[path]
-		if !ok {
-			return nil, ErrInvalidPackage
-		}
-		file, err := entry.Open()
-		if err != nil {
-			return nil, ErrInvalidPackage
-		}
-		payload, readErr := io.ReadAll(file)
-		_ = file.Close()
-		if readErr != nil {
-			return nil, ErrInvalidPackage
-		}
-		plain, err := decrypt(key, []byte(path), payload)
-		if err != nil {
-			return nil, ErrWrongPassphrase
-		}
-		return plain, nil
-	}
-	databaseDump, err := read(databaseDumpEntry)
-	if err != nil {
-		return nil, nil, err
-	}
-	globalsDump, err := read(globalsDumpEntry)
-	if err != nil {
-		return nil, nil, err
-	}
-	return databaseDump, globalsDump, nil
-}
-
 func validateOptions(options Options) error {
 	if strings.TrimSpace(options.DatabaseURL) == "" || strings.TrimSpace(options.OutputDir) == "" || !filepath.IsAbs(options.OutputDir) || strings.TrimSpace(options.AppVersion) == "" || strings.TrimSpace(options.SchemaVersion) == "" || len(options.Passphrase) < 12 {
 		return ErrInvalidOptions
@@ -507,87 +371,9 @@ func deriveKey(passphrase, salt []byte, parameters KDFParameters) []byte {
 	return argon2.IDKey(passphrase, salt, parameters.Iterations, parameters.MemoryKB, parameters.Parallelism, uint32(parameters.KeyLength))
 }
 
-func encrypt(key, associatedData, plain []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, err
-	}
-	sealed := gcm.Seal(nil, nonce, plain, associatedData)
-	result := make([]byte, 0, len(encryptedHeader)+1+len(nonce)+len(sealed))
-	result = append(result, encryptedHeader...)
-	result = append(result, byte(len(nonce)))
-	result = append(result, nonce...)
-	result = append(result, sealed...)
-	return result, nil
-}
-
-func decrypt(key, associatedData, payload []byte) ([]byte, error) {
-	minimum := len(encryptedHeader) + 1
-	if len(payload) < minimum || string(payload[:len(encryptedHeader)]) != encryptedHeader {
-		return nil, ErrWrongPassphrase
-	}
-	nonceLength := int(payload[len(encryptedHeader)])
-	if nonceLength <= 0 || len(payload) <= minimum+nonceLength {
-		return nil, ErrWrongPassphrase
-	}
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, ErrWrongPassphrase
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil || nonceLength != gcm.NonceSize() {
-		return nil, ErrWrongPassphrase
-	}
-	return gcm.Open(nil, payload[minimum:minimum+nonceLength], payload[minimum+nonceLength:], associatedData)
-}
-
 func fileRecord(path string, payload []byte) File {
 	digest := sha256.Sum256(payload)
 	return File{Path: path, SHA256: hex.EncodeToString(digest[:]), SizeBytes: int64(len(payload))}
-}
-
-func validFileDigest(expected File, payload []byte) bool {
-	actual := fileRecord(expected.Path, payload)
-	return strings.EqualFold(actual.SHA256, expected.SHA256) && actual.SizeBytes == expected.SizeBytes
-}
-
-func writePackage(path string, manifest, database, globals []byte) error {
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return fmt.Errorf("create backup package: %w", err)
-	}
-	defer file.Close()
-	archive := zip.NewWriter(file)
-	entries := map[string][]byte{manifestEntry: manifest, databaseDumpEntry: database, globalsDumpEntry: globals}
-	paths := make([]string, 0, len(entries))
-	for path := range entries {
-		paths = append(paths, path)
-	}
-	sort.Strings(paths)
-	for _, entryPath := range paths {
-		entry, createErr := archive.Create(entryPath)
-		if createErr != nil {
-			return createErr
-		}
-		if _, writeErr := entry.Write(entries[entryPath]); writeErr != nil {
-			return writeErr
-		}
-	}
-	if err := archive.Close(); err != nil {
-		return err
-	}
-	if err := file.Sync(); err != nil {
-		return err
-	}
-	return file.Close()
 }
 
 func validKDF(parameters KDFParameters) bool {

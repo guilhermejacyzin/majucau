@@ -181,3 +181,11 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Linhas que falham na validação são contadas em `records_failed`; as linhas válidas do mesmo arquivo são persistidas e o lote termina como `PARTIAL`.
 - A persistência das linhas válidas e a finalização da auditoria do lote pertencem à mesma transação PostgreSQL. Falha técnica ou cancelamento durante a gravação reverte todas as escritas dessa transação.
 - Esta decisão trata importação de arquivos com erros de validação por linha. Ela não define a contagem de páginas RAW da API Bling nem o filtro/cursor incremental dos endpoints, que continuam pendentes de confirmação.
+
+## Decisão técnica posterior aprovada — compatibilidade e formato dos backups
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-03 (America/Sao_Paulo).
+- Preservar leitura/restauração dos pacotes V1 existentes e gravar novos pacotes como V2 em blocos autenticados.
+- A implementação mantém V1 no AES-GCM legado e usa Streaming AEAD AES-256-GCM-HKDF do Tink no V2, com segmentos de 1 MiB. Temporários de plaintext exigem DACL privada e nenhuma restauração pode usar plaintext antes da autenticação completa.
+- Esta decisão aprova formato/compatibilidade criptográfica; não altera telas aprovadas, regras financeiras ou regras de negócio.
+- CI, prova dedicada de compatibilidade V1 e validação de restauração em VM limpa continuam gates obrigatórios.

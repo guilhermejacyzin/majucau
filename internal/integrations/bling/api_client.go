@@ -38,6 +38,10 @@ var (
 	ErrBlingAPIInvalidResponse = errors.New("bling api returned an invalid response")
 	ErrBlingAPISchemaMismatch  = errors.New("bling api response schema is not homologated")
 	ErrBlingAPIConfiguration   = errors.New("bling api configuration is invalid")
+	errBlingDataMissing        = errors.New("bling response data array is missing")
+	errBlingDataNotArray       = errors.New("bling response data is not an array")
+	errBlingPageTooLarge       = errors.New("bling response page exceeds the supported record count")
+	errBlingResponseTooLarge   = errors.New("bling response exceeds the configured byte limit")
 )
 
 // HTTPDoer is intentionally small so the adapter can be tested with an
@@ -165,8 +169,8 @@ type blingPagination struct {
 }
 
 type blingReceivablesEnvelope struct {
-	Data       json.RawMessage  `json:"data"`
-	Pagination *blingPagination `json:"pagination"`
+	Data       []json.RawMessage `json:"data"`
+	Pagination *blingPagination  `json:"pagination"`
 }
 
 func (c *BlingAPIClient) ListReceivables(ctx context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
@@ -269,22 +273,20 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 		}
 		return BlingReceivablesPage{}, apiErr
 	}
-	body, err := readLimitedBody(resp.Body, c.maxResponseBytes)
-	if err != nil {
-		return BlingReceivablesPage{}, fmt.Errorf("%w: response body is too large or unreadable", ErrBlingAPIInvalidResponse)
-	}
-	var envelope blingReceivablesEnvelope
-	if err := json.Unmarshal(body, &envelope); err != nil {
-		return BlingReceivablesPage{}, fmt.Errorf("%w: response is not json", ErrBlingAPIInvalidResponse)
-	}
-	if len(envelope.Data) == 0 || string(envelope.Data) == "null" {
+	envelope, err := decodeBlingReceivablesEnvelope(resp.Body, c.maxResponseBytes)
+	if errors.Is(err, errBlingDataMissing) {
 		return BlingReceivablesPage{}, fmt.Errorf("%w: data array is missing", ErrBlingAPISchemaMismatch)
 	}
-	var records []json.RawMessage
-	if err := json.Unmarshal(envelope.Data, &records); err != nil {
-		return BlingReceivablesPage{}, fmt.Errorf("%w: data is not an array", ErrBlingAPISchemaMismatch)
+	if errors.Is(err, errBlingDataNotArray) || errors.Is(err, errBlingPageTooLarge) {
+		return BlingReceivablesPage{}, fmt.Errorf("%w: %v", ErrBlingAPISchemaMismatch, err)
 	}
-	page := BlingReceivablesPage{Records: records, Page: filter.Page, Limit: filter.Limit}
+	if err != nil {
+		if errors.Is(err, errBlingResponseTooLarge) {
+			return BlingReceivablesPage{}, fmt.Errorf("%w: response body exceeds limit", ErrBlingAPIInvalidResponse)
+		}
+		return BlingReceivablesPage{}, fmt.Errorf("%w: response is not valid bounded json", ErrBlingAPIInvalidResponse)
+	}
+	page := BlingReceivablesPage{Records: envelope.Data, Page: filter.Page, Limit: filter.Limit}
 	if envelope.Pagination != nil {
 		if envelope.Pagination.Page != nil && *envelope.Pagination.Page > 0 {
 			page.Page = *envelope.Pagination.Page
@@ -300,6 +302,123 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 		}
 	}
 	return page, nil
+}
+
+func decodeBlingReceivablesEnvelope(reader io.Reader, limit int64) (blingReceivablesEnvelope, error) {
+	if limit <= 0 {
+		limit = defaultBlingResponseLimit
+	}
+	const maxInt64 = int64(^uint64(0) >> 1)
+	if limit >= maxInt64 {
+		return blingReceivablesEnvelope{}, errors.New("invalid Bling response byte limit")
+	}
+	limited := &io.LimitedReader{R: reader, N: limit + 1}
+	decoder := json.NewDecoder(limited)
+	var envelope blingReceivablesEnvelope
+	opening, err := decoder.Token()
+	if err != nil {
+		if limited.N == 0 {
+			return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+		}
+		return blingReceivablesEnvelope{}, err
+	}
+	if opening != json.Delim('{') {
+		return blingReceivablesEnvelope{}, errors.New("Bling response envelope is not an object")
+	}
+	seenData := false
+	for decoder.More() {
+		propertyToken, err := decoder.Token()
+		if err != nil {
+			if limited.N == 0 {
+				return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+			}
+			return blingReceivablesEnvelope{}, err
+		}
+		property, ok := propertyToken.(string)
+		if !ok {
+			return blingReceivablesEnvelope{}, errors.New("invalid Bling response property")
+		}
+		switch property {
+		case "data":
+			if seenData {
+				return blingReceivablesEnvelope{}, errBlingDataNotArray
+			}
+			seenData = true
+			opening, err := decoder.Token()
+			if err != nil {
+				if limited.N == 0 {
+					return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+				}
+				return blingReceivablesEnvelope{}, err
+			}
+			if opening == nil {
+				return blingReceivablesEnvelope{}, errBlingDataMissing
+			}
+			if opening != json.Delim('[') {
+				return blingReceivablesEnvelope{}, errBlingDataNotArray
+			}
+			envelope.Data = make([]json.RawMessage, 0, BlingMaxPageSize)
+			for decoder.More() {
+				if len(envelope.Data) >= BlingMaxPageSize {
+					return blingReceivablesEnvelope{}, errBlingPageTooLarge
+				}
+				var record json.RawMessage
+				if err := decoder.Decode(&record); err != nil {
+					if limited.N == 0 {
+						return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+					}
+					return blingReceivablesEnvelope{}, err
+				}
+				envelope.Data = append(envelope.Data, record)
+			}
+			closing, err := decoder.Token()
+			if err != nil || closing != json.Delim(']') {
+				if limited.N == 0 {
+					return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+				}
+				return blingReceivablesEnvelope{}, errors.New("invalid Bling response data array")
+			}
+		case "pagination":
+			if err := decoder.Decode(&envelope.Pagination); err != nil {
+				if limited.N == 0 {
+					return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+				}
+				return blingReceivablesEnvelope{}, err
+			}
+		default:
+			var ignored json.RawMessage
+			if err := decoder.Decode(&ignored); err != nil {
+				if limited.N == 0 {
+					return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+				}
+				return blingReceivablesEnvelope{}, err
+			}
+		}
+	}
+	closing, err := decoder.Token()
+	if err != nil || closing != json.Delim('}') {
+		if limited.N == 0 {
+			return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+		}
+		return blingReceivablesEnvelope{}, errors.New("invalid Bling response envelope")
+	}
+	if !seenData {
+		return blingReceivablesEnvelope{}, errBlingDataMissing
+	}
+	var trailing json.RawMessage
+	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+		if limited.N == 0 {
+			return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+		}
+		if err == nil {
+			return blingReceivablesEnvelope{}, errors.New("Bling response contains multiple JSON values")
+		}
+		return blingReceivablesEnvelope{}, err
+	}
+	if limited.N == 0 {
+		return blingReceivablesEnvelope{}, errBlingResponseTooLarge
+	}
+	return envelope, nil
 }
 
 func retryableBlingError(err error) bool {

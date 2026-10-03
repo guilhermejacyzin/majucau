@@ -277,6 +277,41 @@ func TestListReceivablesRejectsUnhomologatedShapeAndOversizedBody(t *testing.T) 
 	}
 }
 
+func TestListReceivablesStreamsDataWithRecordAndByteLimits(t *testing.T) {
+	t.Run("rejects a data array larger than the documented page size", func(t *testing.T) {
+		records := strings.TrimSuffix(strings.Repeat(`{"id":1},`, BlingMaxPageSize+1), ",")
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte(`{"data":[` + records + `]}`))
+		}))
+		defer server.Close()
+		client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = client.ListReceivables(context.Background(), ReceivablesFilter{Limit: BlingMaxPageSize})
+		if !errors.Is(err, ErrBlingAPISchemaMismatch) {
+			t.Fatalf("oversized page error = %v, want schema mismatch", err)
+		}
+	})
+
+	t.Run("rejects response bytes beyond the configured cap after valid JSON", func(t *testing.T) {
+		const validBody = `{"data":[]}`
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte(validBody + " "))
+		}))
+		defer server.Close()
+		client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+		if err != nil {
+			t.Fatal(err)
+		}
+		client.maxResponseBytes = int64(len(validBody))
+		_, err = client.ListReceivables(context.Background(), ReceivablesFilter{})
+		if !errors.Is(err, ErrBlingAPIInvalidResponse) {
+			t.Fatalf("trailing oversized body error = %v, want invalid response", err)
+		}
+	})
+}
+
 func TestNewBlingAPIClientRejectsNonTLSNonLoopback(t *testing.T) {
 	if _, err := NewBlingAPIClient(nil, "http://bling.example.test/Api/v3", "token"); !errors.Is(err, ErrBlingAPIConfiguration) {
 		t.Fatalf("error = %v", err)

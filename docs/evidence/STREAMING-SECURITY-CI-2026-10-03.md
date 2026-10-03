@@ -51,3 +51,10 @@
 - O teste também cria um arquivo filho e verifica que as permissões esperadas foram herdadas; permissões mais amplas ou ausentes fazem o teste falhar.
 - A CI [37132621657](https://github.com/guilhermejacyzin/majucau/actions/runs/37132621657) passou nos jobs Windows e PostgreSQL, incluindo testes Go, vet, scans de segurança, build e smoke de instalação/desinstalação.
 - Esta prova cobre a ACL efetiva no runner Windows. Não substitui a validação da instalação e limpeza numa VM Windows 10/11 limpa nem verifica toda a configuração operacional de DPAPI/serviço; `SEC-01` e `DATA-04` continuam `PARTIAL`.
+
+## DACL efetiva do Named Pipe — CI Windows em 2026-10-03
+
+- `TestNamedPipeAppliesProtectedDACLToCreatedPipe` lê o descritor do pipe criado, usando [`GetSecurityInfo`](https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-getsecurityinfo), que a documentação do Windows indica para recuperar a segurança de named pipes.
+- O teste valida DACL protegida e exatamente três ACEs de acesso total para o SID explicitamente autorizado, BUILTIN\Administrators e LocalSystem. Compara os SIDs binários e a máscara `FILE_ALL_ACCESS` efetiva após a normalização de `GENERIC_ALL`; rejeita ACE extra, tipo ou máscara diferentes e flags de herança.
+- A CI [37134721442](https://github.com/guilhermejacyzin/majucau/actions/runs/37134721442) passou em Windows e PostgreSQL. No Windows passaram os testes Go, vet, govulncheck, secret scan, verificações do frontend, builds desktop/worker/instalador, smoke de instalação/desinstalação e consolidação de outputs.
+- Esta prova confirma a DACL efetiva no runner Windows Server 2025. Ainda faltam validar o processo cliente autorizado separado, UI fechada, reboot, concorrência e instalação em VM Windows 10/11 limpa; `ARC-02` e `SEC-01` permanecem `PARTIAL`.

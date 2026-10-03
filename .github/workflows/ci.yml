@@ -61,6 +61,7 @@ jobs:
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
           go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
+          go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
 
       - name: Go vulnerability scan
         run: govulncheck . ./cmd/... ./database/... ./internal/...
@@ -171,6 +172,38 @@ jobs:
           if (-not $installer) { throw 'Wails não produziu um instalador NSIS; nenhum warning pode ser tratado como sucesso.' }
           Write-Output "Installer: $($installer.FullName)"
 
+      - name: Generate dependency SBOMs and license evidence
+        shell: pwsh
+        run: |
+          $sbomRoot = Join-Path $env:GITHUB_WORKSPACE 'artifacts/verification/sbom'
+          New-Item -ItemType Directory -Force -Path $sbomRoot | Out-Null
+          $goSbomPath = Join-Path $sbomRoot 'majucau-go.cdx.json'
+          cyclonedx-gomod mod -licenses -type application -std -json -output $goSbomPath .
+          if ($LASTEXITCODE -ne 0) { throw "Geração do SBOM Go falhou: $LASTEXITCODE" }
+
+          $npmSbomPath = Join-Path $sbomRoot 'frontend-npm.cdx.json'
+          Push-Location (Join-Path $env:GITHUB_WORKSPACE 'frontend')
+          try {
+            npm sbom --sbom-format=cyclonedx --package-lock-only |
+              Set-Content -LiteralPath $npmSbomPath -Encoding utf8
+            if ($LASTEXITCODE -ne 0) { throw "Geração do SBOM npm falhou: $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+          }
+
+          foreach ($path in @($goSbomPath, $npmSbomPath)) {
+            $sbomFile = Get-Item -LiteralPath $path
+            if ($sbomFile.Length -eq 0 -or $sbomFile.Length -gt 64MB) {
+              throw "SBOM vazio ou acima do limite de 64 MiB: $path"
+            }
+          }
+          @(
+            '## Inventário de dependências',
+            '',
+            'SBOM Go CycloneDX gerado com evidências de licença quando detectadas.',
+            'SBOM npm CycloneDX gerado a partir de frontend/package-lock.json.'
+          ) | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
+
       - name: Smoke install and uninstall unsigned installer
         shell: pwsh
         run: |
@@ -217,6 +250,16 @@ jobs:
           foreach ($name in $required) {
             if (-not (Test-Path -LiteralPath (Join-Path $windowsRoot $name) -PathType Leaf)) {
               throw "Artefato final ausente em artifacts/windows: $name"
+            }
+          }
+          foreach ($relativePath in @('verification\sbom\majucau-go.cdx.json', 'verification\sbom\frontend-npm.cdx.json')) {
+            $sbomPath = Join-Path $artifactRoot $relativePath
+            if (-not (Test-Path -LiteralPath $sbomPath -PathType Leaf)) {
+              throw "SBOM final ausente em artifacts/$relativePath."
+            }
+            $sbomFile = Get-Item -LiteralPath $sbomPath
+            if ($sbomFile.Length -eq 0 -or $sbomFile.Length -gt 64MB) {
+              throw "SBOM vazio ou acima do limite de 64 MiB: $sbomPath"
             }
           }
           if (-not (Get-ChildItem -LiteralPath $windowsRoot -Filter '*-installer.exe' -File)) {

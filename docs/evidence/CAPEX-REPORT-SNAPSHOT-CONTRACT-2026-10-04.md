@@ -20,6 +20,14 @@ Os valores devem vir do relatório. Não substituir o dado do relatório por tod
 
 O leitor existente do painel ainda consulta somente recebíveis, recebimentos, contas a pagar e pagamentos. Ele ainda não extrai as métricas de CAPEX do relatório. Por isso, o contrato e a tela estão preparados para recebê-las, mas os valores reais continuarão como `—` até a ligação no backend.
 
+## Revisão dos arquivos recebidos — 2026-10-04
+
+- Os PDFs de contas a pagar mostram lançamentos pagos e seus períodos, mas não mostram a categoria CAPEX por lançamento.
+- O print do resumo por categoria mostra CAPEX e subcategorias, mas a parte com o período escolhido não aparece.
+- Assim, ainda não é possível confirmar se o total do print é CAPEX pago no mês ou acumulado, nem ligar esse total aos lançamentos dos PDFs.
+- Não usar o total geral de contas a pagar como CAPEX. Para concluir a ligação, falta o mesmo resumo por categoria com as datas do filtro visíveis.
+- Nenhum valor, fornecedor ou dado de lançamento dos anexos foi copiado para o repositório.
+
 ## Verificação
 
 - `git diff --check`: aprovado.

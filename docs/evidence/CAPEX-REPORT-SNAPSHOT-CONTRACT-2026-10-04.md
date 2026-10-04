@@ -18,7 +18,7 @@ Os valores devem vir do relatório. Não substituir o dado do relatório por tod
 
 ## Limite atual
 
-O leitor existente do painel ainda consulta somente recebíveis, recebimentos, contas a pagar e pagamentos. Ele ainda não extrai as métricas de CAPEX do relatório. Por isso, o contrato e a tela estão preparados para recebê-las, mas os valores reais continuarão como `—` até a ligação no backend.
+O leitor do painel transmite linhas tipadas de recebíveis, recebimentos, contas a pagar e pagamentos. A sincronização da API Bling atualmente guarda páginas de contas a pagar como evidência RAW; ainda não transforma essas páginas em registros tipados de `payables`/`payments` nem extrai CAPEX. Por isso, o contrato e a tela estão preparados para receber as métricas, mas os valores reais continuarão como `—` até que os campos e a categoria sejam confirmados e o fluxo de integração seja implementado.
 
 ## Revisão dos arquivos recebidos — 2026-10-04
 
@@ -29,6 +29,13 @@ O leitor existente do painel ainda consulta somente recebíveis, recebimentos, c
 - Assim, ainda não é possível confirmar se o total do print é CAPEX pago no mês ou acumulado, nem reconciliá-lo com o relatório geral de contas a pagar.
 - Não usar o total geral de contas a pagar como CAPEX. Para concluir a ligação, falta o mesmo resumo por categoria com as datas do filtro visíveis.
 - Nenhum valor, fornecedor ou dado de lançamento dos anexos foi copiado para o repositório.
+
+## Rechecagem do relatório e da origem dos dados — 2026-10-04
+
+- O PDF geral recebido nesta continuação confirma o mesmo período (`01/01/2026 a 30/09/2026`) e o mesmo total geral (`R$ 125.481,02`) já registrado acima; ele continua sem coluna de categoria.
+- Uma tentativa de abrir o relatório por categoria no Chrome foi bloqueada por uma preferência salva de segurança do navegador. Nenhum contorno foi tentado. Para conferir o período do total `CAPEX`, é necessário que a usuária envie o print do resumo por categoria com o filtro de datas visível, ou libere o acesso diretamente no navegador.
+- A leitura local do código confirmou que `ListPayables` e `PayablesAPISyncService` preservam cada página da API como JSON RAW. Não foi encontrado fluxo que normalize páginas da API em `payables` ou `payments`; o painel lê essas tabelas tipadas separadamente. Assim, ainda falta homologar os campos reais do Bling e criar a normalização antes de calcular CAPEX a partir da API.
+- O PDF geral não pode substituir essa homologação: ele confirma somente contas pagas no intervalo, não quais pagamentos são CAPEX.
 
 ## Verificação
 

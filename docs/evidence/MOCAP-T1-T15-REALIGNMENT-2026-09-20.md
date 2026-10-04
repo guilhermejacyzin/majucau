@@ -25,6 +25,10 @@ originais.
 - `T14-mockup-2026-09-20.png` — Alertas;
 - `T15-mockup-2026-09-20.png` — Importações / Integrações.
 
+### Correção de escopo — Balanço Patrimonial
+
+Embora algumas imagens históricas exibam “Balanço Patrimonial” no menu, a decisão D-07 e o critério aprovado T-CEI17-08 o definem como conteúdo legado fora da versão 1. A implementação deve omitir essa rota; “Balancete” continua sendo a tela T7. As imagens permanecem preservadas como evidência histórica e não reabrem a decisão.
+
 Os números que aparecem nas imagens são exemplos de composição e não foram hardcoded. A interface mostra `—` e `Sem dados confirmados` enquanto não houver fonte oficial conectada.
 
 O handoff técnico-funcional versionado em `docs/source/Handoff-Tecnico-Funcional-Majucau-2026-08-16.md` foi relido nesta revisão. As regras financeiras do handoff continuam prevalecendo sobre o desenho: o card de menor saldo representa o mínimo diário dentro de D0–D+60, e o painel de semana crítica permanece dependente de decisão/regra, sem converter ausência de dados em zero. Os círculos vermelhos da referência T2 foram tratados como indicação desses dois componentes, não como valores a serem copiados.

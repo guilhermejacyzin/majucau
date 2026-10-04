@@ -25,7 +25,6 @@ const navItems: NavItem[] = [
   { key: 'conciliation', label: 'Conciliação', icon: 'reconcile', tooltip: 'nav.conciliations' },
   { key: 'dre', label: 'DRE', icon: 'result', section: 'RESULTADOS', tooltip: 'nav.result' },
   { key: 'trial-balance', label: 'Balancete', icon: 'balance', tooltip: 'nav.accounting' },
-  { key: 'trial-balance', label: 'Balanço Patrimonial', icon: 'building', tooltip: 'nav.accounting' },
   { key: 'investment-calculator', label: 'Aplicações', icon: 'investment', section: 'INVESTIMENTOS', tooltip: 'nav.investments' },
   { key: 'investment-calculator', label: 'Calculadora de Aplicação', icon: 'calculator', tooltip: 'nav.investments' },
   { key: 'inventory', label: 'Estoque', icon: 'inventory', section: 'OPERAÇÃO', tooltip: 'nav.treasury' },

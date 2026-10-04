@@ -74,9 +74,11 @@ O callback loopback de aplicativo desktop não está comprovado na documentaçã
 
 ## D-003 — Fórmula do Valor Máximo para Aplicação
 
-### Problema
+### Contexto original e atualização
 
-A planilha `Calculadora_Aplicacao_Lucro_Liquido_Profissional.xlsx` referenciada pelo handoff não foi fornecida. Não existe oráculo verificável para reproduzir.
+Na aprovação do G0, em 2026-08-16, a planilha referenciada pelo handoff não havia sido fornecida. Por isso, D-003-A foi aprovada como fórmula própria do Majucau, sem alegar equivalência com a referência.
+
+Em 2026-10-04, Gisele forneceu `Calculadora_Aplicacao_Lucro_Liquido_Profissional.xlsm` e pediu que a parte de segurança considerasse o fluxo de caixa. A planilha foi recebida e analisada; o mapeamento inicial e a dúvida ainda aberta estão em `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`. D-003-A continua vigente até a comparação ser fechada e qualquer alteração de regra ser aprovada.
 
 ### D-003-A — Aprovar fórmula Majucau v1 como novo oráculo (recomendada)
 
@@ -90,15 +92,15 @@ maximum_investment = max(0, min(available_profit, financial_limit))
 
 Somente recebimentos com fonte oficial e data válida participam. O cálculo usa BRL, decimal exato e `ROUND_HALF_UP` em duas casas apenas na fronteira de apresentação/reconciliação.
 
-**Consequência:** cria uma regra nova e auditável, em vez de alegar equivalência com uma planilha inexistente.
+**Consequência:** criou uma regra auditável, sem alegar equivalência com uma planilha ainda não conferida.
 
 ### D-003-B — Aguardar a planilha original
 
-**Consequência:** o card permanece desabilitado até a entrega e os testes de equivalência.
+**Consequência:** era a opção antes da entrega da planilha. A referência foi recebida em 2026-10-04; a comparação está pendente e não suspende D-003-A.
 
 ### Evidência para fechar
 
-- aprovação da fórmula ou entrega da planilha;
+- comparação com a planilha recebida e confirmação do tratamento dos recebimentos previstos da Nuvemshop e da reserva mínima;
 - casos dourados incluindo limite negativo, lucro insuficiente, pior saldo, reserva e recebimento sem fonte oficial;
 - diferença máxima de R$ 0,01.
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"strings"
 
 	"majucau.local/financial-intelligence/internal/application"
@@ -109,24 +110,32 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 	case ipc.MethodNuvemPagoFutureImport:
 		return h.importNuvemPagoFuture(ctx, req)
 	case ipc.MethodDashboardSnapshot:
-		return h.dashboardSnapshot(ctx, req)
+		return ipc.Response{}, errors.New("dashboard snapshot requires the streaming IPC transport")
 	default:
 		return ipc.Response{}, ipc.ErrUnsupportedMethod
 	}
 }
 
-func (h workerHandler) dashboardSnapshot(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+func (h workerHandler) HandleStream(ctx context.Context, req ipc.Request, dst io.Writer) (ipc.Response, error) {
+	if req.Method != ipc.MethodDashboardSnapshot || dst == nil {
+		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_REQUEST_INVALID", "A consulta do painel não recebeu dados válidos."), nil
+	}
 	if len(req.Payload) != 0 && string(req.Payload) != "null" && string(req.Payload) != "{}" {
 		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_REQUEST_INVALID", "A consulta do painel não recebeu dados válidos."), nil
 	}
 	if h.dashboardReader == nil {
 		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_DATABASE_NOT_CONFIGURED", "O banco local ainda não está configurado para consultar o painel."), nil
 	}
-	snapshot, err := h.dashboardReader.ReadDashboardSnapshot(ctx)
-	if err != nil {
+	streamReader, ok := h.dashboardReader.(interface {
+		WriteDashboardSnapshot(context.Context, io.Writer) error
+	})
+	if !ok {
 		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_UNAVAILABLE", "Os dados normalizados do painel ainda não estão disponíveis."), nil
 	}
-	return ipc.NewResponse(req.RequestID, snapshot)
+	if err := streamReader.WriteDashboardSnapshot(ctx, dst); err != nil {
+		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_UNAVAILABLE", "Os dados normalizados do painel ainda não estão disponíveis."), nil
+	}
+	return ipc.Response{Version: ipc.ProtocolVersion, RequestID: req.RequestID, OK: true}, nil
 }
 
 func (h workerHandler) saveNuvemshopConfig(ctx context.Context, req ipc.Request) (ipc.Response, error) {

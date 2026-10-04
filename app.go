@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -139,7 +140,41 @@ func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
 	}
 	ctx, cancel := context.WithTimeout(parent, 5*time.Second)
 	defer cancel()
-	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("dashboard-snapshot"), Method: ipc.MethodDashboardSnapshot, Payload: json.RawMessage(`{}`)})
+	request := ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("dashboard-snapshot"), Method: ipc.MethodDashboardSnapshot, Payload: json.RawMessage(`{}`)}
+	var response ipc.Response
+	var decodeErr error
+	if streamClient, ok := client.(ipc.StreamClient); ok {
+		reader, writer := io.Pipe()
+		decoded := make(chan error, 1)
+		var snapshot application.DashboardSnapshot
+		go func() {
+			decodeErr := json.NewDecoder(reader).Decode(&snapshot)
+			_ = reader.Close()
+			decoded <- decodeErr
+		}()
+		response, err = streamClient.CallStream(ctx, request, writer)
+		if err != nil {
+			_ = writer.CloseWithError(err)
+		} else {
+			_ = writer.Close()
+		}
+		decodeErr = <-decoded
+		if err != nil {
+			return fallback
+		}
+		if !response.OK {
+			fallback.ErrorCode = workerErrorCode(response)
+			fallback.Message = workerErrorMessage(response)
+			return fallback
+		}
+		if decodeErr != nil {
+			fallback.ErrorCode = "WORKER_INVALID_RESPONSE"
+			fallback.Message = "O serviço local respondeu em formato inválido."
+			return fallback
+		}
+		return snapshot
+	}
+	response, err = client.Call(ctx, request)
 	if err != nil {
 		return fallback
 	}

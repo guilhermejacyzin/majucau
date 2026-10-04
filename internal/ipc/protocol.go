@@ -8,8 +8,11 @@ import (
 	"strings"
 )
 
-const ProtocolVersion = "1"
+const ProtocolVersion = "2"
 const MaxMessageSize = 1 << 20
+// StreamChunkSize leaves room for the JSON envelope and base64 encoding while
+// keeping every stream frame comfortably below MaxMessageSize.
+const StreamChunkSize = 512 << 10
 
 var (
 	ErrInvalidRequest     = errors.New("invalid ipc request")
@@ -48,6 +51,12 @@ type Response struct {
 	OK        bool            `json:"ok"`
 	Error     *ErrorBody      `json:"error,omitempty"`
 	Payload   json.RawMessage `json:"payload,omitempty"`
+	Stream    *StreamFrame    `json:"stream,omitempty"`
+}
+type StreamFrame struct {
+	Sequence uint64 `json:"sequence"`
+	Done     bool   `json:"done"`
+	Data     []byte `json:"data,omitempty"`
 }
 type ErrorBody struct {
 	Code    string `json:"code"`

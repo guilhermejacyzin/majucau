@@ -39,11 +39,10 @@ encontrou apenas um chamador de teste, portanto nenhum fluxo de produção mudou
   arquivos, mas só devolve até 50 metadados e 50 detalhes de erro, junto dos
   totais completos.
 - As duas rotas de prévia montam respostas apenas a partir desses arrays
-  limitados. Já o snapshot do painel monta os arrays de recebíveis/pagáveis no
-  servidor antes do quadro IPC validar o limite de 1 MiB; a consulta limita a
-  50 linhas, mas textos vindos do banco não têm tamanho máximo. Esse ponto
-  continua aguardando uma decisão de contrato, pois pode exigir apresentação
-  de erro ou mudança na forma de consulta exibida.
+  limitados. O painel agora consulta recebíveis e pagáveis registro a registro e
+  envia o JSON em quadros IPC de até 512 KiB. A mesma resposta final alimenta a
+  tela já aprovada. Os limites de 1 MiB por campo e 4 MiB por registro impedem
+  que texto sem tamanho máximo na migration gere uma resposta ilimitada.
 - A listagem de integrações usa `rows.Next`, mas a tabela de conexões limita
   `provider` a quatro valores únicos; portanto, essa consulta tem teto de
   quatro linhas. Os demais fluxos de cópia de backup e hash de pacote usam
@@ -56,26 +55,27 @@ do diretório de dados protege os arquivos temporários do servidor durante a
 execução. Esses pontos continuam dependentes de validação em VM Windows; não
 houve alteração de comportamento, tela ou regra de negócio nesta etapa.
 
-## Pendência: resposta do snapshot do painel
+## Resposta do snapshot do painel
 
-O SQL do dashboard limita a 50 linhas de contas a receber e 50 de contas a
-pagar, mas serializa os dois conjuntos como JSON. Alguns campos selecionados,
-como nomes, documentos e categorias, são `text` sem limite de comprimento na
-migration. O IPC limita a resposta a 1 MiB somente quando escreve o quadro:
-nesse momento o handler já materializou os arrays e serializou a resposta.
-Assim, o limite evita enviar um quadro maior, mas não impede o pico de memória
-anterior nem garante ao cliente uma mensagem de erro clara.
+Em 2026-10-04, a usuária autorizou enviar os dados internos em blocos menores,
+mantendo a mesma tela e as mesmas informações. A implementação separa o resumo
+financeiro das consultas de detalhe, lê cada linha do PostgreSQL e transmite o
+JSON em quadros sequenciais. Uma transação somente leitura `REPEATABLE READ`
+mantém resumo e tabelas na mesma visão do banco. Campos acima de 1 MiB ou linhas
+acima de 4 MiB falham sem encaminhar o texto excessivo. O cliente verifica a
+sequência e só devolve o snapshot quando recebe o quadro final e decodifica o
+JSON completo; respostas incompletas não são exibidas.
 
-A regra para conteúdo acima de 1 MiB — erro claro usando o limite atual ou
-paginação/streaming com contrato aprovado — foi perguntada à usuária e aguarda
-resposta. Nenhuma tela ou regra de negócio foi alterada nesta auditoria.
+O protocolo IPC foi elevado para v2 porque o contrato de resposta passou a
+suportar quadros de streaming. A validação de execução Windows/PostgreSQL ainda
+precisa ocorrer na CI; esta alteração não muda a tela nem as regras financeiras.
 
 ## Resultado
 
 A maior parte dos caminhos revisados já tem streaming ou limite de tamanho
-explícito. `DATA-04` continua `PARTIAL` até resolver e validar o contrato de
-resposta IPC do dashboard, terminar a auditoria dos demais fluxos fora deste
-recorte e comprovar a limpeza/ACL em VM Windows real.
+explícito. O contrato de resposta do painel foi implementado; `DATA-04` continua
+`PARTIAL` até a CI Windows/PostgreSQL validar essa mudança, a auditoria dos
+demais fluxos terminar e a limpeza/ACL ser comprovada em VM Windows real.
 
 ## Regressão do limite de redação — CI #241
 

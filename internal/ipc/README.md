@@ -5,6 +5,15 @@ ordem big-endian e payload JSON limitado a `MaxMessageSize` (1 MiB). O servidor
 valida a versão, request id e método antes de chamar o handler; respostas nunca
 incluem secrets.
 
+O contrato v2 envia `dashboard.snapshot` em quadros sequenciais de até 512 KiB
+de dados, com número de sequência e quadro final. O Named Pipe continua
+limitado a 1 MiB por quadro; o cliente valida versão, request id, ordem e
+tamanho antes de encaminhar os bytes para o decoder JSON. A consulta lê os
+detalhes em fluxo, até 50 linhas por tabela, dentro de uma transação somente
+leitura `REPEATABLE READ`; cada campo textual tem limite de 1 MiB e cada linha,
+4 MiB. Se uma linha exceder esses limites, o painel recebe falha e não mostra
+um snapshot incompleto. O JSON final mantém o contrato usado pela tela atual.
+
 O DACL é criado com SDDL explícito para os SID configurados, administradores
 locais (`BA`) e sistema (`SY`). A UI recebe apenas `FILE_READ_DATA`,
 `FILE_WRITE_DATA` e `SYNCHRONIZE`; o SID do serviço também recebe

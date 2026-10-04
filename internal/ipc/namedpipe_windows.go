@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -185,6 +186,28 @@ func (s *NamedPipeServer) handleConnection(ctx context.Context, pipe *serverPipe
 	}
 	requestCtx, cancel := context.WithTimeout(ctx, s.config.IOTimeout)
 	defer cancel()
+	// This connection accepts one request only. A read past that request waits
+	// for the client to disconnect and carries cancellation into database reads.
+	go func() {
+		var trailing [1]byte
+		_, _ = f.Read(trailing[:])
+		cancel()
+	}()
+	if request.Method == MethodDashboardSnapshot {
+		if streamHandler, ok := handler.(StreamingHandler); ok {
+			stream := newResponseStreamWriter(f, request.RequestID)
+			response, streamErr := streamHandler.HandleStream(requestCtx, request, stream)
+			if streamErr != nil {
+				response = NewErrorResponse(request.RequestID, "INTERNAL_ERROR", "worker request failed")
+			}
+			if err := stream.finish(response); err != nil {
+				return err
+			}
+			// DisconnectNamedPipe can discard buffered bytes; force delivery before
+			// the single-request connection is closed.
+			return f.Sync()
+		}
+	}
 	response, err := handler.Handle(requestCtx, request)
 	if err != nil {
 		response = NewErrorResponse(request.RequestID, "INTERNAL_ERROR", "worker request failed")
@@ -231,6 +254,17 @@ func (c *NamedPipeClient) Close() error {
 	return nil
 }
 func (c *NamedPipeClient) Call(ctx context.Context, request Request) (Response, error) {
+	return c.call(ctx, request, nil)
+}
+
+func (c *NamedPipeClient) CallStream(ctx context.Context, request Request, dst io.Writer) (Response, error) {
+	if dst == nil {
+		return Response{}, ErrInvalidRequest
+	}
+	return c.call(ctx, request, dst)
+}
+
+func (c *NamedPipeClient) call(ctx context.Context, request Request, streamDst io.Writer) (Response, error) {
 	if err := ctx.Err(); err != nil {
 		return Response{}, err
 	}
@@ -268,7 +302,12 @@ func (c *NamedPipeClient) Call(ctx context.Context, request Request) (Response, 
 		}
 		c.file = f
 		c.mu.Unlock()
-		resp, err := callOverStream(callCtx, f, request)
+		var resp Response
+		if streamDst == nil {
+			resp, err = callOverStream(callCtx, f, request)
+		} else {
+			resp, err = callOverStreamChunks(callCtx, f, request, streamDst)
+		}
 		_ = f.Close()
 		c.mu.Lock()
 		c.file = nil

@@ -1,8 +1,8 @@
 # Relatórios do Majucau — rascunho para dimensionamento
 
-- **Status:** proposta para revisão; não aprovada como escopo final.
+- **Status:** rascunho; consulta somente em tela aprovada para a versão inicial. A lista e a prioridade dos relatórios ainda precisam de validação.
 - **Público previsto:** gestão e operação financeira em acesso de consulta. A arquitetura alvo é privada e centralizada.
-- **Objetivo:** definir o que cada relatório responde, quais dados exige, de onde vêm os dados e como será conferido antes de exportar.
+- **Objetivo:** definir o que cada relatório responde, quais dados exige, de onde vêm os dados e como conferir as informações exibidas.
 
 ## Caminho de dados já mapeado
 
@@ -40,7 +40,7 @@ O mapa técnico das APIs já lista recursos do Bling para contas a receber, cont
 3. **Período e filtros:** competência, data, origem, situação e conta, quando aplicáveis.
 4. **Detalhe:** somente totais, linhas da DRE, ou também abertura até conta e documento de origem.
 5. **Comparação:** período anterior, orçamento ou realizado versus projetado.
-6. **Saída:** consulta na tela; PDF ou Excel só depois de confirmar o formato necessário.
+6. **Saída:** consulta somente na tela na versão inicial. PDF e Excel ficam fora do escopo até nova aprovação.
 7. **Conferência:** total, origem, atualização, incompletudes e explicação de valores indisponíveis.
 8. **Acesso:** consulta sem permissão para lançar ou alterar dados; pessoas e perfis precisam ser definidos.
 
@@ -50,11 +50,10 @@ O mapa técnico das APIs já lista recursos do Bling para contas a receber, cont
 - Em “Ver detalhes”, abrir um relatório do mesmo período e filtro, com composição e origem rastreável.
 - Mostrar a fórmula e a data-base quando o relatório apresentar indicadores calculados.
 - Destacar dados parciais, pendentes ou desatualizados; ausência de informação não vira zero.
-- Disponibilizar exportação apenas após aprovação do conteúdo, formato e perfil de acesso.
+- Manter a consulta dentro da tela do sistema; qualquer exportação futura precisa de aprovação separada.
 
 ## Aprovações necessárias antes de implementar relatórios
 
-- Priorizar quais relatórios as chefias precisam no primeiro protótipo.
-- Confirmar se basta consultar na tela ou se precisam de PDF, Excel, ou ambos.
+- Priorizar quais relatórios entram primeiro no protótipo.
 - Confirmar se os gestores com acesso externo terão somente consulta.
 - Homologar o mapeamento campo a campo das fontes oficiais antes de preencher totais financeiros.

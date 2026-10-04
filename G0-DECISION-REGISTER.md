@@ -208,3 +208,10 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
   - EBITDA/LAJIDA = EBIT + depreciação + amortização + exaustão.
 - Referência metodológica: [Resolução CVM 156](https://conteudo.cvm.gov.br/legislacao/resolucoes/resol156.html). Quando faltar qualquer componente ou reconciliação, mostrar o traço (—) e “Sem dados confirmados”; não usar zero nem valores ilustrativos.
 - A decisão aprova a apresentação em cards e a metodologia derivada; não aprova EBITDA ajustado nem mudanças nas regras contábeis da DRE.
+
+## Decisão posterior aprovada — consulta dos relatórios
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).
+- Na versão inicial, os relatórios serão consultados somente nas telas do Majucau.
+- PDF e Excel ficam fora do escopo até nova aprovação.
+- A prioridade e a ordem dos relatórios do catálogo continuam pendentes de validação.

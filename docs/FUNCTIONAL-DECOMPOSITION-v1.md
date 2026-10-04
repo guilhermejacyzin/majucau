@@ -277,7 +277,7 @@ Na faixa inferior da página T6, substituir visualmente o card `UNMAPPED` por EB
 
 Referência metodológica: Resolução CVM 156, arts. 1º–3º. Essa metodologia não autoriza ajustes fora da DRE nem altera o reconhecimento contábil. Se qualquer componente não tiver fonte válida ou reconciliação, exibir o traço (—) e “Sem dados confirmados”; nunca usar zero ou números ilustrativos.
 
-CAPEX pago e CAPEX acumulado são informativos: não entram no lucro da DRE. O card de pagamento exige vínculo entre o pagamento e um ativo classificado como CAPEX; o acumulado soma ativos CAPEX reconhecidos desde o início do histórico confiável. Não substituir um pelo outro. Gisele informou que esses dados constam nos relatórios existentes; falta identificar relatório, campos e conciliação. Até confirmar essa ligação, os cards exibem `—`. A faixa acomoda os oito cards inferiores em grade responsiva e mantém o alerta `UNMAPPED` visível.
+CAPEX pago e CAPEX acumulado são informativos: não entram no lucro da DRE. O card de pagamento mostra o valor de CAPEX pago no mês informado pelo relatório; o acumulado mostra o total informado desde o início do histórico confiável. Não substituir um pelo outro. Gisele confirmou que os relatórios existentes informam CAPEX; o snapshot do painel ainda não importa esses valores. A etapa pendente é conectar as métricas do relatório ao snapshot. Até lá, os cards exibem `—`; não usar pagamentos genéricos como substituto. A faixa acomoda os oito cards inferiores em grade responsiva e mantém o alerta `UNMAPPED` visível.
 
 ### Aceite
 

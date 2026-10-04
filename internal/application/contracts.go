@@ -253,6 +253,8 @@ type DashboardSnapshot struct {
 	PayablesDueToday   DashboardMetric          `json:"payables_due_today"`
 	PayablesOverdue    DashboardMetric          `json:"payables_overdue"`
 	PaymentsMonth      DashboardMetric          `json:"payments_month"`
+	CapexPaidMonth     *DashboardMetric         `json:"capex_paid_month,omitempty"`
+	CapexAccumulated   *DashboardMetric         `json:"capex_accumulated,omitempty"`
 	ReceivableRows     []DashboardReceivableRow `json:"receivable_rows,omitempty"`
 	PayableRows        []DashboardPayableRow    `json:"payable_rows,omitempty"`
 	ErrorCode          string                   `json:"error_code,omitempty"`

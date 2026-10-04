@@ -192,15 +192,28 @@ function DreDerivedIndicators() {
   )
 }
 
-function CapexIndicators() {
+function capexValue(metric?: DashboardMetric): string {
+  if (!metric || metric.state === 'UNAVAILABLE' || metric.state === 'PROJECTED' || !metric.value) return '—'
+  return formatMoney(metric.value)
+}
+
+function capexSupport(metric?: DashboardMetric): string {
+  if (metric?.state === 'CONFIRMED' && metric.value) return 'Valor confirmado no relatório'
+  if (metric?.state === 'PARTIAL' && metric.value) return 'Relatório parcialmente conferido'
+  return 'Aguardando integração do relatório'
+}
+
+function CapexIndicators({ snapshot }: { snapshot?: DashboardSnapshot }) {
+  const paidMonth = snapshot?.capex_paid_month
+  const accumulated = snapshot?.capex_accumulated
   return (
     <>
       <article className="mocap-card mocap-dre-indicator-card mocap-dre-capex-card tone-purple" aria-labelledby="mocap-dre-capex-paid-title">
         <div className="mocap-card-icon"><Icon icon="building" /></div>
         <div className="mocap-card-body">
           <Tooltip id="result.capexPaid"><span id="mocap-dre-capex-paid-title" className="mocap-card-label">CAPEX PAGO NO MÊS</span></Tooltip>
-          <strong className="mocap-empty-value">—</strong>
-          <span className="mocap-card-support">Relatório e pagamento a conferir</span>
+          <strong className="mocap-empty-value">{capexValue(paidMonth)}</strong>
+          <span className="mocap-card-support">{capexSupport(paidMonth)}</span>
           <p>Informativo; não entra no lucro da DRE.</p>
         </div>
       </article>
@@ -208,8 +221,8 @@ function CapexIndicators() {
         <div className="mocap-card-icon"><Icon icon="building" /></div>
         <div className="mocap-card-body">
           <Tooltip id="result.capexAccumulated"><span id="mocap-dre-capex-accumulated-title" className="mocap-card-label">CAPEX ACUMULADO</span></Tooltip>
-          <strong className="mocap-empty-value">—</strong>
-          <span className="mocap-card-support">Relatório e acumulado a conferir</span>
+          <strong className="mocap-empty-value">{capexValue(accumulated)}</strong>
+          <span className="mocap-card-support">{capexSupport(accumulated)}</span>
           <p>Informativo; não entra no lucro da DRE.</p>
         </div>
       </article>
@@ -232,6 +245,6 @@ export function MockupDashboard({ screen, snapshot, onNavigate }: { screen: Mock
   const tableRows = screen === 'receivables' ? receivableRows : screen === 'payables' ? payableRows : []
   const middleLeft = config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} rows={tableRows} /> : config.chart ? <EmptyChart title={config.middleTitle} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
   const middleRight = config.layout === 'market' ? <EmptyRiskPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'critical' ? <EmptyCriticalPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'calculation' ? <EmptyRulesPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'forecast' ? <EmptyMetadataPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} />
-  const lower = screen === 'dre' ? <section className="mocap-lower-cards mocap-dre-lower-cards" aria-label="Indicadores e composição da DRE">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}<DreDerivedIndicators /><CapexIndicators /></section> : config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section>
+  const lower = screen === 'dre' ? <section className="mocap-lower-cards mocap-dre-lower-cards" aria-label="Indicadores e composição da DRE">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}<DreDerivedIndicators /><CapexIndicators snapshot={snapshot} /></section> : config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section>
   return <div className="mocap-page"><MocapHeader config={config} snapshot={snapshot} /><section className="mocap-top-cards">{cards.map((card) => <MocapCard key={card.label} card={card} />)}</section><section className={`mocap-middle ${config.layout ? `layout-${config.layout}` : ''}`}>{middleLeft}{middleRight}</section>{lower}{config.layout !== 'market' && <AlertPanel messages={config.alerts} onNavigate={onNavigate} />}</div>
 }

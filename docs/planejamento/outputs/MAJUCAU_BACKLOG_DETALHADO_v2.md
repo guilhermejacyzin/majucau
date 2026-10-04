@@ -22,6 +22,14 @@ As regras funcionais existentes permanecem fechadas. A decisão posterior aprovo
 
 Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. Peso inicial 1 mede quantidade. Evolução geral = soma(peso × conclusão) / soma(pesos). O denominador inclui tarefas condicionais ainda previstas; quando o escopo for efetivamente alterado, registrar a versão e revisar pesos/denominador. Não existe atualização automática pelo GitHub.
 
+### Auditoria do estado atual — 04/10/2026
+
+- O número de 2,4% e a indicação de desenvolvimento em 0% acima pertencem à revisão de 13/09/2026. Como o código e as evidências avançaram desde então sem atualização tarefa a tarefa neste arquivo, esses números são históricos e não devem ser apresentados como o progresso atual.
+- A matriz `REQUIREMENTS-TRACEABILITY.md` tem 51 requisitos, distribuídos assim nesta auditoria: 1 `VERIFIED`, 5 `DOCUMENTED`, 22 `PARTIAL`, 11 `BLOCKED` e 12 `NOT_STARTED`.
+- Apenas `VERIFIED` conta como requisito integralmente comprovado. Isso equivale a 1 de 51 (aproximadamente 2%) por contagem simples de requisitos; não é o percentual oficial do projeto, porque os requisitos têm tamanhos e pesos diferentes.
+- Portanto, ainda não há percentual global nem prazo de conclusão confiável. Para calculá-los, é necessário revisar BK-000 a BK-126 contra o código, os testes/evidências, os gates e as dependências atuais. Documentação isolada não fecha uma tarefa de implementação.
+- Até essa revisão, comunicar o estado como “1 de 51 requisitos verificados; 22 parciais; 11 bloqueados; 12 não iniciados; 5 documentados”. Não converter automaticamente “não verificado” em “não feito”.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.

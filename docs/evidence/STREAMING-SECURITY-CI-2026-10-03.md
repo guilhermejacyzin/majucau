@@ -83,3 +83,10 @@
 - `TestNamedPipeConcurrentClientHealthRequests` libera oito clientes independentes ao mesmo tempo, confere cada `request_id` e payload, rejeita resposta duplicada e impõe prazo para conclusão/cancelamento. O servidor ainda processa um handler por vez; esta evidência prova que as chamadas concorrentes terminam sem perder ou misturar respostas nesse cenário.
 - A CI [37139715109](https://github.com/guilhermejacyzin/majucau/actions/runs/37139715109) passou nos jobs Windows e PostgreSQL, incluindo testes Go, vet, scans de segurança, frontend, builds, smoke do instalador e consolidação de outputs.
 - Isto não substitui concorrência entre operações do worker, ensaio do serviço instalado com UI fechada, reboot ou VMs limpas Windows 10/11. `ARC-02` e `SEC-01` continuam `PARTIAL`.
+
+## Estado atual da CI Windows — 2026-10-04
+
+- As execuções dos commits `86b275a` ([CI 37235671944](https://github.com/guilhermejacyzin/majucau/actions/runs/37235671944)), `667eb5a` ([CI 37236624188](https://github.com/guilhermejacyzin/majucau/actions/runs/37236624188)) e `3ad1e2a` ([CI 37237958548](https://github.com/guilhermejacyzin/majucau/actions/runs/37237958548)) falharam no job Windows, na etapa `Go tests`; os jobs PostgreSQL passaram.
+- O commit `3ad1e2a` só alterou documentação. A repetição confirma que o conjunto Windows ainda não está verde, mas não identifica a causa.
+- A consulta disponível mostrou apenas o estado do job e uma anotação genérica de saída 1. Os logs detalhados não foram acessíveis nesta execução; por isso, não atribuir a falha a um teste específico nem afrouxar controles de segurança com base nisso.
+- Próximo passo: obter a saída detalhada dos testes Windows, corrigir a causa e voltar a exigir sucesso nos dois jobs antes de marcar `ARC-02` concluído.

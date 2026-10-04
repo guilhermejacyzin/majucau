@@ -214,4 +214,11 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).
 - Na versão inicial, os relatórios serão consultados somente nas telas do Majucau.
 - PDF e Excel ficam fora do escopo até nova aprovação.
-- A prioridade e a ordem dos relatórios do catálogo continuam pendentes de validação.
+- O conteúdo detalhado de cada consulta continua pendente de validação.
+
+## Diretriz aprovada — ordem das consultas pelo painel executivo
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).
+- Organizar o detalhamento das consultas na mesma ordem visual da tela aprovada “Visão Executiva”: cards do topo, área central, cards inferiores e alertas.
+- Essa ordem serve para planejar e detalhar as consultas existentes. Não autoriza criar telas novas nem mudar fórmulas, cálculos ou regras de negócio.
+- A DRE continua em sua tela própria como resultado consolidado conforme as regras aprovadas; os cards EBIT/EBITDA permanecem no lugar de UNMAPPED, com o alerta de pendências visível.

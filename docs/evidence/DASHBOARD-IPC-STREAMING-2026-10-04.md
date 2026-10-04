@@ -47,3 +47,11 @@ mantendo a mesma tela e as mesmas informações.
 O streaming do snapshot foi implementado e testado localmente, mas `DATA-04`
 continua parcial até a CI passar, a auditoria dos outros fluxos terminar e a
 limpeza/ACL ser verificada em VM Windows real.
+
+## Revalidação após integração — 2026-10-04
+
+- A execução [CI 37243820980](https://github.com/guilhermejacyzin/majucau/actions/runs/37243820980), no commit `ff9e5ce` (somente documentação), terminou com `verify-postgres` aprovado e `verify-windows` reprovado na etapa `Go tests`. O build da interface passou antes dessa etapa; verificações posteriores do job Windows foram ignoradas.
+- A reprodução local de `TestNamedPipeHealthRoundTripAndCancellation` também falhou em `internal/ipc/namedpipe_windows_test.go:53` com `Acesso negado.`. Um diagnóstico separado confirmou que o Windows consegue abrir um Named Pipe com permissões padrão; isso não identifica por que o canal com DACL restrita está negando acesso.
+- A leitura do diff confirmou que a revisão de streaming adicionou o caminho de quadros, mas não mudou as funções que montam e aplicam o DACL. A causa exata ainda não está provada; não ampliar permissões como tentativa de fazer os testes passarem.
+- Os logs detalhados da execução não foram disponibilizados pela API pública do GitHub (`403 Forbidden`). É necessário obter a saída detalhada de `Go tests` para comparar todos os testes que falharam.
+- `DATA-04` permanece `PARTIAL`; o streaming, por si só, não está homologado até corrigir a falha e obter CI verde.

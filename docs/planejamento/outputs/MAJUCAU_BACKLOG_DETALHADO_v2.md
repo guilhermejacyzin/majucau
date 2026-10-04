@@ -2,7 +2,7 @@
 
 Revisão de 13/09/2026: fechamento funcional enviado pelo usuário incorporado. Escopo desta rodada confirmado: somente atualizar o backlog. Nenhum código do produto, integração, serviço ou teste real foi executado.
 
-Adendo aprovado em 04/10/2026, registrado no `G0-DECISION-REGISTER.md`: o Majucau calculará sua própria DRE com regras contábeis aprovadas; a DRE pronta do Bling deixa de ser tratada como resultado final. Este adendo substitui os trechos conflitantes abaixo. Regras detalhadas e mapa de classificação permanecem bloqueados até serem recebidos e aprovados.
+Adendo aprovado em 04/10/2026, registrado no `G0-DECISION-REGISTER.md`: o Majucau calculará sua própria DRE com regras contábeis aprovadas; a DRE pronta do Bling deixa de ser tratada como resultado final. Este adendo substitui os trechos conflitantes abaixo. Princípios para estoque, produção e CPV/CMV foram recebidos e organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`; o mapeamento por conta/operação, os critérios específicos da empresa e os dados de origem continuam pendentes de validação contábil.
 
 Foram revisadas 70 tarefas mantendo os IDs BK-000 a BK-126. As versões anteriores estão preservadas como histórico. Suas regras superadas não devem orientar a implementação.
 
@@ -14,7 +14,7 @@ Bling é uma das fontes principais de lançamentos. A DRE é calculada pelo moto
 
 Análise/conciliação normal usa movimentos até D-1; dia corrente requer solicitação expressa. A agenda de recebimentos futuros continua alimentando o caixa projetado. D-1 é corte da análise, não frequência de sincronização.
 
-As regras funcionais existentes permanecem fechadas. A decisão posterior aprovou que o Majucau calcule sua própria DRE; as regras contábeis detalhadas e o mapeamento estão pendentes do material da contabilidade. A engenharia ainda executará especificação técnica, mapeamento das fontes, implementação e validação. Artefato aprovado ausente no pacote será localizado, sem inventar seu conteúdo.
+As regras funcionais existentes permanecem fechadas. A decisão posterior aprovou que o Majucau calcule sua própria DRE. Princípios contábeis gerais recebidos estão registrados em `docs/DRE-ACCOUNTING-POLICY-v1.md`; o mapeamento e as escolhas contábeis específicas da empresa ainda dependem de validação com a contabilidade. A engenharia ainda executará especificação técnica, mapeamento das fontes, implementação e validação. Artefato aprovado ausente no pacote será localizado, sem inventar seu conteúdo.
 
 ## Evolução
 
@@ -216,21 +216,21 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-007 — Especificar as regras da DRE própria do Majucau
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações.
+**Situação:** Em andamento — princípios gerais recebidos; mapeamento e critérios específicos pendentes. **Evolução:** 10% (estimativa de planejamento, sem código ou aceite contábil). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações + Contabilidade.
 
 **Objetivo:** Calcular uma DRE própria, com classificação e competência aprovadas pela contabilidade.
 
-**O que fazer:** Receber e registrar as regras contábeis detalhadas e definir como os lançamentos de origem alimentam as linhas já aprovadas da DRE.
+**O que fazer:** Validar e completar as regras contábeis específicas da empresa e definir como os lançamentos de origem alimentam as linhas já aprovadas da DRE, usando `docs/DRE-ACCOUNTING-POLICY-v1.md` como base de trabalho.
 
 **Como fazer:**
 
-1. Obter as regras contábeis aprovadas e mapear tipos de lançamento para as linhas já existentes da DRE; não inventar classificação nem fórmula.
+1. Conferir com a contabilidade os princípios recebidos e decidir critérios pendentes (inclusive valoração do estoque, rateio, tributos e imobilizado); mapear tipos de lançamento às linhas já existentes da DRE, sem inventar classificação ou fórmula.
 2. Mapear os campos e contas de origem realmente disponíveis no Bling e nas demais fontes homologadas, sem alterar os sistemas de origem.
 3. Comparar o resultado calculado pelo Majucau com a DRE do Bling por período e conta; registrar diferenças, sem copiar o relatório pronto como resultado final.
 4. Campo necessário não acessível pela fonte deve aparecer como Dado indisponível; ausência nunca vira zero.
 5. Preservar competência dos rendimentos; aplicação e resgate de principal não são automaticamente receita/despesa. Não alterar resultado por fontes externas fora de seu escopo.
 
-**Critério de aceite:** Regras fornecidas pela contabilidade são versionadas e mapeadas às linhas existentes; entradas, cálculos e diferenças podem ser rastreados até a fonte. Sem regra ou campo aprovado, o valor dependente permanece indisponível.
+**Critério de aceite:** Regras específicas da empresa são validadas/versionadas e mapeadas às linhas existentes; CPV/CMV concilia estoque, produção e vendas; entradas, cálculos e diferenças podem ser rastreados até a fonte. Sem regra, documento ou campo aprovado, o valor dependente permanece indisponível. Tela aprovada não é alterada.
 
 **Impacto:** Previne resultado incompleto apresentado como definitivo.
 

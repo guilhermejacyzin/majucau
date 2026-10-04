@@ -8,20 +8,38 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/domain"
 )
 
 const (
-	dashboardFieldMaxBytes  = 1 << 20
-	dashboardRecordMaxBytes = 4 << 20
+	// Each detail table returns at most 50 rows. These limits cap the raw
+	// detail strings retained by the desktop snapshot at about 1.6 MiB.
+	dashboardFieldMaxBytes  = 4 << 10
+	dashboardRecordMaxBytes = 16 << 10
 )
 
-var ErrSnapshotRecordTooLarge = errors.New("dashboard snapshot record exceeds the configured limit")
+var (
+	ErrDatabaseUnavailable    = errors.New("dashboard database is unavailable")
+	ErrSnapshotRecordTooLarge = errors.New("dashboard snapshot record exceeds the configured limit")
+)
 
 type dashboardStreamDB interface {
 	BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)
+}
+
+type Reader struct {
+	db  dashboardStreamDB
+	now func() time.Time
+}
+
+func NewReader(pool *pgxpool.Pool) *Reader {
+	if pool == nil {
+		return &Reader{}
+	}
+	return &Reader{db: pool, now: func() time.Time { return time.Now().UTC() }}
 }
 
 // WriteDashboardSnapshot emits the same dashboard data as a JSON document but
@@ -29,10 +47,6 @@ type dashboardStreamDB interface {
 // transaction keeps summary metrics and both tables on the same database view.
 func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) error {
 	if r == nil || r.db == nil {
-		return ErrDatabaseUnavailable
-	}
-	db, ok := r.db.(dashboardStreamDB)
-	if !ok {
 		return ErrDatabaseUnavailable
 	}
 	if dst == nil {
@@ -45,7 +59,7 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) erro
 	if r.now != nil {
 		now = r.now().UTC()
 	}
-	tx, err := db.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
 	if err != nil {
 		return err
 	}
@@ -130,6 +144,27 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		PayablesOverdue:    metric(payablesOverdueValue, payablesOverdueCount, stateForCount(payablesCount), "BLING"),
 		PaymentsMonth:      metric(paymentsMonthValue, paymentsMonthCount, stateForCount(paymentsTotalCount), "BLING"),
 	}, nil
+}
+
+func metric(value string, count int64, state, source string) application.DashboardMetric {
+	if count == 0 && state == "UNAVAILABLE" {
+		return application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: source}
+	}
+	return application.DashboardMetric{Value: value, Count: count, State: state, SourceSystem: source}
+}
+
+func stateForCount(count int64) string {
+	if count == 0 {
+		return "UNAVAILABLE"
+	}
+	return "CONFIRMED"
+}
+
+func projectedState(count int64) string {
+	if count == 0 {
+		return "UNAVAILABLE"
+	}
+	return "PROJECTED"
 }
 
 func streamReceivableRows(ctx context.Context, tx pgx.Tx, dst io.Writer) error {

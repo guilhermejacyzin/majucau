@@ -54,7 +54,7 @@ type workerHandler struct {
 	blingOAuth      blingOAuthService
 	blingSync       blingRawSyncer
 	statusReader    application.IntegrationStatusReader
-	dashboardReader application.DashboardSnapshotReader
+	dashboardReader application.DashboardSnapshotStreamer
 }
 
 func newWorkerHandler() workerHandler {
@@ -66,7 +66,7 @@ func newWorkerHandler() workerHandler {
 	var oauthService blingOAuthService
 	var rawSync blingRawSyncer
 	var statusReader application.IntegrationStatusReader
-	var dashboardReader application.DashboardSnapshotReader
+	var dashboardReader application.DashboardSnapshotStreamer
 	if pool != nil {
 		importer = bling.NewReceiptImportService(pool)
 		future = nuvempago.NewFutureImportService(pool)
@@ -126,13 +126,7 @@ func (h workerHandler) HandleStream(ctx context.Context, req ipc.Request, dst io
 	if h.dashboardReader == nil {
 		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_DATABASE_NOT_CONFIGURED", "O banco local ainda não está configurado para consultar o painel."), nil
 	}
-	streamReader, ok := h.dashboardReader.(interface {
-		WriteDashboardSnapshot(context.Context, io.Writer) error
-	})
-	if !ok {
-		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_UNAVAILABLE", "Os dados normalizados do painel ainda não estão disponíveis."), nil
-	}
-	if err := streamReader.WriteDashboardSnapshot(ctx, dst); err != nil {
+	if err := h.dashboardReader.WriteDashboardSnapshot(ctx, dst); err != nil {
 		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_UNAVAILABLE", "Os dados normalizados do painel ainda não estão disponíveis."), nil
 	}
 	return ipc.Response{Version: ipc.ProtocolVersion, RequestID: req.RequestID, OK: true}, nil

@@ -41,7 +41,7 @@ encontrou apenas um chamador de teste, portanto nenhum fluxo de produção mudou
 - As duas rotas de prévia montam respostas apenas a partir desses arrays
   limitados. O painel agora consulta recebíveis e pagáveis registro a registro e
   envia o JSON em quadros IPC de até 512 KiB. A mesma resposta final alimenta a
-  tela já aprovada. Os limites de 1 MiB por campo e 4 MiB por registro impedem
+  tela já aprovada. Os limites de 4 KiB por campo e 16 KiB por registro impedem
   que texto sem tamanho máximo na migration gere uma resposta ilimitada.
 - A listagem de integrações usa `rows.Next`, mas a tabela de conexões limita
   `provider` a quatro valores únicos; portanto, essa consulta tem teto de
@@ -61,14 +61,23 @@ Em 2026-10-04, a usuária autorizou enviar os dados internos em blocos menores,
 mantendo a mesma tela e as mesmas informações. A implementação separa o resumo
 financeiro das consultas de detalhe, lê cada linha do PostgreSQL e transmite o
 JSON em quadros sequenciais. Uma transação somente leitura `REPEATABLE READ`
-mantém resumo e tabelas na mesma visão do banco. Campos acima de 1 MiB ou linhas
-acima de 4 MiB falham sem encaminhar o texto excessivo. O cliente verifica a
+mantém resumo e tabelas na mesma visão do banco. Campos acima de 4 KiB ou linhas
+acima de 16 KiB falham sem encaminhar o texto excessivo. O cliente verifica a
 sequência e só devolve o snapshot quando recebe o quadro final e decodifica o
 JSON completo; respostas incompletas não são exibidas.
 
 O protocolo IPC foi elevado para v2 porque o contrato de resposta passou a
 suportar quadros de streaming. A validação de execução Windows/PostgreSQL ainda
 precisa ocorrer na CI; esta alteração não muda a tela nem as regras financeiras.
+
+### Revalidação complementar — 2026-10-04
+
+A análise inicial não identificou que o método antigo `ReadDashboardSnapshot`
+continuava no código apesar de não ter chamadores de produção. Esse método foi
+removido junto do contrato de leitura não-streaming; o contrato do worker agora
+exige `WriteDashboardSnapshot`. Testes locais com Go 1.26.6 passaram para
+`internal/dashboard` e `cmd/worker`, incluindo limites e rejeição de linhas
+excedentes. A compilação/CI Windows/PostgreSQL continua pendente.
 
 ## Resultado
 

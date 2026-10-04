@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"majucau.local/financial-intelligence/internal/domain"
@@ -258,8 +259,8 @@ type DashboardSnapshot struct {
 	Message            string                   `json:"message,omitempty"`
 }
 
-type DashboardSnapshotReader interface {
-	ReadDashboardSnapshot(context.Context) (DashboardSnapshot, error)
+type DashboardSnapshotStreamer interface {
+	WriteDashboardSnapshot(context.Context, io.Writer) error
 }
 type HealthChecker interface {
 	CheckHealth(context.Context) HealthResponse
@@ -286,4 +287,3 @@ func (h StaticHealth) CheckHealth(_ context.Context) HealthResponse {
 	}
 	return HealthResponse{Service: h.Service, Version: h.Version, State: state, CheckedAt: time.Now().UTC(), Dependencies: append([]DependencyHealth(nil), h.Dependencies...)}
 }
-

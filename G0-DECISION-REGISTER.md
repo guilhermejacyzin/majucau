@@ -222,3 +222,11 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Organizar o detalhamento das consultas na mesma ordem visual da tela aprovada “Visão Executiva”: cards do topo, área central, cards inferiores e alertas.
 - Essa ordem serve para planejar e detalhar as consultas existentes. Não autoriza criar telas novas nem mudar fórmulas, cálculos ou regras de negócio.
 - A DRE continua em sua tela própria como resultado consolidado conforme as regras aprovadas; os cards EBIT/EBITDA permanecem no lugar de UNMAPPED, com o alerta de pendências visível.
+
+## Decisão posterior aprovada — DRE própria do Majucau
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).
+- O Majucau calculará sua própria DRE usando regras contábeis aprovadas; não copiará a DRE pronta do Bling como resultado final.
+- Dados de origem do Bling poderão alimentar o cálculo e servir para comparação, preservando origem, período e diferenças explicáveis.
+- A tela e as linhas da DRE já aprovadas permanecem como estão, inclusive os cards EBIT/EBITDA no lugar do card inferior UNMAPPED.
+- **Pendente:** receber e aprovar as regras contábeis detalhadas e o mapeamento de cada tipo de lançamento para as linhas existentes. Até lá, os valores dependentes ficam indisponíveis; nenhuma classificação ou fórmula será inventada.

@@ -19,7 +19,7 @@ flowchart LR
 
 O mapa técnico das APIs já lista recursos do Bling para contas a receber, contas a pagar, contas financeiras, caixas e categorias. O processamento passa por leitura autenticada, RAW, normalização, validação/reconciliação e motor financeiro. Isso define o caminho técnico geral.
 
-**Ainda falta o mapa campo a campo** que liga cada campo real da origem à conta, classificação e linha da DRE. O próprio projeto mantém essa etapa pendente até a homologação dos campos oficiais. A demonstração pronta do Bling não substitui a DRE calculada pelo Majucau. A API financeira do Nuvem Pago também não está homologada como fonte de valores líquidos, taxas e datas de recebimento.
+**Ainda falta o mapa campo a campo** que liga cada lançamento real da origem às regras contábeis aprovadas e às linhas existentes da DRE. A DRE pronta do Bling não será copiada como resultado final; os dados de origem poderão ser usados no cálculo e para comparação. As regras detalhadas ainda serão fornecidas e aprovadas. A API financeira do Nuvem Pago também não está homologada como fonte de valores líquidos, taxas e datas de recebimento.
 
 ## Ordem do painel executivo
 
@@ -38,7 +38,7 @@ Essa ordem organiza o detalhamento das consultas. Ela não cria telas novas nem 
 
 | Relatório | O que a gestão consegue responder | Caminho dos dados | Situação e pendência |
 |---|---|---|---|
-| DRE do período, com cards EBIT e EBITDA | Como receita, custos e despesas chegaram ao resultado líquido? E quais são os indicadores EBIT e EBITDA? | Origem oficial → conta/categoria → mapeamento aprovado → cálculo por competência → tabela e composição T6, com cards EBIT/EBITDA na faixa inferior | A DRE mantém suas linhas; os dois cards ocupam a posição inferior antes usada por UNMAPPED. O alerta de pendências continua visível. Mapeamento dos campos e contas ainda precisa de homologação. |
+| DRE do período, com cards EBIT e EBITDA | Como receita, custos e despesas chegaram ao resultado líquido? E quais são os indicadores EBIT e EBITDA? | Lançamentos de origem → regras contábeis aprovadas → cálculo Majucau por competência → tabela T6 e cards EBIT/EBITDA | A DRE mantém suas linhas; os dois cards ocupam a posição inferior antes usada por UNMAPPED. O alerta continua visível. Regras detalhadas e mapeamento ainda precisam ser fornecidos e aprovados. |
 | Fluxo de caixa | Quanto entrou, saiu e qual saldo se projeta por dia? | Contas/caixas e recebíveis/pagáveis oficiais → conciliação → saldo diário → tela de fluxo | O motor possui regras de saldo; homologação de campos/fontes e reconciliação ponta a ponta continuam pendentes. |
 | Capacidade para aplicação | Qual valor pode ser aplicado sem usar lucro indisponível nem comprometer o caixa? | Lucro DRE até M-2 + principal líquido já investido + menor saldo diário projetado + reserva → cálculo D-003-A → memória de cálculo | Fórmula aprovada; componentes reais e decisão sobre recebimentos já contidos no fluxo ainda precisam ser confirmados. |
 | Contas a receber e a pagar | O que está aberto, vencido, realizado e por qual origem? | Contas do Bling e fontes oficialmente homologadas → normalização e conciliação → tabelas das telas | Telas previstas; detalhes, filtros e conferência de dados ainda precisam de validação. |
@@ -58,7 +58,7 @@ Essa ordem organiza o detalhamento das consultas. Ela não cria telas novas nem 
 ## Proposta inicial de desenho
 
 - Usar as telas já aprovadas como guia das consultas; não propor telas novas sem aprovação.
-- A DRE apresenta o resultado consolidado dos dados financeiros que a alimentam, depois do mapeamento e da conferência exigidos pelas regras existentes.
+- A DRE apresenta o resultado calculado pelo Majucau segundo regras contábeis aprovadas; a DRE pronta do Bling serve apenas para comparação, não como resultado final.
 - Cada tela mantém sua finalidade. Fluxo de caixa e calculadora de aplicação, por exemplo, são consultas diferentes.
 - Em “Ver detalhes”, quando já existir essa ação aprovada, abrir os dados do mesmo período e filtro, com composição e origem rastreável.
 - Mostrar a fórmula e a data-base quando o relatório apresentar indicadores calculados.

@@ -2,17 +2,19 @@
 
 Revisão de 13/09/2026: fechamento funcional enviado pelo usuário incorporado. Escopo desta rodada confirmado: somente atualizar o backlog. Nenhum código do produto, integração, serviço ou teste real foi executado.
 
+Adendo aprovado em 04/10/2026, registrado no `G0-DECISION-REGISTER.md`: o Majucau calculará sua própria DRE com regras contábeis aprovadas; a DRE pronta do Bling deixa de ser tratada como resultado final. Este adendo substitui os trechos conflitantes abaixo. Regras detalhadas e mapa de classificação permanecem bloqueados até serem recebidos e aprovados.
+
 Foram revisadas 70 tarefas mantendo os IDs BK-000 a BK-126. As versões anteriores estão preservadas como histórico. Suas regras superadas não devem orientar a implementação.
 
 ## Base vigente
 
 Somente Majucau, três diretores, hospedagem local em Windows, backend Go, frontend React JavaScript, monólito DDD hexagonal. Balanço Patrimonial permanece excluído. Mockup aprovado define visual; documentação consolidada define fonte, cálculo e comportamento; prevalece a última versão aprovada/congelada.
 
-Bling é a fonte principal. DRE por competência e balancete reproduzem a informação existente na origem, sem classificação paralela. Drive somente de leitura conserva 01_perdas_operacionais, 02_nuvem_pago/recebimentos_futuros e 03_nuvem_envio. Não existe pasta adicional de investimentos.
+Bling é uma das fontes principais de lançamentos. A DRE é calculada pelo motor Majucau segundo regras contábeis aprovadas; o relatório pronto do Bling serve para comparação, não como resultado final. Drive somente de leitura conserva 01_perdas_operacionais, 02_nuvem_pago/recebimentos_futuros e 03_nuvem_envio. Não existe pasta adicional de investimentos.
 
 Análise/conciliação normal usa movimentos até D-1; dia corrente requer solicitação expressa. A agenda de recebimentos futuros continua alimentando o caixa projetado. D-1 é corte da análise, não frequência de sincronização.
 
-As regras funcionais foram fechadas. A engenharia ainda executará especificação técnica, mapeamento das fontes, implementação e validação. Artefato aprovado ausente no pacote será localizado, sem reabrir sua aprovação ou inventar seu conteúdo.
+As regras funcionais existentes permanecem fechadas. A decisão posterior aprovou que o Majucau calcule sua própria DRE; as regras contábeis detalhadas e o mapeamento estão pendentes do material da contabilidade. A engenharia ainda executará especificação técnica, mapeamento das fontes, implementação e validação. Artefato aprovado ausente no pacote será localizado, sem inventar seu conteúdo.
 
 ## Evolução
 
@@ -26,7 +28,7 @@ IDs e grupos temáticos foram preservados; sua ordem numérica não é cronogram
 
 1. Transcrever contratos fechados e localizar referências; desenhar domínios, acesso, persistência e operação local.
 2. Preparar fundações e adaptadores; comprovar campos reais do Bling/arquivos.
-3. Reproduzir DRE/balancete do Bling em caminho próprio; construir conciliação, caixa e disponibilidade que alimentam a calculadora.
+3. Definir com aprovação as regras e o mapeamento da DRE própria do Majucau; calcular por competência e comparar com a origem. Construir conciliação, caixa e disponibilidade que alimentam a calculadora.
 4. Construir estoque/produção realizados e forecast; calcular produção líquida, trajetória de estoque e insumos por data.
 5. Implementar compras líquidas e prioridade com cobertura parcial/temporal; sinais adicionais de cacau são independentes do motor principal.
 6. Integrar telas fiéis aos mockups, controles, exportações, capacidades, vigência e histórico.
@@ -196,7 +198,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Como fazer:**
 
-1. Registrar lucro elegível pela DRE exibida no Majucau, agora reproduzida do Bling por competência; preservar janela consolidada jan..M−2 e dedução única de Já Investido.
+1. Registrar lucro elegível pela DRE calculada no Majucau conforme regras contábeis aprovadas; preservar janela consolidada jan..M−2 e dedução única de Já Investido.
 2. Registrar Já Investido = aportes de principal − resgates de principal; rendimentos separados. Reserva = MAX(50.000; maior reserva aprovada vigente), conforme M-034 mantida pelo fechamento.
 3. Registrar Máximo = MAX(0; MIN(Caixa Semana Crítica − Reserva; Lucro Elegível)); Executável = MIN(Máximo; saldo transferível do Itaú). Semana crítica continua a de maior total de despesas.
 4. A porta da calculadora recebe os resultados financeiros consolidados, com período, fonte e qualidade. Ela não recebe bandeira, MDR, parcelamento ou tarifas de cartão.
@@ -212,22 +214,23 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Regras e verificações vinculadas:** L-07,Q-10,Q-21,R-06,R-08,F-01
 
-### BK-007 — Especificar a reprodução da DRE e do balancete do Bling
+### BK-007 — Especificar as regras da DRE própria do Majucau
 
 **Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações.
 
-**Objetivo:** Preservar a competência, classificação e os valores corretos da origem.
+**Objetivo:** Calcular uma DRE própria, com classificação e competência aprovadas pela contabilidade.
 
-**O que fazer:** Registrar contratos de leitura dos demonstrativos existentes no Bling.
+**O que fazer:** Receber e registrar as regras contábeis detalhadas e definir como os lançamentos de origem alimentam as linhas já aprovadas da DRE.
 
 **Como fazer:**
 
-1. Adotar DRE por competência do Bling como fonte primária e suas classificações existentes como referência; não criar classificação gerencial paralela.
-2. Usar a base contábil/financeira do Bling para o balancete do projeto; mapear contas, saldos, débitos, créditos e contrapartidas quando retornados.
-3. Planejar comparação de totais com o Bling por período e conta. Campo específico não acessível pela API deve aparecer como Dado indisponível no Bling.
-4. Preservar competência dos rendimentos; aplicação e resgate de principal não são automaticamente receita/despesa. Não alterar resultado por fontes externas fora de seu escopo.
+1. Obter as regras contábeis aprovadas e mapear tipos de lançamento para as linhas já existentes da DRE; não inventar classificação nem fórmula.
+2. Mapear os campos e contas de origem realmente disponíveis no Bling e nas demais fontes homologadas, sem alterar os sistemas de origem.
+3. Comparar o resultado calculado pelo Majucau com a DRE do Bling por período e conta; registrar diferenças, sem copiar o relatório pronto como resultado final.
+4. Campo necessário não acessível pela fonte deve aparecer como Dado indisponível; ausência nunca vira zero.
+5. Preservar competência dos rendimentos; aplicação e resgate de principal não são automaticamente receita/despesa. Não alterar resultado por fontes externas fora de seu escopo.
 
-**Critério de aceite:** Especificação traduz a origem para o contrato de leitura, sem nova estrutura contábil, inferência de competência, preenchimento de ausência ou reabertura financeira.
+**Critério de aceite:** Regras fornecidas pela contabilidade são versionadas e mapeadas às linhas existentes; entradas, cálculos e diferenças podem ser rastreados até a fonte. Sem regra ou campo aprovado, o valor dependente permanece indisponível.
 
 **Impacto:** Previne resultado incompleto apresentado como definitivo.
 
@@ -1021,12 +1024,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Como fazer:**
 
 1. Mapear autenticação, recursos e campos reais da API para DRE por competência, balancete, saldos/contas, movimentos, custos, produção, BOM, compras, resgates e posição.
-2. Registrar endpoint, campo, amostra protegida, competência, significado, data, limites e correspondência com a informação funcional do Bling; não pedir nova estrutura de contas à Majucau.
-3. Para DRE/balancete, validar totais contra o Bling com mesma competência e posição, preservando classificações. Existência funcional informada não comprova endpoint específico disponível.
+2. Registrar endpoint, campo, amostra protegida, competência, significado, data, limites e correspondência com as regras contábeis aprovadas; não alterar o plano de contas do Bling.
+3. Para a DRE, comparar o cálculo do Majucau com o relatório do Bling na mesma competência e posição; diferenças seguem as regras aprovadas e ficam explicadas. Existência funcional informada não comprova endpoint específico disponível.
 4. Para Conta Caixa, usar API oficial ou alternativa de exportação estruturada oficial de investimentos já permitida, sem scraping nem pasta adicional no Drive.
 5. Campo específico não acessível = Dado indisponível no Bling. Produzir evidência técnica por componente, sem inferir, estimar, preencher ausência ou fabricar zero.
 
-**Critério de aceite:** Matriz de campos e resultados de validação registrados; nenhuma prova foi executada nesta atualização de backlog. Negócio definido, integração a executar.
+**Critério de aceite:** Matriz de campos e resultados de validação registrados; nenhuma prova foi executada nesta atualização de backlog. As regras contábeis detalhadas ainda precisam ser fornecidas e aprovadas antes de implementar a DRE.
 
 **Impacto:** Evita construir telas apoiadas em dados inexistentes.
 
@@ -1050,7 +1053,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Renovar tokens com exclusão de concorrência
 3. Aplicar paginação, limites vigentes, retry e erros de autenticação
 4. Manter Conta Caixa, Itaú e Mercado Pago dentro da leitura oficial do Bling. Se a homologação apontar necessidade de exportação estruturada oficial de investimentos, implementar recepção local interna desse arquivo com o parser de BK-043; não usar o Drive.
-5. Implementar extração da DRE por competência e base de balancete por recursos reais homologados; expor limitações pontuais com Dado indisponível no Bling, mantendo classificação e competência da origem.
+5. Implementar extração dos lançamentos e campos necessários, com recursos reais homologados; calcular a DRE por competência no Majucau conforme as regras aprovadas e expor limitações como Dado indisponível, sem copiar a DRE pronta do Bling.
 
 **Critério de aceite:** Adaptador usa somente operações aprovadas; 401/429/falha de rede geram diagnóstico e retomada segura. Não contém scraping nem integração direta presumida com banco ou Mercado Pago. A alternativa oficial necessária tem recepção, autenticação e proveniência implementadas; repetição e versão corrigida são tratadas por BK-044.
 
@@ -1645,22 +1648,22 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Regras e verificações vinculadas:** R-11,F-18
 
-### BK-066 — Obter e reproduzir a DRE por competência do Bling
+### BK-066 — Calcular e conferir a DRE própria por competência
 
 **Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
-**Objetivo:** Apresentar no Majucau a demonstração correta da origem.
+**Objetivo:** Apresentar no Majucau o resultado calculado conforme regras contábeis aprovadas.
 
-**O que fazer:** Consumir os recursos oficiais de DRE e preservar seu significado.
+**O que fazer:** Consumir os lançamentos de origem necessários e calcular as linhas da DRE pelo motor Majucau.
 
 **Como fazer:**
 
-1. Obter linhas, subtotais e resultado líquido por competência, com os recursos reais homologados do Bling.
-2. Preservar contas, categorias, sinais, competência e valores; cálculo de apresentação não reconstrói classificação paralela a partir de vendas/arquivos.
-3. Conferir linhas e totais contra o próprio Bling, guardando consulta, período, posição e evidência.
-4. Campo específico não obtido aparece como Dado indisponível no Bling. Preservar snapshot fechado e bloquear alteração retroativa silenciosa.
+1. Usar regras e mapeamento contábil aprovados para calcular as linhas existentes por competência.
+2. Obter campos e lançamentos pelos recursos reais homologados; manter origem, conta, sinal, data e competência rastreáveis.
+3. Comparar linhas e totais com o relatório do Bling como referência, guardando período e evidência das diferenças.
+4. Sem regra ou dado necessário, mostrar Dado indisponível. Preservar snapshots fechados e bloquear alteração retroativa silenciosa.
 
-**Critério de aceite:** DRE no Majucau reproduz a DRE Bling na mesma competência e posição; não estima nem completa linhas com fatos fictícios. Custo SKU e arquivos externos podem apoiar diagnósticos, sem constituir outro motor de resultado.
+**Critério de aceite:** DRE no Majucau aplica as regras aprovadas, tem origem e cálculo rastreáveis e diferenças explicadas contra o Bling. Não estima nem completa linhas com fatos fictícios. Custo SKU e arquivos externos só entram conforme escopo e regra aprovados.
 
 **Impacto:** Oferece resultado verificável.
 
@@ -1680,9 +1683,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Como fazer:**
 
-1. Preservar layout T06 e apresentar competência, contas, valores e resultado vindos do contrato Bling.
-2. Usar a mesma camada de leitura/cálculo para card, tabela, gráfico, detalhe e exportação, com base de percentual explícita.
-3. Apresentar ausência de campo como Dado indisponível no Bling no espaço previsto; não copiar números ilustrativos ou criar segunda classificação.
+1. Preservar layout T06 e as linhas aprovadas; apresentar os valores calculados pelo Majucau com competência e contas rastreáveis.
+2. Usar a mesma camada de leitura/cálculo para cards, tabela, gráfico e detalhe em tela, com base de percentual explícita.
+3. Apresentar ausência de campo como Dado indisponível no Bling no espaço previsto; não copiar números ilustrativos nem inferir classificação fora das regras contábeis aprovadas.
 
 **Critério de aceite:** Tabela reproduz motor; percentuais derivam dos valores e base aprovada; gráfico não contradiz o resultado.
 
@@ -1804,7 +1807,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Como fazer:**
 
-1. Consumir contratos financeiros consolidados de resultado elegível, disponibilidade, caixa crítico, reserva e principal líquido; DRE no Majucau reproduz Bling por competência.
+1. Consumir contratos financeiros consolidados de resultado elegível, disponibilidade, caixa crítico, reserva e principal líquido; o resultado elegível vem da DRE calculada no Majucau conforme regras aprovadas.
 2. Aplicar a janela e fórmulas transcritas em BK-006, deduzindo principal líquido uma única vez e limitando o executável ao saldo transferível Itaú.
 3. Propagar corte, versão e qualidade das entradas; detalhes de bandeira, MDR, taxas e parcelas não integram este domínio.
 4. Expor componentes comprováveis e indicar ausência dos demais sem zero fictício; nenhuma transferência ou aplicação é executada.
@@ -2540,7 +2543,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 1. Preservar blocos, menu e indicadores da última versão aprovada/congelada.
 2. Produzido Geral e detalhamento T10 compartilham função, período, snapshot e universo; quantidades com unidades diferentes não formam soma sem significado.
-3. Reutilizar resultados de caixa, DRE Bling, estoque e planejamento; origem atrasada, parcial ou indisponível permanece identificada.
+3. Reutilizar resultados de caixa, DRE calculada pelo Majucau, estoque e planejamento; origem atrasada, parcial ou indisponível permanece identificada.
 
 **Critério de aceite:** Cada indicador chega ao módulo e ao detalhe; nenhuma fórmula paralela na dashboard.
 
@@ -2735,10 +2738,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Como fazer:**
 
 1. Validar fluxo Bling + agenda futura → conciliação → caixa projetado/disponibilidade → calculadora, com D-1 e exceção explícita.
-2. Validar em caminho independente DRE/balancete extraídos do Bling e reconciliados na competência/posição, sem reconstrução a partir do caixa.
+2. Validar em caminho independente a DRE calculada pelo Majucau contra a referência do Bling na mesma competência/posição, sem reconstrução a partir do caixa.
 3. Validar forecast por SKU → estoque/produção necessária → BOM/insumos → compras parciais e temporais → exportação.
 4. Validar permissões, metas, vigência, período fechado, reprocessamento auditado e recuperação sem alterar arquivos de origem.
-5. Validar perda operacional → vínculo ao fato Bling ou pendência → correção/reprocessamento idempotente; manter a trilha externa sem recalcular uma DRE paralela.
+5. Validar perda operacional → vínculo ao fato Bling ou pendência → correção/reprocessamento idempotente; manter a trilha externa sem criar um segundo cálculo de DRE fora do motor Majucau.
 
 **Critério de aceite:** Jornadas conferem IDs, valores, permissões, estados e histórico, com evidência reproduzível.
 

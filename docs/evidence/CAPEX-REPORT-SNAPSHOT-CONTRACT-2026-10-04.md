@@ -23,8 +23,10 @@ O leitor existente do painel ainda consulta somente recebíveis, recebimentos, c
 ## Revisão dos arquivos recebidos — 2026-10-04
 
 - Os PDFs de contas a pagar mostram lançamentos pagos e seus períodos, mas não mostram a categoria CAPEX por lançamento.
+- O relatório geral cobre `01/01/2026 a 30/09/2026` e informa `R$ 125.481,02` no total de contas a pagar. Ele lista fornecedor, histórico, vencimento, liquidação, situação e valor pago; não traz uma coluna de categoria CAPEX.
+- Esse total geral não pode ser usado como CAPEX: inclui pagamentos de várias naturezas e não identifica quais são investimentos em ativos.
 - O print do resumo por categoria mostra CAPEX e subcategorias, mas a parte com o período escolhido não aparece.
-- Assim, ainda não é possível confirmar se o total do print é CAPEX pago no mês ou acumulado, nem ligar esse total aos lançamentos dos PDFs.
+- Assim, ainda não é possível confirmar se o total do print é CAPEX pago no mês ou acumulado, nem reconciliá-lo com o relatório geral de contas a pagar.
 - Não usar o total geral de contas a pagar como CAPEX. Para concluir a ligação, falta o mesmo resumo por categoria com as datas do filtro visíveis.
 - Nenhum valor, fornecedor ou dado de lançamento dos anexos foi copiado para o repositório.
 

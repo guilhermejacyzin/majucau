@@ -68,6 +68,15 @@ Estas lacunas não serão preenchidas por suposição:
 
 Para calcular CPV/CMV, extrato bancário ou contas a pagar/receber não bastam. São necessários, no mínimo, saldos e movimentos de matérias-primas, produtos em processo e acabados; consumo e produção por produto; vendas e devoluções; custos de mão de obra e fabricação; documentos de compra e tributos; cadastro/depreciação do imobilizado; plano de contas e balancete. Campo ausente significa “Dado indisponível” no cálculo dependente, nunca zero nem estimativa.
 
-## 7. Próxima etapa
+## 7. CAPEX mostrado separadamente na tela DRE
+
+A pedido de Gisele em 2026-10-04, a faixa de indicadores da T6 terá duas informações distintas:
+
+- **CAPEX pago no mês/período mostrado:** dinheiro efetivamente pago por aquisições de ativos identificadas como CAPEX. É informação de caixa, não despesa da DRE. Não classificar todo pagamento a fornecedor como CAPEX.
+- **CAPEX acumulado:** total dos investimentos em ativos reconhecidos como CAPEX desde o início do histórico confiável disponível. Não é lucro, saldo bancário nem valor líquido contábil dos ativos.
+
+Os dois números ficam em cards fora da tabela DRE e não entram no lucro. A depreciação é contabilizada separadamente conforme o uso e a regra aprovada. Gisele informou que há dados de CAPEX nos relatórios existentes. Ainda precisamos identificar qual relatório e quais campos alimentam cada card, conferir os períodos e conciliar investimentos reconhecidos com pagamentos; até essa validação, os valores ficam indisponíveis, sem estimativa.
+
+## 8. Próxima etapa
 
 Com a contabilidade, montar uma tabela de conferência com: conta/lançamento, documento, fato econômico, linha da DRE, custo ou despesa, competência, efeito no estoque, tratamento de tributo, fonte e divergência. Depois validar os critérios pendentes e os campos disponíveis nas integrações. Só então fechar casos de referência e implementar o cálculo no Majucau.

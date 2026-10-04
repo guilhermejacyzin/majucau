@@ -1686,8 +1686,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 1. Preservar layout T06 e as linhas aprovadas; apresentar os valores calculados pelo Majucau com competência e contas rastreáveis.
 2. Usar a mesma camada de leitura/cálculo para cards, tabela, gráfico e detalhe em tela, com base de percentual explícita.
 3. Apresentar ausência de campo como Dado indisponível no Bling no espaço previsto; não copiar números ilustrativos nem inferir classificação fora das regras contábeis aprovadas.
+4. Mostrar dois cards informativos fora da tabela e do lucro: `CAPEX PAGO NO MÊS/PERÍODO` (pagamentos vinculados a ativos classificados como CAPEX) e `CAPEX ACUMULADO` (ativos CAPEX reconhecidos desde o início do histórico confiável). Sem fonte e reconciliação, ambos ficam indisponíveis.
 
-**Critério de aceite:** Tabela reproduz motor; percentuais derivam dos valores e base aprovada; gráfico não contradiz o resultado.
+**Critério de aceite:** Tabela reproduz motor; percentuais derivam dos valores e base aprovada; gráfico não contradiz o resultado; EBIT/EBITDA e os dois cards CAPEX não alteram o lucro ou as linhas da DRE; alerta `UNMAPPED` continua visível.
 
 **Impacto:** Evita interpretação enganosa da rentabilidade.
 

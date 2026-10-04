@@ -228,7 +228,7 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).
 - O Majucau calculará sua própria DRE usando regras contábeis aprovadas; não copiará a DRE pronta do Bling como resultado final.
 - Dados de origem do Bling poderão alimentar o cálculo e servir para comparação, preservando origem, período e diferenças explicáveis.
-- A tela e as linhas da DRE já aprovadas permanecem como estão, inclusive os cards EBIT/EBITDA no lugar do card inferior UNMAPPED.
+- A tabela e as linhas da DRE já aprovadas permanecem como estão, inclusive os cards EBIT/EBITDA no lugar do card inferior UNMAPPED. Os cards CAPEX aprovados abaixo são informativos e ficam fora da tabela/lucro.
 - **Pendente:** concluir a validação contábil da política por conta/operação, escolher critérios operacionais (por exemplo, valoração do estoque e rateio de custos), mapear cada lançamento às linhas existentes e confirmar os dados de origem. Os princípios recebidos em 2026-10-04 estão em `docs/DRE-ACCOUNTING-POLICY-v1.md`. Até as dependências serem resolvidas, os valores afetados ficam indisponíveis; nenhuma classificação ou fórmula será inventada.
 
 ## Complemento de regra contábil — estoque, produção e CPV/CMV
@@ -243,3 +243,13 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - **Ainda pendente de validação contábil específica:** método de valoração do estoque e consistência por natureza/uso; capacidade normal e critério de rateio dos custos indiretos; regras para perdas e armazenamento; regime tributário e créditos por operação; critérios e cadastros do imobilizado; plano de contas e mapeamento de contas/eventos às linhas da DRE.
 - **Dependência de dados:** posição e movimentação de matérias-primas, produtos em processo e acabados; consumo e produção por produto; vendas/devoluções; mão de obra e custos fabris; notas de entrada e tributos; cadastro/depreciação do imobilizado; plano de contas e balancete. Se uma fonte não fornecer o dado necessário, o componente afetado permanece indisponível, sem estimativa ou substituição por caixa.
 - Base normativa consultada: [CPC 16 (R1) — Estoques](https://www.cpc.org.br/Arquivos/Documentos/243_CPC_16_R1_rev%2012.pdf), [CPC 27 — Ativo Imobilizado](https://www.cpc.org.br/Arquivos/Documentos/316_CPC_27_rev%2014.pdf) e [CFC — Tributos Recuperáveis](https://cfc.org.br/tecnica/perguntas-frequentes/4066-2/). A aplicação tributária depende dos fatos concretos da empresa e deve ser validada com a contabilidade.
+
+## Decisão posterior aprovada — dois cards informativos de CAPEX na T6
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).
+- Incluir na página T6 dois cards separados da tabela e do lucro: `CAPEX PAGO NO MÊS` e `CAPEX ACUMULADO`.
+- `CAPEX PAGO NO MÊS` mostra pagamentos no mês/período exibido que estejam vinculados a uma aquisição de ativo classificada como CAPEX. É uma saída de caixa informativa; pagamento genérico a fornecedor não basta para classificá-lo.
+- `CAPEX ACUMULADO` representa investimentos em ativos reconhecidos como CAPEX desde o início do histórico confiável disponível. A usuária confirmou o acumulado desde o início, não somente o período selecionado.
+- Nenhum dos dois cards entra no lucro da DRE. A depreciação segue sua regra contábil própria e não é substituída pelo CAPEX.
+- Reduzir as dimensões da faixa inferior para acomodar os cards, mantendo linhas da DRE e alerta `UNMAPPED` como aprovados.
+- A usuária informou que os relatórios existentes contêm dados de CAPEX. O relatório, seus campos e o vínculo entre investimento reconhecido e pagamento ainda precisam ser localizados e conferidos; até essa validação, mostrar `—` e não estimar nem inferir pelos extratos bancários.

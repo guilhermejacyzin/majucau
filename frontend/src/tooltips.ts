@@ -18,6 +18,8 @@ export const tooltipCatalog = {
   'result.drePnl': 'Resultado de receitas, custos e despesas calculado pelo Majucau. Diferenças exigem ajuste identificado e aprovado.',
   'result.ebit': 'EBIT (LAJIR) é calculado pelo lucro líquido, tributos sobre o lucro e despesas financeiras líquidas, reconciliados com a DRE.',
   'result.ebitda': 'EBITDA (LAJIDA) é calculado pelo EBIT acrescido de depreciação, amortização e exaustão, reconciliados com a DRE.',
+  'result.capexPaid': 'Mostra os pagamentos do mês ligados a investimentos CAPEX identificados nos relatórios. É uma saída de caixa informativa e não entra no lucro da DRE; o valor aparece depois de conferir o relatório e o vínculo com o ativo.',
+  'result.capexAccumulated': 'Mostra a soma dos investimentos CAPEX reconhecidos desde o início do histórico disponível. É um indicador separado e não entra no lucro da DRE; o valor aparece depois de conferir o relatório e o acumulado.',
   'planning.budgetActual': 'Compara o valor planejado com o que realmente ocorreu. Favorável ou desfavorável depende da natureza da linha.',
   'planning.forecast': 'Previsão versionada baseada em premissas e cenário. Uma nova versão não apaga o histórico.',
   'management.workingCapital': 'Diferença entre ativos e obrigações de curto prazo conforme o plano de contas aprovado.',

@@ -268,14 +268,16 @@ P&L é um modelo gerencial reconciliável com DRE. Qualquer diferença usa `adju
 
 Mostrar EBITDA, margem, realizado, orçado, forecast e variação. EBITDA ajustado exige ajustes tipados, versionados e rastreáveis.
 
-### M07-D — Cards EBIT e EBITDA dentro da T6
+### M07-D — Cards EBIT, EBITDA e CAPEX dentro da T6
 
-Na faixa inferior da página T6, substituir visualmente o card `UNMAPPED` por dois cards: EBIT/LAJIR e EBITDA/LAJIDA. O alerta de lançamentos `UNMAPPED` continua visível na área de alertas e as pendências continuam existindo. Os cards ficam fora da tabela contábil, sem alterar suas linhas, classificações ou totais, e precisam reconciliar com os valores da DRE:
+Na faixa inferior da página T6, substituir visualmente o card `UNMAPPED` por EBIT/LAJIR e EBITDA/LAJIDA. O alerta de lançamentos `UNMAPPED` continua visível na área de alertas e as pendências continuam existindo. A decisão posterior acrescentou dois cards informativos de CAPEX: valor pago no mês/período exibido e total de investimentos CAPEX reconhecidos desde o início do histórico confiável. Todos os cards ficam fora da tabela e do lucro da DRE; EBIT/EBITDA precisam reconciliar com os valores da DRE:
 
 - **EBIT (LAJIR):** lucro líquido + tributos sobre o lucro + despesas financeiras − receitas financeiras;
 - **EBITDA (LAJIDA):** EBIT + depreciação + amortização + exaustão.
 
 Referência metodológica: Resolução CVM 156, arts. 1º–3º. Essa metodologia não autoriza ajustes fora da DRE nem altera o reconhecimento contábil. Se qualquer componente não tiver fonte válida ou reconciliação, exibir o traço (—) e “Sem dados confirmados”; nunca usar zero ou números ilustrativos.
+
+CAPEX pago e CAPEX acumulado são informativos: não entram no lucro da DRE. O card de pagamento exige vínculo entre o pagamento e um ativo classificado como CAPEX; o acumulado soma ativos CAPEX reconhecidos desde o início do histórico confiável. Não substituir um pelo outro. Gisele informou que esses dados constam nos relatórios existentes; falta identificar relatório, campos e conciliação. Até confirmar essa ligação, os cards exibem `—`. A faixa acomoda os oito cards inferiores em grade responsiva e mantém o alerta `UNMAPPED` visível.
 
 ### Aceite
 

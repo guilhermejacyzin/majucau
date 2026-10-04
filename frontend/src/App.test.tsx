@@ -21,6 +21,28 @@ describe('shell financeiro', () => {
     expect(screen.queryByText('R$ 258.420,00')).not.toBeInTheDocument()
   })
 
+  it('mantém as correções aprovadas e mostra CAPEX pago e acumulado fora do lucro da DRE', async () => {
+    const user = userEvent.setup()
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+
+    expect(screen.getByRole('button', { name: 'Balancete' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Balanço Patrimonial' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Calculadora de Aplicação' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Aplicações' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'DRE' }))
+    expect(await screen.findByText('CAPEX PAGO NO MÊS')).toBeInTheDocument()
+    expect(screen.getByText('CAPEX ACUMULADO')).toBeInTheDocument()
+    expect(screen.getByText('EBIT')).toBeInTheDocument()
+    expect(screen.getByText('EBITDA')).toBeInTheDocument()
+    expect(screen.getByText('Lançamentos UNMAPPED na DRE')).toBeInTheDocument()
+    expect(screen.getAllByText('Informativo; não entra no lucro da DRE.')).toHaveLength(2)
+    const indicators = screen.getByRole('region', { name: 'Indicadores e composição da DRE' })
+    expect(indicators.querySelectorAll('.mocap-card')).toHaveLength(8)
+    expect(screen.getByRole('table')).not.toHaveTextContent('CAPEX')
+  })
+
   it('exibe métrica normalizada somente quando o snapshot a confirma', async () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={snapshotAdapterFor()} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })

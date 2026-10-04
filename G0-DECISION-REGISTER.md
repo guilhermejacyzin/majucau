@@ -197,3 +197,14 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Na CI 37101826025, o novo hash `AA38A8CFCE6179B87181609B1C730A29EAF26138FC833AF5759E67576770F3A3` foi aceito após a assinatura passar por esses controles; thumbprint do certificado: `4028CAD637509D4744B17EC5B42AED8D7A31E6AF`. O instalador NSIS e o smoke de instalar/desinstalar passaram.
 - Divergência de hash só prossegue após essa validação de assinatura; assinaturas ausentes, inválidas ou de outro signatário removem o temporário e bloqueiam o build.
 - Este controle afeta apenas a cadeia de build/empacotamento; não altera telas aprovadas nem regras de negócio.
+
+## Decisão posterior aprovada — cards EBIT e EBITDA na página T6
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).
+- Na faixa inferior da página T6, substituir visualmente o card `UNMAPPED` por dois cards: EBIT/LAJIR e EBITDA/LAJIDA. O alerta de lançamentos `UNMAPPED` continua visível na área de alertas e as pendências continuam existindo.
+- Preservar todas as linhas, classificações, critérios de reconhecimento e totais já aprovados para a DRE; os cards não criam lançamentos nem alteram o resultado líquido.
+- Cálculo dos indicadores com componentes contabilizados e conciliados da própria DRE:
+  - EBIT/LAJIR = lucro líquido + tributos sobre o lucro + despesas financeiras − receitas financeiras.
+  - EBITDA/LAJIDA = EBIT + depreciação + amortização + exaustão.
+- Referência metodológica: [Resolução CVM 156](https://conteudo.cvm.gov.br/legislacao/resolucoes/resol156.html). Quando faltar qualquer componente ou reconciliação, mostrar o traço (—) e “Sem dados confirmados”; não usar zero nem valores ilustrativos.
+- A decisão aprova a apresentação em cards e a metodologia derivada; não aprova EBITDA ajustado nem mudanças nas regras contábeis da DRE.

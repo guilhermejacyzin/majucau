@@ -77,6 +77,7 @@
 | RESULT-01 | DRE própria parametrizável; não usar DRE pronta do Bling | p. 17, §27 | Data §11; ERD §6; Plano fase 9 | G5 | Plano de contas, classificação, reconciliação e lineage | BLOCKED |
 | RESULT-02 | P&L reconciliável; ajustes têm motivo, valor, usuário, data e aprovação | p. 17, §28 | ERD §§6–7; Plano fase 9 | G5 | Diferenças, ajuste auditado e novo snapshot | BLOCKED |
 | RESULT-03 | EBITDA e margem com realizado, orçado, forecast e variação | p. 18, §29 | Views/snapshots do ERD; Plano fase 9 | G5 | Casos aprovados e alerta de queda relevante | BLOCKED |
+| RESULT-04 | Cards EBIT e EBITDA na T6, calculados com componentes da DRE e sem alterar suas linhas | Decisão Gisele 2026-10-04; G0-DECISION-REGISTER; decomposição M07-D | Página T6; cálculo derivado reconciliável | G5 | Fórmulas conferidas, fontes válidas e valores reconciliados; sem fonte, mostrar `—` | BLOCKED |
 | ACC-01 | Balancete e balanço próprios; débitos = créditos; Ativo = Passivo + PL; divergência explícita | pp. 18–19, §§30–31 | ERD §6; Plano fase 11 | G5/G7 | Casos balanceados/desbalanceados e `DIVERGENT` | BLOCKED |
 | PAY-01 | Folha com Produção/Comercial/Administrativo, CLT, sócios/pró-labore e desligados | pp. 4, 19, §§5.3, 32 | Data §16; Plano fase 9 | G5 | Arquivo real, parser, totais e PII | BLOCKED |
 | PAY-02 | Adiantamento não é nova despesa; PLR não aplicável | p. 19, §32 | Data §16; Plano fase 9; AGENTS | G5 | Casos de compensação e rejeição de PLR sem aprovação | DOCUMENTED |

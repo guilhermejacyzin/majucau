@@ -31,6 +31,8 @@ Embora algumas imagens históricas exibam “Balanço Patrimonial” no menu, a 
 
 Em 2026-10-04, a responsável confirmou manter somente “Calculadora de Aplicação” no menu da versão 1. “Aplicações” não terá uma rota separada; as imagens históricas permanecem como referência e o cálculo segue o contrato D-003-A.
 
+Em 2026-10-04, a responsável aprovou dois cards separados para EBIT/LAJIR e EBITDA/LAJIDA na página T6, ocupando a posição do card `UNMAPPED` na faixa inferior. O alerta de lançamentos `UNMAPPED` permanece visível na área de alertas. Os indicadores ficam fora da tabela contábil, preservando as linhas e os totais aprovados, e permanecem indisponíveis enquanto os componentes não tiverem fonte e reconciliação confirmadas.
+
 Os números que aparecem nas imagens são exemplos de composição e não foram hardcoded. A interface mostra `—` e `Sem dados confirmados` enquanto não houver fonte oficial conectada.
 
 O handoff técnico-funcional versionado em `docs/source/Handoff-Tecnico-Funcional-Majucau-2026-08-16.md` foi relido nesta revisão. As regras financeiras do handoff continuam prevalecendo sobre o desenho: o card de menor saldo representa o mínimo diário dentro de D0–D+60, e o painel de semana crítica permanece dependente de decisão/regra, sem converter ausência de dados em zero. Os círculos vermelhos da referência T2 foram tratados como indicação desses dois componentes, não como valores a serem copiados.

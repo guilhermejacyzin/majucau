@@ -268,6 +268,15 @@ P&L é um modelo gerencial reconciliável com DRE. Qualquer diferença usa `adju
 
 Mostrar EBITDA, margem, realizado, orçado, forecast e variação. EBITDA ajustado exige ajustes tipados, versionados e rastreáveis.
 
+### M07-D — Cards EBIT e EBITDA dentro da T6
+
+Na faixa inferior da página T6, substituir visualmente o card `UNMAPPED` por dois cards: EBIT/LAJIR e EBITDA/LAJIDA. O alerta de lançamentos `UNMAPPED` continua visível na área de alertas e as pendências continuam existindo. Os cards ficam fora da tabela contábil, sem alterar suas linhas, classificações ou totais, e precisam reconciliar com os valores da DRE:
+
+- **EBIT (LAJIR):** lucro líquido + tributos sobre o lucro + despesas financeiras − receitas financeiras;
+- **EBITDA (LAJIDA):** EBIT + depreciação + amortização + exaustão.
+
+Referência metodológica: Resolução CVM 156, arts. 1º–3º. Essa metodologia não autoriza ajustes fora da DRE nem altera o reconhecimento contábil. Se qualquer componente não tiver fonte válida ou reconciliação, exibir o traço (—) e “Sem dados confirmados”; nunca usar zero ou números ilustrativos.
+
 ### Aceite
 
 Plano de contas aprovado, casos balanceados, diferenças explícitas e reconciliação DRE/P&L precedem o estado confirmado. Sem isso, o módulo permanece `BLOCKED`/`PROVISIONAL`.

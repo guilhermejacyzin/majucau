@@ -167,6 +167,31 @@ function EmptyPurchaseTable({ columns }: { columns: string[] }) {
   return <section className="mocap-panel mocap-purchase-panel"><div className="mocap-panel-heading"><div><Icon icon="shopping" /><div><h2>COMPRAS RECOMENDADAS</h2><p>Com base em forecast, produção, estoque, lead time e mercado</p></div></div><div className="mocap-table-actions"><button type="button" disabled>Próximos 60 dias⌄</button><button type="button" disabled>Todos os insumos⌄</button><button type="button" disabled>Gerar pedidos</button></div></div><div className="mocap-table-scroll"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody><tr><td colSpan={columns.length}><span>Sem dados confirmados</span></td></tr></tbody></table></div></section>
 }
 
+function DreDerivedIndicators() {
+  return (
+    <>
+      <article className="mocap-card mocap-dre-indicator-card tone-blue" aria-labelledby="mocap-dre-ebit-title">
+        <div className="mocap-card-icon"><Icon icon="chart" /></div>
+        <div className="mocap-card-body">
+          <Tooltip id="result.ebit"><span id="mocap-dre-ebit-title" className="mocap-card-label">EBIT <span className="mocap-dre-indicator-alias">LAJIR</span></span></Tooltip>
+          <strong className="mocap-empty-value">—</strong>
+          <span className="mocap-card-support">Sem dados confirmados</span>
+          <p><b>Como calcula:</b> lucro líquido + tributos sobre o lucro + despesas financeiras − receitas financeiras.</p>
+        </div>
+      </article>
+      <article className="mocap-card mocap-dre-indicator-card tone-green" aria-labelledby="mocap-dre-ebitda-title">
+        <div className="mocap-card-icon"><Icon icon="trend" /></div>
+        <div className="mocap-card-body">
+          <Tooltip id="result.ebitda"><span id="mocap-dre-ebitda-title" className="mocap-card-label">EBITDA <span className="mocap-dre-indicator-alias">LAJIDA</span></span></Tooltip>
+          <strong className="mocap-empty-value">—</strong>
+          <span className="mocap-card-support">Sem dados confirmados</span>
+          <p><b>Como calcula:</b> EBIT + depreciação + amortização + exaustão.</p>
+        </div>
+      </article>
+    </>
+  )
+}
+
 function AlertPanel({ messages, onNavigate }: { messages: string[]; onNavigate?: (screen: MockupScreenKey) => void }) {
   return <section className="mocap-alerts"><div className="mocap-alerts-heading"><Icon icon="warning" /><h2>ALERTAS IMPORTANTES</h2></div><div className="mocap-alert-grid">{messages.map((message, index) => <article key={message} className={`mocap-alert alert-${index % 4}`}><div className="mocap-alert-icon"><Icon icon={index === 0 ? 'warning' : index === 1 ? 'document' : index === 2 ? 'clock' : 'refresh'} /></div><div><strong>{message}</strong><span>Sem dados confirmados</span>{index === 0 && onNavigate ? <Tooltip id="notice.integrations"><button type="button" onClick={() => onNavigate('integrations')}>Ir para Integrações <span>→</span></button></Tooltip> : <Tooltip id="metric.details"><button type="button" disabled>Ver detalhes <span>→</span></button></Tooltip>}</div></article>)}</div></section>
 }
@@ -174,12 +199,14 @@ function AlertPanel({ messages, onNavigate }: { messages: string[]; onNavigate?:
 export function MockupDashboard({ screen, snapshot, onNavigate }: { screen: MockupScreenKey; snapshot?: DashboardSnapshot; onNavigate?: (screen: MockupScreenKey) => void }) {
   const config = configs[screen === 'integrations' ? 'executive' : screen]
   const cards = config.cards.map((card) => withSnapshot(screen, card, snapshot))
-  const lowerCards = config.lower.map((card) => withSnapshot(screen, card, snapshot))
+  const lowerCards = config.lower
+    .filter((card) => screen !== 'dre' || card.label !== 'UNMAPPED')
+    .map((card) => withSnapshot(screen, card, snapshot))
   const receivableRows = screen === 'receivables' ? (snapshot?.receivable_rows ?? []).map(receivableTableRow) : []
   const payableRows = screen === 'payables' ? (snapshot?.payable_rows ?? []).map(payableTableRow) : []
   const tableRows = screen === 'receivables' ? receivableRows : screen === 'payables' ? payableRows : []
   const middleLeft = config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} rows={tableRows} /> : config.chart ? <EmptyChart title={config.middleTitle} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
   const middleRight = config.layout === 'market' ? <EmptyRiskPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'critical' ? <EmptyCriticalPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'calculation' ? <EmptyRulesPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'forecast' ? <EmptyMetadataPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} />
-  const lower = config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section>
+  const lower = screen === 'dre' ? <section className="mocap-lower-cards mocap-dre-lower-cards" aria-label="Indicadores e composição da DRE">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}<DreDerivedIndicators /></section> : config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section>
   return <div className="mocap-page"><MocapHeader config={config} snapshot={snapshot} /><section className="mocap-top-cards">{cards.map((card) => <MocapCard key={card.label} card={card} />)}</section><section className={`mocap-middle ${config.layout ? `layout-${config.layout}` : ''}`}>{middleLeft}{middleRight}</section>{lower}{config.layout !== 'market' && <AlertPanel messages={config.alerts} onNavigate={onNavigate} />}</div>
 }

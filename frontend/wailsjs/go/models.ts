@@ -38,6 +38,22 @@ export namespace application {
 	        this.message = source["message"];
 	    }
 	}
+	export class BlingOAuthDisconnectResponse {
+	    status?: string;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BlingOAuthDisconnectResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	}
 	export class BlingOAuthStartResponse {
 	    session_id?: string;
 	    authorization_url?: string;
@@ -90,22 +106,6 @@ export namespace application {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.status = source["status"];
 	        this.page_record_count = source["page_record_count"];
-	        this.error_code = source["error_code"];
-	        this.message = source["message"];
-	    }
-	}
-	export class BlingOAuthDisconnectResponse {
-	    status?: string;
-	    error_code?: string;
-	    message?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new BlingOAuthDisconnectResponse(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.status = source["status"];
 	        this.error_code = source["error_code"];
 	        this.message = source["message"];
 	    }
@@ -302,6 +302,125 @@ export namespace application {
 		    return a;
 		}
 	}
+	export class DashboardMetric {
+	    value?: string;
+	    count?: number;
+	    state: string;
+	    source_system?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardMetric(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.value = source["value"];
+	        this.count = source["count"];
+	        this.state = source["state"];
+	        this.source_system = source["source_system"];
+	    }
+	}
+	export class DashboardPayableRow {
+	    supplier?: string;
+	    document?: string;
+	    due_date: string;
+	    value: string;
+	    category?: string;
+	    status: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardPayableRow(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.supplier = source["supplier"];
+	        this.document = source["document"];
+	        this.due_date = source["due_date"];
+	        this.value = source["value"];
+	        this.category = source["category"];
+	        this.status = source["status"];
+	    }
+	}
+	export class DashboardReceivableRow {
+	    customer?: string;
+	    origin: string;
+	    due_date?: string;
+	    gross_value?: string;
+	    net_value?: string;
+	    status: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardReceivableRow(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.customer = source["customer"];
+	        this.origin = source["origin"];
+	        this.due_date = source["due_date"];
+	        this.gross_value = source["gross_value"];
+	        this.net_value = source["net_value"];
+	        this.status = source["status"];
+	    }
+	}
+	export class DashboardSnapshot {
+	    // Go type: time
+	    as_of: any;
+	    data_state: string;
+	    receivables: DashboardMetric;
+	    future_b2c: DashboardMetric;
+	    receipts_month: DashboardMetric;
+	    receivables_overdue: DashboardMetric;
+	    payables: DashboardMetric;
+	    payables_due_today: DashboardMetric;
+	    payables_overdue: DashboardMetric;
+	    payments_month: DashboardMetric;
+	    receivable_rows?: DashboardReceivableRow[];
+	    payable_rows?: DashboardPayableRow[];
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.as_of = this.convertValues(source["as_of"], null);
+	        this.data_state = source["data_state"];
+	        this.receivables = this.convertValues(source["receivables"], DashboardMetric);
+	        this.future_b2c = this.convertValues(source["future_b2c"], DashboardMetric);
+	        this.receipts_month = this.convertValues(source["receipts_month"], DashboardMetric);
+	        this.receivables_overdue = this.convertValues(source["receivables_overdue"], DashboardMetric);
+	        this.payables = this.convertValues(source["payables"], DashboardMetric);
+	        this.payables_due_today = this.convertValues(source["payables_due_today"], DashboardMetric);
+	        this.payables_overdue = this.convertValues(source["payables_overdue"], DashboardMetric);
+	        this.payments_month = this.convertValues(source["payments_month"], DashboardMetric);
+	        this.receivable_rows = this.convertValues(source["receivable_rows"], DashboardReceivableRow);
+	        this.payable_rows = this.convertValues(source["payable_rows"], DashboardPayableRow);
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class DependencyHealth {
 	    name: string;
 	    state: string;
@@ -397,6 +516,114 @@ export namespace application {
 		    return a;
 		}
 	}
+	export class NuvemPagoFutureImportFile {
+	    name: string;
+	    sha256: string;
+	    receivable_count: number;
+	    rejected_row_count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new NuvemPagoFutureImportFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.sha256 = source["sha256"];
+	        this.receivable_count = source["receivable_count"];
+	        this.rejected_row_count = source["rejected_row_count"];
+	    }
+	}
+	export class NuvemPagoFutureImportIssue {
+	    file: string;
+	    line: number;
+	    code: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NuvemPagoFutureImportIssue(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.file = source["file"];
+	        this.line = source["line"];
+	        this.code = source["code"];
+	        this.message = source["message"];
+	    }
+	}
+	export class NuvemPagoFutureImportPreview {
+	    files: NuvemPagoFutureImportFile[];
+	    file_count: number;
+	    receivable_count: number;
+	    error_count: number;
+	    ignored_count: number;
+	    issues?: NuvemPagoFutureImportIssue[];
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NuvemPagoFutureImportPreview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.files = this.convertValues(source["files"], NuvemPagoFutureImportFile);
+	        this.file_count = source["file_count"];
+	        this.receivable_count = source["receivable_count"];
+	        this.error_count = source["error_count"];
+	        this.ignored_count = source["ignored_count"];
+	        this.issues = this.convertValues(source["issues"], NuvemPagoFutureImportIssue);
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class NuvemPagoFutureImportResult {
+	    batch_id?: string;
+	    status?: string;
+	    records_read: number;
+	    records_created: number;
+	    records_updated: number;
+	    records_failed: number;
+	    ignored_count: number;
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new NuvemPagoFutureImportResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.batch_id = source["batch_id"];
+	        this.status = source["status"];
+	        this.records_read = source["records_read"];
+	        this.records_created = source["records_created"];
+	        this.records_updated = source["records_updated"];
+	        this.records_failed = source["records_failed"];
+	        this.ignored_count = source["ignored_count"];
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	}
 	export class NuvemshopConfigRequest {
 	    app_id: string;
 	    redirect_uri: string;
@@ -434,113 +661,6 @@ export namespace application {
 	        this.error_code = source["error_code"];
 	        this.message = source["message"];
 	    }
-	}
-	export class DashboardMetric {
-	    value?: string;
-	    count?: number;
-	    state: string;
-	    source_system?: string;
-
-	    static createFrom(source: any = {}) {
-	        return new DashboardMetric(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.value = source["value"];
-	        this.count = source["count"];
-	        this.state = source["state"];
-	        this.source_system = source["source_system"];
-	    }
-	}
-	export class DashboardReceivableRow {
-	    customer?: string;
-	    origin: string;
-	    due_date?: string;
-	    gross_value?: string;
-	    net_value?: string;
-	    status: string;
-
-	    static createFrom(source: any = {}) {
-	        return new DashboardReceivableRow(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.customer = source["customer"];
-	        this.origin = source["origin"];
-	        this.due_date = source["due_date"];
-	        this.gross_value = source["gross_value"];
-	        this.net_value = source["net_value"];
-	        this.status = source["status"];
-	    }
-	}
-	export class DashboardPayableRow {
-	    supplier?: string;
-	    document?: string;
-	    due_date: string;
-	    value: string;
-	    category?: string;
-	    status: string;
-
-	    static createFrom(source: any = {}) {
-	        return new DashboardPayableRow(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.supplier = source["supplier"];
-	        this.document = source["document"];
-	        this.due_date = source["due_date"];
-	        this.value = source["value"];
-	        this.category = source["category"];
-	        this.status = source["status"];
-	    }
-	}
-	export class DashboardSnapshot {
-	    as_of: any;
-	    data_state: string;
-	    receivables: DashboardMetric;
-	    future_b2c: DashboardMetric;
-	    receipts_month: DashboardMetric;
-	    receivables_overdue: DashboardMetric;
-	    payables: DashboardMetric;
-	    payables_due_today: DashboardMetric;
-	    payables_overdue: DashboardMetric;
-	    payments_month: DashboardMetric;
-	    receivable_rows?: DashboardReceivableRow[];
-	    payable_rows?: DashboardPayableRow[];
-	    error_code?: string;
-	    message?: string;
-
-	    static createFrom(source: any = {}) {
-	        return new DashboardSnapshot(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.as_of = this.convertValues(source["as_of"], null);
-	        this.data_state = source["data_state"];
-	        this.receivables = this.convertValues(source["receivables"], DashboardMetric);
-	        this.future_b2c = this.convertValues(source["future_b2c"], DashboardMetric);
-	        this.receipts_month = this.convertValues(source["receipts_month"], DashboardMetric);
-	        this.receivables_overdue = this.convertValues(source["receivables_overdue"], DashboardMetric);
-	        this.payables = this.convertValues(source["payables"], DashboardMetric);
-	        this.payables_due_today = this.convertValues(source["payables_due_today"], DashboardMetric);
-	        this.payables_overdue = this.convertValues(source["payables_overdue"], DashboardMetric);
-	        this.payments_month = this.convertValues(source["payments_month"], DashboardMetric);
-	        this.receivable_rows = this.convertValues(source["receivable_rows"], DashboardReceivableRow);
-	        this.payable_rows = this.convertValues(source["payable_rows"], DashboardPayableRow);
-	        this.error_code = source["error_code"];
-	        this.message = source["message"];
-	    }
-
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) return a;
-		    if (a.slice && a.map) return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    if ("object" === typeof a) return new classs(a);
-		    return a;
-		}
 	}
 
 }

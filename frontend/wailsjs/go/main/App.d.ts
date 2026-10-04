@@ -3,17 +3,21 @@
 import {application} from '../models';
 import {main} from '../models';
 
+export function DisconnectBlingOAuth():Promise<application.BlingOAuthDisconnectResponse>;
+
 export function GetBlingOAuthStatus(arg1:string):Promise<application.BlingOAuthStatusResponse>;
 
 export function GetBootstrapState():Promise<main.BootstrapState>;
-
-export function DisconnectBlingOAuth():Promise<application.BlingOAuthDisconnectResponse>;
 
 export function GetDashboardSnapshot():Promise<application.DashboardSnapshot>;
 
 export function ImportBlingReceipts(arg1:string):Promise<application.BlingReceiptImportResult>;
 
+export function ImportNuvemPagoFuture(arg1:string):Promise<application.NuvemPagoFutureImportResult>;
+
 export function PreviewBlingReceipts(arg1:string):Promise<application.BlingReceiptImportPreview>;
+
+export function PreviewNuvemPagoFuture(arg1:string):Promise<application.NuvemPagoFutureImportPreview>;
 
 export function SaveBlingConfig(arg1:application.BlingConfigRequest):Promise<application.BlingConfigResponse>;
 
@@ -24,4 +28,3 @@ export function StartBlingOAuth():Promise<application.BlingOAuthStartResponse>;
 export function SyncBling(arg1:application.BlingSyncRequest):Promise<application.BlingSyncResponse>;
 
 export function TestBlingConnection():Promise<application.BlingOAuthTestResponse>;
-

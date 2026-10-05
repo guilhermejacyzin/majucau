@@ -211,6 +211,14 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Referência metodológica: [Resolução CVM 156](https://conteudo.cvm.gov.br/legislacao/resolucoes/resol156.html). Quando faltar qualquer componente ou reconciliação, mostrar o traço (—) e “Sem dados confirmados”; não usar zero nem valores ilustrativos.
 - A decisão aprova a apresentação em cards e a metodologia derivada; não aprova EBITDA ajustado nem mudanças nas regras contábeis da DRE.
 
+### Complemento aprovado — regra de cálculo dos cards EBIT/EBITDA
+
+- **Aprovado por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).
+- Seguir o exemplo fornecido pela responsável: **EBITDA é o resultado antes de descontar a depreciação; EBIT é o EBITDA depois de descontar a depreciação do período**.
+- A regra de cálculo e a explicação simples devem refletir essa relação. Os cards são apenas para consulta; a tabela e as linhas aprovadas da DRE permanecem inalteradas.
+- Esta confirmação aprova a relação entre os indicadores, mas não define o mapeamento de todas as contas ou a origem/competência da depreciação. Os valores reais dependem desse mapeamento e da conciliação; até lá, os cards mostram `—` e “Sem dados confirmados”. Não presumir outros componentes ou ajustes.
+- Esta orientação posterior substitui as fórmulas detalhadas registradas acima para os cards. Amortização, exaustão e ajustes não serão somados aos indicadores sem validação e aprovação específicas.
+
 ## Decisão posterior aprovada — consulta dos relatórios
 
 - **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).

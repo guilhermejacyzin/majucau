@@ -176,7 +176,7 @@ function DreDerivedIndicators() {
           <Tooltip id="result.ebit"><span id="mocap-dre-ebit-title" className="mocap-card-label">EBIT <span className="mocap-dre-indicator-alias">LAJIR</span></span></Tooltip>
           <strong className="mocap-empty-value">—</strong>
           <span className="mocap-card-support">Sem dados confirmados</span>
-          <p><b>Como calcula:</b> lucro líquido + tributos sobre o lucro + despesas financeiras − receitas financeiras.</p>
+          <p><b>Em termos simples:</b> resultado depois de descontar a depreciação.</p>
         </div>
       </article>
       <article className="mocap-card mocap-dre-indicator-card tone-green" aria-labelledby="mocap-dre-ebitda-title">
@@ -185,7 +185,7 @@ function DreDerivedIndicators() {
           <Tooltip id="result.ebitda"><span id="mocap-dre-ebitda-title" className="mocap-card-label">EBITDA <span className="mocap-dre-indicator-alias">LAJIDA</span></span></Tooltip>
           <strong className="mocap-empty-value">—</strong>
           <span className="mocap-card-support">Sem dados confirmados</span>
-          <p><b>Como calcula:</b> EBIT + depreciação + amortização + exaustão.</p>
+          <p><b>Em termos simples:</b> resultado antes de descontar a depreciação.</p>
         </div>
       </article>
     </>

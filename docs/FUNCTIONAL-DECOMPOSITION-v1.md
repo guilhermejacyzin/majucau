@@ -270,12 +270,7 @@ Mostrar EBITDA, margem, realizado, orçado, forecast e variação. EBITDA ajusta
 
 ### M07-D — Cards EBIT, EBITDA e CAPEX dentro da T6
 
-Na faixa inferior da página T6, substituir visualmente o card `UNMAPPED` por EBIT/LAJIR e EBITDA/LAJIDA. O alerta de lançamentos `UNMAPPED` continua visível na área de alertas e as pendências continuam existindo. A decisão posterior acrescentou dois cards informativos de CAPEX: valor pago no mês/período exibido e total de investimentos CAPEX reconhecidos desde o início do histórico confiável. Todos os cards ficam fora da tabela e do lucro da DRE; EBIT/EBITDA precisam reconciliar com os valores da DRE:
-
-- **EBIT (LAJIR):** lucro líquido + tributos sobre o lucro + despesas financeiras − receitas financeiras;
-- **EBITDA (LAJIDA):** EBIT + depreciação + amortização + exaustão.
-
-Referência metodológica: Resolução CVM 156, arts. 1º–3º. Essa metodologia não autoriza ajustes fora da DRE nem altera o reconhecimento contábil. Se qualquer componente não tiver fonte válida ou reconciliação, exibir o traço (—) e “Sem dados confirmados”; nunca usar zero ou números ilustrativos.
+Na faixa inferior da página T6, substituir visualmente o card `UNMAPPED` por EBIT/LAJIR e EBITDA/LAJIDA. O alerta de lançamentos `UNMAPPED` continua visível na área de alertas e as pendências continuam existindo. A decisão posterior acrescentou dois cards informativos de CAPEX: valor pago no mês/período exibido e total de investimentos CAPEX reconhecidos desde o início do histórico confiável. Todos os cards ficam fora da tabela e do lucro da DRE. Conforme regra de cálculo aprovada por Gisele em 2026-10-04: **EBITDA é o resultado antes de descontar a depreciação; EBIT é o EBITDA depois de descontar a depreciação do período**. Não somar amortização, exaustão ou ajustes sem validação e aprovação específicas. O mapeamento das contas e a origem/competência da depreciação ainda precisam ser confirmados; até haver conciliação, os cards mostram `—`.
 
 CAPEX pago e CAPEX acumulado são informativos: não entram no lucro da DRE. O card de pagamento mostra o valor de CAPEX pago no mês informado pelo relatório; o acumulado mostra o total informado desde o início do histórico confiável. Não substituir um pelo outro. Gisele confirmou que os relatórios existentes informam CAPEX; o snapshot do painel ainda não importa esses valores. A etapa pendente é conectar as métricas do relatório ao snapshot. Até lá, os cards exibem `—`; não usar pagamentos genéricos como substituto. A faixa acomoda os oito cards inferiores em grade responsiva e mantém o alerta `UNMAPPED` visível.
 

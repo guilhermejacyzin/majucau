@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -14,6 +15,8 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
 const DefaultPipeName = `\\.\pipe\Majucau-worker`
@@ -128,15 +131,7 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) error {
 			pipe.close()
 			return context.Canceled
 		}
-		connected := make(chan error, 1)
-		go func() { connected <- connectPipe(h) }()
-		select {
-		case err = <-connected:
-		case <-ctx.Done():
-			go pipe.close()
-			s.untrack(h)
-			return ctx.Err()
-		}
+		err = connectPipe(ctx, h)
 		if err == nil {
 			if authErr := authorizePipeClient(h, s.config); authErr == nil {
 				_ = s.handleConnection(ctx, pipe, handler)
@@ -186,8 +181,8 @@ func (s *NamedPipeServer) handleConnection(ctx context.Context, pipe *serverPipe
 	}
 	requestCtx, cancel := context.WithTimeout(ctx, s.config.IOTimeout)
 	defer cancel()
-	// This connection accepts one request only. A read past that request waits
-	// for the client to disconnect and carries cancellation into database reads.
+	// The pipe is opened for overlapped I/O so this disconnect watcher can read
+	// concurrently with response writes without blocking the same handle.
 	go func() {
 		var trailing [1]byte
 		_, _ = f.Read(trailing[:])
@@ -344,18 +339,18 @@ var (
 
 const (
 	pipeAccessDuplex                             = 0x00000003
+	pipeOpenOverlapped                           = 0x40000000
 	pipeTypeMessage                              = 0x00000004
 	pipeReadModeMessage                          = 0x00000002
 	pipeWait                                     = 0x00000000
 	pipeUnlimitedInstances                       = 255
-	pipeClientAccessMask                         = 0x00100003 // FILE_READ_DATA | FILE_WRITE_DATA | SYNCHRONIZE.
-	pipeServerAccessMask                         = 0x00100007 // Client I/O rights plus FILE_CREATE_PIPE_INSTANCE.
+	pipeClientAccessMask                         = 0x00100083 // FILE_READ_DATA | FILE_WRITE_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE.
+	pipeServerAccessMask                         = 0x00100087 // Client I/O rights plus FILE_CREATE_PIPE_INSTANCE.
 	pipeOpenRetryDelay                           = 10 * time.Millisecond
 	openExisting                                 = 3
 	processQueryLimitedInformation               = 0x1000
 	tokenQuery                                   = 0x0008
 	tokenUser                                    = 1
-	errorPipeConnected             syscall.Errno = 535
 	errorPipeBusy                  syscall.Errno = 231
 	errorFileNotFound              syscall.Errno = 2
 	errorInsufficientBuffer        syscall.Errno = 122
@@ -373,7 +368,7 @@ func openPipeFile(ctx context.Context, name string) (*os.File, error) {
 		}
 		var errno syscall.Errno
 		if !errors.As(err, &errno) || (errno != errorPipeBusy && errno != errorFileNotFound) {
-			return nil, err
+			return nil, fmt.Errorf("open local IPC pipe: %w", err)
 		}
 		timer := time.NewTimer(pipeOpenRetryDelay)
 		select {
@@ -396,22 +391,66 @@ func createPipe(name string, descriptor uintptr) (syscall.Handle, error) {
 	attrs := securityAttributes{length: uint32(unsafe.Sizeof(securityAttributes{})), descriptor: descriptor}
 	// Byte mode is deliberate: framing is provided by the explicit 4-byte
 	// length prefix and remains correct even when a frame spans Win32 writes.
-	r, _, err := createNamedPipeW.Call(uintptr(unsafe.Pointer(n)), pipeAccessDuplex, pipeWait, pipeUnlimitedInstances, MaxMessageSize+frameHeaderSize, MaxMessageSize+frameHeaderSize, 0, uintptr(unsafe.Pointer(&attrs)))
+	r, _, err := createNamedPipeW.Call(uintptr(unsafe.Pointer(n)), pipeAccessDuplex|pipeOpenOverlapped, pipeWait, pipeUnlimitedInstances, MaxMessageSize+frameHeaderSize, MaxMessageSize+frameHeaderSize, 0, uintptr(unsafe.Pointer(&attrs)))
 	h := syscall.Handle(r)
 	if h == syscall.InvalidHandle {
 		return 0, err
 	}
 	return h, nil
 }
-func connectPipe(h syscall.Handle) error {
-	r, _, err := connectNamedPipe.Call(uintptr(h), 0)
+func connectPipe(ctx context.Context, h syscall.Handle) error {
+	event, err := windows.CreateEvent(nil, 1, 0, nil)
+	if err != nil {
+		return err
+	}
+	defer windows.CloseHandle(event)
+	overlapped := windows.Overlapped{HEvent: event}
+	r, _, err := connectNamedPipe.Call(uintptr(h), uintptr(unsafe.Pointer(&overlapped)))
 	if r != 0 {
 		return nil
 	}
-	if errno, ok := err.(syscall.Errno); ok && errno == errorPipeConnected {
+	if errors.Is(err, windows.ERROR_PIPE_CONNECTED) {
 		return nil
 	}
-	return err
+	if !errors.Is(err, windows.ERROR_IO_PENDING) {
+		return err
+	}
+	pending := true
+	defer func() {
+		if pending {
+			_ = windows.CancelIoEx(windows.Handle(h), &overlapped)
+			_, _ = windows.WaitForSingleObject(event, windows.INFINITE)
+			var transferred uint32
+			_ = windows.GetOverlappedResult(windows.Handle(h), &overlapped, &transferred, false)
+		}
+	}()
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		waitResult, err := windows.WaitForSingleObject(event, 100)
+		if err != nil {
+			return err
+		}
+		if waitResult == uint32(windows.WAIT_TIMEOUT) {
+			continue
+		}
+		if waitResult != windows.WAIT_OBJECT_0 {
+			return errors.New("named pipe connect wait failed")
+		}
+		pending = false
+		var transferred uint32
+		if err := windows.GetOverlappedResult(windows.Handle(h), &overlapped, &transferred, false); err != nil {
+			if errors.Is(err, windows.ERROR_PIPE_CONNECTED) {
+				return nil
+			}
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			return err
+		}
+		return nil
+	}
 }
 func disconnectPipe(h syscall.Handle)  { disconnectNamedPipe.Call(uintptr(h)) }
 func closePipeHandle(h syscall.Handle) { disconnectPipe(h); syscall.CloseHandle(h) }
@@ -454,8 +493,8 @@ func makePipeSecurity(c NamedPipeConfig) (uintptr, func(), error) {
 	}
 	sddl := "D:P"
 	for _, sid := range orderedSIDs {
-		// The client receives only the data rights needed for framed I/O. The
-		// service SID also receives FILE_CREATE_PIPE_INSTANCE to serve clients.
+		// The client receives only the rights needed for framed I/O and to open
+		// the pipe. The service SID also receives FILE_CREATE_PIPE_INSTANCE.
 		sddl += "(A;;0x" + strconv.FormatUint(uint64(accessBySID[sid]), 16) + ";;;" + sid + ")"
 	}
 	sddl += "(A;;GA;;;BA)(A;;GA;;;SY)"

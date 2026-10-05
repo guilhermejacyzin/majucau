@@ -14,12 +14,13 @@ leitura `REPEATABLE READ`; cada campo textual tem limite de 1 MiB e cada linha,
 4 MiB. Se uma linha exceder esses limites, o painel recebe falha e não mostra
 um snapshot incompleto. O JSON final mantém o contrato usado pela tela atual.
 
-O DACL é criado com SDDL explícito para os SID configurados, administradores
-locais (`BA`) e sistema (`SY`). A UI recebe apenas `FILE_READ_DATA`,
-`FILE_WRITE_DATA` e `SYNCHRONIZE`; o SID do serviço também recebe
-`FILE_CREATE_PIPE_INSTANCE` para que o worker crie novas instâncias do pipe.
-Isso evita conceder `GENERIC_ALL` ao cliente, pois no named pipe ele inclui o
-direito de criar instâncias ([documentação Microsoft](https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-security-and-access-rights)).
+O servidor abre o pipe com `FILE_FLAG_OVERLAPPED` e conecta por uma operação
+cancelável. Isso permite que a leitura que detecta a desconexão do cliente
+aconteça ao mesmo tempo que a escrita da resposta. A UI recebe somente
+`FILE_READ_DATA`, `FILE_WRITE_DATA`, `FILE_READ_ATTRIBUTES` e `SYNCHRONIZE`; o
+SID do serviço também recebe `FILE_CREATE_PIPE_INSTANCE` para que o worker crie
+novas instâncias do pipe. Isso evita conceder `GENERIC_ALL` ao cliente, pois no
+named pipe ele inclui o direito de criar instâncias ([documentação Microsoft](https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-security-and-access-rights)).
 O instalador deve fornecer o SID exato da UI em
 `MAJUCAU_UI_SID` e, quando necessário, o SID do serviço em
 `MAJUCAU_SERVICE_SID`. Sem `MAJUCAU_UI_SID`, o fallback vincula o DACL ao SID do

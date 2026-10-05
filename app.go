@@ -141,40 +141,27 @@ func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
 	ctx, cancel := context.WithTimeout(parent, 5*time.Second)
 	defer cancel()
 	request := ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("dashboard-snapshot"), Method: ipc.MethodDashboardSnapshot, Payload: json.RawMessage(`{}`)}
-	var response ipc.Response
-	var decodeErr error
-	if streamClient, ok := client.(ipc.StreamClient); ok {
-		reader, writer := io.Pipe()
-		decoded := make(chan error, 1)
-		var snapshot application.DashboardSnapshot
-		go func() {
-			decodeErr := json.NewDecoder(reader).Decode(&snapshot)
-			_ = reader.Close()
-			decoded <- decodeErr
-		}()
-		response, err = streamClient.CallStream(ctx, request, writer)
-		if err != nil {
-			_ = writer.CloseWithError(err)
-		} else {
-			_ = writer.Close()
-		}
-		decodeErr = <-decoded
-		if err != nil {
-			return fallback
-		}
-		if !response.OK {
-			fallback.ErrorCode = workerErrorCode(response)
-			fallback.Message = workerErrorMessage(response)
-			return fallback
-		}
-		if decodeErr != nil {
-			fallback.ErrorCode = "WORKER_INVALID_RESPONSE"
-			fallback.Message = "O serviço local respondeu em formato inválido."
-			return fallback
-		}
-		return snapshot
+	streamClient, ok := client.(ipc.StreamClient)
+	if !ok {
+		fallback.ErrorCode = "WORKER_STREAM_UNAVAILABLE"
+		fallback.Message = "O serviço local não oferece transmissão de dados em blocos."
+		return fallback
 	}
-	response, err = client.Call(ctx, request)
+	reader, writer := io.Pipe()
+	decoded := make(chan error, 1)
+	var snapshot application.DashboardSnapshot
+	go func() {
+		decodeErr := json.NewDecoder(reader).Decode(&snapshot)
+		_ = reader.Close()
+		decoded <- decodeErr
+	}()
+	response, err := streamClient.CallStream(ctx, request, writer)
+	if err != nil {
+		_ = writer.CloseWithError(err)
+	} else {
+		_ = writer.Close()
+	}
+	decodeErr := <-decoded
 	if err != nil {
 		return fallback
 	}
@@ -183,8 +170,7 @@ func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
 		fallback.Message = workerErrorMessage(response)
 		return fallback
 	}
-	var snapshot application.DashboardSnapshot
-	if err := json.Unmarshal(response.Payload, &snapshot); err != nil {
+	if decodeErr != nil {
 		fallback.ErrorCode = "WORKER_INVALID_RESPONSE"
 		fallback.Message = "O serviço local respondeu em formato inválido."
 		return fallback

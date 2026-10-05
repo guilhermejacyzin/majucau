@@ -3,9 +3,11 @@
 package ipc
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -140,6 +142,165 @@ func TestNamedPipeConcurrentClientHealthRequests(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("server did not stop after concurrent clients finished")
+	}
+}
+
+func TestNamedPipeServerCloseUnblocksConnect(t *testing.T) {
+	name := fmt.Sprintf(`\\.\pipe\Majucau-close-%d`, time.Now().UnixNano())
+	server, err := NewNamedPipeServer(NamedPipeConfig{Name: name, IOTimeout: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Close()
+	serveErr := make(chan error, 1)
+	go func() {
+		serveErr <- server.Serve(context.Background(), HandlerFunc(func(context.Context, Request) (Response, error) {
+			return Response{}, nil
+		}))
+	}()
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		server.mu.Lock()
+		waiting := len(server.handles) > 0
+		server.mu.Unlock()
+		if waiting {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("server did not create a pipe instance")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if err := server.Close(); err != nil {
+		t.Fatalf("close named pipe server: %v", err)
+	}
+	select {
+	case err := <-serveErr:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("server stopped with unexpected error: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("server did not stop after Close")
+	}
+}
+
+func TestNamedPipeClientCancellationReachesHandler(t *testing.T) {
+	name := fmt.Sprintf(`\\.\pipe\Majucau-cancel-%d`, time.Now().UnixNano())
+	server, err := NewNamedPipeServer(NamedPipeConfig{Name: name, IOTimeout: 5 * time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Close()
+	serverCtx, cancelServer := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelServer()
+	started := make(chan struct{})
+	canceled := make(chan struct{})
+	serveErr := make(chan error, 1)
+	go func() {
+		serveErr <- server.Serve(serverCtx, HandlerFunc(func(ctx context.Context, req Request) (Response, error) {
+			close(started)
+			<-ctx.Done()
+			close(canceled)
+			return Response{}, ctx.Err()
+		}))
+	}()
+
+	client, err := NewNamedPipeClient(NamedPipeConfig{Name: name, IOTimeout: 8 * time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	callCtx, cancelCall := context.WithCancel(context.Background())
+	defer cancelCall()
+	callErr := make(chan error, 1)
+	go func() {
+		_, err := client.Call(callCtx, Request{Version: ProtocolVersion, RequestID: "cancel", Method: MethodHealth})
+		callErr <- err
+	}()
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("handler did not start")
+	}
+	cancelCall()
+	select {
+	case <-canceled:
+	case <-time.After(2 * time.Second):
+		t.Fatal("client cancellation did not reach the handler")
+	}
+	select {
+	case err := <-callErr:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("client call returned %v; want context cancellation", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("client call did not finish after cancellation")
+	}
+	cancelServer()
+	_ = server.Close()
+	select {
+	case err := <-serveErr:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("server stopped with unexpected error: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("server did not stop after cancellation")
+	}
+}
+
+type namedPipeStreamingTestHandler struct{ payload []byte }
+
+func (h namedPipeStreamingTestHandler) Handle(_ context.Context, req Request) (Response, error) {
+	return NewResponse(req.RequestID, map[string]string{"state": "streamed"})
+}
+
+func (h namedPipeStreamingTestHandler) HandleStream(_ context.Context, req Request, dst io.Writer) (Response, error) {
+	if _, err := dst.Write(h.payload); err != nil {
+		return Response{}, err
+	}
+	return NewResponse(req.RequestID, map[string]string{"state": "streamed"})
+}
+
+func TestNamedPipeStreamsMultipleFrames(t *testing.T) {
+	name := fmt.Sprintf(`\\.\pipe\Majucau-stream-%d`, time.Now().UnixNano())
+	payload := bytes.Repeat([]byte("x"), StreamChunkSize+17)
+	server, err := NewNamedPipeServer(NamedPipeConfig{Name: name, IOTimeout: 3 * time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	serveErr := make(chan error, 1)
+	go func() {
+		serveErr <- server.Serve(ctx, namedPipeStreamingTestHandler{payload: payload})
+	}()
+	client, err := NewNamedPipeClient(NamedPipeConfig{Name: name, IOTimeout: 5 * time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	var got bytes.Buffer
+	response, err := client.CallStream(ctx, Request{Version: ProtocolVersion, RequestID: "stream", Method: MethodDashboardSnapshot}, &got)
+	if err != nil {
+		t.Fatalf("stream dashboard response: %v", err)
+	}
+	if !response.OK || response.Stream == nil || !response.Stream.Done {
+		t.Fatalf("unexpected terminal stream response: %#v", response)
+	}
+	if !bytes.Equal(got.Bytes(), payload) {
+		t.Fatalf("streamed %d bytes; want %d matching bytes", got.Len(), len(payload))
+	}
+	cancel()
+	_ = server.Close()
+	select {
+	case err := <-serveErr:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("server stopped with unexpected error: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("server did not stop after streamed client finished")
 	}
 }
 

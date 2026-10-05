@@ -55,3 +55,24 @@ limpeza/ACL ser verificada em VM Windows real.
 - A leitura do diff confirmou que a revisão de streaming adicionou o caminho de quadros, mas não mudou as funções que montam e aplicam o DACL. A causa exata ainda não está provada; não ampliar permissões como tentativa de fazer os testes passarem.
 - Os logs detalhados da execução não foram disponibilizados pela API pública do GitHub (`403 Forbidden`). É necessário obter a saída detalhada de `Go tests` para comparar todos os testes que falharam.
 - `DATA-04` permanece `PARTIAL`; o streaming, por si só, não está homologado até corrigir a falha e obter CI verde.
+
+## Correção local do Named Pipe — 2026-10-04
+
+- A reprodução local confirmou duas causas no transporte Windows: a abertura do
+  cliente era negada com a ACL mínima anterior; depois de incluir
+  `FILE_READ_ATTRIBUTES`, a leitura síncrona usada para detectar desconexão
+  podia bloquear a escrita da resposta no mesmo pipe.
+- O servidor agora cria instâncias com `FILE_FLAG_OVERLAPPED` e aguarda
+  `ConnectNamedPipe` por evento, cancelando a conexão pendente quando o contexto
+  termina. A UI continua com direitos mínimos e não recebe
+  `FILE_CREATE_PIPE_INSTANCE`; esse direito permanece no SID do serviço.
+- A leitura que detecta desconexão foi mantida para que cancelamento do cliente
+  chegue ao handler. O protocolo e os quadros limitados de streaming não foram
+  alterados.
+- `go test ./internal/ipc -count=1 -v` passou localmente com Go 1.26.6 no
+  Windows. A execução incluiu ida e volta de saúde, oito chamadas concorrentes,
+  fechamento do servidor durante a conexão, cancelamento do cliente até o
+  handler, streaming de mais de um quadro, validação de DACL e
+  rejeição/autorização de processo.
+- A mudança ainda precisa da CI Windows/PostgreSQL. `DATA-04` permanece
+  `PARTIAL` até essa validação e a auditoria dos demais fluxos/ACLs em VM real.

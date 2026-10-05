@@ -57,3 +57,37 @@ entrada manual da planilha.
 Nenhum valor financeiro nem dado de fornecedor da planilha foi copiado para o
 repositório. Nenhuma regra, tela ou fórmula de produção foi alterada nesta
 revisão.
+
+## Leitura estrutural detalhada do arquivo — 2026-10-04
+
+A leitura foi somente leitura: o arquivo não foi alterado e nenhum macro foi
+executado. Embora tenha extensão `.xlsm`, o pacote não contém projeto VBA nem
+links externos. Há uma aba visível, `Calculadora`, com uma única área de
+trabalho (`A1:N27`). Valores de entrada foram inspecionados apenas para
+identificar suas células e formatos; nenhum valor financeiro foi copiado para
+este documento.
+
+Fórmulas encontradas:
+
+- `E12`: acumula o lucro líquido da linha mensal de janeiro até dois meses
+  antes do mês de referência; janeiro/fevereiro resultam em zero. Depois
+  subtrai o valor informado como “já investido”. Isso corresponde ao corte
+  temporal escrito na própria planilha e à parte de lucro aprovada em D-003-A.
+- `E20 = E15 + E16`: soma “Saldo na semana mais crítica” e “Recebimentos
+  previstos da Nuvemshop”. Continua pendente confirmar se `E15` já inclui esses
+  recebimentos; somá-los novamente poderia duplicá-los.
+- `E21 = MAX(0, MIN(E20 - E17, E12))`: limita a aplicação ao menor entre o
+  caixa projetado depois da reserva mínima (`E17`) e o lucro disponível (`E12`),
+  sem resultado negativo.
+- `E22 = E20 - E21`: mostra o caixa projetado restante após a aplicação.
+
+Não existe campo com o nome “seguro”. O campo correspondente mais próximo é
+“Reserva mínima de segurança” (`E17`). Foi solicitada confirmação simples para
+saber se “seguro” queria dizer essa reserva de caixa ou uma proteção/seguro da
+aplicação. Até a resposta, não alterar nem renomear essa regra.
+
+Nota de qualidade da referência: as fórmulas das células `B8:M8` são iguais.
+Quando o mês selecionado é março ou posterior, todas elas mostram “somado”,
+embora `E12` some somente janeiro até o mês de referência menos dois. Isso
+parece uma marcação visual imprecisa e não muda `E12`/`E21`. Não reproduzir essa
+marcação na tela do Majucau sem confirmação.

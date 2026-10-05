@@ -59,9 +59,9 @@
 - A CI [37134721442](https://github.com/guilhermejacyzin/majucau/actions/runs/37134721442) passou em Windows e PostgreSQL. No Windows passaram os testes Go, vet, govulncheck, secret scan, verificações do frontend, builds desktop/worker/instalador, smoke de instalação/desinstalação e consolidação de outputs.
 - Esta prova confirma a DACL efetiva no runner Windows Server 2025. Ainda faltam validar o processo cliente autorizado separado, UI fechada, reboot, concorrência e instalação em VM Windows 10/11 limpa; `ARC-02` e `SEC-01` permanecem `PARTIAL`.
 
-## Direitos mínimos e disponibilidade do Named Pipe — CI Windows em 2026-10-03
+## Direitos mínimos e disponibilidade do Named Pipe — CI Windows de referência em 2026-10-03
 
-- O cliente IPC recebe somente `FILE_READ_DATA | FILE_WRITE_DATA | SYNCHRONIZE` (`0x00100003`); não pode criar instâncias do pipe. O SID do serviço recebe esses direitos mais `FILE_CREATE_PIPE_INSTANCE` (`0x00100007`), necessários para o worker criar a próxima instância. BUILTIN\Administrators e LocalSystem mantêm acesso total para administração e operação do serviço.
+- Na versão coberta por esta CI, o cliente IPC recebia `FILE_READ_DATA | FILE_WRITE_DATA | SYNCHRONIZE` (`0x00100003`); não podia criar instâncias do pipe. O SID do serviço recebia esses direitos mais `FILE_CREATE_PIPE_INSTANCE` (`0x00100007`). Esses valores documentam a versão testada em 2026-10-03; não são as máscaras atuais do commit `48cd1a6`.
 - `TestNamedPipeAppliesProtectedDACLToCreatedPipe` lê o descritor efetivo com `GetSecurityInfo` e compara SIDs binários, máscaras e quantidade exata de ACEs. Assim, verifica a DACL protegida e rejeita principal, permissão ou ACE extra inesperada.
 - `TestNamedPipeHealthRoundTripAndCancellation` executa chamadas de saúde em sequência. O cliente aguarda 10 ms e tenta abrir novamente somente quando o pipe ainda está ocupado ou a instância seguinte ainda não foi criada; a espera respeita cancelamento. O retry ocorre antes de enviar o frame da solicitação, então não repete uma operação de negócio.
 - A CI [37136211472](https://github.com/guilhermejacyzin/majucau/actions/runs/37136211472) passou nos jobs Windows e PostgreSQL, incluindo testes Go, vet, govulncheck, secret scan, frontend, builds desktop/worker/instalador, smoke de instalação/desinstalação e consolidação de outputs.
@@ -84,9 +84,17 @@
 - A CI [37139715109](https://github.com/guilhermejacyzin/majucau/actions/runs/37139715109) passou nos jobs Windows e PostgreSQL, incluindo testes Go, vet, scans de segurança, frontend, builds, smoke do instalador e consolidação de outputs.
 - Isto não substitui concorrência entre operações do worker, ensaio do serviço instalado com UI fechada, reboot ou VMs limpas Windows 10/11. `ARC-02` e `SEC-01` continuam `PARTIAL`.
 
-## Estado atual da CI Windows — 2026-10-04
+## Falhas da CI Windows anteriores à correção — 2026-10-04
 
 - As execuções dos commits `86b275a` ([CI 37235671944](https://github.com/guilhermejacyzin/majucau/actions/runs/37235671944)), `667eb5a` ([CI 37236624188](https://github.com/guilhermejacyzin/majucau/actions/runs/37236624188)) e `3ad1e2a` ([CI 37237958548](https://github.com/guilhermejacyzin/majucau/actions/runs/37237958548)) falharam no job Windows, na etapa `Go tests`; os jobs PostgreSQL passaram.
-- O commit `3ad1e2a` só alterou documentação. A repetição confirma que o conjunto Windows ainda não está verde, mas não identifica a causa.
+- O commit `3ad1e2a` só alterou documentação. A repetição confirmou a falha antes da correção, mas não identificou sua causa.
 - A consulta disponível mostrou apenas o estado do job e uma anotação genérica de saída 1. Os logs detalhados não foram acessíveis nesta execução; por isso, não atribuir a falha a um teste específico nem afrouxar controles de segurança com base nisso.
-- Próximo passo: obter a saída detalhada dos testes Windows, corrigir a causa e voltar a exigir sucesso nos dois jobs antes de marcar `ARC-02` concluído.
+- A reprodução local depois identificou a falha de abertura com a máscara antiga e a disputa entre leitura síncrona de desconexão e escrita da resposta. A correção está no commit `48cd1a6`; o resultado da CI desse commit ainda não foi verificado.
+
+## Revalidação local do Named Pipe — commit `48cd1a6`
+
+- O cliente agora recebe `FILE_READ_DATA | FILE_WRITE_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE` (`0x00100083`). O serviço recebe esses direitos mais `FILE_CREATE_PIPE_INSTANCE` (`0x00100087`). O SID da UI continua sem permissão para criar instâncias; Administrators e LocalSystem mantêm as permissões administrativas anteriores.
+- O servidor abre o Named Pipe com I/O overlapped; `ConnectNamedPipe` usa evento e cancela a espera quando o contexto termina. Isso permite observar desconexão enquanto a resposta é escrita sem dar permissões mais amplas ao cliente.
+- `go test ./internal/ipc -count=15` passou no Windows com Go 1.26.6. Inclui testes de DACL, cliente autorizado em processo separado, concorrência, fechamento enquanto aguarda conexão, cancelamento até o handler e streaming em vários quadros.
+- `go test ./cmd/... ./database/... ./internal/...` e `go vet ./cmd/... ./database/... ./internal/...` passaram. O pacote raiz não foi validado localmente porque `frontend/dist` estava ausente; essa pasta é gerada pelo build da interface. Não foi recriada nesta verificação.
+- A workflow local está configurada para executar em todo push, mas o resultado do commit `48cd1a6` não foi conferido. `ARC-02`, `SEC-01` e `DATA-04` continuam `PARTIAL` até CI atual e validação em VM Windows 10/11.

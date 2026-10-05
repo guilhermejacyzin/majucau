@@ -61,6 +61,24 @@ func TestGetBootstrapStateFailsClosed(t *testing.T) {
 	}
 }
 
+func TestGetDashboardSnapshotRejectsNonStreamingClient(t *testing.T) {
+	var calls int
+	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+		calls++
+		return ipc.NewResponse(req.RequestID, application.DashboardSnapshot{DataState: "CONFIRMED"})
+	})
+	app := NewApp()
+	app.clientFactory = func() (ipc.Client, error) { return ipc.NewFakeClient(handler), nil }
+
+	got := app.GetDashboardSnapshot()
+	if got.ErrorCode != "WORKER_STREAM_UNAVAILABLE" || got.DataState != "UNAVAILABLE" {
+		t.Fatalf("expected safe streaming-unavailable result, got %+v", got)
+	}
+	if calls != 0 {
+		t.Fatalf("dashboard snapshot fell back to whole-response IPC call %d times", calls)
+	}
+}
+
 func TestSaveBlingConfigForwardsSecretOnlyToWorker(t *testing.T) {
 	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 		if req.Method != ipc.MethodBlingConfigSave {

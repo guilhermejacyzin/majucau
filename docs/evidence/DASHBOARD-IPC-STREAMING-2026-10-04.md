@@ -48,6 +48,27 @@ O streaming do snapshot foi implementado e testado localmente, mas `DATA-04`
 continua parcial até a CI passar, a auditoria dos outros fluxos terminar e a
 limpeza/ACL ser verificada em VM Windows real.
 
+## Fechamento da rota sem streaming na fronteira Wails — 2026-10-04
+
+A revisão encontrou uma alternativa em `app.go`: se o cliente IPC não
+implementasse `StreamClient`, o painel ainda chamava `Client.Call` e decodificava
+o snapshot JSON inteiro. A alternativa foi removida. O painel agora exige
+`StreamClient`; se o cliente não oferecer quadros, retorna
+`WORKER_STREAM_UNAVAILABLE` sem tentar a chamada não-streaming. A tela e os
+dados esperados não mudaram.
+
+Verificação local direcionada no Windows:
+
+```text
+go test app.go app_test.go
+```
+
+Resultado: aprovado (`command-line-arguments`, 0.417 s). O novo caso confirma
+que um cliente não-streaming é rejeitado antes de chamar o handler de dashboard.
+Este teste da fronteira Wails não substitui a suíte completa, a CI
+Windows/PostgreSQL nem a validação em VM Windows limpa. `DATA-04` continua
+`PARTIAL` até esses gates e a auditoria dos demais fluxos/ACLs serem concluídos.
+
 ## Revalidação após integração — 2026-10-04
 
 - A execução [CI 37243820980](https://github.com/guilhermejacyzin/majucau/actions/runs/37243820980), no commit `ff9e5ce` (somente documentação), terminou com `verify-postgres` aprovado e `verify-windows` reprovado na etapa `Go tests`. O build da interface passou antes dessa etapa; verificações posteriores do job Windows foram ignoradas.

@@ -86,6 +86,36 @@ explícito. O contrato de resposta do painel foi implementado; `DATA-04` continu
 `PARTIAL` até a CI Windows/PostgreSQL validar essa mudança, a auditoria dos
 demais fluxos terminar e a limpeza/ACL ser comprovada em VM Windows real.
 
+### Revarredura estática de Go, banco e frontend — 2026-10-10
+
+- Busca nos fontes Go de produção (excluindo arquivos `_test.go`) não encontrou
+  `os.ReadFile` nem leitura arbitrária de arquivo inteiro. Os usos produtivos
+  de `io.ReadAll` identificados estão limitados: resposta HTTP do Bling com
+  limite configurável mais um byte, entrada auxiliar do pacote de backup com
+  limite do manifesto e arquivo DPAPI com limite do blob.
+- O decoder da resposta de dados Bling usa `json.Decoder` sobre
+  `io.LimitedReader`; o decoder OAuth usa `readLimitedBody`. Journals e
+  manifestos do instalador também usam leitores limitados. Mensagens IPC
+  comuns têm teto de 1 MiB e o fluxo do painel usa frames em blocos de 512 KiB.
+- `internal/dashboard/stream.go` consulta detalhes linha a linha, limita cada
+  tabela a 50 linhas e aplica limites de 4 KiB por campo e 16 KiB por registro.
+- `internal/integrations/csvstream/file_queue.go` enumera 256 entradas por
+  leitura, armazena a lista em tabela temporária PostgreSQL e lê lotes de até
+  256 nomes; não mantém a pasta inteira em uma fatia Go.
+- `ListIntegrationStatus` monta uma fatia, mas a migration restringe `provider`
+  a quatro valores únicos (`BLING`, `NUVEMSHOP`, `NUVEM_PAGO`, `PAYROLL`), então
+  essa consulta tem um teto de quatro linhas.
+- A busca no frontend não encontrou `FileReader`, `readAsText`,
+  `readAsArrayBuffer`, `File.text()`, `Blob.arrayBuffer()`, `fetch` ou
+  `response.json()`. Os fluxos de CSV chamam os métodos Wails do worker com o
+  caminho selecionado, sem carregar o arquivo no navegador.
+- O resultado é uma revisão estática dos padrões pesquisados; não prova pico de
+  memória em execução, ACL do PostgreSQL, limpeza real de temporários ou
+  comportamento em máquina Windows limpa. `DATA-04` permanece `PARTIAL` até
+  esses gates serem comprovados.
+- Nenhum código, tela ou regra de negócio foi alterado nesta revarredura. Testes
+  não foram executados.
+
 ## Regressão do limite de redação — CI #241
 
 A CI [37144902549](https://github.com/guilhermejacyzin/majucau/actions/runs/37144902549)

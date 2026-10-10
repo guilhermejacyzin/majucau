@@ -164,8 +164,9 @@ A revisão encontrou um caso sem essa proteção: `prepare-webview2.ps1` ignorav
 falhas ao apagar um bootstrapper rejeitado por Authenticode. O script agora
 deixa a falha de exclusão interromper o fluxo e informa o código HRESULT para
 que a limpeza manual seja identificada. A rejeição normal continua falhando
-como antes. O parser PowerShell e `git diff --check` passaram localmente; a CI
-Windows ainda precisa validar a alteração. Não houve mudança de tela ou regra
+como antes. O parser PowerShell e `git diff --check` passaram localmente. A CI
+[38081525442](https://github.com/guilhermejacyzin/majucau/actions/runs/38081525442)
+passou nos jobs Windows e PostgreSQL. Não houve mudança de tela ou regra
 financeira.
 
 O `finally` de `smoke-installer.ps1` também ignorava falhas ao remover arquivos
@@ -173,5 +174,8 @@ auxiliares e a tarefa agendada. O fluxo agora tenta limpar cada item, registra
 os HRESULTs de todas as falhas e preserva a mensagem da falha principal do
 smoke. A criação do script temporário e a preparação da tarefa também ficaram
 dentro do trecho protegido por limpeza. O parser PowerShell passou localmente;
-o smoke de instalação na CI ainda precisa validar a mudança. O diff local
-preexistente no fim do script foi preservado fora do commit.
+a CI [38081927858](https://github.com/guilhermejacyzin/majucau/actions/runs/38081927858)
+passou nos jobs Windows e PostgreSQL, incluindo o smoke de instalação e
+desinstalação. O smoke não simula uma falha real de exclusão ou arquivo
+bloqueado; essa validação ainda falta. O diff local preexistente no fim do
+script foi preservado fora do commit.

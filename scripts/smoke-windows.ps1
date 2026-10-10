@@ -31,6 +31,7 @@ function Assert-Condition {
 }
 
 Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $smokeRoot -ExpectedRelativePath 'artifacts\cache\windows-smoke-run'
+try {
 New-Item -ItemType Directory -Force -Path $smokeRoot | Out-Null
 Assert-Condition (Test-Path -LiteralPath $portableZip -PathType Leaf) "Bundle portátil ausente: $portableZip"
 
@@ -126,4 +127,7 @@ $result = [ordered]@{
 }
 $resultPath = Join-Path $smokeRoot 'SMOKE-RESULT.json'
 $result | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $resultPath -Encoding utf8
-Write-Output "Windows smoke PASS: $resultPath"
+Write-Output 'Windows smoke PASS'
+} finally {
+    Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $smokeRoot -ExpectedRelativePath 'artifacts\cache\windows-smoke-run'
+}

@@ -38,6 +38,7 @@ if (-not (Test-Path -LiteralPath $releaseMigrations -PathType Container)) {
 }
 
 Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $stageRoot -ExpectedRelativePath 'artifacts\cache\portable-stage'
+try {
 New-Item -ItemType Directory -Force -Path $stageRoot | Out-Null
 
 foreach ($fileName in $required) {
@@ -89,5 +90,7 @@ Get-ChildItem -LiteralPath $artifactRoot -Recurse -File |
     ForEach-Object { $lines += "$($_.FullName.Substring($artifactRoot.Length + 1))  $($_.Length) bytes" }
 Set-Content -LiteralPath $manifest -Value $lines -Encoding utf8
 
-Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $stageRoot -ExpectedRelativePath 'artifacts\cache\portable-stage'
 Write-Host "Bundle portátil criado em: $bundlePath"
+} finally {
+    Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $stageRoot -ExpectedRelativePath 'artifacts\cache\portable-stage'
+}

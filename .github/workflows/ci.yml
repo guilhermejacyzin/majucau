@@ -189,6 +189,14 @@ jobs:
           if (-not $installer) { throw 'Wails não produziu um instalador NSIS; nenhum warning pode ser tratado como sucesso.' }
           Write-Output "Installer: $($installer.FullName)"
 
+      - name: Build portable bundle
+        shell: pwsh
+        run: ./scripts/package-portable.ps1
+
+      - name: Smoke portable Windows bundle
+        shell: pwsh
+        run: ./scripts/smoke-windows.ps1
+
       - name: Generate dependency SBOMs and license evidence
         shell: pwsh
         run: |

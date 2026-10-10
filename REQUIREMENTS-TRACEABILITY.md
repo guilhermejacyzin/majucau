@@ -132,6 +132,12 @@ de limpeza do smoke de instalação. O job Windows executou instalação,
 desinstalação e verificação da consolidação com sucesso. O teste local agora
 também rejeita caminhos fora do projeto, destino diferente do permitido e
 junction para uma pasta externa, preservando um arquivo sentinela; todos esses
-casos passaram localmente. A CI `38086416845` está verificando a versão do
-teste que inclui o junction. `DATA-04` continua `PARTIAL` até esse resultado e
-as validações em VM Windows limpa comprovarem ACL e limpeza real.
+casos passaram localmente. O estado atual do GitHub confirma que a CI
+`38086416845` concluiu com sucesso nos jobs Windows e PostgreSQL. A CI
+`38087687132` também passou nos dois jobs, incluindo as guardas de limpeza.
+`DATA-04` continua `PARTIAL` até ACL e limpeza serem comprovadas em VM Windows
+10/11 limpa.
+
+## Evidência de CI para DATA-04 — 2026-10-10
+
+A CI [38093372456](https://github.com/guilhermejacyzin/majucau/actions/runs/38093372456), no commit `43976d3`, passou nos jobs completos de Windows e PostgreSQL, incluindo testes Go, testes/build frontend, análise de dependências, geração SQL, backup/restauração em PostgreSQL descartável, smoke do bundle e instalador e consolidação de outputs. Ver `docs/evidence/DATA-FLOW-STATIC-AUDIT-2026-10-03.md` para o escopo da revisão estática. A CI não substitui carga com histórico real nem ACL/limpeza em VM Windows 10/11 limpa; `DATA-04` permanece `PARTIAL`.

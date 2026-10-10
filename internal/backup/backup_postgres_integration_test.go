@@ -29,6 +29,46 @@ func TestCreateVerifyAndRestoreAgainstDisposablePostgres(t *testing.T) {
 		t.Fatalf("connect to disposable backup source PostgreSQL: %v", err)
 	}
 	defer func() { _ = source.Close(context.Background()) }()
+	_, err = source.Exec(ctx, `
+WITH connection AS (
+  INSERT INTO integration_connections (provider, status)
+  VALUES ('BLING', 'CONNECTED')
+  RETURNING id
+), batch AS (
+  INSERT INTO integration_sync_batches (connection_id, resource, status, finished_at)
+  SELECT id, 'ci_restore_evidence', 'SUCCESS', clock_timestamp() FROM connection
+  RETURNING id, connection_id
+), raw AS (
+  INSERT INTO raw_records (sync_batch_id, connection_id, source_system, source_entity, source_id, payload_hash, payload)
+  SELECT id, connection_id, 'BLING', 'ci_restore_evidence', 'streaming-backup-restore-ci-raw', repeat('a', 64),
+         '{"marker":"streaming-backup-restore-ci-raw"}'::jsonb
+  FROM batch
+  RETURNING id
+), cursor AS (
+  INSERT INTO sync_cursors (connection_id, resource, cursor_value)
+  SELECT connection_id, 'ci_restore_evidence', 'marker-page-1' FROM batch
+), rule AS (
+  INSERT INTO financial_rule_versions (rule_code, version, description, status)
+  VALUES ('CI_RESTORE_EVIDENCE', 1, 'Test-only backup restoration fixture', 'DRAFT')
+  RETURNING id
+), calculation AS (
+  INSERT INTO calculation_runs (calculation_type, rule_version_id, scenario_id, reference_date, status, input_hash, finished_at)
+  SELECT 'CI_RESTORE_EVIDENCE', rule.id, scenario.id, DATE '2026-10-10', 'PARTIAL', repeat('b', 64), clock_timestamp()
+  FROM rule CROSS JOIN scenarios AS scenario
+  WHERE scenario.code = 'BASE'
+  RETURNING id, rule_version_id, scenario_id
+), snapshot AS (
+  INSERT INTO statement_snapshots (calculation_run_id, statement_type, period_start, period_end, scenario_id, status)
+  SELECT id, 'DRE', DATE '2026-10-01', DATE '2026-10-31', scenario_id, 'PROVISIONAL'
+  FROM calculation
+  RETURNING id, calculation_run_id
+)
+INSERT INTO statement_lines (snapshot_id, line_code, label, amount, display_order, rule_version_id)
+SELECT snapshot.id, 'CI_RESTORE_EVIDENCE', 'CI-only backup restore marker', 123.45, 999, calculation.rule_version_id
+FROM snapshot JOIN calculation ON calculation.id = snapshot.calculation_run_id`)
+	if err != nil {
+		t.Fatalf("create RAW, cursor, and statement snapshot evidence in source: %v", err)
+	}
 	if _, err := source.Exec(ctx, `CREATE TABLE backup_restore_evidence (marker text PRIMARY KEY)`); err != nil {
 		t.Fatalf("create restore evidence table in source: %v", err)
 	}
@@ -96,6 +136,27 @@ func TestCreateVerifyAndRestoreAgainstDisposablePostgres(t *testing.T) {
 			}
 			if !sourceRoleExists {
 				return fmt.Errorf("source PostgreSQL role was not restored")
+			}
+			var restoredRawMarker string
+			if err := connection.QueryRow(ctx, `SELECT payload->>'marker' FROM raw_records WHERE source_entity = 'ci_restore_evidence' AND source_id = 'streaming-backup-restore-ci-raw'`).Scan(&restoredRawMarker); err != nil {
+				return fmt.Errorf("query restored RAW record: %w", err)
+			}
+			if restoredRawMarker != "streaming-backup-restore-ci-raw" {
+				return fmt.Errorf("restored RAW marker mismatch: got %q", restoredRawMarker)
+			}
+			var restoredCursor string
+			if err := connection.QueryRow(ctx, `SELECT cursor_value FROM sync_cursors WHERE resource = 'ci_restore_evidence'`).Scan(&restoredCursor); err != nil {
+				return fmt.Errorf("query restored sync cursor: %w", err)
+			}
+			if restoredCursor != "marker-page-1" {
+				return fmt.Errorf("restored cursor mismatch: got %q", restoredCursor)
+			}
+			var restoredStatementAmount string
+			if err := connection.QueryRow(ctx, `SELECT line.amount::text FROM statement_lines AS line JOIN statement_snapshots AS snapshot ON snapshot.id = line.snapshot_id WHERE line.line_code = 'CI_RESTORE_EVIDENCE' AND snapshot.statement_type = 'DRE'`).Scan(&restoredStatementAmount); err != nil {
+				return fmt.Errorf("query restored statement snapshot line: %w", err)
+			}
+			if restoredStatementAmount != "123.4500" {
+				return fmt.Errorf("restored statement amount mismatch: got %q", restoredStatementAmount)
 			}
 			return nil
 		},

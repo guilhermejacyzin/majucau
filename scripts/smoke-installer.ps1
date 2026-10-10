@@ -68,14 +68,19 @@ try {
     exit 1
 }
 "@
-    Set-Content -LiteralPath $scriptPath -Value $taskScript -Encoding utf8
-
-    $powerShell = (Get-Command powershell.exe -ErrorAction Stop).Source
-    $action = New-ScheduledTaskAction -Execute $powerShell -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
-    $identity = if ($env:USERDOMAIN) { "$env:USERDOMAIN\$env:USERNAME" } else { $env:USERNAME }
-    $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Highest
+    $taskRegistered = $false
+    $exitCode = $null
+    $operationError = $null
+    $cleanupFailures = New-Object 'System.Collections.Generic.List[string]'
     try {
+        Set-Content -LiteralPath $scriptPath -Value $taskScript -Encoding utf8
+
+        $powerShell = (Get-Command powershell.exe -ErrorAction Stop).Source
+        $action = New-ScheduledTaskAction -Execute $powerShell -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+        $identity = if ($env:USERDOMAIN) { "$env:USERDOMAIN\$env:USERNAME" } else { $env:USERNAME }
+        $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Highest
         Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal -Force | Out-Null
+        $taskRegistered = $true
         Start-ScheduledTask -TaskName $taskName
         $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
         do {
@@ -90,12 +95,39 @@ try {
         if (-not (Test-Path -LiteralPath $resultPath -PathType Leaf)) {
             throw "Processo elevado excedeu $TimeoutSeconds segundos: $FilePath"
         }
-        return [int](Read-BoundedTextFile -Path $resultPath -MaxBytes 4096).Trim()
+        $exitCode = [int](Read-BoundedTextFile -Path $resultPath -MaxBytes 4096).Trim()
+    } catch {
+        $operationError = $_
     }
-    finally {
-        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
-        Remove-Item -LiteralPath $scriptPath, $resultPath, $errorPath -Force -ErrorAction SilentlyContinue
+
+    if ($taskRegistered) {
+        try {
+            Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction Stop
+        } catch {
+            $cleanupHResult = '0x{0:X8}' -f $_.Exception.HResult
+            $cleanupFailures.Add("tarefa agendada '$taskName' (HRESULT=$cleanupHResult)")
+        }
     }
+    foreach ($path in @($scriptPath, $resultPath, $errorPath)) {
+        try {
+            [System.IO.File]::Delete($path)
+        } catch {
+            $cleanupHResult = '0x{0:X8}' -f $_.Exception.HResult
+            $cleanupName = [System.IO.Path]::GetFileName($path)
+            $cleanupFailures.Add("arquivo auxiliar '$cleanupName' (HRESULT=$cleanupHResult)")
+        }
+    }
+    if ($cleanupFailures.Count -gt 0) {
+        $cleanupSummary = "limpeza incompleta; verifique os arquivos auxiliares do smoke e a tarefa '$taskName': $($cleanupFailures -join '; ')"
+        if ($null -ne $operationError) {
+            throw "$($operationError.Exception.Message) Além disso, $cleanupSummary."
+        }
+        throw $cleanupSummary
+    }
+    if ($null -ne $operationError) {
+        throw $operationError
+    }
+    return [int]$exitCode
 }
 
 if (Test-Path -LiteralPath $OutputRoot) { Remove-Item -LiteralPath $OutputRoot -Recurse -Force }

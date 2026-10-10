@@ -168,7 +168,10 @@ como antes. O parser PowerShell e `git diff --check` passaram localmente; a CI
 Windows ainda precisa validar a alteração. Não houve mudança de tela ou regra
 financeira.
 
-Continua pendente revisar o `SilentlyContinue` no `finally` de
-`smoke-installer.ps1`, que abrange a remoção de arquivos auxiliares e o registro
-da tarefa agendada. O diff local preexistente desse arquivo foi preservado e
-ficou fora desta alteração.
+O `finally` de `smoke-installer.ps1` também ignorava falhas ao remover arquivos
+auxiliares e a tarefa agendada. O fluxo agora tenta limpar cada item, registra
+os HRESULTs de todas as falhas e preserva a mensagem da falha principal do
+smoke. A criação do script temporário e a preparação da tarefa também ficaram
+dentro do trecho protegido por limpeza. O parser PowerShell passou localmente;
+o smoke de instalação na CI ainda precisa validar a mudança. O diff local
+preexistente no fim do script foi preservado fora do commit.

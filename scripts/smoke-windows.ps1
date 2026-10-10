@@ -131,3 +131,8 @@ Write-Output 'Windows smoke PASS'
 } finally {
     Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $smokeRoot -ExpectedRelativePath 'artifacts\cache\windows-smoke-run'
 }
+
+# Os códigos dos executáveis auxiliares já foram verificados acima. O runner do
+# PowerShell pode herdar o código do último processo encerrado durante o smoke;
+# normalize o resultado apenas depois de todas as verificações e da limpeza.
+$global:LASTEXITCODE = 0

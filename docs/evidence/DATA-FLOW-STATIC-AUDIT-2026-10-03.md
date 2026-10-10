@@ -197,7 +197,11 @@ de apagar, confirma que a raiz do projeto, os diretórios pais existentes, o
 destino e seus itens internos não são links de pasta (reparse points); aplica a
 mesma proteção à extração temporária do diagnóstico do instalador.
 
-O parser PowerShell e `git diff --check` passaram localmente. O smoke completo
-de instalação não foi executado nesta verificação; a CI após o push precisa
-confirmar o fluxo no runner compatível. A alteração afeta apenas a ferramenta
-de validação, sem mudar telas ou regras financeiras.
+O parser PowerShell e `git diff --check` passaram localmente. Depois do push, a
+CI [38084637102](https://github.com/guilhermejacyzin/majucau/actions/runs/38084637102)
+passou em Windows e PostgreSQL, incluindo o smoke de instalação/desinstalação e
+a verificação da consolidação dos outputs. Isso comprova o fluxo normal com o
+destino dedicado usado pela CI; a rejeição de caminhos fora da pasta permitida
+e de links/reparse points ainda não foi testada por um caso negativo. A
+alteração afeta apenas a ferramenta de validação, sem mudar telas ou regras
+financeiras.

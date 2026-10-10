@@ -126,3 +126,9 @@ Nenhum desses itens deve ser reinterpretado como concluído por existir uma inte
 ## Evidência complementar de streaming — 2026-10-10
 
 `DATA-04` também cobre as ferramentas de validação Windows: `scripts/BoundedText.psm1` faz leitura em blocos limitados e os scripts de smoke/inspeção definem tetos por arquivo. O teste positivo/negativo do leitor, a análise sintática PowerShell e a verificação do contrato NSIS passaram localmente. A CI `38077877166` passou em Windows e PostgreSQL, incluindo o smoke de instalação/desinstalação e a consolidação dos outputs. Evidência detalhada: `docs/evidence/DATA-FLOW-STATIC-AUDIT-2026-10-03.md`. Isso ainda não prova ACL e limpeza em VM Windows 10/11 limpa; `DATA-04` continua `PARTIAL`.
+
+A CI `38084637102` passou em Windows e PostgreSQL após a proteção do destino
+de limpeza do smoke de instalação. O job Windows executou instalação,
+desinstalação e verificação da consolidação com sucesso. Os casos negativos
+para caminho fora da raiz e links de pasta ainda não foram testados; `DATA-04`
+continua `PARTIAL`.

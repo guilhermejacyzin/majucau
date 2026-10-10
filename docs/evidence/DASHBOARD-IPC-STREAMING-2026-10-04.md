@@ -97,3 +97,24 @@ Windows/PostgreSQL nem a validação em VM Windows limpa. `DATA-04` continua
   rejeição/autorização de processo.
 - A mudança ainda precisa da CI Windows/PostgreSQL. `DATA-04` permanece
   `PARTIAL` até essa validação e a auditoria dos demais fluxos/ACLs em VM real.
+
+## Limite do leitor Wails — 2026-10-10
+
+- A fronteira Wails já recebia o snapshot por IPC em blocos, mas o decoder não
+  tinha limite total de bytes e aceitava dados após o primeiro documento JSON.
+- `app.go` agora limita a leitura do snapshot a 16 MiB e rejeita conteúdo acima
+  do teto ou JSON adicional após o documento esperado. Esse teto considera as
+  duas tabelas com até 50 registros de até 16 KiB cada; inclui margem para a
+  expansão de caracteres especiais no JSON e para o resumo fixo. A resposta
+  inválida usa o código público já existente `WORKER_INVALID_RESPONSE`.
+- Nenhum campo, cálculo, regra contábil ou elemento de tela foi alterado. O
+  limite protege a entrada do processo Wails e preserva o contrato do snapshot.
+- `go test app.go app_test.go` e `go vet app.go app_test.go` passaram com Go
+  1.26.9; os testes cobrem JSON dentro do limite, excesso de bytes e documento
+  JSON adicional. A tentativa de `go test .` não chegou à compilação porque o
+  diretório gerado `frontend/dist` estava ausente; o script de verificação do
+  projeto prepara esse diretório e a CI completa do commit de código ainda é
+  necessária.
+- `DATA-04` continua `PARTIAL` até a CI Windows/PostgreSQL do código atualizado,
+  a conclusão da auditoria de todos os fluxos e a verificação em VM Windows
+  limpa.

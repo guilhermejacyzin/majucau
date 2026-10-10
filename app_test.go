@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"majucau.local/financial-intelligence/internal/application"
@@ -76,6 +77,24 @@ func TestGetDashboardSnapshotRejectsNonStreamingClient(t *testing.T) {
 	}
 	if calls != 0 {
 		t.Fatalf("dashboard snapshot fell back to whole-response IPC call %d times", calls)
+	}
+}
+
+func TestDecodeDashboardSnapshotLimitsBytesAndRejectsTrailingJSON(t *testing.T) {
+	valid := `{"data_state":"CONFIRMED"}`
+	got, tooLarge, err := decodeDashboardSnapshot(strings.NewReader(valid), int64(len(valid)))
+	if err != nil || tooLarge || got.DataState != "CONFIRMED" {
+		t.Fatalf("valid bounded snapshot = %+v, tooLarge=%t, err=%v", got, tooLarge, err)
+	}
+
+	_, tooLarge, err = decodeDashboardSnapshot(strings.NewReader(valid+" "), int64(len(valid)))
+	if !tooLarge {
+		t.Fatalf("snapshot over the byte limit was not rejected: tooLarge=%t, err=%v", tooLarge, err)
+	}
+
+	_, tooLarge, err = decodeDashboardSnapshot(strings.NewReader(valid+` {}`), int64(len(valid)+8))
+	if tooLarge || err == nil {
+		t.Fatalf("trailing JSON was not rejected: tooLarge=%t, err=%v", tooLarge, err)
 	}
 }
 

@@ -15,6 +15,11 @@ import (
 
 const appVersion = "0.1.0-g1"
 
+// The worker streams at most 50 rows per detail table and limits each row to
+// 16 KiB before JSON escaping. Sixfold escaping plus the fixed summary fits
+// below this cap, which also bounds memory at the Wails process boundary.
+const maxDashboardSnapshotBytes int64 = 16 << 20
+
 // App is the deliberately small Wails boundary. It never receives or stores
 // provider secrets; privileged actions belong to the worker.
 type App struct {
@@ -148,12 +153,16 @@ func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
 		return fallback
 	}
 	reader, writer := io.Pipe()
-	decoded := make(chan error, 1)
-	var snapshot application.DashboardSnapshot
+	type decodeResult struct {
+		snapshot application.DashboardSnapshot
+		err      error
+		tooLarge bool
+	}
+	decoded := make(chan decodeResult, 1)
 	go func() {
-		decodeErr := json.NewDecoder(reader).Decode(&snapshot)
+		snapshot, tooLarge, decodeErr := decodeDashboardSnapshot(reader, maxDashboardSnapshotBytes)
 		_ = reader.Close()
-		decoded <- decodeErr
+		decoded <- decodeResult{snapshot: snapshot, err: decodeErr, tooLarge: tooLarge}
 	}()
 	response, err := streamClient.CallStream(ctx, request, writer)
 	if err != nil {
@@ -161,7 +170,12 @@ func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
 	} else {
 		_ = writer.Close()
 	}
-	decodeErr := <-decoded
+	result := <-decoded
+	if result.tooLarge {
+		fallback.ErrorCode = "WORKER_INVALID_RESPONSE"
+		fallback.Message = "O serviço local respondeu em formato inválido."
+		return fallback
+	}
 	if err != nil {
 		return fallback
 	}
@@ -170,12 +184,32 @@ func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
 		fallback.Message = workerErrorMessage(response)
 		return fallback
 	}
-	if decodeErr != nil {
+	if result.err != nil {
 		fallback.ErrorCode = "WORKER_INVALID_RESPONSE"
 		fallback.Message = "O serviço local respondeu em formato inválido."
 		return fallback
 	}
-	return snapshot
+	return result.snapshot
+}
+
+func decodeDashboardSnapshot(reader io.Reader, maxBytes int64) (application.DashboardSnapshot, bool, error) {
+	if maxBytes <= 0 || maxBytes == int64(^uint64(0)>>1) {
+		return application.DashboardSnapshot{}, false, fmt.Errorf("invalid dashboard snapshot size limit")
+	}
+	limited := &io.LimitedReader{R: reader, N: maxBytes + 1}
+	decoder := json.NewDecoder(limited)
+	var snapshot application.DashboardSnapshot
+	if err := decoder.Decode(&snapshot); err != nil {
+		return application.DashboardSnapshot{}, limited.N == 0, err
+	}
+	var trailing json.RawMessage
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		if err == nil {
+			err = fmt.Errorf("dashboard snapshot contains trailing JSON")
+		}
+		return application.DashboardSnapshot{}, limited.N == 0, err
+	}
+	return snapshot, limited.N == 0, nil
 }
 
 // SaveBlingConfig forwards the editable Bling configuration to the worker.
@@ -578,4 +612,3 @@ func unavailableIntegrations() []application.IntegrationStatus {
 func requestID(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UTC().UnixNano())
 }
-

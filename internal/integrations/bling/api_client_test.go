@@ -283,8 +283,8 @@ func TestListReceivablesDoesNotRetryCallerCancellation(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("caller cancellation error = %v, want context.Canceled", err)
 	}
-	if doer.calls != 1 || waits != 0 {
-		t.Fatalf("caller cancellation made %d attempts and %d waits; want 1 attempt and no wait", doer.calls, waits)
+	if doer.calls != 0 || waits != 0 {
+		t.Fatalf("caller cancellation made %d transport attempts and %d waits; want no transport attempt and no wait", doer.calls, waits)
 	}
 }
 

@@ -156,7 +156,7 @@ func NewBlingOAuthService(pool *pgxpool.Pool, store security.SecretStore) *Bling
 		repo:       newPostgresBlingOAuthRepository(pool),
 		store:      store,
 		pool:       pool,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		httpClient: withBlingRequestPacing(&http.Client{Timeout: 30 * time.Second}),
 		listen:     net.Listen,
 		now:        time.Now,
 		sessions:   make(map[string]*blingOAuthSession),
@@ -167,6 +167,7 @@ func newBlingOAuthService(repo blingOAuthRepository, store security.SecretStore,
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 30 * time.Second}
 	}
+	httpClient = withBlingRequestPacing(httpClient)
 	return &BlingOAuthService{repo: repo, store: store, httpClient: httpClient, listen: net.Listen, now: time.Now, sessions: make(map[string]*blingOAuthSession)}
 }
 
@@ -643,4 +644,3 @@ func oauthErrorMessage(err error) string {
 		return "Não foi possível concluir a autorização do Bling."
 	}
 }
-

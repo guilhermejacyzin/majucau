@@ -179,3 +179,10 @@ passou nos jobs Windows e PostgreSQL, incluindo o smoke de instalação e
 desinstalação. O smoke não simula uma falha real de exclusão ou arquivo
 bloqueado; essa validação ainda falta. O diff local preexistente no fim do
 script foi preservado fora do commit.
+
+A varredura dos scripts Windows encontrou também `Stop-Process` e
+`Wait-Process` com erros suprimidos em `smoke-windows.ps1`. O smoke agora exige
+que o worker de teste encerre e informa PID/HRESULT se ele continuar ativo. O
+parser PowerShell passou localmente. A CI atual não executa esse script; falta
+rodá-lo em Windows e simular a falha de encerramento do processo. Nenhuma tela
+ou regra financeira foi alterada.

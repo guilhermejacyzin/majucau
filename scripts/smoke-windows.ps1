@@ -90,11 +90,19 @@ $worker = Join-Path $portableRoot 'majucau-worker.exe'
 $workerProcess = Start-Process -FilePath $worker -ArgumentList '--console' -WorkingDirectory $portableRoot -WindowStyle Hidden -RedirectStandardOutput $workerStdout -RedirectStandardError $workerStderr -PassThru
 Start-Sleep -Seconds 2
 $workerStarted = -not $workerProcess.HasExited
-if ($workerStarted) {
-    Stop-Process -Id $workerProcess.Id -Force -ErrorAction SilentlyContinue
-    Wait-Process -Id $workerProcess.Id -Timeout 5 -ErrorAction SilentlyContinue
+try {
+    if ($workerStarted) {
+        Stop-Process -Id $workerProcess.Id -Force -ErrorAction Stop
+        Wait-Process -Id $workerProcess.Id -Timeout 5 -ErrorAction Stop
+    }
+} catch {
+    if (-not $workerProcess.HasExited) {
+        $cleanupHResult = '0x{0:X8}' -f $_.Exception.HResult
+        throw "Worker de smoke continua ativo (PID=$($workerProcess.Id), HRESULT=$cleanupHResult); encerre-o manualmente antes de limpar o diretório de smoke."
+    }
 }
 Assert-Condition $workerStarted 'Worker não permaneceu ativo durante o smoke console.'
+Assert-Condition $workerProcess.HasExited "Worker de smoke não encerrou (PID=$($workerProcess.Id))."
 $workerHealth = (Read-BoundedTextFile -Path $workerStdout -MaxBytes 262144) | ConvertFrom-Json
 Assert-Condition ($workerHealth.service -eq 'majucau-worker' -and $workerHealth.state -eq 'OK') 'Health do worker não ficou OK.'
 

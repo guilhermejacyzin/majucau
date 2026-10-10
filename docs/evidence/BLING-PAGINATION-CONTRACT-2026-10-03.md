@@ -19,23 +19,26 @@
 - `DATA-02` permanece `PARTIAL`. Antes de mudar a sincronização, é necessária a referência específica do endpoint ou uma resposta sanitizada preservando somente os nomes e valores dos campos de paginação. Registros, IDs reais, valores financeiros, tokens e dados pessoais devem ser removidos.
 - Ainda é necessário confirmar se os filtros de alteração são aceitos nesses endpoints e se a paginação permanece estável enquanto os registros mudam. A homologação com a conta autorizada deve gerar uma fixture sanitizada e testes de contrato.
 
-## Rechecagem da documentação pública e do código — 2026-10-10
+## Rechecagem da OpenAPI pública e do código — 2026-10-10
 
-### O que a documentação pública confirma
+### O que a OpenAPI do endpoint confirma
 
-- A [FAQ oficial do Bling](https://developer.bling.com.br/perguntas-frequentes) e as [boas práticas oficiais](https://developer.bling.com.br/boas-praticas) confirmam paginação por `pagina`, com `limite` configurável e padrão de 100 registros.
-- A página oficial de [limites e filtros](https://developer.bling.com.br/limites) explica sufixos `Inicial`/`Final` para filtros de período e cita `dataAlteracaoInicial`/`dataAlteracaoFinal`. Isso não confirma, por si só, que `GET /contas/receber` aceita esses filtros.
-- As páginas públicas consultadas não descrevem o campo de resposta que sinaliza a última página nem confirmam `pagination.hasNext` ou `pagination.total` para esse endpoint.
+- A [referência oficial OpenAPI do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) descreve `GET /contas/receber` como paginado e lista os parâmetros `pagina` e `limite`.
+- A definição oficial desses parâmetros informa `pagina` padrão 1 e mínimo 1; `limite` padrão 100 e mínimo 1. A OpenAPI não publica um limite máximo.
+- Para esse endpoint, a OpenAPI documenta filtros `dataInicial` e `dataFinal`, interpretados conforme `tipoFiltroData` (`E` emissão, `V` vencimento, `R` recebimento). Ela não lista `dataAlteracaoInicial` nem `dataAlteracaoFinal` entre os parâmetros de `GET /contas/receber`.
+- A resposta HTTP 200 documenta um objeto cuja propriedade `data` é uma lista de contas. Não documenta metadados como `pagination.hasNext`, `pagination.total` ou a quantidade total de páginas. O schema não é prova de que a API nunca envie campos adicionais fora da documentação.
+- Portanto, a fonte oficial confirma os parâmetros da paginação e o formato documentado da lista, mas não define como detectar a última página nem uma marca d'água de alteração para sincronização incremental.
 
 ### Risco identificado no adaptador atual
 
 - `api_client.go` só marca `HasNext` quando recebe `pagination.hasNext` ou `pagination.total`. Se a resposta não trouxer esses metadados, `HasNext` permanece falso.
-- `api_sync.go` interpreta esse valor como fim normal e marca a sincronização como concluída. Se o endpoint omitir a paginação de resposta, a execução pode terminar após a primeira página sem acusar incompletude.
+- `api_sync.go` interpreta esse valor como fim normal e marca a sincronização como concluída. Como a OpenAPI não documenta esses metadados, existe risco de uma resposta válida conforme o schema ser tratada como completa após uma única página. Isso precisa ser resolvido antes de aceitar a sincronização para produção.
 - O cursor gravado é `page:<n>`, mas a próxima sincronização não o lê para escolher a página inicial. Portanto, ele não é um marcador incremental comprovado nem um mecanismo de retomada entre execuções.
 - Os testes atuais usam respostas sintéticas; não provam o envelope real da conta Bling.
 
 ### Limite da investigação e decisão
 
-- A referência interativa do Bling foi bloqueada por uma preferência de segurança salva no navegador. Nenhum outro navegador, ferramenta ou rota foi usado para contornar o bloqueio.
+- A tentativa de abrir a aba autenticada do Bling foi bloqueada por uma preferência de segurança salva no navegador, mesmo com a autorização já dada pela usuária. Nenhum outro navegador, ferramenta ou rota foi usado para contornar o bloqueio.
 - Não alterei o código: adivinhar o campo de resposta ou encerrar pela quantidade de registros poderia pular dados em uma resposta incompleta.
-- `DATA-02` permanece `PARTIAL` e a paginação continua bloqueada até confirmar o contrato específico do endpoint por documentação acessível ou resposta sanitizada. Para a resposta, basta preservar nomes dos campos de paginação e quantidades; remover registros, IDs reais, valores financeiros, tokens e dados pessoais.
+- `DATA-02` permanece `PARTIAL`. Não alterei o código nem presumi que uma página curta ou vazia seja o marcador final. Antes de corrigir o comportamento, precisamos confirmar como a resposta real encerra a paginação ou aprovar um procedimento seguro de leitura página a página.
+- Para ajudar nessa confirmação, uma resposta sanitizada precisa manter apenas os nomes dos campos de paginação e quantidades, removendo registros, IDs reais, valores financeiros, tokens e dados pessoais. Outra opção é ajustar a preferência salva do navegador para permitir o acesso ao Bling; a tentativa bloqueada não será contornada.

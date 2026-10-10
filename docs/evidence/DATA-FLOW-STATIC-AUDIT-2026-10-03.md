@@ -223,7 +223,14 @@ parser PowerShell passou nos sete arquivos alterados e a busca confirmou que
 os únicos `Remove-Item` recursivos restantes estão dentro do módulo protegido.
 O teste também cria um junction para uma pasta externa e confirma que a limpeza
 recusa o link e preserva um arquivo sentinela no destino; esse cenário passou
-localmente. Os fluxos completos de empacotamento/consolidação ainda não foram
-executados nesta máquina. A CI Windows/PostgreSQL deve validar a integração. Esta
-mudança cobre ferramentas de build/validação e não altera telas aprovadas,
-regras financeiras ou comportamento de produção.
+localmente. Os fluxos completos de empacotamento/consolidação passaram na CI
+[38087687132](https://github.com/guilhermejacyzin/majucau/actions/runs/38087687132),
+em Windows e PostgreSQL. A mesma CI aprovou o pacote portátil, a verificação de
+hashes/manifesto, o preflight, o diagnóstico sanitizado, a inicialização e o
+encerramento do worker, os guardas de limpeza, o smoke do instalador e a
+consolidação dos outputs. O smoke portátil inicialmente imprimia `PASS` mas
+herdava um código de saída não zero; o commit `beefcfe` normalizou esse código
+somente após as verificações e a limpeza, e a nova CI confirmou o sucesso. A
+validação ainda não substitui a matriz em VMs limpas Windows 10/11. Esta mudança
+cobre ferramentas de build/validação e não altera telas aprovadas, regras
+financeiras ou comportamento de produção.

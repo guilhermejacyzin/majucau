@@ -118,3 +118,18 @@ Windows/PostgreSQL nem a validação em VM Windows limpa. `DATA-04` continua
 - `DATA-04` continua `PARTIAL` até a CI Windows/PostgreSQL do código atualizado,
   a conclusão da auditoria de todos os fluxos e a verificação em VM Windows
   limpa.
+
+## CI Windows e PostgreSQL do limite Wails — 2026-10-10
+
+- A CI [38076672784](https://github.com/guilhermejacyzin/majucau/actions/runs/38076672784)
+  do commit `d0462b8` concluiu com sucesso nos jobs `verify-windows` e
+  `verify-postgres`.
+- No Windows, a execução passou pelos testes e `go vet`, verificações do
+  frontend, builds do aplicativo/worker e instalador, smoke do instalador e
+  consolidação dos outputs. No PostgreSQL, passou pelo schema, pacote de backup
+  e testes de integração.
+- Isso valida o limite de 16 MiB e a rejeição de JSON adicional no processo de
+  CI. Não comprova pico de memória em execução nem substitui a validação de
+  ACL/limpeza em VM Windows 10/11 limpa.
+- `DATA-04` permanece `PARTIAL` até a auditoria completa dos fluxos e os gates
+  operacionais em VM limpa.

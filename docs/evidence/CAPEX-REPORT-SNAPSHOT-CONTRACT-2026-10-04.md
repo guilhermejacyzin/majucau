@@ -41,3 +41,13 @@ O leitor do painel transmite linhas tipadas de recebíveis, recebimentos, contas
 
 - `git diff --check`: aprovado.
 - Testes de frontend e backend não foram executados nesta etapa.
+
+## Rechecagem dos PDFs recebidos — 2026-10-10
+
+- O relatório de contas a pagar do mês cobre `01/09/2026 a 30/09/2026` e informa `R$ 27.902,40` como total pago no período.
+- O relatório geral cobre `01/01/2026 a 30/09/2026` e informa `R$ 125.481,02` como total pago no período.
+- Os dois relatórios listam data de vencimento, liquidação, situação e valor pago. Nenhum dos dois mostra a categoria CAPEX em cada lançamento.
+- Portanto, `R$ 27.902,40` é o total pago de todas as contas no mês, não o CAPEX pago; `R$ 125.481,02` é o total de todas as contas no histórico, não o CAPEX acumulado. Não usar esses valores nos cards.
+- Para ligar o relatório ao card, falta um arquivo ou print que mostre, para os mesmos lançamentos, categoria CAPEX, data de pagamento/liquidação e valor; para o acumulado, também é necessário definir o início do histórico confiável conforme a decisão já registrada.
+- Nenhum nome de fornecedor ou detalhe de lançamento foi copiado para o repositório. Os PDFs originais não foram alterados.
+- A tela continua mantendo `—` sem dado CAPEX confiável; nenhuma tela ou regra de negócio foi alterada.

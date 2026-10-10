@@ -183,3 +183,32 @@ Windows 10/11. Esta evidência comprova geração e verificação criptográfica
 com dumps reais; ela não comprova restore PostgreSQL real com RAW/snapshots/roles,
 integração com worker/UI/instalador, retenção, nem continuidade operacional.
 `OPS-02` e `DATA-04` seguem `PARTIAL`.
+
+## Restauração PostgreSQL real em instância limpa — CI em 2026-10-10
+
+O run
+[38089338306](https://github.com/guilhermejacyzin/majucau/actions/runs/38089338306)
+passou por inteiro em 2026-10-10 nos jobs `verify-postgres` e `verify-windows`.
+Ele usou PostgreSQL 18.6 descartável como origem e uma segunda instância
+PostgreSQL 18.6 limpa como destino. Com `pg_dump`,
+`pg_dumpall`, `pg_restore` e `psql` reais, criou e autenticou um pacote de
+backup V2 e executou o fluxo de restauração completo.
+
+Após a restauração, o cenário conferiu um registro marcador da base de origem,
+a existência da role `majucau`, a criação e verificação do backup de segurança
+pré-restauração e a ordem dos ganchos parar worker → validar base → iniciar
+worker. O job Windows também passou pela suíte Go, verificações de segurança,
+builds, smoke do instalador unsigned, teste do pacote portátil, guardas de
+limpeza e consolidação dos outputs. A tabela marcador comprova a cópia de dados
+nesse cenário; não representa nem substitui a validação de tabelas reais
+RAW/snapshots.
+
+O artefato unsigned G1 `11683682245` tem 55.600.046 bytes, SHA-256
+`dcbc626a17d0c8191022a900a47be00b1731aebe5ed33dbff529ee012fdfad18` e expira
+em 2026-10-11 22:03:17 UTC. Ele não é uma release assinada; seu registro para
+remoção manual ou expiração está em `artifacts/retained/cleanup-register.md`.
+
+A conclusão do requisito `OPS-02` continua parcial: ainda faltam integração
+operacional com worker/UI/instalador, restore de dados reais RAW/snapshots,
+política e execução de retenção e ensaio de continuidade em VM limpa. Esta CI
+também não altera telas aprovadas nem regras de negócio.

@@ -122,3 +122,7 @@ Permanecem pendentes:
 10. Decisão de limite/entrega em partes para textos do detalhe do painel; ver auditoria estática em `docs/evidence/STREAMING-SECURITY-CI-2026-10-03.md`.
 
 Nenhum desses itens deve ser reinterpretado como concluído por existir uma intenção no plano. O estado muda somente quando a evidência correspondente for produzida e revisada.
+
+## Evidência complementar de streaming — 2026-10-10
+
+`DATA-04` também cobre as ferramentas de validação Windows: `scripts/BoundedText.psm1` faz leitura em blocos limitados e os scripts de smoke/inspeção definem tetos por arquivo. O teste positivo/negativo do leitor, a análise sintática PowerShell e a verificação do contrato NSIS passaram localmente. Evidência detalhada: `docs/evidence/DATA-FLOW-STATIC-AUDIT-2026-10-03.md`. Isso não substitui CI Windows completa nem prova ACL, limpeza e fluxo de dados em VM; `DATA-04` continua `PARTIAL`.

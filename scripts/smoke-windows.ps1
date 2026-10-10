@@ -4,6 +4,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'BoundedText.psm1') -Force
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) {
     $ArtifactRoot = Join-Path $projectRoot 'artifacts'
@@ -56,7 +57,7 @@ $freePath = $smokeRoot
     Set-Content -LiteralPath $preflightPath -Encoding utf8
 $preflightExit = $LASTEXITCODE
 Assert-Condition ($preflightExit -in @(0, 2)) "Preflight retornou código inesperado: $preflightExit"
-$preflight = Get-Content -LiteralPath $preflightPath -Raw | ConvertFrom-Json
+$preflight = (Read-BoundedTextFile -Path $preflightPath -MaxBytes 262144) | ConvertFrom-Json
 Assert-Condition ($preflight.schema_version -eq '1.0') 'Preflight sem schema_version esperado.'
 Assert-Condition ($preflight.status -in @('READY', 'BLOCKED')) "Status de preflight inesperado: $($preflight.status)"
 Assert-Condition ($preflight.checks.platform.architecture -eq 'amd64') 'Artefato não reportou arquitetura x64.'
@@ -67,7 +68,7 @@ $packageVerificationPath = Join-Path $smokeRoot 'package-verification.json'
     Set-Content -LiteralPath $packageVerificationPath -Encoding utf8
 $packageVerificationExit = $LASTEXITCODE
 Assert-Condition ($packageVerificationExit -eq 0) "Manifesto do bundle não foi verificado: $packageVerificationExit"
-$packageVerification = Get-Content -LiteralPath $packageVerificationPath -Raw | ConvertFrom-Json
+$packageVerification = (Read-BoundedTextFile -Path $packageVerificationPath -MaxBytes 262144) | ConvertFrom-Json
 Assert-Condition ($packageVerification.status -eq 'PACKAGE_VERIFIED' -and $packageVerification.valid -eq $true) 'Bundle portátil não passou no gate PACKAGE_VERIFIED.'
 
 & $helper diagnostics --output $diagnosticZip --install-dir $installPath --data-dir $dataPath --free-space-path $freePath --min-free-bytes 1 --port 55439 |
@@ -80,7 +81,7 @@ $diagnosticRoot = Join-Path $smokeRoot 'diagnostic'
 Expand-Archive -LiteralPath $diagnosticZip -DestinationPath $diagnosticRoot
 Assert-Condition (Test-Path -LiteralPath (Join-Path $diagnosticRoot 'diagnostic.json') -PathType Leaf) 'diagnostic.json ausente.'
 Assert-Condition (Test-Path -LiteralPath (Join-Path $diagnosticRoot 'README.txt') -PathType Leaf) 'README.txt ausente.'
-$diagnosticText = Get-Content -LiteralPath (Join-Path $diagnosticRoot 'diagnostic.json') -Raw
+$diagnosticText = Read-BoundedTextFile -Path (Join-Path $diagnosticRoot 'diagnostic.json') -MaxBytes 1048576
 Assert-Condition ($diagnosticText -notmatch '(?i)([A-Z]:\\|[A-Z]:/|password|secret|token|dsn)') 'Diagnóstico contém dado sensível ou caminho completo.'
 
 $workerStdout = Join-Path $smokeRoot 'worker.stdout.log'
@@ -94,7 +95,7 @@ if ($workerStarted) {
     Wait-Process -Id $workerProcess.Id -Timeout 5 -ErrorAction SilentlyContinue
 }
 Assert-Condition $workerStarted 'Worker não permaneceu ativo durante o smoke console.'
-$workerHealth = Get-Content -LiteralPath $workerStdout -Raw | ConvertFrom-Json
+$workerHealth = (Read-BoundedTextFile -Path $workerStdout -MaxBytes 262144) | ConvertFrom-Json
 Assert-Condition ($workerHealth.service -eq 'majucau-worker' -and $workerHealth.state -eq 'OK') 'Health do worker não ficou OK.'
 
 $result = [ordered]@{

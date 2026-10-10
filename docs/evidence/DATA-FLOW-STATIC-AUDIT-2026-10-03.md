@@ -123,3 +123,26 @@ passou em Windows e PostgreSQL após `security.RedactJSON` passar a rejeitar
 entradas acima de 1 MiB com substituição integral por `[REDACTED]`. O helper
 segue sem chamadores de produção; esta prova não substitui limites nos fluxos
 produtivos. `DATA-04` permanece `PARTIAL` pelas pendências listadas acima.
+
+### Limites para leituras de texto nos scripts Windows — 2026-10-10
+
+A revarredura encontrou `Get-Content -Raw` nos scripts de validação do instalador.
+Esses arquivos eram resultados pequenos gerados pelo próprio helper e o código
+NSIS do repositório, mas ainda não tinham um limite explícito de leitura. Para
+evitar que uma saída defeituosa ou inesperadamente grande seja carregada sem
+limite:
+
+- `scripts/BoundedText.psm1` lê em blocos de 8 KiB, rejeita o byte que ultrapassa
+  o teto, valida UTF-8 (com detecção de BOM) e fecha os recursos em `finally`.
+- `smoke-windows.ps1` limita JSON/health a 256 KiB e o diagnóstico a 1 MiB.
+- `smoke-installer.ps1` limita JSON a 256 KiB, erro a 64 KiB e código de saída a
+  4 KiB; o diff local anterior no fim desse script foi mantido fora do commit.
+- `test-installer-nsis.ps1` limita a leitura do fonte NSIS a 4 MiB.
+
+Validação local em 2026-10-10: parser PowerShell dos quatro arquivos passou;
+leitura abaixo do teto e rejeição acima do teto passaram; o contrato do NSIS
+retornou `PASS`; a busca não encontrou mais `Get-Content -Raw` em scripts
+PowerShell. O smoke de instalação completo e a CI Windows ainda precisam
+terminar. Esta mudança afeta apenas ferramentas de validação, sem alterar
+telas, regras financeiras ou o comportamento de produção. `DATA-04` continua
+`PARTIAL` até a CI e os gates de VM/ACL/limpeza serem comprovados.

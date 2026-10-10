@@ -91,3 +91,16 @@ Quando o mês selecionado é março ou posterior, todas elas mostram “somado�
 embora `E12` some somente janeiro até o mês de referência menos dois. Isso
 parece uma marcação visual imprecisa e não muda `E12`/`E21`. Não reproduzir essa
 marcação na tela do Majucau sem confirmação.
+
+## Resposta sobre recebimentos previstos — 2026-10-10
+
+- Foi perguntado se o saldo da semana mais crítica (`E15`) já inclui os
+  recebimentos previstos da Nuvemshop (`E16`). A responsável respondeu:
+  “Não sei; mantenha a regra atual por enquanto”.
+- D-003-A continua sendo a fórmula ativa no produto. Não substituir o cálculo
+  pelo fluxo `E15 + E16` da planilha enquanto essa relação não for conhecida e
+  aprovada; somar um recebimento já incluído no saldo crítico poderia contá-lo
+  duas vezes.
+- A célula `E17` da referência está rotulada “Reserva mínima de segurança”. A
+  planilha de origem permanece sem alteração; nenhum cálculo, tela ou regra do
+  produto foi mudado por esta resposta.

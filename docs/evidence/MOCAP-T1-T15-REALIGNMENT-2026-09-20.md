@@ -80,3 +80,9 @@ O handoff técnico-funcional versionado em `docs/source/Handoff-Tecnico-Funciona
 ## Limite honesto deste incremento
 
 O realinhamento visual cobre o shell e a composição de todas as telas de referência. A ligação dos números e tabelas aos dados reais de cada módulo, a validação em máquina Windows limpa e o instalador NSIS continuam no backlog de produção. Nenhuma dessas pendências autoriza inserir números fictícios na tela.
+
+### Verificação automatizada das correções aprovadas — 2026-10-10
+
+O teste existente em `frontend/src/App.test.tsx` verifica que o menu mostra `Balancete` e `Calculadora de Aplicação`, sem `Balanço Patrimonial` ou uma rota separada chamada `Aplicações`. Ao abrir a DRE, também verifica EBIT/EBITDA, os dois cards de CAPEX fora da tabela e do lucro, e o alerta `UNMAPPED` ainda visível. A CI [38094090573](https://github.com/guilhermejacyzin/majucau/actions/runs/38094090573) passou na etapa `Frontend tests`, que executa essa suíte.
+
+Esta evidência confirma essas correções no comportamento testado. Não é uma comparação visual de todas as telas nem valida todos os estados e interações do wireframe; por isso, `UX-02` continua `BLOCKED`. Nenhuma tela ou regra de negócio foi alterada nesta revisão.

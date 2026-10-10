@@ -2,6 +2,7 @@
 param()
 
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'SafeCleanup.psm1') -Force
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $artifactRoot = Join-Path $projectRoot 'artifacts'
 $windowsRoot = Join-Path $artifactRoot 'windows'
@@ -20,6 +21,8 @@ $releaseMigrations = Join-Path $windowsRoot 'migrations'
 if (-not (Test-Path -LiteralPath $windowsRoot -PathType Container)) {
     throw "Diretório de artefatos Windows ausente: $windowsRoot"
 }
+Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $windowsRoot -ExpectedType Directory
+Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $stageRoot -ExpectedType Directory
 
 foreach ($fileName in $required) {
     $filePath = Join-Path $windowsRoot $fileName
@@ -34,9 +37,7 @@ if (-not (Test-Path -LiteralPath $releaseMigrations -PathType Container)) {
     throw "Migrations do manifesto ausentes: $releaseMigrations"
 }
 
-if (Test-Path -LiteralPath $stageRoot) {
-    Remove-Item -LiteralPath $stageRoot -Recurse -Force
-}
+Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $stageRoot -ExpectedRelativePath 'artifacts\cache\portable-stage'
 New-Item -ItemType Directory -Force -Path $stageRoot | Out-Null
 
 foreach ($fileName in $required) {
@@ -69,12 +70,12 @@ Get-ChildItem -LiteralPath $stageRoot -File |
     ForEach-Object { '{0}  {1}' -f $_.Hash.ToLowerInvariant(), $_.Path.Substring($stageRoot.Length + 1) } |
     Set-Content -LiteralPath (Join-Path $stageRoot 'SHA256SUMS.txt') -Encoding ascii
 
-if (Test-Path -LiteralPath $bundlePath) {
-    Remove-Item -LiteralPath $bundlePath -Force
-}
+Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $bundlePath -ExpectedType File
+Remove-MajucauProjectFile -ProjectRoot $projectRoot -Path $bundlePath -ExpectedRelativePath 'artifacts\windows\majucau-windows-x64-portable.zip'
 Compress-Archive -Path (Join-Path $stageRoot '*') -DestinationPath $bundlePath -CompressionLevel Optimal
 
 $manifest = Join-Path $artifactRoot 'MANIFEST.txt'
+Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $manifest -ExpectedType File
 $lines = @(
     'Majucau Financial Intelligence artifacts',
     "Gerado em: $(Get-Date -Format o)",
@@ -88,5 +89,5 @@ Get-ChildItem -LiteralPath $artifactRoot -Recurse -File |
     ForEach-Object { $lines += "$($_.FullName.Substring($artifactRoot.Length + 1))  $($_.Length) bytes" }
 Set-Content -LiteralPath $manifest -Value $lines -Encoding utf8
 
-Remove-Item -LiteralPath $stageRoot -Recurse -Force
+Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $stageRoot -ExpectedRelativePath 'artifacts\cache\portable-stage'
 Write-Host "Bundle portátil criado em: $bundlePath"

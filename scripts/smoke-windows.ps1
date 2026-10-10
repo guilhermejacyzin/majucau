@@ -5,10 +5,19 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'BoundedText.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'SafeCleanup.psm1') -Force
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) {
     $ArtifactRoot = Join-Path $projectRoot 'artifacts'
 }
+$ArtifactRoot = [System.IO.Path]::GetFullPath($ArtifactRoot)
+$expectedArtifactRoot = [System.IO.Path]::GetFullPath((Join-Path $projectRoot 'artifacts'))
+$separatorCharacters = [char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+if (-not [string]::Equals($ArtifactRoot.TrimEnd($separatorCharacters), $expectedArtifactRoot.TrimEnd($separatorCharacters), [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw 'ArtifactRoot precisa ser a pasta artifacts do projeto.'
+}
+$ArtifactRoot = $expectedArtifactRoot
+Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $ArtifactRoot -ExpectedType Directory
 $windowsRoot = Join-Path $ArtifactRoot 'windows'
 $smokeRoot = Join-Path $ArtifactRoot 'cache\windows-smoke-run'
 $portableZip = Join-Path $windowsRoot 'majucau-windows-x64-portable.zip'
@@ -21,9 +30,7 @@ function Assert-Condition {
     }
 }
 
-if (Test-Path -LiteralPath $smokeRoot) {
-    Remove-Item -LiteralPath $smokeRoot -Recurse -Force
-}
+Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $smokeRoot -ExpectedRelativePath 'artifacts\cache\windows-smoke-run'
 New-Item -ItemType Directory -Force -Path $smokeRoot | Out-Null
 Assert-Condition (Test-Path -LiteralPath $portableZip -PathType Leaf) "Bundle portátil ausente: $portableZip"
 

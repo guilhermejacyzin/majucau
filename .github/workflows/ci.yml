@@ -228,6 +228,10 @@ jobs:
             'Ambos os arquivos passaram pela validação do schema CycloneDX.'
           ) | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
 
+      - name: Verify generated-output cleanup guards
+        shell: pwsh
+        run: ./scripts/test-safe-cleanup.ps1
+
       - name: Smoke install and uninstall unsigned installer
         shell: pwsh
         run: |

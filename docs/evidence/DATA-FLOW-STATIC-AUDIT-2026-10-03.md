@@ -205,3 +205,23 @@ destino dedicado usado pela CI; a rejeição de caminhos fora da pasta permitida
 e de links/reparse points ainda não foi testada por um caso negativo. A
 alteração afeta apenas a ferramenta de validação, sem mudar telas ou regras
 financeiras.
+
+### Proteção comum para limpezas PowerShell — 2026-10-10
+
+A varredura encontrou operações de remoção recursiva em scripts de smoke,
+empacotamento e consolidação. `scripts/SafeCleanup.psm1` agora concentra a
+proteção: cada chamada exige o destino relativo exato esperado dentro do
+projeto, verifica os diretórios pais e itens internos para reparse points e
+propaga erros de remoção. Os scripts que recebem `ArtifactRoot` limitam o valor
+à pasta `artifacts` do repositório. A checagem do caminho acontece antes da
+criação/cópia para o destino.
+
+O teste `scripts/test-safe-cleanup.ps1` passou localmente: rejeitou um caminho
+fora do projeto e um destino diferente do permitido, preservou um arquivo
+sentinela e removeu somente a pasta temporária criada pelo próprio teste. O
+parser PowerShell passou nos sete arquivos alterados e a busca confirmou que
+os únicos `Remove-Item` recursivos restantes estão dentro do módulo protegido.
+Não foi testada a rejeição de reparse points nem executados os fluxos completos
+de empacotamento/consolidação nesta máquina. A CI Windows/PostgreSQL ainda deve
+validar a integração. Esta mudança cobre ferramentas de build/validação e não
+altera telas aprovadas, regras financeiras ou comportamento de produção.

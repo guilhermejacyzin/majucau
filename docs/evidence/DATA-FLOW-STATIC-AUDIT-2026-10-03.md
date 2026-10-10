@@ -221,7 +221,9 @@ fora do projeto e um destino diferente do permitido, preservou um arquivo
 sentinela e removeu somente a pasta temporária criada pelo próprio teste. O
 parser PowerShell passou nos sete arquivos alterados e a busca confirmou que
 os únicos `Remove-Item` recursivos restantes estão dentro do módulo protegido.
-Não foi testada a rejeição de reparse points nem executados os fluxos completos
-de empacotamento/consolidação nesta máquina. A CI Windows/PostgreSQL ainda deve
-validar a integração. Esta mudança cobre ferramentas de build/validação e não
-altera telas aprovadas, regras financeiras ou comportamento de produção.
+O teste também cria um junction para uma pasta externa e confirma que a limpeza
+recusa o link e preserva um arquivo sentinela no destino; esse cenário passou
+localmente. Os fluxos completos de empacotamento/consolidação ainda não foram
+executados nesta máquina. A CI Windows/PostgreSQL deve validar a integração. Esta
+mudança cobre ferramentas de build/validação e não altera telas aprovadas,
+regras financeiras ou comportamento de produção.

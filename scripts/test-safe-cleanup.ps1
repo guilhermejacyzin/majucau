@@ -9,9 +9,16 @@ $relativeTestRoot = Join-Path 'artifacts\cache' $testDirectoryName
 $testRoot = Join-Path $projectRoot $relativeTestRoot
 $targetRoot = Join-Path $testRoot 'expected'
 $sentinelRoot = Join-Path $testRoot 'sentinel'
+$linkedRoot = Join-Path $testRoot 'with-link'
+$junctionPath = Join-Path $linkedRoot 'external'
+$relativeLinkedRoot = Join-Path $relativeTestRoot 'with-link'
+$externalTargetName = "safe-cleanup-target-$([guid]::NewGuid().ToString('N'))"
+$relativeExternalTargetRoot = Join-Path 'artifacts\cache' $externalTargetName
+$externalTargetRoot = Join-Path $projectRoot $relativeExternalTargetRoot
 $relativeTargetRoot = Join-Path $relativeTestRoot 'expected'
 $mismatchRejected = $false
 $escapeRejected = $false
+$reparseRejected = $false
 
 Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $testRoot -ExpectedType Directory
 try {
@@ -42,7 +49,26 @@ try {
         throw 'SafeCleanup não removeu a pasta de teste autorizada.'
     }
 
+    New-Item -ItemType Directory -Force -Path $linkedRoot, $externalTargetRoot | Out-Null
+    Set-Content -LiteralPath (Join-Path $externalTargetRoot 'keep.txt') -Value 'preserve' -Encoding ascii
+    New-Item -ItemType Junction -Path $junctionPath -Target $externalTargetRoot | Out-Null
+    try {
+        Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $linkedRoot -ExpectedRelativePath $relativeLinkedRoot
+    } catch {
+        $reparseRejected = $_.Exception.Message -like '*link para outro local*'
+        if (-not $reparseRejected) { throw }
+    }
+    if (-not $reparseRejected -or -not (Test-Path -LiteralPath (Join-Path $externalTargetRoot 'keep.txt') -PathType Leaf)) {
+        throw 'SafeCleanup não rejeitou o reparse point ou removeu o arquivo externo sentinela.'
+    }
+    [System.IO.Directory]::Delete($junctionPath, $false)
+    Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $linkedRoot -ExpectedRelativePath $relativeLinkedRoot
+
     Write-Output 'Safe cleanup contract: PASS'
 } finally {
+    if (Test-Path -LiteralPath $junctionPath) {
+        [System.IO.Directory]::Delete($junctionPath, $false)
+    }
     Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $testRoot -ExpectedRelativePath $relativeTestRoot
+    Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $externalTargetRoot -ExpectedRelativePath $relativeExternalTargetRoot
 }

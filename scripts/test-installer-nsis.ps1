@@ -2,13 +2,14 @@
 param()
 
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'BoundedText.psm1') -Force
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $installerPath = Join-Path $projectRoot 'build\windows\installer\project.nsi'
 if (-not (Test-Path -LiteralPath $installerPath)) {
     throw "Arquivo NSIS não encontrado: $installerPath"
 }
 
-$source = Get-Content -LiteralPath $installerPath -Raw
+$source = Read-BoundedTextFile -Path $installerPath -MaxBytes 4194304
 $required = [ordered]@{
     helper_source_define = 'MAJUCAU_HELPER_SOURCE'
     helper_embedded_before_install = 'File /oname=$PLUGINSDIR\majucau-installer-helper.exe'

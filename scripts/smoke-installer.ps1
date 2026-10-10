@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $PSScriptRoot 'BoundedText.psm1') -Force
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
     $OutputRoot = Join-Path $projectRoot 'artifacts\cache\installer-smoke'
@@ -31,11 +32,11 @@ function Get-PreflightIssueCodes {
         Expand-Archive -LiteralPath $candidate -DestinationPath $extractRoot -Force
         $jsonPath = Get-ChildItem -LiteralPath $extractRoot -Filter 'preflight.json' -File -Recurse | Select-Object -First 1
         if (-not $jsonPath) { continue }
-        $json = Get-Content -LiteralPath $jsonPath.FullName -Raw | ConvertFrom-Json
+        $json = (Read-BoundedTextFile -Path $jsonPath.FullName -MaxBytes 262144) | ConvertFrom-Json
         return @($json.issues | ForEach-Object { $_.code })
     }
     if (-not [string]::IsNullOrWhiteSpace($FallbackPath) -and (Test-Path -LiteralPath $FallbackPath -PathType Leaf)) {
-        $fallback = Get-Content -LiteralPath $FallbackPath -Raw | ConvertFrom-Json
+        $fallback = (Read-BoundedTextFile -Path $FallbackPath -MaxBytes 262144) | ConvertFrom-Json
         return @($fallback.issues | ForEach-Object { $_.code })
     }
     return @('PREFLIGHT_DIAGNOSTIC_NOT_FOUND')
@@ -84,12 +85,12 @@ try {
         } while ((Get-Date) -lt $deadline)
 
         if (Test-Path -LiteralPath $errorPath -PathType Leaf) {
-            throw "Processo elevado falhou: $(Get-Content -LiteralPath $errorPath -Raw)"
+            throw "Processo elevado falhou: $(Read-BoundedTextFile -Path $errorPath -MaxBytes 65536)"
         }
         if (-not (Test-Path -LiteralPath $resultPath -PathType Leaf)) {
             throw "Processo elevado excedeu $TimeoutSeconds segundos: $FilePath"
         }
-        return [int](Get-Content -LiteralPath $resultPath -Raw).Trim()
+        return [int](Read-BoundedTextFile -Path $resultPath -MaxBytes 4096).Trim()
     }
     finally {
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
@@ -128,7 +129,7 @@ foreach ($name in @('Majucau Financial Intelligence.exe', 'majucau-worker.exe', 
     Set-Content -LiteralPath $preflightPath -Encoding utf8
 $preflightExit = $LASTEXITCODE
 Assert-Condition ($preflightExit -in @(0, 2)) "Preflight pós-instalação retornou código inesperado: $preflightExit"
-$preflight = Get-Content -LiteralPath $preflightPath -Raw | ConvertFrom-Json
+$preflight = (Read-BoundedTextFile -Path $preflightPath -MaxBytes 262144) | ConvertFrom-Json
 Assert-Condition ($preflight.schema_version -eq '1.0') 'Preflight pós-instalação sem schema.'
 
 $uninstaller = Join-Path $installDir 'uninstall.exe'

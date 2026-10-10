@@ -212,3 +212,31 @@ A conclusão do requisito `OPS-02` continua parcial: ainda faltam integração
 operacional com worker/UI/instalador, restore de dados reais RAW/snapshots,
 política e execução de retenção e ensaio de continuidade em VM limpa. Esta CI
 também não altera telas aprovadas nem regras de negócio.
+
+## Restore de RAW, cursor e snapshot em PostgreSQL — CI em 2026-10-10
+
+O run
+[38090505310](https://github.com/guilhermejacyzin/majucau/actions/runs/38090505310)
+passou nos jobs `verify-postgres` e `verify-windows`. O teste de backup e
+restauração usa os executáveis reais do PostgreSQL e uma segunda instância
+limpa; além da tabela marcador, o fixture de CI cria conexão, lote, registro
+RAW append-only, cursor, regra de teste, execução de cálculo parcial, snapshot
+DRE provisório e linha sintética identificada como evidência de CI.
+
+Depois do restore, a validação confere o marcador no RAW, o valor do cursor,
+o decimal do snapshot (`123.4500`), a role PostgreSQL da origem e o backup
+pré-restauração. São dados sintéticos descartáveis; isso prova que o formato e
+o fluxo de restauração preservam essas estruturas no banco, mas não substitui
+um ensaio com dados reais recebidos do Bling nem a validação contábil do
+snapshot. O mesmo run passou por testes Go, verificações de segurança, builds,
+smoke de instalação/desinstalação, pacote portátil, limpeza e consolidação de
+outputs.
+
+O artefato unsigned G1 `11684405598` tem 55.600.137 bytes, SHA-256
+`c8df02cb0065082b8c4f65254feada7d4694cd6587b698a0eac0a1e52ee76c89` e expira
+em 2026-10-11 22:21:03 UTC. Não é release assinada. O registro para exclusão
+manual ou expiração está em `artifacts/retained/cleanup-register.md`.
+
+`OPS-02` permanece parcial: faltam integração operacional com worker/UI/
+instalador, ensaio com dados reais da integração, política de retenção e teste
+de continuidade em VM limpa. Nenhuma tela ou regra de negócio foi alterada.

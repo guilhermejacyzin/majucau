@@ -12,6 +12,51 @@ if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
 }
 $OutputRoot = [System.IO.Path]::GetFullPath($OutputRoot)
 $InstallerPath = (Resolve-Path -LiteralPath $InstallerPath).Path
+$outputPathRoot = [System.IO.Path]::GetPathRoot($OutputRoot)
+if ($OutputRoot.Length -gt $outputPathRoot.Length) {
+    $OutputRoot = $OutputRoot.TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar))
+}
+$artifactsRoot = [System.IO.Path]::GetFullPath((Join-Path $projectRoot 'artifacts'))
+$cacheOutputRoot = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot 'cache\installer-smoke'))
+$verificationRoot = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot 'verification'))
+$verificationOutputPrefix = Join-Path $verificationRoot 'install-smoke-'
+
+function Assert-PlainDirectoryPath {
+    param([Parameter(Mandatory)] [string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+    if (-not $item.PSIsContainer) {
+        throw "O caminho reservado para o smoke não é uma pasta: $Path"
+    }
+    if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "O smoke não pode usar nem apagar uma pasta ligada a outro local: $Path"
+    }
+}
+
+function Assert-NoReparseDescendants {
+    param([Parameter(Mandatory)] [string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return }
+    $linkedItem = Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction Stop |
+        Where-Object { ($_.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0 } |
+        Select-Object -First 1
+    if ($null -ne $linkedItem) {
+        throw "O smoke não pode apagar uma pasta que contém um link para outro local: $($linkedItem.FullName)"
+    }
+}
+
+$isCacheOutput = [string]::Equals($OutputRoot, $cacheOutputRoot, [System.StringComparison]::OrdinalIgnoreCase)
+$verificationSuffix = ''
+if ($OutputRoot.StartsWith($verificationOutputPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+    $verificationSuffix = $OutputRoot.Substring($verificationOutputPrefix.Length)
+}
+$isVerificationOutput = $verificationSuffix -match '^\d+-\d+$'
+if (-not ($isCacheOutput -or $isVerificationOutput)) {
+    throw 'OutputRoot precisa ser artifacts/cache/installer-smoke ou artifacts/verification/install-smoke-<run>-<tentativa>.'
+}
+$outputParent = if ($isCacheOutput) { Join-Path $artifactsRoot 'cache' } else { $verificationRoot }
+foreach ($path in @($projectRoot, $artifactsRoot, $outputParent, $OutputRoot)) {
+    Assert-PlainDirectoryPath -Path $path
+}
 
 function Assert-Condition {
     param([bool]$Condition, [string]$Message)
@@ -28,7 +73,11 @@ function Get-PreflightIssueCodes {
     foreach ($candidate in $candidates) {
         if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { continue }
         $extractRoot = Join-Path $OutputRoot 'installer-preflight'
-        if (Test-Path -LiteralPath $extractRoot) { Remove-Item -LiteralPath $extractRoot -Recurse -Force }
+        Assert-PlainDirectoryPath -Path $extractRoot
+        if (Test-Path -LiteralPath $extractRoot) {
+            Assert-NoReparseDescendants -Path $extractRoot
+            Remove-Item -LiteralPath $extractRoot -Recurse -Force
+        }
         Expand-Archive -LiteralPath $candidate -DestinationPath $extractRoot -Force
         $jsonPath = Get-ChildItem -LiteralPath $extractRoot -Filter 'preflight.json' -File -Recurse | Select-Object -First 1
         if (-not $jsonPath) { continue }
@@ -130,7 +179,10 @@ try {
     return [int]$exitCode
 }
 
-if (Test-Path -LiteralPath $OutputRoot) { Remove-Item -LiteralPath $OutputRoot -Recurse -Force }
+if (Test-Path -LiteralPath $OutputRoot) {
+    Assert-NoReparseDescendants -Path $OutputRoot
+    Remove-Item -LiteralPath $OutputRoot -Recurse -Force
+}
 New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
 $installDir = Join-Path $OutputRoot 'app'
 $dataDir = Join-Path $OutputRoot 'data'

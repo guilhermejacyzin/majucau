@@ -142,7 +142,9 @@ limite:
 Validação local em 2026-10-10: parser PowerShell dos quatro arquivos passou;
 leitura abaixo do teto e rejeição acima do teto passaram; o contrato do NSIS
 retornou `PASS`; a busca não encontrou mais `Get-Content -Raw` em scripts
-PowerShell. O smoke de instalação completo e a CI Windows ainda precisam
-terminar. Esta mudança afeta apenas ferramentas de validação, sem alterar
-telas, regras financeiras ou o comportamento de produção. `DATA-04` continua
-`PARTIAL` até a CI e os gates de VM/ACL/limpeza serem comprovados.
+PowerShell. A CI `38077877166` passou em Windows e PostgreSQL; no Windows,
+também passou pelo smoke completo de instalação/desinstalação, pela geração e
+consolidação dos outputs e pela verificação do artefato final. Esta mudança
+afeta apenas ferramentas de validação, sem alterar telas, regras financeiras
+ou o comportamento de produção. `DATA-04` continua `PARTIAL` até os gates de
+VM/ACL/limpeza serem comprovados.

@@ -113,6 +113,7 @@ func NewBlingAPIClient(httpClient HTTPDoer, rawBaseURL, accessToken string) (*Bl
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 30 * time.Second}
 	}
+	httpClient = withBlingRequestPacing(httpClient)
 	return &BlingAPIClient{
 		baseURL:          baseURL,
 		httpClient:       httpClient,

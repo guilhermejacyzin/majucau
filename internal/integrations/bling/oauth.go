@@ -36,6 +36,7 @@ func NewBlingOAuthClient(httpClient HTTPDoer, rawTokenURL string) (*BlingOAuthCl
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 30 * time.Second}
 	}
+	httpClient = withBlingRequestPacing(httpClient)
 	return &BlingOAuthClient{tokenURL: tokenURL, httpClient: httpClient, maxResponseBytes: defaultBlingResponseLimit}, nil
 }
 

@@ -108,6 +108,13 @@ O cliente inicial valida `pagina >= 1`, `1 <= limite <= 100`, envia somente
 retentativa com backoff e o checkpoint transacional pertencem à camada de
 orquestração/sincronização; não são simulados dentro do cliente HTTP.
 
+O adaptador aplica espaçamento compartilhado entre chamadas: no mínimo 400 ms
+entre inícios de requisições gerais e 3,1 s entre chamadas ao endpoint OAuth de
+token, com cancelamento respeitado antes do envio. No serviço de produção, OAuth
+e API reutilizam o mesmo limitador. O limite diário de 120.000 chamadas não é
+contado localmente; o Bling continua sendo a autoridade e a resposta 429 é
+tratada sem avançar o cursor. Evidência dos testes: `docs/evidence/BLING-RATE-LIMIT-2026-10-10.md`.
+
 ### 3.4 Lacunas Bling
 
 1. Não existe `business_type = B2B` comprovado. A classificação dependerá de regra configurável e aprovável.

@@ -345,10 +345,24 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      postgres_restore:
+        image: postgres:18.6
+        env:
+          POSTGRES_USER: restore_admin
+          POSTGRES_PASSWORD: ci-only-restore-password
+          POSTGRES_DB: restore_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U restore_admin -d restore_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       GOCACHE: '${{ github.workspace }}/artifacts/cache/go-build'
       GOMODCACHE: '${{ github.workspace }}/artifacts/cache/go-mod'
       MAJUCAU_TEST_DATABASE_URL: postgres://majucau:ci-only-password@localhost:5432/majucau_test?sslmode=disable
+      MAJUCAU_TEST_RESTORE_DATABASE_URL: postgres://restore_admin:ci-only-restore-password@localhost:5433/restore_test?sslmode=disable
       MAJUCAU_TEST_RECEIPTS_FOLDER: '${{ github.workspace }}/internal/integrations/bling/testdata/e2e'
       MAJUCAU_TEST_FUTURE_FOLDER: '${{ github.workspace }}/internal/integrations/nuvempago/testdata/e2e'
     steps:
@@ -380,8 +394,8 @@ jobs:
             psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
 
-      - name: Run backup creation and verification against disposable PostgreSQL
-        run: go test ./internal/backup -run '^TestCreateAndVerifyAgainstDisposablePostgres$' -count=1
+      - name: Run backup creation and real restore against disposable PostgreSQL
+        run: go test ./internal/backup -run '^TestCreateVerifyAndRestoreAgainstDisposablePostgres$' -count=1
 
       - name: Run PostgreSQL integration tests
         run: go test ./internal/integrations/bling ./internal/integrations/nuvempago

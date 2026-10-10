@@ -65,7 +65,7 @@
 
 | ID | Requisito | Fonte | Artefato/contrato | Gate | Evidência final | Estado atual |
 |---|---|---|---|---|---|---|
-| UX-01 | Primeira tela usa nomes oficiais e todos os cards obrigatórios | pp. 7–9, §§10–11 | Plano fase 8; AGENTS “Frontend” | G4 | Teste por label/card e comparação com referência | DOCUMENTED |
+| UX-01 | Primeira tela usa nomes oficiais e todos os cards obrigatórios | pp. 7–9, §§10–11 | Plano fase 8; AGENTS “Frontend”; `frontend/src/App.test.tsx`; `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md` | G4 | A suíte verifica os nomes e a composição T1; a CI `38094815807` passou nos testes do frontend. A comparação visual completa com a referência ainda precisa de validação. | PARTIAL |
 | UX-02 | Preservar sidebar, cards clicáveis, estados, gráficos, alertas, drill-down, filtros e atualização do wireframe | p. 23, §44 | Plano fase 8 | G4 | Arquivo do wireframe aprovado, comparação visual lado a lado e checklist | BLOCKED |
 | UX-03 | Cada card possui nome, valor, status, fonte, atualização, comparação, ação e drill-down | pp. 9–10, §§12–15 | Data §§3, 11; Plano fase 8 | G4/G5 | Teste de contrato e percurso completo por card | NOT_STARTED |
 | UX-04 | Tooltips simples em todos os componentes funcionais, acessíveis e sem esconder regra crítica | solicitação da usuária | ADR §5.2; Plano fase 4; AGENTS | G4/G7 | Hover, foco, Escape, axe, leitor de tela, teclado e zoom 200% | NOT_STARTED |

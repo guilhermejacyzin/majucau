@@ -50,10 +50,16 @@ if ($null -ne $signature.SignerCertificate) {
 if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid -or
     $publisher -cne 'Microsoft Corporation' -or
     -not $hasCodeSigningEku) {
-    Remove-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
     $signatureStatus = [string]$signature.Status
     if ([string]::IsNullOrWhiteSpace($publisher)) { $publisher = '<ausente>' }
-    throw "WebView2 Bootstrapper rejeitado: Authenticode=$signatureStatus; signatário=$publisher; EKU de assinatura de código=$hasCodeSigningEku."
+    $rejectionMessage = "WebView2 Bootstrapper rejeitado: Authenticode=$signatureStatus; signatário=$publisher; EKU de assinatura de código=$hasCodeSigningEku."
+    try {
+        [System.IO.File]::Delete($Destination)
+    } catch {
+        $cleanupHResult = '0x{0:X8}' -f $_.Exception.HResult
+        throw "$rejectionMessage O arquivo rejeitado não pôde ser removido (HRESULT=$cleanupHResult); limpe manualmente o destino configurado."
+    }
+    throw $rejectionMessage
 }
 
 if ($actualHash -ne $expectedSha256) {

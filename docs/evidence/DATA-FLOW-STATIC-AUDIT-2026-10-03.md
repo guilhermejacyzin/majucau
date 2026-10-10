@@ -148,3 +148,27 @@ consolidação dos outputs e pela verificação do artefato final. Esta mudança
 afeta apenas ferramentas de validação, sem alterar telas, regras financeiras
 ou o comportamento de produção. `DATA-04` continua `PARTIAL` até os gates de
 VM/ACL/limpeza serem comprovados.
+
+### Propagação de erros de limpeza — 2026-10-10
+
+A revisão dos temporários de backup confirmou que os arquivos parciais V2 e os
+arquivos de restauração ficam dentro de um workspace privado. Os caminhos de
+falha removem o arquivo individual quando possível; se ele permanecer, o
+`securetemp.RemoveAll` executado pelo fluxo de backup/restauração informa a falha
+ao chamador. A prévia CSV também guarda os índices e arquivos de ordenação no
+workspace privado, cujo `DiskSourceIDSet.Close` propaga falhas da remoção do
+workspace. Esta confirmação veio de leitura estática; não foi injetada uma
+falha de remoção do sistema operacional.
+
+A revisão encontrou um caso sem essa proteção: `prepare-webview2.ps1` ignorava
+falhas ao apagar um bootstrapper rejeitado por Authenticode. O script agora
+deixa a falha de exclusão interromper o fluxo e informa o código HRESULT para
+que a limpeza manual seja identificada. A rejeição normal continua falhando
+como antes. O parser PowerShell e `git diff --check` passaram localmente; a CI
+Windows ainda precisa validar a alteração. Não houve mudança de tela ou regra
+financeira.
+
+Continua pendente revisar o `SilentlyContinue` no `finally` de
+`smoke-installer.ps1`, que abrange a remoção de arquivos auxiliares e o registro
+da tarefa agendada. O diff local preexistente desse arquivo foi preservado e
+ficou fora desta alteração.

@@ -183,9 +183,10 @@ script foi preservado fora do commit.
 A varredura dos scripts Windows encontrou também `Stop-Process` e
 `Wait-Process` com erros suprimidos em `smoke-windows.ps1`. O smoke agora exige
 que o worker de teste encerre e informa PID/HRESULT se ele continuar ativo. O
-parser PowerShell passou localmente. A CI atual não executa esse script; falta
-rodá-lo em Windows e simular a falha de encerramento do processo. Nenhuma tela
-ou regra financeira foi alterada.
+parser PowerShell passou localmente. Naquele momento, ainda faltava executar o
+script pela CI e simular a falha de encerramento do processo. A revalidação
+abaixo atualiza o estado da execução em CI; a falha induzida continua pendente.
+Nenhuma tela ou regra financeira foi alterada.
 
 ### Proteção do destino de limpeza do smoke de instalação — 2026-10-10
 
@@ -234,3 +235,9 @@ somente após as verificações e a limpeza, e a nova CI confirmou o sucesso. A
 validação ainda não substitui a matriz em VMs limpas Windows 10/11. Esta mudança
 cobre ferramentas de build/validação e não altera telas aprovadas, regras
 financeiras ou comportamento de produção.
+
+### Execução do smoke Windows na CI — 2026-10-10
+
+A CI [38091149963](https://github.com/guilhermejacyzin/majucau/actions/runs/38091149963) passou nos jobs PostgreSQL e Windows. O passo `Smoke portable Windows bundle` executou `scripts/smoke-windows.ps1` e terminou com sucesso; portanto, o runner validou o pacote portátil, hashes e manifesto, preflight, diagnóstico sanitizado, health do worker e encerramento normal do processo. A CI também passou pelo smoke de instalação/desinstalação e pela consolidação dos outputs.
+
+Esta evidência cobre o caminho normal em runner hospedado. Ainda não comprova a falha induzida no encerramento do worker, ACL/limpeza em VM Windows 10/11 limpa nem instalação em máquina real da empresa. Não houve mudança de código de produção, tela ou regra financeira.

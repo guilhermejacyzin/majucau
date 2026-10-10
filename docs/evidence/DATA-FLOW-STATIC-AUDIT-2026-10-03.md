@@ -241,3 +241,12 @@ financeiras ou comportamento de produção.
 A CI [38091149963](https://github.com/guilhermejacyzin/majucau/actions/runs/38091149963) passou nos jobs PostgreSQL e Windows. O passo `Smoke portable Windows bundle` executou `scripts/smoke-windows.ps1` e terminou com sucesso; portanto, o runner validou o pacote portátil, hashes e manifesto, preflight, diagnóstico sanitizado, health do worker e encerramento normal do processo. A CI também passou pelo smoke de instalação/desinstalação e pela consolidação dos outputs.
 
 Esta evidência cobre o caminho normal em runner hospedado. Ainda não comprova a falha induzida no encerramento do worker, ACL/limpeza em VM Windows 10/11 limpa nem instalação em máquina real da empresa. Não houve mudança de código de produção, tela ou regra financeira.
+
+
+### Fronteira de importação CSV entre a interface e o worker — 2026-10-10
+
+A inspeção estática da interface não encontrou uso de `FileReader`, `readAsText`, `readAsArrayBuffer`, `Blob.text()` ou campo de upload de arquivo nas fontes do frontend. As telas de importação mantêm o caminho da pasta e chamam os métodos Wails de prévia/importação; o conteúdo dos arquivos não é enviado inteiro pela interface. O limite do pedido IPC é 1 MiB, e o pedido contém o caminho, não os registros CSV.
+
+Os fluxos de recebimentos do Bling e de recebíveis futuros do Nuvem Pago abrem os arquivos pela raiz confinada (`os.OpenRoot`) e entregam os registros um a um às rotinas de persistência. Ambos passam `io.Reader` por `csvlimit.NewReader` antes de `encoding/csv`, com limites de 1 MiB por campo, 4 MiB por registro e 256 campos. A lista de arquivos é percorrida em blocos limitados; os fluxos calculam SHA-256 durante a leitura, verificam se o CSV da prévia mudou entre as duas passagens e usam callbacks dentro da transação do lote. Validação por linha pode fechar o lote como `PARTIAL`; falha técnica ou cancelamento interrompe a transação.
+
+Esta é uma revisão estática dos dois caminhos CSV citados, não uma auditoria completa de todos os formatos e estados de operação. Ela não substitui comprovação de ACL, limpeza após falha e execução em VM Windows 10/11 limpa. `DATA-04` permanece `PARTIAL`. Nenhuma tela ou regra de negócio foi alterada.

@@ -129,6 +129,9 @@ Nenhum desses itens deve ser reinterpretado como concluído por existir uma inte
 
 A CI `38084637102` passou em Windows e PostgreSQL após a proteção do destino
 de limpeza do smoke de instalação. O job Windows executou instalação,
-desinstalação e verificação da consolidação com sucesso. Os casos negativos
-para caminho fora da raiz e links de pasta ainda não foram testados; `DATA-04`
-continua `PARTIAL`.
+desinstalação e verificação da consolidação com sucesso. O teste local agora
+também rejeita caminhos fora do projeto, destino diferente do permitido e
+junction para uma pasta externa, preservando um arquivo sentinela; todos esses
+casos passaram localmente. A CI `38086416845` está verificando a versão do
+teste que inclui o junction. `DATA-04` continua `PARTIAL` até esse resultado e
+as validações em VM Windows limpa comprovarem ACL e limpeza real.

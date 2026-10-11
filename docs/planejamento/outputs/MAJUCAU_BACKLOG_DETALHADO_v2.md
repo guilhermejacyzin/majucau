@@ -329,8 +329,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - `CalculateAgingFrom` agora consome um título por chamada, acumula somente as faixas fixas e propaga cancelamento e erros sem devolver totais parciais. O método anterior continua como wrapper para listas já disponíveis. As regras aprovadas de faixa, fuso, saldo aberto e exclusões foram preservadas.
 - Testes próprios cobrem mil títulos fornecidos um a um, falha de leitura e cancelamento; `go test -count=1 ./internal/financial` passou. O cache Go foi isolado em `artifacts/cache` e removido ao final desta execução.
 - BK-056 avança de 0% para 5% como fundação técnica. Não há integração com consulta ou tela de produção. Permanecem as dependências BK-046, BK-053 e BK-020; nenhuma regra ou tela mudou. Evidência: `docs/evidence/AGING-STREAM-READER-2026-10-11.md`.
-- O backlog tem 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (80%), BK-041 (60%), BK-056 (5%) e BK-067 (20%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 10% + 15% + 15% + 5% + 35% + 70% + 80% + 60% + 20%) ÷ 127 = 8,3%`; restam 91,7%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
+- O backlog tem 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (60%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 10% + 15% + 15% + 5% + 35% + 70% + 85% + 60% + 20%) ÷ 127 = 8,4%`; restam 91,6%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
 
 ## 00 Descoberta e decisões
 

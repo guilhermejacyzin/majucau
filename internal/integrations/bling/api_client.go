@@ -223,6 +223,7 @@ func (c *BlingAPIClient) listFinancialResource(ctx context.Context, resource str
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	req.Header.Set("enable-jwt", "1")
 	return c.doFinancialResourceRequest(req, filter)
 }
 

@@ -29,8 +29,12 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 		if r.URL.Path != "/Api/v3/contas/receber" {
 			t.Fatalf("path = %s", r.URL.Path)
 		}
-		if got := r.Header.Get("Authorization"); got != "Bearer access-token" {
+		jwt := strings.Repeat("j", 3000)
+		if got := r.Header.Get("Authorization"); got != "Bearer "+jwt {
 			t.Fatalf("authorization = %q", got)
+		}
+		if got := r.Header.Get("enable-jwt"); got != "1" {
+			t.Fatalf("enable-jwt = %q, want 1", got)
 		}
 		if got := r.URL.Query().Get("pagina"); got != "2" {
 			t.Fatalf("pagina = %q", got)
@@ -52,7 +56,8 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "access-token")
+	jwt := strings.Repeat("j", 3000)
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", jwt)
 	if err != nil {
 		t.Fatal(err)
 	}

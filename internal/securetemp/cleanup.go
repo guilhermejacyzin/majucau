@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrCleanupPathRequired = errors.New("temporary cleanup path is required")
-	ErrUnsafeCleanupPath   = errors.New("refusing unsafe temporary cleanup path")
+	ErrCleanupPathRequired   = errors.New("temporary cleanup path is required")
+	ErrUnsafeCleanupPath     = errors.New("refusing unsafe temporary cleanup path")
+	ErrUnsafeWorkspacePrefix = errors.New("refusing unsafe temporary workspace prefix")
 )
 
 // Workspace represents a private temporary directory created by this package.
@@ -19,8 +20,11 @@ type Workspace struct {
 }
 
 // NewWorkspace creates a private temporary directory and returns a cleanup
-// capability for that directory.
+// capability for that directory. The prefix must not contain path separators.
 func NewWorkspace(parent, prefix string) (*Workspace, error) {
+	if strings.ContainsAny(prefix, "/\\") {
+		return nil, ErrUnsafeWorkspacePrefix
+	}
 	path, err := createPrivateDir(parent, prefix)
 	if err != nil {
 		return nil, err

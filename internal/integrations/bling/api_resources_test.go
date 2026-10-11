@@ -18,6 +18,9 @@ func TestGetPayableAndBorderoReadBoundedRawDetails(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer access-token" {
 			t.Fatalf("authorization header missing")
 		}
+		if got := r.Header.Get("enable-jwt"); got != "1" {
+			t.Fatalf("enable-jwt = %q, want 1", got)
+		}
 		switch r.URL.Path {
 		case "/Api/v3/contas/pagar/123":
 			_, _ = w.Write([]byte(`{"data":{"id":123,"categoria":{"id":9}}}`))

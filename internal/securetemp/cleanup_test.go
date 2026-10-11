@@ -18,6 +18,34 @@ func TestRemoveFileTreatsMissingPathAsAlreadyCleaned(t *testing.T) {
 	}
 }
 
+func TestNewWorkspaceRejectsPathSeparatorsInPrefix(t *testing.T) {
+	for _, prefix := range []string{"../outside-", `..\outside-`, `/outside-`, `\outside-`} {
+		workspace, err := NewWorkspace(t.TempDir(), prefix)
+		if workspace != nil {
+			t.Fatalf("prefix %q created workspace %q", prefix, workspace.Path())
+		}
+		if !errors.Is(err, ErrUnsafeWorkspacePrefix) {
+			t.Fatalf("prefix %q error = %v, want ErrUnsafeWorkspacePrefix", prefix, err)
+		}
+	}
+}
+
+func TestNewWorkspaceKeepsSafePrefixInsideParent(t *testing.T) {
+	parent := t.TempDir()
+	workspace, err := NewWorkspace(parent, "majucau-safe-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := workspace.RemoveAll(); err != nil {
+			t.Errorf("remove private workspace: %v", err)
+		}
+	})
+	if got := filepath.Dir(workspace.Path()); got != parent {
+		t.Fatalf("workspace parent = %q, want %q", got, parent)
+	}
+}
+
 func TestRemoveFileReturnsSanitizedErrorWhenCleanupFails(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "non-empty-directory")

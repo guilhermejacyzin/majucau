@@ -21,6 +21,9 @@ func TestBlingOAuthExchangeUsesBasicAuthAndForm(t *testing.T) {
 		if got := r.Header.Get("Content-Type"); got != "application/x-www-form-urlencoded" {
 			t.Fatalf("content type = %q", got)
 		}
+		if got := r.Header.Get("enable-jwt"); got != "1" {
+			t.Fatalf("enable-jwt = %q, want 1", got)
+		}
 		if err := r.ParseForm(); err != nil {
 			t.Fatal(err)
 		}
@@ -66,8 +69,11 @@ func TestBlingOAuthErrorsDoNotExposeSecretOrBody(t *testing.T) {
 
 func TestBlingOAuthTokenExchangeDoesNotRetryOneTimeRequest(t *testing.T) {
 	attempts := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attempts++
+		if got := r.Header.Get("enable-jwt"); got != "1" {
+			t.Fatalf("enable-jwt = %q, want 1", got)
+		}
 		w.Header().Set("Retry-After", "0")
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}))

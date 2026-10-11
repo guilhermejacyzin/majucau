@@ -330,7 +330,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Testes próprios cobrem mil títulos fornecidos um a um, falha de leitura e cancelamento; `go test -count=1 ./internal/financial` passou. O cache Go foi isolado em `artifacts/cache` e removido ao final desta execução.
 - BK-056 avança de 0% para 5% como fundação técnica. Não há integração com consulta ou tela de produção. Permanecem as dependências BK-046, BK-053 e BK-020; nenhuma regra ou tela mudou. Evidência: `docs/evidence/AGING-STREAM-READER-2026-10-11.md`.
 - O backlog tem 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (60%), BK-056 (5%) e BK-067 (20%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 10% + 15% + 15% + 5% + 35% + 70% + 85% + 60% + 20%) ÷ 127 = 8,4%`; restam 91,6%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
+- Pela média simples, `(7 × 100% + 30% + 20% + 10% + 15% + 15% + 5% + 35% + 70% + 85% + 65% + 20%) ÷ 127 = 8,4%`; restam 91,6%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
 - A execução local de `scripts/verify-backlog.ps1` confirmou as contagens e os percentuais registrados acima.
 
 ## 00 Descoberta e decisões
@@ -958,6 +958,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Evidência de cancelamento no streaming CSV (11/10/2026):** `StreamReceiptsCSV` e `StreamFutureCSV` recebem o contexto e verificam cancelamento antes/depois de cada leitura de linha. Isso também cobre linhas inválidas quando o chamador não registra avisos. Bling e Nuvem Pago passam o contexto da importação para os parsers; o erro propaga ao serviço, que sai antes do commit. Validações, contagens, limites e regras de persistência não foram alteradas. Testes focalizados passam. Ver `docs/evidence/CSV-STREAM-CANCELLATION-2026-10-11.md`. BK-024 permanece em 35%, pois faltam validações operacionais, riscos e fluxos adicionais.
 
+**Validação do prefixo de workspace temporário (11/10/2026):** `securetemp.NewWorkspace` rejeita barras no prefixo antes de criar arquivos, impedindo que o nome saia da pasta pai prevista. Testes de prefixos relativos/absolutos e prefixo válido passaram no Windows; `go vet` também passou. A evidência está em `docs/evidence/SECURETEMP-WORKSPACE-PREFIX-2026-10-11.md`. A mudança fecha apenas essa validação local; ACL sob a conta real do serviço, junctions, falha de disco e VM limpa continuam pendentes. BK-024 permanece em 35%.
+
 **Dependências:** BK-013, BK-014, BK-019
 
 **Fonte:** M-058; Y_CEI_Tela_17; Consolidação 13/09/2026, §2
@@ -1365,7 +1367,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-041 — Implementar o adaptador de leitura do Bling
 
-**Situação:** Em andamento. **Evolução:** 60%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 65%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Ingerir dados oficiais sem alterar o ERP.
 
@@ -1382,6 +1384,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Critério de aceite:** Adaptador usa somente operações aprovadas; 401/429/falha de rede geram diagnóstico e retomada segura. Não contém scraping nem integração direta presumida com banco ou Mercado Pago. A alternativa oficial necessária tem recepção, autenticação e proveniência implementadas; repetição e versão corrigida são tratadas por BK-044.
 
 **Evidência da auditoria estática e correção parcial (11/10/2026):** já existem OAuth e armazenamento protegido no worker, cliente somente de leitura para contas a receber e a pagar, limites de resposta/página, retry seguro para GET, persistência RAW atômica e replay idempotente. A trava compartilhada entre os serviços de configuração e OAuth foi implementada; os testes locais dos pacotes Bling/worker e `go vet` passaram. A CI completa `38120125096` passou nos jobs Windows e PostgreSQL, incluindo os cenários `-race` no Ubuntu. O alerta anterior do scanner Windows era uma fixture de teste sem marcador e foi corrigido. A sincronização agora falha com segurança se não consegue saber se a página recebida é a última; a CI `38121237550` passou no teste PostgreSQL que confirma rollback e preservação do cursor. Os nomes de filtro de situação foram ajustados por endpoint e o teste focal passou. A cobertura real de campos/recursos, a resposta autenticada, o fim da paginação e o cursor incremental oficial não foram homologados. A trava é local ao processo worker. Ver `docs/evidence/BLING-ADAPTER-STATIC-AUDIT-2026-10-11.md` e `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`. Estimativa parcial não representa integração pronta.
+
+**Compatibilidade com autenticação JWT do Bling (11/10/2026):** implementado `enable-jwt: 1` na troca e renovação de token e em todas as chamadas autenticadas de leitura. Testes cobrem OAuth, consultas de recursos e Bearer JWT com 3.000 caracteres. O host já usa `api.bling.com.br`; o cofre não impõe limite curto de token. A autenticação com a conta real ainda não foi homologada. Ver `docs/evidence/BLING-JWT-MIGRATION-2026-10-11.md`. BK-041 passa de 60% para 65%; o avanço não encerra a tarefa.
 
 **Impacto:** Mantém integração estável e credenciais protegidas.
 
@@ -3521,3 +3525,17 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Os commits iniciais foram recusados pelo verificador de mensagens porque os campos percentuais usaram rótulos diferentes dos exigidos em `CONTRIBUTING.md`; não reescrevi os commits publicados. O commit de correção no formato exato disparou a CI `38169879308`, que passou em `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`.
 - `gofmt`, `git diff --check` e a CI completa passaram. Não foram executados testes locais nesta etapa. A conferência visual no protótipo e a validação de ACL em instalação/VM continuam pendentes.
 - BK-031 avança de 80% para 85% (15% restante). O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; estimativa ponderada de 8,4% concluído e 91,6% restante. Não há prazo confiável para concluir o projeto: faltam 109 tarefas não iniciadas e validações externas.
+
+### Validação de prefixos temporários — 11/10/2026
+
+- `securetemp.NewWorkspace` passou a recusar `/` e `\\` em prefixos e ganhou testes para entradas relativas, absolutas e caminho válido. Isso impede que a API crie o workspace fora da pasta pai por causa do prefixo.
+- `go test -count=1 ./internal/securetemp`, `go vet ./internal/securetemp` e `git diff --check` passaram no Windows. O cache foi isolado e limpo em `artifacts/cache/`.
+- BK-024 permanece em 35% (65% restante), pois esta correção não substitui os testes de ACL sob o serviço, instalação/VM limpa, falhas de disco nem as demais lacunas do mapa de riscos. O backlog continua com 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas: 8,4% concluído, 91,6% restante. Ainda não há prazo global confiável.
+
+### Migração de autenticação JWT do Bling — 11/10/2026
+
+- Após comparar o código com o guia oficial do Bling, foi identificado que faltava o cabeçalho `enable-jwt: 1` na obtenção/renovação OAuth e nas chamadas autenticadas.
+- O adaptador agora envia esse cabeçalho em todas essas chamadas. Testes verificam authorization code, refresh token, consultas de lista e detalhe, e token Bearer de 3.000 caracteres. O host `https://api.bling.com.br/Api/v3` já era o endereço atual.
+- Os testes focalizados de Bling e `securetemp`, `go vet`, o verificador do backlog e `git diff --check` passaram localmente no Windows; caches temporários foram removidos.
+- BK-041 avança de 60% para 65% (35% restante); a conta real, o contrato de paginação e o cursor incremental continuam pendentes. O backlog segue com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,4% concluído, 91,6% restante. A previsão total ainda não é confiável.
+- Nenhuma tela aprovada ou regra financeira foi alterada. Evidência: `docs/evidence/BLING-JWT-MIGRATION-2026-10-11.md`.

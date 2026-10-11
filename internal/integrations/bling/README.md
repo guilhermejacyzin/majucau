@@ -10,7 +10,10 @@ modo somente leitura. O pacote contém um cliente técnico para:
 - `GET /contas/receber` e `GET /contas/pagar`, com paginação (`pagina`/`limite`)
   e filtros explícitos por rota;
 - consulta de detalhe `GET /contas/pagar/{idContaPagar}`,
-  `GET /borderos/{idBordero}` e `GET /categorias/receitas-despesas/{id}`;
+  `GET /borderos/{idBordero}`, `GET /caixas/{idCaixa}` e
+  `GET /categorias/receitas-despesas/{id}`;
+- leitura de uma página limitada de `GET /caixas`, com os filtros documentados
+  de página, limite e período;
 - leitura de uma página de `GET /categorias/receitas-despesas`;
 - classificação segura de 401/403, 429, timeout, indisponibilidade e resposta
   fora do contrato;
@@ -46,13 +49,15 @@ marcador de última página nem um cursor incremental por alteração; por isso,
 essa homologação continua pendente. O detalhe está em
 `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
 
-O schema público de categorias descreve `data[]`, sem informar como identificar
-a última página; o cliente não pode declarar a lista completa sem esse
-marcador. O endpoint `GET /caixas` ainda não está implementado no cliente. Ele
-é o caminho planejado para alimentar os cards CAPEX, mas os IDs de categoria e
-a correspondência dos movimentos com os relatórios da Majucau precisam ser
-confirmados antes de exibir valores. Os métodos atuais de conta a pagar,
-borderô e categoria não preenchem os cards nem alteram a DRE. Consulte
+Os schemas públicos de categorias e de caixa descrevem `data[]`, sem informar
+como identificar a última página; o cliente não pode declarar a lista completa
+sem esse marcador. O adaptador agora oferece `ListCashMovements` e
+`GetCashMovement`, que aplicam limites, JWT, cancelamento e retry seguro, e
+preservam a resposta como RAW. A leitura de caixa ainda não é persistida nem
+integrada ao snapshot. A lista não envia filtro por ID de categoria até que sua
+codificação exata seja homologada. Os IDs/hierarquia de CAPEX e a
+correspondência dos movimentos com os relatórios da Majucau precisam ser
+confirmados antes de exibir valores. Consulte
 `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md`.
 
 O `ReceivablesAPISyncService` já fecha a etapa seguinte de infraestrutura: lê

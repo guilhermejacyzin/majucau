@@ -41,7 +41,8 @@ idempotente e com limite por resposta.
 
 Antes de preencher os cards, ainda é necessário homologar os IDs e a
 hierarquia real de CAPEX, confirmar que as movimentações retornadas conciliam
-com o relatório do Bling e implementar a leitura dessa fonte. Até então, os
+com o relatório do Bling e integrar a leitura dessa fonte ao armazenamento e
+ao snapshot. Até então, os
 valores continuam `Dado indisponível`; não são substituídos por zero nem
 estimados.
 
@@ -51,8 +52,25 @@ Esta revisão confirma a estrutura dos dois PDFs e do print enviados, e a
 existência dos campos e filtros descritos na documentação pública da API. Ela
 não confirma os IDs de categoria da conta Majucau, nem que os movimentos
 retornados conciliam com os relatórios reais. A situação da BK-067 permanece
-em 20%: a interface existe e a fonte técnica foi identificada, mas a leitura,
-o cálculo e a conferência ainda não foram implementados.
+em 20%: a interface existe e a fonte técnica foi identificada, mas a integração
+com armazenamento/snapshot, o cálculo e a conferência ainda não foram
+implementados.
+
+## Atualização de implementação — leitura de movimentações
+
+O adaptador agora possui `ListCashMovements` para ler uma página de `GET
+/caixas` com `pagina`, `limite`, `dataInicial` e `dataFinal`, e
+`GetCashMovement` para consultar `GET /caixas/{idCaixa}`. Ambos usam o cliente
+HTTP existente: Bearer/JWT, cancelamento, limite de resposta e retry seguro
+para `GET`; os registros seguem como JSON bruto. A página sem metadados
+explícitos continua com término desconhecido, e uma página curta não é tratada
+como lista completa.
+
+Essa mudança implementa somente a leitura técnica do recurso. Ela não persiste
+movimentações, não mapeia categoria, não calcula CAPEX e não preenche os cards.
+Ainda faltam confirmar IDs/árvore CAPEX na conta, o formato do filtro por IDs de
+categoria, a paginação real e a conciliação com os relatórios fornecidos. Até
+isso, os valores dos cards permanecem indisponíveis.
 
 Nenhum valor financeiro, nome de fornecedor, identificador ou credencial foi
 copiado para este registro.

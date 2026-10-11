@@ -169,6 +169,11 @@ type BlingReceivablesPage struct {
 	HasNextKnown bool
 }
 
+// BlingAPIResourcePage is the generic name for a bounded raw page returned by
+// any list endpoint. BlingReceivablesPage remains as a compatibility alias for
+// existing callers.
+type BlingAPIResourcePage = BlingReceivablesPage
+
 type blingPagination struct {
 	Page    *int  `json:"page"`
 	Limit   *int  `json:"limit"`

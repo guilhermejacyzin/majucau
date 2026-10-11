@@ -29,6 +29,15 @@ func (c *BlingAPIClient) GetBordero(ctx context.Context, id int64) (json.RawMess
 	return c.getDataRecord(ctx, "borderos/"+strconv.FormatInt(id, 10))
 }
 
+// GetCashMovement reads one Bling cash/bank movement and preserves its payload
+// as RAW JSON. It does not classify the movement or infer financial meaning.
+func (c *BlingAPIClient) GetCashMovement(ctx context.Context, id int64) (json.RawMessage, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("%w: cash movement ID must be positive", ErrBlingAPIConfiguration)
+	}
+	return c.getDataRecord(ctx, "caixas/"+strconv.FormatInt(id, 10))
+}
+
 // GetFinancialCategory reads one Bling income/expense category and preserves
 // its payload as RAW JSON. The category is not mapped to a Majucau rule here.
 func (c *BlingAPIClient) GetFinancialCategory(ctx context.Context, id int64) (json.RawMessage, error) {
@@ -43,6 +52,62 @@ func (c *BlingAPIClient) GetFinancialCategory(ctx context.Context, id int64) (js
 // never treated as the end of the list.
 func (c *BlingAPIClient) ListFinancialCategories(ctx context.Context, page, limit int) (BlingReceivablesPage, error) {
 	return c.listFinancialResource(ctx, "categorias/receitas-despesas", ReceivablesFilter{Page: page, Limit: limit})
+}
+
+// CashMovementsFilter contains only the date and page parameters documented
+// for GET /caixas. Category IDs are intentionally omitted until their exact
+// query encoding is homologated against the official contract.
+type CashMovementsFilter struct {
+	Page     int
+	Limit    int
+	DateFrom string
+	DateTo   string
+}
+
+func (f CashMovementsFilter) normalized() (CashMovementsFilter, error) {
+	if f.Page == 0 {
+		f.Page = 1
+	}
+	if f.Limit == 0 {
+		f.Limit = BlingMaxPageSize
+	}
+	if f.Page < 1 {
+		return CashMovementsFilter{}, fmt.Errorf("%w: page must be positive", ErrBlingAPIConfiguration)
+	}
+	if f.Limit < 1 || f.Limit > BlingMaxPageSize {
+		return CashMovementsFilter{}, fmt.Errorf("%w: limit must be between 1 and %d", ErrBlingAPIConfiguration, BlingMaxPageSize)
+	}
+	return f, nil
+}
+
+// ListCashMovements reads one bounded page from GET /caixas and preserves
+// each item as RAW JSON. HasNextKnown must be checked before a caller treats
+// the result as complete; a short page is not proof that pagination ended.
+func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovementsFilter) (BlingAPIResourcePage, error) {
+	if c == nil || c.baseURL == nil || c.httpClient == nil {
+		return BlingReceivablesPage{}, ErrBlingAPIConfiguration
+	}
+	filter, err := filter.normalized()
+	if err != nil {
+		return BlingReceivablesPage{}, err
+	}
+	pathURL := *c.baseURL
+	pathURL.Path = strings.TrimRight(pathURL.Path, "/") + "/caixas"
+	query := pathURL.Query()
+	query.Set("pagina", strconv.Itoa(filter.Page))
+	query.Set("limite", strconv.Itoa(filter.Limit))
+	setOptionalQuery(query, "dataInicial", strings.TrimSpace(filter.DateFrom))
+	setOptionalQuery(query, "dataFinal", strings.TrimSpace(filter.DateTo))
+	pathURL.RawQuery = query.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pathURL.String(), nil)
+	if err != nil {
+		return BlingReceivablesPage{}, fmt.Errorf("%w: create request", ErrBlingAPIConfiguration)
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	req.Header.Set("enable-jwt", "1")
+	return c.doFinancialResourceRequest(req, ReceivablesFilter{Page: filter.Page, Limit: filter.Limit})
 }
 
 func (c *BlingAPIClient) getDataRecord(ctx context.Context, resource string) (json.RawMessage, error) {

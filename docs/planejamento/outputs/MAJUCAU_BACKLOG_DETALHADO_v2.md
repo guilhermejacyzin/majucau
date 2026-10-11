@@ -359,6 +359,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Pela média simples, `(7 × 100% + 30% + 20% + 25% + 15% + 15% + 5% + 35% + 70% + 85% + 65% + 20%) ÷ 127 = 8,5%`; restam 91,5%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
 - `scripts/verify-backlog.ps1` confirmou 127 tarefas, 7 concluídas, 11 em andamento, 109 não iniciadas, 8,5% concluído e 91,5% restante. `docs/planejamento/work/verify_package.py` confirmou 127 tarefas sincronizadas, 76 links locais válidos e nenhuma fórmula com erro. `git diff --check` passou. Nenhum teste de produto foi executado para esta atualização documental.
 
+### Leitura técnica de movimentações de caixa Bling — 11/10/2026
+
+- BK-041 avança de 65% para 68% (32% restante). O adaptador agora oferece leitura limitada de uma página e detalhe por ID para movimentações de caixa, preservando os dados como JSON bruto; paginação real, persistência, categorias CAPEX e conciliação continuam pendentes.
+- O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (25%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (68%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 25% + 15% + 15% + 35% + 70% + 85% + 68% + 5% + 20%) ÷ 127 = 8,6%`; restam 91,4%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -1393,7 +1399,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-041 — Implementar o adaptador de leitura do Bling
 
-**Situação:** Em andamento. **Evolução:** 65%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 68% (estimativa; além das consultas já existentes, o adaptador agora lê páginas limitadas de movimentações de caixa por período e detalhes por ID, preservando JSON bruto; ainda não persiste nem integra essa fonte, não homologou a paginação real/categoria da conta e não retoma cursor incremental). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Ingerir dados oficiais sem alterar o ERP.
 
@@ -3574,3 +3580,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - `scripts/test-verify-backlog.ps1`, `scripts/test-safe-cleanup.ps1`, `scripts/verify-backlog.ps1` e `git diff --check` passaram localmente. Evidência: `docs/evidence/BACKLOG-VALIDATOR-SAFE-TEMP-2026-10-11.md`.
 - BK-025 permanece em 70% (30% restante); a proteção de branch e a exigência de verificações obrigatórias continuam dependendo de uma pessoa administradora. O backlog permanece em 127 tarefas: 7 concluídas, 11 em andamento, 109 não iniciadas, 8,5% concluído e 91,5% restante.
 - Nenhuma tela ou regra financeira foi alterada. A mudança é restrita ao teste de governança do backlog.
+
+### Leitura técnica de movimentações de caixa Bling — 11/10/2026
+
+- O adaptador adicionou `ListCashMovements` (`GET /caixas`) com uma página por chamada, limite local de 100, filtros documentados de período e página, Bearer/JWT, timeout/cancelamento, limite de 4 MiB e retry seguro de `GET`. `GetCashMovement` (`GET /caixas/{idCaixa}`) usa o mesmo limite e preserva o objeto `data` como JSON bruto.
+- A página sem indicador explícito de continuação permanece com término desconhecido. Não há regra que trate página curta como final. A codificação do filtro por categoria foi omitida até homologação; nenhuma movimentação foi persistida, classificada ou usada para calcular CAPEX.
+- Os testes do pacote Bling passaram localmente e `go vet` passou; caches de Go ficaram em `artifacts/cache/` durante a validação e foram removidos pela rotina segura. A CI deste commit ainda precisa executar.
+- BK-041 avança de 65% para 68% (32% restante). O backlog continua com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,6% concluído e 91,4% restante. O restante depende de homologação real, persistência RAW/idempotente, cursor, demais recursos e reconciliação.
+- Nenhuma tela, regra financeira ou dado real foi alterado. Evidências: `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md` e `internal/integrations/bling/api_resources_test.go`.

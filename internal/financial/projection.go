@@ -1,6 +1,7 @@
 package financial
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -17,7 +18,7 @@ type Movement struct {
 // MovementReader yields one movement at a time. The callback can read from a
 // database cursor and return its context or rows error without buffering the
 // full result set.
-type MovementReader func() (Movement, bool, error)
+type MovementReader func(context.Context) (Movement, bool, error)
 
 type BalanceType string
 
@@ -44,7 +45,7 @@ type DailyBalance struct {
 // normalized to midnight UTC to make results independent of local process TZ.
 func DailyProjection(start time.Time, opening domain.Money, movements []Movement) ([]DailyBalance, error) {
 	index := 0
-	return DailyProjectionFrom(start, opening, func() (Movement, bool, error) {
+	return DailyProjectionFrom(context.Background(), start, opening, func(context.Context) (Movement, bool, error) {
 		if index >= len(movements) {
 			return Movement{}, false, nil
 		}
@@ -57,15 +58,18 @@ func DailyProjection(start time.Time, opening domain.Money, movements []Movement
 // DailyProjectionFrom consumes movements once and retains only daily totals
 // within D0 through D+60. Its memory use is bounded by the 61-day output,
 // regardless of the number of source movements.
-func DailyProjectionFrom(start time.Time, opening domain.Money, next MovementReader) ([]DailyBalance, error) {
-	if next == nil {
+func DailyProjectionFrom(ctx context.Context, start time.Time, opening domain.Money, next MovementReader) ([]DailyBalance, error) {
+	if ctx == nil || next == nil {
 		return nil, ErrInvalidProjection
 	}
 	start = dateOnly(start)
 	end := start.AddDate(0, 0, 60)
 	var dailyMovements [61]Movement
 	for {
-		m, ok, err := next()
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		m, ok, err := next(ctx)
 		if err != nil {
 			return nil, err
 		}

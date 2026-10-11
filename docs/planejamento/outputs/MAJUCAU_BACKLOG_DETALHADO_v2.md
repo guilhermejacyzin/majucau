@@ -516,6 +516,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Regras e verificações vinculadas:** L-07,Q-10,Q-21,R-06,R-08,F-01
 
+**Evidência técnica parcial (11/10/2026):** `DailyProjectionFrom` mantém a leitura dos movimentos em fluxo e agora encaminha `context.Context` ao leitor. Cancelamento ou falha da fonte devolve erro sem publicar uma série parcial; o wrapper de fatia continua compatível. A fórmula D0–D+60, os tipos de saldo e a precisão monetária não mudaram. Teste e `go vet` focal passaram. A função ainda não é chamada por uma consulta de produção, e as fontes/valores necessários à calculadora continuam sem homologação; por isso BK-006 permanece em 30% e BK-060 não avança. Ver `docs/evidence/PROJECTION-STREAM-CONTEXT-2026-10-11.md`.
+
 ### BK-007 — Especificar as regras da DRE própria do Majucau
 
 **Situação:** Em andamento. **Evolução:** 20% (estimativa de planejamento; os princípios enviados por Gisele estão organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`, incluindo estrutura de classificação, estoque/CPV, máquinas/depreciação, tributos recuperáveis e dados mínimos. Essa documentação preserva as linhas e a tela aprovadas. Ainda faltam validação com a contabilidade, critérios específicos da empresa, mapeamento de contas/eventos e conferência com dados reais). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações + Contabilidade.

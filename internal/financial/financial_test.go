@@ -38,7 +38,7 @@ func TestDailyProjectionFromConsumesMovementsAsStream(t *testing.T) {
 	largeOutflow := money(t, "25")
 	emitted := 0
 
-	rows, err := DailyProjectionFrom(start, money(t, "100"), func() (Movement, bool, error) {
+	rows, err := DailyProjectionFrom(context.Background(), start, money(t, "100"), func(context.Context) (Movement, bool, error) {
 		if emitted < dailyRecords {
 			emitted++
 			return Movement{Date: start, Inflows: increment}, true, nil
@@ -70,7 +70,7 @@ func TestDailyProjectionFromPropagatesReaderErrors(t *testing.T) {
 	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
 	wantErr := errors.New("movement source stopped")
 	calls := 0
-	rows, err := DailyProjectionFrom(start, money(t, "100"), func() (Movement, bool, error) {
+	rows, err := DailyProjectionFrom(context.Background(), start, money(t, "100"), func(context.Context) (Movement, bool, error) {
 		calls++
 		if calls == 1 {
 			return Movement{Date: start, Inflows: money(t, "1")}, true, nil
@@ -83,7 +83,7 @@ func TestDailyProjectionFromPropagatesReaderErrors(t *testing.T) {
 	if rows != nil {
 		t.Fatalf("failed stream returned partial projection: %#v", rows)
 	}
-	if _, err := DailyProjectionFrom(start, money(t, "100"), nil); err != ErrInvalidProjection {
+	if _, err := DailyProjectionFrom(context.Background(), start, money(t, "100"), nil); err != ErrInvalidProjection {
 		t.Fatalf("nil movement reader error = %v, want %v", err, ErrInvalidProjection)
 	}
 }
@@ -92,7 +92,7 @@ func TestDailyProjectionFromPropagatesMoneyOverflow(t *testing.T) {
 	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
 	maximum := money(t, "922337203685477.5807")
 	emitted := false
-	rows, err := DailyProjectionFrom(start, maximum, func() (Movement, bool, error) {
+	rows, err := DailyProjectionFrom(context.Background(), start, maximum, func(context.Context) (Movement, bool, error) {
 		if emitted {
 			return Movement{}, false, nil
 		}
@@ -104,6 +104,27 @@ func TestDailyProjectionFromPropagatesMoneyOverflow(t *testing.T) {
 	}
 	if rows != nil {
 		t.Fatalf("overflow returned partial projection: %#v", rows)
+	}
+}
+
+func TestDailyProjectionFromPassesContextAndStopsWhenCancelled(t *testing.T) {
+	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	calls := 0
+	rows, err := DailyProjectionFrom(ctx, start, money(t, "100"), func(readerCtx context.Context) (Movement, bool, error) {
+		if readerCtx != ctx {
+			t.Fatalf("reader context = %p, want %p", readerCtx, ctx)
+		}
+		calls++
+		cancel()
+		return Movement{Date: start, Inflows: money(t, "1")}, true, nil
+	})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("DailyProjectionFrom() error = %v, want context.Canceled", err)
+	}
+	if rows != nil || calls != 1 {
+		t.Fatalf("cancelled stream returned rows %#v after %d reads", rows, calls)
 	}
 }
 

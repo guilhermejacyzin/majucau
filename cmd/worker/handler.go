@@ -73,9 +73,10 @@ func newWorkerHandler() workerHandler {
 		statusReader = newIntegrationStatusReader(pool)
 		dashboardReader = dashboard.NewReader(pool)
 		if store := newWorkerSecretStore(); store != nil {
-			configSaver = bling.NewBlingCredentialService(pool, store)
+			blingCredentials := bling.NewBlingCredentialState(store)
+			configSaver = bling.NewBlingCredentialServiceWithState(pool, blingCredentials)
 			nuvemshopSaver = nuvemshop.NewCredentialService(pool, store)
-			oauthService = bling.NewBlingOAuthService(pool, store)
+			oauthService = bling.NewBlingOAuthServiceWithState(pool, blingCredentials)
 			rawSync = oauthService.(blingRawSyncer)
 		}
 	}

@@ -5,14 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 
 	"majucau.local/financial-intelligence/internal/security"
 )
 
-type memorySecretStore struct{ values map[string][]byte }
+type memorySecretStore struct {
+	mu     sync.Mutex
+	values map[string][]byte
+}
 
 func (s *memorySecretStore) Put(_ context.Context, ref string, value []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if err := security.ValidateSecretRef(ref); err != nil {
 		return err
 	}
@@ -23,12 +29,16 @@ func (s *memorySecretStore) Put(_ context.Context, ref string, value []byte) err
 	return nil
 }
 func (s *memorySecretStore) Get(_ context.Context, ref string) ([]byte, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if err := security.ValidateSecretRef(ref); err != nil {
 		return nil, err
 	}
 	return append([]byte(nil), s.values[ref]...), nil
 }
 func (s *memorySecretStore) Delete(_ context.Context, ref string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if err := security.ValidateSecretRef(ref); err != nil {
 		return err
 	}

@@ -452,5 +452,8 @@ jobs:
       - name: Run backup creation and real restore against disposable PostgreSQL
         run: go test ./internal/backup -run '^TestCreateVerifyAndRestoreAgainstDisposablePostgres$' -count=1
 
+      - name: Check Bling OAuth credential concurrency with race detector
+        run: go test -race ./internal/integrations/bling -run '^(TestBlingOAuthLoopbackSessionExchangesAndTestsWithoutLeakingToken|TestBlingOAuthDisconnectWaitsForInFlightAuthorization)$' -count=1
+
       - name: Run PostgreSQL integration tests
         run: go test ./internal/integrations/bling ./internal/integrations/nuvempago

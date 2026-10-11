@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -46,13 +47,32 @@ type blingSecretBundle struct {
 	RefreshTokenExpiresUnix int64  `json:"refresh_token_expires_unix,omitempty"`
 }
 
-type BlingCredentialService struct {
-	pool  *pgxpool.Pool
+// BlingCredentialState coordinates read/modify/write operations on the shared
+// protected credential bundle across configuration and OAuth services.
+type BlingCredentialState struct {
 	store security.SecretStore
+	mu    sync.Mutex
 }
 
+// NewBlingCredentialState creates a shared coordinator for one worker process.
+func NewBlingCredentialState(store security.SecretStore) *BlingCredentialState {
+	return &BlingCredentialState{store: store}
+}
+
+type BlingCredentialService struct {
+	pool        *pgxpool.Pool
+	credentials *BlingCredentialState
+}
+
+// NewBlingCredentialService creates a standalone service. If it shares a
+// secret store with OAuth, pass one BlingCredentialState to both WithState
+// constructors instead.
 func NewBlingCredentialService(pool *pgxpool.Pool, store security.SecretStore) *BlingCredentialService {
-	return &BlingCredentialService{pool: pool, store: store}
+	return NewBlingCredentialServiceWithState(pool, NewBlingCredentialState(store))
+}
+
+func NewBlingCredentialServiceWithState(pool *pgxpool.Pool, credentials *BlingCredentialState) *BlingCredentialService {
+	return &BlingCredentialService{pool: pool, credentials: credentials}
 }
 
 // Save stores the secret only in the worker vault and public metadata in the
@@ -62,14 +82,16 @@ func (s *BlingCredentialService) Save(ctx context.Context, input BlingConfigInpu
 	if s == nil || s.pool == nil {
 		return BlingConfigResult{}, ErrBlingCredentialVault
 	}
-	if s.store == nil {
+	if s.credentials == nil || s.credentials.store == nil {
 		return BlingConfigResult{}, ErrBlingCredentialVault
 	}
 	input, err := normalizeBlingConfig(input)
 	if err != nil {
 		return BlingConfigResult{}, err
 	}
-	previous, previousErr := s.store.Get(ctx, BlingCredentialSecretRef)
+	s.credentials.mu.Lock()
+	defer s.credentials.mu.Unlock()
+	previous, previousErr := s.credentials.store.Get(ctx, BlingCredentialSecretRef)
 	if previousErr != nil && !errors.Is(previousErr, fs.ErrNotExist) {
 		return BlingConfigResult{}, fmt.Errorf("%w: read existing secret", ErrBlingCredentialVault)
 	}
@@ -96,13 +118,13 @@ func (s *BlingCredentialService) Save(ctx context.Context, input BlingConfigInpu
 	if err != nil {
 		return BlingConfigResult{}, fmt.Errorf("%w: encode secret", ErrBlingCredentialVault)
 	}
-	if err := s.store.Put(ctx, BlingCredentialSecretRef, bundle); err != nil {
+	if err := s.credentials.store.Put(ctx, BlingCredentialSecretRef, bundle); err != nil {
 		return BlingConfigResult{}, fmt.Errorf("%w: write secret", ErrBlingCredentialVault)
 	}
 	queries := database.New(s.pool)
 	clientID, redirectURI, secretRef := input.ClientID, input.RedirectURI, BlingCredentialSecretRef
 	if err := queries.UpsertBlingConnectionConfig(ctx, database.UpsertBlingConnectionConfigParams{ClientID: &clientID, RedirectUri: &redirectURI, SecretRef: &secretRef}); err != nil {
-		restoreSecret(ctx, s.store, previous, previousErr)
+		restoreSecret(ctx, s.credentials.store, previous, previousErr)
 		return BlingConfigResult{}, fmt.Errorf("save Bling public configuration: %w", err)
 	}
 	return BlingConfigResult{ClientID: input.ClientID, RedirectURI: input.RedirectURI, SecretConfigured: true, Status: "NOT_CONFIGURED"}, nil

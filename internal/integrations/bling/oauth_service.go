@@ -140,41 +140,54 @@ type blingOAuthSession struct {
 }
 
 type BlingOAuthService struct {
-	repo       blingOAuthRepository
-	store      security.SecretStore
-	pool       *pgxpool.Pool
-	httpClient HTTPDoer
-	listen     func(string, string) (net.Listener, error)
-	now        func() time.Time
+	repo        blingOAuthRepository
+	credentials *BlingCredentialState
+	pool        *pgxpool.Pool
+	httpClient  HTTPDoer
+	listen      func(string, string) (net.Listener, error)
+	now         func() time.Time
 
 	mu       sync.Mutex
 	sessions map[string]*blingOAuthSession
 }
 
+// NewBlingOAuthService creates a standalone OAuth service. When sharing the
+// vault with BlingCredentialService, use the same BlingCredentialState for
+// both services via their WithState constructors.
 func NewBlingOAuthService(pool *pgxpool.Pool, store security.SecretStore) *BlingOAuthService {
+	return NewBlingOAuthServiceWithState(pool, NewBlingCredentialState(store))
+}
+
+func NewBlingOAuthServiceWithState(pool *pgxpool.Pool, credentials *BlingCredentialState) *BlingOAuthService {
 	return &BlingOAuthService{
-		repo:       newPostgresBlingOAuthRepository(pool),
-		store:      store,
-		pool:       pool,
-		httpClient: withBlingRequestPacing(&http.Client{Timeout: 30 * time.Second}),
-		listen:     net.Listen,
-		now:        time.Now,
-		sessions:   make(map[string]*blingOAuthSession),
+		repo:        newPostgresBlingOAuthRepository(pool),
+		credentials: credentials,
+		pool:        pool,
+		httpClient:  withBlingRequestPacing(&http.Client{Timeout: 30 * time.Second}),
+		listen:      net.Listen,
+		now:         time.Now,
+		sessions:    make(map[string]*blingOAuthSession),
 	}
 }
 
 func newBlingOAuthService(repo blingOAuthRepository, store security.SecretStore, httpClient HTTPDoer) *BlingOAuthService {
+	return newBlingOAuthServiceWithState(repo, NewBlingCredentialState(store), httpClient)
+}
+
+func newBlingOAuthServiceWithState(repo blingOAuthRepository, credentials *BlingCredentialState, httpClient HTTPDoer) *BlingOAuthService {
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 30 * time.Second}
 	}
 	httpClient = withBlingRequestPacing(httpClient)
-	return &BlingOAuthService{repo: repo, store: store, httpClient: httpClient, listen: net.Listen, now: time.Now, sessions: make(map[string]*blingOAuthSession)}
+	return &BlingOAuthService{repo: repo, credentials: credentials, httpClient: httpClient, listen: net.Listen, now: time.Now, sessions: make(map[string]*blingOAuthSession)}
 }
 
 func (s *BlingOAuthService) Start(ctx context.Context) (BlingOAuthStartResult, error) {
-	if s == nil || s.repo == nil || s.store == nil {
+	if s == nil || s.repo == nil || s.credentials == nil || s.credentials.store == nil {
 		return BlingOAuthStartResult{}, ErrBlingOAuthConfiguration
 	}
+	s.credentials.mu.Lock()
+	defer s.credentials.mu.Unlock()
 	connection, err := s.repo.Connection(ctx)
 	if err != nil {
 		return BlingOAuthStartResult{}, ErrBlingOAuthConfiguration
@@ -183,7 +196,7 @@ func (s *BlingOAuthService) Start(ctx context.Context) (BlingOAuthStartResult, e
 	if err != nil {
 		return BlingOAuthStartResult{}, err
 	}
-	if _, err := loadBlingSecret(ctx, s.store); err != nil {
+	if _, err := loadBlingSecret(ctx, s.credentials.store); err != nil {
 		return BlingOAuthStartResult{}, err
 	}
 	redirect, err := validateBlingLoopbackRedirect(redirectURI)
@@ -241,9 +254,15 @@ func (s *BlingOAuthService) Status(_ context.Context, sessionID string) (BlingOA
 }
 
 func (s *BlingOAuthService) Test(ctx context.Context) (BlingOAuthTestResult, error) {
-	if s == nil || s.repo == nil || s.store == nil {
+	if s == nil || s.repo == nil || s.credentials == nil || s.credentials.store == nil {
 		return BlingOAuthTestResult{}, ErrBlingOAuthConfiguration
 	}
+	s.credentials.mu.Lock()
+	defer s.credentials.mu.Unlock()
+	return s.testLocked(ctx)
+}
+
+func (s *BlingOAuthService) testLocked(ctx context.Context) (BlingOAuthTestResult, error) {
 	connection, err := s.repo.Connection(ctx)
 	if err != nil {
 		return BlingOAuthTestResult{}, ErrBlingOAuthConfiguration
@@ -252,7 +271,7 @@ func (s *BlingOAuthService) Test(ctx context.Context) (BlingOAuthTestResult, err
 	if err != nil {
 		return BlingOAuthTestResult{}, err
 	}
-	bundle, err := loadBlingSecret(ctx, s.store)
+	bundle, err := loadBlingSecret(ctx, s.credentials.store)
 	if err != nil {
 		return BlingOAuthTestResult{}, err
 	}
@@ -275,7 +294,7 @@ func (s *BlingOAuthService) Test(ctx context.Context) (BlingOAuthTestResult, err
 		}
 		bundle = updateBundleWithToken(bundle, refreshed, s.now())
 		encoded, encodeErr := json.Marshal(bundle)
-		if encodeErr != nil || s.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
+		if encodeErr != nil || s.credentials.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
 			_ = s.repo.RecordTestFailure(ctx, "BLING_TOKEN_STORE_FAILED")
 			return BlingOAuthTestResult{}, ErrBlingOAuthStorage
 		}
@@ -303,10 +322,12 @@ func (s *BlingOAuthService) Test(ctx context.Context) (BlingOAuthTestResult, err
 // financial data. The client secret remains protected so the user can
 // reconnect later; access and refresh tokens are removed from the vault.
 func (s *BlingOAuthService) Disconnect(ctx context.Context) error {
-	if s == nil || s.repo == nil || s.store == nil {
+	if s == nil || s.repo == nil || s.credentials == nil || s.credentials.store == nil {
 		return ErrBlingOAuthDisconnect
 	}
-	previous, previousErr := s.store.Get(ctx, BlingCredentialSecretRef)
+	s.credentials.mu.Lock()
+	defer s.credentials.mu.Unlock()
+	previous, previousErr := s.credentials.store.Get(ctx, BlingCredentialSecretRef)
 	if previousErr != nil && !errors.Is(previousErr, fs.ErrNotExist) {
 		return ErrBlingOAuthDisconnect
 	}
@@ -322,13 +343,13 @@ func (s *BlingOAuthService) Disconnect(ctx context.Context) error {
 		bundle.AccessTokenExpiresUnix = 0
 		bundle.RefreshTokenExpiresUnix = 0
 		encoded, err := json.Marshal(bundle)
-		if err != nil || s.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
+		if err != nil || s.credentials.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
 			return ErrBlingOAuthDisconnect
 		}
 	}
 	if err := s.repo.MarkDisconnected(ctx); err != nil {
 		if previousErr == nil && len(previous) > 0 {
-			_ = s.store.Put(ctx, BlingCredentialSecretRef, previous)
+			_ = s.credentials.store.Put(ctx, BlingCredentialSecretRef, previous)
 		}
 		return ErrBlingOAuthDisconnect
 	}
@@ -350,10 +371,20 @@ func (s *BlingOAuthService) Sync(ctx context.Context, filter ReceivablesFilter) 
 	if s == nil || s.pool == nil {
 		return BlingRawSyncResult{}, ErrBlingAPISyncDatabaseUnavailable
 	}
-	if _, err := s.Test(ctx); err != nil {
-		return BlingRawSyncResult{}, err
-	}
-	bundle, err := loadBlingSecret(ctx, s.store)
+	var bundle blingSecretBundle
+	err := func() error {
+		if s.repo == nil || s.credentials == nil || s.credentials.store == nil {
+			return ErrBlingOAuthConfiguration
+		}
+		s.credentials.mu.Lock()
+		defer s.credentials.mu.Unlock()
+		if _, err := s.testLocked(ctx); err != nil {
+			return err
+		}
+		var err error
+		bundle, err = loadBlingSecret(ctx, s.credentials.store)
+		return err
+	}()
 	if err != nil {
 		return BlingRawSyncResult{}, err
 	}
@@ -376,12 +407,20 @@ func (s *BlingOAuthService) runSession(session *blingOAuthSession, clientID, red
 	ctx, cancel := context.WithTimeout(context.Background(), blingOAuthSessionTTL)
 	defer cancel()
 	code, err := s.awaitCallback(ctx, session)
+	if s.credentials == nil || s.credentials.store == nil {
+		return
+	}
+	s.credentials.mu.Lock()
+	defer s.credentials.mu.Unlock()
+	if !s.isCurrentSession(session) {
+		return
+	}
 	if err != nil {
 		s.failSession(session, oauthErrorCode(err), oauthErrorMessage(err))
 		_ = s.repo.MarkOAuthError(ctx, oauthErrorCode(err))
 		return
 	}
-	bundle, err := loadBlingSecret(ctx, s.store)
+	bundle, err := loadBlingSecret(ctx, s.credentials.store)
 	if err != nil {
 		s.failSession(session, "BLING_SECRET_REQUIRED", "Configure o Client Secret antes de conectar.")
 		_ = s.repo.MarkOAuthError(ctx, "BLING_SECRET_REQUIRED")
@@ -410,16 +449,16 @@ func (s *BlingOAuthService) runSession(session *blingOAuthSession, clientID, red
 		_ = s.repo.MarkOAuthError(ctx, oauthErrorCode(err))
 		return
 	}
-	previous, previousErr := s.store.Get(ctx, BlingCredentialSecretRef)
+	previous, previousErr := s.credentials.store.Get(ctx, BlingCredentialSecretRef)
 	updated := updateBundleWithToken(bundle, token, s.now())
 	encoded, err := json.Marshal(updated)
-	if err != nil || s.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
+	if err != nil || s.credentials.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
 		s.failSession(session, "BLING_TOKEN_STORE_FAILED", "A autorização foi concluída, mas o token não pôde ser protegido.")
 		_ = s.repo.MarkOAuthError(ctx, "BLING_TOKEN_STORE_FAILED")
 		return
 	}
 	if err := s.repo.CompleteOAuth(ctx, splitScopes(updated.Scope), tokenExpiry(s.now(), token.ExpiresIn), refreshExpiry(s.now(), updated.RefreshToken)); err != nil {
-		restoreSecret(ctx, s.store, previous, previousErr)
+		restoreSecret(ctx, s.credentials.store, previous, previousErr)
 		s.failSession(session, "BLING_OAUTH_PERSIST_FAILED", "A autorização não pôde ser registrada no banco local.")
 		_ = s.repo.MarkOAuthError(ctx, "BLING_OAUTH_PERSIST_FAILED")
 		return
@@ -496,6 +535,16 @@ func (s *BlingOAuthService) completeSession(session *blingOAuthSession) {
 	session.status = blingOAuthStatusConnected
 	session.errorCode = ""
 	session.message = "Bling autorizado e testado com sucesso."
+}
+
+func (s *BlingOAuthService) isCurrentSession(session *blingOAuthSession) bool {
+	if s == nil || session == nil {
+		return false
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	current, ok := s.sessions[session.id]
+	return ok && current == session
 }
 
 func connectionOAuthConfig(connection database.IntegrationConnection) (string, string, error) {

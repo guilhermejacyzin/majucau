@@ -93,9 +93,9 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - BK-025 permanece em 60% até que uma pessoa administradora confirme em **Settings → Branches** se `main` exige revisão e verificações. Nenhuma configuração foi alterada. A auditoria foi documental e não executou testes.
 - A estimativa atual do rastreador continua em 6,2% concluído e 93,8% restante, entre 127 tarefas; isso não representa prontidão para produção nem esforço medido. Evidência: `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-11.md`.
 
-### Rechecagem do material de origem — 11/10/2026
+### Rechecagem preliminar do material de origem — 11/10/2026 (superada)
 
-- Foram encontrados quatro arquivos complementares de outubro na pasta privada; os hashes conferem com o registro local de limpeza, e o Git os ignora. Eles não substituem os 17 arquivos do pacote histórico.
+- Esta conferência ocorreu antes da localização do ZIP histórico; sua anotação de ausência dos 17 arquivos foi substituída pela conclusão de BK-001 abaixo. Os quatro arquivos complementares de outubro continuam separados e não substituem o pacote histórico.
 - A busca registrada pelos 17 nomes conhecidos não encontrou os arquivos originais em Downloads nem na pasta privada. Correção da rechecagem: a extração das vinte abas não está ausente; ela existe em `docs/planejamento/work/source_extract/`, com 20 abas em `workbook.json` e os 17 itens históricos em `manifest.json`. Os originais continuam necessários para recalcular os hashes e confirmar a correspondência da extração. BK-001 segue em 0% aceito até o pacote ser preservado ou a responsável aprovar expressamente hashes e extrações como suficientes; os quatro materiais complementares não substituem o pacote inicial.
 - Não houve alteração de tela ou regra financeira, nem execução de testes. A estimativa geral continua em 6,2% concluído e 93,8% restante.
 
@@ -313,6 +313,16 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O backlog permanece com 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas. A soma simples estimada passa a `(6 × 100% + 0% + 30% + 20% + 10% + 15% + 15% + 35% + 70% + 80% + 60% + 20%) ÷ 127 = 7,5%`; restam 92,5%. Não há prazo global confiável.
 - Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado. A estrutura enviada da calculadora continua sendo a referência aprovada.
 
+### Conclusão do inventário de fontes BK-001 — 11/10/2026
+
+- O pacote histórico foi localizado e preservado. Os 17 arquivos do ZIP conferem por nome, tamanho e SHA-256 com o inventário; as 17 cópias em `sources/private/material-original/` também conferem. O SHA-256 do ZIP é `323d1f246f0eeaf66e00cc3bfa5ee7a23a592d95fbd9968f9d45b6181378d95f`. O arquivo recebido foi mantido intacto.
+- A pasta privada é ignorada pelo Git; nenhum arquivo original foi incluído no commit. A extração histórica continua com 20 abas e 17 itens no manifesto, sem mudança nos hashes registrados. O inventário também confirma 19 hashes do baseline/mockups e três cópias alternativas exatas; a duplicata T10 permanece identificada.
+- As revisões v1/v2 estão preservadas na área local ignorada. Os textos integrais de consolidação/fechamento continuam ausentes e identificados por hash e caminho esperado. O registro distingue essas ausências do que foi efetivamente recebido.
+- BK-001 atende ao critério de aceite e passa de 0% para **Concluída, 100%**. A conferência encerra o inventário e a preservação, mas não substitui validação contábil nem releitura semântica das fórmulas da calculadora.
+- O backlog tem 127 tarefas: 7 concluídas, 10 em andamento e 110 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (30%), BK-025 (70%), BK-031 (80%), BK-041 (60%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 10% + 15% + 15% + 30% + 70% + 80% + 60% + 20%) ÷ 127 = 8,3%`; restam 91,7%. É uma estimativa do backlog, não uma medida de esforço ou prontidão. Não há prazo global confiável.
+- Nenhuma tela, regra financeira ou estrutura da calculadora foi alterada. Continua valendo a estrutura da planilha enviada.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -343,7 +353,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-001 — Inventariar os materiais e suas versões
 
-**Situação:** Em andamento. **Evolução:** 0% aceito. **Tipo:** Planejamento. **Responsável sugerido:** Produto + UX.
+**Situação:** Concluída. **Evolução:** 100%. **Tipo:** Planejamento. **Responsável sugerido:** Produto + UX.
 
 **Objetivo:** Saber exatamente o que foi analisado e preservar as fontes.
 
@@ -364,7 +374,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Fonte:** docs/planejamento/FONTES.md; docs/source/README.md; extrações do pacote; revision_v1.json; revision_v2.json.
 
-**Evidência e pendência:** Os registros e os documentos v0/v1/v2 foram preservados. Em 11/10/2026, a conferência local encontrou quatro materiais complementares de outubro na pasta privada e confirmou correspondência com o registro de limpeza; eles não são o pacote histórico. Os 17 originais não foram encontrados nos locais consultados. A extração preservada em `docs/planejamento/work/source_extract/` contém 20 abas em `workbook.json` e 17 referências históricas em `manifest.json`; portanto, a anotação anterior de que ela não existia estava incorreta. Sem os binários originais não se recalculam seus hashes nem se confirma a correspondência da extração. A estrutura foi conferida, mas o conteúdo das células não foi reanalisado nesta rechecagem. A tarefa continua em 0% aceito até os originais serem preservados ou a responsável aprovar expressamente hashes e extrações como suficientes.
+**Evidência da conclusão (11/10/2026):** O pacote histórico contém exatamente 17 originais; cada entrada do ZIP e cada cópia privada conferem por nome, tamanho e SHA-256 com `docs/planejamento/work/source_extract/manifest.json` (17/17). SHA-256 do ZIP: `323d1f246f0eeaf66e00cc3bfa5ee7a23a592d95fbd9968f9d45b6181378d95f`. O ZIP original não foi modificado. `sources/private/material-original/` é ignorada pelo Git e nenhum original foi publicado. A extração `workbook.json` representa 20 abas e mantém o SHA-256 registrado em `docs/planejamento/FONTES.md`; o manifesto preserva os 17 itens históricos e identifica a duplicata T10 pelo hash. Os 19 hashes do baseline/mockups em `docs/source/README.md` conferem, assim como as três cópias alternativas. `revision_v1.json` e `revision_v2.json` permanecem na área local ignorada. Os textos completos de consolidação e fechamento continuam ausentes e estão registrados por hash, sem reconstrução presumida. Isso conclui o inventário e a preservação; não declara validadas as regras contábeis ou as fórmulas da calculadora, cuja estrutura aprovada permanece intacta.
 
 ### BK-002 — Verificar o ponto de partida no GitHub
 

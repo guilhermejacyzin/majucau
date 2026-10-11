@@ -26,9 +26,19 @@ A pasta continha uma planilha e dezesseis PNGs. O PNG com nome ChatGPT repete a 
 | T16_Parametros.png | `ae91e304c0185c5908e3ac40497d98c6d3e63936ab9a35dc9a9ac8729329753c` |
 | T17_Usuarios.png | `fcd45dde50ea33a1ed039931a4f39ff4b85aacc232c1f8b4cca64749f4261406` |
 
-### Rechecagem do pacote inicial — 11/10/2026
+### Rechecagem preliminar do pacote inicial — 11/10/2026 (superada)
 
-Os 17 nomes da tabela acima foram procurados na pasta Downloads da usuária e em `sources/private/material-original/`; nenhum dos 17 arquivos originais foi encontrado nesses locais. **A extração das abas está preservada** em `docs/planejamento/work/source_extract/`: `workbook.json` representa 20 abas (286.067 bytes; SHA-256 `1b8cee72563b88fd359ebc2a984d9f5cbd41c7cbe12f63b521924c043f6abe7c`) e `manifest.json` registra 17 itens históricos (2.596 bytes; SHA-256 `86d1bcd91d404925ee6d180c09c7c5c231b835d6e5b99f73d4ee72bf16f71cb6`). A extração não substitui os arquivos binários originais: sem eles, não é possível recalcular seus hashes nem provar que a extração corresponde ao pacote recebido. Esta rechecagem confirmou a estrutura, mas não revisou o conteúdo das células. Os mockups posteriores em `docs/source/` são um conjunto separado e não substituem o pacote inicial. BK-001 continua aberta até os originais serem preservados ou a responsável aprovar expressamente hashes e extrações como suficientes.
+Na primeira busca daquele dia, os 17 arquivos ainda não estavam na pasta privada usada para a conferência. Essa observação ficou desatualizada quando o pacote original foi localizado. A extração continua preservada em `docs/planejamento/work/source_extract/`: `workbook.json` representa 20 abas (286.067 bytes; SHA-256 `1b8cee72563b88fd359ebc2a984d9f5cbd41c7cbe12f63b521924c043f6abe7c`) e `manifest.json` registra 17 itens históricos (2.596 bytes; SHA-256 `86d1bcd91d404925ee6d180c09c7c5c231b835d6e5b99f73d4ee72bf16f71cb6`). A constatação preliminar de ausência foi substituída pela conferência conclusiva abaixo.
+
+### Conferência conclusiva do pacote inicial — 11/10/2026
+
+- O pacote original contém exatamente 17 arquivos. O SHA-256 do ZIP é `323d1f246f0eeaf66e00cc3bfa5ee7a23a592d95fbd9968f9d45b6181378d95f`.
+- Os 17 arquivos dentro do ZIP conferem com o inventário histórico por nome, tamanho e SHA-256. As 17 cópias em `sources/private/material-original/` também conferem com o mesmo inventário. O ZIP original foi preservado sem alteração.
+- `sources/private/` é ignorada pelo Git. Os originais, portanto, ficam disponíveis localmente para conferência e não são incluídos nos commits nem enviados ao GitHub.
+- A extração do livro contém 20 abas e seus arquivos mantêm os hashes registrados acima. A planilha binária extraída do pacote foi mantida junto dos demais originais na área privada. O PNG chamado T10 repete a imagem ChatGPT Image; a igualdade dos dois hashes confirma a duplicata registrada.
+- Os 19 arquivos listados como baseline e mockups em `docs/source/README.md` conferem por SHA-256; os três nomes alternativos T1/C11 também são cópias exatas de suas referências.
+- `revision_v1.json` e `revision_v2.json` estão preservados na área local de trabalho ignorada pelo Git. Os textos completos de consolidação e fechamento continuam ausentes; seus hashes e caminhos esperados permanecem registrados nesta documentação. As ausências não foram preenchidas por suposição.
+- Esta conferência fecha o inventário, a preservação e a rastreabilidade das versões. Ela não é uma nova validação contábil nem uma revisão semântica de todas as células da planilha; esse trabalho permanece na tarefa técnica correspondente.
 
 ## Material complementar recebido em outubro de 2026
 
@@ -50,6 +60,6 @@ Para repetir a verificação integral local, disponibilize o original em `source
 
 ## Reprodução da conferência dos originais
 
-Disponibilize os dezessete arquivos do material em `sources/private/material-original/`, preservando os nomes. Os dois textos devem ocupar os caminhos descritos acima. Essa pasta é ignorada pelo Git. Não é necessário disponibilizar os originais para consultar os documentos ou verificar a estrutura do pacote.
+Os dezessete arquivos originais já estão preservados em `sources/private/material-original/`, com os nomes do inventário. A pasta é ignorada pelo Git. Para repetir a conferência em outro clone, copie os arquivos para esse caminho. Os textos completos de consolidação e fechamento continuam ausentes; se forem localizados, devem ser preservados nos caminhos indicados acima. Os originais não precisam ser publicados no Git para consultar os documentos ou verificar a estrutura do pacote.
 
 A confirmação posterior “Somente atualizar o backlog” determina o escopo desta entrega. O pedido seguinte autoriza incluir no repositório o material produzido, sem iniciar implementação.

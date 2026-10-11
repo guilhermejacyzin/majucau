@@ -13,6 +13,12 @@ type Movement struct {
 	Date                           time.Time
 	Inflows, Outflows, Adjustments domain.Money
 }
+
+// MovementReader yields one movement at a time. The callback can read from a
+// database cursor and return its context or rows error without buffering the
+// full result set.
+type MovementReader func() (Movement, bool, error)
+
 type BalanceType string
 
 const (
@@ -31,40 +37,65 @@ type DailyBalance struct {
 	Type           BalanceType
 }
 
-// DailyProjection returns D0 through D+60 (61 consecutive calendar dates).
+// DailyProjection is a slice-backed compatibility wrapper for callers that
+// already hold a small set of movements. Database-backed production readers
+// should use DailyProjectionFrom to avoid buffering the full source result.
 // Dates are compared in the caller's business timezone; the date portion is
 // normalized to midnight UTC to make results independent of local process TZ.
 func DailyProjection(start time.Time, opening domain.Money, movements []Movement) ([]DailyBalance, error) {
+	index := 0
+	return DailyProjectionFrom(start, opening, func() (Movement, bool, error) {
+		if index >= len(movements) {
+			return Movement{}, false, nil
+		}
+		movement := movements[index]
+		index++
+		return movement, true, nil
+	})
+}
+
+// DailyProjectionFrom consumes movements once and retains only daily totals
+// within D0 through D+60. Its memory use is bounded by the 61-day output,
+// regardless of the number of source movements.
+func DailyProjectionFrom(start time.Time, opening domain.Money, next MovementReader) ([]DailyBalance, error) {
+	if next == nil {
+		return nil, ErrInvalidProjection
+	}
 	start = dateOnly(start)
-	byDate := make(map[string]Movement, len(movements))
-	for _, m := range movements {
+	end := start.AddDate(0, 0, 60)
+	var dailyMovements [61]Movement
+	for {
+		m, ok, err := next()
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			break
+		}
 		m.Date = dateOnly(m.Date)
-		key := m.Date.Format("2006-01-02")
-		old, ok := byDate[key]
-		if ok {
-			var err error
-			old.Inflows, err = old.Inflows.Add(m.Inflows)
-			if err != nil {
-				return nil, err
-			}
-			old.Outflows, err = old.Outflows.Add(m.Outflows)
-			if err != nil {
-				return nil, err
-			}
-			old.Adjustments, err = old.Adjustments.Add(m.Adjustments)
-			if err != nil {
-				return nil, err
-			}
-			byDate[key] = old
-		} else {
-			byDate[key] = m
+		if m.Date.Before(start) || m.Date.After(end) {
+			continue
+		}
+		dayIndex := int(m.Date.Sub(start) / (24 * time.Hour))
+		day := &dailyMovements[dayIndex]
+		day.Inflows, err = day.Inflows.Add(m.Inflows)
+		if err != nil {
+			return nil, err
+		}
+		day.Outflows, err = day.Outflows.Add(m.Outflows)
+		if err != nil {
+			return nil, err
+		}
+		day.Adjustments, err = day.Adjustments.Add(m.Adjustments)
+		if err != nil {
+			return nil, err
 		}
 	}
 	result := make([]DailyBalance, 0, 61)
 	closing := opening
 	for day := 0; day <= 60; day++ {
 		date := start.AddDate(0, 0, day)
-		m := byDate[date.Format("2006-01-02")]
+		m := dailyMovements[day]
 		var err error
 		closing, err = closing.Add(m.Inflows)
 		if err != nil {
@@ -161,4 +192,3 @@ func dateOnly(t time.Time) time.Time {
 	y, m, d := t.Date()
 	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 }
-

@@ -230,7 +230,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-006 — Especificar tecnicamente a regra fechada da calculadora
 
-**Situação:** Em andamento. **Evolução:** 10% (estimativa de planejamento; sugestão de reserva aprovada apenas para consulta; mapeamento dos dados e especificação restante pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
+**Situação:** Em andamento. **Evolução:** 10% (estimativa de planejamento; a última cópia da planilha foi reanalisada e sua estrutura será preservada. A referência ainda pede dados da DRE do Bling e soma recebimentos da Nuvemshop, mas essas partes não substituem a regra aprovada D-003-A. Foi preparada uma entrada em fluxo para a projeção diária, porém ainda não há chamada de produção nem consulta ao fluxo consolidado. Mapeamento das entradas reais, ligação da calculadora e exemplos reproduzíveis permanecem pendentes. A sugestão de reserva foi aprovada apenas para consulta). **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
 
 **Objetivo:** Permitir um cálculo reproduzível e compreensível.
 

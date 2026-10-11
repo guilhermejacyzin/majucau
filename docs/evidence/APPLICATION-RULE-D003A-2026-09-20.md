@@ -126,3 +126,52 @@ marcação na tela do Majucau sem confirmação.
   o valor máximo para aplicação ou qualquer transferência. Os campos do fluxo
   consolidado precisam ser mapeados antes da implementação; dados ausentes não
   podem ser substituídos por zero ou por recebimentos presumidos.
+
+## Reauditoria da cópia mais recente da calculadora — 2026-10-11
+
+A cópia enviada em 10/10 foi lida em modo somente leitura. Nenhum macro foi
+executado e o arquivo não foi alterado. Gisele confirmou que a calculadora deve
+manter a estrutura já enviada. Isso preserva sua estrutura de apresentação;
+não aprova a soma separada de recebimentos da Nuvemshop, que já foi excluída da
+regra da calculadora em 10/10.
+
+A cópia ainda contém estes elementos antigos:
+
+- A instrução em `B5` pede colar o resultado líquido da DRE do Bling. A decisão
+  vigente determina que a DRE seja calculada pelo Majucau; o relatório do Bling
+  é referência de comparação, não a fonte final da DRE.
+- `E12` acumula o lucro mensal até M−2 e desconta o valor já investido. Esse
+  corte coincide com o contrato D-003-A.
+- `E20 = E15 + E16` soma o saldo da semana crítica com os recebimentos da
+  Nuvemshop. Essa soma não deve ser copiada para o cálculo ativo. D-003-A usa
+  diretamente o menor saldo diário de fechamento do fluxo consolidado em
+  D0–D+60.
+- `E21` limita o valor ao menor entre caixa depois da reserva e lucro
+  disponível. O cálculo ativo continua sendo o contrato documentado em
+  D-003-A, com reserva mínima aprovada de R$ 50.000; a reserva sugerida fica
+  separada e é somente informativa.
+
+A leitura estática do código confirmou que `MaximumApplication`,
+`DailyProjection` e `FindMinimumProjectedBalance` existem como funções de
+domínio. Para evitar acumular uma lista de movimentos sem limite, foi incluída
+`DailyProjectionFrom`, que lê um movimento por chamada e mantém somente 61
+totais diários. A versão antiga com fatia foi preservada como wrapper de
+compatibilidade para conjuntos pequenos; leitores de banco devem usar a nova
+entrada em fluxo. A busca ainda não encontrou chamadas de produção para essas
+funções nem consultas de produção à tabela `daily_balances`; a migration define
+a estrutura, mas o fluxo de caixa consolidado ainda não está conectado à
+calculadora. Portanto, a regra está especificada, mas o cálculo ainda não
+opera de ponta a ponta com dados reais. Se o saldo D0, os 61 fechamentos
+diários, o lucro elegível ou o principal líquido já investido não estiverem
+comprovados, o resultado dependente deve continuar indisponível, nunca ser
+substituído por zero.
+
+A alteração de `DailyProjectionFrom` recebeu revisão estática e formatação
+Go. Testes não foram executados nesta execução. A CI `38110918694` do commit
+anterior terminou com falha no job Windows durante a consolidação de artefatos;
+ela não contém esta alteração financeira. A nova alteração também depende de
+CI após o push.
+
+Esta reauditoria não alterou a planilha, a tela ou qualquer regra financeira.
+O helper de projeção diária foi alterado para oferecer leitura em fluxo; a
+calculadora ainda não chama esse helper. Não foram executados testes.

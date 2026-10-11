@@ -217,6 +217,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - BK-014 continua em 15%; documentar o estado do instalador melhora o inventário, mas o critério de aceite da proposta operacional ainda não foi atendido. Evidência: `docs/evidence/WINDOWS-ENVIRONMENT-INVENTORY-2026-10-11.md`.
 - O total e a média do backlog não mudam: 6 concluídas, 11 em andamento e 110 não iniciadas; estimativa simples de 7,4% concluído e 92,6% restante. Não há prazo global confiável.
 
+### Contrato público de paginação do Bling — 11/10/2026
+
+- A documentação OpenAPI oficial descreve `GET /contas/receber` com `pagina` e `limite`, mas o schema de resposta publicado declara somente `data` como lista; não declara `hasNext`, `total` ou indicador de página final. O FAQ confirma o padrão de até 100 registros e o uso de `pagina`.
+- A rota também declara `tipoFiltroData`, `dataInicial` e `dataFinal`; não declara `dataAlteracaoInicial/Final`. A menção genérica desses filtros na página de limites não prova suporte nesta rota específica.
+- BK-041 permanece em 55%: a regra que falha com rollback quando não reconhece o fim da paginação continua necessária; não foi presumido que uma página curta encerra a lista. A resposta autenticada da conta e a retomada incremental permanecem pendentes porque a preferência salva do Chrome ainda bloqueia a página do Bling; não contornar essa restrição.
+- Nenhuma tela, regra financeira ou comportamento do adapter foi alterado; não foram executados testes. Evidência e fontes: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
+- O backlog permanece com 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas; estimativa simples de 7,4% concluído e 92,6% restante. Evidência documental não altera o aceite nem o percentual da tarefa.
+
 ### Testes de integração PostgreSQL no Windows — 11/10/2026
 
 - Um PostgreSQL 18.3 descartável foi criado sob `artifacts/cache`, limitado a loopback, sem mexer no serviço existente e sem instalar serviço Windows. A verificação de checksums passou e as três migrations foram aplicadas ao banco vazio.

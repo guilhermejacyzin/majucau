@@ -1044,14 +1044,15 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Impedir execução concorrente duplicada da mesma carga
 3. Aplicar cancelamento, timeout e retomada após reinício
 4. Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.
+5. Programar a atualização diária para 09:30, após o tempo para colocar os arquivos externos nas pastas. Confirmar o fuso horário e a ação se algum arquivo estiver ausente antes de implementar esse comportamento.
 
-**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis.
+**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 no fuso aprovado e o sistema trata explicitamente arquivos externos ausentes.
 
 **Impacto:** Sustenta sincronização e reprocessamento local.
 
 **Dependências:** BK-027, BK-029, BK-031
 
-**Fonte:** U_CEI_Tela_15; Fechamento vigente 13/09/2026, §8.11
+**Fonte:** U_CEI_Tela_15; Fechamento vigente 13/09/2026, §8.11; requisito operacional registrado em `G0-DECISION-REGISTER.md` em 2026-10-11
 
 **Regras e verificações vinculadas:** F-19
 

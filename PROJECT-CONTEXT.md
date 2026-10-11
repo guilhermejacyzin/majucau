@@ -10,7 +10,7 @@ O objetivo é entregar inteligência financeira executiva com dados de fontes of
 - No destino, clientes autenticados acessam um serviço Majucau por TLS; somente o serviço acessa o PostgreSQL privado. O login será próprio do Majucau: `financeiro@majucau.com.br` usa `ADMIN` e `contato@majucau.com.br` é uma conta compartilhada dos Diretores. Os logs identificam essa conta e a ação, não o Diretor individual. As capacidades aprovadas dos Diretores incluem consulta, sincronização com importação manual de CSV e exportação de backups e relatórios.
 - A prévia CSV permanece local e sem dependência de banco. O serviço central deverá validar novamente o conteúdo antes de persistir; canal de envio e retenção ainda dependem de decisão.
 - O fluxo do cliente continua sem terminal, Docker, Node.js ou configuração manual do PostgreSQL.
-- A escolha do provedor, orçamento, região, identidade/MFA, forma final do cliente e operação de sincronização diária ainda não foi aprovada.
+- Provedor, orçamento e região ainda não foram escolhidos. A atualização diária foi solicitada para 09:30; o fuso horário e o comportamento quando algum arquivo externo ainda não estiver disponível precisam de confirmação antes da implementação.
 
 Estado verificável em 2026-10-03:
 

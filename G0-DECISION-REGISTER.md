@@ -308,3 +308,10 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Em 2026-10-11, Gisele confirmou que Diretores também podem importar manualmente arquivos CSV do Bling e da Nuvem Pago como parte da sincronização (`INTEGRATION_SYNC`). Isso autoriza importar esses arquivos no fluxo de sincronização; não autoriza configurar credenciais nem administrar integrações.
 - MFA, sessão, recuperação, provisionamento e aplicação efetiva das permissões no serviço/worker continuam pendentes; a conta não deve ser provisionada antes de esses controles serem definidos e validados.
 - Este registro não altera telas, capacidades já aprovadas nem regras financeiras.
+
+## Requisito operacional — atualização diária às 09:30
+
+- **Recebido de:** Gisele, nesta conversa Codex, em 2026-10-11 (America/Sao_Paulo).
+- A atualização automática dos dados deve ocorrer diariamente às 09:30, dando tempo para que os arquivos externos sejam colocados nas pastas antes do processamento.
+- O fuso horário que define 09:30 e a resposta quando algum arquivo ainda não estiver disponível nesse horário precisam ser confirmados antes da implementação. Não presumir espera, importação parcial ou uso silencioso de dados antigos.
+- Este requisito de horário não altera telas aprovadas nem regras financeiras.

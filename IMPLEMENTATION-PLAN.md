@@ -508,6 +508,7 @@ Esses itens não impedem o desenvolvimento da fundação e dos módulos independ
 
 - manter as telas e regras já aprovadas;
 - definir API/serviço central autenticado e manter PostgreSQL em rede privada;
+- agendar a atualização diária para 09:30, após o tempo para colocar arquivos externos nas pastas. Definir o fuso horário e o comportamento quando algum arquivo ainda não estiver disponível;
 - encaminhar sincronização diária, credenciais, auditoria e idempotência ao serviço autorizado;
 - implementar os perfis aprovados: Financeiro como `ADMIN`; Diretores usando a conta compartilhada `contato@majucau.com.br`, com consulta, sincronização (incluindo importação manual de CSV) e exportação de backups e relatórios. A auditoria registra a conta compartilhada e a ação, sem identificar qual Diretor agiu;
 - validar os CSVs no cliente para prévia local sem banco e validar de novo no serviço antes da persistência;

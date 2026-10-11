@@ -370,3 +370,13 @@ BK-024 permanece em 30% e o projeto mantém a estimativa registrada de 7,5% conc
 - `go test -count=1 ./internal/securetemp ./internal/integrations/csvstream` e `git diff --check` passaram localmente. O cache Go foi criado em `artifacts/cache` e removido pelo módulo `scripts/SafeCleanup.psm1`; a ausência da pasta foi conferida.
 - A CI [38145917293](https://github.com/guilhermejacyzin/majucau/actions/runs/38145917293) passou em backlog, Windows e PostgreSQL para o commit `93a7ffb`. Os novos ensaios de falha serão verificados na CI do próximo commit.
 - Não houve alteração de dados persistidos, telas ou regras financeiras. A simulação determinística não substitui falhas reais de disco/ACL nem validação em VM limpa.
+
+## Complemento — exportações de relatórios e pacote de diagnóstico — 11/10/2026
+
+**Tipo:** revisão estática das saídas atuais; nenhuma exportação de produto foi criada.
+
+- A busca nas rotas Wails/IPC e no frontend não encontrou uma operação funcional de exportação de relatórios. O menu do mockup mantém a opção desativada. Os detalhes aprovados por tela, formatos, filtros e permissões continuam pendentes em L-22/Q-13; não alterar a tela nem criar uma saída por inferência.
+- A exportação atualmente implementada no helper do instalador é um ZIP de suporte com somente dois itens: o contrato sanitizado de pré-teste e instruções. No uso atual da CLI, o contrato contém campos fixos de verificação e duas pastas configuradas; não lê logs, variáveis de ambiente, dados financeiros ou payloads externos.
+- O helper escreve o ZIP num temporário ao lado do destino, fecha e sincroniza o arquivo, publica o destino com `os.Rename` e calcula o SHA-256 com `io.Copy`. Se a operação falhar, remove o temporário; a tentativa e seus limites constam em `internal/installer/diagnostics.go`.
+- Os backups continuam sendo a saída de maior porte: V1 é lido em fluxo para compatibilidade e V2 cifra/decifra blocos autenticados, conforme `docs/evidence/BACKUP-STREAMING-IMPLEMENTATION-2026-10-03.md`. Essa revisão não repetiu o teste operacional de backup/restore.
+- Permanecem pendentes o contrato dos relatórios por tela e a revisão operacional de ACL/limpeza em VM limpa. Nenhum teste ou build foi executado nesta revisão; BK-024 continua em 30%, sem mudança de telas ou regras financeiras.

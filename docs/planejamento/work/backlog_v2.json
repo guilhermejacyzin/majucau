@@ -32,24 +32,23 @@
     "goal": "Saber exatamente o que foi analisado.",
     "action": "Catalogar as imagens, abas e documentos citados.",
     "steps": [
-      "Listar 16 PNGs e 20 abas",
-      "Registrar duplicata T10 por hash e materiais ausentes",
-      "Preservar originais e vincular requisitos às coordenadas da planilha",
-      "Catalogar a consolidação enviada em 13/09/2026, com hash, mudanças e vínculo às tarefas, preservando os arquivos e a análise anteriores.",
-      "Catalogar este segundo fechamento, seu hash e os trechos superados nas versões 0/1; preservar todos os originais."
+      "Conferir o inventário histórico do pacote recebido: 16 PNGs (15 imagens únicas) e 20 abas da planilha; preservar a extração e identificar a cópia duplicada T10.",
+      "Conferir o inventário atual dos mockups T1–T15/C11 e os hashes registrados em docs/source/README.md; distinguir imagens atuais do pacote histórico.",
+      "Registrar documentos citados mas não recebidos, versões v0/v1/v2, hash dos fechamentos e tarefas afetadas, preservando as análises e extrações já existentes.",
+      "Preservar os arquivos originais no local privado aprovado ou obter autorização explícita para considerar hash e extração suficientes."
     ],
-    "accept": "Inventário identifica 15 imagens únicas, todas as abas e documentos apenas referenciados.",
+    "accept": "Inventário identifica o pacote histórico, as 20 abas, duplicatas e materiais ausentes; mudanças e hashes das versões são rastreáveis; os originais estão preservados ou a responsável aprova expressamente a retenção somente de hashes e extrações.",
     "impact": "Evita omissões e mistura de versões.",
     "deps": [],
-    "refs": "Pacote fornecido; manifesto de arquivos; Consolidação 13/09/2026, consolidação integral; Fechamento vigente 13/09/2026, integral",
-    "questions": "",
+    "refs": "docs/planejamento/FONTES.md; docs/source/README.md; docs/planejamento/work/source_extract; revision_v1.json; revision_v2.json",
+    "questions": "Aguardar orientação sobre os originais: envio para arquivo privado local ou aceitação de hashes e extrações como suficientes.",
     "owner": "Produto + UX",
     "kind": "Planejamento",
-    "status": "Concluída",
-    "evidence": "MAJUCAU_ANALISE_E_DECISOES_v0.md — inventário e análise; inspeção dos materiais e GitHub nesta sessão. Evidência original preservada na versão 0; esta revisão não altera a conclusão desse levantamento.",
+    "status": "Em andamento",
+    "evidence": "Inventário histórico registra 16 PNGs, 15 imagens únicas, 20 abas, T10 duplicada e materiais ausentes; a extração tem 20 entradas de aba e as versões v0/v1/v2 estão preservadas. Os hashes dos originais constam em FONTES.md, mas sources/private/material-original não existe neste checkout e os nomes exatos não foram encontrados em Downloads. A responsável foi consultada se enviará os originais ou aceita hashes/extrações; resposta pendente. BK-001 permanece aberta até a decisão.",
     "weight": 1,
     "dependencies": [],
-    "progress": 1
+    "progress": 0
   },
   {
     "key": "repoaudit",
@@ -59,19 +58,20 @@
     "goal": "Separar trabalho existente de trabalho futuro.",
     "action": "Inspecionar repositório, commits, arquivos e issues.",
     "steps": [
-      "Consultar repositório em modo leitura",
-      "Registrar resposta de repositório vazio",
-      "Perguntar se há código ou ambientes fora do GitHub"
+      "Preservar a resposta do repositório vazio no documento v0 como registro histórico, sem tratá-la como estado atual.",
+      "Consultar em modo de leitura a visibilidade do repositório, branch padrão, hash atual, branches remotas, issues e pull requests.",
+      "Comparar a branch de trabalho publicada com main e registrar a distância entre elas; não mesclar branches por inferência.",
+      "Registrar que a responsável confirmou não haver outros clones, servidores ou ambientes de trabalho com código/dados além deste checkout; o controle do código fica no GitHub."
     ],
-    "accept": "Estado do GitHub comprovado; eventual material externo registrado como não inspecionado.",
+    "accept": "Snapshot histórico e estado atual do GitHub são distinguíveis e comprovados; branches, issues e pull requests são registrados; a responsável confirmou não haver outro clone, servidor ou ambiente de trabalho fora deste checkout.",
     "impact": "Permite planejar a preparação do projeto desde o início.",
     "deps": [],
-    "refs": "GitHub majucau /contents e /commits",
+    "refs": "GitHub REST: repos/guilhermejacyzin/majucau, branches/main, issues?state=all, pulls?state=all; git ls-remote origin; comparação origin/main..HEAD",
     "questions": "",
     "owner": "Arquitetura",
     "kind": "Planejamento",
     "status": "Concluída",
-    "evidence": "MAJUCAU_ANALISE_E_DECISOES_v0.md — inventário e análise; inspeção dos materiais e GitHub nesta sessão. Evidência original preservada na versão 0; esta revisão não altera a conclusão desse levantamento.",
+    "evidence": "Auditoria pública somente de leitura em 10/10/2026: repositório público, branch padrão main no commit 39f8630390936717b2500c8b7ce923dc138cca72; branch de trabalho codex/majucau-artifact-consolidation em b94bb3a, mesma ponta remota, 178 commits à frente e zero atrás de main. A API retornou zero issues e cinco pull requests abertos e não mesclados (#1–#5), todos em outras branches. A afirmação de repositório vazio em v0 é histórica. A responsável confirmou que não há outro clone, servidor ou ambiente de trabalho fora deste checkout; o código é controlado somente pelo Git/GitHub. Nenhuma branch foi mesclada e nenhum teste foi executado.",
     "weight": 1,
     "dependencies": [],
     "progress": 1

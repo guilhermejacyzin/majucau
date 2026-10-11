@@ -41,8 +41,10 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 
 - BK-000 foi revisada contra ADR-001, ADR-002, `AGENTS.md`, `G0-DECISION-REGISTER.md`, a política contábil da DRE e a análise v2. Seu aceite foi atendido e a tarefa foi concluída com evidência.
 - BK-004 foi revisada contra o inventário das fontes, o mapa MOCAP e as decisões vigentes: 15 imagens T1–T15/C11 estão presentes e seus hashes conferem; as correções de menu e T6 estão registradas. Nenhuma tela foi alterada.
-- Três das 127 tarefas foram auditadas: BK-000, BK-004 e BK-005. BK-005 registra os exemplos de C-01, inclusive diferença de R$ 0,01, divergências pendentes e revisão humana de vínculos ambíguos; nenhuma regra ou tela foi alterada. Outras 124 aguardam revisão tarefa a tarefa; três conclusões históricas não foram revalidadas.
-- A planilha mostra 6 de 127 tarefas concluídas (4,7% por contagem simples), mas esse valor é apenas o estado do rastreador; não representa o percentual real de conclusão do produto. A estimativa global e o prazo continuam indisponíveis.
+- BK-002 foi reauditada contra a API pública do GitHub: main está em 39f8630; a branch de trabalho publicada está em b94bb3a, 178 commits à frente; há cinco PRs abertos e nenhuma issue. A nota anterior de repositório vazio é histórica.
+- BK-001 foi reaberta: o inventário e as extrações estão disponíveis, mas os arquivos binários originais não estão no local privado; aguardamos a orientação da responsável sobre preservá-los.
+- Quatro tarefas têm auditoria atual concluída: BK-000, BK-002, BK-004 e BK-005. BK-001 aguarda os originais ou autorização para aceitar hashes/extrações; 122 tarefas ainda aguardam revisão, incluindo a conclusão histórica BK-003, não revalidada.
+- A planilha mostra 5 de 127 tarefas concluídas (3,9% por contagem simples). É estado do rastreador, não percentual real de conclusão do produto. Prazo global ainda indisponível.
 - Esta auditoria não alterou código, telas aprovadas ou regras de negócio.
 
 ## Dependências e ordem prática
@@ -93,29 +95,28 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-001 — Inventariar os materiais e suas versões
 
-**Situação:** Concluída. **Evolução:** 100%. **Tipo:** Planejamento. **Responsável sugerido:** Produto + UX.
+**Situação:** Em andamento. **Evolução:** 0% aceito. **Tipo:** Planejamento. **Responsável sugerido:** Produto + UX.
 
-**Objetivo:** Saber exatamente o que foi analisado.
+**Objetivo:** Saber exatamente o que foi analisado e preservar as fontes.
 
-**O que fazer:** Catalogar as imagens, abas e documentos citados.
+**O que fazer:** Catalogar imagens, abas, documentos citados, versões e arquivos originais.
 
 **Como fazer:**
 
-1. Listar 16 PNGs e 20 abas
-2. Registrar duplicata T10 por hash e materiais ausentes
-3. Preservar originais e vincular requisitos às coordenadas da planilha
-4. Catalogar a consolidação enviada em 13/09/2026, com hash, mudanças e vínculo às tarefas, preservando os arquivos e a análise anteriores.
-5. Catalogar este segundo fechamento, seu hash e os trechos superados nas versões 0/1; preservar todos os originais.
+1. Conferir o registro histórico de 16 PNGs (15 únicos), 20 abas e a duplicata T10; preservar a extração disponível.
+2. Conferir o inventário atual dos mockups aprovados e seus hashes, sem confundir versões atuais e materiais históricos.
+3. Manter identificados documentos citados mas não recebidos, hashes dos fechamentos e as mudanças entre v0/v1/v2.
+4. Guardar os originais no local privado aprovado ou obter autorização expressa para considerar hashes e extrações suficientes.
 
-**Critério de aceite:** Inventário identifica 15 imagens únicas, todas as abas e documentos apenas referenciados.
+**Critério de aceite:** Pacote histórico, abas, duplicatas, ausências e versões ficam rastreáveis; os originais são preservados ou a responsável aprova expressamente a retenção somente de hashes e extrações.
 
 **Impacto:** Evita omissões e mistura de versões.
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
-**Fonte:** Pacote fornecido; manifesto de arquivos; Consolidação 13/09/2026, consolidação integral; Fechamento vigente 13/09/2026, integral
+**Fonte:** docs/planejamento/FONTES.md; docs/source/README.md; extrações do pacote; revision_v1.json; revision_v2.json.
 
-**Evidência:** MAJUCAU_ANALISE_E_DECISOES_v0.md — inventário e análise; inspeção dos materiais e GitHub nesta sessão. Evidência original preservada na versão 0; esta revisão não altera a conclusão desse levantamento.
+**Evidência e pendência:** O registro histórico e as extrações confirmam o inventário; os documentos v0/v1/v2 foram preservados. Os hashes estão em FONTES.md, mas a pasta privada dos originais não existe neste checkout e os nomes exatos não foram encontrados em Downloads. A responsável foi consultada se enviará os originais ou aceita hashes e extrações; resposta pendente. A tarefa não está concluída.
 
 ### BK-002 — Verificar o ponto de partida no GitHub
 
@@ -123,23 +124,24 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Objetivo:** Separar trabalho existente de trabalho futuro.
 
-**O que fazer:** Inspecionar repositório, commits, arquivos e issues.
+**O que fazer:** Inspecionar repositório, commits, branches, issues e pull requests.
 
 **Como fazer:**
 
-1. Consultar repositório em modo leitura
-2. Registrar resposta de repositório vazio
-3. Perguntar se há código ou ambientes fora do GitHub
+1. Preservar a resposta de repositório vazio da versão 0 como fotografia histórica.
+2. Consultar em modo de leitura o estado atual: repositório público, branch principal, branches remotas, issues e pull requests.
+3. Registrar a diferença entre a branch de trabalho publicada e main; não mesclar por inferência.
+4. Registrar a confirmação da responsável de que não há outros clones, servidores ou ambientes de trabalho com código/dados além deste checkout; o controle do código fica no GitHub.
 
-**Critério de aceite:** Estado do GitHub comprovado; eventual material externo registrado como não inspecionado.
+**Critério de aceite:** O histórico e o estado atual do GitHub são distinguíveis; branches, issues e pull requests têm evidência; a confirmação da responsável de que não há outros ambientes de trabalho fora deste checkout está registrada.
 
-**Impacto:** Permite planejar a preparação do projeto desde o início.
+**Impacto:** Permite planejar o trabalho sem confundir código existente, histórico e trabalho futuro.
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
-**Fonte:** GitHub majucau /contents e /commits
+**Fonte:** docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-10.md e endpoints de leitura da API do GitHub.
 
-**Evidência:** MAJUCAU_ANALISE_E_DECISOES_v0.md — inventário e análise; inspeção dos materiais e GitHub nesta sessão. Evidência original preservada na versão 0; esta revisão não altera a conclusão desse levantamento.
+**Evidência:** O estado foi verificado em 10/10/2026: main está em 39f8630; a branch de trabalho publicada codex/majucau-artifact-consolidation está em b94bb3a, 178 commits à frente de main; há cinco PRs abertos e nenhuma issue. A observação antiga de repositório vazio é histórica. A responsável confirmou em 10/10/2026 que não há outro clone, servidor ou ambiente de trabalho fora deste checkout; o código é controlado somente pelo Git/GitHub. Nenhuma branch foi mesclada e nenhum teste foi executado.
 
 ### BK-003 — Auditar cada tela e seus cálculos ilustrativos
 

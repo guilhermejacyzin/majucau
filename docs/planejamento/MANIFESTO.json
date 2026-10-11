@@ -29,8 +29,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md",
-      "bytes": 72637,
-      "sha256": "25deffe35142b91dca0bae38f8d56d4ce0d5d75afc867f0193d6cebd02306616"
+      "bytes": 72764,
+      "sha256": "4a1eedaa8a6b6d1913d584a3e0f10c3903ee6fc3bdb60a95f6d4148688ec0af8"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v0.md",
@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 160067,
-      "sha256": "cdcc792b365692caeba5bd590164e3d2aeaf0e55c0e0e3117b26a282a00ba331"
+      "bytes": 161669,
+      "sha256": "92bbc83fcc0be5bd469bc6bbe98aefa4c1fb3c44f069eb239674df13da76f70f"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -59,8 +59,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 47145,
-      "sha256": "4493d8270d8de6a250261563966628611ed4964b73e79259ff8989cac00a30ee"
+      "bytes": 47904,
+      "sha256": "d9ef729d9da9ddaf07d74b602dca435f77dc1f7955c4079a34dc075b66fe8fb6"
     },
     {
       "path": "docs/planejamento/README.md",
@@ -69,8 +69,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 3984,
-      "sha256": "10b5add0a6da4859b743a213f94587ab2910b9f550c54654d0451c2dc0228c64"
+      "bytes": 3975,
+      "sha256": "19387373d8f32fb12dd5c7f66f64198f628117baa9f1ad92973bb5ff8b0e8e2a"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -89,8 +89,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 186045,
-      "sha256": "4c82b7426a0bc73d9536183ad9b80ccace770e20e6d46a6b5e4ec6d6d7bc508d"
+      "bytes": 183751,
+      "sha256": "9f516548d7f7d04d88ae9cdfbafbf2b7f97bd59bfd6a283c032ef109f2f1315a"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -99,8 +99,8 @@
     },
     {
       "path": "docs/planejamento/work/build_tracker.mjs",
-      "bytes": 12241,
-      "sha256": "93d71c0a02790009143d061969dfd8783aafccf0d43c83677aa09ff38a3b0683"
+      "bytes": 12280,
+      "sha256": "bcbefb84a2c78356623b46d0cc06470892c0d60a952c1d6f7486e36af7bc89da"
     },
     {
       "path": "docs/planejamento/work/build_tracker_v1.mjs",
@@ -199,13 +199,13 @@
     },
     {
       "path": "docs/planejamento/work/previews_v2/Evolucao.png",
-      "bytes": 198744,
-      "sha256": "938df10d67be6a8f4853fe04692562362a79d0dcd7f461ecb0447bfd70ef2d9e"
+      "bytes": 200003,
+      "sha256": "1e6eccf869b3dce67823b99a588d0235e35e6050cfd840781ba05a24f7cdb83e"
     },
     {
       "path": "docs/planejamento/work/previews_v2/Tarefas.png",
-      "bytes": 70364,
-      "sha256": "f51e200501728209e9e8d5ea5dc3b0b6ffb79d7dd5854497eb50f700c1f1b5a9"
+      "bytes": 70643,
+      "sha256": "a3539b3263358e0e3957c9a3890a5d456fcd4c2e44961f13096a6f46d9d0f25b"
     },
     {
       "path": "docs/planejamento/work/previews_v2/Verificacoes.png",
@@ -380,7 +380,7 @@
     {
       "path": "docs/planejamento/work/verify_package.py",
       "bytes": 4484,
-      "sha256": "cce5a41f41e3baa4de29a4664f200a9b05adf0f71fb0970d47766c2f23b3692c"
+      "sha256": "fe444f373d5e6d0509e05e07e6ee59622ffaabcd02c7096065e991fa588611b7"
     },
     {
       "path": "docs/planejamento/work/verify_v1.py",
@@ -390,7 +390,7 @@
     {
       "path": "docs/planejamento/work/verify_v2.py",
       "bytes": 3303,
-      "sha256": "64e89b2b1806fca832ed6b4f345212bdd943ca2b92f3337b21414021f619daee"
+      "sha256": "7cd9b54f9c56a4e749fb20fce072b284f3856d2f6661ab90cd06a8f67a01e85f"
     },
     {
       "path": "README.md",
@@ -401,6 +401,11 @@
       "path": "tools/exportar_planejamento.py",
       "bytes": 1926,
       "sha256": "f89c888f5e05cbdf6ba9fc0b565a839a70330b359c0f362c14ef20a93625ac03"
+    },
+    {
+      "path": "docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-10.md",
+      "bytes": 1611,
+      "sha256": "e86d5805084db8439cd6f41831e47dbbd2cf60a4742ff263545b7db7d76f9353"
     }
   ]
 }

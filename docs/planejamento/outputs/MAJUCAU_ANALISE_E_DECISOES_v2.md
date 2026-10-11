@@ -83,7 +83,8 @@ As dez frentes HT abaixo são trabalho futuro, não novas perguntas de negócio.
 | ID | Tarefa | Campos alterados |
 |---|---|---|
 | BK-000 | Confirmar a base de escopo e as decisões da Majucau | action, steps, accept, status |
-| BK-001 | Inventariar os materiais e suas versões | steps |
+| BK-001 | Inventariar os materiais e suas versões | steps, accept, status, evidence, refs |
+| BK-002 | Verificar o ponto de partida no GitHub | steps, accept, evidence, refs, questions |
 | BK-004 | Localizar e versionar os mockups e contratos aprovados | action, steps, accept, status, evidence, refs, progress |
 | BK-005 | Detalhar os casos de pagamento divergente após decidir C-01 | steps, accept, status, evidence |
 | BK-006 | Especificar tecnicamente a regra fechada da calculadora | title, action, steps, accept, status |

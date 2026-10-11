@@ -18,6 +18,8 @@
 
 `go test -count=1 ./internal/integrations/csvstream` passou localmente no Windows. Como `MAJUCAU_TEST_DATABASE_URL` não está configurada nesta máquina, os dois testes PostgreSQL foram pulados localmente; o job `verify-postgres` da CI fornece um PostgreSQL descartável e executa os testes de integração.
 
+A CI [38176651727](https://github.com/guilhermejacyzin/majucau/actions/runs/38176651727) passou nos quatro jobs (`detect-changes`, `verify-backlog`, `verify-postgres` e `verify-windows`). No Windows, passaram testes Go, `go vet`, análise de segurança, compilação do app e do worker, e smoke de instalação/remoção do instalador de teste.
+
 Os caches e diretórios temporários do Go foram direcionados a `artifacts/cache` e removidos após a verificação.
 
 ## Limites

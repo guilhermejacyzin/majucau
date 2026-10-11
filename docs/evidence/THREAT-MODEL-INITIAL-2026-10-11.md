@@ -447,5 +447,5 @@ BK-024 permanece em 30% e o projeto mantém a estimativa registrada de 7,5% conc
 ## Cancelamento entre nomes já enfileirados — 11/10/2026
 
 - `FileQueue.Next` agora confere o contexto antes de devolver cada nome, mesmo dentro de um bloco já carregado. Testes de integração cobrem cancelamento imediato e ordenação de 515 arquivos em mais de dois blocos.
-- `go test -count=1 ./internal/integrations/csvstream` passou localmente. A conexão PostgreSQL de teste não está configurada nesta máquina, então os testes que precisam dela ficaram para o job `verify-postgres` da CI.
+- `go test -count=1 ./internal/integrations/csvstream` passou localmente. A conexão PostgreSQL de teste não está configurada nesta máquina; os testes foram executados com sucesso pelo job `verify-postgres` da [CI 38176651727](https://github.com/guilhermejacyzin/majucau/actions/runs/38176651727), que passou junto aos outros três jobs.
 - Evidência: `CSV-FILE-QUEUE-CANCELLATION-2026-10-11.md`. BK-024 permanece em 35%; a alteração não fecha a validação de segurança operacional, ACL ou VM limpa. Nenhuma tela, regra financeira ou dado persistido foi alterado.

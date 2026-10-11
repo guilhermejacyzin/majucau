@@ -88,7 +88,9 @@ def commits_for_event() -> list[str]:
 
 
 def check_message(commit: str) -> list[str]:
-    body = git("show", "-s", "--format=%B", commit)
+    # `%b` returns only the body; `%B` would also allow the subject to satisfy
+    # fields that CONTRIBUTING.md explicitly requires in the commit body.
+    body = git("show", "-s", "--format=%b", commit)
     missing: list[str] = []
     for field in TEXT_FIELDS:
         if not re.search(rf"^\s*{re.escape(field)}:\s*\S", body, re.MULTILINE):

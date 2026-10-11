@@ -29,7 +29,7 @@ func TestDiskSourceIDSetDeduplicatesWithoutPersistingPlaintextAndCleansUp(t *tes
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = set.Close() })
-	workspace := set.dir
+	workspace := set.workspace.Path()
 	firstID := "sensitive-source-id-0000"
 	lastID := "sensitive-source-id-0749"
 	for index := 0; index < 750; index++ {

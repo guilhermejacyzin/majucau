@@ -88,6 +88,51 @@ func TestNewDirReportsDescriptorReleaseAndCleanupFailures(t *testing.T) {
 	})
 }
 
+func TestNewDirPreservesCreateAndDescriptorReleaseFailures(t *testing.T) {
+	createErr := errors.New("CreateDirectoryW injected failure")
+	releaseErr := errors.New("LocalFree injected failure")
+	freeCalled := false
+	removeCalled := false
+	api := privateDirectoryAPI{
+		convert: func(_ *uint16, descriptor **windows.SECURITY_DESCRIPTOR, size *uint32) (uintptr, error) {
+			*descriptor = &windows.SECURITY_DESCRIPTOR{}
+			*size = 1
+			return 1, nil
+		},
+		free: func(address uintptr) (uintptr, error) {
+			freeCalled = true
+			if address == 0 {
+				t.Error("LocalFree received a nil security descriptor")
+			}
+			return address, releaseErr
+		},
+		create: func(_ *uint16, attributes *windows.SecurityAttributes) (uintptr, error) {
+			if attributes == nil || attributes.SecurityDescriptor == nil {
+				t.Error("CreateDirectoryW did not receive the protected security descriptor")
+			}
+			return 0, createErr
+		},
+		remove: func(string) error {
+			removeCalled = true
+			return nil
+		},
+	}
+
+	dir, err := newDirWithAPI(t.TempDir(), "majucau-create-failure-", api)
+	if dir != "" {
+		t.Fatalf("directory path = %q, want empty after failed creation", dir)
+	}
+	if !errors.Is(err, createErr) || !errors.Is(err, releaseErr) {
+		t.Fatalf("error = %v, want both creation and descriptor-release failures", err)
+	}
+	if !freeCalled {
+		t.Fatal("security descriptor was not released after directory creation failed")
+	}
+	if removeCalled {
+		t.Fatal("cleanup ran even though the directory was never created")
+	}
+}
+
 func failingPrivateDirectoryAPI(t *testing.T, created *string, leaveChild bool) privateDirectoryAPI {
 	t.Helper()
 	return privateDirectoryAPI{

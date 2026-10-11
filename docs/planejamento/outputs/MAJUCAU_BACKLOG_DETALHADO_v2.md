@@ -3472,3 +3472,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A evidência está em `docs/evidence/OAUTH-TOKEN-STREAMING-2026-10-11.md`; a rastreabilidade foi atualizada em `REQUIREMENTS-TRACEABILITY.md`.
 - BK-024 permanece em 35% e DATA-04 continua parcial: esta correção cobre a resposta OAuth, mas ainda faltam carga com memória medida, validação da conta real e ensaios de ACL/limpeza em VM Windows limpa. O backlog permanece em 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas; 8,3% concluído e 91,7% restante.
 - Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado. Não houve chamada à conta real do Bling nesta execução.
+
+## Cobertura de falhas no diretório temporário — 2026-10-11
+
+- O teste Windows do provisionamento em `securetemp` cobre falhas simultâneas ao criar o diretório e liberar o descritor de segurança; confirma que os dois erros são preservados e que não há remoção indevida de caminho não criado.
+- O teste de IDs em disco do `csvstream` foi ajustado para usar o caminho do `Workspace` seguro. `go test -count=1 ./internal/securetemp ./internal/integrations/csvstream` e `go vet` passaram localmente no Windows.
+- Evidência: `docs/evidence/SECURETEMP-CREATION-FAILURE-2026-10-11.md`. BK-024 permanece em 35% (65% restante); DATA-04 continua parcial até validação de ACL e limpeza em VM Windows limpa. Projeto: 8,3% concluído, 91,7% restante (127 tarefas; 7 concluídas, 11 em andamento, 109 não iniciadas).
+- Nenhuma tela, regra financeira, fórmula ou dado de negócio foi alterado.

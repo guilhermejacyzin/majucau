@@ -430,6 +430,13 @@ BK-024 permanece em 30% e o projeto mantém a estimativa registrada de 7,5% conc
 - `go test` e `go vet` passaram nos quatro pacotes afetados. A evidência e o limite de validação local estão em `TRANSACTION-ROLLBACK-ERRORS-2026-10-11.md`.
 - Isso melhora a observabilidade da limpeza de transações, mas não fecha BK-024: faltam falhas controladas adicionais, validação PostgreSQL ponta a ponta e ensaios em VM, rede e perfis.
 
+## Falhas no provisionamento de diretório temporário — 11/10/2026
+
+- A cobertura do Windows agora injeta simultaneamente falha ao criar o diretório e ao liberar o buffer de atributos de segurança. O teste confirma que ambos os erros são preservados e que a rotina não tenta remover um diretório que nunca chegou a ser criado.
+- Um teste antigo de `csvstream` foi atualizado para consultar o caminho pelo `Workspace` seguro, acompanhando a interface atual de `securetemp`.
+- `go test -count=1 ./internal/securetemp ./internal/integrations/csvstream` e `go vet` nos mesmos pacotes passaram localmente no Windows. A evidência específica está em `SECURETEMP-CREATION-FAILURE-2026-10-11.md`.
+- O escopo é somente teste e compatibilidade do teste existente; nenhuma regra de importação, tela ou dado de negócio mudou. `DATA-04` continua parcial e BK-024 permanece em 35%, pois ACL e limpeza ainda precisam de validação em VM limpa, além de ensaios operacionais mais amplos.
+
 ## Normalização dos nomes de campos sensíveis — 11/10/2026
 
 - A revisão encontrou um caso em que `RedactJSON` reconhecia nomes como `access_token`, mas não grafias equivalentes como `accessToken`, `clientSecret` ou `API-Key`.

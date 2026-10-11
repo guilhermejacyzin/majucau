@@ -160,3 +160,7 @@ ou ilegível (`ErrBlingAPIInvalidResponse`) e formato inválido
 `docs/evidence/OAUTH-TOKEN-STREAMING-2026-10-11.md`. `DATA-04` continua
 `PARTIAL`: faltam carga com memória medida e comprovação de ACL/limpeza em VM
 Windows limpa.
+
+## Falhas no provisionamento de diretório temporário — 2026-10-11
+
+O teste Windows de `internal/securetemp` agora verifica que falhas simultâneas na criação do diretório e na liberação do descritor de segurança são retornadas sem tentar remover um diretório inexistente. O teste de `csvstream` usa o caminho exposto pelo `Workspace` seguro. `go test -count=1` e `go vet` passaram localmente nos dois pacotes. Isso amplia a cobertura de falha, mas `DATA-04` continua `PARTIAL` até a verificação de ACL e limpeza em VM Windows limpa. Evidência: `docs/evidence/SECURETEMP-CREATION-FAILURE-2026-10-11.md`.

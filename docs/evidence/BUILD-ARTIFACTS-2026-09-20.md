@@ -30,3 +30,5 @@ projeto. Foram mantidos nessa pasta central porque removê-los exige novo
 download e pode impedir uma compilação sem internet. Ficam registrados para
 limpeza manual quando a responsável decidir que não precisa mais deles. Esta
 execução não criou outputs de build locais.
+
+Na CI [38113352327](https://github.com/guilhermejacyzin/majucau/actions/runs/38113352327), a migration de permissão passou no job PostgreSQL e o build Windows completo também passou. O instalador unsigned ficou no artefato centralizado `majucau-g1-unsigned` (55.601.124 bytes; SHA-256 `8560fddb0545a615771532cc3a53e15d97bfee35f70596087c36bf15921620a6`), com expiração automática em 2026-10-12 05:07:59 UTC. Como não há ferramenta conectada para excluir esse artefato remoto, ele foi adicionado ao registro local de limpeza manual.

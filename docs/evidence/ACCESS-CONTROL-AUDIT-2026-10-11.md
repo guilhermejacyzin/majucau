@@ -66,5 +66,6 @@ A migration aditiva `000003_director_report_export_permission.up.sql` registra
 conforme decisão já aprovada no `G0-DECISION-REGISTER.md`. A migration não cria
 usuários, não abre uma rota de exportação e não aplica autorização no worker.
 Por isso, `SEC-02` e BK-013 continuam parciais; nenhum perfil foi provisionado
-e nenhuma tela foi alterada. A validação de aplicação da migration fica para a
-CI PostgreSQL após o push.
+e nenhuma tela foi alterada. A CI [38113352327](https://github.com/guilhermejacyzin/majucau/actions/runs/38113352327)
+aplicou as migrations e passou nos jobs PostgreSQL e Windows. A autorização
+por comando no worker continua pendente.

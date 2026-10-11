@@ -845,7 +845,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Critério de aceite:** Riscos têm tratamento e testes associados; nenhuma credencial entra no Git ou no navegador. O desenho não usa a pasta de fontes como destino de exportação, logs ou backup.
 
-**Evidência atual:** [Mapa inicial de ativos, riscos, controles, lacunas e verificações](../../evidence/THREAT-MODEL-INITIAL-2026-10-11.md). Inclui revisão estática, correções de falhas ao fechar recursos e testes automatizados do pacote do instalador no Windows. O mapeamento completo, ensaios controlados de falha, instalação/atualização em VM e demais controles continuam pendentes.
+**Evidência atual:** [Mapa inicial de ativos, riscos, controles, lacunas e verificações](../../evidence/THREAT-MODEL-INITIAL-2026-10-11.md). Inclui revisões estáticas, correções de falhas ao fechar recursos e testes locais dos pacotes do instalador e de backup no Windows. O teste de integração PostgreSQL foi pulado por falta de bancos descartáveis configurados. O mapeamento completo, ensaios controlados de falha, restauração integrada e instalação/atualização em VM continuam pendentes.
 
 **Impacto:** Protege os dados financeiros e operacionais.
 

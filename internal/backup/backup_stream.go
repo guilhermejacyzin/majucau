@@ -40,6 +40,30 @@ type packageArchive struct {
 	manifest Manifest
 }
 
+type resourceCloseFailure struct {
+	resource string
+	cause    error
+}
+
+func (failure resourceCloseFailure) Error() string {
+	return failure.resource + " close failed"
+}
+
+func (failure resourceCloseFailure) Unwrap() error {
+	return failure.cause
+}
+
+func combineCloseFailure(cause error, resource string, closeErr error) error {
+	if closeErr == nil {
+		return cause
+	}
+	return errors.Join(cause, resourceCloseFailure{resource: resource, cause: closeErr})
+}
+
+func closeWithFailure(cause error, resource string, closer io.Closer) error {
+	return combineCloseFailure(cause, resource, closer.Close())
+}
+
 func (archive *packageArchive) Close() error {
 	return archive.closer.Close()
 }
@@ -139,12 +163,12 @@ func createStoredEntry(archive *zip.Writer, name string) (io.Writer, error) {
 	return archive.CreateHeader(header)
 }
 
-func encryptFileEntry(ctx context.Context, archive *zip.Writer, primitive tink.StreamingAEAD, entryName, sourcePath string) (File, error) {
+func encryptFileEntry(ctx context.Context, archive *zip.Writer, primitive tink.StreamingAEAD, entryName, sourcePath string) (record File, returnErr error) {
 	source, err := os.Open(sourcePath)
 	if err != nil {
 		return File{}, err
 	}
-	defer source.Close()
+	defer func() { returnErr = closeWithFailure(returnErr, "backup source", source) }()
 	entry, err := createStoredEntry(archive, entryName)
 	if err != nil {
 		return File{}, err
@@ -155,17 +179,16 @@ func encryptFileEntry(ctx context.Context, archive *zip.Writer, primitive tink.S
 		return File{}, err
 	}
 	if _, err := io.Copy(writer, contextReader{ctx: ctx, reader: source}); err != nil {
-		_ = writer.Close()
-		return File{}, err
+		return File{}, closeWithFailure(err, "encrypted payload writer", writer)
 	}
 	if err := writer.Close(); err != nil {
-		return File{}, err
+		return File{}, combineCloseFailure(nil, "encrypted payload writer", err)
 	}
 	return digest.file(entryName), nil
 }
 
-func verifyPackage(ctx context.Context, path string, passphrase []byte, currentSchema string) Verification {
-	result := Verification{}
+func verifyPackage(ctx context.Context, path string, passphrase []byte, currentSchema string) (result Verification) {
+	result = Verification{}
 	if ctx == nil || ctx.Err() != nil || !filepath.IsAbs(path) || strings.TrimSpace(currentSchema) == "" || len(passphrase) == 0 {
 		result.Issues = append(result.Issues, "invalid verification arguments")
 		return result
@@ -173,9 +196,18 @@ func verifyPackage(ctx context.Context, path string, passphrase []byte, currentS
 	archive, err := openPackage(path)
 	if err != nil {
 		result.Issues = append(result.Issues, "backup package is unreadable or invalid")
+		var closeFailure resourceCloseFailure
+		if errors.As(err, &closeFailure) {
+			result.Issues = append(result.Issues, closeFailure.Error())
+		}
 		return result
 	}
-	defer archive.Close()
+	defer func() {
+		if archive.Close() != nil {
+			result.Valid = false
+			result.Issues = append(result.Issues, "backup package close failed")
+		}
+	}()
 	result.Manifest = archive.manifest
 	if result.Manifest.SchemaVersion != currentSchema {
 		result.Issues = append(result.Issues, ErrUnsupportedSchema.Error())
@@ -196,6 +228,10 @@ func verifyPackage(ctx context.Context, path string, passphrase []byte, currentS
 		verifyErr = ErrInvalidPackage
 	}
 	if verifyErr != nil {
+		var closeFailure resourceCloseFailure
+		if errors.As(verifyErr, &closeFailure) {
+			result.Issues = append(result.Issues, closeFailure.Error())
+		}
 		if errors.Is(verifyErr, ErrWrongPassphrase) {
 			result.Issues = append(result.Issues, ErrWrongPassphrase.Error())
 		} else {
@@ -213,60 +249,49 @@ func openPackage(path string) (*packageArchive, error) {
 	}
 	info, err := file.Stat()
 	if err != nil {
-		_ = file.Close()
-		return nil, err
+		return nil, closeWithFailure(err, "backup package", file)
 	}
 	if err := preflightArchiveDirectory(file, info.Size()); err != nil {
-		_ = file.Close()
-		return nil, ErrInvalidPackage
+		return nil, closeWithFailure(ErrInvalidPackage, "backup package", file)
 	}
 	reader, err := zip.NewReader(file, info.Size())
 	if err != nil {
-		_ = file.Close()
-		return nil, err
+		return nil, closeWithFailure(err, "backup package", file)
 	}
 	archive := &packageArchive{closer: file, entries: make(map[string]*zip.File, len(reader.File))}
 	if len(reader.File) < 3 || len(reader.File) > 4 {
-		_ = archive.Close()
-		return nil, ErrInvalidPackage
+		return nil, closeWithFailure(ErrInvalidPackage, "backup package", archive)
 	}
 	for _, entry := range reader.File {
 		if _, exists := archive.entries[entry.Name]; exists {
-			_ = archive.Close()
-			return nil, ErrInvalidPackage
+			return nil, closeWithFailure(ErrInvalidPackage, "backup package", archive)
 		}
 		archive.entries[entry.Name] = entry
 	}
 	manifestEntryFile, ok := archive.entries[manifestEntry]
 	if !ok || (manifestEntryFile.Method != zip.Store && manifestEntryFile.Method != zip.Deflate) || manifestEntryFile.UncompressedSize64 > maxManifestBytes {
-		_ = archive.Close()
-		return nil, ErrInvalidPackage
+		return nil, closeWithFailure(ErrInvalidPackage, "backup package", archive)
 	}
 	manifestBytes, err := readZipEntryBounded(manifestEntryFile, maxManifestBytes)
 	if err != nil {
-		_ = archive.Close()
-		return nil, ErrInvalidPackage
+		return nil, closeWithFailure(ErrInvalidPackage, "backup package", archive)
 	}
 	decoder := json.NewDecoder(bytes.NewReader(manifestBytes))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&archive.manifest); err != nil {
-		_ = archive.Close()
-		return nil, ErrInvalidPackage
+		return nil, closeWithFailure(ErrInvalidPackage, "backup package", archive)
 	}
 	var trailing any
 	if err := decoder.Decode(&trailing); err != io.EOF {
-		_ = archive.Close()
-		return nil, ErrInvalidPackage
+		return nil, closeWithFailure(ErrInvalidPackage, "backup package", archive)
 	}
 	allowed := expectedArchiveEntries(archive.manifest.FormatVersion)
 	if len(allowed) != len(archive.entries) {
-		_ = archive.Close()
-		return nil, ErrInvalidPackage
+		return nil, closeWithFailure(ErrInvalidPackage, "backup package", archive)
 	}
 	for name, entry := range archive.entries {
 		if !allowed[name] || !validEntryCompression(entry, archive.manifest.FormatVersion) {
-			_ = archive.Close()
-			return nil, ErrInvalidPackage
+			return nil, closeWithFailure(ErrInvalidPackage, "backup package", archive)
 		}
 	}
 	return archive, nil
@@ -470,10 +495,10 @@ func readZipEntryBounded(entry *zip.File, limit uint64) ([]byte, error) {
 	payload, readErr := io.ReadAll(io.LimitReader(reader, int64(limit)+1))
 	closeErr := reader.Close()
 	if readErr != nil {
-		return nil, readErr
+		return nil, combineCloseFailure(readErr, "backup archive entry", closeErr)
 	}
 	if closeErr != nil {
-		return nil, closeErr
+		return nil, combineCloseFailure(nil, "backup archive entry", closeErr)
 	}
 	if uint64(len(payload)) != entry.UncompressedSize64 || uint64(len(payload)) > limit {
 		return nil, ErrInvalidPackage
@@ -499,11 +524,14 @@ func verifyV1Payloads(ctx context.Context, archive *packageArchive, key []byte) 
 		closeErr := source.Close()
 		if decryptErr != nil {
 			if errors.Is(decryptErr, ErrWrongPassphrase) {
-				return ErrWrongPassphrase
+				return combineCloseFailure(ErrWrongPassphrase, "backup archive entry", closeErr)
 			}
-			return ErrInvalidPackage
+			return combineCloseFailure(ErrInvalidPackage, "backup archive entry", closeErr)
 		}
-		if closeErr != nil || !digest.matches(record) {
+		if closeErr != nil {
+			return combineCloseFailure(ErrInvalidPackage, "backup archive entry", closeErr)
+		}
+		if !digest.matches(record) {
 			return ErrInvalidPackage
 		}
 	}
@@ -544,22 +572,34 @@ func authenticateV2Entry(ctx context.Context, entry *zip.File, record File, prim
 	closeErr := source.Close()
 	if err != nil {
 		if errors.Is(err, ErrWrongPassphrase) {
-			return ErrWrongPassphrase
+			return combineCloseFailure(ErrWrongPassphrase, "backup archive entry", closeErr)
 		}
-		return ErrInvalidPackage
+		return combineCloseFailure(ErrInvalidPackage, "backup archive entry", closeErr)
 	}
-	if closeErr != nil || !digest.matches(record) {
+	if closeErr != nil {
+		return combineCloseFailure(ErrInvalidPackage, "backup archive entry", closeErr)
+	}
+	if !digest.matches(record) {
 		return ErrInvalidPackage
 	}
 	return nil
 }
 
-func decryptPackageToFiles(ctx context.Context, path string, passphrase []byte, expected Manifest, directory string) (string, string, error) {
+func decryptPackageToFiles(ctx context.Context, path string, passphrase []byte, expected Manifest, directory string) (databasePath, globalsPath string, returnErr error) {
 	archive, err := openPackage(path)
 	if err != nil {
+		var closeFailure resourceCloseFailure
+		if errors.As(err, &closeFailure) {
+			return "", "", errors.Join(ErrInvalidPackage, closeFailure)
+		}
 		return "", "", ErrInvalidPackage
 	}
-	defer archive.Close()
+	defer func() {
+		if closeErr := archive.Close(); closeErr != nil {
+			databasePath, globalsPath = "", ""
+			returnErr = combineCloseFailure(returnErr, "backup package", closeErr)
+		}
+	}()
 	if archive.manifest.FormatVersion != expected.FormatVersion || !validPackageManifest(archive.manifest) {
 		return "", "", ErrInvalidPackage
 	}
@@ -577,8 +617,8 @@ func decryptPackageToFiles(ctx context.Context, path string, passphrase []byte, 
 			return "", "", ErrWrongPassphrase
 		}
 	}
-	databasePath := filepath.Join(directory, "database.dump")
-	globalsPath := filepath.Join(directory, "globals.sql")
+	databasePath = filepath.Join(directory, "database.dump")
+	globalsPath = filepath.Join(directory, "globals.sql")
 	for _, record := range archive.manifest.Files {
 		if err := ctx.Err(); err != nil {
 			return "", "", err
@@ -599,9 +639,7 @@ func decryptPackageToFiles(ctx context.Context, path string, passphrase []byte, 
 			} else {
 				digest := &digestReader{reader: contextReader{ctx: ctx, reader: source}, hash: sha256.New()}
 				decryptErr = decryptV1Stream(digest, record.SizeBytes, masterKey, []byte(record.Path), output)
-				if closeErr := source.Close(); decryptErr == nil && closeErr != nil {
-					decryptErr = closeErr
-				}
+				decryptErr = combineCloseFailure(decryptErr, "backup archive entry", source.Close())
 				if decryptErr == nil && !digest.matches(record) {
 					decryptErr = ErrInvalidPackage
 				}
@@ -612,10 +650,7 @@ func decryptPackageToFiles(ctx context.Context, path string, passphrase []byte, 
 		if decryptErr == nil {
 			decryptErr = output.Sync()
 		}
-		closeErr := output.Close()
-		if decryptErr == nil {
-			decryptErr = closeErr
-		}
+		decryptErr = combineCloseFailure(decryptErr, "restored output", output.Close())
 		if decryptErr != nil {
 			if cleanupErr := securetemp.RemoveFile(output.Name()); cleanupErr != nil {
 				decryptErr = errors.Join(decryptErr, cleanupErr)
@@ -766,12 +801,12 @@ func clearBytes(value []byte) {
 	}
 }
 
-func copyEncryptedPackage(ctx context.Context, sourcePath, destinationPath string) error {
+func copyEncryptedPackage(ctx context.Context, sourcePath, destinationPath string) (returnErr error) {
 	source, err := os.Open(sourcePath)
 	if err != nil {
 		return err
 	}
-	defer source.Close()
+	defer func() { returnErr = closeWithFailure(returnErr, "source backup package", source) }()
 	information, err := source.Stat()
 	if err != nil || !information.Mode().IsRegular() {
 		return ErrInvalidPackage

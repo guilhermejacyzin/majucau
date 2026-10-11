@@ -187,3 +187,15 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
 - Falhas ao abrir um caminho continuam sendo representadas como inacessibilidade, como antes. Não foram alteradas as condições funcionais de prontidão nem o conteúdo exibido em caso normal.
 - `gofmt`, `git diff --check` e `go test -count=1 ./internal/installer` foram executados no Windows; o pacote passou (`0.437s`). Os caches foram direcionados a `artifacts/cache` e removidos pelo módulo seguro do projeto.
 - Não foi possível injetar uma falha real de fechamento com os testes existentes. Instalação/atualização em VM limpa e ensaios controlados de falha continuam pendentes.
+
+## Complemento — fechamento de recursos na verificação e restauração de backups
+
+**Data:** 11/10/2026
+
+**Tipo:** correção de caminhos de erro e teste automatizado local no Windows.
+
+- A leitura de pacotes V1/V2 combina erros de leitura, descriptografia e fechamento dos arquivos. A verificação e a restauração também tratam falhas ao fechar o pacote, as entradas ZIP e os arquivos temporários restaurados.
+- As mensagens de fechamento usam rótulos genéricos; o erro original continua encadeado para diagnóstico interno sem incluir seu caminho na mensagem comum. A verificação marca o pacote como inválido se não conseguir fechar um recurso.
+- Os testes de backup passaram com `go test -count=1 ./internal/backup` (`1.541s`). O teste de integração com PostgreSQL descartável foi pulado porque as duas URLs de banco descartável não estavam configuradas neste ambiente. Portanto, não há evidência de restauração integrada nesta execução.
+- Os caches do Go ficaram temporariamente em `artifacts/cache` e foram removidos pelo módulo `scripts/SafeCleanup.psm1`. `gofmt`, `git diff --check` e a busca por fechamentos ignorados no código de produção de `internal/backup` também foram concluídos.
+- O formato dos backups, a compatibilidade V1, o conteúdo dos dados, as telas e as regras financeiras não foram alterados. Ainda faltam falhas de fechamento injetadas e restauração real em PostgreSQL/VM isolados.

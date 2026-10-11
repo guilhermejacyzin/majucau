@@ -561,8 +561,16 @@ func diskNameLess(left, right string) bool {
 }
 
 type diskRunBuilder struct {
-	set    *DiskSourceIDSet
-	levels [][]string
+	set        *DiskSourceIDSet
+	levels     [][]string
+	removeFile func(string) error
+}
+
+func (b *diskRunBuilder) removeTemporaryRun(path string) error {
+	if b.removeFile != nil {
+		return b.removeFile(path)
+	}
+	return securetemp.RemoveFile(path)
 }
 
 func (b *diskRunBuilder) add(ctx context.Context, path string) error {
@@ -583,7 +591,7 @@ func (b *diskRunBuilder) add(ctx context.Context, path string) error {
 			return err
 		}
 		for _, oldPath := range group {
-			if err := securetemp.RemoveFile(oldPath); err != nil {
+			if err := b.removeTemporaryRun(oldPath); err != nil {
 				return fmt.Errorf("remove merged temporary CSV filename run: %w", err)
 			}
 		}
@@ -614,7 +622,7 @@ func (b *diskRunBuilder) finish(ctx context.Context) (string, error) {
 				return "", err
 			}
 			for _, oldPath := range group {
-				if err := securetemp.RemoveFile(oldPath); err != nil {
+				if err := b.removeTemporaryRun(oldPath); err != nil {
 					return "", fmt.Errorf("remove merged temporary CSV filename run: %w", err)
 				}
 			}

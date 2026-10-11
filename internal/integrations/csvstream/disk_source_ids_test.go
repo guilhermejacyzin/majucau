@@ -3,10 +3,14 @@ package csvstream
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"majucau.local/financial-intelligence/internal/securetemp"
 )
 
 func TestDiskSourceIDSetDeduplicatesWithoutPersistingPlaintextAndCleansUp(t *testing.T) {
@@ -171,6 +175,76 @@ func TestDiskRunBuilderFinishRemovesIntermediateTemporaryRuns(t *testing.T) {
 	}
 	if _, err := os.Stat(mergedPath); err != nil {
 		t.Fatalf("final temporary CSV filename run is missing: %v", err)
+	}
+}
+
+func TestDiskRunBuilderAddSanitizesCleanupFailure(t *testing.T) {
+	ctx := context.Background()
+	set, err := NewDiskSourceIDSet(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := set.Close(); err != nil {
+			t.Errorf("close temporary CSV source index: %v", err)
+		}
+	})
+
+	paths := writeTemporaryNameRuns(t, set, diskMergeFanIn)
+	builder := diskRunBuilder{
+		set: set,
+		removeFile: func(path string) error {
+			return &securetemp.CleanupError{Path: path, Cause: os.ErrPermission}
+		},
+	}
+	var gotErr error
+	for _, path := range paths {
+		if err := builder.add(ctx, path); err != nil {
+			gotErr = err
+			break
+		}
+	}
+	assertSanitizedTemporaryCleanupError(t, gotErr, paths[0])
+}
+
+func TestDiskRunBuilderFinishSanitizesCleanupFailure(t *testing.T) {
+	ctx := context.Background()
+	set, err := NewDiskSourceIDSet(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := set.Close(); err != nil {
+			t.Errorf("close temporary CSV source index: %v", err)
+		}
+	})
+
+	paths := writeTemporaryNameRuns(t, set, diskMergeFanIn)
+	builder := diskRunBuilder{
+		set:    set,
+		levels: [][]string{paths},
+		removeFile: func(path string) error {
+			return &securetemp.CleanupError{Path: path, Cause: os.ErrPermission}
+		},
+	}
+	_, gotErr := builder.finish(ctx)
+	assertSanitizedTemporaryCleanupError(t, gotErr, paths[0])
+}
+
+func assertSanitizedTemporaryCleanupError(t *testing.T, err error, wantPath string) {
+	t.Helper()
+	if err == nil {
+		t.Fatal("temporary-file cleanup failure was not returned")
+	}
+	var cleanupErr *securetemp.CleanupError
+	if !errors.As(err, &cleanupErr) {
+		t.Fatalf("cleanup error type = %T, want *securetemp.CleanupError", err)
+	}
+	if cleanupErr.Path != wantPath {
+		t.Fatalf("manual cleanup path = %q, want %q", cleanupErr.Path, wantPath)
+	}
+	if strings.Contains(err.Error(), wantPath) {
+		t.Fatalf("ordinary error exposed the local path: %q", err)
 	}
 }
 

@@ -289,7 +289,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 - Na auditoria dos temporários da prévia CSV, dois caminhos de junção removiam arquivos diretamente e não usavam o erro seguro padronizado. Agora chamam `securetemp.RemoveFile`; os testes cobrem as junções por `add` e `finish` e a suíte de `securetemp` cobre erro tipado e mensagem sanitizada.
 - `go test -count=1 ./internal/securetemp ./internal/integrations/csvstream` e `git diff --check` passaram. O cache Go temporário foi removido ao final. Nenhuma tela, regra financeira ou dado persistido foi alterado.
-- BK-024 permanece em 30%: seguem pendentes as falhas controladas específicas, a conclusão do mapa de riscos e as validações em VM/rede/perfis. O projeto permanece com 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas; 7,5% concluído e 92,5% restante.
+- BK-024 permanece em 30%: agora há falhas de remoção injetadas nos dois caminhos de junção CSV, com verificação do erro tipado e da mensagem sanitizada. Ainda faltam falhas reais de disco/ACL, a conclusão do mapa de riscos e as validações em VM/rede/perfis. A CI `38145917293` passou no commit anterior `93a7ffb`; os novos testes locais aguardam a CI do próximo commit. O projeto permanece com 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas; 7,5% concluído e 92,5% restante.
 
 ## 00 Descoberta e decisões
 

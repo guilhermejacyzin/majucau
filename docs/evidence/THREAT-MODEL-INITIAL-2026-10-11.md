@@ -334,6 +334,7 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
 ## Correção da remoção de arquivos intermediários CSV — 11/10/2026
 
 - A revisão encontrou dois pontos da intercalação de nomes de arquivos em que a remoção direta propagava a falha, mas não preservava o tipo `securetemp.CleanupError` nem ocultava o caminho na mensagem comum.
-- Os dois caminhos agora usam `securetemp.RemoveFile`, mantendo o caminho disponível para tratamento autorizado e a mensagem comum sanitizada. Foram acrescentados testes para as junções em `add` e `finish`; a suíte de `securetemp` também cobre o tipo e a sanitização do erro do helper.
+- Os dois caminhos agora usam `securetemp.RemoveFile`, mantendo o caminho disponível para tratamento autorizado e a mensagem comum sanitizada. Os testes exercitam as junções em `add` e `finish`; também injetam uma falha de remoção em cada caminho e verificam o tipo do erro, o caminho protegido para suporte e a mensagem sem caminho. A suíte de `securetemp` cobre o comportamento do helper.
 - `go test -count=1 ./internal/securetemp ./internal/integrations/csvstream` e `git diff --check` passaram localmente. O cache Go foi criado em `artifacts/cache` e removido pelo módulo `scripts/SafeCleanup.psm1`; a ausência da pasta foi conferida.
-- Não houve alteração de dados persistidos, telas ou regras financeiras. Falhas controladas nas chamadas específicas de remoção e a validação em VM limpa continuam pendentes.
+- A CI [38145917293](https://github.com/guilhermejacyzin/majucau/actions/runs/38145917293) passou em backlog, Windows e PostgreSQL para o commit `93a7ffb`. Os novos ensaios de falha serão verificados na CI do próximo commit.
+- Não houve alteração de dados persistidos, telas ou regras financeiras. A simulação determinística não substitui falhas reais de disco/ACL nem validação em VM limpa.

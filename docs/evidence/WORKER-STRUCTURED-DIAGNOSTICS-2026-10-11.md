@@ -89,12 +89,14 @@ controle local de limpeza. Nenhum artefato unsigned é uma versão de produção
   identificada. Falhas anteriores ao envio ao worker não recebem referência,
   pois não há evento correspondente para localizar. A mensagem não inclui
   segredos, conteúdo financeiro ou detalhes brutos do erro.
-- Revisão feita com `gofmt` e `git diff --check`. Nenhum teste ou build local foi
-  executado nesta etapa. A CI `38169796225` passou em `verify-backlog`, mas o
-  gate `detect-changes` parou porque os corpos de dois commits não usaram os
-  rótulos exatos das porcentagens exigidos por `CONTRIBUTING.md`; por isso,
-  `verify-windows` e `verify-postgres` foram pulados e o código ainda não foi
-  validado pela CI. A conferência visual da referência no protótipo também está
-  pendente.
+- Revisão feita com `gofmt` e `git diff --check`; nenhum teste ou build local foi
+  executado. A primeira CI (`38169796225`) passou no backlog, mas parou no gate
+  de mensagens de commit porque os rótulos de porcentagem não eram os exatos de
+  `CONTRIBUTING.md`; Windows e PostgreSQL foram pulados nessa execução.
+- Depois da correção do formato e do rótulo mais simples “Código de referência”,
+  a CI `38169879308` passou nos quatro jobs: `detect-changes`, `verify-backlog`,
+  `verify-windows` e `verify-postgres`. Isso inclui os testes automatizados,
+  compilação e empacotamento. A conferência visual no protótipo e a validação da
+  ACL dos logs em instalação/VM continuam pendentes.
 - A mudança altera somente o texto complementar autorizado. Nenhum layout,
-  regra financeira, regra de negócio ou dado persistido foi alterado.
+  regra financeira, regra de negócio ou dado financeiro/operacional foi alterado.

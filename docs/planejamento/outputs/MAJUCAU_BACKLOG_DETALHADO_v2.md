@@ -1103,7 +1103,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-031 — Criar logs e rastreio técnico básicos
 
-**Situação:** Em andamento. **Evolução:** 80% (estimativa; logs do worker, correlação técnica básica, limites de tamanho, rotação e testes próprios passaram na CI Windows/PostgreSQL-Linux. Falta validar ACL em instalação/VM, aprovar uma referência de diagnóstico junto ao erro na tela e definir/medir fila somente se uma fila real for criada). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 85% (estimativa; logs do worker, limites, rotação, correlação do erro visível e CI completa estão comprovados. Falta validar visualmente a mensagem e demonstrar a ACL em instalação/VM. Não há fila neste fluxo síncrono; só medir fila se uma fila real vier a existir). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Diagnosticar falhas sem expor dados sensíveis.
 
@@ -1119,7 +1119,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Complemento de mascaramento (2026-10-11):** `RedactJSON` agora reconhece nomes comuns de credenciais independentemente de camelCase, hífen ou separadores, com teste e `go vet` aprovados. O helper não tem chamador de produção; o logger mantém a estratégia de campos permitidos, sem payload livre. Isso não fecha o critério de BK-031, que permanece em 80%. Ver `docs/evidence/LOG-REDACTION-KEY-NORMALIZATION-2026-10-11.md`.
 
-**Limite dos logs preexistentes (2026-10-11):** a inicialização agora recusa, sem apagar nem alterar, um arquivo ativo ou rotacionado acima do limite configurado. A suíte focada e `go vet` do pacote `internal/diagnosticslog` passaram localmente no Windows; o cache Go foi limpo. BK-031 permanece em 80% porque ainda faltam a validação da ACL em VM/instalação e a aprovação da referência técnica ao lado dos erros visíveis na tela. Evidência: `docs/evidence/LOG-ROTATION-STARTUP-BOUND-2026-10-11.md`.
+**Registro da revisão dos logs preexistentes — 11/10/2026, antes da referência visível:** a inicialização passou a recusar, sem apagar nem alterar, um arquivo ativo ou rotacionado acima do limite configurado. Naquele momento, BK-031 estava em 80%; a referência visível ainda aguardava aprovação. A atualização posterior e o percentual atual estão registrados abaixo. Evidência: `docs/evidence/LOG-ROTATION-STARTUP-BOUND-2026-10-11.md`.
+
+**Atualização após referência visível — 11/10/2026:** com autorização da responsável, `app.go` agora acrescenta à mensagem já existente o identificador que o worker registra no log. A CI `38169879308` passou nos quatro jobs, incluindo Windows, PostgreSQL, testes, compilação e instalador. BK-031 avança para 85%; faltam conferência visual no protótipo e validação da ACL dos logs em instalação/VM. O progresso geral do rastreador é 8,4%, com 91,6% restante (127 tarefas; 7 concluídas, 11 em andamento e 109 não iniciadas). A mensagem complementar não move elementos nem redesenha a tela e não altera regras de negócio ou financeiras. Evidência: `docs/evidence/WORKER-STRUCTURED-DIAGNOSTICS-2026-10-11.md`.
 
 **Critério de aceite:** Erro visível ao usuário possui referência que encontra diagnóstico técnico sem tokens ou extratos completos.
 
@@ -3513,5 +3515,6 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 - A responsável autorizou acrescentar uma referência curta à mensagem existente, sem mover ou redesenhar telas.
 - A camada Wails agora repassa para a mensagem o `request_id` que o worker já grava no log, com o rótulo “Código de referência”. A mudança cobre erros retornados pelo worker nas consultas de saúde, painel, configurações, OAuth, sincronização e importações; o código de erro e os dados financeiros não mudam.
-- `gofmt` e `git diff --check` passaram. Não foram executados testes nem build local nesta etapa. A CI `38169796225` validou o backlog, mas parou no gate de mensagens de commit; as verificações Windows e PostgreSQL foram puladas. Uma nova execução será disparada após corrigir o formato exigido pelo `CONTRIBUTING.md`.
-- BK-031 permanece em 80% até a validação automatizada e a validação de ACL em instalação/VM. O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; estimativa simples de 8,3% concluído e 91,7% restante. Não há prazo confiável para a conclusão global.
+- Os commits iniciais foram recusados pelo verificador de mensagens porque os campos percentuais usaram rótulos diferentes dos exigidos em `CONTRIBUTING.md`; não reescrevi os commits publicados. O commit de correção no formato exato disparou a CI `38169879308`, que passou em `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`.
+- `gofmt`, `git diff --check` e a CI completa passaram. Não foram executados testes locais nesta etapa. A conferência visual no protótipo e a validação de ACL em instalação/VM continuam pendentes.
+- BK-031 avança de 80% para 85% (15% restante). O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; estimativa ponderada de 8,4% concluído e 91,6% restante. Não há prazo confiável para concluir o projeto: faltam 109 tarefas não iniciadas e validações externas.

@@ -145,6 +145,7 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 
 - A `DailyProjectionFrom` agora tem testes próprios: o leitor gera 1.000 movimentos sob demanda, produz uma série limitada a D0–D+60 e mantém os totais corretos; erros da fonte, leitor ausente e estouro de moeda falham sem devolver uma série parcial.
 - `go test ./internal/financial -count=1`, `go vet ./internal/financial` e `git diff --check` passaram no Windows. O teste confirma o helper de cálculo em fluxo; ainda não há chamada de produção, consulta ao saldo diário real nem conexão com a calculadora.
+- A CI completa `38123193176`, no commit `6983a76`, passou nos jobs Windows e PostgreSQL/Linux. Passaram testes e `go vet`, verificações de segurança, migrations/sqlc, frontend, builds, instalador e versão portátil sem assinatura, smoke de instalação/desinstalação, consolidação e upload dos outputs. O artefato temporário está no registro local de limpeza. Essa aprovação não comprova integração da calculadora com dados financeiros reais.
 - BK-006 permanece em 15%, pois os dados reais de entrada e a ligação ao fluxo consolidado continuam pendentes. A estrutura da planilha enviada, telas e regras financeiras não foram alteradas.
 - O backlog continua com 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. A média simples permanece em 6,7% concluído e 93,3% restante; não há prazo global confiável.
 - Evidência: `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`.

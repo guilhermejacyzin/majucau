@@ -235,3 +235,11 @@ projeção e os limites do seu contrato; não valida integração com fontes rea
 consulta de produção a `daily_balances` ou uso da calculadora. Nenhuma fórmula,
 tela ou regra financeira foi alterada. O vínculo com o fluxo consolidado e as
 entradas reais continua pendente.
+
+A CI completa `38123193176`, no commit `6983a76`, passou nos jobs Windows e
+PostgreSQL/Linux. Passaram testes e `go vet`, verificações de vulnerabilidades,
+migrations/sqlc, segredos, lint/tipos/testes/build do frontend, builds desktop e
+worker, instalador e versão portátil sem assinatura, smoke de instalação e
+desinstalação, consolidação e upload dos outputs. Isso confirma o código e o
+pipeline desta alteração, mas não prova a conexão da calculadora com dados
+financeiros reais.

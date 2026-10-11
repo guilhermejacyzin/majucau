@@ -137,7 +137,7 @@ func streamReceiptsFolder(ctx context.Context, folder string, seen csvstream.Sou
 		var validationHash []byte
 		if preview {
 			validationHasher := sha256.New()
-			validationErr := StreamReceiptsCSV(io.TeeReader(file, validationHasher), func(_ int, _ ReceiptCandidate) error {
+			validationErr := StreamReceiptsCSV(ctx, io.TeeReader(file, validationHasher), func(_ int, _ ReceiptCandidate) error {
 				return ctx.Err()
 			}, func(RowError) error {
 				return ctx.Err()
@@ -184,7 +184,7 @@ func streamReceiptsFolder(ctx context.Context, folder string, seen csvstream.Sou
 		}
 		hasher := sha256.New()
 		metadata := ImportedFile{Name: name}
-		parseErr := StreamReceiptsCSV(io.TeeReader(file, hasher), func(line int, candidate ReceiptCandidate) error {
+		parseErr := StreamReceiptsCSV(ctx, io.TeeReader(file, hasher), func(line int, candidate ReceiptCandidate) error {
 			if err := ctx.Err(); err != nil {
 				return err
 			}

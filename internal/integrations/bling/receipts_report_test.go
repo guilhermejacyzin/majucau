@@ -1,6 +1,7 @@
 package bling
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
@@ -15,7 +16,7 @@ const sampleReceiptsCSV = "\ufeffCliente;Histórico;Forma de pagamento;Nº docum
 func TestStreamReceiptsCSVUsesBlingAsSourceForNuvemPaymentMethods(t *testing.T) {
 	var first ReceiptCandidate
 	accepted, rejected := 0, 0
-	err := StreamReceiptsCSV(strings.NewReader(sampleReceiptsCSV), func(_ int, candidate ReceiptCandidate) error {
+	err := StreamReceiptsCSV(context.Background(), strings.NewReader(sampleReceiptsCSV), func(_ int, candidate ReceiptCandidate) error {
 		accepted++
 		if accepted == 1 {
 			first = candidate
@@ -40,9 +41,29 @@ func TestStreamReceiptsCSVUsesBlingAsSourceForNuvemPaymentMethods(t *testing.T) 
 }
 
 func TestStreamReceiptsCSVRejectsMissingColumn(t *testing.T) {
-	err := StreamReceiptsCSV(strings.NewReader("Cliente;Recebido\nA;10,00\n"), nil, nil)
+	err := StreamReceiptsCSV(context.Background(), strings.NewReader("Cliente;Recebido\nA;10,00\n"), nil, nil)
 	if err == nil {
 		t.Fatal("missing report columns must fail before import")
+	}
+}
+
+func TestStreamReceiptsCSVCancelsBetweenRowsAfterRejectedRow(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	input := strings.Replace(sampleReceiptsCSV, ";pago;53,43;461,45\n", ";aberto;53,43;461,45\n", 1)
+	accepted := 0
+	err := StreamReceiptsCSV(ctx, strings.NewReader(input), func(_ int, _ ReceiptCandidate) error {
+		accepted++
+		return nil
+	}, func(RowError) error {
+		cancel()
+		return nil
+	})
+	if err != context.Canceled {
+		t.Fatalf("StreamReceiptsCSV() error = %v, want context.Canceled", err)
+	}
+	if accepted != 0 {
+		t.Fatalf("CSV stream accepted %d rows after cancellation", accepted)
 	}
 }
 

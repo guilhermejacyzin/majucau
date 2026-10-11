@@ -132,7 +132,7 @@ func streamFutureFolder(ctx context.Context, folder string, seen csvstream.Sourc
 		var validationHash []byte
 		if preview {
 			validationHasher := sha256.New()
-			validationErr := StreamFutureCSV(io.TeeReader(file, validationHasher), func(_ int, _ FutureReceivableCandidate) error {
+			validationErr := StreamFutureCSV(ctx, io.TeeReader(file, validationHasher), func(_ int, _ FutureReceivableCandidate) error {
 				return ctx.Err()
 			}, func(RowError) error {
 				return ctx.Err()
@@ -179,7 +179,7 @@ func streamFutureFolder(ctx context.Context, folder string, seen csvstream.Sourc
 		}
 		hasher := sha256.New()
 		metadata := ImportedFutureFile{Name: name}
-		parseErr := StreamFutureCSV(io.TeeReader(file, hasher), func(line int, candidate FutureReceivableCandidate) error {
+		parseErr := StreamFutureCSV(ctx, io.TeeReader(file, hasher), func(line int, candidate FutureReceivableCandidate) error {
 			if err := ctx.Err(); err != nil {
 				return err
 			}

@@ -1,6 +1,7 @@
 package nuvempago
 
 import (
+	"context"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -62,14 +63,24 @@ type FutureErrorHandler func(issue RowError) error
 
 // StreamFutureCSV validates and delivers one row at a time without retaining
 // candidates, row errors, or source identifiers. The caller owns
-// deduplication and persistence.
-func StreamFutureCSV(input io.Reader, accept FutureRowHandler, reject FutureErrorHandler) error {
+// deduplication and persistence. Cancellation is checked between bounded
+// record reads so long files stop even when rows are rejected without a handler.
+func StreamFutureCSV(ctx context.Context, input io.Reader, accept FutureRowHandler, reject FutureErrorHandler) error {
+	if ctx == nil {
+		return errors.New("future CSV context is required")
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	reader := csv.NewReader(csvlimit.NewReader(input))
 	reader.Comma = ';'
 	reader.FieldsPerRecord = -1
 	reader.TrimLeadingSpace = true
 
 	header, err := reader.Read()
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return ctxErr
+	}
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			return ErrInvalidFutureHeader
@@ -82,7 +93,13 @@ func StreamFutureCSV(input io.Reader, accept FutureRowHandler, reject FutureErro
 	}
 
 	for line := 2; ; line++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		row, readErr := reader.Read()
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if errors.Is(readErr, io.EOF) {
 			break
 		}

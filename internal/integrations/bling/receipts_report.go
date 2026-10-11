@@ -1,6 +1,7 @@
 package bling
 
 import (
+	"context"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -48,14 +49,24 @@ type ReceiptErrorHandler func(issue RowError) error
 // StreamReceiptsCSV validates one row at a time and delivers it to the caller.
 // It does not retain candidates, row errors, or source identifiers. The caller
 // owns deduplication and persistence so it can use bounded or transactional
-// storage appropriate to its workflow.
-func StreamReceiptsCSV(input io.Reader, accept ReceiptRowHandler, reject ReceiptErrorHandler) error {
+// storage appropriate to its workflow. Cancellation is checked between bounded
+// record reads so long files stop even when rows are rejected without a handler.
+func StreamReceiptsCSV(ctx context.Context, input io.Reader, accept ReceiptRowHandler, reject ReceiptErrorHandler) error {
+	if ctx == nil {
+		return errors.New("receipt CSV context is required")
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	reader := csv.NewReader(csvlimit.NewReader(input))
 	reader.Comma = ';'
 	reader.FieldsPerRecord = -1
 	reader.TrimLeadingSpace = true
 
 	header, err := reader.Read()
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return ctxErr
+	}
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			return ErrInvalidReportHeader
@@ -68,7 +79,13 @@ func StreamReceiptsCSV(input io.Reader, accept ReceiptRowHandler, reject Receipt
 	}
 
 	for line := 2; ; line++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		row, readErr := reader.Read()
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if errors.Is(readErr, io.EOF) {
 			break
 		}

@@ -955,6 +955,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Evidência adicionada em 11/10/2026:** O cofre DPAPI aplica e valida DACLs protegidas na pasta e nos arquivos, com teste Windows e `go vet` aprovados sob a identidade de desenvolvimento. O instalador ainda não provisiona a pasta pai nem a identidade/credencial do worker; portanto, SEC-R03 continua bloqueador e BK-024 segue parcial.
 
+**Evidência de cancelamento no streaming CSV (11/10/2026):** `StreamReceiptsCSV` e `StreamFutureCSV` recebem o contexto e verificam cancelamento antes/depois de cada leitura de linha. Isso também cobre linhas inválidas quando o chamador não registra avisos. Bling e Nuvem Pago passam o contexto da importação para os parsers; o erro propaga ao serviço, que sai antes do commit. Validações, contagens, limites e regras de persistência não foram alteradas. Testes focalizados passam. Ver `docs/evidence/CSV-STREAM-CANCELLATION-2026-10-11.md`. BK-024 permanece em 35%, pois faltam validações operacionais, riscos e fluxos adicionais.
+
 **Dependências:** BK-013, BK-014, BK-019
 
 **Fonte:** M-058; Y_CEI_Tela_17; Consolidação 13/09/2026, §2

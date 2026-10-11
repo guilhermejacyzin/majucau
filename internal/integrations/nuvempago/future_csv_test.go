@@ -1,6 +1,7 @@
 package nuvempago
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
@@ -14,7 +15,7 @@ const sampleFutureCSV = "\ufeffData do pagamento;Data de recebimento;Tipo de mov
 func TestStreamFutureCSVNormalizesProjectedNuvemPagoRows(t *testing.T) {
 	var first FutureReceivableCandidate
 	accepted, rejected := 0, 0
-	err := StreamFutureCSV(strings.NewReader(sampleFutureCSV), func(_ int, candidate FutureReceivableCandidate) error {
+	err := StreamFutureCSV(context.Background(), strings.NewReader(sampleFutureCSV), func(_ int, candidate FutureReceivableCandidate) error {
 		accepted++
 		if accepted == 1 {
 			first = candidate
@@ -42,9 +43,29 @@ func TestStreamFutureCSVNormalizesProjectedNuvemPagoRows(t *testing.T) {
 }
 
 func TestStreamFutureCSVRejectsInvalidContractBeforeRows(t *testing.T) {
-	err := StreamFutureCSV(strings.NewReader("Cliente;Recebido\nA;10,00\n"), nil, nil)
+	err := StreamFutureCSV(context.Background(), strings.NewReader("Cliente;Recebido\nA;10,00\n"), nil, nil)
 	if err == nil {
 		t.Fatal("missing future columns must fail before import")
+	}
+}
+
+func TestStreamFutureCSVCancelsBetweenRowsAfterRejectedRow(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	input := strings.Replace(sampleFutureCSV, ";Entrada;Venda;9483;", ";Saída;Venda;9483;", 1)
+	accepted := 0
+	err := StreamFutureCSV(ctx, strings.NewReader(input), func(_ int, _ FutureReceivableCandidate) error {
+		accepted++
+		return nil
+	}, func(RowError) error {
+		cancel()
+		return nil
+	})
+	if err != context.Canceled {
+		t.Fatalf("StreamFutureCSV() error = %v, want context.Canceled", err)
+	}
+	if accepted != 0 {
+		t.Fatalf("CSV stream accepted %d rows after cancellation", accepted)
 	}
 }
 
@@ -52,7 +73,7 @@ func TestStreamFutureCSVRejectsReceiptDateBeforePayment(t *testing.T) {
 	input := strings.Replace(sampleFutureCSV, "20/08/2026;21/09/2026;Entrada;Venda;9483", "20/08/2026;19/08/2026;Entrada;Venda;9999", 1)
 	firstRejected := ""
 	accepted, rejected := 0, 0
-	err := StreamFutureCSV(strings.NewReader(input), func(_ int, _ FutureReceivableCandidate) error {
+	err := StreamFutureCSV(context.Background(), strings.NewReader(input), func(_ int, _ FutureReceivableCandidate) error {
 		accepted++
 		return nil
 	}, func(issue RowError) error {

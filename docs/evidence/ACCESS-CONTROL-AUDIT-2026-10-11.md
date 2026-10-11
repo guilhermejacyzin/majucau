@@ -23,7 +23,7 @@ O projeto tem estruturas de banco para perfis e permissões e controle de quem p
 
 ## Próximo passo seguro
 
-Definir e aprovar uma tabela simples que diga, para cada perfil, quem pode consultar, sincronizar, exportar backup, editar dados financeiros/contábeis, fechar períodos, administrar usuários e restaurar backups. Depois da aprovação, implementar a verificação no worker e validar que cada ação permitida e negada é auditada. Até lá, não alterar os vínculos padrão da migration nem ampliar capacidades.
+Em 11/10/2026, a responsável aprovou para a versão 1: Financeiro usa `ADMIN`; Diretores podem consultar, sincronizar e exportar backups e relatórios; `ACCOUNTING` e `VIEWER` ficam fora da versão 1. Essa decisão resolve a escolha dos perfis e as capacidades dos Diretores. A implementação ainda precisa definir o provisionamento/identidade de usuários e verificar cada capacidade no worker, registrando ações permitidas e negadas. Até essa validação, a migration e o despacho atual não garantem que o acesso real corresponda à decisão aprovada; não alterar telas.
 
 ## Arquivos lidos
 

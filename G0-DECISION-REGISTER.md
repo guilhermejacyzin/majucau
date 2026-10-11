@@ -288,3 +288,12 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Nenhum dos dois cards entra no lucro da DRE. A depreciação segue sua regra contábil própria e não é substituída pelo CAPEX.
 - Reduzir as dimensões da faixa inferior para acomodar os cards, mantendo linhas da DRE e alerta `UNMAPPED` como aprovados.
 - A usuária confirmou que os relatórios existentes informam CAPEX. O painel ainda não recebe esses valores: o snapshot atual consulta recebíveis, recebimentos, contas a pagar e pagamentos, sem campos de CAPEX. A pendência é integrar ao snapshot os dados já informados nos relatórios e conferir o período; até a integração, mostrar `—`. Não reconstruir o CAPEX com pagamentos genéricos nem estimar por extratos bancários.
+
+## Decisão posterior aprovada — perfis de acesso da versão 1
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-11 (America/Sao_Paulo).
+- O perfil da pessoa responsável pelo Financeiro será `ADMIN`.
+- Diretores poderão consultar dados, sincronizar integrações e exportar backups e relatórios.
+- Os perfis `ACCOUNTING` e `VIEWER` ficam fora da versão 1.
+- Esta decisão define os perfis e capacidades funcionais da versão 1. A implementação ainda precisa aplicar as permissões no worker e alinhar a criação/provisionamento de usuários; até isso ser validado, os cadastros atuais não comprovam que o acesso esteja protegido por perfil.
+- A decisão não altera telas aprovadas nem regras financeiras.

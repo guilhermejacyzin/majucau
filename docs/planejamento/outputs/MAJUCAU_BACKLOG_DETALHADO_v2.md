@@ -285,6 +285,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A responsável confirmou que a calculadora deve preservar a estrutura da planilha enviada. Essa é a referência para a implementação futura; não alterar fórmulas, fontes de dados ou apresentação sem conferir o documento e pedir confirmação quando houver dúvida.
 - Esta confirmação não resolve a divergência técnica dos filtros de data do Bling e não muda telas, regras financeiras ou percentuais do backlog.
 
+### Correção da limpeza dos arquivos intermediários CSV — 11/10/2026
+
+- Na auditoria dos temporários da prévia CSV, dois caminhos de junção removiam arquivos diretamente e não usavam o erro seguro padronizado. Agora chamam `securetemp.RemoveFile`; os testes cobrem as junções por `add` e `finish` e a suíte de `securetemp` cobre erro tipado e mensagem sanitizada.
+- `go test -count=1 ./internal/securetemp ./internal/integrations/csvstream` e `git diff --check` passaram. O cache Go temporário foi removido ao final. Nenhuma tela, regra financeira ou dado persistido foi alterado.
+- BK-024 permanece em 30%: seguem pendentes as falhas controladas específicas, a conclusão do mapa de riscos e as validações em VM/rede/perfis. O projeto permanece com 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas; 7,5% concluído e 92,5% restante.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau

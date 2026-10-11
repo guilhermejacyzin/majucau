@@ -330,3 +330,10 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
 - Continuam pendentes outras injeções controladas de falha, fechar o mapa de
   riscos e validar instalação/atualização em VM limpa, rede e acesso por perfil.
 - Nenhuma tela ou regra financeira foi alterada.
+
+## Correção da remoção de arquivos intermediários CSV — 11/10/2026
+
+- A revisão encontrou dois pontos da intercalação de nomes de arquivos em que a remoção direta propagava a falha, mas não preservava o tipo `securetemp.CleanupError` nem ocultava o caminho na mensagem comum.
+- Os dois caminhos agora usam `securetemp.RemoveFile`, mantendo o caminho disponível para tratamento autorizado e a mensagem comum sanitizada. Foram acrescentados testes para as junções em `add` e `finish`; a suíte de `securetemp` também cobre o tipo e a sanitização do erro do helper.
+- `go test -count=1 ./internal/securetemp ./internal/integrations/csvstream` e `git diff --check` passaram localmente. O cache Go foi criado em `artifacts/cache` e removido pelo módulo `scripts/SafeCleanup.psm1`; a ausência da pasta foi conferida.
+- Não houve alteração de dados persistidos, telas ou regras financeiras. Falhas controladas nas chamadas específicas de remoção e a validação em VM limpa continuam pendentes.

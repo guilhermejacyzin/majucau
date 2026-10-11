@@ -583,7 +583,7 @@ func (b *diskRunBuilder) add(ctx context.Context, path string) error {
 			return err
 		}
 		for _, oldPath := range group {
-			if err := os.Remove(oldPath); err != nil {
+			if err := securetemp.RemoveFile(oldPath); err != nil {
 				return fmt.Errorf("remove merged temporary CSV filename run: %w", err)
 			}
 		}
@@ -614,7 +614,7 @@ func (b *diskRunBuilder) finish(ctx context.Context) (string, error) {
 				return "", err
 			}
 			for _, oldPath := range group {
-				if err := os.Remove(oldPath); err != nil {
+				if err := securetemp.RemoveFile(oldPath); err != nil {
 					return "", fmt.Errorf("remove merged temporary CSV filename run: %w", err)
 				}
 			}

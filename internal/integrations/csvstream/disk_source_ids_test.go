@@ -111,3 +111,78 @@ func TestDiskSourceIDSetDeduplicatesWithoutPersistingPlaintextAndCleansUp(t *tes
 		t.Fatal("encryption key state must be released on Close")
 	}
 }
+
+func TestDiskRunBuilderAddRemovesMergedTemporaryRuns(t *testing.T) {
+	ctx := context.Background()
+	set, err := NewDiskSourceIDSet(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := set.Close(); err != nil {
+			t.Errorf("close temporary CSV source index: %v", err)
+		}
+	})
+
+	builder := diskRunBuilder{set: set}
+	paths := writeTemporaryNameRuns(t, set, diskMergeFanIn)
+	for _, path := range paths {
+		if err := builder.add(ctx, path); err != nil {
+			t.Fatalf("add temporary CSV filename run: %v", err)
+		}
+	}
+	for _, path := range paths {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatalf("merged temporary CSV filename run %q still exists: %v", path, err)
+		}
+	}
+
+	mergedPath, err := builder.finish(ctx)
+	if err != nil {
+		t.Fatalf("finish temporary CSV filename runs: %v", err)
+	}
+	if _, err := os.Stat(mergedPath); err != nil {
+		t.Fatalf("final temporary CSV filename run is missing: %v", err)
+	}
+}
+
+func TestDiskRunBuilderFinishRemovesIntermediateTemporaryRuns(t *testing.T) {
+	ctx := context.Background()
+	set, err := NewDiskSourceIDSet(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := set.Close(); err != nil {
+			t.Errorf("close temporary CSV source index: %v", err)
+		}
+	})
+
+	paths := writeTemporaryNameRuns(t, set, diskMergeFanIn+1)
+	builder := diskRunBuilder{set: set, levels: [][]string{paths}}
+	mergedPath, err := builder.finish(ctx)
+	if err != nil {
+		t.Fatalf("finish temporary CSV filename runs: %v", err)
+	}
+	for _, path := range paths {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatalf("intermediate temporary CSV filename run %q still exists: %v", path, err)
+		}
+	}
+	if _, err := os.Stat(mergedPath); err != nil {
+		t.Fatalf("final temporary CSV filename run is missing: %v", err)
+	}
+}
+
+func writeTemporaryNameRuns(t *testing.T, set *DiskSourceIDSet, count int) []string {
+	t.Helper()
+	paths := make([]string, 0, count)
+	for index := 0; index < count; index++ {
+		path, err := set.writeNameRun([]string{fmt.Sprintf("temporary-%04d.csv", index)})
+		if err != nil {
+			t.Fatalf("write temporary CSV filename run: %v", err)
+		}
+		paths = append(paths, path)
+	}
+	return paths
+}

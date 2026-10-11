@@ -26,6 +26,10 @@ A pasta continha uma planilha e dezesseis PNGs. O PNG com nome ChatGPT repete a 
 | T16_Parametros.png | `ae91e304c0185c5908e3ac40497d98c6d3e63936ab9a35dc9a9ac8729329753c` |
 | T17_Usuarios.png | `fcd45dde50ea33a1ed039931a4f39ff4b85aacc232c1f8b4cca64749f4261406` |
 
+## Material complementar recebido em outubro de 2026
+
+Em 11/10/2026, quatro arquivos de apoio à calculadora e relatórios financeiros foram encontrados nos Downloads e copiados para `sources/private/material-original/`. Os originais nos Downloads foram preservados. A pasta privada é ignorada pelo Git; o repositório não contém as planilhas nem os relatórios. Nome, tamanho e SHA-256 estão registrados apenas em `artifacts/retained/cleanup-register.md`. As duas cópias da calculadora têm conteúdo idêntico.
+
 ## Consolidacao das respostas
 
 Texto recebido e incorporado à versão 1. SHA-256: `ed8f04f469577e8772a91412edb6f49df65e5788beafd7f87920e226aa6aae42`.

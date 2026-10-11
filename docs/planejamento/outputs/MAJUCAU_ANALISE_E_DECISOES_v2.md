@@ -85,7 +85,7 @@ As dez frentes HT abaixo são trabalho futuro, não novas perguntas de negócio.
 | BK-000 | Confirmar a base de escopo e as decisões da Majucau | action, steps, accept, status |
 | BK-001 | Inventariar os materiais e suas versões | steps |
 | BK-004 | Localizar e versionar os mockups e contratos aprovados | action, steps, accept, status, evidence, refs, progress |
-| BK-005 | Detalhar os casos de pagamento divergente após decidir C-01 | steps, accept, status |
+| BK-005 | Detalhar os casos de pagamento divergente após decidir C-01 | steps, accept, status, evidence |
 | BK-006 | Especificar tecnicamente a regra fechada da calculadora | title, action, steps, accept, status |
 | BK-007 | Especificar as regras da DRE própria do Majucau | title, goal, action, steps, accept, status, owner |
 | BK-008 | Especificar necessidade líquida e acompanhamento da produção | title, action, steps, accept, status |
@@ -225,7 +225,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Marcar divergência e manter o título sem baixa até a análise. Casos complementares serão detalhados em BK-005.
+**Regra / trabalho vigente:** Qualquer diferença entre o título e o movimento, inclusive R$ 0,01, marca divergência e mantém o título sem baixa até análise. Os cenários de aceite, o tratamento de ambiguidade e a proteção contra duplicidade estão detalhados em BK-005.
 
 **Fonte:** C_Conflitos!A3:L3; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 

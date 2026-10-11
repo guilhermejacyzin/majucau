@@ -118,7 +118,7 @@
     "impact": "Aplicar a definição vigente; execução, evidência e aceite são registrados nas tarefas relacionadas.",
     "source": "C_Conflitos!A3:L3; Fechamento das questões ainda tratadas como abertas — 13/09/2026",
     "status": "Definida",
-    "answer": "Marcar divergência e manter o título sem baixa até a análise. Casos complementares serão detalhados em BK-005.",
+    "answer": "Qualquer diferença, inclusive R$ 0,01, marca divergência e mantém o título sem baixa até análise. Cenários de aceite, tratamento de ambiguidade e proteção contra duplicidade estão detalhados em BK-005.",
     "tasks": "BK-005",
     "nature": "Regra/atribuição definida",
     "previous_status": "Respondida",

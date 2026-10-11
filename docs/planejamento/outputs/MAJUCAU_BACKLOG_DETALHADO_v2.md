@@ -41,8 +41,8 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 
 - BK-000 foi revisada contra ADR-001, ADR-002, `AGENTS.md`, `G0-DECISION-REGISTER.md`, a política contábil da DRE e a análise v2. Seu aceite foi atendido e a tarefa foi concluída com evidência.
 - BK-004 foi revisada contra o inventário das fontes, o mapa MOCAP e as decisões vigentes: 15 imagens T1–T15/C11 estão presentes e seus hashes conferem; as correções de menu e T6 estão registradas. Nenhuma tela foi alterada.
-- Duas das 127 tarefas foram auditadas em 10–11/10/2026: BK-000 e BK-004. Outras 125 ainda aguardam revisão tarefa a tarefa; três conclusões históricas não foram revalidadas.
-- A planilha mostra 5 de 127 tarefas concluídas (3,9% por contagem simples), mas esse valor é apenas o estado do rastreador; não representa o percentual real de conclusão do produto. A estimativa global e o prazo continuam indisponíveis.
+- Três das 127 tarefas foram auditadas: BK-000, BK-004 e BK-005. BK-005 registra os exemplos de C-01, inclusive diferença de R$ 0,01, divergências pendentes e revisão humana de vínculos ambíguos; nenhuma regra ou tela foi alterada. Outras 124 aguardam revisão tarefa a tarefa; três conclusões históricas não foram revalidadas.
+- A planilha mostra 6 de 127 tarefas concluídas (4,7% por contagem simples), mas esse valor é apenas o estado do rastreador; não representa o percentual real de conclusão do produto. A estimativa global e o prazo continuam indisponíveis.
 - Esta auditoria não alterou código, telas aprovadas ou regras de negócio.
 
 ## Dependências e ordem prática
@@ -193,7 +193,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-005 — Detalhar os casos de pagamento divergente após decidir C-01
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
+**Situação:** Concluída. **Evolução:** 100%. **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
 
 **Objetivo:** Ter uma única semântica de baixa de títulos.
 
@@ -201,17 +201,21 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Como fazer:**
 
-1. Aplicar valor diferente = divergência e título sem baixa até análise, inclusive diferença de centavos sem tolerância inventada.
-2. Derivar movimento financeiro efetivamente registrado do Bling, preservando estorno, desconto e tarifa conforme a origem; não dar baixa no ERP pelo Majucau.
-3. Criar exemplos de aceite e trilha de conferência; candidato ambíguo não é conciliado automaticamente.
+1. Comparar o valor do título com o movimento efetivamente registrado e comprovado no Bling. Valor igual pode seguir a conciliação normal se o vínculo for único e sustentado por evidência.
+2. Usar estes exemplos de aceite para C-01: título de R$ 1.000,00 com movimento de R$ 999,99, R$ 1.000,01 ou R$ 600,00 = `DIVERGENT`; manter o título sem baixa até análise. A diferença de um centavo já é divergência; não criar tolerância.
+3. Preservar desconto, tarifa e estorno como eventos separados conforme a origem. Se houver diferença líquida, reversão ou dúvida de vínculo, deixar pendente para análise; não compensar ou ajustar automaticamente.
+4. Se mais de um movimento puder corresponder ao título, não escolher por aproximação; manter a conciliação pendente de revisão humana. Reprocessar o mesmo arquivo/evento não deve duplicar o movimento.
+5. Registrar título, movimento e origem, valores comparados, estado, motivo da divergência e revisão realizada. O Majucau não altera nem baixa títulos no Bling.
 
-**Critério de aceite:** Título e movimento mantêm estados distintos e rastreáveis; a divergência segue C-01, sem pedir novamente a regra financeira.
+**Critério de aceite:** Valor igual e vínculo único seguem a conciliação normal com evidência. Qualquer diferença, inclusive R$ 0,01, mantém `DIVERGENT` e o título sem baixa. Desconto/tarifa/estorno não são compensados por hipótese; vínculo ambíguo fica para revisão humana; replay não duplica fatos; não há escrita no Bling.
 
 **Impacto:** Afeta contas a pagar, vencidos, caixa e conciliação.
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
 **Fonte:** C_Conflitos!A3:L3; T04; Fechamento vigente 13/09/2026, §8.6–8.8; C-01 mantida
+
+**Evidência:** Cenários de aceite e tratamento de ambiguidade registrados nesta tarefa a partir da regra C-01 aprovada; não houve alteração de código nem execução de testes.
 
 **Regras e verificações vinculadas:** C-01
 

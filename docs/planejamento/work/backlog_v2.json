@@ -142,22 +142,24 @@
     "goal": "Ter uma única semântica de baixa de títulos.",
     "action": "Formalizar a decisão: valor diferente gera divergência e mantém título sem baixa até análise.",
     "steps": [
-      "Aplicar valor diferente = divergência e título sem baixa até análise, inclusive diferença de centavos sem tolerância inventada.",
-      "Derivar movimento financeiro efetivamente registrado do Bling, preservando estorno, desconto e tarifa conforme a origem; não dar baixa no ERP pelo Majucau.",
-      "Criar exemplos de aceite e trilha de conferência; candidato ambíguo não é conciliado automaticamente."
+      "Comparar o valor do título com o movimento efetivamente registrado e comprovado no Bling. Valor igual pode seguir a conciliação normal se o vínculo for único e sustentado por evidência.",
+      "Usar estes exemplos de aceite para C-01: título de R$ 1.000,00 com movimento de R$ 999,99, R$ 1.000,01 ou R$ 600,00 = DIVERGENT; manter o título sem baixa até análise. A diferença de um centavo já é divergência; não criar tolerância.",
+      "Preservar desconto, tarifa e estorno como eventos separados conforme a origem. Se houver diferença líquida, reversão ou dúvida de vínculo, deixar pendente para análise; não compensar ou ajustar automaticamente.",
+      "Se mais de um movimento puder corresponder ao título, não escolher por aproximação; manter a conciliação pendente de revisão humana. Reprocessar o mesmo arquivo/evento não deve duplicar o movimento.",
+      "Registrar título, movimento e origem, valores comparados, estado, motivo da divergência e revisão realizada. O Majucau não altera nem baixa títulos no Bling."
     ],
-    "accept": "Título e movimento mantêm estados distintos e rastreáveis; a divergência segue C-01, sem pedir novamente a regra financeira.",
+    "accept": "Valor igual e vínculo único seguem a conciliação normal com evidência. Qualquer diferença, inclusive R$ 0,01, mantém DIVERGENT e o título sem baixa. Desconto/tarifa/estorno não são compensados por hipótese; vínculo ambíguo fica para revisão humana; replay não duplica fatos; não há escrita no Bling.",
     "impact": "Afeta contas a pagar, vencidos, caixa e conciliação.",
     "deps": [],
     "refs": "C_Conflitos!A3:L3; T04; Fechamento vigente 13/09/2026, §8.6–8.8; C-01 mantida",
     "questions": "C-01",
     "owner": "Majucau / Financeiro",
     "kind": "Planejamento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Concluída",
+    "evidence": "Cenários de aceite e tratamento de ambiguidade registrados nesta tarefa a partir da regra C-01 aprovada; não houve alteração de código nem execução de testes.",
     "weight": 1,
     "dependencies": [],
-    "progress": 0
+    "progress": 1
   },
   {
     "key": "investmentpolicy",

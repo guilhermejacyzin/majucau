@@ -521,7 +521,11 @@ func retryAfterAt(value string, now time.Time) time.Duration {
 	if err != nil || !when.After(now) {
 		return 0
 	}
-	return when.Sub(now)
+	delay := when.Sub(now)
+	if delay > defaultBlingMaxRetryAfter {
+		return defaultBlingMaxRetryAfter
+	}
+	return delay
 }
 
 func isDecimalRetryAfter(value string) bool {

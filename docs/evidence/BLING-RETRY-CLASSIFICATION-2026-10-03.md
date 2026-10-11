@@ -33,3 +33,16 @@ O artifact G1 unsigned `11276817282` tem 37.432.967 bytes, SHA-256
 em 2026-10-04 14:53:01 UTC. Ele não é uma release assinada. A conexão GitHub não
 oferece exclusão remota; o artifact foi registrado em
 `artifacts/retained/cleanup-register.md`.
+
+## Correção de limite — 2026-10-11
+
+Uma revisão estática encontrou uma lacuna: `Retry-After` em segundos era
+limitado a 30 segundos, mas a forma válida com data HTTP não tinha o mesmo
+limite. O parser agora limita também datas futuras a 30 segundos, conforme
+`AGENTS.md`. Isso evita uma espera longa causada por uma resposta externa.
+
+Não foram adicionados nem executados testes nesta correção. A cobertura existente
+verifica uma data futura curta e limites numéricos; ainda falta cobrir uma data
+HTTP superior a 30 segundos. Portanto, esta correção de código ainda não tem
+validação automatizada nesta execução e não fecha por si só BK-041. Nenhuma tela
+ou regra financeira foi alterada.

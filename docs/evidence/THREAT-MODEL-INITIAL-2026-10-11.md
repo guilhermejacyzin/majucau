@@ -110,6 +110,15 @@ Esta conferência rastreou os principais pontos em que dados entram, são transf
 | Pacote de diagnóstico | `internal/installer/diagnostics.go` gera um ZIP com dois arquivos fixos contendo o preflight sanitizado e instruções; calcula seu hash em fluxo. | Não inclui logs nem arquivos financeiros. O destino é indicado pelo chamador; validar caminho e proteção do destino em execução real continua pendente.
 | Exportação de relatórios | A auditoria `ACTION-EXPORT-STATIC-AUDIT-2026-10-11.md` não encontrou rota funcional de exportação de relatórios no catálogo atual. | Quando for implementada conforme a permissão aprovada dos Diretores, deve ser projetada desde o início com leitura em blocos, limites, filtro/snapshot consistente, sanitização, autorização no serviço e auditoria. Não foi criada rota nem arquivo nesta revisão.
 
+### Escopo transacional da importação CSV
+
+Leitura estática de `ReceiptImportService.Import` e `FutureImportService.Import` em 11/10/2026:
+
+- Cada serviço abre uma transação PostgreSQL antes de percorrer a pasta e só confirma depois de gravar o resultado do lote. Os parsers percorrem os arquivos linha a linha e a deduplicação guarda fingerprints HMAC em uma tabela temporária da mesma transação; o PostgreSQL descarta essa tabela no commit ou rollback.
+- Erros de validação por linha são contabilizados; as linhas válidas e o lote `PARTIAL` são confirmados juntos. Uma falha técnica ou cancelamento retorna antes do commit e o rollback descarta as alterações daquela importação.
+- Portanto, hoje a atomicidade técnica cobre a pasta selecionada inteira, embora a leitura e a persistência aconteçam registro a registro. Uma pasta muito grande pode manter a transação e a conexão abertas por bastante tempo. Dividir a confirmação em blocos mudaria o que permanece salvo após uma falha; isso precisa seguir a decisão de atomicidade pendente e não deve ser alterado por inferência.
+- A inspeção foi somente leitura; nenhum teste, build ou mudança de regra/tela foi feito nesta revalidação.
+
 ### Lacunas que continuam abertas
 
 - **Sem limite total de linhas CSV:** isso preserva a decisão aprovada. Ainda é necessário definir monitoramento de espaço, comportamento seguro quando o disco estiver cheio e eventual retenção de dados. Nenhum desses pontos autoriza descartar linhas ou mudar a regra da importação.

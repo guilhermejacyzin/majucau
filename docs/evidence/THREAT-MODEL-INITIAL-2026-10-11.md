@@ -273,6 +273,18 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
   de acesso por perfil.
 - Nenhuma tela ou regra financeira foi alterada.
 
+## Auditoria estática adicional de leituras e streaming — 11/10/2026
+
+Foi feita uma busca estática no código de produção Go e nos scripts por leitura integral de arquivos/respostas, montagem de buffers e decodificação de dados. Testes, dependências, documentação e outputs foram excluídos da busca.
+
+- A leitura de CSV continua registro a registro, com limites por campo e registro; a quantidade total de linhas permanece sem teto, conforme a decisão aprovada. O armazenamento temporário e a limpeza em caso de disco cheio/ACL ainda precisam de validação operacional.
+- As listas e detalhes do Bling passam `resp.Body` diretamente para `json.Decoder` através de `io.LimitedReader`; a resposta tem limite de 4 MiB e cada página aceita até 100 registros. A resposta OAuth usa leitura completa limitada a 4 MiB porque contém um único envelope de tokens.
+- As consultas de linhas do dashboard e da fila CSV usam `Rows.Next()` e percorrem os resultados em fluxo. A lista de estados de integração é um conjunto pequeno de controle.
+- As leituras completas restantes encontradas são limitadas: arquivo de credencial DPAPI, manifesto/chave do pacote de backup e resposta de token. `Read-BoundedTextFile` limita os arquivos dos scripts antes de `ReadToEnd`; os usos encontrados ficam entre 4 KiB e 4 MiB.
+- A busca não encontrou `os.ReadFile`, `File.ReadAllBytes`, `response.json()`, `response.text()` ou `Buffer.concat` nos caminhos pesquisados. Isso é evidência estática delimitada; não comprova consumo de memória em execução, resposta real do Bling, disco cheio, ACL ou máquina limpa.
+
+BK-024 permanece em 30%: esta conferência documenta mais evidência de streaming, mas não substitui os ensaios controlados, o fechamento do mapa de riscos, a validação em VM limpa, rede e perfis. Nenhuma tela ou regra financeira foi alterada; nenhum teste ou build foi executado nesta conferência.
+
 ## Complemento — erros de encerramento nos fluxos CSV em streaming
 
 **Data:** 11/10/2026

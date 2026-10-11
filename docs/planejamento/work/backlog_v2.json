@@ -722,7 +722,7 @@
     "owner": "Segurança + Arquitetura",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "Mapa e testes controlados em docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md. Testes de securetemp/csvstream, go vet e diff check locais passaram; CI #410 passou nos jobs backlog, Windows e PostgreSQL (Go, vet, análise de vulnerabilidades, builds, SBOM, smoke do instalador e consolidação). BK-024 continua em andamento: faltam outras falhas controladas, completar o mapa de riscos e validar VM limpa, rede e acesso por perfil.",
+    "evidence": "Mapa e testes controlados em docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md. Busca estática adicional confirma CSV por linha, Bling com decoder direto e limite de 4 MiB/100 registros por página, e consultas de linhas com Rows.Next(); leituras completas restantes têm limites explícitos. BK-024 permanece em 30% porque ainda faltam falhas controladas, fechar o mapa de riscos e validar VM limpa, rede, disco cheio/ACL e acesso por perfil.",
     "weight": 1,
     "dependencies": [
       "BK-013",

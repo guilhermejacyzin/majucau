@@ -285,6 +285,18 @@ Foi feita uma busca estática no código de produção Go e nos scripts por leit
 
 BK-024 permanece em 30%: esta conferência documenta mais evidência de streaming, mas não substitui os ensaios controlados, o fechamento do mapa de riscos, a validação em VM limpa, rede e perfis. Nenhuma tela ou regra financeira foi alterada; nenhum teste ou build foi executado nesta conferência.
 
+## Complemento — escopo da transação CSV e cobertura de retry HTTP — 11/10/2026
+
+**Tipo:** revisão estática de dois fluxos CSV e de chamadas HTTP de produção; sem mudança de comportamento.
+
+- Os importadores de recebimentos do Bling e de recebíveis futuros do Nuvem Pago percorrem arquivos e linhas em fluxo, com limites CSV de 1 MiB por campo, 4 MiB por registro e 256 campos. A fila de nomes lê 256 itens por vez; a prévia usa área temporária privada/cifrada e mantém até 50 arquivos e 50 problemas na resposta.
+- A deduplicação da importação fica numa tabela temporária PostgreSQL usando HMAC por execução. O serviço abre **uma única transação por pasta selecionada**. Erros de validação por linha permitem gravar as linhas válidas com estado `PARTIAL`; falha técnica ou cancelamento devolve erro e desfaz a transação da pasta.
+- O streaming limita o uso de memória do processo, mas não limita o tamanho total da pasta nem a duração/volume da transação, das tabelas temporárias do banco e do WAL. Como o limite total de linhas foi definido como inexistente, a regra de atomicidade para pastas enormes precisa dizer se o lote é a pasta inteira ou se cada bloco pode ser confirmado e retomado separadamente. A pergunta foi enviada à usuária; não alterar esse comportamento até a resposta. Evidência: `internal/integrations/bling/receipt_service.go`, `internal/integrations/nuvempago/future_service.go`, `internal/integrations/csvstream/file_queue.go` e `internal/integrations/csvstream/source_ids.go`.
+- Inventário estático de `http.Client.Do` e criação de requests no Go de produção encontrou consultas GET do Bling e o POST OAuth. Os GET passam pelo retry compartilhado, limitado a operações repetíveis e falhas transitórias; o POST OAuth não é repetido. Não foi encontrada outra chamada HTTP externa de produção neste inventário. Um futuro adapter de API deve adotar o padrão aprovado, classificando antes quais operações podem ser repetidas.
+- Não houve alteração de código de produto, telas, permissões ou regras financeiras. Nenhum teste ou build foi executado nesta revisão; a constatação é estática e não mede crescimento real de WAL/temporários, consumo do banco, memória ou duração sob carga.
+
+BK-024 permanece em 30% e o projeto mantém a estimativa registrada de 7,5% concluído: este complemento identifica uma decisão de arquitetura pendente, não fecha a validação operacional nem o mapa de riscos.
+
 ## Complemento — erros de encerramento nos fluxos CSV em streaming
 
 **Data:** 11/10/2026

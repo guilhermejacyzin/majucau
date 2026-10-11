@@ -3479,3 +3479,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O teste de IDs em disco do `csvstream` foi ajustado para usar o caminho do `Workspace` seguro. `go test -count=1 ./internal/securetemp ./internal/integrations/csvstream` e `go vet` passaram localmente no Windows.
 - Evidência: `docs/evidence/SECURETEMP-CREATION-FAILURE-2026-10-11.md`. BK-024 permanece em 35% (65% restante); DATA-04 continua parcial até validação de ACL e limpeza em VM Windows limpa. Projeto: 8,3% concluído, 91,7% restante (127 tarefas; 7 concluídas, 11 em andamento, 109 não iniciadas).
 - Nenhuma tela, regra financeira, fórmula ou dado de negócio foi alterado.
+
+## Verificação local completa do checkout — 2026-10-11
+
+- `scripts/verify.ps1` passou em Windows com PowerShell 7: testes Go, vet, scan de segredos, checksums de migrations, sqlc determinístico, contrato NSIS, lint/typecheck/frontend (24 testes), build e `npm audit`.
+- `govulncheck` não reportou vulnerabilidade alcançável. Registrou `GO-2026-5932` na parte OpenPGP não usada de `golang.org/x/crypto@v0.56.0`, sem versão corrigida. O projeto usa Argon2 desse módulo; manter o alerta monitorado e não trocar a criptografia sem revisão.
+- Evidência: `docs/evidence/LOCAL-VERIFICATION-2026-10-11.md`. É validação local, não substitui CI no commit, PostgreSQL ponta a ponta, VM limpa, assinatura, validação funcional ou os gates de produção. Os percentuais do backlog não mudam por uma execução de verificação; projeto continua em 8,3% concluído e 91,7% restante.
+- Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado.

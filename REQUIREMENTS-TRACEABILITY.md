@@ -161,6 +161,10 @@ ou ilegível (`ErrBlingAPIInvalidResponse`) e formato inválido
 `PARTIAL`: faltam carga com memória medida e comprovação de ACL/limpeza em VM
 Windows limpa.
 
+## Verificação local completa — 2026-10-11
+
+`scripts/verify.ps1` passou localmente em Windows/PowerShell 7 no commit `be9cbae`: suíte Go, `go vet`, verificações de migração e sqlc, scan de segredos, contrato NSIS, frontend (lint, tipos, 24 testes, build) e `npm audit`. `govulncheck` não encontrou vulnerabilidade alcançável, mas reportou `GO-2026-5932` no pacote OpenPGP não usado do módulo `golang.org/x/crypto@v0.56.0`, sem versão corrigida indicada. O app importa `argon2` desse módulo e não importa OpenPGP; manter monitoramento antes de qualquer troca criptográfica. A evidência detalhada e os limites estão em `docs/evidence/LOCAL-VERIFICATION-2026-10-11.md`. Isso não prova CI do GitHub, teste em VM limpa, PostgreSQL ponta a ponta nem prontidão de produção.
+
 ## Falhas no provisionamento de diretório temporário — 2026-10-11
 
 O teste Windows de `internal/securetemp` agora verifica que falhas simultâneas na criação do diretório e na liberação do descritor de segurança são retornadas sem tentar remover um diretório inexistente. O teste de `csvstream` usa o caminho exposto pelo `Workspace` seguro. `go test -count=1` e `go vet` passaram localmente nos dois pacotes. Isso amplia a cobertura de falha, mas `DATA-04` continua `PARTIAL` até a verificação de ACL e limpeza em VM Windows limpa. Evidência: `docs/evidence/SECURETEMP-CREATION-FAILURE-2026-10-11.md`.

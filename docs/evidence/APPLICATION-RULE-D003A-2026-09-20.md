@@ -185,17 +185,20 @@ fórmulas apenas nos marcadores mensais e nos três resultados.
 - A instrução de DRE pede valores da DRE do Bling. A decisão aprovada do produto
   determina que o Majucau calcule sua própria DRE; o relatório pronto do Bling
   serve para comparação, não como resultado final.
-- Os meses de janeiro a dezembro são campos de entrada. O lucro acumulado do
-  ano também é digitado manualmente. O mês de referência não calcula esse total:
-  as doze células de marcação repetem a mesma indicação, e não existe fórmula
-  que some os meses até M−2.
-- “Valor já investido” é um campo manual, mas nenhuma fórmula da planilha o usa.
-  A regra aprovada D-003-A calcula o principal já investido por aportes menos
+- Os resultados mensais de janeiro a dezembro são campos de entrada. A fórmula
+  `E12` soma os meses de janeiro até dois meses antes do mês selecionado; em
+  janeiro e fevereiro, retorna zero. As marcações visuais `B8:M8` repetem a
+  mesma indicação e não mostram corretamente o corte M−2, mas isso não altera
+  a soma calculada em `E12`.
+- “Valor já investido” (`E11`) é digitado manualmente e é subtraído em `E12`.
+  Isso não comprova que o valor corresponde ao principal líquido real. A regra
+  aprovada D-003-A exige calcular o principal já investido por aportes menos
   resgates, sem misturar rendimentos.
 - O fluxo de caixa recebe manualmente o saldo da semana crítica, os recebimentos
   previstos da Nuvemshop e a reserva mínima. A planilha soma o saldo e o valor da
-  Nuvemshop, limita a aplicação pela reserva e pelo lucro digitado e mostra o
-  saldo que sobra. Não há uma série dos 61 saldos diários D0–D+60 nessa planilha.
+  Nuvemshop (`E20 = E15 + E16`), limita a aplicação pela reserva e pelo lucro
+  elegível calculado em `E12` e mostra o saldo que sobra. Não há uma série dos
+  61 saldos diários D0–D+60 nessa planilha.
 
 ### O que continua valendo no Majucau
 
@@ -269,3 +272,18 @@ alinhado à regra aprovada sem alteração da migration.
 lacunas; isso não conecta a calculadora nem habilita valores. A próxima ligação
 depende, entre outros pontos, de identificar onde o histórico de aportes e
 resgates de principal é oficialmente registrado.
+
+### Retificação da conferência da planilha — 11/10/2026
+
+Uma comparação célula a célula das duas cópias recebidas confirmou que ambas
+têm as mesmas 16 fórmulas. A fórmula `E12` soma os resultados mensais de
+janeiro até M−2 e desconta o valor manual de `E11`; `E20`, `E21` e `E22`
+calculam o caixa com recebimentos separados da Nuvemshop, o máximo limitado
+pela reserva/lucro e o saldo restante. A anotação anterior que dizia que `E11`
+não era usado e que o arquivo não somava os meses até M−2 estava incorreta e
+foi corrigida acima e no backlog. O contrato aprovado do Majucau não mudou:
+aportes menos resgates devem vir de registros comprovados, e recebimentos da
+Nuvemshop não são somados separadamente ao fluxo consolidado.
+
+Esta conferência foi somente leitura; nenhum macro foi executado. Nenhuma
+fórmula, tela ou regra financeira foi alterada.

@@ -1,6 +1,7 @@
 package financial
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -31,6 +32,10 @@ type AgingTotal struct {
 	Count  int
 }
 
+// OpenReceivableReader yields one open receivable at a time. Database-backed
+// callers should use this contract instead of materializing the full result.
+type OpenReceivableReader func(context.Context) (OpenReceivable, bool, error)
+
 func AgingBucketFor(reference, due time.Time) AgingBucket {
 	// D-005-A treats the reference as an instant and due as a persisted business
 	// date. Convert only the instant; converting a SQL DATE would shift its day.
@@ -58,11 +63,43 @@ func AgingBucketFor(reference, due time.Time) AgingBucket {
 }
 
 func CalculateAging(reference time.Time, records []OpenReceivable) (map[AgingBucket]AgingTotal, error) {
+	index := 0
+	return CalculateAgingFrom(context.Background(), reference, func(context.Context) (OpenReceivable, bool, error) {
+		if index >= len(records) {
+			return OpenReceivable{}, false, nil
+		}
+		record := records[index]
+		index++
+		return record, true, nil
+	})
+}
+
+// CalculateAgingFrom consumes receivables incrementally and retains only the
+// fixed set of aging totals. Reader, validation, and cancellation errors return
+// no partial totals. It preserves the same D-005-A buckets and exclusions as
+// CalculateAging.
+func CalculateAgingFrom(ctx context.Context, reference time.Time, next OpenReceivableReader) (map[AgingBucket]AgingTotal, error) {
 	if reference.IsZero() {
 		return nil, errors.New("reference date is required")
 	}
+	if ctx == nil {
+		return nil, errors.New("context is required")
+	}
+	if next == nil {
+		return nil, errors.New("receivable reader is required")
+	}
 	result := make(map[AgingBucket]AgingTotal)
-	for _, r := range records {
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		r, ok, err := next(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			break
+		}
 		status := r.Status
 		if status == "CANCELLED" || status == "CANCELED" || status == "REFUNDED" || status == "REVERSED" || status == "ESTORNADO" {
 			continue
@@ -78,7 +115,6 @@ func CalculateAging(reference time.Time, records []OpenReceivable) (map[AgingBuc
 		}
 		bucket := AgingBucketFor(reference, r.DueDate)
 		item := result[bucket]
-		var err error
 		item.Amount, err = item.Amount.Add(r.OpenBalance)
 		if err != nil {
 			return nil, err

@@ -1,6 +1,7 @@
 package financial
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -256,6 +257,69 @@ func TestCalculateAgingTotalsAreMutuallyExclusiveAndUseOpenBalance(t *testing.T)
 		if got.Amount.String() != expected.amount || got.Count != expected.count || got.Bucket != bucket {
 			t.Errorf("%s totals = %#v; want amount=%s count=%d", bucket, got, expected.amount, expected.count)
 		}
+	}
+}
+
+func TestCalculateAgingFromConsumesReceivablesIncrementally(t *testing.T) {
+	reference := time.Date(2026, 2, 10, 14, 0, 0, 0, time.UTC)
+	amount := money(t, "1.00")
+	const records = 1_000
+	emitted := 0
+	totals, err := CalculateAgingFrom(context.Background(), reference, func(context.Context) (OpenReceivable, bool, error) {
+		if emitted == records {
+			return OpenReceivable{}, false, nil
+		}
+		emitted++
+		return OpenReceivable{DueDate: reference, OpenBalance: amount}, true, nil
+	})
+	if err != nil {
+		t.Fatalf("CalculateAgingFrom() error = %v", err)
+	}
+	if emitted != records {
+		t.Fatalf("reader emitted %d records, want %d", emitted, records)
+	}
+	if totals[Today].Count != records || totals[Today].Amount.String() != "1000.0000" {
+		t.Fatalf("streamed totals = %#v, want 1000 records totaling 1000.0000", totals[Today])
+	}
+}
+
+func TestCalculateAgingFromPropagatesReaderErrorWithoutPartialTotals(t *testing.T) {
+	reference := time.Date(2026, 2, 10, 14, 0, 0, 0, time.UTC)
+	wantErr := errors.New("receivable source stopped")
+	calls := 0
+	totals, err := CalculateAgingFrom(context.Background(), reference, func(context.Context) (OpenReceivable, bool, error) {
+		calls++
+		if calls == 1 {
+			return OpenReceivable{DueDate: reference, OpenBalance: money(t, "1.00")}, true, nil
+		}
+		return OpenReceivable{}, false, wantErr
+	})
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("CalculateAgingFrom() error = %v, want %v", err, wantErr)
+	}
+	if totals != nil {
+		t.Fatalf("failed stream returned partial totals: %#v", totals)
+	}
+}
+
+func TestCalculateAgingFromStopsWhenContextIsCancelled(t *testing.T) {
+	reference := time.Date(2026, 2, 10, 14, 0, 0, 0, time.UTC)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	calls := 0
+	totals, err := CalculateAgingFrom(ctx, reference, func(readerCtx context.Context) (OpenReceivable, bool, error) {
+		if readerCtx != ctx {
+			t.Fatalf("reader context = %p, want %p", readerCtx, ctx)
+		}
+		calls++
+		cancel()
+		return OpenReceivable{DueDate: reference, OpenBalance: money(t, "1.00")}, true, nil
+	})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("CalculateAgingFrom() error = %v, want context.Canceled", err)
+	}
+	if totals != nil || calls != 1 {
+		t.Fatalf("cancelled stream returned totals %#v after %d reads", totals, calls)
 	}
 }
 

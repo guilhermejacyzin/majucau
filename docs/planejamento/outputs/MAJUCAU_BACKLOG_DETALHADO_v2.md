@@ -323,6 +323,15 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Pela média simples, `(7 × 100% + 30% + 20% + 10% + 15% + 15% + 30% + 70% + 80% + 60% + 20%) ÷ 127 = 8,3%`; restam 91,7%. É uma estimativa do backlog, não uma medida de esforço ou prontidão. Não há prazo global confiável.
 - Nenhuma tela, regra financeira ou estrutura da calculadora foi alterada. Continua valendo a estrutura da planilha enviada.
 
+### Leitura incremental do aging — 11/10/2026
+
+- A auditoria de streaming encontrou `CalculateAging` recebendo todos os títulos numa lista. Não havia consumidor de produção, mas esse contrato levaria um futuro leitor de banco a acumular os registros antes do cálculo.
+- `CalculateAgingFrom` agora consome um título por chamada, acumula somente as faixas fixas e propaga cancelamento e erros sem devolver totais parciais. O método anterior continua como wrapper para listas já disponíveis. As regras aprovadas de faixa, fuso, saldo aberto e exclusões foram preservadas.
+- Testes próprios cobrem mil títulos fornecidos um a um, falha de leitura e cancelamento; `go test -count=1 ./internal/financial` passou. O cache Go foi isolado em `artifacts/cache` e removido ao final desta execução.
+- BK-056 avança de 0% para 5% como fundação técnica. Não há integração com consulta ou tela de produção. Permanecem as dependências BK-046, BK-053 e BK-020; nenhuma regra ou tela mudou. Evidência: `docs/evidence/AGING-STREAM-READER-2026-10-11.md`.
+- O backlog tem 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (80%), BK-041 (60%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 10% + 15% + 15% + 5% + 35% + 70% + 80% + 60% + 20%) ÷ 127 = 8,3%`; restam 91,7%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -1715,7 +1724,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-056 — Implementar regras e leitura de Contas a Receber
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 5% (fundação técnica de leitura incremental para as faixas de aging; ainda sem integração de produção). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Mostrar direitos abertos, recebidos e vencidos corretamente.
 
@@ -1737,6 +1746,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Fonte:** T03; M-004,M-005; Consolidação 13/09/2026, §10; Fechamento vigente 13/09/2026, §8.5–8.11
 
 **Regras e verificações vinculadas:** Q-20,F-19,F-20
+
+**Evidência parcial (11/10/2026):** `CalculateAgingFrom` processa títulos um por vez, mantém apenas os totais por faixa e propaga cancelamento/erros sem resultado parcial. A função existente continua compatível. As regras D-005-A foram preservadas. A verificação `go test -count=1 ./internal/financial` passou. Consulta real, conexão com as telas e reconciliação continuam pendentes conforme as dependências registradas. Ver `docs/evidence/AGING-STREAM-READER-2026-10-11.md`.
 
 ### BK-057 — Implementar T03 Contas a Receber
 

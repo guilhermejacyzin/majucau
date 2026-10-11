@@ -54,12 +54,13 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Os números 3,9% e 4,2% respondem perguntas diferentes: 3,9% é a proporção de tarefas totalmente concluídas; 4,2% inclui o avanço parcial registrado nas tarefas em andamento.
 - Prazo global continua sem estimativa confiável: BK-001 aguarda materiais/decisão da responsável, outros módulos dependem de fontes e aprovações, e a revisão técnica das 127 tarefas ainda não terminou.
 
-### Recontagem após auditoria de BK-025 — 11/10/2026
+### Recontagem após auditorias de BK-025 e BK-067 — 11/10/2026
 
 - BK-025 foi revisada contra `README.md`, `.gitignore`, `AGENTS.md`, `.github/workflows/ci.yml` e a nova `CONTRIBUTING.md`. A base do repositório e as instruções estão disponíveis; a proteção efetiva de branches e a exigência de revisores no GitHub ainda não foram confirmadas. BK-025 passa a `Em andamento`, com estimativa de 60%; nenhum ajuste em tela ou regra de negócio foi feito.
-- O backlog continua com 127 tarefas: 5 concluídas, 5 em andamento e 117 não iniciadas. As tarefas em andamento são BK-001 (0%), BK-006 (10%), BK-007 (10%), BK-013 (15%) e BK-025 (60%).
-- Pela média simples configurada no backlog, o indicador passa a `(5 × 100% + 0% + 10% + 10% + 15% + 60%) ÷ 127 = 4,7%`; restam 95,3%. É uma estimativa do rastreador, não uma medição de esforço nem prova de prontidão para produção.
-- Seis tarefas tiveram auditoria atual concluída: BK-000, BK-002, BK-003, BK-004, BK-005 e BK-025. BK-001 aguarda os materiais originais ou a decisão da responsável; 120 tarefas ainda aguardam revisão individual.
+- A rechecagem estática de BK-067 confirmou que a tela já renderiza EBIT, EBITDA, CAPEX pago no mês e CAPEX acumulado como cards de consulta, remove o card numérico UNMAPPED e preserva o alerta de lançamentos pendentes. A tabela não recebe CAPEX. Os valores continuam indisponíveis: EBIT/EBITDA ainda são traços e o backend não carrega os campos CAPEX a partir do relatório. BK-067 passa a `Em andamento`, com estimativa conservadora de 20%; não houve alteração de tela ou regra nesta auditoria.
+- O backlog continua com 127 tarefas: 5 concluídas, 6 em andamento e 116 não iniciadas. As tarefas em andamento são BK-001 (0%), BK-006 (10%), BK-007 (10%), BK-013 (15%), BK-025 (60%) e BK-067 (20%).
+- Pela média simples configurada no backlog, o indicador passa a `(5 × 100% + 0% + 10% + 10% + 15% + 60% + 20%) ÷ 127 = 4,8%`; restam 95,2%. É uma estimativa do rastreador, não uma medição de esforço nem prova de prontidão para produção.
+- Sete tarefas tiveram auditoria atual concluída: BK-000, BK-002, BK-003, BK-004, BK-005, BK-025 e BK-067. BK-001 aguarda os materiais originais ou a decisão da responsável; 119 tarefas ainda aguardam revisão individual.
 - Prazo global continua sem estimativa confiável, pois ainda faltam essa revisão, fontes reais, validações e decisões operacionais.
 
 ### Revalidação do GitHub — 11/10/2026
@@ -1733,7 +1734,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-067 — Implementar T06 DRE
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 20% (estimativa de planejamento; os cards informativos EBIT, EBITDA, CAPEX pago no mês e CAPEX acumulado estão desenhados no espaço aprovado, somente para consulta, e o card numérico UNMAPPED foi retirado. A tabela e o lucro da DRE não incluem CAPEX. Ainda faltam cálculo da DRE própria com lineage, integração dos dados e valores confiáveis; hoje EBIT/EBITDA e CAPEX ficam indisponíveis). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Explicar como o resultado foi formado.
 
@@ -1755,6 +1756,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Fonte:** T06; Fechamento vigente 13/09/2026, §§2,5
 
 **Regras e verificações vinculadas:** Q-22,F-02
+
+**Reauditoria estática de 2026-10-11:** `frontend/src/mockupDashboard.tsx` contém os quatro cards e filtra o card `UNMAPPED` dessa área; o alerta de lançamentos pendentes continua separado. `frontend/src/bootstrap.ts` e `internal/application/contracts.go` aceitam as métricas de CAPEX, mas a busca de código de produção não encontrou fonte que as preencha. EBIT/EBITDA continuam com valor indisponível. A evidência de CI anteriormente registrada em `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md` cobre a presença da interface; esta reauditoria não executou testes e não altera telas ou regras.
 
 ### BK-068 — Reproduzir o balancete a partir da base do Bling
 

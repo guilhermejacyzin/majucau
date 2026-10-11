@@ -312,6 +312,60 @@ func TestApplicationFloorsInsufficientProfitAndReserveBreach(t *testing.T) {
 	}
 }
 
+func TestSuggestedReserveD003CIsInformational(t *testing.T) {
+	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	balances, err := DailyProjection(start, money(t, "100000"), []Movement{{
+		Date: start.AddDate(0, 0, 10), Outflows: money(t, "30000"),
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	maximum, err := MaximumApplication(ApplicationInput{
+		EligibleAccumulatedProfit: money(t, "500000"),
+		AlreadyInvested:           money(t, "0"),
+		MinimumReserve:            money(t, "50000"),
+		Balances:                  balances,
+		RuleVersion:               "D-003-A",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	suggested, err := SuggestedReserve(balances, money(t, "50000"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if suggested.String() != "80000.0000" {
+		t.Fatalf("suggested reserve = %s, want 80000.0000", suggested)
+	}
+	if maximum.MaximumInvestment.String() != "20000.0000" {
+		t.Fatalf("suggestion changed maximum application: got %s, want 20000.0000", maximum.MaximumInvestment)
+	}
+}
+
+func TestSuggestedReserveRejectsInvalidInputsAndPropagatesOverflow(t *testing.T) {
+	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	balances, err := DailyProjection(start, money(t, "100"), []Movement{{
+		Date: start.AddDate(0, 0, 1), Outflows: money(t, "100"),
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := SuggestedReserve(balances[:60], money(t, "50")); err != ErrInvalidProjection {
+		t.Fatalf("invalid horizon error = %v, want %v", err, ErrInvalidProjection)
+	}
+	if _, err := SuggestedReserve(balances, money(t, "-0.0001")); err != ErrInvalidApplicationInput {
+		t.Fatalf("negative reserve error = %v, want %v", err, ErrInvalidApplicationInput)
+	}
+	maximumReserve, err := domain.ParseMoney("922337203685477.5807")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := SuggestedReserve(balances, maximumReserve); err == nil {
+		t.Fatal("expected overflow when adding the projected cash drawdown")
+	}
+}
+
 func TestApplicationRejectsInvalidHorizonAndNegativeParameters(t *testing.T) {
 	rows, err := DailyProjection(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), money(t, "100"), nil)
 	if err != nil {

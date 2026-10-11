@@ -66,6 +66,26 @@ func MaximumApplication(in ApplicationInput) (ApplicationResult, error) {
 	return ApplicationResult{in.EligibleAccumulatedProfit, in.AlreadyInvested, available, worst, in.MinimumReserve, limit, max, in.RuleVersion, domain.StatusProvisional}, nil
 }
 
+// SuggestedReserve calculates the approved, informational D-003-C suggestion
+// from a validated D0-D+60 projection. It does not change MaximumApplication.
+func SuggestedReserve(balances []DailyBalance, minimumReserve domain.Money) (domain.Money, error) {
+	if minimumReserve.IsNegative() {
+		return domain.ZeroMoney(), ErrInvalidApplicationInput
+	}
+	minimum, err := FindMinimumProjectedBalance(balances)
+	if err != nil {
+		return domain.ZeroMoney(), err
+	}
+	drawdown, err := balances[0].ClosingBalance.Sub(minimum.ClosingBalance)
+	if err != nil {
+		return domain.ZeroMoney(), err
+	}
+	if drawdown.IsNegative() {
+		drawdown = domain.ZeroMoney()
+	}
+	return minimumReserve.Add(drawdown)
+}
+
 func IsWithinProjection(b DailyBalance, now time.Time) bool {
 	return !b.Date.Before(dateOnly(now)) && !b.Date.After(dateOnly(now).AddDate(0, 0, 60))
 }

@@ -38,4 +38,12 @@ Assim, a previsão mantém R$ 50.000 no ponto mais baixo. É uma sugestão; não
 
 ### Próximo trabalho técnico
 
-Confirmar e ligar o saldo D0 e a série diária D0–D+60 à execução consolidada aprovada, mantendo cenário, data-base, execução, fonte e estado de qualidade. Depois documentar exemplos reproduzíveis e validar a exibição sem alterar o desenho aprovado. A fórmula da sugestão está aprovada; sua origem real e a implementação continuam pendentes.
+Confirmar e ligar o saldo D0 e a série diária D0–D+60 à execução consolidada aprovada, mantendo cenário, data-base, execução, fonte e estado de qualidade. Depois documentar exemplos reproduzíveis e validar a exibição sem alterar o desenho aprovado. A fórmula da sugestão está aprovada e sua função isolada foi implementada; a origem real e a chamada de produção continuam pendentes.
+
+## Implementação isolada da sugestão — 2026-10-11
+
+- `internal/financial.SuggestedReserve` calcula `reserva mínima + MAX(0, fechamento D0 − menor fechamento D0–D+60)` após validar a série completa de 61 dias por `FindMinimumProjectedBalance`.
+- O cálculo usa `domain.Money` com precisão exata, recusa reserva negativa e propaga erros de projeção e estouro. Ele é independente de `MaximumApplication`; não muda o máximo aprovado.
+- Os testes locais confirmam o exemplo aprovado (D0 de R$ 100.000, mínimo de R$ 70.000, sugestão de R$ 80.000), que o máximo continua em R$ 20.000 nessa mesma série, e a rejeição de horizonte incompleto/reserva negativa/estouro.
+- `go test ./internal/financial -count=1`, `go vet ./internal/financial` e `git diff --check` passaram localmente. A validação remota da CI fica pendente após o envio do commit.
+- A função ainda não tem chamada de produção nem entrada ligada ao saldo diário real. Sem dados comprovados, a sugestão continua indisponível. Nenhuma tela, planilha ou regra de aplicação foi alterada.

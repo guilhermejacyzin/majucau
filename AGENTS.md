@@ -62,6 +62,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Telas aprovadas e regras de negócio são protegidas. Dúvida que possa alterar comportamento, apresentação, importação ou contrato persistente exige pergunta antes da mudança.
 - Commits pequenos devem informar `O que é`, `O que foi feito`, `Próximo passo`, percentual restante da tarefa e percentual restante do projeto. Cada execução reporta em linguagem simples progresso, pendências e estimativa.
 - Caches e outputs gerados ficam em `artifacts/`. Ao fim de cada execução, remover o que puder ser recriado sem risco nem dependência ativa. O que precisar permanecer fica em `artifacts/retained/` e no registro local de limpeza, com motivo, origem e caminho para exclusão manual.
+- Scripts que executam Go devem direcionar `GOCACHE`, `GOMODCACHE` e `GOTMPDIR` para subpastas de `artifacts/cache` e criar os diretórios necessários antes do comando. Não executar `go` manualmente sem esses caminhos definidos; isso evita deixar downloads ou temporários no perfil global do computador.
 
 ## Integrações
 

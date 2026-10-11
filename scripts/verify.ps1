@@ -8,9 +8,10 @@ $verificationRoot = Join-Path $artifactRoot 'verification'
 $env:GOCACHE = Join-Path $artifactRoot 'cache\go-build'
 $goModCacheRoot = Join-Path $artifactRoot 'cache\go-mod'
 $env:GOMODCACHE = $goModCacheRoot
+$env:GOTMPDIR = Join-Path $artifactRoot 'cache\go-tmp'
 $env:npm_config_cache = Join-Path $artifactRoot 'cache\npm'
 $goModCacheBoundary = Join-Path $goModCacheRoot 'go.mod'
-New-Item -ItemType Directory -Force -Path $goModCacheRoot | Out-Null
+New-Item -ItemType Directory -Force -Path $goModCacheRoot, $env:GOTMPDIR | Out-Null
 if (-not (Test-Path -LiteralPath $goModCacheBoundary)) {
     @('module majucau.local/artifact-cache', '', 'go 1.26.0') |
         Set-Content -LiteralPath $goModCacheBoundary -Encoding utf8

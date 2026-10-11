@@ -223,6 +223,12 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - O processo foi encerrado; a porta 55439 foi liberada e `artifacts/cache` removida pela rotina segura. Nenhuma tela ou regra financeira mudou. Evidência: `docs/evidence/LOCAL-POSTGRES-INTEGRATION-2026-10-11.md`.
 - BK-041 permanece em 55%, pois paginação/campos oficiais do Bling ainda precisam de homologação. BK-014 permanece em 15%, pois o instalador continua sem provisionar o banco dedicado. As contagens e a estimativa global permanecem 6 concluídas, 11 em andamento, 110 não iniciadas; 7,4% concluído e 92,6% restante.
 
+### Direcionamento de temporários Go — 11/10/2026
+
+- A revisão das rotinas oficiais identificou que `bootstrap.ps1`, `verify.ps1` e `build-windows.ps1` já centralizavam cache de compilação e módulos, mas deixavam o diretório temporário do Go no padrão global do Windows. Os três scripts agora definem `GOTMPDIR` em `artifacts/cache/go-tmp` e criam a pasta antes de executar Go; `AGENTS.md` torna o padrão obrigatório.
+- Uma consulta manual anterior foi executada fora desses scripts e baixou três versões de dependências para o cache de módulos compartilhado do perfil. Como esse cache pode ser usado por outros projetos, não foi apagado; os caminhos exatos foram registrados no registro local ignorado `artifacts/retained/cleanup-register.md` para decisão manual. Os comandos seguintes usarão os caminhos de cache do repositório.
+- O parser PowerShell e as verificações de caminho dos três scripts passaram. A evidência sanitizada está em `docs/evidence/CACHE-CLEANUP-2026-10-11.md`. BK-025 continua em 70%, pois a proteção da branch `main` e os checks obrigatórios ainda dependem de uma administradora. Percentual global permanece 7,4% concluído e 92,6% restante.
+
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
 
 1. Transcrever contratos fechados e localizar referências; desenhar domínios, acesso, persistência e operação local.

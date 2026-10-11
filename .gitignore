@@ -8,6 +8,7 @@ frontend/dist
 *.log
 coverage/
 artifacts/
+sources/private/
 .env
 .env.*
 !.env.example

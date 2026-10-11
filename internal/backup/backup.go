@@ -187,12 +187,9 @@ func Create(ctx context.Context, options Options) (result Result, retErr error) 
 			retErr = errors.Join(retErr, cleanupErr)
 		}
 	}()
-	passwordFile, env, err := connectionEnvironment(config, temporary)
+	_, env, err := connectionEnvironment(config, temporary)
 	if err != nil {
 		return Result{}, err
-	}
-	if passwordFile != "" {
-		defer os.Remove(passwordFile)
 	}
 	dumpPath := filepath.Join(temporary, "database.dump")
 	globalsPath := filepath.Join(temporary, "globals.sql")

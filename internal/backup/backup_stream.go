@@ -22,6 +22,8 @@ import (
 	"github.com/tink-crypto/tink-go/v2/keyset"
 	"github.com/tink-crypto/tink-go/v2/streamingaead"
 	"github.com/tink-crypto/tink-go/v2/tink"
+
+	"majucau.local/financial-intelligence/internal/securetemp"
 )
 
 const (
@@ -42,7 +44,7 @@ func (archive *packageArchive) Close() error {
 	return archive.closer.Close()
 }
 
-func writeV2Package(ctx context.Context, path string, manifest Manifest, masterKey []byte, databasePath, globalsPath string) (Manifest, error) {
+func writeV2Package(ctx context.Context, path string, manifest Manifest, masterKey []byte, databasePath, globalsPath string) (manifestResult Manifest, returnErr error) {
 	if err := ctx.Err(); err != nil {
 		return Manifest{}, err
 	}
@@ -61,47 +63,50 @@ func writeV2Package(ctx context.Context, path string, manifest Manifest, masterK
 	if err != nil {
 		return Manifest{}, fmt.Errorf("create backup package: %w", err)
 	}
-	closed := false
+	archive := zip.NewWriter(output)
+	archiveClosed := false
+	outputClosed := false
+	completed := false
 	defer func() {
-		if !closed {
-			_ = output.Close()
+		if completed {
+			return
+		}
+		if !archiveClosed {
+			if err := archive.Close(); err != nil {
+				returnErr = errors.Join(returnErr, fmt.Errorf("close incomplete backup archive: %w", err))
+			}
+		}
+		if !outputClosed {
+			if err := output.Close(); err != nil {
+				returnErr = errors.Join(returnErr, fmt.Errorf("close incomplete backup package: %w", err))
+			}
+		}
+		if err := securetemp.RemoveFile(path); err != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("remove incomplete backup package: %w", err))
 		}
 	}()
-	archive := zip.NewWriter(output)
 	keysetWriter, err := createStoredEntry(archive, streamKeysetEntry)
 	if err != nil {
-		_ = archive.Close()
-		_ = os.Remove(path)
 		return Manifest{}, fmt.Errorf("write backup keyset entry: %w", err)
 	}
 	if _, err := keysetWriter.Write(keysetBytes); err != nil {
-		_ = archive.Close()
-		_ = os.Remove(path)
 		return Manifest{}, fmt.Errorf("write backup keyset entry: %w", err)
 	}
 	databaseRecord, err := encryptFileEntry(ctx, archive, primitive, databaseDumpEntry, databasePath)
 	if err != nil {
-		_ = archive.Close()
-		_ = os.Remove(path)
 		return Manifest{}, fmt.Errorf("encrypt database dump: %w", err)
 	}
 	globalsRecord, err := encryptFileEntry(ctx, archive, primitive, globalsDumpEntry, globalsPath)
 	if err != nil {
-		_ = archive.Close()
-		_ = os.Remove(path)
 		return Manifest{}, fmt.Errorf("encrypt globals dump: %w", err)
 	}
 	manifest.Files = []File{databaseRecord, globalsRecord}
 	manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
-		_ = archive.Close()
-		_ = os.Remove(path)
 		return Manifest{}, fmt.Errorf("encode backup manifest: %w", err)
 	}
 	manifestBytes = append(manifestBytes, '\n')
 	if len(manifestBytes) > maxManifestBytes {
-		_ = archive.Close()
-		_ = os.Remove(path)
 		return Manifest{}, fmt.Errorf("backup manifest exceeds the supported size")
 	}
 	manifestWriter, err := createStoredEntry(archive, manifestEntry)
@@ -109,23 +114,22 @@ func writeV2Package(ctx context.Context, path string, manifest Manifest, masterK
 		_, err = manifestWriter.Write(manifestBytes)
 	}
 	if err != nil {
-		_ = archive.Close()
-		_ = os.Remove(path)
 		return Manifest{}, fmt.Errorf("write backup manifest: %w", err)
 	}
 	if err := archive.Close(); err != nil {
-		_ = os.Remove(path)
+		archiveClosed = true
 		return Manifest{}, fmt.Errorf("finish backup archive: %w", err)
 	}
+	archiveClosed = true
 	if err := output.Sync(); err != nil {
-		_ = os.Remove(path)
 		return Manifest{}, fmt.Errorf("flush backup package: %w", err)
 	}
 	if err := output.Close(); err != nil {
-		_ = os.Remove(path)
+		outputClosed = true
 		return Manifest{}, fmt.Errorf("close backup package: %w", err)
 	}
-	closed = true
+	outputClosed = true
+	completed = true
 	return manifest, nil
 }
 
@@ -506,7 +510,6 @@ func verifyV1Payloads(ctx context.Context, archive *packageArchive, key []byte) 
 	return nil
 }
 
-
 func verifyV2Payloads(ctx context.Context, archive *packageArchive, masterKey []byte) error {
 	keysetRecordBytes, err := readZipEntryBounded(archive.entries[streamKeysetEntry], maxKeysetBytes)
 	if err != nil || !validByteRecord(archive.manifest.KeysetFile, keysetRecordBytes) {
@@ -614,7 +617,9 @@ func decryptPackageToFiles(ctx context.Context, path string, passphrase []byte, 
 			decryptErr = closeErr
 		}
 		if decryptErr != nil {
-			_ = os.Remove(output.Name())
+			if cleanupErr := securetemp.RemoveFile(output.Name()); cleanupErr != nil {
+				decryptErr = errors.Join(decryptErr, cleanupErr)
+			}
 			return "", "", decryptErr
 		}
 	}
@@ -784,7 +789,9 @@ func copyEncryptedPackage(ctx context.Context, sourcePath, destinationPath strin
 		copyErr = closeErr
 	}
 	if copyErr != nil {
-		_ = os.Remove(destinationPath)
+		if cleanupErr := securetemp.RemoveFile(destinationPath); cleanupErr != nil {
+			copyErr = errors.Join(copyErr, cleanupErr)
+		}
 		return copyErr
 	}
 	return nil

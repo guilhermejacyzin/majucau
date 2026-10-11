@@ -385,17 +385,17 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Como fazer:**
 
-1. Preservar botões, navegação e exportações dos mockups/contratos congelados; não pedir nova aprovação da função existente.
-2. Definir tecnicamente contratos de detalhes, atualização e downloads, preservando filtros, período, snapshot, dados e Excel onde especificado.
+1. Preservar botões, navegação e exportações dos mockups/contratos congelados; não pedir nova aprovação da função existente. Exceção aprovada em 10/10/2026: T11 Compras somente mostra dados e não exporta nem baixa arquivos.
+2. Definir tecnicamente contratos de detalhes, atualização e downloads somente onde a exportação estiver aprovada, preservando filtros, período, snapshot, dados e Excel onde especificado. T11 não oferece download.
 3. Resolução de pendência registra responsável, data, alteração, origem e justificativa; resolver exige tratar a causa e não apenas esconder o alerta.
 
-**Critério de aceite:** Cada controle aprovado tem caso de uso e capacidade associados; exportação reproduz a tela. Ausência de arquivo de referência é localização documental, sem função inventada.
+**Critério de aceite:** Cada controle aprovado tem caso de uso e capacidade associados; exportações autorizadas reproduzem a tela. T11 permanece somente para consulta, sem exportação/download. Ausência de arquivo de referência é localização documental, sem função inventada.
 
 **Impacto:** Evita botões decorativos e encerramento indevido de problemas.
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
-**Fonte:** S/T/U CEIs; T02–T07; T13–T15; Fechamento vigente 13/09/2026, §§5–6
+**Fonte:** S/T/U CEIs; T02–T07; T13–T15; `G0-DECISION-REGISTER.md` (decisão posterior de T11 em 10/10/2026); Fechamento vigente 13/09/2026, §§5–6
 
 **Regras e verificações vinculadas:** L-22,L-23,Q-13,F-14
 

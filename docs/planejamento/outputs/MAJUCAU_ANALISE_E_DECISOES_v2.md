@@ -133,7 +133,7 @@ As dez frentes HT abaixo são trabalho futuro, não novas perguntas de negócio.
 | BK-082 | Avaliar necessidade e cobertura temporal das compras | title, action, steps, accept, deps |
 | BK-084 | Calcular necessidade líquida e prioridade operacional de compra | title, action, steps, accept |
 | BK-085 | Implementar sinais externos do cacau | steps, accept, condition |
-| BK-086 | Implementar T11 Compras e exportação de recomendações | action, steps, deps |
+| BK-086 | Implementar T11 Compras somente para consulta, sem exportação | action, steps, deps |
 | BK-091 | Implementar forecast e metas explícitas como planejamento distinto | title, action, steps, accept |
 | BK-092 | Implementar produção projetada a partir das vendas | action, steps, accept, deps |
 | BK-093 | Implementar evolução do estoque projetado | steps, accept |
@@ -1146,7 +1146,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Manter exportações aprovadas, inclusive Excel onde especificado. Arquivo usa os mesmos dados, filtros, período, snapshot e métricas da tela.
+**Regra / trabalho vigente:** Manter exportações aprovadas, inclusive Excel onde especificado. Arquivo usa os mesmos dados, filtros, período, snapshot e métricas da tela. Esta regra não autoriza exportação em toda tela: em 10/10/2026, a responsável definiu T11 Compras como somente consulta, sem exportar ou baixar arquivo e sem gerar/alterar pedidos. Ver `G0-DECISION-REGISTER.md`.
 
 **Fonte:** Fechamento das questões ainda tratadas como abertas — 13/09/2026; §5.7
 

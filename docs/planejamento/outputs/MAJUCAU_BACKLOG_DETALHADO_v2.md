@@ -8,7 +8,7 @@ Foram revisadas 70 tarefas mantendo os IDs BK-000 a BK-126. As versões anterior
 
 ## Base vigente
 
-Somente Majucau, três diretores; Balanço Patrimonial permanece excluído. O cliente Wails/Windows e o PostgreSQL local são a etapa atual de transição. A direção aprovada é hospedar o serviço central em ambiente privado, com PostgreSQL sem acesso público (ADR-002). O login próprio do Majucau foi escolhido, com `financeiro@majucau.com.br` para `ADMIN` e `contato@majucau.com.br` para Diretores. A conta compartilhada selecionada para Diretores conflita com a identidade individual aprovada em ADR-002 e aguarda confirmação informada sobre a consequência na auditoria; não provisionar enquanto isso. Provedor, orçamento, região e detalhes da operação diária continuam pendentes. A arquitetura usa backend Go, frontend React + TypeScript + Vite e monólito DDD hexagonal. O mockup aprovado define o visual; as decisões aprovadas definem fontes, cálculos e comportamento.
+Somente Majucau, três diretores; Balanço Patrimonial permanece excluído. O cliente Wails/Windows e o PostgreSQL local são a etapa atual de transição. A direção aprovada é hospedar o serviço central em ambiente privado, com PostgreSQL sem acesso público (ADR-002). O login próprio do Majucau foi escolhido, com `financeiro@majucau.com.br` para `ADMIN` e a conta compartilhada `contato@majucau.com.br` para Diretores. Gisele confirmou essa escolha após ser informada de que o histórico não distinguirá qual diretor fez cada ação; a decisão posterior substitui a identidade individual da ADR-002 somente para Diretores. O provisionamento ainda depende da implementação e validação de autorização, MFA, sessão e recuperação. Provedor, orçamento, região e detalhes da operação diária continuam pendentes. A arquitetura usa backend Go, frontend React + TypeScript + Vite e monólito DDD hexagonal. O mockup aprovado define o visual; as decisões aprovadas definem fontes, cálculos e comportamento.
 
 Bling é uma das fontes principais de lançamentos. A DRE é calculada pelo motor Majucau segundo regras contábeis aprovadas; o relatório pronto do Bling serve para comparação, não como resultado final. Drive somente de leitura conserva 01_perdas_operacionais, 02_nuvem_pago/recebimentos_futuros e 03_nuvem_envio. Não existe pasta adicional de investimentos.
 
@@ -408,7 +408,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-013 — Especificar perfis, capacidades, vigência e auditoria
 
-**Situação:** Em andamento. **Evolução:** 15% (estimativa documental: schema, permissões iniciais, caminho de autorização do worker e capacidades aprovadas; login próprio do Majucau e endereços por perfil informados; a conta compartilhada dos Diretores conflita com a identidade individual da ADR-002 e aguarda confirmação informada; enforcement ainda pendente). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Segurança.
+**Situação:** Em andamento. **Evolução:** 15% (estimativa documental: schema, permissões iniciais, caminho de autorização do worker e capacidades aprovadas; login próprio do Majucau, endereços por perfil e uso aprovado de uma conta compartilhada para Diretores, com limitação de auditoria registrada; matriz completa, MFA, sessão, recuperação, provisionamento e enforcement ainda pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Segurança.
 
 **Objetivo:** Definir quem pode consultar ou alterar cada recurso.
 

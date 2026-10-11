@@ -8,9 +8,9 @@
 
 O destino do produto será uma implantação hospedada e centralizada, com acesso autenticado pela camada de aplicação. PostgreSQL permanecerá em uma rede privada, acessível somente pelos serviços confiáveis do Majucau. O aplicativo cliente não receberá credenciais de banco nem fará conexões diretas ao PostgreSQL.
 
-As pessoas terão identidades individuais. O perfil de consulta começa com privilégio de leitura; permissões de gravação ou administração exigem decisões específicas. O serviço central será responsável por sincronização diária, idempotência, auditoria e persistência. O provedor, orçamento e região dos dados ainda não foram escolhidos.
+O login será próprio do Majucau. O perfil `ADMIN` será associado a `financeiro@majucau.com.br`; o perfil `DIRECTOR` usará a conta compartilhada `contato@majucau.com.br`, conforme decisão posterior registrada no G0 em 2026-10-11. Essa decisão substitui somente para Diretores a exigência original desta ADR de identidades individuais: o histórico mostrará a conta e a ação, mas não qual diretor agiu. Diretores terão somente consulta, sincronização e exportação de backups e relatórios. O serviço central será responsável por sincronização diária, idempotência, auditoria e persistência. O provedor, orçamento e região dos dados ainda não foram escolhidos.
 
-Gisele escolheu login próprio do Majucau, informou `financeiro@majucau.com.br` para o perfil `ADMIN` e `contato@majucau.com.br` para os Diretores, e respondeu que os Diretores usariam uma conta compartilhada. Essa última escolha conflita com a exigência de identidades individuais desta ADR: todas as ações apareceriam no histórico como feitas pela mesma conta, sem identificar qual Diretor as executou. A escolha compartilhada fica pendente de confirmação informada dessa consequência; até lá, não provisionar uma conta compartilhada. MFA, sessão, recuperação e demais detalhes de identidade também permanecem pendentes.
+**Decisão posterior de 2026-10-11:** após ser informada sobre a limitação de auditoria, Gisele confirmou a conta compartilhada dos Diretores. O log deve preservar a ação, o horário e a conta `contato@majucau.com.br`, sem alegar que identifica qual diretor a executou. A conta não deve receber capacidades além das aprovadas. MFA, sessão, recuperação e provisionamento continuam pendentes até definição e validação dos controles.
 
 A prévia de CSV permanece local e sem dependência do banco. Antes de gravar um arquivo no repositório central, o serviço deverá validar novamente o conteúdo e aplicar as regras já aprovadas. O canal de envio, retenção do arquivo e experiência de importação ainda precisam de desenho e aceite.
 
@@ -19,7 +19,7 @@ A prévia de CSV permanece local e sem dependência do banco. Antes de gravar um
 - somente a API/serviço autenticado aceita tráfego de clientes; TLS protege as conexões;
 - PostgreSQL não possui endpoint público e aceita conexão somente do serviço autorizado;
 - segredos de integração ficam em armazenamento de segredos apropriado ao host, sem migração automática de tokens DPAPI;
-- usuários individuais, privilégio mínimo, trilha de auditoria e separação dos ambientes de desenvolvimento e produção;
+- privilégio mínimo, trilha de auditoria e separação dos ambientes de desenvolvimento e produção; a auditoria deve indicar claramente que `DIRECTOR` usa conta compartilhada e não atribuir uma ação a uma pessoa específica;
 - backups cifrados, retenção definida, monitoramento e ensaio de restauração antes do gate de produção;
 - retry, atomicidade, idempotência, lineage e critérios financeiros aprovados permanecem inalterados.
 
@@ -36,7 +36,7 @@ As telas aprovadas permanecem como estão. Uma mudança de apresentação ou reg
 3. forma final do cliente: Wails conectado ao serviço ou aplicação em navegador;
 4. onde e como a sincronização diária roda, com alertas e recuperação de atraso;
 5. canal seguro para os CSVs do local externo, retenção e eliminação dos temporários;
-6. confirmação informada sobre conta compartilhada dos Diretores versus a exigência aprovada de identidades individuais; MFA, sessão, recuperação e prazo de retenção dos dados.
+6. MFA, sessão, recuperação e prazo de retenção dos dados; implementar e validar o provisionamento e a autorização dos perfis, mantendo explícita a limitação de auditoria da conta compartilhada dos Diretores.
 
 ## Referências de segurança
 

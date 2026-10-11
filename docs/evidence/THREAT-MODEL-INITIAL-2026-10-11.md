@@ -81,9 +81,41 @@ Os itens abaixo são propostas de evidência para o plano de segurança. **Ainda
 
 ## Próximos passos da BK-024
 
-1. Mapear, uma a uma, todas as fontes e saídas de dados para confirmar limites e processamento em fluxo.
+1. Ao criar novos fluxos ainda não existentes — especialmente exportação de relatórios — acrescentá-los ao inventário e exigir limites/streaming desde o desenho. Os principais caminhos já implementados foram conferidos no complemento abaixo.
 2. Planejar autenticação, sessão e autorização para a hospedagem central usando apenas os perfis já aprovados.
 3. Completar retenção, recuperação de credenciais, operação de backup/restore e a rotina para arquivo ausente; perguntas que mudem regra continuam pendentes de aprovação.
 4. Relacionar cada risco aos testes automatizados e ensaios de ambiente, executá-los e anexar resultados verificáveis.
 
-Esta primeira etapa cobre apenas o mapa inicial. BK-024 permanece em andamento e não libera o uso com dados reais nem a produção.
+O mapa de riscos e a conferência estática dos principais caminhos implementados estão registrados. BK-024 permanece em andamento e não libera o uso com dados reais nem a produção.
+
+## Complemento — conferência dos fluxos de dados no código
+
+**Data:** 11/10/2026
+
+**Tipo:** leitura estática adicional; nenhum teste de produto ou ensaio em máquina foi executado.
+
+Esta conferência rastreou os principais pontos em que dados entram, são transformados, consultados, transmitidos, guardados ou exportados. Ela confirma limites já registrados, mas não comprova consumo real de memória/disco nem proteção efetiva em uma instalação limpa.
+
+| Caminho | O que o código faz hoje | Limite e ponto ainda aberto |
+|---|---|---|
+| CSV do Bling e Nuvem Pago | `internal/integrations/bling/receipts_report.go` e `internal/integrations/nuvempago/future_csv.go` leem e validam uma linha por vez; os serviços chamadores controlam deduplicação e persistência. | Cada campo tem teto de 1 MiB, cada registro 4 MiB e são aceitos até 256 campos. Não há teto total de linhas/arquivo, conforme a decisão da usuária de aceitar importação total sem limite fixo, usando blocos e área temporária segura. Ainda faltam política operacional de espaço/monitoramento do disco e validação da ACL/limpeza do temporário do PostgreSQL em Windows. Não criar um teto total sem aprovação.
+| Descoberta de arquivos e prévia | `internal/integrations/csvstream/file_queue.go` lê nomes em blocos de 256. A prévia usa índice e ordenação auxiliares no espaço temporário privado; o importador usa tabela temporária PostgreSQL. | O volume de linhas e o número de arquivos podem crescer. Os blocos evitam acumular a lista inteira em memória, mas não substituem limite operacional de disco nem validação real das ACLs do diretório de dados do PostgreSQL.
+| API do Bling | `internal/integrations/bling/api_client.go` limita o corpo HTTP; `api_resources.go` decodifica JSON por fluxo; o sincronizador percorre páginas sequencialmente e mantém um bloco limitado. | Corpo até 4 MiB e até 100 registros por página. Retry é limitado às falhas transitórias de chamadas repetíveis. Faltam as provas integradas para cada endpoint e a confirmação dos contratos reais de paginação já listadas nas evidências do adapter.
+| Banco para o painel | `internal/dashboard/stream.go` calcula resumos no banco e lê os detalhes linha por linha; as tabelas do painel são limitadas a 50 linhas cada, com campo até 4 KiB e registro até 16 KiB. | O resumo fica pequeno; detalhes acima dos limites falham fechados. O painel segue com a mesma informação e tela aprovadas.
+| Worker até a interface | `internal/ipc/transport.go` transmite o painel em blocos de 512 KiB; cada mensagem tem teto de 1 MiB. `app.go` recebe os blocos, mas monta um objeto de painel completo, limitado a 16 MiB, antes de devolvê-lo à tela. | A transmissão entre processos é em blocos e tem teto. A última etapa mantém um objeto limitado em memória; não é uma transmissão registro a registro até o componente visual. O limite e a tela atual permanecem preservados. Medição de pico de memória continua pendente.
+| Backup e restauração | `internal/backup/backup_stream.go` copia e cifra/descriptografa os dados em fluxo. Manifesto, chave do pacote e diretório ZIP têm limites próprios; o pacote aceita quantidade fixa de arquivos. O leitor antigo V1 continua compatível. | Os arquivos de dados não são carregados inteiros na memória. A compatibilidade V1 conserva o limite técnico histórico; a V2 não define um teto total de arquivo no aplicativo, conforme a decisão de preservar restauração grande. Falta validar espaço em disco, falhas de limpeza e restauração real em ambiente isolado.
+| Segredos | `internal/security/dpapi_windows.go` usa DPAPI e rejeita blobs acima do limite; não envia o segredo ao frontend. | Buffer protegido até 1 MiB; arquivo de credencial cifrado tem leitura limitada. ACL e ciclo de provisionamento para a hospedagem central ainda não existem/foram comprovados.
+| Instalador e integridade de arquivos | `internal/installer/manifest.go` decodifica manifesto limitado, valida quantidade/caminhos e calcula hash em fluxo. | Limites do manifesto e dos caminhos são estáticos; não são a política de retenção de dados do produto. Validação de instalação real depende de VM limpa.
+| Logs técnicos | `internal/diagnosticslog/logger.go` limita cada registro a 32 KiB e gira até cinco arquivos de 10 MiB; `cmd/worker/diagnostics.go` grava campos permitidos, sem payload financeiro ou token. | Retenção máxima local aproximada de 50 MiB. Controle de acesso/retensão na hospedagem central ainda precisa ser definido e verificado.
+| Pacote de diagnóstico | `internal/installer/diagnostics.go` gera um ZIP com dois arquivos fixos contendo o preflight sanitizado e instruções; calcula seu hash em fluxo. | Não inclui logs nem arquivos financeiros. O destino é indicado pelo chamador; validar caminho e proteção do destino em execução real continua pendente.
+| Exportação de relatórios | A auditoria `ACTION-EXPORT-STATIC-AUDIT-2026-10-11.md` não encontrou rota funcional de exportação de relatórios no catálogo atual. | Quando for implementada conforme a permissão aprovada dos Diretores, deve ser projetada desde o início com leitura em blocos, limites, filtro/snapshot consistente, sanitização, autorização no serviço e auditoria. Não foi criada rota nem arquivo nesta revisão.
+
+### Lacunas que continuam abertas
+
+- **Sem limite total de linhas CSV:** isso preserva a decisão aprovada. Ainda é necessário definir monitoramento de espaço, comportamento seguro quando o disco estiver cheio e eventual retenção de dados. Nenhum desses pontos autoriza descartar linhas ou mudar a regra da importação.
+- **Banco PostgreSQL:** o app pode manter o CSV sem teto total, mas não foi comprovada uma política operacional de capacidade/alerta/backup para crescimento contínuo. Essa política depende da hospedagem e não deve ser inventada para alterar o comportamento.
+- **Autorização:** a identidade do Named Pipe protege o processo local, mas não substitui perfil por ação; o serviço central e o login próprio ainda são trabalhos pendentes.
+- **Retenção e LGPD:** duração e alcance de exclusão em RAW e backups permanecem sem decisão funcional.
+- **Verificação prática:** memória máxima, consumo de disco, ACLs Windows/PostgreSQL, cancelamento e falha de limpeza precisam ser validados nos ambientes previstos. Esta revisão não executou testes.
+
+O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SEC-R09 e SEC-R13 ainda impedem considerar a segurança pronta para uso real. Nenhuma tela, regra financeira, fórmula, importação ou permissão foi alterada.

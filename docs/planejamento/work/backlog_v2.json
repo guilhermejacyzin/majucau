@@ -29,15 +29,15 @@
     "id": "BK-001",
     "phase": "00 Descoberta e decisões",
     "title": "Inventariar os materiais e suas versões",
-    "goal": "Saber exatamente o que foi analisado.",
-    "action": "Catalogar as imagens, abas e documentos citados.",
+    "goal": "Saber exatamente o que foi analisado e preservar as fontes.",
+    "action": "Catalogar imagens, abas, documentos citados, versões e arquivos originais.",
     "steps": [
-      "Conferir o inventário histórico do pacote recebido: 16 PNGs (15 imagens únicas) e 20 abas da planilha; preservar a extração e identificar a cópia duplicada T10.",
-      "Conferir o inventário atual dos mockups T1–T15/C11 e os hashes registrados em docs/source/README.md; distinguir imagens atuais do pacote histórico.",
-      "Registrar documentos citados mas não recebidos, versões v0/v1/v2, hash dos fechamentos e tarefas afetadas, preservando as análises e extrações já existentes.",
-      "Preservar os arquivos originais no local privado aprovado ou obter autorização explícita para considerar hash e extração suficientes."
+      "Conferir o registro histórico de 16 PNGs (15 únicos), 20 abas e a duplicata T10; preservar a extração disponível.",
+      "Conferir o inventário atual dos mockups aprovados e seus hashes, sem confundir versões atuais e materiais históricos.",
+      "Manter identificados documentos citados mas não recebidos, hashes dos fechamentos e as mudanças entre v0/v1/v2.",
+      "Guardar os originais no local privado aprovado ou obter autorização expressa para considerar hashes e extrações suficientes."
     ],
-    "accept": "Inventário identifica o pacote histórico, as 20 abas, duplicatas e materiais ausentes; mudanças e hashes das versões são rastreáveis; os originais estão preservados ou a responsável aprova expressamente a retenção somente de hashes e extrações.",
+    "accept": "Pacote histórico, abas, duplicatas, ausências e versões ficam rastreáveis; os originais são preservados ou a responsável aprova expressamente a retenção somente de hashes e extrações.",
     "impact": "Evita omissões e mistura de versões.",
     "deps": [],
     "refs": "docs/planejamento/FONTES.md; docs/source/README.md; docs/planejamento/work/source_extract; revision_v1.json; revision_v2.json",
@@ -56,15 +56,15 @@
     "phase": "00 Descoberta e decisões",
     "title": "Verificar o ponto de partida no GitHub",
     "goal": "Separar trabalho existente de trabalho futuro.",
-    "action": "Inspecionar repositório, commits, arquivos e issues.",
+    "action": "Inspecionar repositório, commits, branches, issues e pull requests.",
     "steps": [
-      "Preservar a resposta do repositório vazio no documento v0 como registro histórico, sem tratá-la como estado atual.",
-      "Consultar em modo de leitura a visibilidade do repositório, branch padrão, hash atual, branches remotas, issues e pull requests.",
-      "Comparar a branch de trabalho publicada com main e registrar a distância entre elas; não mesclar branches por inferência.",
-      "Registrar que a responsável confirmou não haver outros clones, servidores ou ambientes de trabalho com código/dados além deste checkout; o controle do código fica no GitHub."
+      "Preservar a resposta de repositório vazio da versão 0 como fotografia histórica.",
+      "Consultar em modo de leitura o estado atual: repositório público, branch principal, branches remotas, issues e pull requests.",
+      "Registrar a diferença entre a branch de trabalho publicada e main; não mesclar por inferência.",
+      "Registrar a confirmação da responsável de que não há outros clones, servidores ou ambientes de trabalho com código/dados além deste checkout; o controle do código fica no GitHub."
     ],
-    "accept": "Snapshot histórico e estado atual do GitHub são distinguíveis e comprovados; branches, issues e pull requests são registrados; a responsável confirmou não haver outro clone, servidor ou ambiente de trabalho fora deste checkout.",
-    "impact": "Permite planejar a preparação do projeto desde o início.",
+    "accept": "O histórico e o estado atual do GitHub são distinguíveis; branches, issues e pull requests têm evidência; a confirmação da responsável de que não há outros ambientes de trabalho fora deste checkout está registrada.",
+    "impact": "Permite planejar o trabalho sem confundir código existente, histórico e trabalho futuro.",
     "deps": [],
     "refs": "GitHub REST: repos/guilhermejacyzin/majucau, branches/main, issues?state=all, pulls?state=all; git ls-remote origin; comparação origin/main..HEAD",
     "questions": "",
@@ -113,8 +113,8 @@
     "goal": "Disponibilizar à implementação as referências visuais oficiais de cada tela.",
     "action": "Manter localizadas e versionadas as referências visuais oficiais e as decisões de escopo que governam sua implementação.",
     "steps": [
-      "Usar o inventário de docs/source/README.md e a evidência docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md para vincular as referências T1–T15/C11 preservadas no repositório; os 15 hashes foram conferidos nesta auditoria.",
-      "Aplicar as correções aprovadas registradas no G0: Balanço Patrimonial fora da versão 1, Balancete mantido, somente Calculadora de Aplicação no menu e cards T6 nos locais aprovados. Aplicações não é uma rota separada.",
+      "Usar o inventário de `docs/source/README.md` e a evidência `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md` para vincular as referências T1–T15/C11 preservadas no repositório; os 15 hashes foram conferidos nesta auditoria.",
+      "Aplicar as correções aprovadas registradas no G0: Balanço Patrimonial fora da versão 1, Balancete mantido, somente Calculadora de Aplicação no menu e cards T6 nos locais aprovados. “Aplicações” não é uma rota separada.",
       "Manter as imagens como referência histórica/visual sem copiar números ilustrativos. Regras de cálculo pendentes seguem suas próprias tarefas (BK-006/BK-007); esta conclusão não as presume nem altera telas."
     ],
     "accept": "Referências T1–T15/C11 estão presentes, seus hashes correspondem ao inventário e o mapa liga as telas às decisões vigentes; rotas excluídas não são reintroduzidas; nenhum mockup ou tela foi alterado.",
@@ -143,12 +143,12 @@
     "action": "Formalizar a decisão: valor diferente gera divergência e mantém título sem baixa até análise.",
     "steps": [
       "Comparar o valor do título com o movimento efetivamente registrado e comprovado no Bling. Valor igual pode seguir a conciliação normal se o vínculo for único e sustentado por evidência.",
-      "Usar estes exemplos de aceite para C-01: título de R$ 1.000,00 com movimento de R$ 999,99, R$ 1.000,01 ou R$ 600,00 = DIVERGENT; manter o título sem baixa até análise. A diferença de um centavo já é divergência; não criar tolerância.",
+      "Usar estes exemplos de aceite para C-01: título de R$ 1.000,00 com movimento de R$ 999,99, R$ 1.000,01 ou R$ 600,00 = `DIVERGENT`; manter o título sem baixa até análise. A diferença de um centavo já é divergência; não criar tolerância.",
       "Preservar desconto, tarifa e estorno como eventos separados conforme a origem. Se houver diferença líquida, reversão ou dúvida de vínculo, deixar pendente para análise; não compensar ou ajustar automaticamente.",
       "Se mais de um movimento puder corresponder ao título, não escolher por aproximação; manter a conciliação pendente de revisão humana. Reprocessar o mesmo arquivo/evento não deve duplicar o movimento.",
       "Registrar título, movimento e origem, valores comparados, estado, motivo da divergência e revisão realizada. O Majucau não altera nem baixa títulos no Bling."
     ],
-    "accept": "Valor igual e vínculo único seguem a conciliação normal com evidência. Qualquer diferença, inclusive R$ 0,01, mantém DIVERGENT e o título sem baixa. Desconto/tarifa/estorno não são compensados por hipótese; vínculo ambíguo fica para revisão humana; replay não duplica fatos; não há escrita no Bling.",
+    "accept": "Valor igual e vínculo único seguem a conciliação normal com evidência. Qualquer diferença, inclusive R$ 0,01, mantém `DIVERGENT` e o título sem baixa. Desconto/tarifa/estorno não são compensados por hipótese; vínculo ambíguo fica para revisão humana; replay não duplica fatos; não há escrita no Bling.",
     "impact": "Afeta contas a pagar, vencidos, caixa e conciliação.",
     "deps": [],
     "refs": "C_Conflitos!A3:L3; T04; Fechamento vigente 13/09/2026, §8.6–8.8; C-01 mantida",
@@ -169,26 +169,26 @@
     "goal": "Permitir um cálculo reproduzível e compreensível.",
     "action": "Transcrever o contrato consolidado da calculadora e os estados das entradas.",
     "steps": [
-      "Usar o resultado líquido mensal calculado pela DRE do Majucau; preservar a janela de janeiro até dois meses antes do mês selecionado (M−2).",
-      "Calcular Já Investido = aportes de principal − resgates de principal; manter rendimentos separados. Reserva mínima aprovada: R$ 50.000. Se o fluxo indicar que ela será comprometida, exibir uma sugestão de reserva alternativa, sem trocar o mínimo automaticamente. A usuária definirá no documento atualizado como calcular essa sugestão; até lá, não inventar um valor.",
-      "Seguir a planilha enviada: Caixa Projetado na Pior Semana = saldo na semana crítica + recebimentos previstos da Nuvemshop. A semana crítica é a de maior total de despesas. Na integração, verificar se o saldo de origem já contém esses recebimentos para evitar contagem duplicada.",
-      "Calcular Máximo Aplicável = MAX(0; MIN(Caixa Projetado na Pior Semana − Reserva Mínima; Lucro Elegível)). O lucro elegível é o acumulado de janeiro até M−2 menos Já Investido, uma única vez.",
-      "Calcular Valor Executável Hoje = MIN(Máximo Aplicável; saldo transferível do Itaú) e exibir o saldo projetado restante após o valor máximo. A tela é de consulta; não executa transferência ou aplicação.",
+      "Usar o resultado líquido mensal calculado pela DRE do Majucau; preservar a janela de janeiro até dois meses antes do mês selecionado (M−2). A planilha atual recebe os meses manualmente e não calcula esse acumulado; o sistema deve fazê-lo a partir dos resultados mensais comprovados.",
+      "Calcular Já Investido = aportes de principal − resgates de principal; manter rendimentos separados. O campo manual “Valor já investido” da planilha atual não é usado por suas fórmulas e não substitui o cálculo aprovado. A reserva mínima continua em R$ 50.000. Exibir, apenas como sugestão informativa, `reserva_sugerida_hoje = R$ 50.000 + MAX(0; caixa projetado em D0 − menor saldo diário projetado em D0–D+60)`. A sugestão não altera D-003-A nem o valor máximo para aplicar.",
+      "Seguir D-003-A: `worst_week_cash` representa o menor saldo diário de fechamento entre D0 e D+60. Usar somente o fluxo de caixa consolidado, com fonte oficial e data válida; não somar recebimentos da Nuvemshop separadamente. Na planilha atual, E15 é um saldo de semana digitado e E16 é uma previsão da Nuvemshop somada separadamente; nenhum deles comprova os 61 saldos diários da regra aprovada. A equivalência desses campos continua pendente e não substitui D-003-A.",
+      "Calcular `available_profit = MAX(0; lucro líquido acumulado de janeiro até M−2 − Já Investido)`, `financial_limit = MAX(0; menor saldo diário D0–D+60 − reserva mínima)` e `Máximo Aplicável = MAX(0; MIN(available_profit; financial_limit))`, com moeda decimal exata.",
+      "Calcular separadamente `Valor Executável Hoje = MIN(Máximo Aplicável; saldo transferível do Itaú)`, conforme R-08; exibir o saldo projetado restante. A tela é somente para consulta e não executa transferência ou aplicação.",
       "A calculadora recebe resultados financeiros consolidados, com período, fonte e qualidade. Bandeira, MDR, parcelamento e tarifas de cartão não entram nela.",
-      "Localizar o contrato/campo de Caixa Semana Crítica e detalhes de fronteira temporal na documentação vigente; não escolher saldo inicial/final/mínimo por conveniência. É rastreabilidade técnica, sem reabrir regra definida."
+      "Mapear os campos técnicos que comprovam o saldo diário de fechamento, D0, D+60 e recebimentos elegíveis. Se uma entrada obrigatória não puder ser comprovada, mostrá-la como indisponível e pedir orientação; não inventar equivalência com a planilha nem substituir dado ausente por zero."
     ],
-    "accept": "Contrato financeiro fechado transcrito com referências e exemplos técnicos; nenhuma entrada ausente é inventada. A execução do cálculo depende das entradas comprovadas, sem exigir integração pronta para concluir a especificação.",
+    "accept": "Contrato financeiro fechado transcrito com referências e exemplos técnicos; sugestão de reserva aparece separada e não interfere no máximo; nenhuma entrada ausente é inventada. A execução do cálculo depende das entradas comprovadas, sem exigir integração pronta para concluir a especificação.",
     "impact": "Evita uma capacidade de aplicação baseada em critérios indefinidos.",
     "deps": [],
     "refs": "C_Conflitos!A4:L5; A_Matriz_Mestra!A32:S36; T02/T08; planilha Calculadora_Aplicacao_Lucro_Liquido_Profissional (1).xlsm enviada em 10/10/2026; fechamento de 13/09/2026, §§1–2",
     "questions": "L-07,Q-10,Q-21,R-06,R-08,F-01",
     "owner": "Majucau / Financeiro",
     "kind": "Planejamento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [],
-    "progress": 0
+    "progress": 0.25
   },
   {
     "key": "accountingpolicy",
@@ -215,7 +215,7 @@
     "evidence": "",
     "weight": 1,
     "dependencies": [],
-    "progress": 0.1
+    "progress": 0.2
   },
   {
     "key": "opsrules",
@@ -329,22 +329,22 @@
     "goal": "Especificar o que cada botão pode fazer.",
     "action": "Mapear os controles aprovados a casos de uso, dados e capacidades.",
     "steps": [
-      "Preservar botões, navegação e exportações dos mockups/contratos congelados; não pedir nova aprovação da função existente.",
-      "Definir tecnicamente contratos de detalhes, atualização e downloads, preservando filtros, período, snapshot, dados e Excel onde especificado.",
+      "Preservar botões, navegação e exportações dos mockups/contratos congelados; não pedir nova aprovação da função existente. Exceção aprovada em 10/10/2026: T11 Compras somente mostra dados e não exporta nem baixa arquivos.",
+      "Definir tecnicamente contratos de detalhes, atualização e downloads somente onde a exportação estiver aprovada, preservando filtros, período, snapshot, dados e Excel onde especificado. T11 não oferece download.",
       "Resolução de pendência registra responsável, data, alteração, origem e justificativa; resolver exige tratar a causa e não apenas esconder o alerta."
     ],
-    "accept": "Cada controle aprovado tem caso de uso e capacidade associados; exportação reproduz a tela. Ausência de arquivo de referência é localização documental, sem função inventada.",
+    "accept": "Cada controle aprovado tem caso de uso e capacidade associados; exportações autorizadas reproduzem a tela. T11 permanece somente para consulta, sem exportação/download. Ausência de arquivo de referência é localização documental, sem função inventada.",
     "impact": "Evita botões decorativos e encerramento indevido de problemas.",
     "deps": [],
     "refs": "S/T/U CEIs; T02–T07; T13–T15; Fechamento vigente 13/09/2026, §§5–6",
     "questions": "L-22,L-23,Q-13,F-14",
     "owner": "Majucau + UX",
     "kind": "Planejamento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [],
-    "progress": 0
+    "progress": 0.1
   },
   {
     "key": "accesspolicy",
@@ -366,11 +366,11 @@
     "questions": "L-25,L-26,Q-14,F-15",
     "owner": "Arquitetura + Segurança",
     "kind": "Planejamento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [],
-    "progress": 0
+    "progress": 0.15
   },
   {
     "key": "localrequirements",
@@ -392,11 +392,11 @@
     "questions": "Q-03,Q-04,Q-05,Q-15,Q-16,F-17",
     "owner": "Infraestrutura + Segurança",
     "kind": "Planejamento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [],
-    "progress": 0
+    "progress": 0.15
   },
   {
     "key": "deliveryplan",
@@ -754,7 +754,7 @@
     "questions": "",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [
@@ -762,7 +762,7 @@
       "BK-017",
       "BK-015"
     ],
-    "progress": 0
+    "progress": 0.7
   },
   {
     "key": "devsetup",
@@ -916,14 +916,14 @@
     "questions": "",
     "owner": "Engenharia + Infraestrutura",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Concluída",
+    "evidence": "A CI 38115370056 comprovou o fluxo de sucesso das verificações, build e publicação condicionada; evidência e escopo estão descritos nesta tarefa.",
     "weight": 1,
     "dependencies": [
       "BK-027",
       "BK-028"
     ],
-    "progress": 0
+    "progress": 1.0
   },
   {
     "key": "observabilitybase",
@@ -935,7 +935,7 @@
     "steps": [
       "Implementar logs estruturados com mascaramento",
       "Correlacionar API, job, lote e fonte",
-      "Definir métricas de latência, falhas e tamanho das filas"
+      "Definir métricas de latência, falhas e tamanho das filas **Implementação parcial (2026-10-11):** `docs/evidence/WORKER-STRUCTURED-DIAGNOSTICS-2026-10-11.md`. O worker registra requisições com campos limitados e IDs de lote. A duração e falhas podem ser agregadas dos eventos; a fila não existe neste caminho síncrono e, portanto, ainda não possui métrica. O usuário vê códigos de erro, mas ainda não vê o ID único que permite filtrar uma requisição específica no log."
     ],
     "accept": "Erro visível ao usuário possui referência que encontra diagnóstico técnico sem tokens ou extratos completos.",
     "impact": "Facilita suporte e investigação.",
@@ -947,14 +947,14 @@
     "questions": "",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [
       "BK-027",
       "BK-024"
     ],
-    "progress": 0
+    "progress": 0.8
   },
   {
     "key": "identity",
@@ -1201,9 +1201,10 @@
       "Persistir estado, checkpoint e tentativa",
       "Impedir execução concorrente duplicada da mesma carga",
       "Aplicar cancelamento, timeout e retomada após reinício",
-      "Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha."
+      "Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.",
+      "Programar a atualização diária para 09:30, após o tempo para colocar os arquivos externos nas pastas. Confirmar o fuso horário e a ação se algum arquivo estiver ausente antes de implementar esse comportamento."
     ],
-    "accept": "Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis.",
+    "accept": "Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 no fuso aprovado e o sistema trata explicitamente arquivos externos ausentes.",
     "impact": "Sustenta sincronização e reprocessamento local.",
     "deps": [
       "gofoundation",
@@ -1284,7 +1285,7 @@
     "questions": "R-04",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [
@@ -1292,7 +1293,7 @@
       "BK-039",
       "BK-038"
     ],
-    "progress": 0
+    "progress": 0.55
   },
   {
     "key": "fileingestion",
@@ -2140,9 +2141,9 @@
       "Preservar o layout T06 e as linhas aprovadas; apresentar os valores calculados pelo Majucau com competência e contas rastreáveis.",
       "Usar a mesma camada de leitura/cálculo para cards, tabela, gráfico e detalhe em tela, com base de percentual explícita. Os cards são somente para consulta.",
       "Apresentar ausência de campo como Dado indisponível no espaço previsto; não copiar números ilustrativos nem inferir classificação fora das regras contábeis aprovadas.",
-      "No topo da tela, no espaço aprovado para os indicadores onde hoje aparece UNMAPPED, exibir cards separados, somente para consulta. Dar destaque a EBITDA e EBIT, calculados a partir da DRE própria sem mudar suas linhas: EBITDA antes da depreciação; EBIT depois. Incluir também CAPEX PAGO NO MÊS e CAPEX ACUMULADO como informações separadas da tabela e do lucro. CAPEX pago no mês considera o pagamento efetivo no mês filtrado; CAPEX acumulado soma a categoria CAPEX dos relatórios desde o início do histórico confiável. Reduzir os cards apenas o necessário para caber no espaço aprovado; não alterar o restante da tela. Até a integração, mostrar Dado indisponível."
+      "No topo da tela, no espaço aprovado para os indicadores onde hoje aparece `UNMAPPED`, exibir cards separados, somente para consulta. Dar destaque a `EBITDA` e `EBIT`, calculados a partir da DRE própria sem mudar suas linhas: EBITDA antes da depreciação; EBIT depois. Incluir também `CAPEX PAGO NO MÊS` e `CAPEX ACUMULADO` como informações separadas da tabela e do lucro. CAPEX pago no mês considera o pagamento efetivo no mês filtrado; CAPEX acumulado soma a categoria CAPEX dos relatórios desde o início do histórico confiável. Reduzir os cards apenas o necessário para caber no espaço aprovado; não alterar o restante da tela. Até a integração, mostrar Dado indisponível."
     ],
-    "accept": "Tabela e gráfico usam o cálculo aprovado e não se contradizem; EBIT/EBITDA aparecem em cards separados e destacados no topo, derivados da DRE sem alterar as linhas dela; os cards substituem UNMAPPED no espaço aprovado; CAPEX pago no mês e acumulado são consultas separadas, vêm da categoria CAPEX dos relatórios e não entram no lucro; nenhuma outra parte do layout aprovado é alterada.",
+    "accept": "Tabela e gráfico usam o cálculo aprovado e não se contradizem; EBIT/EBITDA aparecem em cards separados e destacados no topo, derivados da DRE sem alterar as linhas dela; os cards substituem `UNMAPPED` no espaço aprovado; CAPEX pago no mês e acumulado são consultas separadas, vêm da categoria CAPEX dos relatórios e não entram no lucro; nenhuma outra parte do layout aprovado é alterada.",
     "impact": "Evita interpretação enganosa da rentabilidade.",
     "deps": [
       "dreengine",
@@ -2153,7 +2154,7 @@
     "questions": "Q-22,F-02",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [
@@ -2161,7 +2162,7 @@
       "BK-028",
       "BK-021"
     ],
-    "progress": 0
+    "progress": 0.2
   },
   {
     "key": "trialbalanceengine",
@@ -2783,15 +2784,16 @@
     "key": "purchasesscreen",
     "id": "BK-086",
     "phase": "07 Estoque, produção e compras",
-    "title": "Implementar T11 Compras e exportação de recomendações",
-    "goal": "Entregar o módulo de compras especificado na planilha.",
-    "action": "Construir a tela conforme referência aprovada, com recomendação operacional e contexto separado.",
+    "title": "Implementar T11 Compras para consulta",
+    "goal": "Exibir as informações de compras para consulta, sem executar operações.",
+    "action": "Construir a tela conforme a referência visual aprovada, com recomendação operacional e contexto separado, respeitando a decisão posterior de consulta somente.",
     "steps": [
       "Apresentar necessidade, quantidade, cobertura, prazo e prioridade pelo contrato funcional vigente nos blocos aprovados.",
       "Preservar bloco de inteligência do cacau com componentes disponíveis; ausência/refinamento de fonte externa não bloqueia motor principal.",
-      "Manter exportação aprovada da recomendação, com mesmos filtros e snapshot da tela; não criar pedidos no Bling."
+      "Somente mostrar os dados; não disponibilizar exportação/download, criação, alteração ou envio de pedidos ao Bling.",
+      "Manter “Gerar pedidos” no mesmo lugar e desativado, conforme confirmação visual de 11/10/2026. Não associar handler nem ação de exportação, download, criação, alteração ou envio de pedido. A referência histórica permanece arquivada."
     ],
-    "accept": "Não há Gerar pedidos; exportação e cartões reconciliam com a mesma base e versão.",
+    "accept": "A tela exibe dados consultivos consistentes com a mesma base e versão; não existe ação funcional para exportar/baixar ou gerar/alterar pedidos. O botão “Gerar pedidos” permanece no lugar aprovado e desativado. Qualquer outra mudança visual depende de aprovação explícita.",
     "impact": "Permite discutir compras com evidência sem alterar o ERP.",
     "deps": [
       "missing",

@@ -28,7 +28,7 @@ A pasta continha uma planilha e dezesseis PNGs. O PNG com nome ChatGPT repete a 
 
 ### Rechecagem do pacote inicial — 11/10/2026
 
-Os 17 nomes da tabela acima foram procurados em `C:\Users\Gisele\Downloads` e em `sources/private/material-original/`. Nenhum dos 17 arquivos foi encontrado nesses locais. A pasta `work/source_extract/`, que deveria conter a extração das vinte abas, também não existe neste checkout. Portanto, os hashes acima são o registro histórico; não foi possível recalculá-los nem rever as abas do arquivo original nesta conferência.
+Os 17 nomes da tabela acima foram procurados na pasta Downloads da usuária e em `sources/private/material-original/`. Nenhum dos 17 arquivos foi encontrado nesses locais. A pasta `work/source_extract/`, que deveria conter a extração das vinte abas, também não existe neste checkout. Portanto, os hashes acima são o registro histórico; não foi possível recalculá-los nem rever as abas do arquivo original nesta conferência.
 
 ## Material complementar recebido em outubro de 2026
 

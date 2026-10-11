@@ -2028,6 +2028,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Reauditoria estática de 2026-10-11:** `frontend/src/mockupDashboard.tsx` contém os quatro cards e filtra o card `UNMAPPED` dessa área; o alerta de lançamentos pendentes continua separado. `frontend/src/bootstrap.ts` e `internal/application/contracts.go` aceitam as métricas de CAPEX, mas a busca de código de produção não encontrou fonte que as preencha. EBIT/EBITDA continuam com valor indisponível. A evidência de CI anteriormente registrada em `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md` cobre a presença da interface; esta reauditoria não executou testes e não altera telas ou regras.
 
+**Revisão dos relatórios CAPEX — 11/10/2026:** os dois PDFs de Contas a Pagar enviados mostram datas e valores por lançamento, mas não a categoria de cada pagamento; o print separado mostra CAPEX agregado por categoria, sem a data de liquidação por linha. Esses arquivos, sozinhos, não permitem preencher os cards aprovados sem inferir classificação. A BK-067 permanece em 20% e os cards continuam indisponíveis até localizar um relatório que ligue categoria CAPEX a cada pagamento e sua data, ou que forneça os totais CAPEX com filtros de período. Evidência sanitizada: `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md`. Nenhuma regra, tela ou valor foi alterado.
+
 ### BK-068 — Reproduzir o balancete a partir da base do Bling
 
 **Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.

@@ -401,7 +401,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-013 — Especificar perfis, capacidades, vigência e auditoria
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Segurança.
+**Situação:** Em andamento. **Evolução:** 15% (estimativa documental: schema, permissões iniciais e caminho de autorização do worker auditados; matriz aprovada, protocolo de identidade e enforcement ainda pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Segurança.
 
 **Objetivo:** Definir quem pode consultar ou alterar cada recurso.
 
@@ -420,7 +420,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
-**Fonte:** W/Y CEIs; H_Contrato_Dados!A34:H39; Fechamento vigente 13/09/2026, §6
+**Fonte:** W/Y CEIs; H_Contrato_Dados!A34:H39; Fechamento vigente 13/09/2026, §6; auditoria estática `docs/evidence/ACCESS-CONTROL-AUDIT-2026-10-11.md`
 
 **Regras e verificações vinculadas:** L-25,L-26,Q-14,F-15
 
@@ -2193,9 +2193,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 1. Apresentar necessidade, quantidade, cobertura, prazo e prioridade pelo contrato funcional vigente nos blocos aprovados.
 2. Preservar bloco de inteligência do cacau com componentes disponíveis; ausência/refinamento de fonte externa não bloqueia motor principal.
 3. Somente mostrar os dados; não disponibilizar exportação/download, criação, alteração ou envio de pedidos ao Bling.
-4. A referência histórica contém “Gerar pedidos”. Manter a referência arquivada; não tornar essa ação funcional nem mudar sua apresentação sem aprovação visual explícita.
+4. Manter “Gerar pedidos” no mesmo lugar e desativado, conforme confirmação visual de 11/10/2026. Não associar handler nem ação de exportação, download, criação, alteração ou envio de pedido. A referência histórica permanece arquivada.
 
-**Critério de aceite:** A tela exibe dados consultivos consistentes com a mesma base e versão; não existe ação funcional para exportar/baixar ou gerar/alterar pedidos. Mudanças na apresentação visual são feitas somente após aprovação explícita.
+**Critério de aceite:** A tela exibe dados consultivos consistentes com a mesma base e versão; não existe ação funcional para exportar/baixar ou gerar/alterar pedidos. O botão “Gerar pedidos” permanece no lugar aprovado e desativado. Qualquer outra mudança visual depende de aprovação explícita.
 
 **Impacto:** Permite discutir compras com evidência sem alterar o ERP.
 

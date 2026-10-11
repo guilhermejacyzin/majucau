@@ -122,6 +122,13 @@ Somente recebimentos com fonte oficial e data válida participam. O cálculo usa
 - Esta decisão substitui qualquer permissão anterior de exportar recomendações na tela de Compras.
 - A imagem histórica T11 ainda exibe “Gerar pedidos”. Isso não autoriza essa ação. A função fica proibida; qualquer mudança na aparência ou no texto desse elemento depende de aprovação visual explícita, pois as telas aprovadas não devem ser alteradas por inferência.
 
+### Confirmação visual posterior — botão “Gerar pedidos” desativado
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-11 (America/Sao_Paulo).
+- Manter o botão “Gerar pedidos” no mesmo lugar da tela T11 e desativado.
+- Essa confirmação autoriza somente preservar essa apresentação. Não autoriza adicionar uma ação, exportação, download ou operação no Bling.
+- No código conferido em 2026-10-11, o botão já está com `disabled` e não possui handler; por isso, nenhuma alteração de tela ou código foi necessária.
+
 ## D-004 — Fonte financeira do Nuvem Pago
 
 ### Problema

@@ -54,6 +54,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Propagar cancelamento e timeout até a leitura e a persistência. Calcular hash enquanto o conteúdo passa pelo stream; validar cada registro antes de persistir e preservar atomicidade/idempotência.
 - Entrada externa é não confiável. Não registrar payload, segredos ou PII; arquivos temporários com dados sensíveis ficam em diretório privado, têm limpeza garantida e não entram em caches ou outputs de CI. A falha de limpeza deve ser propagada como `securetemp.CleanupError`, com o caminho acessível para operador autorizado e omitido da mensagem comum/log. Não descartar erros de remoção de temporários; se um workspace contiver o arquivo, a remoção do workspace deve reportar qualquer resíduo.
 - Scripts PowerShell que apagam diretórios recursivamente devem usar `scripts/SafeCleanup.psm1`, restringir o destino ao caminho relativo previsto dentro do projeto, rejeitar links/reparse points nos pais e no conteúdo e propagar qualquer falha de limpeza.
+- Inventários de artefatos devem ser escritos linha a linha, sem ordenar ou acumular todos os caminhos em memória. Liste apenas entregáveis e evidências de verificação; não percorra caches nem conteúdo retido.
 
 ## Governança de execução
 

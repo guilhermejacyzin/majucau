@@ -15,3 +15,7 @@ As saídas intermediárias `build/bin`, `frontend/dist` e `tmp` são removidas p
 ## Limite
 
 O bundle portátil é somente um artefato de validação/diagnóstico; ele não instala PostgreSQL, serviço, ACLs ou WebView2. O artefato atual é um build Windows x64 não assinado. O instalador NSIS e a assinatura Authenticode permanecem marcos posteriores do G7.
+
+## Complemento — geração do inventário em fluxo — 2026-10-11
+
+`scripts/ArtifactManifest.psm1` gera `artifacts/MANIFEST.txt` escrevendo uma linha por arquivo, sem manter todos os caminhos em memória. O inventário inclui apenas `artifacts/windows` e `artifacts/verification`; caches em `artifacts/cache` e conteúdo preservado em `artifacts/retained` são excluídos. Links/reparse points são recusados. A alteração está sob revisão estática; a CI ainda precisa confirmar o fluxo nos scripts de consolidação e pacote portátil.

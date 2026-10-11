@@ -46,7 +46,7 @@ Esta classificação registra o que os comandos fazem e confronta com as capacid
 | `bling.oauth.*`, `bling.config.save`, `nuvemshop.config.save` | Configura, conecta, testa, revoga ou desconecta credenciais | Administração de integração; não está entre as capacidades aprovadas para Diretores |
 | `bling.sync` | Consulta a API do Bling e grava dados sincronizados | Corresponde a “sincronizar integrações”, aprovado para Diretores |
 | `bling.receipts.preview`, `nuvem_pago.future.preview` | Lê e valida arquivos CSV sem persistir seus registros | Prévia de consulta; autorização por perfil não existe hoje |
-| `bling.receipts.import`, `nuvem_pago.future.import` | Grava registros CSV no banco local | Escrita de dados; não há decisão explícita se isso está incluído em “sincronizar” para Diretores |
+| `bling.receipts.import`, `nuvem_pago.future.import` | Grava registros CSV no banco local | Gisele aprovou a importação manual desses arquivos como parte de `INTEGRATION_SYNC`; o worker ainda não valida o perfil |
 | Exportação de relatórios | Não há método de exportação no catálogo IPC atual; a tela mantém a opção indisponível sem dados confirmados | Capacidade aprovada, ainda sem rota de serviço comprovada nesta auditoria |
 
 ### Lacunas técnicas atualizadas
@@ -55,6 +55,6 @@ Esta classificação registra o que os comandos fazem e confronta com as capacid
 - O catálogo da migration possui `BACKUP_EXPORT`, mas não possui permissão específica `REPORT_EXPORT`, apesar de a exportação de relatórios ter sido aprovada para Diretores.
 - O Named Pipe autentica o processo Windows autorizado; não transforma a conta compartilhada de e-mail em identidade autenticada no serviço central. Na futura auditoria, registrar a ação como executada pela principal compartilhada, sem atribuir um Diretor individual.
 - Não foram localizadas verificações de permissão por comando no worker. A conta compartilhada aprovada, por si só, não corrige essa lacuna.
-- Antes de codificar a matriz, falta classificar a importação manual dos CSVs: é uma operação de gravação de dados e pode ou não fazer parte da capacidade “sincronizar” que Gisele aprovou para Diretores. Essa ambiguidade não altera a regra financeira, mas altera quem pode gravar; não presumir.
+- A importação manual de CSVs do Bling e da Nuvem Pago foi aprovada para Diretores como parte de `INTEGRATION_SYNC`. A autorização ainda precisa ser aplicada no serviço/worker, com registro de sucesso e negação.
 
-O código e as telas permanecem inalterados nesta reauditoria. O próximo passo de implementação depende da classificação dos dois comandos de importação CSV; depois disso, ainda será necessário desenhar autenticação/sessão do login próprio e adicionar a permissão de exportação de relatórios ao contrato antes de aplicar autorização no serviço/worker.
+O código e as telas permanecem inalterados nesta reauditoria. O próximo passo é desenhar autenticação/sessão do login próprio e adicionar a permissão de exportação de relatórios ao contrato; depois, aplicar no serviço/worker as capacidades aprovadas, incluindo importação CSV sob `INTEGRATION_SYNC`.

@@ -3,6 +3,7 @@ param()
 
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'SafeCleanup.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'ArtifactManifest.psm1') -Force
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $artifactRoot = Join-Path $projectRoot 'artifacts'
 $windowsRoot = Join-Path $artifactRoot 'windows'
@@ -76,19 +77,7 @@ Remove-MajucauProjectFile -ProjectRoot $projectRoot -Path $bundlePath -ExpectedR
 Compress-Archive -Path (Join-Path $stageRoot '*') -DestinationPath $bundlePath -CompressionLevel Optimal
 
 $manifest = Join-Path $artifactRoot 'MANIFEST.txt'
-Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $manifest -ExpectedType File
-$lines = @(
-    'Majucau Financial Intelligence artifacts',
-    "Gerado em: $(Get-Date -Format o)",
-    "Origem do código: $projectRoot",
-    "Arquivos finais: $windowsRoot",
-    ''
-)
-Get-ChildItem -LiteralPath $artifactRoot -Recurse -File |
-    Where-Object { $_.FullName -ne $manifest -and $_.FullName -notlike "$stageRoot*" } |
-    Sort-Object FullName |
-    ForEach-Object { $lines += "$($_.FullName.Substring($artifactRoot.Length + 1))  $($_.Length) bytes" }
-Set-Content -LiteralPath $manifest -Value $lines -Encoding utf8
+Write-MajucauArtifactManifest -ProjectRoot $projectRoot -ManifestPath $manifest
 
 Write-Host "Bundle portátil criado em: $bundlePath"
 } finally {

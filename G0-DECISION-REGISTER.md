@@ -305,5 +305,6 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Após ser informada de que uma conta compartilhada não distingue qual diretor fez cada ação, Gisele confirmou que os Diretores usarão uma única conta `contato@majucau.com.br`.
 - Esta decisão posterior substitui, somente para o perfil `DIRECTOR`, a exigência de identidade individual registrada originalmente na ADR-002. A auditoria identificará a conta compartilhada e a ação, mas não a pessoa física que a executou.
 - A conta terá somente as capacidades aprovadas para Diretores: consulta, sincronização e exportação de backups e relatórios. A decisão não autoriza outras permissões.
+- Em 2026-10-11, Gisele confirmou que Diretores também podem importar manualmente arquivos CSV do Bling e da Nuvem Pago como parte da sincronização (`INTEGRATION_SYNC`). Isso autoriza importar esses arquivos no fluxo de sincronização; não autoriza configurar credenciais nem administrar integrações.
 - MFA, sessão, recuperação, provisionamento e aplicação efetiva das permissões no serviço/worker continuam pendentes; a conta não deve ser provisionada antes de esses controles serem definidos e validados.
 - Este registro não altera telas, capacidades já aprovadas nem regras financeiras.

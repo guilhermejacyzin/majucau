@@ -93,6 +93,12 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - BK-025 permanece em 60% até que uma pessoa administradora confirme em **Settings → Branches** se `main` exige revisão e verificações. Nenhuma configuração foi alterada. A auditoria foi documental e não executou testes.
 - A estimativa atual do rastreador continua em 6,2% concluído e 93,8% restante, entre 127 tarefas; isso não representa prontidão para produção nem esforço medido. Evidência: `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-11.md`.
 
+### Rechecagem do material de origem — 11/10/2026
+
+- Foram encontrados quatro arquivos complementares de outubro na pasta privada; os hashes conferem com o registro local de limpeza, e o Git os ignora. Eles não substituem os 17 arquivos do pacote histórico.
+- A busca pelos 17 nomes conhecidos não encontrou os arquivos em Downloads nem na pasta privada; a extração das vinte abas também está ausente. BK-001 segue em 0% aceito e aguarda o pacote histórico. Se ele não estiver disponível, a tarefa permanece pendente até que a responsável decida expressamente como tratar essa ausência; não será marcada como concluída só com os arquivos complementares.
+- Não houve alteração de tela ou regra financeira, nem execução de testes. A estimativa geral continua em 6,2% concluído e 93,8% restante.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -162,7 +168,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Fonte:** docs/planejamento/FONTES.md; docs/source/README.md; extrações do pacote; revision_v1.json; revision_v2.json.
 
-**Evidência e pendência:** O registro histórico e as extrações confirmam o inventário; os documentos v0/v1/v2 foram preservados. Os hashes estão em FONTES.md, mas a pasta privada dos originais não existe neste checkout e os nomes exatos não foram encontrados em Downloads. A responsável foi consultada se enviará os originais ou aceita hashes e extrações; resposta pendente. A tarefa não está concluída.
+**Evidência e pendência:** Os registros e os documentos v0/v1/v2 foram preservados. Em 11/10/2026, a conferência local encontrou os quatro materiais complementares de outubro na pasta privada e confirmou correspondência com o registro de limpeza; eles não são o pacote histórico. Nenhum dos 17 nomes do pacote inicial foi encontrado em Downloads ou em `sources/private/material-original/`, e `work/source_extract/` não existe neste checkout. Assim, não foi possível recalcular os hashes do pacote original nem revisar as vinte abas. A tarefa continua em 0% aceito e aguarda o pacote original; se ele não estiver disponível, o inventário permanece aberto até decisão expressa sobre a ausência, sem tratar os quatro arquivos complementares como substitutos.
 
 ### BK-002 — Verificar o ponto de partida no GitHub
 

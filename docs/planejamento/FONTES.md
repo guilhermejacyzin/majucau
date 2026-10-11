@@ -26,9 +26,15 @@ A pasta continha uma planilha e dezesseis PNGs. O PNG com nome ChatGPT repete a 
 | T16_Parametros.png | `ae91e304c0185c5908e3ac40497d98c6d3e63936ab9a35dc9a9ac8729329753c` |
 | T17_Usuarios.png | `fcd45dde50ea33a1ed039931a4f39ff4b85aacc232c1f8b4cca64749f4261406` |
 
+### Rechecagem do pacote inicial — 11/10/2026
+
+Os 17 nomes da tabela acima foram procurados em `C:\Users\Gisele\Downloads` e em `sources/private/material-original/`. Nenhum dos 17 arquivos foi encontrado nesses locais. A pasta `work/source_extract/`, que deveria conter a extração das vinte abas, também não existe neste checkout. Portanto, os hashes acima são o registro histórico; não foi possível recalculá-los nem rever as abas do arquivo original nesta conferência.
+
 ## Material complementar recebido em outubro de 2026
 
 Em 11/10/2026, quatro arquivos de apoio à calculadora e relatórios financeiros foram encontrados nos Downloads e copiados para `sources/private/material-original/`. Os originais nos Downloads foram preservados. A pasta privada é ignorada pelo Git; o repositório não contém as planilhas nem os relatórios. Nome, tamanho e SHA-256 estão registrados apenas em `artifacts/retained/cleanup-register.md`. As duas cópias da calculadora têm conteúdo idêntico.
+
+Na conferência de 11/10/2026, os quatro arquivos continuam presentes nessa pasta privada e seus SHA-256 correspondem ao registro local de limpeza. Eles são materiais complementares recebidos em outubro e não substituem o pacote histórico de 17 arquivos nem a planilha de vinte abas descrita acima. Os arquivos privados e o registro local seguem fora do Git.
 
 ## Consolidacao das respostas
 

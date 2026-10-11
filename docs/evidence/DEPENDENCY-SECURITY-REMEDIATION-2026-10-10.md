@@ -24,3 +24,19 @@ O script oficial `scripts/verify.ps1` terminou com sucesso após as atualizaçõ
 O scanner ainda mostra um aviso de módulo sobre `golang.org/x/crypto/openpgp` ([GO-2026-5932](https://pkg.go.dev/vuln/GO-2026-5932)): esse pacote é considerado inseguro, não mantido e sem versão corrigida. O código do Majucau importa `golang.org/x/crypto/argon2`, não importa OpenPGP, e `govulncheck` não encontrou chamadas ao pacote afetado. O aviso deve continuar visível até a ferramenta de scan deixar de relatar código não alcançável ou a dependência de Argon2 ser substituída por decisão técnica.
 
 As verificações foram locais e sem banco de produção. Elas não substituem CI remota, restore real, VM Windows limpa, assinatura do instalador ou homologação funcional. Nenhuma tela ou regra financeira foi alterada.
+
+## Rechecagem do scanner Go — 2026-10-11
+
+Foi executado `govulncheck` v1.9.0 com Go 1.26.9 sobre os 19 pacotes do
+aplicativo, worker, instalador, banco e módulos internos. A base pública do
+scanner estava atualizada em 2026-10-08 22:31 UTC. Resultado: zero vulnerabilidade
+alcançável em símbolos ou pacotes importados. O único aviso continua sendo
+GO-2026-5932 para `golang.org/x/crypto/openpgp`, sem versão corrigida conhecida.
+O código do projeto importa somente `golang.org/x/crypto/argon2` desse módulo;
+OpenPGP não é importado. Portanto, não houve troca de dependência nem alteração
+de código nesta rechecagem. O aviso deve continuar monitorado, sem usar OpenPGP.
+
+Esta execução foi somente uma análise de vulnerabilidades: não executou testes,
+não acessou dados de produção e não alterou telas ou regras financeiras. A
+evidência pública do alerta está em
+[GO-2026-5932](https://pkg.go.dev/vuln/GO-2026-5932).

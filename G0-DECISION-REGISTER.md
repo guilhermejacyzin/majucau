@@ -82,6 +82,8 @@ Em 2026-10-04, Gisele forneceu `Calculadora_Aplicacao_Lucro_Liquido_Profissional
 
 Em 2026-10-10, Gisele esclareceu que recebimentos da Nuvemshop não são uma regra aprovada para a calculadora. A fórmula ativa deve usar o fluxo consolidado já aprovado; não somar recebimentos da Nuvemshop separadamente por causa de uma linha da planilha.
 
+Em 2026-10-11, Gisele reiterou que a calculadora deve preservar a estrutura da planilha que enviou. Não acrescentar uma soma de recebimentos da Nuvemshop nem trocar a estrutura por outra proposta. A planilha serve de referência para mapear campos e fluxo; qualquer diferença entre ela e uma regra já aprovada (por exemplo, a DRE própria do Majucau) precisa ser identificada antes da implementação. D-003-A permanece vigente até a comparação e eventual aprovação de mudança; esta confirmação não altera fórmulas financeiras.
+
 ### D-003-A — Aprovar fórmula Majucau v1 como novo oráculo (recomendada)
 
 ```text

@@ -26,6 +26,12 @@ Esta revisão não altera telas, códigos, cálculos ou regras de negócio. Os v
 | T14 — Alertas | `T14-mockup-2026-09-20.png`; BK-101 | Os cartões de alertas ativos somam 51; os valores exibidos por módulo também somam 51, mas o centro do gráfico declara 57. Percentuais usam 57 como denominador e somam aproximadamente 88,4%. Os 14 resolvidos são outra janela. Reconciliar o total do gráfico/percentuais e separar alertas ativos de resolvidos. |
 | T15 — Importações/Integrações | `T15-mockup-2026-09-20.png`; BK-052 | Os estados dos lotes somam 128, como o cartão. As porcentagens chegam a 100,1% por arredondamento. O topo usa os últimos 30 dias e a tabela mostra apenas alguns lotes, portanto os números de exemplo não precisam somar entre si; a tela real deve identificar período e universo e preservar as regras de idempotência/reprocessamento. |
 
+### Conferência visual complementar da T06 — 11/10/2026
+
+- A prévia local foi aberta em uma janela de 916 × 892 px. Os oito cards inferiores (CMV/CPV, despesas, perdas, tributos, EBIT, EBITDA e os dois indicadores de CAPEX) apareceram em três colunas, com dois cards na última linha. Não houve rolagem horizontal nem texto cortado nos cards conferidos.
+- EBIT, EBITDA e CAPEX continuaram como consulta visual; CAPEX permaneceu fora das linhas e do lucro da DRE. O alerta de pendências continuou visível. Valores sem fonte confirmada apareceram como indisponíveis (`—`), sem criar valores financeiros.
+- Esta observação cobre somente essa largura e a disposição do conteúdo; não valida outros tamanhos, comportamento com dados reais, cálculos, navegação ou homologação. Nenhum código, tela aprovada ou regra de negócio foi alterado. A prévia foi encerrada e o cache temporário criado para ela foi removido.
+
 ## Decisões e próximos passos
 
 - O inventário, as inconsistências visuais e as ambiguidades estão associados às tarefas BK-052, BK-055, BK-057, BK-059, BK-062, BK-067, BK-069, BK-073, BK-078, BK-081, BK-082, BK-084, BK-086, BK-096, BK-099, BK-101 e BK-102.

@@ -114,8 +114,11 @@ CREATE TEMP TABLE csv_import_files (
 }
 
 func (q *FileQueue) Next() (string, bool, error) {
-	if q == nil || q.tx == nil {
+	if q == nil || q.tx == nil || q.ctx == nil {
 		return "", false, errors.New("CSV file queue is not initialized")
+	}
+	if err := q.ctx.Err(); err != nil {
+		return "", false, err
 	}
 	if q.batchIndex >= len(q.batch) {
 		if err := q.loadBatch(); err != nil {

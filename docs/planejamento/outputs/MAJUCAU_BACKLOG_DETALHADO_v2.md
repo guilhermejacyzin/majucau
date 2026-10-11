@@ -331,6 +331,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-056 avança de 0% para 5% como fundação técnica. Não há integração com consulta ou tela de produção. Permanecem as dependências BK-046, BK-053 e BK-020; nenhuma regra ou tela mudou. Evidência: `docs/evidence/AGING-STREAM-READER-2026-10-11.md`.
 - O backlog tem 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (60%), BK-056 (5%) e BK-067 (20%).
 - Pela média simples, `(7 × 100% + 30% + 20% + 10% + 15% + 15% + 5% + 35% + 70% + 85% + 60% + 20%) ÷ 127 = 8,4%`; restam 91,6%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
+- A execução local de `scripts/verify-backlog.ps1` confirmou as contagens e os percentuais registrados acima.
 
 ## 00 Descoberta e decisões
 

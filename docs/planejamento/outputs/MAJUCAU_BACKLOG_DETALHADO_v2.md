@@ -56,7 +56,7 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 
 ### Recontagem após auditorias de BK-025 e BK-067 — 11/10/2026
 
-- BK-025 foi revisada contra `README.md`, `.gitignore`, `AGENTS.md`, `.github/workflows/ci.yml` e a nova `CONTRIBUTING.md`. A base do repositório e as instruções estão disponíveis; a proteção efetiva de branches e a exigência de revisores no GitHub ainda não foram confirmadas. BK-025 passa a `Em andamento`, com estimativa de 60%; nenhum ajuste em tela ou regra de negócio foi feito.
+- BK-025 foi revisada contra `README.md`, `.gitignore`, `AGENTS.md`, `.github/workflows/ci.yml` e `CONTRIBUTING.md`. A base do repositório e as instruções estão disponíveis; a proteção efetiva de branches e a exigência de revisores no GitHub ainda não foram confirmadas. BK-025 passa a `Em andamento`, com estimativa de 60%; nenhum ajuste em tela ou regra de negócio foi feito.
 - A rechecagem estática de BK-067 confirmou que a tela já renderiza EBIT, EBITDA, CAPEX pago no mês e CAPEX acumulado como cards de consulta, remove o card numérico UNMAPPED e preserva o alerta de lançamentos pendentes. A tabela não recebe CAPEX. Os valores continuam indisponíveis: EBIT/EBITDA ainda são traços e o backend não carrega os campos CAPEX a partir do relatório. BK-067 passa a `Em andamento`, com estimativa conservadora de 20%; não houve alteração de tela ou regra nesta auditoria.
 - O backlog continua com 127 tarefas: 5 concluídas, 6 em andamento e 116 não iniciadas. As tarefas em andamento são BK-001 (0%), BK-006 (10%), BK-007 (10%), BK-013 (15%), BK-025 (60%) e BK-067 (20%).
 - Pela média simples configurada no backlog, o indicador passa a `(5 × 100% + 0% + 10% + 10% + 15% + 60% + 20%) ÷ 127 = 4,8%`; restam 95,2%. É uma estimativa do rastreador, não uma medição de esforço nem prova de prontidão para produção.
@@ -86,6 +86,12 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 
 - BK-002 foi revalidada em modo de leitura. `main` continua em `39f8630`; a branch `codex/majucau-artifact-consolidation` está em `1d90a0a`, 206 commits à frente e nenhum atrás; há cinco PRs abertos e nenhuma issue aberta. Evidência: `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-11.md`.
 - Os números de 178 commits à frente e ponta `b94bb3a` continuam registrados como a fotografia anterior de 10/10, não como estado atual.
+
+### Rechecagem das proteções GitHub — 11/10/2026
+
+- A consulta de rulesets retornou lista vazia. A consulta de proteção clássica da branch `main` foi negada com HTTP 403 porque a integração GitHub não tem permissão administrativa; isso não prova que a branch esteja desprotegida.
+- BK-025 permanece em 60% até que uma pessoa administradora confirme em **Settings → Branches** se `main` exige revisão e verificações. Nenhuma configuração foi alterada. A auditoria foi documental e não executou testes.
+- A estimativa atual do rastreador continua em 6,2% concluído e 93,8% restante, entre 127 tarefas; isso não representa prontidão para produção nem esforço medido. Evidência: `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-11.md`.
 
 ## Dependências e ordem prática
 
@@ -732,7 +738,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-025 — Preparar o repositório e as convenções do projeto
 
-**Situação:** Em andamento. **Evolução:** 60% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` agora explica o fluxo seguro de mudanças, commits e evidências. Ainda falta conferir e configurar, se necessário, as proteções reais de branch e revisão no GitHub). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 60% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` explica o fluxo seguro de mudanças, commits e evidências. A lista de rulesets do GitHub está vazia, mas a integração recebeu HTTP 403 ao consultar a proteção clássica de `main`; falta confirmação de uma pessoa administradora sobre revisões e verificações exigidas). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Criar uma base reproduzível para a equipe.
 

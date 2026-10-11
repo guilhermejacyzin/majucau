@@ -11,3 +11,9 @@ Consulta pública somente de leitura em 11/10/2026. Nenhuma branch, issue ou pul
 - A responsável confirmou em 10/10/2026 que não há outro clone, servidor ou ambiente de trabalho com código/dados além deste checkout; o controle do código fica no Git/GitHub.
 
 Esta revalidação foi apenas documental. Nenhuma branch foi mesclada, nenhuma tela ou regra de negócio foi alterada e nenhum teste foi executado.
+
+## Proteção da branch — consulta adicional em 11/10/2026
+
+- A consulta de regras do repositório (`/repos/guilhermejacyzin/majucau/rulesets`) retornou uma lista vazia. Não há rulesets configurados que apareçam nessa consulta.
+- A consulta de proteção clássica da branch padrão (`/branches/main/protection`) retornou HTTP 403: `Resource not accessible by integration`. Essa conexão não tem a permissão administrativa necessária para confirmar se `main` exige revisão ou verificações antes de aceitar mudanças.
+- O erro 403 não significa que a branch esteja desprotegida. Nenhuma configuração foi alterada. Para fechar essa verificação, uma pessoa administradora precisa conferir **GitHub → repositório Majucau → Settings → Branches**.

@@ -29,8 +29,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md",
-      "bytes": 68267,
-      "sha256": "596a93ce93e38b211254a0fbc46b059ae3c295a0409809d797f2b3c5e4a165ec"
+      "bytes": 69341,
+      "sha256": "f0b7fbe8f8d4fad3307a704bf7641866e185c3cb779772c2cf9875bd442f0f14"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v0.md",
@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 150066,
-      "sha256": "3111337d09ad07b42424224d9b81499b039fb4bbf3b9253429afed1de4326df8"
+      "bytes": 155002,
+      "sha256": "c46a54cfcc03091b991e08628c09893a18f2526b0f0c0629a71ed057ae2ee810"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -69,8 +69,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 2169,
-      "sha256": "3628fdd7bc287eb90cd14b8541436b574a1d26e4fdac59630357e43f7048c08f"
+      "bytes": 2676,
+      "sha256": "c56c61d27f7438ec612f1f6cce6c51c6f7fd631f589e67f5860179d5cb5ea8b4"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",

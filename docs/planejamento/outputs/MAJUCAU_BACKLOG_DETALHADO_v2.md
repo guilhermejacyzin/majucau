@@ -8,7 +8,7 @@ Foram revisadas 70 tarefas mantendo os IDs BK-000 a BK-126. As versões anterior
 
 ## Base vigente
 
-Somente Majucau, três diretores, hospedagem local em Windows, backend Go, frontend React JavaScript, monólito DDD hexagonal. Balanço Patrimonial permanece excluído. Mockup aprovado define visual; documentação consolidada define fonte, cálculo e comportamento; prevalece a última versão aprovada/congelada.
+Somente Majucau, três diretores; Balanço Patrimonial permanece excluído. O cliente Wails/Windows e o PostgreSQL local são a etapa atual de transição. A direção aprovada é hospedar o serviço central em ambiente privado, com PostgreSQL sem acesso público (ADR-002). Provedor, orçamento, região, identidade e detalhes da operação diária continuam pendentes. A arquitetura usa backend Go, frontend React JavaScript e monólito DDD hexagonal. O mockup aprovado define o visual; as decisões aprovadas definem fontes, cálculos e comportamento.
 
 Bling é uma das fontes principais de lançamentos. A DRE é calculada pelo motor Majucau segundo regras contábeis aprovadas; o relatório pronto do Bling serve para comparação, não como resultado final. Drive somente de leitura conserva 01_perdas_operacionais, 02_nuvem_pago/recebimentos_futuros e 03_nuvem_envio. Não existe pasta adicional de investimentos.
 

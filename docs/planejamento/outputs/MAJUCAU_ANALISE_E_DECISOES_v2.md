@@ -1,12 +1,18 @@
 # Majucau — fechamento vigente e rastreabilidade, versão 2
 
-Esta revisão corrige a interpretação que tratava regras já definidas e responsabilidades técnicas como perguntas de negócio. O fechamento foi lido integralmente e aplicado ao backlog. O usuário confirmou expressamente: somente atualizar o backlog nesta rodada.
+Esta revisão corrige a interpretação que tratava regras já definidas e responsabilidades técnicas como perguntas de negócio. O fechamento registrado aqui é o de 13/09/2026. A confirmação de “somente atualizar o backlog” valia para aquela rodada. Decisões aprovadas depois e evidências atuais estão listadas a seguir e prevalecem em caso de conflito, sem alterar telas ou regras que continuam aprovadas.
 
-70 tarefas revisadas; IDs BK-000 a BK-126 preservados. Três levantamentos continuam concluídos, 2,4% por quantidade e 0% de desenvolvimento. Não houve acesso à conta real Bling/Drive nem implementação ou teste do produto.
+Registro histórico de 13/09/2026: 70 tarefas revisadas; 3 levantamentos concluídos, 2,4% por quantidade e 0% de desenvolvimento. Naquela data não havia implementação nem testes reais do produto. Esse registro não representa o estado atual.
 
-## Substituições expressas
+## Estado atualizado após o fechamento de 13/09/2026
 
-| Interpretação anterior | Regra vigente | Referência |
+- Em 03/10/2026, foi aprovada a direção de hospedagem privada centralizada. O cliente local continua como transição; provedor e operação ainda aguardam decisões. Referências: `ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md` e fase 13 do plano.
+- Em 04/10/2026, foi aprovada a DRE própria do Majucau com base nas regras contábeis recebidas; o relatório pronto do Bling serve para comparação, não como resultado final. Referências: `G0-DECISION-REGISTER.md` e `docs/DRE-ACCOUNTING-POLICY-v1.md`.
+- Em 10/10/2026, a matriz atual registrava 1 requisito verificado, 4 documentados, 26 parciais, 11 bloqueados e 9 não iniciados. A auditoria das 127 tarefas ainda está pendente; não há percentual global nem prazo confiável.
+
+## Substituições expressas no fechamento de 13/09/2026 (históricas)
+
+| Interpretação anterior | Entendimento adotado em 13/09/2026 (histórico; decisões aprovadas depois prevalecem) | Referência |
 |---|---|---|
 | DRE calculada/classificada independentemente no Majucau | Reproduzir DRE Bling por competência, preservando contas e classificações. | §2 |
 | Rotina Nuvem D+1 | Análise/conciliação normal dos movimentos até D-1; dia corrente só com solicitação expressa. Agenda futura não é eliminada. | §8.11 |

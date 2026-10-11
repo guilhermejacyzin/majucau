@@ -104,3 +104,25 @@ marcação na tela do Majucau sem confirmação.
 - A célula `E17` da referência está rotulada “Reserva mínima de segurança”. A
   planilha de origem permanece sem alteração; nenhum cálculo, tela ou regra do
   produto foi mudado por esta resposta.
+
+## Retificação de fonte e aprovação da sugestão de reserva — 2026-10-10
+
+- Gisele esclareceu que recebimentos da Nuvemshop não são uma regra aprovada
+  para a calculadora. A fórmula ativa deve usar o fluxo de caixa consolidado;
+  não somar esses recebimentos separadamente por causa do campo `E16` da
+  planilha.
+- Gisele aprovou exibir somente como sugestão, sem alterar o máximo da D-003-A:
+
+  ```text
+  reserva_sugerida_hoje = R$ 50.000 + MAX(0,
+    caixa_projetado_D0 - menor_saldo_diario_projetado_D0_D60)
+  ```
+
+- Exemplo: caixa projetado em D0 de R$ 100.000 e menor saldo diário previsto
+  de R$ 70.000 produzem uma sugestão de R$ 80.000. A queda prevista é
+  R$ 30.000; ao atravessá-la, a reserva mínima de R$ 50.000 permanece no ponto
+  mais baixo projetado.
+- A sugestão é informativa e não altera a reserva mínima aprovada, D-003-A,
+  o valor máximo para aplicação ou qualquer transferência. Os campos do fluxo
+  consolidado precisam ser mapeados antes da implementação; dados ausentes não
+  podem ser substituídos por zero ou por recebimentos presumidos.

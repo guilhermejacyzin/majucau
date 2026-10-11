@@ -189,7 +189,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Fonte:** `docs/source/README.md`; `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md`; `docs/FUNCTIONAL-DECOMPOSITION-v1.md`; `G0-DECISION-REGISTER.md`; hashes das 15 referências conferidos em 10/10/2026
 
-**Evidência:** As 15 referências do inventário existem e os 15 SHA-256 conferem; o MOCAP mapeia 15 rotas e registra Balanço Patrimonial fora do escopo, ausência de rota separada “Aplicações” e correções aprovadas da T6. A inspeção visual das imagens T1–T15 foi revalidada em 10/10/2026; discrepâncias e ambiguidades têm destino registrado em [MOCAP-SCREEN-AUDIT-2026-10-10.md](../../evidence/MOCAP-SCREEN-AUDIT-2026-10-10.md). Os valores dos mockups são ilustrativos, não regras; o botão “Gerar pedidos” da imagem de Compras permanece em conflito com o contrato aprovado e aguarda esclarecimento antes de qualquer mudança nessa tela. Contratos de cálculo continuam vinculados às tarefas financeiras específicas.
+**Evidência:** As 15 referências do inventário existem e os 15 SHA-256 conferem; o MOCAP mapeia 15 rotas e registra Balanço Patrimonial fora do escopo, ausência de rota separada “Aplicações” e correções aprovadas da T6. A inspeção visual das imagens T1–T15 foi revalidada em 10/10/2026; discrepâncias e ambiguidades têm destino registrado em [MOCAP-SCREEN-AUDIT-2026-10-10.md](../../evidence/MOCAP-SCREEN-AUDIT-2026-10-10.md). Os valores dos mockups são ilustrativos, não regras. A responsável confirmou que Compras deve apenas mostrar os dados, sem exportar, baixar ou criar/alterar pedidos; a aparência do botão histórico “Gerar pedidos” não será alterada sem aprovação visual explícita. Contratos de cálculo continuam vinculados às tarefas financeiras específicas.
 
 **Regras e verificações vinculadas:** Q-01,Q-02,F-13
 
@@ -223,7 +223,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-006 — Especificar tecnicamente a regra fechada da calculadora
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
+**Situação:** Em andamento. **Evolução:** 10% (estimativa de planejamento; sugestão de reserva aprovada apenas para consulta; mapeamento dos dados e especificação restante pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
 
 **Objetivo:** Permitir um cálculo reproduzível e compreensível.
 
@@ -232,20 +232,20 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Como fazer:**
 
 1. Usar o resultado líquido mensal calculado pela DRE do Majucau; preservar a janela de janeiro até dois meses antes do mês selecionado (M−2).
-2. Calcular Já Investido = aportes de principal − resgates de principal; manter rendimentos separados. A reserva mínima aprovada continua em R$ 50.000. Proposta ainda não aprovada: `reserva_sugerida_hoje = R$ 50.000 + MAX(0; saldo de caixa projetado em D0 − menor saldo diário projetado em D0–D+60)`. A responsável ainda decidirá se essa saída será apenas um aviso ou se também recalculará o máximo; até lá, não usar a proposta como regra.
-3. Seguir D-003-A: `worst_week_cash` representa o menor saldo diário de fechamento entre D0 e D+60. Usar somente recebimentos de fonte oficial e com data válida. Não escolher a semana com mais despesas nem somar recebimentos da Nuvemshop separadamente sem decisão aprovada; a equivalência com os campos E15/E16 da planilha continua pendente.
+2. Calcular Já Investido = aportes de principal − resgates de principal; manter rendimentos separados. A reserva mínima continua em R$ 50.000. Exibir, apenas como sugestão informativa, `reserva_sugerida_hoje = R$ 50.000 + MAX(0; caixa projetado em D0 − menor saldo diário projetado em D0–D+60)`. A sugestão não altera D-003-A nem o valor máximo para aplicar.
+3. Seguir D-003-A: `worst_week_cash` representa o menor saldo diário de fechamento entre D0 e D+60. Usar somente o fluxo de caixa consolidado, com fonte oficial e data válida; não somar recebimentos da Nuvemshop separadamente. A equivalência dos campos E15/E16 da planilha continua pendente de mapeamento e não substitui a regra aprovada.
 4. Calcular `available_profit = MAX(0; lucro líquido acumulado de janeiro até M−2 − Já Investido)`, `financial_limit = MAX(0; menor saldo diário D0–D+60 − reserva mínima)` e `Máximo Aplicável = MAX(0; MIN(available_profit; financial_limit))`, com moeda decimal exata.
 5. Calcular separadamente `Valor Executável Hoje = MIN(Máximo Aplicável; saldo transferível do Itaú)`, conforme R-08; exibir o saldo projetado restante. A tela é somente para consulta e não executa transferência ou aplicação.
 6. A calculadora recebe resultados financeiros consolidados, com período, fonte e qualidade. Bandeira, MDR, parcelamento e tarifas de cartão não entram nela.
 7. Mapear os campos técnicos que comprovam o saldo diário de fechamento, D0, D+60 e recebimentos elegíveis. Se uma entrada obrigatória não puder ser comprovada, mostrá-la como indisponível e pedir orientação; não inventar equivalência com a planilha nem substituir dado ausente por zero.
 
-**Critério de aceite:** Contrato financeiro fechado transcrito com referências e exemplos técnicos; nenhuma entrada ausente é inventada. A execução do cálculo depende das entradas comprovadas, sem exigir integração pronta para concluir a especificação.
+**Critério de aceite:** Contrato financeiro fechado transcrito com referências e exemplos técnicos; sugestão de reserva aparece separada e não interfere no máximo; nenhuma entrada ausente é inventada. A execução do cálculo depende das entradas comprovadas, sem exigir integração pronta para concluir a especificação.
 
 **Impacto:** Evita uma capacidade de aplicação baseada em critérios indefinidos.
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
-**Fonte:** `G0-DECISION-REGISTER.md` (D-003-A); `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`; C_Conflitos!A4:L5; A_Matriz_Mestra!A32:S36; T02/T08; Consolidação 13/09/2026, §§6–9; Fechamento vigente 13/09/2026, §§1–2
+**Fonte:** `G0-DECISION-REGISTER.md` (D-003-A e D-003-C); `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`; `docs/evidence/INVESTMENT-RESERVE-SUGGESTION-2026-10-10.md`; C_Conflitos!A4:L5; A_Matriz_Mestra!A32:S36; T02/T08; Consolidação 13/09/2026, §§6–9; Fechamento vigente 13/09/2026, §§1–2
 
 **Regras e verificações vinculadas:** L-07,Q-10,Q-21,R-06,R-08,F-01
 
@@ -2180,21 +2180,22 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Condição:** Fontes externas específicas habilitadas após refinamento técnico; não bloqueia compras operacionais.
 
-### BK-086 — Implementar T11 Compras e exportação de recomendações
+### BK-086 — Implementar T11 Compras para consulta
 
 **Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
-**Objetivo:** Entregar o módulo de compras especificado na planilha.
+**Objetivo:** Exibir as informações de compras para consulta, sem executar operações.
 
-**O que fazer:** Construir a tela conforme referência aprovada, com recomendação operacional e contexto separado.
+**O que fazer:** Construir a tela conforme a referência visual aprovada, com recomendação operacional e contexto separado, respeitando a decisão posterior de consulta somente.
 
 **Como fazer:**
 
 1. Apresentar necessidade, quantidade, cobertura, prazo e prioridade pelo contrato funcional vigente nos blocos aprovados.
 2. Preservar bloco de inteligência do cacau com componentes disponíveis; ausência/refinamento de fonte externa não bloqueia motor principal.
-3. Manter exportação aprovada da recomendação, com mesmos filtros e snapshot da tela; não criar pedidos no Bling.
+3. Somente mostrar os dados; não disponibilizar exportação/download, criação, alteração ou envio de pedidos ao Bling.
+4. A referência histórica contém “Gerar pedidos”. Manter a referência arquivada; não tornar essa ação funcional nem mudar sua apresentação sem aprovação visual explícita.
 
-**Critério de aceite:** Não há Gerar pedidos; exportação e cartões reconciliam com a mesma base e versão.
+**Critério de aceite:** A tela exibe dados consultivos consistentes com a mesma base e versão; não existe ação funcional para exportar/baixar ou gerar/alterar pedidos. Mudanças na apresentação visual são feitas somente após aprovação explícita.
 
 **Impacto:** Permite discutir compras com evidência sem alterar o ERP.
 

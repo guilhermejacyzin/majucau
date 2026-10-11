@@ -78,7 +78,9 @@ O callback loopback de aplicativo desktop não está comprovado na documentaçã
 
 Na aprovação do G0, em 2026-08-16, a planilha referenciada pelo handoff não havia sido fornecida. Por isso, D-003-A foi aprovada como fórmula própria do Majucau, sem alegar equivalência com a referência.
 
-Em 2026-10-04, Gisele forneceu `Calculadora_Aplicacao_Lucro_Liquido_Profissional.xlsm` e pediu que a parte de segurança considerasse o fluxo de caixa. A planilha foi recebida e analisada; o mapeamento inicial e a dúvida ainda aberta estão em `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`. D-003-A continua vigente até a comparação ser fechada e qualquer alteração de regra ser aprovada.
+Em 2026-10-04, Gisele forneceu `Calculadora_Aplicacao_Lucro_Liquido_Profissional.xlsm` e pediu que a parte de segurança considerasse o fluxo de caixa. A planilha foi recebida e analisada; o mapeamento inicial e a dúvida ainda aberta estão em `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`. D-003-A continua vigente até a comparação ser fechada e qualquer alteração do valor máximo ser aprovada.
+
+Em 2026-10-10, Gisele esclareceu que recebimentos da Nuvemshop não são uma regra aprovada para a calculadora. A fórmula ativa deve usar o fluxo consolidado já aprovado; não somar recebimentos da Nuvemshop separadamente por causa de uma linha da planilha.
 
 ### D-003-A — Aprovar fórmula Majucau v1 como novo oráculo (recomendada)
 
@@ -100,9 +102,25 @@ Somente recebimentos com fonte oficial e data válida participam. O cálculo usa
 
 ### Evidência para fechar
 
-- comparação com a planilha recebida e confirmação do tratamento dos recebimentos previstos da Nuvemshop e da reserva mínima;
+- comparar os componentes da planilha com os campos do fluxo consolidado, sem somar recebimentos da Nuvemshop separadamente; mapear saldo e corte temporal da semana crítica;
 - casos dourados incluindo limite negativo, lucro insuficiente, pior saldo, reserva e recebimento sem fonte oficial;
 - diferença máxima de R$ 0,01.
+
+### D-003-C — Reserva sugerida apenas para consulta
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-10 (America/Sao_Paulo).
+- Manter a reserva mínima vigente de R$ 50.000 e D-003-A como cálculo do valor máximo para aplicar.
+- Exibir separadamente uma sugestão de reserva para hoje: `reserva_sugerida_hoje = R$ 50.000 + MAX(0; caixa_projetado_D0 - menor_saldo_diario_projetado_D0_D60)`.
+- Exemplo: se o caixa projetado em D0 for R$ 100.000 e o menor saldo previsto for R$ 70.000, a queda prevista é R$ 30.000 e a sugestão para hoje é R$ 80.000; assim, o menor saldo previsto ainda preserva R$ 50.000.
+- A sugestão é informativa. Não substitui a reserva mínima de R$ 50.000, não altera o valor máximo de D-003-A e não executa aplicação ou transferência.
+- A entrada deve vir do fluxo de caixa consolidado, sem adicionar recebimentos da Nuvemshop como fonte separada. Se faltar dado comprovado, não inventar o valor.
+
+### Decisão posterior aprovada — Compras somente para consulta
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-10 (America/Sao_Paulo).
+- A tela T11 serve somente para mostrar dados. Não exportar ou baixar arquivos, nem gerar, alterar ou enviar pedidos ao Bling.
+- Esta decisão substitui qualquer permissão anterior de exportar recomendações na tela de Compras.
+- A imagem histórica T11 ainda exibe “Gerar pedidos”. Isso não autoriza essa ação. A função fica proibida; qualquer mudança na aparência ou no texto desse elemento depende de aprovação visual explícita, pois as telas aprovadas não devem ser alteradas por inferência.
 
 ## D-004 — Fonte financeira do Nuvem Pago
 

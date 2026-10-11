@@ -28,10 +28,11 @@ O contrato público mostra um caminho técnico possível, mas ainda falta uma re
 
 ## Estado no Majucau
 
-- O adaptador atual lê e preserva páginas RAW de contas a pagar; não normaliza categoria e borderôs para gerar os valores de CAPEX.
+- O adaptador lê e preserva páginas RAW de contas a pagar. Agora também oferece consultas somente de leitura para o detalhe de uma conta a pagar, o detalhe de um borderô e páginas de categorias financeiras. Os detalhes são devolvidos como JSON original, com limite de resposta, cancelamento e retry seguro; a lista de categorias exige metadados explícitos para decidir que terminou. Testes locais do pacote Bling cobrem esses contratos.
+- Esses novos métodos ainda não persistem os detalhes no banco, não ligam pagamentos às contas e não alimentam o snapshot. Portanto, não normalizam categoria nem geram valores de CAPEX.
 - A consulta atual do painel não calcula nem preenche `CAPEX PAGO NO MÊS` ou `CAPEX ACUMULADO`. Os cards continuam sem valor confirmado.
 - A tela e a regra aprovadas permanecem: pagamentos de CAPEX no período filtrado e acumulado desde o início do histórico confiável, em cards informativos fora da tabela e do lucro da DRE.
 
 ## Próximo passo técnico seguro
 
-Implementar a leitura somente de recursos oficiais, com paginação, limite de chamadas, retry seguro, streaming e vínculo auditável de conta, categoria, pagamento e data. Antes de apresentar números, validar o contrato com uma resposta sanitizada da conta, cobrir pagamento parcial e reconciliar um período do sistema com o relatório oficial. Se a associação entre conta e pagamento não puder ser provada, manter o valor como indisponível.
+Persistir em RAW os detalhes e categorias, em blocos limitados e com idempotência/transação; estabelecer vínculo auditável entre conta, categoria, borderô, pagamento e data. Respeitar o limite da API ao consultar muitos detalhes. Antes de apresentar números, validar o contrato com uma resposta sanitizada da conta, cobrir pagamento parcial e reconciliar um período do sistema com o relatório oficial. Se a associação entre conta e pagamento não puder ser provada, manter o valor como indisponível.

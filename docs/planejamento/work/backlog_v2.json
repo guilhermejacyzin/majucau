@@ -722,14 +722,14 @@
     "owner": "Segurança + Arquitetura",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "Mapa inicial em docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md: ativos, riscos, controles e verificações propostas. Revisão estática, sem testes; falta mapear todas as fontes, implementar controles e validar.",
+    "evidence": "Mapa e testes controlados em docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md. Testes de securetemp/csvstream, go vet e diff check locais passaram; CI #410 passou nos jobs backlog, Windows e PostgreSQL (Go, vet, análise de vulnerabilidades, builds, SBOM, smoke do instalador e consolidação). BK-024 continua em andamento: faltam outras falhas controladas, completar o mapa de riscos e validar VM limpa, rede e acesso por perfil.",
     "weight": 1,
     "dependencies": [
       "BK-013",
       "BK-014",
       "BK-019"
     ],
-    "progress": 0.2
+    "progress": 0.3
   },
   {
     "key": "repoinit",

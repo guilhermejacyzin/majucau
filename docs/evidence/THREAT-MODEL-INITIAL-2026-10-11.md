@@ -303,3 +303,30 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
   a auditoria mais ampla, VM limpa, validação de rede e testes de acesso por
   perfil.
 - Nenhuma tela, regra financeira, permissão ou dado persistido foi alterado.
+
+## Complemento — testes controlados de limpeza temporária
+
+**Data:** 11/10/2026
+
+**Tipo:** testes de falha e confirmação de evidência de CI.
+
+- Os testes de `internal/securetemp` agora cobrem falha ao liberar memória
+  nativa depois de uma operação bem-sucedida e o caso combinado em que a
+  liberação e a remoção do temporário falham. A mensagem comum permanece
+  sanitizada; quando a remoção falha, `securetemp.CleanupError` preserva o
+  caminho para tratamento autorizado.
+- `go test -count=1 ./internal/securetemp ./internal/integrations/csvstream`,
+  `go vet` para os mesmos pacotes e `git diff --check` passaram localmente.
+- A [CI #410](https://github.com/guilhermejacyzin/majucau/actions/runs/38139211957)
+  passou nos jobs de backlog, Windows e PostgreSQL, incluindo testes Go, `go
+  vet`, análise de vulnerabilidades, builds do desktop/worker, SBOM, smoke do
+  instalador e consolidação dos outputs.
+- A CI publicou o instalador temporário unsigned `majucau-g1-unsigned`, ID
+  `11702500102`, SHA-256
+  `bf93e59bd8ef372774c3cc175d4372dd05990774474c19245af5b08d8ce1d00a`, com
+  expiração em `2026-10-12T12:32:30Z`. Como a conexão disponível não oferece
+  exclusão de artifacts, os dados para remoção manual estão no registro local
+  `artifacts/retained/cleanup-register.md`.
+- Continuam pendentes outras injeções controladas de falha, fechar o mapa de
+  riscos e validar instalação/atualização em VM limpa, rede e acesso por perfil.
+- Nenhuma tela ou regra financeira foi alterada.

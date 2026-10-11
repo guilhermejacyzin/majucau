@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 200059,
-      "sha256": "7b896ca3486c2bb1cfe86d54d007d9f769923f36db45762495ed99c5f8f05b6f"
+      "bytes": 201184,
+      "sha256": "32703db26df3f52c19581c271c02d3d1b6722cd427f9673a6df9dbf0156a87b7"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -59,8 +59,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 48833,
-      "sha256": "ef26e0b9620dd2a7d06c86e2207a287eec910b0f1018a4b9e3494c263f39a62d"
+      "bytes": 48824,
+      "sha256": "6b58efbcc8014a2e7ebf96cd8d9781571f6896070bc912b8f487dae680c93044"
     },
     {
       "path": "docs/planejamento/README.md",
@@ -68,9 +68,14 @@
       "sha256": "901eda94681bd8423ef941c89bb812ca51a1172cee9754d2aeb95187f7d1ce70"
     },
     {
+      "path": "docs/planejamento/RELATORIOS-CATALOGO-RASCUNHO-2026-10-04.md",
+      "bytes": 7092,
+      "sha256": "c85f72f4ca56e418ab1694add3369641a58ca780fec2630f8a92c4fdb77b94df"
+    },
+    {
       "path": "docs/planejamento/VISAO_GERAL.md",
       "bytes": 3296,
-      "sha256": "f77e59cd0c6d503937a0907d9241e38b94ab1bb0872934ec4eff4d92dcf75ae9"
+      "sha256": "c498bdd5d744077db6888b21d9cf4051f5842e51e52ea5e5ec6eac5feeda8ff1"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -89,8 +94,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 190612,
-      "sha256": "2d7f8b26ae0a39c618e8337a850ae60a063504cc47512d3f1e6bcf89b0fb4e70"
+      "bytes": 190829,
+      "sha256": "e751e347fb92a4ea4b68813d5b458c741d9fe47d1c4289911ff8aa01ca323b58"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -401,11 +406,6 @@
       "path": "tools/exportar_planejamento.py",
       "bytes": 1926,
       "sha256": "f89c888f5e05cbdf6ba9fc0b565a839a70330b359c0f362c14ef20a93625ac03"
-    },
-    {
-      "path": "docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-10.md",
-      "bytes": 1611,
-      "sha256": "e86d5805084db8439cd6f41831e47dbbd2cf60a4742ff263545b7db7d76f9353"
     }
   ]
 }

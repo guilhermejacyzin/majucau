@@ -108,6 +108,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Pela média simples do rastreador, `(6 × 100% + 0% + 15% + 10% + 15% + 60% + 75% + 20%) ÷ 127 = 6,3%`; restam 93,7%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão para produção.
 - Não há prazo confiável para o projeto completo enquanto 114 tarefas não foram iniciadas e faltam fontes, integrações e decisões operacionais.
 
+### Reauditoria estática do adaptador Bling — 11/10/2026
+
+- BK-041 avançou de 0% para 35%: foram conferidos no código o cliente GET somente de leitura para contas a receber e a pagar, a paginação limitada, o corpo de resposta limitado, as três tentativas com backoff/jitter e `Retry-After` limitado a 30 segundos. OAuth usa POST sem repetição automática. A gravação RAW e o cursor são transacionais, com rollback de dados e auditoria de falha; evidências anteriores da CI cobrem também replay idempotente.
+- Permanecem pendentes a homologação dos endpoints/campos da conta real, o cursor incremental oficial e a cobertura das fontes/recursos requeridos. A renovação concorrente ainda não tem exclusão no serviço: a conexão IPC atende uma chamada por vez, mas a sessão OAuth roda em goroutine e pode disputar gravações no armazenamento de credenciais. Nenhuma regra financeira ou tela foi alterada.
+- O registro da calculadora continua preservando a estrutura da planilha recebida; essa confirmação não substitui homologação das fontes do Bling nem autoriza alterar a fórmula financeira.
+- O backlog tem 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (15%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-031 (75%), BK-041 (35%) e BK-067 (20%). Onze tarefas tiveram auditoria atual concluída.
+- Pela média simples do rastreador, `(6 × 100% + 0% + 15% + 10% + 15% + 60% + 75% + 35% + 20%) ÷ 127 = 6,5%`; restam 93,5%. É estimativa do backlog, não medição de esforço nem prontidão para produção. Não há prazo global confiável enquanto permanecem 113 tarefas não iniciadas, homologações e validações externas.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -1144,7 +1152,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-041 — Implementar o adaptador de leitura do Bling
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 35%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Ingerir dados oficiais sem alterar o ERP.
 
@@ -1159,6 +1167,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 5. Implementar extração dos lançamentos e campos necessários, com recursos reais homologados; calcular a DRE por competência no Majucau conforme as regras aprovadas e expor limitações como Dado indisponível, sem copiar a DRE pronta do Bling.
 
 **Critério de aceite:** Adaptador usa somente operações aprovadas; 401/429/falha de rede geram diagnóstico e retomada segura. Não contém scraping nem integração direta presumida com banco ou Mercado Pago. A alternativa oficial necessária tem recepção, autenticação e proveniência implementadas; repetição e versão corrigida são tratadas por BK-044.
+
+**Evidência da auditoria estática (11/10/2026):** já existem OAuth e armazenamento protegido no worker, cliente somente de leitura para contas a receber e a pagar, limites de resposta/página, retry seguro para GET, persistência RAW atômica e replay idempotente. A cobertura real de campos e recursos ainda não foi homologada. O bloqueio de concorrência da renovação de token também não está comprovado; a sessão OAuth executa em goroutine e pode disputar gravações com operações de teste/sincronização. Ver `docs/evidence/BLING-ADAPTER-STATIC-AUDIT-2026-10-11.md`. Estimativa parcial não representa integração pronta.
 
 **Impacto:** Mantém integração estável e credenciais protegidas.
 

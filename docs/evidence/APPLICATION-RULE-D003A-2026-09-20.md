@@ -167,10 +167,7 @@ comprovados, o resultado dependente deve continuar indisponível, nunca ser
 substituído por zero.
 
 A alteração de `DailyProjectionFrom` recebeu revisão estática e formatação
-Go. Testes não foram executados nesta execução. A CI `38110918694` do commit
-anterior terminou com falha no job Windows durante a consolidação de artefatos;
-ela não contém esta alteração financeira. A nova alteração também depende de
-CI após o push.
+Go. Não executei testes locais. Na CI `38111468872`, as etapas Go e PostgreSQL passaram; o Windows falhou depois na consolidação de artefatos por chamadas sem qualificação do módulo `SafeCleanup`. Essa falha não indica falha da fórmula financeira nem prova integração ponta a ponta. A CI `38111929797`, do commit `02ea6a0`, está em andamento. A calculadora ainda não chama esse helper.
 
 Esta reauditoria não alterou a planilha, a tela ou qualquer regra financeira.
 O helper de projeção diária foi alterado para oferecer leitura em fluxo; a

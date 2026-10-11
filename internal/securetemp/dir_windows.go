@@ -15,9 +15,16 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+type privateDirectoryAPI struct {
+	convert func(*uint16, **windows.SECURITY_DESCRIPTOR, *uint32) (uintptr, error)
+	free    func(uintptr) (uintptr, error)
+	create  func(*uint16, *windows.SecurityAttributes) (uintptr, error)
+	remove  func(string) error
+}
+
 // NewDir creates a temporary directory with a protected DACL. The owner,
 // LocalSystem, and administrators can access the directory and its contents.
-func NewDir(parent, prefix string) (createdPath string, returnErr error) {
+func NewDir(parent, prefix string) (string, error) {
 	if !filepath.IsAbs(parent) {
 		return "", fmt.Errorf("private temporary directory parent must be absolute")
 	}
@@ -33,17 +40,40 @@ func NewDir(parent, prefix string) (createdPath string, returnErr error) {
 	if err := createDir.Find(); err != nil {
 		return "", err
 	}
+	return newDirWithAPI(parent, prefix, privateDirectoryAPI{
+		convert: func(sddl *uint16, descriptor **windows.SECURITY_DESCRIPTOR, size *uint32) (uintptr, error) {
+			result, _, callErr := convert.Call(
+				uintptr(unsafe.Pointer(sddl)), 1,
+				uintptr(unsafe.Pointer(descriptor)), uintptr(unsafe.Pointer(size)),
+			)
+			return result, callErr
+		},
+		free: func(address uintptr) (uintptr, error) {
+			result, _, callErr := localFree.Call(address)
+			return result, callErr
+		},
+		create: func(path *uint16, attributes *windows.SecurityAttributes) (uintptr, error) {
+			result, _, callErr := createDir.Call(uintptr(unsafe.Pointer(path)), uintptr(unsafe.Pointer(attributes)))
+			return result, callErr
+		},
+		remove: os.Remove,
+	})
+}
 
+func newDirWithAPI(parent, prefix string, api privateDirectoryAPI) (createdPath string, returnErr error) {
+	if !filepath.IsAbs(parent) {
+		return "", fmt.Errorf("private temporary directory parent must be absolute")
+	}
+	if api.convert == nil || api.free == nil || api.create == nil || api.remove == nil {
+		return "", errors.New("private temporary directory API is incomplete")
+	}
 	sddl, err := syscall.UTF16PtrFromString("D:P(A;OICI;FA;;;OW)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)")
 	if err != nil {
 		return "", err
 	}
 	var descriptor *windows.SECURITY_DESCRIPTOR
 	var descriptorSize uint32
-	result, _, callErr := convert.Call(
-		uintptr(unsafe.Pointer(sddl)), 1,
-		uintptr(unsafe.Pointer(&descriptor)), uintptr(unsafe.Pointer(&descriptorSize)),
-	)
+	result, callErr := api.convert(sddl, &descriptor, &descriptorSize)
 	if result == 0 {
 		if callErr == nil || errors.Is(callErr, syscall.Errno(0)) {
 			callErr = errors.New("Windows returned failure without an error code")
@@ -54,7 +84,7 @@ func NewDir(parent, prefix string) (createdPath string, returnErr error) {
 		return "", errors.New("Windows returned no temporary-directory security descriptor")
 	}
 	defer func() {
-		freed, _, freeErr := localFree.Call(uintptr(unsafe.Pointer(descriptor)))
+		freed, freeErr := api.free(uintptr(unsafe.Pointer(descriptor)))
 		if freed == 0 {
 			return
 		}
@@ -63,7 +93,7 @@ func NewDir(parent, prefix string) (createdPath string, returnErr error) {
 		}
 		cleanupErr := fmt.Errorf("release temporary-directory security descriptor: %w", freeErr)
 		if createdPath != "" {
-			if err := os.Remove(createdPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			if err := api.remove(createdPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 				cleanupErr = errors.Join(cleanupErr, &CleanupError{Path: createdPath, Cause: err})
 			}
 			createdPath = ""
@@ -85,7 +115,7 @@ func NewDir(parent, prefix string) (createdPath string, returnErr error) {
 		if err != nil {
 			return "", err
 		}
-		created, _, createErr := createDir.Call(uintptr(unsafe.Pointer(pathPtr)), uintptr(unsafe.Pointer(&attributes)))
+		created, createErr := api.create(pathPtr, &attributes)
 		if created != 0 {
 			return path, nil
 		}

@@ -333,6 +333,15 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Pela média simples, `(7 × 100% + 30% + 20% + 10% + 15% + 15% + 5% + 35% + 70% + 85% + 65% + 20%) ÷ 127 = 8,4%`; restam 91,6%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
 - A execução local de `scripts/verify-backlog.ps1` confirmou as contagens e os percentuais registrados acima.
 
+### Matriz parcial das exportações T13–T15 — 11/10/2026
+
+- A releitura das três referências aprovadas confirma o botão Exportar em T13, T14 e T15. L-22 e Q-13 já determinam preservar essas exportações; a auditoria anterior dizia incorretamente que ainda faltava decidir se o botão deveria existir. A matriz de dados visíveis, casos de uso e capacidades está em `docs/evidence/ACTION-EXPORT-STATIC-AUDIT-2026-10-11.md`.
+- T13, T14 e T15 passam de inventário geral para mapeamento técnico parcial. `REPORT_EXPORT` está aprovada para `ADMIN` e `DIRECTOR`; a migration existe, mas seu enforcement no worker continua pendente em BK-013. Nenhuma tela foi redesenhada nem regra de negócio alterada.
+- A rota de relatório ainda não existe. Faltam mapear T02–T07 e definir por referência/contrato, sem presumir, o escopo de linhas, filtros/período, formato do arquivo e consultas de detalhe em T13–T15. T11 continua sem exportação.
+- BK-012 avança de 10% para 15%. Permanecem 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; BK-012 (15%), BK-006 (30%), BK-007 (20%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (65%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 15% + 15% + 15% + 5% + 35% + 70% + 85% + 65% + 20%) ÷ 127 = 8,5%`; restam 91,5%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
+- A execução local de `scripts/verify-backlog.ps1` confirmou 127 tarefas, 7 concluídas, 11 em andamento, 109 não iniciadas, 8,5% concluído e 91,5% restante. `git diff --check` passou. Não foram executados testes de produto.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -647,7 +656,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-012 — Especificar ações e exportações já previstas
 
-**Situação:** Em andamento. **Evolução:** 10% (auditoria estática inicial dos controles atuais e das chamadas disponíveis, registrada em `docs/evidence/ACTION-EXPORT-STATIC-AUDIT-2026-10-11.md`. A matriz tela por tela, as rotas de exportação e os contratos de detalhe/atualização ainda faltam; para T13–T15, L-22/Q-13 continuam abertos). **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
+**Situação:** Em andamento. **Evolução:** 15% (a auditoria estática inicial foi ampliada com uma matriz parcial das referências T13–T15, mapeando os botões aprovados, campos visíveis, ações de leitura e capacidades. L-22/Q-13 já confirmam preservar as exportações, portanto não falta decidir se elas existem. A rota de relatório ainda não existe; falta mapear T02–T07 e completar os contratos de filtros/período, escopo dos dados, formato e detalhes para T13–T15, sem presumir conteúdo). **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
 
 **Objetivo:** Especificar o que cada botão pode fazer.
 

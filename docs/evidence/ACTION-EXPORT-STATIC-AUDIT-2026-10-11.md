@@ -2,30 +2,34 @@
 
 ## Escopo
 
-Leitura do código de apresentação e do catálogo de chamadas IPC/Wails comparada às decisões aprovadas e aos documentos de referência. Nenhuma tela, botão, regra financeira, permissão ou operação foi alterada ou executada.
+Leitura das referências T13–T15 preservadas em `docs/source/`, das decisões vigentes e do catálogo de chamadas Wails/IPC. Nenhuma tela, botão, regra financeira, permissão ou operação foi alterada ou executada. Os números das imagens são exemplos visuais, não dados reais nem valores de teste.
 
-## O que está comprovado
+## Decisões já confirmadas
 
-| Área/controle | Estado observado | Limite ou decisão aplicável |
-|---|---|---|
-| Navegação do painel | A navegação abre as telas representadas pelo componente de mockup. | O acesso aos dados e ações de cada módulo continua em construção. |
-| `Exportar` no cabeçalho | Abre um menu com uma opção desativada enquanto não há dados confirmados. | Não há método de exportação de relatório no catálogo atual do Wails/IPC; o botão não gera arquivo. |
-| `Ver detalhes` dos cards | O controle aparece, mas não tem ação de abertura ligada no componente atual. | O drill-down até a origem ainda precisa de contrato e implementação. |
-| Detalhes de fluxo, cálculo, distribuição e parâmetros | Os controles de detalhe existentes estão desativados. | Não foi implementada navegação para registros de origem. |
-| T11 — Compras | “Gerar pedidos” permanece desativado e sem ação. A tela não oferece exportação ou download. | Decisão explícita: somente consulta; não criar/alterar pedidos no Bling. |
-| T15 — Bling | Existem controles separados para salvar configuração, conectar, reconectar, testar, desconectar, abrir sincronização com filtros explícitos e pré-visualizar/importar CSV de recebimentos. | Importação e sincronização são ações distintas; a verificação efetiva de permissões por perfil ainda está pendente em BK-013. |
-| T15 — Nuvem Pago | Existem prévia e importação manual de CSV de recebimentos futuros. | Esses dados permanecem projetados e não dão baixa como recebidos. A autorização por perfil ainda precisa ser aplicada no worker. |
+- As referências aprovadas das telas T13, T14 e T15 mostram o botão **Exportar**. L-22 e Q-13 estão definidos: preservar a função de exportação aprovada e detalhar tecnicamente sua execução, sem perguntar novamente se o botão deve existir.
+- A responsável aprovou que `ADMIN` e `DIRECTOR` possam exportar relatórios; `REPORT_EXPORT` foi incluída para esses perfis pela migration `000003_director_report_export_permission.up.sql`. A verificação efetiva da capacidade no worker continua pendente em BK-013.
+- F-14 exige que o arquivo use os mesmos dados, filtros, período, snapshot e métricas da tela, e preserva Excel quando a referência o especificar. A aprovação geral não autoriza criar dados, colunas, filtros ou formatos que não estejam definidos.
+- T11 Compras é a exceção expressa: somente consulta, sem exportação ou download.
 
-## Decisões e lacunas
+## Matriz parcial das referências T13–T15
 
-- Gisele aprovou que Diretores consultem, sincronizem e exportem backups e relatórios; também aprovou importar CSV do Bling e da Nuvem Pago dentro da sincronização. Isso define capacidades gerais, não os relatórios disponíveis em cada tela.
-- Os registros L-22 e Q-13 continuam abertos para definir, nas telas T13–T15, se há exportação, quais dados e filtros entram, formato e permissões. As referências consultadas não fecham esses detalhes para todas as telas.
-- Não foi encontrada uma rota de exportação de relatório no catálogo IPC/Wails atual. O botão de cabeçalho ainda não representa uma exportação funcional.
-- Regras para resolver pendências também continuam abertas em L-23; não associar um botão de detalhe a uma ação que feche ou altere uma pendência sem contrato aprovado.
-- Até receber a referência aprovada, manter a apresentação existente e não inventar formatos, colunas, downloads ou ações. T11 continua sem exportação.
+| Tela | Ação e dados visíveis na referência aprovada | Caso de uso/capacidade | Situação técnica e limites |
+|---|---|---|---|
+| **T13 — Lançamentos e Pendências** | O cabeçalho tem **Exportar**. A tabela mostra Módulo, Origem, Descrição, Status, Responsável e Ação; há links como “Ver lista completa”, “Ver divergências”, “Ver mapeamento” e “Ver decisão”. | Exportar o relatório aprovado com `REPORT_EXPORT`; abrir lista e detalhes em leitura com `DASHBOARD_READ`. “Ver” não fecha pendência nem altera o Bling. | A opção do cabeçalho não está ligada a uma rota Wails/IPC de relatório. O período/filtro efetivo, o conjunto de linhas, o nome/formato do arquivo e o contrato de detalhe ainda não estão mapeados. A transição de pendências segue L-23 por tipo; não implementar resolução genérica. |
+| **T14 — Alertas** | O cabeçalho tem **Exportar**. A tabela mostra Módulo, Alerta, Impacto, Prioridade, Atualizado e Status; os recortes oferecem “Ver detalhes”. | Exportar o relatório aprovado com `REPORT_EXPORT`; consultar alerta e origem em leitura com `DASHBOARD_READ`. Prioridade e status continuam dimensões distintas; detalhe não resolve alerta. | A opção não está ligada a uma rota Wails/IPC de relatório. O intervalo dos alertas, o conjunto de linhas, o nome/formato do arquivo e o contrato de detalhe ainda precisam ser ligados ao snapshot correspondente. Não calcular novos limiares nem criar resolução automática. |
+| **T15 — Importações e Integrações** | O cabeçalho tem **Exportar**. A tabela mostra Origem, Lote/arquivo, Data ref., Importação, Status, Aceitos, Rejeitados e Hash; os links incluem “Ver todos os lotes”, “Ver rejeições”, “Ver arquivo” e “Ver lotes”. | Exportar o relatório aprovado com `REPORT_EXPORT`; consultar lotes/erros com `INTEGRATION_READ`. Prévia, importação manual e sincronização continuam ações distintas, autorizadas por `INTEGRATION_SYNC`; exportar não pode iniciar nenhuma delas. | A opção do cabeçalho não está ligada a uma rota Wails/IPC de relatório. A paginação/escopo da lista, o conteúdo completo do hash, o nome/formato do arquivo e os contratos de detalhe ainda não estão mapeados. Não exibir caminho sensível nem segredo. |
+
+As imagens exibem posição e última sincronização, mas não definem todos os filtros, campos de origem, ordenação, paginação nem as opções abertas do menu **Exportar**. Em T15 o hash de exemplo aparece abreviado; isso não aprova truncar ou expandir o hash no arquivo. Esses detalhes precisam ser derivados do contrato já aprovado ou confirmados antes da implementação. Não usar os valores de exemplo das imagens como fonte ou oráculo.
+
+## Estado da implementação observado
+
+- O código atual tem uma opção de exportação desativada no menu do cabeçalho e não possui rota Wails/IPC para exportação de relatórios. Logo, a função aprovada ainda não está implementada.
+- A migration de `REPORT_EXPORT` registra a capacidade para `ADMIN` e `DIRECTOR`, mas isso não comprova enforcement no worker; ver auditoria de acesso e BK-013.
+- A implementação de leitura e exportação deverá preservar a mesma população e contexto apresentados na respectiva tela. Uma falha ou ausência de dados não pode virar zero, nem a exportação pode disparar sincronização, importação ou mudança de estado.
+- A matriz acima cobre as referências T13–T15. T02–T07 e o vínculo completo entre controles aprovados, consultas e contratos de exportação ainda precisam ser conferidos para concluir BK-012.
 
 ## Próxima etapa
 
-Completar a matriz tela por tela com as referências aprovadas para detalhes e exportação. Onde L-22/Q-13 ainda estiverem sem resposta, obter a definição funcional antes de implementar. Depois, vincular cada capacidade ao contrato do worker e à mesma consulta/filtros/snapshot exibidos na tela.
+Concluir o mapeamento dos controles de T02–T07 e confirmar, em T13–T15, os detalhes técnicos que as referências não especificam (escopo/lista exportada, filtros/período, formato e conteúdo completo). Depois, desenhar o contrato da rota Wails/IPC e vincular a capacidade aprovada. Não redesenhar nem retirar os botões das referências. T11 permanece sem exportação.
 
-**Progresso de BK-012:** 10%, somente pelo inventário estático das ações atuais e das decisões encontradas. O critério de aceite da tarefa não está concluído.
+**Progresso de BK-012:** 15% (inventário inicial mais matriz técnica das referências T13–T15; ainda falta mapear T02–T07, fechar os contratos de detalhe/exportação e verificar capacidades). Nenhuma tela ou regra de negócio foi modificada.

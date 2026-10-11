@@ -173,22 +173,50 @@ Esta reauditoria não alterou a planilha, a tela ou qualquer regra financeira.
 O helper de projeção diária foi alterado para oferecer leitura em fluxo; a
 calculadora ainda não chama esse helper. Não foram executados testes.
 
-## Conferência da planilha enviada — 2026-10-11
+## Conferência da cópia disponível — 2026-10-11
 
-Leitura somente para consulta do arquivo recebido, sem salvar alterações:
-encontrei uma única aba (`Calculadora`) com as seções de DRE, fluxo de caixa e
-resultado. A seção de fluxo tem campos separados para “Saldo na semana mais
-crítica” e “Recebimentos previstos da Nuvemshop”; a fórmula atual soma esses
-dois valores antes de descontar a reserva. A planilha não contém uma lista de
-saldos por dia até 60 dias: o saldo da pior semana é uma entrada única.
+Leitura somente para consulta; nenhum valor de entrada foi copiado para esta
+evidência e a planilha não foi salva ou alterada. O arquivo tem uma aba visível,
+uma lista de meses em `E10`, não contém projeto VBA nem links externos e tem
+fórmulas apenas nos marcadores mensais e nos três resultados.
 
-A responsável confirmou que a estrutura da calculadora enviada deve
-permanecer. Essa confirmação preserva a apresentação aprovada; ela não aprova
-a soma separada de recebimentos da Nuvemshop. Prevalece a regra financeira já
-registrada em 10/10: usar o menor saldo diário do fluxo consolidado em D0–D+60,
-sem somar Nuvemshop novamente. A fonte e o cálculo pertencem ao fluxo
-consolidado aprovado; a conexão dos dados reais à calculadora ainda está
-pendente de implementação e comprovação. Nenhuma tela, planilha ou regra
-financeira foi alterada nesta conferência.
+### O que a planilha atual faz
 
-**Situação:** Estrutura confirmada; integração técnica pendente.
+- A instrução de DRE pede valores da DRE do Bling. A decisão aprovada do produto
+  determina que o Majucau calcule sua própria DRE; o relatório pronto do Bling
+  serve para comparação, não como resultado final.
+- Os meses de janeiro a dezembro são campos de entrada. O lucro acumulado do
+  ano também é digitado manualmente. O mês de referência não calcula esse total:
+  as doze células de marcação repetem a mesma indicação, e não existe fórmula
+  que some os meses até M−2.
+- “Valor já investido” é um campo manual, mas nenhuma fórmula da planilha o usa.
+  A regra aprovada D-003-A calcula o principal já investido por aportes menos
+  resgates, sem misturar rendimentos.
+- O fluxo de caixa recebe manualmente o saldo da semana crítica, os recebimentos
+  previstos da Nuvemshop e a reserva mínima. A planilha soma o saldo e o valor da
+  Nuvemshop, limita a aplicação pela reserva e pelo lucro digitado e mostra o
+  saldo que sobra. Não há uma série dos 61 saldos diários D0–D+60 nessa planilha.
+
+### O que continua valendo no Majucau
+
+D-003-A permanece a regra ativa. O cálculo usa o lucro líquido da DRE própria do
+Majucau até M−2, subtrai o principal líquido já investido e compara esse valor
+com o menor saldo diário de fechamento do fluxo consolidado em D0–D+60, menos a
+reserva mínima. Não soma recebimentos da Nuvemshop separadamente. A sugestão de
+reserva para hoje continua separada e somente para consulta, conforme D-003-C.
+
+Assim, a planilha atual ajuda a entender a estrutura, mas seus campos manuais e
+sua soma de Nuvemshop não substituem as regras aprovadas. A tela aprovada mostra
+“Caixa consolidado”; não alterei essa tela, a planilha ou qualquer regra
+financeira. O vínculo da calculadora com as fontes reais continua pendente.
+
+A busca estática atual confirmou que as funções de domínio para projetar os
+61 dias e calcular a aplicação existem, mas não encontrou chamadas de produção
+nem consulta aos saldos diários. A entrada em fluxo mantém poucos saldos em
+memória; falta conectá-la ao fluxo consolidado aprovado e demonstrar as entradas
+reais. Esta conferência foi documental e não executou testes.
+
+**Situação:** Estrutura documentada; comparação das fórmulas concluída; vínculo
+com dados reais e exemplos reproduzíveis pendentes. Esta seção descreve a cópia
+disponível em 11/10; a versão binária da conferência de 04/10 não está disponível
+neste checkout para comparação de arquivo.

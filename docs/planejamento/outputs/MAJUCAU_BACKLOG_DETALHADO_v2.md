@@ -101,6 +101,15 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 
 ## Dependências e ordem prática
 
+### Recontagem após auditoria de BK-006 — 11/10/2026
+
+- BK-006 avançou de 10% para 15%: a cópia atual da calculadora foi mapeada em leitura somente para consulta e comparada com D-003-A. Os conflitos e campos que não alimentam as fórmulas foram registrados; nenhuma regra, tela ou planilha foi alterada. A ligação com os dados consolidados e os exemplos reproduzíveis continuam pendentes.
+- O backlog mantém 127 tarefas: 6 concluídas, 7 em andamento e 114 não iniciadas. Em andamento: BK-001 (0%), BK-006 (15%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-031 (75%) e BK-067 (20%).
+- Pela média simples do rastreador, `(6 × 100% + 0% + 15% + 10% + 15% + 60% + 75% + 20%) ÷ 127 = 6,3%`; restam 93,7%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão para produção.
+- Não há prazo confiável para o projeto completo enquanto 114 tarefas não foram iniciadas e faltam fontes, integrações e decisões operacionais.
+
+## Dependências e ordem prática
+
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
 
 1. Transcrever contratos fechados e localizar referências; desenhar domínios, acesso, persistência e operação local.
@@ -275,7 +284,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-006 — Especificar tecnicamente a regra fechada da calculadora
 
-**Situação:** Em andamento. **Evolução:** 10% (estimativa de planejamento; Gisele reiterou que a estrutura da planilha enviada deve ser preservada. A soma separada de recebimentos da Nuvemshop não é uma regra aprovada; a DRE é própria do Majucau. D-003-A continua ativa até o comparativo da planilha e eventual aprovação de mudança. Foi preparada uma entrada em fluxo para a projeção diária, porém ainda não há chamada de produção nem consulta ao fluxo consolidado. Mapeamento das entradas reais, ligação da calculadora e exemplos reproduzíveis permanecem pendentes. A sugestão de reserva foi aprovada apenas para consulta). **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
+**Situação:** Em andamento. **Evolução:** 15% (estimativa de planejamento; a estrutura da planilha enviada foi preservada e comparada, em leitura somente para consulta, com as regras aprovadas. A planilha atual pede valores da DRE do Bling, soma separadamente recebimentos previstos da Nuvemshop e deixa manual o lucro acumulado e o valor já investido; isso não substitui D-003-A, a DRE própria do Majucau ou o fluxo diário consolidado. D-003-A continua ativa e a sugestão de reserva foi aprovada só para consulta. A entrada em fluxo para os 61 dias existe, mas ainda não tem chamada de produção nem consulta aos saldos diários. Mapeamento das fontes reais, ligação da calculadora e exemplos reproduzíveis continuam pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
 
 **Objetivo:** Permitir um cálculo reproduzível e compreensível.
 
@@ -283,9 +292,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Como fazer:**
 
-1. Usar o resultado líquido mensal calculado pela DRE do Majucau; preservar a janela de janeiro até dois meses antes do mês selecionado (M−2).
-2. Calcular Já Investido = aportes de principal − resgates de principal; manter rendimentos separados. A reserva mínima continua em R$ 50.000. Exibir, apenas como sugestão informativa, `reserva_sugerida_hoje = R$ 50.000 + MAX(0; caixa projetado em D0 − menor saldo diário projetado em D0–D+60)`. A sugestão não altera D-003-A nem o valor máximo para aplicar.
-3. Seguir D-003-A: `worst_week_cash` representa o menor saldo diário de fechamento entre D0 e D+60. Usar somente o fluxo de caixa consolidado, com fonte oficial e data válida; não somar recebimentos da Nuvemshop separadamente. A equivalência dos campos E15/E16 da planilha continua pendente de mapeamento e não substitui a regra aprovada.
+1. Usar o resultado líquido mensal calculado pela DRE do Majucau; preservar a janela de janeiro até dois meses antes do mês selecionado (M−2). A planilha atual recebe os meses manualmente e não calcula esse acumulado; o sistema deve fazê-lo a partir dos resultados mensais comprovados.
+2. Calcular Já Investido = aportes de principal − resgates de principal; manter rendimentos separados. O campo manual “Valor já investido” da planilha atual não é usado por suas fórmulas e não substitui o cálculo aprovado. A reserva mínima continua em R$ 50.000. Exibir, apenas como sugestão informativa, `reserva_sugerida_hoje = R$ 50.000 + MAX(0; caixa projetado em D0 − menor saldo diário projetado em D0–D+60)`. A sugestão não altera D-003-A nem o valor máximo para aplicar.
+3. Seguir D-003-A: `worst_week_cash` representa o menor saldo diário de fechamento entre D0 e D+60. Usar somente o fluxo de caixa consolidado, com fonte oficial e data válida; não somar recebimentos da Nuvemshop separadamente. Na planilha atual, E15 é um saldo de semana digitado e E16 é uma previsão da Nuvemshop somada separadamente; nenhum deles comprova os 61 saldos diários da regra aprovada. A equivalência desses campos continua pendente e não substitui D-003-A.
 4. Calcular `available_profit = MAX(0; lucro líquido acumulado de janeiro até M−2 − Já Investido)`, `financial_limit = MAX(0; menor saldo diário D0–D+60 − reserva mínima)` e `Máximo Aplicável = MAX(0; MIN(available_profit; financial_limit))`, com moeda decimal exata.
 5. Calcular separadamente `Valor Executável Hoje = MIN(Máximo Aplicável; saldo transferível do Itaú)`, conforme R-08; exibir o saldo projetado restante. A tela é somente para consulta e não executa transferência ou aplicação.
 6. A calculadora recebe resultados financeiros consolidados, com período, fonte e qualidade. Bandeira, MDR, parcelamento e tarifas de cartão não entram nela.
@@ -297,7 +306,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
-**Fonte:** `G0-DECISION-REGISTER.md` (D-003-A e D-003-C); `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`; `docs/evidence/INVESTMENT-RESERVE-SUGGESTION-2026-10-10.md`; C_Conflitos!A4:L5; A_Matriz_Mestra!A32:S36; T02/T08; Consolidação 13/09/2026, §§6–9; Fechamento vigente 13/09/2026, §§1–2
+**Fonte:** `G0-DECISION-REGISTER.md` (D-003-A e D-003-C); `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`; `docs/evidence/INVESTMENT-RESERVE-SUGGESTION-2026-10-10.md`; `docs/source/T8-mockup-2026-09-20.png`; C_Conflitos!A4:L5; A_Matriz_Mestra!A32:S36; T02/T08; Consolidação 13/09/2026, §§6–9; Fechamento vigente 13/09/2026, §§1–2
 
 **Regras e verificações vinculadas:** L-07,Q-10,Q-21,R-06,R-08,F-01
 

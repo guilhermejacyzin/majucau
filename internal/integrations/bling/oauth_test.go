@@ -99,3 +99,37 @@ func TestBlingOAuthRejectsMissingAccessToken(t *testing.T) {
 		t.Fatalf("error = %v", err)
 	}
 }
+
+func TestBlingOAuthStreamsAndBoundsTokenResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"access_token":"access"}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingOAuthClient(server.Client(), server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.maxResponseBytes = int64(len(`{"access_token":"access"}`))
+	if _, err := client.RefreshAccessToken(context.Background(), "client-id", "client-secret", "refresh"); err != nil {
+		t.Fatalf("response at byte limit failed: %v", err)
+	}
+
+	client.maxResponseBytes--
+	if _, err := client.RefreshAccessToken(context.Background(), "client-id", "client-secret", "refresh"); !errors.Is(err, ErrBlingAPIInvalidResponse) {
+		t.Fatalf("oversized response error = %v, want invalid response", err)
+	}
+}
+
+func TestBlingOAuthRejectsTrailingJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"access_token":"access"} {"access_token":"second"}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingOAuthClient(server.Client(), server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.RefreshAccessToken(context.Background(), "client-id", "client-secret", "refresh"); !errors.Is(err, ErrBlingOAuthSchema) {
+		t.Fatalf("trailing JSON error = %v, want schema error", err)
+	}
+}

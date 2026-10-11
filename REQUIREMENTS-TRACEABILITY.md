@@ -149,3 +149,14 @@ Os scripts `consolidate-artifacts.ps1` e `package-portable.ps1` agora delegam a 
 ## Resultado das CIs do inventário em fluxo — 2026-10-11
 
 A CI [38110918694](https://github.com/guilhermejacyzin/majucau/actions/runs/38110918694), no commit `41f47dc`, passou no job PostgreSQL e falhou no Windows durante a consolidação de artefatos. O job de instalador também falhou porque dependia dessa consolidação. A causa registrada foi `Assert-MajucauProjectPath` não estar disponível dentro do módulo `ArtifactManifest.psm1`; a chamada foi qualificada com o módulo `SafeCleanup`. As CIs `38110918694` (`41f47dc`), `38111428867` (`74633ff`) e `38111468872` (`fa876eb`) falharam no Windows ao consolidar artefatos, embora PostgreSQL tenha passado. Na CI `38111929797` (`02ea6a0`), a qualificação pelo nome curto falhou porque o módulo não estava visível no escopo do chamador; PostgreSQL, testes Go e verificações frontend passaram antes dessa etapa. O commit `7d13f87` corrigiu o escopo: `ArtifactManifest.psm1` usa sua importação interna e os scripts chamadores carregam `SafeCleanup.psm1` no próprio escopo. A CI [38112462467](https://github.com/guilhermejacyzin/majucau/actions/runs/38112462467) passou nos jobs PostgreSQL e Windows, incluindo a consolidação e o envio do instalador sem assinatura. Não executei testes localmente. `DATA-04` continua `PARTIAL` até a verificação de ACL e limpeza em máquina virtual limpa.
+
+## Complemento de streaming da resposta OAuth — 2026-10-11
+
+O cliente OAuth do Bling passou a decodificar o JSON diretamente do corpo HTTP,
+com o mesmo teto de 4 MiB, sem criar um `[]byte` com a resposta inteira. O
+decoder exige um único objeto JSON e mantém a separação entre resposta grande
+ou ilegível (`ErrBlingAPIInvalidResponse`) e formato inválido
+(`ErrBlingOAuthSchema`). A evidência está em
+`docs/evidence/OAUTH-TOKEN-STREAMING-2026-10-11.md`. `DATA-04` continua
+`PARTIAL`: faltam carga com memória medida e comprovação de ACL/limpeza em VM
+Windows limpa.

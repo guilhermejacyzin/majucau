@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -46,6 +47,34 @@ type BlingOAuthToken struct {
 	TokenType    string
 	Scope        string
 	ExpiresIn    int64
+}
+
+type blingOAuthTokenPayload struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	Scope        string `json:"scope"`
+	ExpiresIn    int64  `json:"expires_in"`
+}
+
+type blingOAuthDecodeResult struct {
+	payload   blingOAuthTokenPayload
+	tooLarge  bool
+	readErr   error
+	decodeErr error
+}
+
+type blingOAuthReadTracker struct {
+	source io.Reader
+	err    error
+}
+
+func (r *blingOAuthReadTracker) Read(p []byte) (int, error) {
+	n, err := r.source.Read(p)
+	if err != nil && !errors.Is(err, io.EOF) {
+		r.err = err
+	}
+	return n, err
 }
 
 func (c *BlingOAuthClient) ExchangeAuthorizationCode(ctx context.Context, clientID, clientSecret, redirectURI, code string) (BlingOAuthToken, error) {
@@ -104,20 +133,14 @@ func (c *BlingOAuthClient) exchange(ctx context.Context, clientID, clientSecret 
 		}
 		return BlingOAuthToken{}, fmt.Errorf("%w: status %d", ErrBlingOAuthRejected, resp.StatusCode)
 	}
-	body, err := readLimitedBody(resp.Body, c.maxResponseBytes)
-	if err != nil {
+	decoded := decodeBlingOAuthTokenResponse(resp.Body, c.maxResponseBytes)
+	if decoded.tooLarge || decoded.readErr != nil {
 		return BlingOAuthToken{}, fmt.Errorf("%w: token response is too large or unreadable", ErrBlingAPIInvalidResponse)
 	}
-	var payload struct {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-		TokenType    string `json:"token_type"`
-		Scope        string `json:"scope"`
-		ExpiresIn    int64  `json:"expires_in"`
-	}
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if decoded.decodeErr != nil {
 		return BlingOAuthToken{}, fmt.Errorf("%w: token response is not json", ErrBlingOAuthSchema)
 	}
+	payload := decoded.payload
 	if strings.TrimSpace(payload.AccessToken) == "" {
 		return BlingOAuthToken{}, fmt.Errorf("%w: access_token is missing", ErrBlingOAuthSchema)
 	}
@@ -128,4 +151,38 @@ func (c *BlingOAuthClient) exchange(ctx context.Context, clientID, clientSecret 
 		Scope:        payload.Scope,
 		ExpiresIn:    payload.ExpiresIn,
 	}, nil
+}
+
+func decodeBlingOAuthTokenResponse(reader io.Reader, limit int64) blingOAuthDecodeResult {
+	if limit <= 0 {
+		limit = defaultBlingResponseLimit
+	}
+	const maxInt64 = int64(^uint64(0) >> 1)
+	if limit >= maxInt64 {
+		return blingOAuthDecodeResult{decodeErr: ErrBlingAPIConfiguration}
+	}
+	tracker := &blingOAuthReadTracker{source: reader}
+	limited := &io.LimitedReader{R: tracker, N: limit + 1}
+	decoder := json.NewDecoder(limited)
+	var result blingOAuthDecodeResult
+	if err := decoder.Decode(&result.payload); err != nil {
+		result.tooLarge = limited.N == 0
+		result.readErr = tracker.err
+		result.decodeErr = err
+		return result
+	}
+	var trailing json.RawMessage
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		result.tooLarge = limited.N == 0
+		result.readErr = tracker.err
+		if err == nil {
+			result.decodeErr = errors.New("token response contains trailing JSON")
+		} else {
+			result.decodeErr = err
+		}
+		return result
+	}
+	result.tooLarge = limited.N == 0
+	result.readErr = tracker.err
+	return result
 }

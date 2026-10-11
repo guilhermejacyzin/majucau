@@ -25,7 +25,7 @@ limpa. Nenhuma tela ou regra financeira foi alterada.
 | Fluxo | Limites e comportamento observados |
 |---|---|
 | CSV Bling/Nuvem Pago e prévia | Leitura contínua; campo até 1 MiB, registro até 4 MiB e 256 campos. Prévia usa índice temporário cifrado em disco; a fila de nomes de arquivo é lida em blocos de até 256 e ordenada em tabela temporária com memória do PostgreSQL limitada a 16 MiB. |
-| API Bling | Corpo JSON até 4 MiB; página até 100 registros; decoder percorre a resposta e mantém um bloco limitado. OAuth também limita o corpo lido. Retry fica restrito às falhas transitórias definidas para chamadas repetíveis. |
+| API Bling | Corpo JSON até 4 MiB; página até 100 registros; decoder percorre a resposta e mantém um bloco limitado. A resposta OAuth também é decodificada diretamente do fluxo, sem criar uma cópia integral do corpo; os campos de token necessários continuam em memória. Retry fica restrito às falhas transitórias definidas para chamadas repetíveis. |
 | Snapshot do painel | Consulta PostgreSQL em fluxo, linha por linha; máximo de 50 detalhes por tabela, campo até 4 KiB e registro até 16 KiB. IPC transmite blocos de até 512 KiB, abaixo do teto de mensagem de 1 MiB. |
 | Backup | Dumps e criptografia V2 usam cópia/criptografia em fluxo. O leitor V1 antigo também descriptografa em fluxo. Somente manifesto (até 1 MiB) e chave do pacote (até 64 KiB) são lidos como pequenos registros limitados. |
 | Segredos DPAPI | Valor até 1 MiB; arquivo cifrado é lido com limite adicional de 64 KiB e o buffer é zerado quando a leitura falha ou excede o teto. |
@@ -43,3 +43,18 @@ limpa. Nenhuma tela ou regra financeira foi alterada.
 
 Por isso, `DATA-04` continua `PARTIAL`; esta auditoria não promove o requisito a
 verificado.
+
+## Complemento — resposta OAuth do Bling — 2026-10-11
+
+A conferência detalhada encontrou uma exceção pequena: o cliente OAuth lia até
+4 MiB da resposta para um `[]byte`, mantendo o corpo inteiro junto com os
+campos decodificados. O código agora usa `json.Decoder` diretamente no corpo
+HTTP, atrás de um limite de 4 MiB.
+Ele exige um único objeto JSON, rejeita conteúdo adicional e mantém a mesma
+classificação de erro para resposta grande/ilegível e JSON inválido. Os tokens
+continuam como campos tipados porque o serviço precisa usá-los; o corpo bruto
+não fica duplicado em memória.
+
+Validação local em 2026-10-11: `go test ./internal/integrations/bling` e
+`go vet ./internal/integrations/bling` passaram. Isso não substitui medição de
+memória nem homologação com a conta real do Bling.

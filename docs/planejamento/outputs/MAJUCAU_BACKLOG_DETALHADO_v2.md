@@ -37,11 +37,12 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - O resultado continua sendo 1 de 51 requisitos totalmente verificado (aproximadamente 2% por contagem simples). Isso não é uma estimativa de conclusão por esforço. O percentual e prazo global permanecem indisponíveis até a revisão individual das tarefas do backlog.
 - Evidência da recontagem: `docs/evidence/TRACEABILITY-COUNT-CORRECTION-2026-10-10.md`. A matriz `REQUIREMENTS-TRACEABILITY.md` permanece como fonte atual dos estados.
 
-### Auditoria do backlog — 10/10/2026
+### Auditoria do backlog — 10–11/10/2026
 
 - BK-000 foi revisada contra ADR-001, ADR-002, `AGENTS.md`, `G0-DECISION-REGISTER.md`, a política contábil da DRE e a análise v2. Seu aceite foi atendido e a tarefa foi concluída com evidência.
-- Uma das 127 tarefas foi auditada nesta rodada; 126 ainda aguardam revisão. As três tarefas que já apareciam como concluídas antes desta auditoria não foram revalidadas nela.
-- A planilha mostra 4 de 127 tarefas concluídas (3,1% por contagem simples), mas esse valor é apenas o estado do rastreador; não representa o percentual real de conclusão do produto. A estimativa global e o prazo continuam indisponíveis.
+- BK-004 foi revisada contra o inventário das fontes, o mapa MOCAP e as decisões vigentes: 15 imagens T1–T15/C11 estão presentes e seus hashes conferem; as correções de menu e T6 estão registradas. Nenhuma tela foi alterada.
+- Duas das 127 tarefas foram auditadas em 10–11/10/2026: BK-000 e BK-004. Outras 125 ainda aguardam revisão tarefa a tarefa; três conclusões históricas não foram revalidadas.
+- A planilha mostra 5 de 127 tarefas concluídas (3,9% por contagem simples), mas esse valor é apenas o estado do rastreador; não representa o percentual real de conclusão do produto. A estimativa global e o prazo continuam indisponíveis.
 - Esta auditoria não alterou código, telas aprovadas ou regras de negócio.
 
 ## Dependências e ordem prática
@@ -166,25 +167,27 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-004 — Localizar e versionar os mockups e contratos aprovados
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
+**Situação:** Concluída. **Evolução:** 100%. **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
 
 **Objetivo:** Disponibilizar à implementação as referências visuais oficiais de cada tela.
 
-**O que fazer:** Localizar a última versão aprovada/congelada, preservando escopo e navegação.
+**O que fazer:** Manter localizadas e versionadas as referências visuais oficiais e as decisões de escopo que governam sua implementação.
 
 **Como fazer:**
 
-1. Identificar no material entregue a versão oficial de cada tela e vincular seu arquivo; não usar ordem de nome/data como prova de aprovação.
-2. Registrar como Referência a localizar o arquivo aprovado que não esteja no pacote, incluindo T01, T11 e Aplicações. Isso não reabre a aprovação da tela.
-3. Manter a exclusão explícita de Balanço Patrimonial e os módulos confirmados; resolver equivalência de números antigos pelo módulo.
+1. Usar o inventário de `docs/source/README.md` e a evidência `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md` para vincular as referências T1–T15/C11 preservadas no repositório; os 15 hashes foram conferidos nesta auditoria.
+2. Aplicar as correções aprovadas registradas no G0: Balanço Patrimonial fora da versão 1, Balancete mantido, somente Calculadora de Aplicação no menu e cards T6 nos locais aprovados. “Aplicações” não é uma rota separada.
+3. Manter as imagens como referência histórica/visual sem copiar números ilustrativos. Regras de cálculo pendentes seguem suas próprias tarefas (BK-006/BK-007); esta conclusão não as presume nem altera telas.
 
-**Critério de aceite:** Cada tela tem referência oficial identificada ou localização documental rastreada; não há redesenho, reorganização de menu ou falsa alegação de ter recebido arquivo ausente.
+**Critério de aceite:** Referências T1–T15/C11 estão presentes, seus hashes correspondem ao inventário e o mapa liga as telas às decisões vigentes; rotas excluídas não são reintroduzidas; nenhum mockup ou tela foi alterado.
 
 **Impacto:** Impede declarar produção completa com módulos faltantes.
 
 **Dependências:** BK-001
 
-**Fonte:** A_Matriz_Mestra!A41:S41; 00_Resumo!A46:D46; menus das imagens; Fechamento vigente 13/09/2026, §5
+**Fonte:** `docs/source/README.md`; `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md`; `docs/FUNCTIONAL-DECOMPOSITION-v1.md`; `G0-DECISION-REGISTER.md`; hashes das 15 referências conferidos em 11/10/2026
+
+**Evidência:** As 15 referências do inventário existem e os 15 SHA-256 conferem; o MOCAP mapeia 15 rotas e registra Balanço Patrimonial fora do escopo, ausência de rota separada “Aplicações” e correções aprovadas da T6. Contratos de cálculo continuam vinculados às tarefas financeiras específicas.
 
 **Regras e verificações vinculadas:** Q-01,Q-02,F-13
 

@@ -70,7 +70,7 @@ sc.freezePanes.freezeRows(5);sc.tables.add(`A5:E${sl}`,true,'MajucauCobertura');
 
 baseStyle(summary,'A1:G43');widths(summary,{A:295,B:125,C:170,D:28,E:340,F:150,G:150});summary.tabColor=dark;
 title(summary,'A2','Majucau — evolução do backlog');
-summary.getRange('A3').values=[['Status atualizado em 10/10/2026 | fechamento funcional de 13/09/2026']];
+summary.getRange('A3').values=[['Status atualizado em 11/10/2026 | fechamento funcional de 13/09/2026']];
 summary.getRange('A3').format.font={name:'Arial',size:10,italic:true,color:muted};
 headers(summary,'A5:C5',['Medida','Valor','Interpretação']);
 const metrics=[['Tarefas no catálogo',n,'Escopo provisório'],['Levantamentos concluídos',null,'Com evidência'],['Conclusão por peso',null,'Peso inicial = 1'],['Tarefas de desenvolvimento concluídas',null,'Com evidência no rastreador'],['Frentes técnicas',null,'HT: execução futura']];
@@ -114,7 +114,7 @@ summary.getRange('E18:E27').format.rowHeight=29;
 summary.getRange('A28').values=[['Responsáveis são papéis sugeridos; prazo e esforço aguardam a equipe.']];
 summary.getRange('A30').values=[['Fonte: imagens e planilha MAJUCAU_CONSOLIDACAO_DEV_GATE_RC3_CEI_CONFIGURACOES_T16_T17.xlsx fornecidas pelo usuário.']];
 summary.getRange('A31').values=[['Fechamento de 13/09/2026; decisões posteriores registradas no G0-DECISION-REGISTER.md até 10/10/2026.']];
-summary.getRange('A33').values=[['BK-000 auditada em 10/10; 126 tarefas ainda aguardam revisão. Regra definida não equivale a implementação concluída.']];
+summary.getRange('A33').values=[['BK-000 e BK-004 auditadas em 10–11/10; 125 tarefas ainda aguardam revisão. Regra definida não equivale a implementação concluída.']];
 summary.getRange('A34').values=[['D-1: análise/conciliação normal até ontem; agenda futura continua na projeção.']];
 summary.getRange('A35').values=[['Nenhuma regra foi reaberta nesta auditoria. Paginação do Bling e outras pendências técnicas continuam em verificação.']];
 summary.getRange('A30:A31').format.font={name:'Arial',size:10,italic:true,color:muted};

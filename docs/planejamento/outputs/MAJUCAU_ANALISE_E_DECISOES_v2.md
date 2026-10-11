@@ -8,7 +8,7 @@ Registro histórico de 13/09/2026: 70 tarefas revisadas; 3 levantamentos conclu�
 
 - Em 03/10/2026, foi aprovada a direção de hospedagem privada centralizada. O cliente local continua como transição; provedor e operação ainda aguardam decisões. Referências: `ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md` e fase 13 do plano.
 - Em 04/10/2026, foi aprovada a DRE própria do Majucau com base nas regras contábeis recebidas; o relatório pronto do Bling serve para comparação, não como resultado final. Referências: `G0-DECISION-REGISTER.md` e `docs/DRE-ACCOUNTING-POLICY-v1.md`.
-- Em 10/10/2026, a matriz atual registrava 1 requisito verificado, 4 documentados, 26 parciais, 11 bloqueados e 9 não iniciados. A auditoria das 127 tarefas ainda está pendente; não há percentual global nem prazo confiável.
+- Em 10/10/2026, a matriz atual registrava 1 requisito verificado, 4 documentados, 26 parciais, 11 bloqueados e 9 não iniciados. A auditoria tarefa a tarefa está em andamento; não há percentual global nem prazo confiável.
 
 ## Substituições expressas no fechamento de 13/09/2026 (históricas)
 
@@ -84,7 +84,7 @@ As dez frentes HT abaixo são trabalho futuro, não novas perguntas de negócio.
 |---|---|---|
 | BK-000 | Confirmar a base de escopo e as decisões da Majucau | action, steps, accept, status |
 | BK-001 | Inventariar os materiais e suas versões | steps |
-| BK-004 | Localizar e versionar os mockups e contratos aprovados | title, goal, action, steps, accept, status |
+| BK-004 | Localizar e versionar os mockups e contratos aprovados | action, steps, accept, status, evidence, refs, progress |
 | BK-005 | Detalhar os casos de pagamento divergente após decidir C-01 | steps, accept, status |
 | BK-006 | Especificar tecnicamente a regra fechada da calculadora | title, action, steps, accept, status |
 | BK-007 | Especificar as regras da DRE própria do Majucau | title, goal, action, steps, accept, status, owner |

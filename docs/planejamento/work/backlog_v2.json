@@ -111,28 +111,28 @@
     "phase": "00 Descoberta e decisões",
     "title": "Localizar e versionar os mockups e contratos aprovados",
     "goal": "Disponibilizar à implementação as referências visuais oficiais de cada tela.",
-    "action": "Localizar a última versão aprovada/congelada, preservando escopo e navegação.",
+    "action": "Manter localizadas e versionadas as referências visuais oficiais e as decisões de escopo que governam sua implementação.",
     "steps": [
-      "Identificar no material entregue a versão oficial de cada tela e vincular seu arquivo; não usar ordem de nome/data como prova de aprovação.",
-      "Registrar como Referência a localizar o arquivo aprovado que não esteja no pacote, incluindo T01, T11 e Aplicações. Isso não reabre a aprovação da tela.",
-      "Manter a exclusão explícita de Balanço Patrimonial e os módulos confirmados; resolver equivalência de números antigos pelo módulo."
+      "Usar o inventário de docs/source/README.md e a evidência docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md para vincular as referências T1–T15/C11 preservadas no repositório; os 15 hashes foram conferidos nesta auditoria.",
+      "Aplicar as correções aprovadas registradas no G0: Balanço Patrimonial fora da versão 1, Balancete mantido, somente Calculadora de Aplicação no menu e cards T6 nos locais aprovados. Aplicações não é uma rota separada.",
+      "Manter as imagens como referência histórica/visual sem copiar números ilustrativos. Regras de cálculo pendentes seguem suas próprias tarefas (BK-006/BK-007); esta conclusão não as presume nem altera telas."
     ],
-    "accept": "Cada tela tem referência oficial identificada ou localização documental rastreada; não há redesenho, reorganização de menu ou falsa alegação de ter recebido arquivo ausente.",
+    "accept": "Referências T1–T15/C11 estão presentes, seus hashes correspondem ao inventário e o mapa liga as telas às decisões vigentes; rotas excluídas não são reintroduzidas; nenhum mockup ou tela foi alterado.",
     "impact": "Impede declarar produção completa com módulos faltantes.",
     "deps": [
       "inventory"
     ],
-    "refs": "A_Matriz_Mestra!A41:S41; 00_Resumo!A46:D46; menus das imagens; Fechamento vigente 13/09/2026, §5",
+    "refs": "docs/source/README.md; docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md; docs/FUNCTIONAL-DECOMPOSITION-v1.md; G0-DECISION-REGISTER.md; conferência local dos hashes em 11/10/2026",
     "questions": "Q-01,Q-02,F-13",
     "owner": "Majucau + UX",
     "kind": "Planejamento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Concluída",
+    "evidence": "As 15 referências do inventário existem e os 15 SHA-256 conferem; o MOCAP mapeia 15 rotas e registra Balanço Patrimonial fora do escopo, ausência de rota separada Aplicações e correções aprovadas da T6. Contratos de cálculo continuam vinculados às tarefas financeiras específicas.",
     "weight": 1,
     "dependencies": [
       "BK-001"
     ],
-    "progress": 0
+    "progress": 1
   },
   {
     "key": "partial",

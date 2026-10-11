@@ -38,7 +38,7 @@ assert 'cocoasignals' not in ancestors('purchasesscreen')
 assert 'inputprojection' in ancestors('purchaseeligibility')
 assert 'inventoryprojection' not in ancestors('productionprojection')
 assert all(t['goal'] and t['action'] and t['accept'] and t['impact'] and len(t['steps']) >= 3 for t in tasks)
-assert sum(t['progress'] for t in tasks) == 4
+assert sum(t['status'] == 'Concluída' and bool(t['evidence']) for t in tasks) == 5
 assert all(t['progress'] == 0 for t in tasks if t['kind'] == 'Desenvolvimento')
 assert not any(t['status'] == 'Aguarda decisão' for t in tasks)
 assert len(decisions) == 108
@@ -52,8 +52,8 @@ for xlsx in (root / 'outputs').glob('*.xlsx'):
     if xlsx.name.endswith('_v2.xlsx'):
         formula = openpyxl.load_workbook(xlsx, data_only=False)
         sheet = cached['Evolucao']
-        assert [sheet[f'B{n}'].value for n in [6,7,9,10]] == [127,4,0,10]
-        assert abs(sheet['B8'].value - 4/127) < 1e-10
+        assert [sheet[f'B{n}'].value for n in [6,7,9,10]] == [127,5,0,10]
+        assert abs(sheet['B8'].value - 5/127) < 1e-10
         assert all(formula['Tarefas'].cell(i+6,7).data_type == 'f' for i in range(127))
         assert [formula['Tarefas'].cell(i+6,1).value for i in range(127)] == ids
         assert [formula['Tarefas'].cell(i+6,3).value for i in range(127)] == [t['title'] for t in tasks]
@@ -86,6 +86,6 @@ if manifest.exists():
         assert hashlib.sha256(p.read_bytes()).hexdigest() == entry['sha256'], entry['path']
 
 print(json.dumps({'tasks':127,'decisions':108,'technical_fronts':10,
-    'completed_planning':4,'development_progress':0,'acyclic_dependencies':True,
+    'completed_planning':5,'development_progress':0,'acyclic_dependencies':True,
     'formula_errors':0,'valid_local_markdown_links':links,
     'original_sources_checked':False,'product_tests_executed':False}, ensure_ascii=False))

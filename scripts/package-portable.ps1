@@ -22,8 +22,8 @@ $releaseMigrations = Join-Path $windowsRoot 'migrations'
 if (-not (Test-Path -LiteralPath $windowsRoot -PathType Container)) {
     throw "Diretório de artefatos Windows ausente: $windowsRoot"
 }
-Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $windowsRoot -ExpectedType Directory
-Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $stageRoot -ExpectedType Directory
+SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $windowsRoot -ExpectedType Directory
+SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $stageRoot -ExpectedType Directory
 
 foreach ($fileName in $required) {
     $filePath = Join-Path $windowsRoot $fileName
@@ -38,7 +38,7 @@ if (-not (Test-Path -LiteralPath $releaseMigrations -PathType Container)) {
     throw "Migrations do manifesto ausentes: $releaseMigrations"
 }
 
-Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $stageRoot -ExpectedRelativePath 'artifacts\cache\portable-stage'
+SafeCleanup\Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $stageRoot -ExpectedRelativePath 'artifacts\cache\portable-stage'
 try {
 New-Item -ItemType Directory -Force -Path $stageRoot | Out-Null
 
@@ -72,8 +72,8 @@ Get-ChildItem -LiteralPath $stageRoot -File |
     ForEach-Object { '{0}  {1}' -f $_.Hash.ToLowerInvariant(), $_.Path.Substring($stageRoot.Length + 1) } |
     Set-Content -LiteralPath (Join-Path $stageRoot 'SHA256SUMS.txt') -Encoding ascii
 
-Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $bundlePath -ExpectedType File
-Remove-MajucauProjectFile -ProjectRoot $projectRoot -Path $bundlePath -ExpectedRelativePath 'artifacts\windows\majucau-windows-x64-portable.zip'
+SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $bundlePath -ExpectedType File
+SafeCleanup\Remove-MajucauProjectFile -ProjectRoot $projectRoot -Path $bundlePath -ExpectedRelativePath 'artifacts\windows\majucau-windows-x64-portable.zip'
 Compress-Archive -Path (Join-Path $stageRoot '*') -DestinationPath $bundlePath -CompressionLevel Optimal
 
 $manifest = Join-Path $artifactRoot 'MANIFEST.txt'
@@ -81,5 +81,5 @@ Write-MajucauArtifactManifest -ProjectRoot $projectRoot -ManifestPath $manifest
 
 Write-Host "Bundle portátil criado em: $bundlePath"
 } finally {
-    Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $stageRoot -ExpectedRelativePath 'artifacts\cache\portable-stage'
+    SafeCleanup\Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $stageRoot -ExpectedRelativePath 'artifacts\cache\portable-stage'
 }

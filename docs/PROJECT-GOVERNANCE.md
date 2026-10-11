@@ -35,7 +35,8 @@
 
 ## Mensagem obrigatória de commit
 
-Cada commit deve conter estes campos:
+Cada commit deve conter estes campos. Os dois rótulos de percentual precisam ser
+escritos exatamente como no exemplo, porque a CI os confere automaticamente:
 
 ```text
 O que é: tarefa que está subindo
@@ -44,9 +45,9 @@ O que foi feito: resumo técnico detalhado
 
 Próximo passo: detalhe o próximo passo
 
-Quantos % da meta falta para terminar a tarefa: N%
+Quanto falta da tarefa [id ou nome]: N%
 
-Quantos % da meta falta para terminar o projeto: N%
+Quanto falta do projeto: N%
 ```
 
 ## Dados, resiliência e segurança

@@ -415,3 +415,10 @@ BK-024 permanece em 30% e o projeto mantém a estimativa registrada de 7,5% conc
 - `go test ./internal/security`, `go vet ./internal/security` e `git diff --check` passaram no Windows de desenvolvimento. O teste verificou a DACL da pasta do cofre, de `.entropy` e do arquivo de segredo. Não foi executado como `NT SERVICE\MajucauWorker`, nem em VM limpa ou pelo instalador.
 - **Limitação para instalar:** o NSIS ainda não cria `ProgramData\Majucau` com ACL da identidade que executará o worker, não registra o serviço nem configura de forma segura a credencial de `MAJUCAU_DATABASE_URL`. Portanto, a implementação do cofre é fail-closed, mas ainda não está pronta para uso na hospedagem ou em uma instalação de produção.
 - Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado. O progresso de BK-024 sobe apenas parcialmente; continuam bloqueantes o provisionamento pelo instalador, prova sob a identidade real do serviço, falhas controladas e validação em VM/rede/perfis.
+
+## Divergência pendente sobre o escopo DPAPI — 11/10/2026
+
+- O `ADR-001-ARQUITETURA-E-EMPACOTAMENTO.md` contém dois trechos diferentes: um diz que o worker protege dados no contexto da conta de serviço; outro pede DPAPI no escopo da máquina. A implementação em `internal/security/dpapi_windows.go` chama `CryptProtectData` com `dwFlags = 0`, e a migration `000001_init.up.sql` registra `DPAPI_CURRENT_USER`; `AGENTS.md` também vincula o cofre à identidade `NT SERVICE\MajucauWorker`.
+- A documentação oficial da Microsoft explica que o modo padrão restringe a descriptografia à mesma conta, enquanto `CRYPTPROTECT_LOCAL_MACHINE` permite que qualquer usuário do mesmo computador descriptografe o conteúdo se conseguir obtê-lo. Fonte: [Microsoft Learn — CryptProtectData](https://learn.microsoft.com/pt-br/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata).
+- Foi solicitada à responsável a escolha do escopo. Até a resposta, o código e o schema permanecem sem alteração nesse ponto; não implementar o provisionamento final do cofre nem declarar SEC-R03 fechado.
+- A pergunta é técnica e não muda nenhuma tela, regra financeira ou dado persistido.

@@ -216,6 +216,13 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - BK-014 continua em 15%; documentar o estado do instalador melhora o inventário, mas o critério de aceite da proposta operacional ainda não foi atendido. Evidência: `docs/evidence/WINDOWS-ENVIRONMENT-INVENTORY-2026-10-11.md`.
 - O total e a média do backlog não mudam: 6 concluídas, 11 em andamento e 110 não iniciadas; estimativa simples de 7,4% concluído e 92,6% restante. Não há prazo global confiável.
 
+### Testes de integração PostgreSQL no Windows — 11/10/2026
+
+- Um PostgreSQL 18.3 descartável foi criado sob `artifacts/cache`, limitado a loopback, sem mexer no serviço existente e sem instalar serviço Windows. A verificação de checksums passou e as três migrations foram aplicadas ao banco vazio.
+- `go test -count=1 ./internal/integrations/bling ./internal/integrations/nuvempago` passou com as fixtures sanitizadas e variáveis de ambiente dos testes opt-in. A execução incluiu os E2Es de importação de recebimentos do Bling, atomicidade/cursor da sincronização de API e repetição idempotente dos recebíveis futuros.
+- O processo foi encerrado; a porta 55439 foi liberada e `artifacts/cache` removida pela rotina segura. Nenhuma tela ou regra financeira mudou. Evidência: `docs/evidence/LOCAL-POSTGRES-INTEGRATION-2026-10-11.md`.
+- BK-041 permanece em 55%, pois paginação/campos oficiais do Bling ainda precisam de homologação. BK-014 permanece em 15%, pois o instalador continua sem provisionar o banco dedicado. As contagens e a estimativa global permanecem 6 concluídas, 11 em andamento, 110 não iniciadas; 7,4% concluído e 92,6% restante.
+
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
 
 1. Transcrever contratos fechados e localizar referências; desenhar domínios, acesso, persistência e operação local.

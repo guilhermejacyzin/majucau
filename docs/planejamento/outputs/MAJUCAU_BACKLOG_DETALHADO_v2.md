@@ -408,7 +408,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-013 — Especificar perfis, capacidades, vigência e auditoria
 
-**Situação:** Em andamento. **Evolução:** 15% (estimativa documental: schema, permissões iniciais, caminho de autorização do worker e capacidades aprovadas; login próprio do Majucau, endereços por perfil e uso aprovado de uma conta compartilhada para Diretores, com limitação de auditoria registrada; matriz completa, MFA, sessão, recuperação, provisionamento e enforcement ainda pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Segurança.
+**Situação:** Em andamento. **Evolução:** 15% (estimativa documental: schema, permissões iniciais, caminho de autorização do worker e capacidades aprovadas; login próprio do Majucau, endereços por perfil e uso aprovado de uma conta compartilhada para Diretores, com limitação de auditoria registrada. Reauditoria identificou que a migration usa `windows_sid`, falta `REPORT_EXPORT` e a autorização ainda não é aplicada no worker. A classificação dos comandos de importação CSV para Diretores permanece pendente; MFA, sessão, recuperação, provisionamento e enforcement também). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Segurança.
 
 **Objetivo:** Definir quem pode consultar ou alterar cada recurso.
 

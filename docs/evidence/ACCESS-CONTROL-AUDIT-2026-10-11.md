@@ -31,3 +31,30 @@ Em 11/10/2026, a responsável aprovou para a versão 1: Financeiro usa `ADMIN`; 
 - `cmd/worker/handler.go`
 - `internal/ipc/namedpipe_windows.go`
 - `REQUIREMENTS-TRACEABILITY.md`
+
+## Reauditoria após aprovação da conta compartilhada — 11/10/2026
+
+Gisele confirmou que os Diretores usarão uma conta compartilhada `contato@majucau.com.br`, após ser informada de que o histórico não identificará qual Diretor fez cada ação. A decisão está registrada no `G0-DECISION-REGISTER.md` e substitui a exigência de identidade individual da ADR-002 somente para o perfil `DIRECTOR`. Financeiro usa o perfil `ADMIN` com `financeiro@majucau.com.br`. Não houve mudança de tela nem regra financeira.
+
+### Mapa observado dos comandos do worker
+
+Esta classificação registra o que os comandos fazem e confronta com as capacidades amplas aprovadas. Não é uma implementação de autorização e não amplia permissões:
+
+| Comando observado | Efeito observado | Relação com o perfil aprovado |
+| --- | --- | --- |
+| `health.get`, `integration.status`, `dashboard.snapshot` | Consulta saúde, integração ou dados do painel | Consulta; o worker ainda não valida perfil |
+| `bling.oauth.*`, `bling.config.save`, `nuvemshop.config.save` | Configura, conecta, testa, revoga ou desconecta credenciais | Administração de integração; não está entre as capacidades aprovadas para Diretores |
+| `bling.sync` | Consulta a API do Bling e grava dados sincronizados | Corresponde a “sincronizar integrações”, aprovado para Diretores |
+| `bling.receipts.preview`, `nuvem_pago.future.preview` | Lê e valida arquivos CSV sem persistir seus registros | Prévia de consulta; autorização por perfil não existe hoje |
+| `bling.receipts.import`, `nuvem_pago.future.import` | Grava registros CSV no banco local | Escrita de dados; não há decisão explícita se isso está incluído em “sincronizar” para Diretores |
+| Exportação de relatórios | Não há método de exportação no catálogo IPC atual; a tela mantém a opção indisponível sem dados confirmados | Capacidade aprovada, ainda sem rota de serviço comprovada nesta auditoria |
+
+### Lacunas técnicas atualizadas
+
+- A migration local identifica `system_users` por `windows_sid`; a auditoria não encontrou consumo dessa tabela no despacho do worker nem um contexto de identidade/login Majucau por comando. Um SID do Windows identifica uma conta de máquina/sistema local, não prova quem entrou na hospedagem central.
+- O catálogo da migration possui `BACKUP_EXPORT`, mas não possui permissão específica `REPORT_EXPORT`, apesar de a exportação de relatórios ter sido aprovada para Diretores.
+- O Named Pipe autentica o processo Windows autorizado; não transforma a conta compartilhada de e-mail em identidade autenticada no serviço central. Na futura auditoria, registrar a ação como executada pela principal compartilhada, sem atribuir um Diretor individual.
+- Não foram localizadas verificações de permissão por comando no worker. A conta compartilhada aprovada, por si só, não corrige essa lacuna.
+- Antes de codificar a matriz, falta classificar a importação manual dos CSVs: é uma operação de gravação de dados e pode ou não fazer parte da capacidade “sincronizar” que Gisele aprovou para Diretores. Essa ambiguidade não altera a regra financeira, mas altera quem pode gravar; não presumir.
+
+O código e as telas permanecem inalterados nesta reauditoria. O próximo passo de implementação depende da classificação dos dois comandos de importação CSV; depois disso, ainda será necessário desenhar autenticação/sessão do login próprio e adicionar a permissão de exportação de relatórios ao contrato antes de aplicar autorização no serviço/worker.

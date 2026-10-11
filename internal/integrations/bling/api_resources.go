@@ -58,7 +58,7 @@ func (c *BlingAPIClient) getDataRecord(ctx context.Context, resource string) (js
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
-	return withBlingReadRetry(req.Context(), c.maxAttempts, c.wait, c.retryDelay, func() (json.RawMessage, error) {
+	return withBlingReadRetry(req.Context(), req.Method, c.maxAttempts, c.wait, c.retryDelay, func() (json.RawMessage, error) {
 		return c.getDataRecordAttempt(req)
 	})
 }

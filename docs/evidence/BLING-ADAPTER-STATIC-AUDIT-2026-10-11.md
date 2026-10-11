@@ -78,6 +78,9 @@ pessoais ou valores reais da empresa na evidência.
 - As duas consultas GET do adapter (`api_client.go` e `api_resources.go`) agora
   usam `withBlingReadRetry`, que concentra classificação de falha transitória,
   máximo de tentativas, backoff/jitter, `Retry-After` e cancelamento.
+- O mecanismo recebe o método HTTP e rejeita qualquer chamada que não seja GET
+  antes de executar a operação. O teste `TestBlingReadRetryRejectsNonGETBeforeCallingRequest`
+  confirma que POST não é chamado nem repetido.
 - O POST de troca/renovação OAuth continua fora desse mecanismo e não é repetido,
   pois pode consumir código ou refresh token de uso único.
 - `go test -count=1 ./internal/integrations/bling` e

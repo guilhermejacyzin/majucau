@@ -3,6 +3,8 @@ package bling
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -11,11 +13,16 @@ import (
 // one-time authorization code or refresh token.
 func withBlingReadRetry[T any](
 	ctx context.Context,
+	method string,
 	attempts int,
 	wait func(context.Context, time.Duration) error,
 	delay func(int, time.Duration) time.Duration,
 	request func() (T, error),
 ) (T, error) {
+	if method != http.MethodGet {
+		var zero T
+		return zero, fmt.Errorf("%w: automatic retry is restricted to GET", ErrBlingAPIConfiguration)
+	}
 	if attempts < 1 {
 		attempts = 1
 	}

@@ -235,7 +235,7 @@ func (c *BlingAPIClient) TestConnection(ctx context.Context) (BlingConnectionPro
 }
 
 func (c *BlingAPIClient) doFinancialResourceRequest(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {
-	return withBlingReadRetry(req.Context(), c.maxAttempts, c.wait, c.retryDelay, func() (BlingReceivablesPage, error) {
+	return withBlingReadRetry(req.Context(), req.Method, c.maxAttempts, c.wait, c.retryDelay, func() (BlingReceivablesPage, error) {
 		return c.doFinancialResourceAttempt(req, filter)
 	})
 }

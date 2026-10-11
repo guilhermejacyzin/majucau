@@ -231,8 +231,8 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 
 ### Retry compartilhado nas consultas Bling — 11/10/2026
 
-- As duas implementações repetidas de retry foram consolidadas em `withBlingReadRetry`. As consultas GET preservam três chamadas no máximo, espera exponencial com jitter, `Retry-After` limitado a 30 segundos e encerramento por cancelamento/erro permanente. A troca de token OAuth continua sem retry automático.
-- `go test -count=1 ./internal/integrations/bling` e `go vet ./internal/integrations/bling` passaram. `GOCACHE`, `GOMODCACHE` e `GOTMPDIR` foram limitados a `artifacts/cache`; a pasta foi removida ao final.
+- As duas implementações repetidas de retry foram consolidadas em `withBlingReadRetry`. A função só aceita GET e rejeita POST antes de executar a operação. As consultas GET preservam três chamadas no máximo, espera exponencial com jitter, `Retry-After` limitado a 30 segundos e encerramento por cancelamento/erro permanente. A troca de token OAuth continua sem retry automático.
+- `TestBlingReadRetryRejectsNonGETBeforeCallingRequest`, `go test -count=1 ./internal/integrations/bling` e `go vet ./internal/integrations/bling` passaram. `GOCACHE`, `GOMODCACHE` e `GOTMPDIR` foram limitados a `artifacts/cache`; a pasta foi removida ao final.
 - BK-041 permanece em 55%, pois ainda faltam homologação real dos campos e cursor/paginação oficial do Bling. A mudança não altera regra financeira, tela ou chamada à conta real. Evidência: `docs/evidence/BLING-ADAPTER-STATIC-AUDIT-2026-10-11.md`.
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.

@@ -34,15 +34,19 @@ em 2026-10-04 14:53:01 UTC. Ele não é uma release assinada. A conexão GitHub 
 oferece exclusão remota; o artifact foi registrado em
 `artifacts/retained/cleanup-register.md`.
 
-## Correção de limite — 2026-10-11
+## Correção e cobertura do limite — 2026-10-11
 
 Uma revisão estática encontrou uma lacuna: `Retry-After` em segundos era
 limitado a 30 segundos, mas a forma válida com data HTTP não tinha o mesmo
 limite. O parser agora limita também datas futuras a 30 segundos, conforme
 `AGENTS.md`. Isso evita uma espera longa causada por uma resposta externa.
 
-Não foram adicionados nem executados testes nesta correção. A cobertura existente
-verifica uma data futura curta e limites numéricos; ainda falta cobrir uma data
-HTTP superior a 30 segundos. Portanto, esta correção de código ainda não tem
-validação automatizada nesta execução e não fecha por si só BK-041. Nenhuma tela
-ou regra financeira foi alterada.
+Foi acrescentada uma verificação para uma data HTTP que excede o teto em um
+segundo. O teste focado passou localmente usando o cache de compilação dentro de
+`artifacts/cache`; a pasta foi removida após a execução com o módulo seguro de
+limpeza. A CI `38141001629` passou antes da inclusão deste caso específico; o
+novo teste ainda precisa passar na próxima CI.
+
+Esta evidência fecha o caso de limite de espera, mas não fecha BK-041: a
+homologação do envelope/paginação e a decisão de filtros por grupo ainda estão
+pendentes. Nenhuma tela ou regra financeira foi alterada.

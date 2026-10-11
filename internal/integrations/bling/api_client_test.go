@@ -321,6 +321,10 @@ func TestRetryAfterAcceptsSecondsAndHTTPDate(t *testing.T) {
 	if got := retryAfterAt(future, now); got != 15*time.Second {
 		t.Fatalf("date retry-after = %v", got)
 	}
+	futureBeyondLimit := now.Add(defaultBlingMaxRetryAfter + time.Second).Format(http.TimeFormat)
+	if got := retryAfterAt(futureBeyondLimit, now); got != defaultBlingMaxRetryAfter {
+		t.Fatalf("date retry-after above the limit = %v, want %v", got, defaultBlingMaxRetryAfter)
+	}
 	if got := retryAfterAt(now.Add(-time.Second).Format(http.TimeFormat), now); got != 0 {
 		t.Fatalf("past date retry-after = %v", got)
 	}

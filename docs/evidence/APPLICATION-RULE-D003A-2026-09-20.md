@@ -172,3 +172,17 @@ Go. Não executei testes locais. Na CI `38111929797`, os testes Go e o job Postg
 Esta reauditoria não alterou a planilha, a tela ou qualquer regra financeira.
 O helper de projeção diária foi alterado para oferecer leitura em fluxo; a
 calculadora ainda não chama esse helper. Não foram executados testes.
+
+## Conferência da planilha enviada — 2026-10-11
+
+Leitura somente para consulta do arquivo recebido, sem salvar alterações:
+encontrei uma única aba (`Calculadora`) com as seções de DRE, fluxo de caixa e
+resultado. A seção de fluxo tem campos separados para “Saldo na semana mais
+crítica” e “Recebimentos previstos da Nuvemshop”; a fórmula atual soma esses
+dois valores antes de descontar a reserva. A planilha não contém uma lista de
+saldos por dia até 60 dias: o saldo da pior semana é uma entrada única.
+
+A responsável confirmou que a estrutura enviada deve permanecer, mas a
+participação da Nuvemshop na soma não está clara frente à correção verbal
+anterior. Foi solicitada confirmação antes de qualquer implementação. Nenhuma
+tela, planilha ou regra financeira foi alterada nesta conferência.

@@ -299,9 +299,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Revisão estática das chamadas de limpeza recursiva — 11/10/2026
 
-- A leitura de código encontrou uma única chamada de produção a `os.RemoveAll`, encapsulada em `securetemp.RemoveAll`. Os chamadores auditados passam caminhos criados por `securetemp.NewDir`; no Windows, essa criação usa DACL protegida, e nas outras plataformas restringe o acesso ao proprietário.
-- Backup, restauração e prévia CSV migraram para `securetemp.Workspace`; o método de limpeza não recebe caminho externo. As funções antigas baseadas em `string` permanecem obsoletas para compatibilidade; a evidência registra que elas não têm chamadas de produção encontradas.
-- `go build ./internal/securetemp ./internal/backup ./internal/integrations/csvstream` compilou os pacotes alterados em Windows; o cache dedicado foi removido com `SafeCleanup`. Nenhum teste foi executado.
+- A leitura de código encontrou uma única chamada de produção a `os.RemoveAll`, encapsulada em `securetemp.Workspace.RemoveAll`. Os chamadores auditados usam diretórios criados por `securetemp.NewWorkspace`; no Windows, essa criação usa DACL protegida, e nas outras plataformas restringe o acesso ao proprietário.
+- Backup, restauração e prévia CSV usam `securetemp.Workspace`; as funções públicas que aceitavam um caminho arbitrário para limpeza foram removidas. O teste Windows de ACL também usa a limpeza tipada.
+- As APIs públicas de criação e remoção por `string` foram removidas; o teste existente da ACL Windows agora usa `Workspace`. A compilação `go build ./internal/securetemp ./internal/backup ./internal/integrations/csvstream` passou em Windows após a migração. O cache temporário foi removido com `SafeCleanup`; nenhum teste foi executado.
 - BK-024 permanece em 30% até validação dos fluxos e controles em ambiente isolado. O projeto permanece em 7,5% concluído e 92,5% restante. Telas e regras financeiras não foram alteradas.
 
 ## 00 Descoberta e decisões

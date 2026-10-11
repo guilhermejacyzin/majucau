@@ -13,16 +13,17 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func TestNewDirAppliesProtectedDACLAndRestrictsInheritedAccess(t *testing.T) {
-	dir, err := NewDir(t.TempDir(), "majucau-securetemp-")
+func TestNewWorkspaceAppliesProtectedDACLAndRestrictsInheritedAccess(t *testing.T) {
+	workspace, err := NewWorkspace(t.TempDir(), "majucau-securetemp-")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := RemoveAll(dir); err != nil {
+		if err := workspace.RemoveAll(); err != nil {
 			t.Errorf("remove private directory: %v", err)
 		}
 	})
+	dir := workspace.Path()
 
 	dirSecurity := readDACL(t, dir)
 	control, _, err := dirSecurity.Control()

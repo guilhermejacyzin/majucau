@@ -22,12 +22,9 @@ type privateDirectoryAPI struct {
 	remove  func(string) error
 }
 
-// NewDir creates a temporary directory with a protected DACL. The owner,
+// createPrivateDir creates a temporary directory with a protected DACL. The owner,
 // LocalSystem, and administrators can access the directory and its contents.
-//
-// Deprecated: production code should use NewWorkspace to bind cleanup to the
-// directory created here.
-func NewDir(parent, prefix string) (string, error) {
+func createPrivateDir(parent, prefix string) (string, error) {
 	if !filepath.IsAbs(parent) {
 		return "", fmt.Errorf("private temporary directory parent must be absolute")
 	}

@@ -21,7 +21,7 @@ type Workspace struct {
 // NewWorkspace creates a private temporary directory and returns a cleanup
 // capability for that directory.
 func NewWorkspace(parent, prefix string) (*Workspace, error) {
-	path, err := NewDir(parent, prefix)
+	path, err := createPrivateDir(parent, prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -69,15 +69,6 @@ func RemoveFile(path string) error {
 		return &CleanupError{Path: path, Cause: err}
 	}
 	return nil
-}
-
-// RemoveAll removes a temporary workspace and treats an already-absent path
-// as successfully cleaned up.
-//
-// Deprecated: production callers should use Workspace.RemoveAll so the cleanup
-// target comes from a workspace created by NewWorkspace.
-func RemoveAll(path string) error {
-	return removeAllPath(path)
 }
 
 func removeAllPath(path string) error {

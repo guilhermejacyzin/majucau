@@ -9,11 +9,8 @@ import (
 	"path/filepath"
 )
 
-// NewDir creates a temporary directory restricted to its owner.
-//
-// Deprecated: production code should use NewWorkspace to bind cleanup to the
-// directory created here.
-func NewDir(parent, prefix string) (string, error) {
+// createPrivateDir creates a temporary directory restricted to its owner.
+func createPrivateDir(parent, prefix string) (string, error) {
 	if !filepath.IsAbs(parent) {
 		return "", fmt.Errorf("private temporary directory parent must be absolute")
 	}

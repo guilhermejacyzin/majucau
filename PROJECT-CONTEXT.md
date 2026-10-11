@@ -7,7 +7,7 @@ Este arquivo é o ponto de retomada técnico-funcional do projeto. Ele descreve 
 O objetivo é entregar inteligência financeira executiva com dados de fontes oficiais, regras determinísticas e rastreabilidade até a origem. A direção-alvo aprovada é hospedagem privada centralizada para ingestão diária e consulta por duas pessoas em locais diferentes. As telas aprovadas e as regras financeiras/de negócio permanecem protegidas.
 
 - O aplicativo Wails para Windows 10/11 x64 e o PostgreSQL local continuam como modo de transição e base de desenvolvimento; não representam a implantação multi-site.
-- No destino, clientes autenticados acessam um serviço Majucau por TLS; somente o serviço acessa o PostgreSQL privado. Cada pessoa terá identidade individual e a consulta começa com privilégio de leitura.
+- No destino, clientes autenticados acessam um serviço Majucau por TLS; somente o serviço acessa o PostgreSQL privado. O login será próprio do Majucau: `financeiro@majucau.com.br` usa `ADMIN` e `contato@majucau.com.br` é uma conta compartilhada dos Diretores. Os logs identificam essa conta e a ação, não o Diretor individual. As capacidades aprovadas dos Diretores incluem consulta, sincronização com importação manual de CSV e exportação de backups e relatórios.
 - A prévia CSV permanece local e sem dependência de banco. O serviço central deverá validar novamente o conteúdo antes de persistir; canal de envio e retenção ainda dependem de decisão.
 - O fluxo do cliente continua sem terminal, Docker, Node.js ou configuração manual do PostgreSQL.
 - A escolha do provedor, orçamento, região, identidade/MFA, forma final do cliente e operação de sincronização diária ainda não foi aprovada.

@@ -32,7 +32,7 @@ Não implementar nesta entrega: previsão comercial por SKU, previsão de demand
 | G5 - Resultado | DRE/P&L/EBITDA com regras aprovadas e rastreáveis |
 | G6 - Operação | backup, restore, update, logs e segurança validados |
 | G7 - Produção | instalador assinado aprovado em VMs limpas e aceite funcional concluído |
-| G8 - Hospedagem compartilhada | implantação central privada, identidade individual, API autenticada, PostgreSQL privado, ingestão diária, backup/restore e acesso do local externo validados conforme ADR-002 |
+| G8 - Hospedagem compartilhada | implantação central privada; login Majucau com `financeiro@majucau.com.br` para `ADMIN` e conta compartilhada `contato@majucau.com.br` para `DIRECTOR`; API autenticada, PostgreSQL privado, ingestão diária, backup/restore e acesso do local externo validados conforme ADR-002 e decisão posterior do G0 |
 
 G0 não será aprovado apenas por existir documentação. Cada P0 abaixo precisa de uma disposição explícita: resolvido por evidência, retirado do release por decisão de escopo ou diferido mantendo todos os módulos/resultados dependentes desabilitados. O diferimento permite construir a fundação, mas continua bloqueando G2/G3/G5/G7 conforme a dependência. Até G0, não há código de produção; somente pesquisa, protótipos descartáveis e artefatos de decisão.
 
@@ -509,7 +509,7 @@ Esses itens não impedem o desenvolvimento da fundação e dos módulos independ
 - manter as telas e regras já aprovadas;
 - definir API/serviço central autenticado e manter PostgreSQL em rede privada;
 - encaminhar sincronização diária, credenciais, auditoria e idempotência ao serviço autorizado;
-- definir acesso individual das duas pessoas e começar com consulta somente de leitura;
+- implementar os perfis aprovados: Financeiro como `ADMIN`; Diretores usando a conta compartilhada `contato@majucau.com.br`, com consulta, sincronização (incluindo importação manual de CSV) e exportação de backups e relatórios. A auditoria registra a conta compartilhada e a ação, sem identificar qual Diretor agiu;
 - validar os CSVs no cliente para prévia local sem banco e validar de novo no serviço antes da persistência;
 - aprovar canal de envio, retenção e limpeza dos arquivos externos;
 - definir provedor, região, orçamento, disponibilidade, MFA, backups cifrados, observabilidade e resposta a incidentes;

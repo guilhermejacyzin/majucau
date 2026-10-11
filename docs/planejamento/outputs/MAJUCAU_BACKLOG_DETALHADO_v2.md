@@ -161,10 +161,10 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 ### Conferência automática do resumo do backlog — 11/10/2026
 
 - `scripts/verify-backlog.ps1` foi criado para ler as tarefas uma por vez, conferir IDs repetidos, estado e percentual de cada uma e comparar contagens e média com a última recontagem antes da lista detalhada.
-- A conferência e seu teste de rejeição de resumo incorreto foram ligados à CI Windows e passaram localmente. Ainda falta a validação remota da CI deste commit.
-- BK-025 avança de 60% para 65% pela conferência automática do resumo; a confirmação administrativa das regras de proteção da branch ainda está pendente. Nenhuma tela ou regra financeira foi alterada.
-- O backlog mantém 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (15%), BK-007 (20%), BK-013 (15%), BK-025 (65%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
-- Pela média simples, `(6 × 100% + 0% + 15% + 20% + 15% + 65% + 80% + 55% + 20%) ÷ 127 = 6,9%`; restam 93,1%. É estimativa do rastreador, não prontidão para produção.
+- A conferência e seu teste de rejeição de resumo incorreto passaram localmente e na CI Windows. A CI completa do commit `a61dd71` terminou com sucesso no run `38124546590`, incluindo Windows e PostgreSQL/Linux.
+- BK-025 avança de 65% para 70% com a validação remota; a confirmação administrativa das regras de proteção da branch ainda está pendente. Nenhuma tela ou regra financeira foi alterada.
+- O backlog mantém 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (15%), BK-007 (20%), BK-013 (15%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples, `(6 × 100% + 0% + 15% + 20% + 15% + 70% + 80% + 55% + 20%) ÷ 127 = 6,9%`; restam 93,1%. É estimativa do rastreador, não prontidão para produção.
 
 ## Dependências e ordem prática
 
@@ -811,7 +811,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-025 — Preparar o repositório e as convenções do projeto
 
-**Situação:** Em andamento. **Evolução:** 65% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` explica o fluxo seguro de mudanças, commits e evidências. `scripts/verify-backlog.ps1` confere automaticamente contagens e percentuais da recontagem mais recente e foi ligado à CI. A lista de rulesets do GitHub está vazia, mas a integração recebeu HTTP 403 ao consultar a proteção clássica de `main`; falta confirmação de uma pessoa administradora sobre revisões e verificações exigidas). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 70% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` explica o fluxo seguro de mudanças, commits e evidências. `scripts/verify-backlog.ps1` e seu teste de divergência passaram na CI Windows, e a CI completa do commit `a61dd71` concluiu com sucesso. A lista de rulesets do GitHub está vazia, mas a integração recebeu HTTP 403 ao consultar a proteção clássica de `main`; falta confirmação de uma pessoa administradora sobre revisões e verificações exigidas). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Criar uma base reproduzível para a equipe.
 

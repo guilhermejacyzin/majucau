@@ -41,6 +41,12 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 		if got := r.URL.Query().Get("dataRecebimentoInicial"); got != "2026-09-01" {
 			t.Fatalf("dataRecebimentoInicial = %q", got)
 		}
+		if got := r.URL.Query().Get("situacoes[]"); got != "2" {
+			t.Fatalf("situacoes[] = %q, want 2", got)
+		}
+		if _, ok := r.URL.Query()["situacao"]; ok {
+			t.Fatal("accounts-receivable request used the wrong status parameter")
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"data":[{"id":123,"situacao":"pago"},{"id":124}],"pagination":{"page":2,"limit":2,"total":5}}`))
 	}))
@@ -50,7 +56,7 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	page, err := client.ListReceivables(context.Background(), ReceivablesFilter{Page: 2, Limit: 2, ReceivedDateFrom: "2026-09-01"})
+	page, err := client.ListReceivables(context.Background(), ReceivablesFilter{Page: 2, Limit: 2, ReceivedDateFrom: "2026-09-01", Status: "2"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,6 +103,12 @@ func TestListPayablesUsesPayableEndpointAndPaymentFilter(t *testing.T) {
 		if got := r.URL.Query().Get("dataPagamentoFinal"); got != "2026-09-30" {
 			t.Fatalf("dataPagamentoFinal = %q", got)
 		}
+		if got := r.URL.Query().Get("situacao"); got != "2" {
+			t.Fatalf("situacao = %q, want 2", got)
+		}
+		if _, ok := r.URL.Query()["situacoes[]"]; ok {
+			t.Fatal("accounts-payable request used the wrong status parameter")
+		}
 		_, _ = w.Write([]byte(`{"data":[{"id":77,"situacao":"pago"}],"pagination":{"page":1,"limit":1,"total":1}}`))
 	}))
 	defer server.Close()
@@ -104,7 +116,7 @@ func TestListPayablesUsesPayableEndpointAndPaymentFilter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	page, err := client.ListPayables(context.Background(), ReceivablesFilter{PaymentDateFrom: "2026-09-01", PaymentDateTo: "2026-09-30", Limit: 1})
+	page, err := client.ListPayables(context.Background(), ReceivablesFilter{PaymentDateFrom: "2026-09-01", PaymentDateTo: "2026-09-30", Limit: 1, Status: "2"})
 	if err != nil || len(page.Records) != 1 || !strings.Contains(string(page.Records[0]), `"id":77`) || !page.HasNextKnown {
 		t.Fatalf("unexpected payable page: %+v, err=%v", page, err)
 	}

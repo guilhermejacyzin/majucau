@@ -208,7 +208,11 @@ func (c *BlingAPIClient) listFinancialResource(ctx context.Context, resource str
 	setOptionalQuery(query, "dataRecebimentoFinal", filter.ReceivedDateTo)
 	setOptionalQuery(query, "dataPagamentoInicial", filter.PaymentDateFrom)
 	setOptionalQuery(query, "dataPagamentoFinal", filter.PaymentDateTo)
-	setOptionalQuery(query, "situacao", filter.Status)
+	statusQueryName := "situacao"
+	if resource == "contas/receber" {
+		statusQueryName = "situacoes[]"
+	}
+	setOptionalQuery(query, statusQueryName, filter.Status)
 	pathURL.RawQuery = query.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pathURL.String(), nil)

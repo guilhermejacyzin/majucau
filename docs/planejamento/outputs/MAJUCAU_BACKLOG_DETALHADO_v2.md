@@ -232,12 +232,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Como fazer:**
 
 1. Usar o resultado líquido mensal calculado pela DRE do Majucau; preservar a janela de janeiro até dois meses antes do mês selecionado (M−2).
-2. Calcular Já Investido = aportes de principal − resgates de principal; manter rendimentos separados. Reserva mínima aprovada: R$ 50.000. Se o fluxo indicar que ela será comprometida, exibir uma sugestão de reserva alternativa, sem trocar o mínimo automaticamente. A usuária definirá no documento atualizado como calcular essa sugestão; até lá, não inventar um valor.
-3. Seguir a planilha enviada: Caixa Projetado na Pior Semana = saldo na semana crítica + recebimentos previstos da Nuvemshop. A semana crítica é a de maior total de despesas. Na integração, verificar se o saldo de origem já contém esses recebimentos para evitar contagem duplicada.
-4. Calcular Máximo Aplicável = MAX(0; MIN(Caixa Projetado na Pior Semana − Reserva Mínima; Lucro Elegível)). O lucro elegível é o acumulado de janeiro até M−2 menos Já Investido, uma única vez.
-5. Calcular Valor Executável Hoje = MIN(Máximo Aplicável; saldo transferível do Itaú) e exibir o saldo projetado restante após o valor máximo. A tela é de consulta; não executa transferência ou aplicação.
+2. Calcular Já Investido = aportes de principal − resgates de principal; manter rendimentos separados. A reserva mínima aprovada continua em R$ 50.000. Proposta ainda não aprovada: `reserva_sugerida_hoje = R$ 50.000 + MAX(0; saldo de caixa projetado em D0 − menor saldo diário projetado em D0–D+60)`. A responsável ainda decidirá se essa saída será apenas um aviso ou se também recalculará o máximo; até lá, não usar a proposta como regra.
+3. Seguir D-003-A: `worst_week_cash` representa o menor saldo diário de fechamento entre D0 e D+60. Usar somente recebimentos de fonte oficial e com data válida. Não escolher a semana com mais despesas nem somar recebimentos da Nuvemshop separadamente sem decisão aprovada; a equivalência com os campos E15/E16 da planilha continua pendente.
+4. Calcular `available_profit = MAX(0; lucro líquido acumulado de janeiro até M−2 − Já Investido)`, `financial_limit = MAX(0; menor saldo diário D0–D+60 − reserva mínima)` e `Máximo Aplicável = MAX(0; MIN(available_profit; financial_limit))`, com moeda decimal exata.
+5. Calcular separadamente `Valor Executável Hoje = MIN(Máximo Aplicável; saldo transferível do Itaú)`, conforme R-08; exibir o saldo projetado restante. A tela é somente para consulta e não executa transferência ou aplicação.
 6. A calculadora recebe resultados financeiros consolidados, com período, fonte e qualidade. Bandeira, MDR, parcelamento e tarifas de cartão não entram nela.
-7. Localizar o contrato/campo de Caixa Semana Crítica e detalhes de fronteira temporal na documentação vigente; não escolher saldo inicial/final/mínimo por conveniência. É rastreabilidade técnica, sem reabrir regra definida.
+7. Mapear os campos técnicos que comprovam o saldo diário de fechamento, D0, D+60 e recebimentos elegíveis. Se uma entrada obrigatória não puder ser comprovada, mostrá-la como indisponível e pedir orientação; não inventar equivalência com a planilha nem substituir dado ausente por zero.
 
 **Critério de aceite:** Contrato financeiro fechado transcrito com referências e exemplos técnicos; nenhuma entrada ausente é inventada. A execução do cálculo depende das entradas comprovadas, sem exigir integração pronta para concluir a especificação.
 
@@ -245,7 +245,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
-**Fonte:** C_Conflitos!A4:L5; A_Matriz_Mestra!A32:S36; T02/T08; Consolidação 13/09/2026, §§6–9; Fechamento vigente 13/09/2026, §§1–2
+**Fonte:** `G0-DECISION-REGISTER.md` (D-003-A); `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`; C_Conflitos!A4:L5; A_Matriz_Mestra!A32:S36; T02/T08; Consolidação 13/09/2026, §§6–9; Fechamento vigente 13/09/2026, §§1–2
 
 **Regras e verificações vinculadas:** L-07,Q-10,Q-21,R-06,R-08,F-01
 

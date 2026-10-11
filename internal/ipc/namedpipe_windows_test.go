@@ -337,7 +337,11 @@ func TestNamedPipeAppliesProtectedDACLToCreatedPipe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build named pipe security descriptor: %v", err)
 	}
-	t.Cleanup(release)
+	t.Cleanup(func() {
+		if err := release(); err != nil {
+			t.Errorf("release named pipe security descriptor: %v", err)
+		}
+	})
 
 	pipe, err := createPipe(name, security)
 	if err != nil {

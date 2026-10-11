@@ -224,11 +224,11 @@ Tarefas condicionais de fontes externas do cacau permanecem previstas, sem bloqu
 
 Além do aceite específico: regras vigentes e capacidades aplicadas no backend, visual congelado preservado, métricas compartilhadas, ausência distinta de zero, origem e competência rastreáveis, períodos fechados preservados, verificações proporcionais executadas e evidência registrada. Os 167 cenários da planilha original são previstos e precisam ser atualizados nas regras superadas; não foram executados nesta etapa.
 
-### Recontagem após o mapa inicial de segurança — 11/10/2026
+### Recontagem após a revisão de recursos do Named Pipe — 11/10/2026
 
-- BK-024 avançou para 20% e `Em andamento`. O mapa inicial registrou ativos, caminhos dos dados, controles já encontrados, lacunas e verificações futuras em `docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md`. Foi uma revisão estática: nenhum teste foi executado, nenhuma tela ou regra financeira mudou, e segurança não foi declarada concluída.
-- O backlog tem 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas. Em andamento: BK-001 (0%), BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (20%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
-- Pela média simples, `(6 × 100% + 0% + 30% + 20% + 10% + 15% + 15% + 20% + 70% + 80% + 55% + 20%) ÷ 127 = 7,4%`; restam 92,6%. É uma estimativa do backlog, não uma medida de esforço nem prova de prontidão. O prazo global continua sem estimativa confiável.
+- BK-024 avançou para 25% e segue `Em andamento`. Além do mapa de riscos, foram corrigidos e verificados fechamentos de conexão pendente, evento, processo/token e memória local no Named Pipe Windows. A evidência está em `docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md`. A segurança geral não está concluída.
+- O backlog tem 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas. Em andamento: BK-001 (0%), BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (25%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples, `(6 × 100% + 0% + 30% + 20% + 10% + 15% + 15% + 25% + 70% + 80% + 55% + 20%) ÷ 127 = 7,4%`; restam 92,6%. É uma estimativa do backlog, não uma medida de esforço nem prova de prontidão. O prazo global continua sem estimativa confiável.
 
 ## 00 Descoberta e decisões
 
@@ -830,7 +830,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-024 — Planejar segurança e proteção dos dados
 
-**Situação:** Em andamento. **Evolução:** 20%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Segurança + Arquitetura.
+**Situação:** Em andamento. **Evolução:** 25%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Segurança + Arquitetura.
 
 **Objetivo:** Identificar falhas possíveis antes de expor o sistema.
 
@@ -845,7 +845,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Critério de aceite:** Riscos têm tratamento e testes associados; nenhuma credencial entra no Git ou no navegador. O desenho não usa a pasta de fontes como destino de exportação, logs ou backup.
 
-**Evidência atual:** [Mapa inicial de ativos, riscos, controles, lacunas e verificações](../../evidence/THREAT-MODEL-INITIAL-2026-10-11.md). Inclui revisões estáticas, correções de falhas ao fechar recursos e testes do instalador, backups, Named Pipe e restauração integrada no Windows/CI. O teste com dois PostgreSQL 18.6 descartáveis passou na [CI #403](https://github.com/guilhermejacyzin/majucau/actions/runs/38135368926). Ainda faltam auditar handles auxiliares do IPC, fechar o mapeamento de riscos, executar falhas controladas e validar instalação/atualização em VM limpa.
+**Evidência atual:** [Mapa inicial de ativos, riscos, controles, lacunas e verificações](../../evidence/THREAT-MODEL-INITIAL-2026-10-11.md). Inclui revisões estáticas, correções verificadas no instalador, backups, Named Pipe e restauração integrada no Windows/CI. O teste com dois PostgreSQL 18.6 descartáveis passou na [CI #403](https://github.com/guilhermejacyzin/majucau/actions/runs/38135368926). A CI [#405](https://github.com/guilhermejacyzin/majucau/actions/runs/38136416904) aprovou Windows e PostgreSQL para a revisão anterior do Named Pipe. Ainda faltam auditar recursos de outros módulos, fechar o mapa de riscos, executar falhas controladas e validar instalação/atualização em VM limpa.
 
 **Impacto:** Protege os dados financeiros e operacionais.
 

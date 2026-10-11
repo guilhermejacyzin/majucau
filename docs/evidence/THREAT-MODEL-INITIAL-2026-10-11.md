@@ -212,3 +212,32 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
 - `go test -count=1 ./internal/ipc` passou no Windows (`0.689s`), incluindo o ensaio de fechamento do servidor que interrompe uma conexão pendente. Os testes agora verificam também os erros de fechamento nos recursos que usam. Caches direcionados a `artifacts/cache` foram removidos pelo módulo seguro do projeto.
 - Permanecem para auditoria os handles do evento de conexão, processo/token e o descritor de segurança liberado por `LocalFree`, além dos resultados da rotina que cancela uma conexão sobreposta. Login, permissões por perfil e configuração de acesso remoto continuam pendentes conforme SEC-R01.
 - Não foram alteradas telas, regras financeiras, direitos da DACL nem dados persistidos.
+
+## Complemento — cancelamento seguro e liberação de recursos do Named Pipe
+
+**Data:** 11/10/2026
+
+**Tipo:** correção de encerramento de conexão e propagação de falhas de limpeza.
+
+- Ao cancelar uma conexão pendente, o worker agora pede o cancelamento e espera
+  o resultado final da operação sobreposta antes de liberar a estrutura e o
+  evento. `ERROR_NOT_FOUND` no cancelamento é aceito como ausência de operação
+  pendente; falhas reais são devolvidas junto com o erro original. A espera é
+  necessária porque `CancelIoEx` só solicita o cancelamento e não aguarda sua
+  conclusão; a Microsoft orienta consultar o resultado antes de reutilizar ou
+  liberar a estrutura `OVERLAPPED` ([CancelIoEx](https://learn.microsoft.com/en-us/windows/win32/fileio/cancelioex-func),
+  [GetOverlappedResult](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-getoverlappedresult)).
+- As falhas ao fechar o evento, os handles de processo/token e ao liberar o
+  descritor de segurança ou o texto do SID agora são verificadas e propagadas.
+  Uma conexão não autorizada continua sendo recusada sem derrubar o worker;
+  somente falha real ao limpar recurso é reportada como erro do serviço.
+- `LocalFree` é considerado bem-sucedido quando retorna nulo; retorno não nulo
+  agora gera erro registrado, conforme a [documentação da Microsoft](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-localfree).
+- `gofmt`, `git diff --check`, `go test -count=1 ./internal/ipc` (Windows,
+  aprovado em `0.666s`) e `go vet ./internal/ipc` passaram. O cache ficou em
+  `artifacts/cache` e foi removido pelo módulo seguro do projeto.
+- Continua pendente revisar handles e liberações em outros módulos (`DPAPI`,
+  `securetemp` e trava do instalador), testar falhas de limpeza de forma
+  controlada, terminar o mapa de riscos e instalar/atualizar em VM limpa.
+- Nenhuma tela, regra financeira, permissão, DACL ou dado persistido foi
+  alterado.

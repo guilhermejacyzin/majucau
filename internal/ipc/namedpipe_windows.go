@@ -108,7 +108,7 @@ func (s *NamedPipeServer) track(pipe *serverPipeHandle) bool {
 }
 func (s *NamedPipeServer) untrack(h syscall.Handle) { s.mu.Lock(); delete(s.handles, h); s.mu.Unlock() }
 
-func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) error {
+func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) (returnErr error) {
 	if handler == nil {
 		return errors.New("ipc handler is required")
 	}
@@ -116,7 +116,7 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) error {
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer func() { returnErr = errors.Join(returnErr, release()) }()
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -127,14 +127,22 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) error {
 		}
 		pipe := &serverPipeHandle{handle: h, file: os.NewFile(uintptr(h), "majucau-pipe-server")}
 		if pipe.file == nil {
-			return errors.Join(ErrTransportUnavailable, syscall.CloseHandle(h))
+			return errors.Join(ErrTransportUnavailable, cleanupFailure("close named pipe", syscall.CloseHandle(h)))
 		}
 		if !s.track(pipe) {
 			return errors.Join(context.Canceled, pipe.close())
 		}
 		err = connectPipe(ctx, h)
-		if err == nil {
-			if authErr := authorizePipeClient(h, s.config); authErr == nil {
+		var authErr error
+		if err != nil {
+			var cleanupErr *pipeResourceCleanupError
+			if errors.As(err, &cleanupErr) {
+				authErr = err
+			}
+		} else {
+			var authorized bool
+			authorized, authErr = authorizePipeClient(h, s.config)
+			if authorized && authErr == nil {
 				_ = s.handleConnection(ctx, pipe, handler)
 			}
 		}
@@ -142,8 +150,8 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) error {
 		// cannot attach to a stale, disconnected pipe instance.
 		closeErr := pipe.close()
 		s.untrack(h)
-		if closeErr != nil {
-			return closeErr
+		if closeErr != nil || authErr != nil {
+			return errors.Join(closeErr, authErr)
 		}
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -397,16 +405,18 @@ func createPipe(name string, descriptor uintptr) (syscall.Handle, error) {
 	r, _, err := createNamedPipeW.Call(uintptr(unsafe.Pointer(n)), pipeAccessDuplex|pipeOpenOverlapped, pipeWait, pipeUnlimitedInstances, MaxMessageSize+frameHeaderSize, MaxMessageSize+frameHeaderSize, 0, uintptr(unsafe.Pointer(&attrs)))
 	h := syscall.Handle(r)
 	if h == syscall.InvalidHandle {
-		return 0, err
+		return 0, win32CallFailure("CreateNamedPipeW", err)
 	}
 	return h, nil
 }
-func connectPipe(ctx context.Context, h syscall.Handle) error {
+func connectPipe(ctx context.Context, h syscall.Handle) (returnErr error) {
 	event, err := windows.CreateEvent(nil, 1, 0, nil)
 	if err != nil {
 		return err
 	}
-	defer windows.CloseHandle(event)
+	defer func() {
+		returnErr = errors.Join(returnErr, cleanupFailure("close named pipe connect event", windows.CloseHandle(event)))
+	}()
 	overlapped := windows.Overlapped{HEvent: event}
 	r, _, err := connectNamedPipe.Call(uintptr(h), uintptr(unsafe.Pointer(&overlapped)))
 	if r != 0 {
@@ -416,15 +426,24 @@ func connectPipe(ctx context.Context, h syscall.Handle) error {
 		return nil
 	}
 	if !errors.Is(err, windows.ERROR_IO_PENDING) {
-		return err
+		return win32CallFailure("connect named pipe", err)
 	}
 	pending := true
 	defer func() {
 		if pending {
-			_ = windows.CancelIoEx(windows.Handle(h), &overlapped)
-			_, _ = windows.WaitForSingleObject(event, windows.INFINITE)
+			cancelErr := windows.CancelIoEx(windows.Handle(h), &overlapped)
+			if errors.Is(cancelErr, windows.ERROR_NOT_FOUND) {
+				cancelErr = nil
+			}
 			var transferred uint32
-			_ = windows.GetOverlappedResult(windows.Handle(h), &overlapped, &transferred, false)
+			completionErr := windows.GetOverlappedResult(windows.Handle(h), &overlapped, &transferred, true)
+			if ctx.Err() != nil && errors.Is(completionErr, windows.ERROR_OPERATION_ABORTED) {
+				completionErr = nil
+			}
+			returnErr = errors.Join(returnErr,
+				cleanupFailure("cancel named pipe connection", cancelErr),
+				cleanupFailure("wait for named pipe connection completion", completionErr),
+			)
 		}
 	}()
 	for {
@@ -475,16 +494,53 @@ func disconnectPipe(h syscall.Handle) error {
 }
 
 func closePipeHandle(h syscall.Handle) error {
-	return errors.Join(disconnectPipe(h), syscall.CloseHandle(h))
+	return errors.Join(disconnectPipe(h), cleanupFailure("close named pipe handle", syscall.CloseHandle(h)))
 }
 
-func makePipeSecurity(c NamedPipeConfig) (uintptr, func(), error) {
+type pipeResourceCleanupError struct {
+	operation string
+	err       error
+}
+
+func (e *pipeResourceCleanupError) Error() string { return e.operation + ": " + e.err.Error() }
+func (e *pipeResourceCleanupError) Unwrap() error { return e.err }
+
+func cleanupFailure(operation string, err error) error {
+	if err == nil {
+		return nil
+	}
+	return &pipeResourceCleanupError{operation: operation, err: err}
+}
+
+func freeLocalMemory(operation string, address uintptr) error {
+	if address == 0 {
+		return nil
+	}
+	r, _, err := localFree.Call(address)
+	if r == 0 {
+		return nil
+	}
+	if err == nil || errors.Is(err, syscall.Errno(0)) {
+		err = errors.New("LocalFree returned the allocation handle")
+	}
+	return cleanupFailure(operation, err)
+}
+
+func win32CallFailure(operation string, err error) error {
+	if err == nil || errors.Is(err, syscall.Errno(0)) {
+		return fmt.Errorf("%s failed", operation)
+	}
+	return fmt.Errorf("%s: %w", operation, err)
+}
+
+func makePipeSecurity(c NamedPipeConfig) (uintptr, func() error, error) {
+	noRelease := func() error { return nil }
 	clientSIDs := append([]string(nil), c.AllowedClientSIDs...)
 	serviceSID := c.ServiceSID
 	if len(clientSIDs) == 0 {
 		sid, err := currentProcessSID()
 		if err != nil {
-			return 0, func() {}, err
+			return 0, noRelease, err
 		}
 		clientSIDs = []string{sid}
 		if serviceSID == "" {
@@ -506,12 +562,12 @@ func makePipeSecurity(c NamedPipeConfig) (uintptr, func(), error) {
 	}
 	for _, sid := range clientSIDs {
 		if err := addSID(sid, pipeClientAccessMask); err != nil {
-			return 0, func() {}, err
+			return 0, noRelease, err
 		}
 	}
 	if serviceSID != "" {
 		if err := addSID(serviceSID, pipeServerAccessMask); err != nil {
-			return 0, func() {}, err
+			return 0, noRelease, err
 		}
 	}
 	sddl := "D:P"
@@ -526,38 +582,45 @@ func makePipeSecurity(c NamedPipeConfig) (uintptr, func(), error) {
 	var size uint32
 	r, _, err := convertStringSecurityDescriptorW.Call(uintptr(unsafe.Pointer(p)), 1, uintptr(unsafe.Pointer(&descriptor)), uintptr(unsafe.Pointer(&size)))
 	if r == 0 {
-		return 0, func() {}, err
+		return 0, noRelease, win32CallFailure("ConvertStringSecurityDescriptorToSecurityDescriptorW", err)
 	}
-	return descriptor, func() { localFree.Call(descriptor) }, nil
+	return descriptor, func() error { return freeLocalMemory("free named pipe security descriptor", descriptor) }, nil
 }
 func validSID(s string) bool { return strings.HasPrefix(s, "S-") && len(s) < 184 }
-func authorizePipeClient(h syscall.Handle, c NamedPipeConfig) error {
+func authorizePipeClient(h syscall.Handle, c NamedPipeConfig) (authorized bool, returnErr error) {
 	var pid uint32
 	r, _, err := getNamedPipeClientProcessID.Call(uintptr(h), uintptr(unsafe.Pointer(&pid)))
 	if r == 0 {
-		return ErrUnauthorizedClient
+		return false, nil
 	}
 	// Development fallback: an empty allow-list uses the DACL's current-process
 	// SID and skips the second SID lookup. Production UI/service pairs must
 	// configure the UI SID explicitly for cross-process authorization.
 	if len(c.AllowedClientSIDs) == 0 {
-		return nil
+		return true, nil
 	}
 	p, _, err := openProcess.Call(processQueryLimitedInformation, 0, uintptr(pid))
 	if p == 0 {
-		_ = err
-		return ErrUnauthorizedClient
+		return false, nil
 	}
-	defer syscall.CloseHandle(syscall.Handle(p))
+	defer func() {
+		returnErr = errors.Join(returnErr, cleanupFailure("close named pipe client process handle", syscall.CloseHandle(syscall.Handle(p))))
+	}()
 	var token syscall.Handle
 	r, _, _ = openProcessToken.Call(p, tokenQuery, uintptr(unsafe.Pointer(&token)))
 	if r == 0 {
-		return ErrUnauthorizedClient
+		return false, nil
 	}
-	defer syscall.CloseHandle(token)
+	defer func() {
+		returnErr = errors.Join(returnErr, cleanupFailure("close named pipe client token", syscall.CloseHandle(token)))
+	}()
 	sid, err := tokenSID(token)
 	if err != nil {
-		return ErrUnauthorizedClient
+		var cleanupErr *pipeResourceCleanupError
+		if errors.As(err, &cleanupErr) {
+			return false, err
+		}
+		return false, nil
 	}
 	allowedSIDs := c.AllowedClientSIDs
 	if len(allowedSIDs) == 0 {
@@ -567,10 +630,10 @@ func authorizePipeClient(h syscall.Handle, c NamedPipeConfig) error {
 	}
 	for _, allowed := range allowedSIDs {
 		if sid == allowed {
-			return nil
+			return true, nil
 		}
 	}
-	return ErrUnauthorizedClient
+	return false, nil
 }
 
 type sidAndAttributes struct {
@@ -579,7 +642,7 @@ type sidAndAttributes struct {
 }
 type tokenUserData struct{ user sidAndAttributes }
 
-func tokenSID(token syscall.Handle) (string, error) {
+func tokenSID(token syscall.Handle) (sid string, returnErr error) {
 	var size uint32
 	getTokenInformation.Call(uintptr(token), tokenUser, 0, 0, uintptr(unsafe.Pointer(&size)))
 	if size == 0 {
@@ -588,24 +651,28 @@ func tokenSID(token syscall.Handle) (string, error) {
 	buf := make([]byte, size)
 	r, _, err := getTokenInformation.Call(uintptr(token), tokenUser, uintptr(unsafe.Pointer(&buf[0])), uintptr(size), uintptr(unsafe.Pointer(&size)))
 	if r == 0 {
-		return "", err
+		return "", win32CallFailure("read client token information", err)
 	}
 	tu := (*tokenUserData)(unsafe.Pointer(&buf[0]))
 	var text *uint16
 	r, _, err = convertSidToStringSidW.Call(uintptr(unsafe.Pointer(tu.user.sid)), uintptr(unsafe.Pointer(&text)))
 	if r == 0 {
-		return "", err
+		return "", win32CallFailure("convert client SID", err)
 	}
-	defer localFree.Call(uintptr(unsafe.Pointer(text)))
+	defer func() {
+		returnErr = errors.Join(returnErr, freeLocalMemory("free converted client SID", uintptr(unsafe.Pointer(text))))
+	}()
 	return syscall.UTF16ToString((*[1 << 15]uint16)(unsafe.Pointer(text))[:]), nil
 }
-func currentProcessSID() (string, error) {
+func currentProcessSID() (sid string, returnErr error) {
 	var token syscall.Handle
 	pseudoCurrentProcess := ^uintptr(0)
 	r, _, err := openProcessToken.Call(pseudoCurrentProcess, tokenQuery, uintptr(unsafe.Pointer(&token)))
 	if r == 0 {
-		return "", err
+		return "", win32CallFailure("open current process token", err)
 	}
-	defer syscall.CloseHandle(token)
+	defer func() {
+		returnErr = errors.Join(returnErr, cleanupFailure("close current process token", syscall.CloseHandle(token)))
+	}()
 	return tokenSID(token)
 }

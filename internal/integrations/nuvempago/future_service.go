@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/database/gen"
+	"majucau.local/financial-intelligence/internal/dbtx"
 	"majucau.local/financial-intelligence/internal/integrations/csvstream"
 )
 
@@ -41,7 +42,7 @@ func (s *FutureImportService) Close() {
 	}
 }
 
-func (s *FutureImportService) Import(ctx context.Context, folder string) (FutureImportResult, error) {
+func (s *FutureImportService) Import(ctx context.Context, folder string) (out FutureImportResult, returnErr error) {
 	if s == nil || s.pool == nil {
 		return FutureImportResult{}, ErrFutureDatabaseUnavailable
 	}
@@ -52,7 +53,12 @@ func (s *FutureImportService) Import(ctx context.Context, folder string) (Future
 	if err != nil {
 		return FutureImportResult{}, fmt.Errorf("begin future import: %w", err)
 	}
-	defer tx.Rollback(context.Background())
+	defer func() {
+		if err := dbtx.Rollback(ctx, tx); err != nil {
+			out = FutureImportResult{}
+			returnErr = errors.Join(returnErr, err)
+		}
+	}()
 	queries := database.New(tx)
 	connection, err := queries.GetIntegrationConnectionByProvider(ctx, "NUVEM_PAGO")
 	if err != nil {

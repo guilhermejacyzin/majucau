@@ -3448,3 +3448,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Dependências:** BK-125
 
 **Fonte:** Requisito técnico para entregar e operar o produto.
+
+## Propagação de falha ao desfazer transações — 11/10/2026
+
+- Quatro fluxos passaram a usar o helper `internal/dbtx.Rollback`: importação CSV do Bling, importação CSV da Nuvem Pago, sincronização de contas do Bling e leitura do painel. O helper tenta o rollback por até cinco segundos mesmo que a operação tenha sido cancelada e mantém valores de rastreamento no contexto.
+- Transação já confirmada/encerrada continua sendo tratada normalmente. Uma falha real no rollback agora é acrescentada ao erro original, em vez de ser descartada; importações e sincronização não devolvem contadores normais quando a limpeza falha.
+- `go test -count=1` e `go vet` passaram nos quatro pacotes; não houve teste PostgreSQL real nesta execução. Evidência: `docs/evidence/TRANSACTION-ROLLBACK-ERRORS-2026-10-11.md`.
+- BK-024 permanece em 35%: essa mudança fecha uma lacuna de propagação de erro, mas não substitui validação ponta a ponta nem os ensaios operacionais pendentes. O backlog permanece em 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,3% concluído e 91,7% restante.
+- Nenhuma tela, regra financeira ou fórmula foi alterada. A planilha enviada continua sendo a referência da estrutura da calculadora; não adicionar separadamente recebimentos da Nuvemshop ao caixa da calculadora.

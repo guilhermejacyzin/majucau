@@ -422,3 +422,10 @@ BK-024 permanece em 30% e o projeto mantém a estimativa registrada de 7,5% conc
 - A documentação oficial da Microsoft explica que o modo padrão restringe a descriptografia à mesma conta, enquanto `CRYPTPROTECT_LOCAL_MACHINE` permite que qualquer usuário do mesmo computador descriptografe o conteúdo se conseguir obtê-lo. Fonte: [Microsoft Learn — CryptProtectData](https://learn.microsoft.com/pt-br/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata).
 - Foi solicitada à responsável a escolha do escopo. Até a resposta, o código e o schema permanecem sem alteração nesse ponto; não implementar o provisionamento final do cofre nem declarar SEC-R03 fechado.
 - A pergunta é técnica e não muda nenhuma tela, regra financeira ou dado persistido.
+
+## Propagação de falha no encerramento de transações — 11/10/2026
+
+- Os caminhos de importação CSV do Bling e Nuvem Pago, sincronização de contas do Bling e leitura do painel passaram a usar `internal/dbtx.Rollback`. O helper tenta o encerramento com prazo limitado mesmo após cancelamento da operação.
+- Uma transação já encerrada é tratada como resultado normal. Uma falha real ao desfazer passa a fazer parte do erro retornado; o chamador não recebe contadores como se a operação tivesse terminado normalmente.
+- `go test` e `go vet` passaram nos quatro pacotes afetados. A evidência e o limite de validação local estão em `TRANSACTION-ROLLBACK-ERRORS-2026-10-11.md`.
+- Isso melhora a observabilidade da limpeza de transações, mas não fecha BK-024: faltam falhas controladas adicionais, validação PostgreSQL ponta a ponta e ensaios em VM, rede e perfis.

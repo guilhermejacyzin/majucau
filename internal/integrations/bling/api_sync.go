@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/database/gen"
+	"majucau.local/financial-intelligence/internal/dbtx"
 	"majucau.local/financial-intelligence/internal/domain"
 )
 
@@ -62,7 +63,7 @@ func NewPayablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *Paya
 	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: 1000, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables}}
 }
 
-func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFilter) (APISyncResult, error) {
+func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFilter) (out APISyncResult, returnErr error) {
 	if s == nil || s.pool == nil {
 		return APISyncResult{}, ErrBlingAPISyncDatabaseUnavailable
 	}
@@ -77,9 +78,10 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 		return APISyncResult{}, fmt.Errorf("begin Bling API sync: %w", err)
 	}
 	defer func() {
-		rollbackCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
-		defer cancel()
-		_ = tx.Rollback(rollbackCtx)
+		if err := dbtx.Rollback(ctx, tx); err != nil {
+			out = APISyncResult{}
+			returnErr = errors.Join(returnErr, err)
+		}
 	}()
 	queries := database.New(tx)
 	connection, err := queries.GetIntegrationConnectionByProvider(ctx, string(domain.OriginBling))

@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/database/gen"
+	"majucau.local/financial-intelligence/internal/dbtx"
 	"majucau.local/financial-intelligence/internal/integrations/csvstream"
 )
 
@@ -46,7 +47,7 @@ func (s *ReceiptImportService) Close() {
 	}
 }
 
-func (s *ReceiptImportService) Import(ctx context.Context, folder string) (ReceiptImportResult, error) {
+func (s *ReceiptImportService) Import(ctx context.Context, folder string) (out ReceiptImportResult, returnErr error) {
 	if s == nil || s.pool == nil {
 		return ReceiptImportResult{}, ErrReceiptDatabaseUnavailable
 	}
@@ -57,7 +58,12 @@ func (s *ReceiptImportService) Import(ctx context.Context, folder string) (Recei
 	if err != nil {
 		return ReceiptImportResult{}, fmt.Errorf("begin receipt import: %w", err)
 	}
-	defer tx.Rollback(context.Background())
+	defer func() {
+		if err := dbtx.Rollback(ctx, tx); err != nil {
+			out = ReceiptImportResult{}
+			returnErr = errors.Join(returnErr, err)
+		}
+	}()
 	queries := database.New(tx)
 	connection, err := queries.GetIntegrationConnectionByProvider(ctx, "BLING")
 	if err != nil {

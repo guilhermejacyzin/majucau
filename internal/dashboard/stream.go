@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/internal/application"
+	"majucau.local/financial-intelligence/internal/dbtx"
 	"majucau.local/financial-intelligence/internal/domain"
 )
 
@@ -45,7 +46,7 @@ func NewReader(pool *pgxpool.Pool) *Reader {
 // WriteDashboardSnapshot emits the same dashboard data as a JSON document but
 // reads and writes detail rows one at a time. The read-only repeatable-read
 // transaction keeps summary metrics and both tables on the same database view.
-func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) error {
+func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (returnErr error) {
 	if r == nil || r.db == nil {
 		return ErrDatabaseUnavailable
 	}
@@ -63,7 +64,11 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) erro
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(context.Background()) }()
+	defer func() {
+		if err := dbtx.Rollback(ctx, tx); err != nil {
+			returnErr = errors.Join(returnErr, err)
+		}
+	}()
 
 	snapshot, err := readStreamSummary(ctx, tx, now)
 	if err != nil {

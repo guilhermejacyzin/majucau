@@ -54,6 +54,11 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Os números 3,9% e 4,2% respondem perguntas diferentes: 3,9% é a proporção de tarefas totalmente concluídas; 4,2% inclui o avanço parcial registrado nas tarefas em andamento.
 - Prazo global continua sem estimativa confiável: BK-001 aguarda materiais/decisão da responsável, outros módulos dependem de fontes e aprovações, e a revisão técnica das 127 tarefas ainda não terminou.
 
+### Revalidação do GitHub — 11/10/2026
+
+- BK-002 foi revalidada em modo de leitura. `main` continua em `39f8630`; a branch `codex/majucau-artifact-consolidation` está em `1d90a0a`, 206 commits à frente e nenhum atrás; há cinco PRs abertos e nenhuma issue aberta. Evidência: `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-11.md`.
+- Os números de 178 commits à frente e ponta `b94bb3a` continuam registrados como a fotografia anterior de 10/10, não como estado atual.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -146,9 +151,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
-**Fonte:** docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-10.md e endpoints de leitura da API do GitHub.
+**Fonte:** `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-10.md` (fotografia histórica); `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-11.md` (estado atual); endpoints de leitura da API do GitHub.
 
-**Evidência:** O estado foi verificado em 10/10/2026: main está em 39f8630; a branch de trabalho publicada codex/majucau-artifact-consolidation está em b94bb3a, 178 commits à frente de main; há cinco PRs abertos e nenhuma issue. A observação antiga de repositório vazio é histórica. A responsável confirmou em 10/10/2026 que não há outro clone, servidor ou ambiente de trabalho fora deste checkout; o código é controlado somente pelo Git/GitHub. Nenhuma branch foi mesclada e nenhum teste foi executado.
+**Evidência:** Na revalidação de 11/10/2026, `main` está em `39f8630` e a branch de trabalho publicada está em `1d90a0a`, 206 commits à frente e nenhum atrás; há cinco PRs abertos e nenhuma issue. A observação antiga de repositório vazio e a contagem anterior de 178 commits são históricas. A responsável confirmou em 10/10/2026 que não há outro clone, servidor ou ambiente de trabalho fora deste checkout; o código é controlado somente pelo Git/GitHub. Nenhuma branch foi mesclada e nenhum teste foi executado.
 
 ### BK-003 — Auditar cada tela e seus cálculos ilustrativos
 

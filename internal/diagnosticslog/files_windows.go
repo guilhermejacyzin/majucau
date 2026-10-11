@@ -77,7 +77,11 @@ func requirePlainDirectory(path string) error {
 	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return fmt.Errorf("path is not a regular directory")
 	}
-	attributes, err := windows.GetFileAttributes(path)
+	pathPtr, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return err
+	}
+	attributes, err := windows.GetFileAttributes(pathPtr)
 	if err != nil {
 		return err
 	}
@@ -98,7 +102,11 @@ func requirePlainFileOrMissing(path string) error {
 	if !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
 		return fmt.Errorf("path is not a regular file")
 	}
-	attributes, err := windows.GetFileAttributes(path)
+	pathPtr, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return err
+	}
+	attributes, err := windows.GetFileAttributes(pathPtr)
 	if err != nil {
 		return err
 	}
@@ -133,10 +141,7 @@ func validatePrivateACL(path string, directory bool) error {
 			return fmt.Errorf("unexpected diagnostic access entry")
 		}
 		sid := (*windows.SID)(unsafe.Pointer(&ace.SidStart))
-		sidText, err := sid.String()
-		if err != nil {
-			return err
-		}
+		sidText := sid.String()
 		if seen, ok := allowed[sidText]; !ok || seen || ace.Mask != windows.ACCESS_MASK(0x001F01FF) {
 			return fmt.Errorf("diagnostic path has an unexpected access entry")
 		}

@@ -85,3 +85,10 @@ limpa.
 - A CI [38182492594](https://github.com/guilhermejacyzin/majucau/actions/runs/38182492594) concluiu com sucesso nos quatro jobs: `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`. O Windows executou testes, análise estática, build do aplicativo/worker/instalador, geração de SBOM e limpeza/consolidação de saídas; PostgreSQL executou as verificações de integração e backup/restore descartável.
 - A CI não mede pico de memória sob carga real nem comprova ACL/limpeza em VM limpa. Também não homologa o cursor oficial do Bling. `DATA-04` permanece `PARTIAL`; a aprovação da CI não muda esse status.
 - Nenhuma tela, regra financeira ou comportamento do produto foi alterado nesta revalidação. O relatório unsigned gerado pela CI está identificado no registro local de limpeza, pois a conexão disponível não oferece exclusão de artefatos remotos.
+
+## Revalidação da leitura de movimentações de caixa — 11/10/2026
+
+- No commit `1926856b8cf6f09b406f0d1901194c655c721988`, `ListCashMovements` lê uma página de `GET /caixas` por chamada, com limite local de 100 registros e filtros de página/período. O leitor usa o limite compartilhado de 4 MiB e o decoder JSON do adapter; `GetCashMovement` também usa a leitura de detalhe limitada. Cada objeto permanece como JSON bruto, sem classificar seu significado financeiro.
+- A ausência de marcador de continuação permanece desconhecida: página curta não encerra a leitura. A rota ainda não está ligada à persistência; não há estimativa de CAPEX a partir desses dados.
+- Os testes focais do adapter e `go vet` passaram localmente; a CI [38184670780](https://github.com/guilhermejacyzin/majucau/actions/runs/38184670780) passou nos jobs Windows e PostgreSQL. Isso valida os limites e contratos sintéticos, não mede pico de memória com dados reais nem homologa a paginação da conta.
+- A inspeção da documentação da conta do Bling continua pendente por bloqueio de navegação no Chrome. Para terminar a homologação, é necessário confirmar os campos reais da resposta e a forma oficial de avançar de página. Nenhuma tela ou regra financeira foi alterada.

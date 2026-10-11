@@ -69,3 +69,11 @@ Por isso, `SEC-02` e BK-013 continuam parciais; nenhum perfil foi provisionado
 e nenhuma tela foi alterada. A CI [38113352327](https://github.com/guilhermejacyzin/majucau/actions/runs/38113352327)
 aplicou as migrations e passou nos jobs PostgreSQL e Windows. A autorização
 por comando no worker continua pendente.
+
+## Matriz das capacidades aprovadas — 2026-10-11
+
+A matriz consolidada de permissões da versão 1 está em
+[`APPROVED-ACCESS-MATRIX-V1-2026-10-11.md`](APPROVED-ACCESS-MATRIX-V1-2026-10-11.md).
+Ela mantém as capacidades já aprovadas, registra o limite da conta compartilhada
+e destaca que cancelar uma sincronização por Diretores ainda precisa de resposta.
+Nenhuma permissão ou tela foi alterada.

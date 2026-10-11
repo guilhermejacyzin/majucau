@@ -17,3 +17,9 @@ Esta revalidação foi apenas documental. Nenhuma branch foi mesclada, nenhuma t
 - A consulta de regras do repositório (`/repos/guilhermejacyzin/majucau/rulesets`) retornou uma lista vazia. Não há rulesets configurados que apareçam nessa consulta.
 - A consulta de proteção clássica da branch padrão (`/branches/main/protection`) retornou HTTP 403: `Resource not accessible by integration`. Essa conexão não tem a permissão administrativa necessária para confirmar se `main` exige revisão ou verificações antes de aceitar mudanças.
 - O erro 403 não significa que a branch esteja desprotegida. Nenhuma configuração foi alterada. Para fechar essa verificação, uma pessoa administradora precisa conferir **GitHub → repositório Majucau → Settings → Branches**.
+
+### Confirmação pública do estado da `main` — 11/10/2026
+
+- A API pública de metadados da branch (`GET /repos/guilhermejacyzin/majucau/branches/main`) retornou `protected: false` para `main`, no commit `39f8630390936717b2500c8b7ce923dc138cca72`. Portanto, a branch principal está sem proteção ativa neste momento; a consulta antiga com HTTP 403 não permitia concluir isso, mas esta consulta pública permite.
+- A CI local contém os jobs `verify-windows` e `verify-postgres`; isso identifica verificações disponíveis, mas não as torna obrigatórias no GitHub. A integração continua sem permissão para configurar proteção.
+- Nenhuma regra de branch foi alterada. Para concluir BK-025, uma pessoa administradora precisa configurar proteção da `main` com revisão e verificações apropriadas em **GitHub → repositório Majucau → Settings → Branches**. Como essa configuração pode bloquear pushes/merges diretos, ela não foi aplicada automaticamente.

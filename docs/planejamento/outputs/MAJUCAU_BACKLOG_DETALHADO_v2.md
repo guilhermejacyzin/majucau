@@ -843,7 +843,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-025 — Preparar o repositório e as convenções do projeto
 
-**Situação:** Em andamento. **Evolução:** 70% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` explica o fluxo seguro de mudanças, commits e evidências. `scripts/verify-backlog.ps1` e seu teste de divergência passaram na CI Windows, e a CI completa do commit `a61dd71` concluiu com sucesso. A lista de rulesets do GitHub está vazia, mas a integração recebeu HTTP 403 ao consultar a proteção clássica de `main`; falta confirmação de uma pessoa administradora sobre revisões e verificações exigidas). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 70% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` explica o fluxo seguro de mudanças, commits e evidências. `scripts/verify-backlog.ps1` e seu teste de divergência passaram na CI Windows, e a CI completa do commit `a61dd71` concluiu com sucesso. A consulta pública à API do GitHub confirmou `protected: false` para `main`; os jobs de CI existentes são `verify-windows` e `verify-postgres`, mas ainda não são exigidos pela branch. Falta uma pessoa administradora configurar as proteções e verificações obrigatórias). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Criar uma base reproduzível para a equipe.
 
@@ -863,7 +863,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Fonte:** GitHub vazio; BK arquitetura
 
-**Evidência da auditoria de 2026-10-11:** `README.md`, `.gitignore`, `AGENTS.md`, `.github/workflows/ci.yml` e `CONTRIBUTING.md`. `git ls-files` não encontrou caches, artefatos gerados, arquivos de ambiente ou chaves nos caminhos pesquisados. A configuração de revisão/permissões do GitHub não é comprovada pelos arquivos locais e permanece pendente de verificação no repositório remoto.
+**Evidência da auditoria de 2026-10-11:** `README.md`, `.gitignore`, `AGENTS.md`, `.github/workflows/ci.yml`, `CONTRIBUTING.md` e `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-11.md`. `git ls-files` não encontrou caches, artefatos gerados, arquivos de ambiente ou chaves nos caminhos pesquisados. A API pública confirmou que `main` está sem proteção; configurar a proteção e os status checks obrigatórios ainda depende de uma pessoa administradora.
 
 ### BK-026 — Preparar o ambiente de desenvolvimento local
 

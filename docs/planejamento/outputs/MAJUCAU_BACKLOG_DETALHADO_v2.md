@@ -18,7 +18,7 @@ As regras funcionais existentes permanecem fechadas. A decisão posterior aprovo
 
 ## Evolução
 
-127 tarefas, 3 levantamentos concluídos com evidência, 2,4% por quantidade. Desenvolvimento do produto: **0%**. Fechamento de regra não equivale a código entregue ou homologação executada.
+**Registro histórico de 13/09/2026 — não representa o progresso atual:** naquele levantamento, havia 127 tarefas, 3 levantamentos concluídos com evidência, 2,4% por quantidade e 0% de desenvolvimento do produto. O andamento atual exige auditoria tarefa a tarefa; não apresentar estes números históricos como estado de hoje.
 
 Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. Peso inicial 1 mede quantidade. Evolução geral = soma(peso × conclusão) / soma(pesos). O denominador inclui tarefas condicionais ainda previstas; quando o escopo for efetivamente alterado, registrar a versão e revisar pesos/denominador. Não existe atualização automática pelo GitHub.
 

@@ -42,3 +42,17 @@ func openSafeLogFile(path string) (*os.File, error) {
 	}
 	return file, nil
 }
+
+func inspectExistingLogFile(path string) (os.FileInfo, error) {
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, errors.New("inspect diagnostic log file")
+	}
+	if !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+		return nil, fmt.Errorf("diagnostic log target is not a regular file")
+	}
+	return info, nil
+}

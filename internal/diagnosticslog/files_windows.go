@@ -68,6 +68,20 @@ func openSafeLogFile(path string) (*os.File, error) {
 	return file, nil
 }
 
+func inspectExistingLogFile(path string) (os.FileInfo, error) {
+	if err := requirePlainFileOrMissing(path); err != nil {
+		return nil, fmt.Errorf("diagnostic log target is unsafe")
+	}
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("inspect diagnostic log file")
+	}
+	return info, nil
+}
+
 func requirePlainDirectory(path string) error {
 	info, err := os.Lstat(path)
 	if err != nil {

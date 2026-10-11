@@ -20,6 +20,7 @@ const (
 var (
 	ErrRecordTooLarge      = errors.New("diagnostic log record exceeds its size limit")
 	ErrInvalidRotationCaps = errors.New("diagnostic log rotation limits are invalid")
+	ErrExistingLogTooLarge = errors.New("existing diagnostic log exceeds its size limit")
 )
 
 // Logger writes JSON diagnostics to one bounded, rotating local file set.
@@ -72,10 +73,26 @@ func newRotatingWriter(dir string, maxBytes int64, maxFiles int) (*rotatingWrite
 		return nil, ErrInvalidRotationCaps
 	}
 	w := &rotatingWriter{dir: dir, maxBytes: maxBytes, maxFiles: maxFiles}
+	if err := w.validateExistingFiles(); err != nil {
+		return nil, err
+	}
 	if err := w.openCurrent(); err != nil {
 		return nil, err
 	}
 	return w, nil
+}
+
+func (w *rotatingWriter) validateExistingFiles() error {
+	for index := 0; index < w.maxFiles; index++ {
+		info, err := inspectExistingLogFile(w.path(index))
+		if err != nil {
+			return fmt.Errorf("inspect existing diagnostic log: %w", err)
+		}
+		if info != nil && info.Size() > w.maxBytes {
+			return ErrExistingLogTooLarge
+		}
+	}
+	return nil
 }
 
 func (w *rotatingWriter) Write(p []byte) (int, error) {

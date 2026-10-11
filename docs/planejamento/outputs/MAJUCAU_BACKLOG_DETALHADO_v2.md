@@ -1119,6 +1119,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Complemento de mascaramento (2026-10-11):** `RedactJSON` agora reconhece nomes comuns de credenciais independentemente de camelCase, hífen ou separadores, com teste e `go vet` aprovados. O helper não tem chamador de produção; o logger mantém a estratégia de campos permitidos, sem payload livre. Isso não fecha o critério de BK-031, que permanece em 80%. Ver `docs/evidence/LOG-REDACTION-KEY-NORMALIZATION-2026-10-11.md`.
 
+**Limite dos logs preexistentes (2026-10-11):** a inicialização agora recusa, sem apagar nem alterar, um arquivo ativo ou rotacionado acima do limite configurado. A suíte focada e `go vet` do pacote `internal/diagnosticslog` passaram localmente no Windows; o cache Go foi limpo. BK-031 permanece em 80% porque ainda faltam a validação da ACL em VM/instalação e a aprovação da referência técnica ao lado dos erros visíveis na tela. Evidência: `docs/evidence/LOG-ROTATION-STARTUP-BOUND-2026-10-11.md`.
+
 **Critério de aceite:** Erro visível ao usuário possui referência que encontra diagnóstico técnico sem tokens ou extratos completos.
 
 **Impacto:** Facilita suporte e investigação.

@@ -55,17 +55,19 @@ type serverPipeHandle struct {
 	handle syscall.Handle
 	file   *os.File
 	once   sync.Once
+	err    error
 }
 
-func (p *serverPipeHandle) close() {
+func (p *serverPipeHandle) close() error {
 	p.once.Do(func() {
-		disconnectPipe(p.handle)
+		p.err = disconnectPipe(p.handle)
 		if p.file != nil {
-			_ = p.file.Close()
+			p.err = errors.Join(p.err, p.file.Close())
 			return
 		}
-		_ = syscall.CloseHandle(p.handle)
+		p.err = errors.Join(p.err, syscall.CloseHandle(p.handle))
 	})
+	return p.err
 }
 
 func NewNamedPipeServer(config NamedPipeConfig) (*NamedPipeServer, error) {
@@ -89,10 +91,11 @@ func (s *NamedPipeServer) Close() error {
 	}
 	s.handles = make(map[syscall.Handle]*serverPipeHandle)
 	s.mu.Unlock()
+	var closeErr error
 	for _, pipe := range handles {
-		go pipe.close()
+		closeErr = errors.Join(closeErr, pipe.close())
 	}
-	return nil
+	return closeErr
 }
 func (s *NamedPipeServer) track(pipe *serverPipeHandle) bool {
 	s.mu.Lock()
@@ -124,12 +127,10 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) error {
 		}
 		pipe := &serverPipeHandle{handle: h, file: os.NewFile(uintptr(h), "majucau-pipe-server")}
 		if pipe.file == nil {
-			syscall.CloseHandle(h)
-			return ErrTransportUnavailable
+			return errors.Join(ErrTransportUnavailable, syscall.CloseHandle(h))
 		}
 		if !s.track(pipe) {
-			pipe.close()
-			return context.Canceled
+			return errors.Join(context.Canceled, pipe.close())
 		}
 		err = connectPipe(ctx, h)
 		if err == nil {
@@ -137,11 +138,13 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) error {
 				_ = s.handleConnection(ctx, pipe, handler)
 			}
 		}
-		// Finish disconnecting this instance before creating the next one. If
-		// the close runs asynchronously, CreateFile may briefly open the stale
-		// disconnected instance and observe EOF instead of reaching the worker.
-		pipe.close()
+		// Finish closing this instance before creating the next one so a client
+		// cannot attach to a stale, disconnected pipe instance.
+		closeErr := pipe.close()
 		s.untrack(h)
+		if closeErr != nil {
+			return closeErr
+		}
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
@@ -244,7 +247,7 @@ func (c *NamedPipeClient) Close() error {
 	defer c.mu.Unlock()
 	c.closed = true
 	if c.file != nil {
-		return c.file.Close()
+		return closePipeFile(c.file)
 	}
 	return nil
 }
@@ -288,11 +291,11 @@ func (c *NamedPipeClient) call(ctx context.Context, request Request, streamDst i
 		c.mu.Lock()
 		if c.closed {
 			c.mu.Unlock()
-			_ = f.Close()
+			closeErr := closePipeFile(f)
 			result <- struct {
 				response Response
 				err      error
-			}{err: ErrTransportUnavailable}
+			}{err: errors.Join(ErrTransportUnavailable, closeErr)}
 			return
 		}
 		c.file = f
@@ -303,10 +306,11 @@ func (c *NamedPipeClient) call(ctx context.Context, request Request, streamDst i
 		} else {
 			resp, err = callOverStreamChunks(callCtx, f, request, streamDst)
 		}
-		_ = f.Close()
+		closeErr := closePipeFile(f)
 		c.mu.Lock()
 		c.file = nil
 		c.mu.Unlock()
+		err = errors.Join(err, closeErr)
 		result <- struct {
 			response Response
 			err      error
@@ -316,8 +320,7 @@ func (c *NamedPipeClient) call(ctx context.Context, request Request, streamDst i
 	case out := <-result:
 		return out.response, out.err
 	case <-callCtx.Done():
-		_ = c.Close()
-		return Response{}, callCtx.Err()
+		return Response{}, errors.Join(callCtx.Err(), c.Close())
 	}
 }
 
@@ -452,8 +455,28 @@ func connectPipe(ctx context.Context, h syscall.Handle) error {
 		return nil
 	}
 }
-func disconnectPipe(h syscall.Handle)  { disconnectNamedPipe.Call(uintptr(h)) }
-func closePipeHandle(h syscall.Handle) { disconnectPipe(h); syscall.CloseHandle(h) }
+func closePipeFile(file *os.File) error {
+	if err := file.Close(); errors.Is(err, os.ErrClosed) {
+		return nil
+	} else {
+		return err
+	}
+}
+
+func disconnectPipe(h syscall.Handle) error {
+	r, _, err := disconnectNamedPipe.Call(uintptr(h))
+	if r != 0 || errors.Is(err, windows.ERROR_PIPE_NOT_CONNECTED) {
+		return nil
+	}
+	if err == nil || errors.Is(err, syscall.Errno(0)) {
+		return errors.New("disconnect named pipe failed")
+	}
+	return fmt.Errorf("disconnect named pipe: %w", err)
+}
+
+func closePipeHandle(h syscall.Handle) error {
+	return errors.Join(disconnectPipe(h), syscall.CloseHandle(h))
+}
 
 func makePipeSecurity(c NamedPipeConfig) (uintptr, func(), error) {
 	clientSIDs := append([]string(nil), c.AllowedClientSIDs...)

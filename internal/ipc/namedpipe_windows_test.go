@@ -18,13 +18,27 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+func closeNamedPipeServerForTest(t *testing.T, server *NamedPipeServer) {
+	t.Helper()
+	if err := server.Close(); err != nil {
+		t.Errorf("close named pipe server: %v", err)
+	}
+}
+
+func closeNamedPipeClientForTest(t *testing.T, client *NamedPipeClient) {
+	t.Helper()
+	if err := client.Close(); err != nil {
+		t.Errorf("close named pipe client: %v", err)
+	}
+}
+
 func TestNamedPipeHealthRoundTripAndCancellation(t *testing.T) {
 	name := fmt.Sprintf(`\\.\pipe\Majucau-test-%d`, time.Now().UnixNano())
 	server, err := NewNamedPipeServer(NamedPipeConfig{Name: name, IOTimeout: time.Second})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer server.Close()
+	defer closeNamedPipeServerForTest(t, server)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	serveErr := make(chan error, 1)
@@ -43,7 +57,7 @@ func TestNamedPipeHealthRoundTripAndCancellation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
+	defer closeNamedPipeClientForTest(t, client)
 	callCtx, callCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer callCancel()
 	response, err := client.Call(callCtx, Request{Version: ProtocolVersion, RequestID: "test", Method: MethodHealth})
@@ -67,7 +81,9 @@ func TestNamedPipeHealthRoundTripAndCancellation(t *testing.T) {
 		t.Fatalf("second response: %#v", response)
 	}
 	cancel()
-	_ = server.Close()
+	if err := server.Close(); err != nil {
+		t.Fatalf("close named pipe server: %v", err)
+	}
 }
 
 func TestNamedPipeConcurrentClientHealthRequests(t *testing.T) {
@@ -76,7 +92,7 @@ func TestNamedPipeConcurrentClientHealthRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer server.Close()
+	defer closeNamedPipeServerForTest(t, server)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	serveErr := make(chan error, 1)
@@ -103,7 +119,7 @@ func TestNamedPipeConcurrentClientHealthRequests(t *testing.T) {
 				results <- callResult{requestID: requestID, err: err}
 				return
 			}
-			defer client.Close()
+			defer closeNamedPipeClientForTest(t, client)
 			response, err := client.Call(ctx, Request{Version: ProtocolVersion, RequestID: requestID, Method: MethodHealth})
 			results <- callResult{requestID: requestID, response: response, err: err}
 		}(requestID)
@@ -134,7 +150,9 @@ func TestNamedPipeConcurrentClientHealthRequests(t *testing.T) {
 	}
 
 	cancel()
-	_ = server.Close()
+	if err := server.Close(); err != nil {
+		t.Fatalf("close named pipe server: %v", err)
+	}
 	select {
 	case err := <-serveErr:
 		if !errors.Is(err, context.Canceled) {
@@ -151,7 +169,7 @@ func TestNamedPipeServerCloseUnblocksConnect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer server.Close()
+	defer closeNamedPipeServerForTest(t, server)
 	serveErr := make(chan error, 1)
 	go func() {
 		serveErr <- server.Serve(context.Background(), HandlerFunc(func(context.Context, Request) (Response, error) {
@@ -191,7 +209,7 @@ func TestNamedPipeClientCancellationReachesHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer server.Close()
+	defer closeNamedPipeServerForTest(t, server)
 	serverCtx, cancelServer := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelServer()
 	started := make(chan struct{})
@@ -210,7 +228,7 @@ func TestNamedPipeClientCancellationReachesHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
+	defer closeNamedPipeClientForTest(t, client)
 	callCtx, cancelCall := context.WithCancel(context.Background())
 	defer cancelCall()
 	callErr := make(chan error, 1)
@@ -238,7 +256,9 @@ func TestNamedPipeClientCancellationReachesHandler(t *testing.T) {
 		t.Fatal("client call did not finish after cancellation")
 	}
 	cancelServer()
-	_ = server.Close()
+	if err := server.Close(); err != nil {
+		t.Fatalf("close named pipe server: %v", err)
+	}
 	select {
 	case err := <-serveErr:
 		if !errors.Is(err, context.Canceled) {
@@ -269,7 +289,7 @@ func TestNamedPipeStreamsMultipleFrames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer server.Close()
+	defer closeNamedPipeServerForTest(t, server)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	serveErr := make(chan error, 1)
@@ -280,7 +300,7 @@ func TestNamedPipeStreamsMultipleFrames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
+	defer closeNamedPipeClientForTest(t, client)
 	var got bytes.Buffer
 	response, err := client.CallStream(ctx, Request{Version: ProtocolVersion, RequestID: "stream", Method: MethodDashboardSnapshot}, &got)
 	if err != nil {
@@ -293,7 +313,9 @@ func TestNamedPipeStreamsMultipleFrames(t *testing.T) {
 		t.Fatalf("streamed %d bytes; want %d matching bytes", got.Len(), len(payload))
 	}
 	cancel()
-	_ = server.Close()
+	if err := server.Close(); err != nil {
+		t.Fatalf("close named pipe server: %v", err)
+	}
 	select {
 	case err := <-serveErr:
 		if !errors.Is(err, context.Canceled) {
@@ -321,7 +343,11 @@ func TestNamedPipeAppliesProtectedDACLToCreatedPipe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create named pipe with explicit DACL: %v", err)
 	}
-	t.Cleanup(func() { closePipeHandle(pipe) })
+	t.Cleanup(func() {
+		if err := closePipeHandle(pipe); err != nil {
+			t.Errorf("close test pipe handle: %v", err)
+		}
+	})
 
 	descriptor, err := windows.GetSecurityInfo(windows.Handle(pipe), windows.SE_KERNEL_OBJECT, windows.DACL_SECURITY_INFORMATION)
 	if err != nil {
@@ -388,7 +414,7 @@ func TestNamedPipeRejectsUnauthorizedSID(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	defer server.Close()
+	defer closeNamedPipeServerForTest(t, server)
 	defer cancel()
 	go func() {
 		_ = server.Serve(ctx, HandlerFunc(func(context.Context, Request) (Response, error) { return Response{}, nil }))
@@ -397,7 +423,7 @@ func TestNamedPipeRejectsUnauthorizedSID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
+	defer closeNamedPipeClientForTest(t, client)
 	_, err = client.Call(context.Background(), Request{Version: ProtocolVersion, RequestID: "unauthorized", Method: MethodHealth})
 	if err == nil || strings.Contains(strings.ToLower(err.Error()), "success") {
 		t.Fatalf("unauthorized call unexpectedly succeeded: %v", err)
@@ -419,7 +445,7 @@ func TestNamedPipeAcceptsAuthorizedClientProcess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer server.Close()
+	defer closeNamedPipeServerForTest(t, server)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	serveErr := make(chan error, 1)
@@ -446,7 +472,9 @@ func TestNamedPipeAcceptsAuthorizedClientProcess(t *testing.T) {
 	}
 
 	cancel()
-	_ = server.Close()
+	if err := server.Close(); err != nil {
+		t.Fatalf("close named pipe server: %v", err)
+	}
 	select {
 	case err := <-serveErr:
 		if !errors.Is(err, context.Canceled) {
@@ -466,7 +494,7 @@ func TestNamedPipeAuthorizedClientProcessHelper(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer client.Close()
+	defer closeNamedPipeClientForTest(t, client)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	response, err := client.Call(ctx, Request{Version: ProtocolVersion, RequestID: "authorized-child", Method: MethodHealth})

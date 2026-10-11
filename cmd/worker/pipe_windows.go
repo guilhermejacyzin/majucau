@@ -4,13 +4,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strings"
 
 	"majucau.local/financial-intelligence/internal/ipc"
 )
 
-func runWorkerPipe(ctx context.Context, handler ipc.Handler) error {
+func runWorkerPipe(ctx context.Context, handler ipc.Handler) (returnErr error) {
 	cfg := ipc.DefaultNamedPipeConfig()
 	// The installer supplies the exact desktop user's SID. Omitting it is
 	// allowed only for development and binds the ACL to the service process SID;
@@ -25,6 +26,6 @@ func runWorkerPipe(ctx context.Context, handler ipc.Handler) error {
 	if err != nil {
 		return err
 	}
-	defer server.Close()
+	defer func() { returnErr = errors.Join(returnErr, server.Close()) }()
 	return server.Serve(ctx, handler)
 }

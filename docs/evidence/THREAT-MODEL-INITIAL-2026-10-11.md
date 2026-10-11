@@ -199,3 +199,16 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
 - Os testes locais de backup passaram com `go test -count=1 ./internal/backup` (`1.541s`). A integração local foi pulada porque as duas URLs de banco descartável não estavam configuradas neste computador. Depois, a CI [#403](https://github.com/guilhermejacyzin/majucau/actions/runs/38135368926) executou a restauração real com dois PostgreSQL 18.6 descartáveis; o passo de backup/restauração e todos os jobs do workflow terminaram com sucesso para o commit `0e4a400`.
 - Os caches do Go ficaram temporariamente em `artifacts/cache` e foram removidos pelo módulo `scripts/SafeCleanup.psm1`. `gofmt`, `git diff --check` e a busca por fechamentos ignorados no código de produção de `internal/backup` também foram concluídos.
 - O formato dos backups, a compatibilidade V1, o conteúdo dos dados, as telas e as regras financeiras não foram alterados. Ainda faltam falhas de fechamento injetadas e ensaios de instalação/atualização em VM limpa; o teste integrado de backup/restore passou na CI, mas não substitui esses ensaios.
+
+## Complemento — fechamento do canal Named Pipe no Windows
+
+**Data:** 11/10/2026
+
+**Tipo:** correção de encerramento do canal local e teste automatizado no Windows.
+
+- O servidor agora espera fechar as instâncias abertas e devolve erros de desconexão/fechamento ao chamador; `runWorkerPipe` combina esse erro ao resultado do worker.
+- O fechamento do cliente combina erros de fechamento ao resultado da chamada ou ao cancelamento. Fechar novamente um arquivo já encerrado continua sendo tratado como operação idempotente.
+- O código 233 (`ERROR_PIPE_NOT_CONNECTED`) é tratado como encerramento normal porque significa que já não há cliente conectado; os demais erros de desconexão e fechamento são propagados. Referências: [Microsoft Learn — DisconnectNamedPipe](https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-disconnectnamedpipe) e [Microsoft Learn — códigos de erro do sistema](https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-).
+- `go test -count=1 ./internal/ipc` passou no Windows (`0.689s`), incluindo o ensaio de fechamento do servidor que interrompe uma conexão pendente. Os testes agora verificam também os erros de fechamento nos recursos que usam. Caches direcionados a `artifacts/cache` foram removidos pelo módulo seguro do projeto.
+- Permanecem para auditoria os handles do evento de conexão, processo/token e o descritor de segurança liberado por `LocalFree`, além dos resultados da rotina que cancela uma conexão sobreposta. Login, permissões por perfil e configuração de acesso remoto continuam pendentes conforme SEC-R01.
+- Não foram alteradas telas, regras financeiras, direitos da DACL nem dados persistidos.

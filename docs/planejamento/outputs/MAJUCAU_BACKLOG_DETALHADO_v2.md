@@ -3537,5 +3537,6 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Após comparar o código com o guia oficial do Bling, foi identificado que faltava o cabeçalho `enable-jwt: 1` na obtenção/renovação OAuth e nas chamadas autenticadas.
 - O adaptador agora envia esse cabeçalho em todas essas chamadas. Testes verificam authorization code, refresh token, consultas de lista e detalhe, e token Bearer de 3.000 caracteres. O host `https://api.bling.com.br/Api/v3` já era o endereço atual.
 - Os testes focalizados de Bling e `securetemp`, `go vet`, o verificador do backlog e `git diff --check` passaram localmente no Windows; caches temporários foram removidos.
+- A CI completa `38172628938` passou em `verify-backlog`, `verify-postgres` e `verify-windows`. O instalador unsigned de teste produzido pela CI não pôde ser apagado pela conexão disponível; está registrado em `artifacts/retained/cleanup-register.md` e expira em 12/10/2026.
 - BK-041 avança de 60% para 65% (35% restante); a conta real, o contrato de paginação e o cursor incremental continuam pendentes. O backlog segue com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,4% concluído, 91,6% restante. A previsão total ainda não é confiável.
 - Nenhuma tela aprovada ou regra financeira foi alterada. Evidência: `docs/evidence/BLING-JWT-MIGRATION-2026-10-11.md`.

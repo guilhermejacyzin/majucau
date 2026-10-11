@@ -17,6 +17,8 @@ A documentação [Descontinuação de URL da API](https://developer.bling.com.br
 
 Em Windows, passaram `go test -count=1 ./internal/integrations/bling ./internal/securetemp`, `go vet ./internal/integrations/bling ./internal/securetemp`, `scripts/verify-backlog.ps1` e `git diff --check`. Os testes verificam o cabeçalho na troca do authorization code, na renovação, nas consultas autenticadas e a transmissão de JWT de 3.000 caracteres. Os caches Go foram isolados em `artifacts/cache/` e removidos após a validação.
 
+A CI completa `38172628938` passou em `verify-backlog`, `verify-postgres` e `verify-windows`, incluindo testes Go, `go vet`, varreduras, frontend, instalador e consolidação de outputs. O instalador unsigned gerado (`11714099858`, SHA-256 `92a705e002ec3629a16f8d8f0ab90a9078dea910db7aa9ad3df332ef48066aa4`) não pôde ser apagado pela conexão disponível; está no registro `artifacts/retained/cleanup-register.md` e expira em 12/10/2026.
+
 Esta evidência de código/testes não equivale a homologação com a conta real. OAuth real, permissões, escopos e contrato de paginação ainda precisam ser confirmados antes de declarar a integração Bling pronta.
 
 Nenhuma tela aprovada ou regra de negócio/financeira foi alterada.

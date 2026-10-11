@@ -51,3 +51,11 @@ O leitor do painel transmite linhas tipadas de recebíveis, recebimentos, contas
 - Para ligar o relatório ao card, falta um arquivo ou print que mostre, para os mesmos lançamentos, categoria CAPEX, data de pagamento/liquidação e valor; para o acumulado, também é necessário definir o início do histórico confiável conforme a decisão já registrada.
 - Nenhum nome de fornecedor ou detalhe de lançamento foi copiado para o repositório. Os PDFs originais não foram alterados.
 - A tela continua mantendo `—` sem dado CAPEX confiável; nenhuma tela ou regra de negócio foi alterada.
+
+## Revalidação visual local — 2026-10-10
+
+- As páginas do relatório mensal e do relatório geral foram renderizadas e conferidas visualmente. Ambos mostram vencimento, liquidação, situação e valor pago por conta; nenhum deles mostra categoria CAPEX por lançamento.
+- O print enviado pela responsável mostra CAPEX agrupado por categoria, mas não deixa visível o intervalo de datas selecionado. Assim, não identifica com segurança o CAPEX pago no mês nem o acumulado.
+- Os relatórios e o print ainda não permitem ligar cada lançamento à categoria CAPEX, à data de pagamento e ao valor. A fonte do CAPEX continua insuficiente para preencher os cards sem estimativa.
+- Os cards permanecem com `—` até haver relatório que associe categoria, data de liquidação e valor no período. O CAPEX acumulado também depende do início do histórico confiável.
+- Nenhum dado de fornecedor ou valor por lançamento foi copiado. Os PDFs originais não foram alterados; as prévias temporárias foram apagadas após a conferência.

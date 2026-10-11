@@ -76,27 +76,35 @@ func WriteDiagnosticBundle(outputPath string, result Result, metadata Diagnostic
 	temporaryPath := temporary.Name()
 	removeTemporary := true
 	temporaryClosed := false
+	archive := zip.NewWriter(temporary)
+	archiveClosed := false
 	defer func() {
+		if !archiveClosed {
+			if err := archive.Close(); err != nil {
+				returnErr = errors.Join(returnErr, fmt.Errorf("%w: close incomplete bundle", ErrDiagnosticOutput))
+			}
+		}
 		if !temporaryClosed {
-			returnErr = errors.Join(returnErr, temporary.Close())
+			if err := temporary.Close(); err != nil {
+				returnErr = errors.Join(returnErr, fmt.Errorf("%w: close temporary bundle", ErrDiagnosticOutput))
+			}
 		}
 		if removeTemporary {
 			returnErr = errors.Join(returnErr, securetemp.RemoveFile(temporaryPath))
 		}
 	}()
 
-	archive := zip.NewWriter(temporary)
 	if err := writeZipEntry(archive, "diagnostic.json", document); err != nil {
-		_ = archive.Close()
 		return DiagnosticBundleInfo{}, fmt.Errorf("%w: write contract", ErrDiagnosticOutput)
 	}
 	if err := writeZipEntry(archive, "README.txt", readme); err != nil {
-		_ = archive.Close()
 		return DiagnosticBundleInfo{}, fmt.Errorf("%w: write instructions", ErrDiagnosticOutput)
 	}
 	if err := archive.Close(); err != nil {
+		archiveClosed = true
 		return DiagnosticBundleInfo{}, fmt.Errorf("%w: close bundle", ErrDiagnosticOutput)
 	}
+	archiveClosed = true
 	if err := temporary.Sync(); err != nil {
 		return DiagnosticBundleInfo{}, fmt.Errorf("%w: flush bundle", ErrDiagnosticOutput)
 	}

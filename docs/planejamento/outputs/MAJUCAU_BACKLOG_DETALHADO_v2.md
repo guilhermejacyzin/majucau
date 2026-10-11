@@ -47,6 +47,13 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - A planilha mostra 5 de 127 tarefas concluídas (3,9% por contagem simples). É estado do rastreador, não percentual real de conclusão do produto. Prazo global ainda indisponível.
 - Esta auditoria não alterou código, telas aprovadas ou regras de negócio.
 
+### Recontagem do andamento — 11/10/2026
+
+- O backlog vigente contém 127 tarefas: 5 concluídas, 4 em andamento e 118 não iniciadas. As tarefas em andamento são BK-001 (0%), BK-006 (10%), BK-007 (10%) e BK-013 (15%).
+- Como o plano atribui peso 1 a cada tarefa, a média dos percentuais registrados é `(5 × 100% + 0% + 10% + 10% + 15%) ÷ 127 = 4,2%`; portanto, o indicador do backlog tem 95,8% restante. Os percentuais de tarefas em andamento são estimativas, não medição de esforço nem prova de protótipo pronto.
+- Os números 3,9% e 4,2% respondem perguntas diferentes: 3,9% é a proporção de tarefas totalmente concluídas; 4,2% inclui o avanço parcial registrado nas tarefas em andamento.
+- Prazo global continua sem estimativa confiável: BK-001 aguarda materiais/decisão da responsável, outros módulos dependem de fontes e aprovações, e a revisão técnica das 127 tarefas ainda não terminou.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.

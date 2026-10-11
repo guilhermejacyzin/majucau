@@ -3493,3 +3493,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O checker agora usa a lista de commits do evento como fallback, e a CI testa esse caso. A simulação local de `BEFORE_SHA` ausente, a seleção dos commits `9d77684`/`caa6ef4` e `git diff --check` passaram; a CI da correção ainda aguarda novo push.
 - Evidência: `docs/evidence/CI-FORCE-PUSH-COMMIT-CHECK-2026-10-11.md`. Percentual geral não muda: 8,3% concluído, 91,7% restante (127 tarefas; 7 concluídas, 11 em andamento, 109 não iniciadas).
 - Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado.
+
+### CI completa após a correção do verificador — 11/10/2026
+
+- A CI [38165490225](https://github.com/guilhermejacyzin/majucau/actions/runs/38165490225), no commit `43cbe22`, concluiu com sucesso. Os quatro jobs (`detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`) passaram; o primeiro confirmou o fallback para o `BEFORE_SHA` ausente e executou o teste de regressão.
+- A correção de governança está validada em CI. BK-025 permanece em 70%: ainda falta confirmação administrativa de proteção da branch e dos checks obrigatórios. O total do backlog não muda: 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas; 8,3% concluído e 91,7% restante.
+- O CI não substitui VM Windows limpa, pacote assinado, homologação de fontes reais nem os gates financeiros e funcionais. Nenhuma tela ou regra de negócio foi alterada.

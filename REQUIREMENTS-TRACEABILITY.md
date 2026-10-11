@@ -163,7 +163,7 @@ Windows limpa.
 
 ## Recuperação da validação de mensagens em force-push — 2026-10-11
 
-A reescrita autorizada das mensagens causou a CI `38165227608` a falhar antes dos testes de produto: o checkout limpo não continha o `BEFORE_SHA` antigo, e o script de governança não recorria à lista de commits do evento. `scripts/verify-commit-messages.py` agora usa o payload do push quando o SHA anterior não está disponível. Um teste de regressão foi adicionado e ligado à CI. O teste e a simulação local com SHA anterior ausente passaram; a aprovação do próprio pipeline ainda depende do próximo push. Evidência: `docs/evidence/CI-FORCE-PUSH-COMMIT-CHECK-2026-10-11.md`.
+A reescrita autorizada das mensagens causou a CI `38165227608` a falhar antes dos testes de produto: o checkout limpo não continha o `BEFORE_SHA` antigo, e o script de governança não recorria à lista de commits do evento. `scripts/verify-commit-messages.py` agora usa o payload do push quando o SHA anterior não está disponível. Um teste de regressão foi adicionado e ligado à CI. A CI [38165490225](https://github.com/guilhermejacyzin/majucau/actions/runs/38165490225), no commit `43cbe22`, confirmou o fallback e passou nos quatro jobs: `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`. Evidência: `docs/evidence/CI-FORCE-PUSH-COMMIT-CHECK-2026-10-11.md`.
 
 ## Verificação local completa — 2026-10-11
 

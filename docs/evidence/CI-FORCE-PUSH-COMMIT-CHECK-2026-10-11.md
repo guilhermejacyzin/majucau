@@ -13,6 +13,8 @@ Após a reescrita autorizada das duas mensagens de commit, o GitHub Actions exec
 
 ## Validação e limite
 
-`python scripts/test_verify_commit_messages.py`, a simulação local do checker com um `BEFORE_SHA` inexistente e o payload de commits, e `git diff --check` passaram. A correção ainda precisa passar na CI acionada pelo próximo push. O run `38165227608` não executou testes de produto, pois parou no job de detecção/validação de mensagens.
+`python scripts/test_verify_commit_messages.py`, a simulação local do checker com um `BEFORE_SHA` inexistente e o payload de commits, e `git diff --check` passaram. Após o push de `43cbe22`, a CI [38165490225](https://github.com/guilhermejacyzin/majucau/actions/runs/38165490225) concluiu com sucesso em 11/10/2026: `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres` passaram. A verificação de commits aceitou o fallback e executou o teste de regressão; Windows e PostgreSQL também rodaram suas verificações completas.
+
+O sucesso da CI confirma o commit `43cbe22c6f80fdca52c0ca4fa37628c6b4344447`; não comprova produção, instalação em VM limpa, assinatura do pacote ou homologação de regras e fontes reais.
 
 Nenhuma tela, regra financeira, fórmula ou código de produto foi alterado.

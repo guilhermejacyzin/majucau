@@ -178,21 +178,21 @@ func Create(ctx context.Context, options Options) (result Result, retErr error) 
 	if err != nil || config.Host == "" || config.Database == "" || config.User == "" {
 		return Result{}, ErrInvalidOptions
 	}
-	temporary, err := securetemp.NewDir(options.OutputDir, ".backup-")
+	temporary, err := securetemp.NewWorkspace(options.OutputDir, ".backup-")
 	if err != nil {
 		return Result{}, fmt.Errorf("create temporary backup directory: %w", err)
 	}
 	defer func() {
-		if cleanupErr := securetemp.RemoveAll(temporary); cleanupErr != nil {
+		if cleanupErr := temporary.RemoveAll(); cleanupErr != nil {
 			retErr = errors.Join(retErr, cleanupErr)
 		}
 	}()
-	_, env, err := connectionEnvironment(config, temporary)
+	_, env, err := connectionEnvironment(config, temporary.Path())
 	if err != nil {
 		return Result{}, err
 	}
-	dumpPath := filepath.Join(temporary, "database.dump")
-	globalsPath := filepath.Join(temporary, "globals.sql")
+	dumpPath := filepath.Join(temporary.Path(), "database.dump")
+	globalsPath := filepath.Join(temporary.Path(), "globals.sql")
 	common := []string{"--host", config.Host, "--port", fmt.Sprintf("%d", config.Port), "--username", config.User, "--dbname", config.Database}
 	if err := run(ctx, pgDump, append([]string{"--format=custom", "--no-owner", "--no-privileges", "--file", dumpPath}, common...), env); err != nil {
 		return Result{}, fmt.Errorf("pg_dump failed: %w", err)
@@ -220,7 +220,7 @@ func Create(ctx context.Context, options Options) (result Result, retErr error) 
 	defer clearBytes(key)
 	stamp := now().UTC().Format("20060102T150405.000000000Z")
 	finalPath := filepath.Join(options.OutputDir, "majucau-backup-"+stamp+".mjbk")
-	temporaryPackage := filepath.Join(temporary, "backup-package.tmp")
+	temporaryPackage := filepath.Join(temporary.Path(), "backup-package.tmp")
 	manifest, err = writeV2Package(ctx, temporaryPackage, manifest, key, dumpPath, globalsPath)
 	if err != nil {
 		return Result{}, err
@@ -261,16 +261,16 @@ func Restore(ctx context.Context, options RestoreOptions) (result RestoreResult,
 	if err := os.MkdirAll(options.BackupDir, 0700); err != nil {
 		return RestoreResult{}, fmt.Errorf("create restore parent directory: %w", err)
 	}
-	temporary, err := securetemp.NewDir(options.BackupDir, ".restore-")
+	temporary, err := securetemp.NewWorkspace(options.BackupDir, ".restore-")
 	if err != nil {
 		return RestoreResult{Status: "RECOVERY_REQUIRED"}, fmt.Errorf("create private restore workspace: %w", err)
 	}
 	defer func() {
-		if cleanupErr := securetemp.RemoveAll(temporary); cleanupErr != nil {
+		if cleanupErr := temporary.RemoveAll(); cleanupErr != nil {
 			retErr = errors.Join(retErr, cleanupErr)
 		}
 	}()
-	stagedPackage := filepath.Join(temporary, "input.mjbk")
+	stagedPackage := filepath.Join(temporary.Path(), "input.mjbk")
 	if err := copyEncryptedPackage(ctx, options.PackagePath, stagedPackage); err != nil {
 		return RestoreResult{Status: "RECOVERY_REQUIRED"}, fmt.Errorf("stage encrypted backup: %w", err)
 	}
@@ -278,7 +278,7 @@ func Restore(ctx context.Context, options RestoreOptions) (result RestoreResult,
 	if !verification.Valid {
 		return RestoreResult{Manifest: verification.Manifest, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("%w: %s", ErrInvalidPackage, strings.Join(verification.Issues, "; "))
 	}
-	databasePath, globalsPath, err := decryptPackageToFiles(ctx, stagedPackage, options.Passphrase, verification.Manifest, temporary)
+	databasePath, globalsPath, err := decryptPackageToFiles(ctx, stagedPackage, options.Passphrase, verification.Manifest, temporary.Path())
 	if err != nil {
 		return RestoreResult{Manifest: verification.Manifest, Status: "RECOVERY_REQUIRED"}, fmt.Errorf("authenticate and stage restore payloads: %w", err)
 	}
@@ -298,7 +298,7 @@ func Restore(ctx context.Context, options RestoreOptions) (result RestoreResult,
 	if err != nil || config.Host == "" || config.Database == "" || config.User == "" {
 		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, ErrInvalidOptions
 	}
-	_, env, err := connectionEnvironment(config, temporary)
+	_, env, err := connectionEnvironment(config, temporary.Path())
 	if err != nil {
 		return RestoreResult{Manifest: verification.Manifest, PreRestoreBackup: preRestore, Status: "RECOVERY_REQUIRED"}, err
 	}

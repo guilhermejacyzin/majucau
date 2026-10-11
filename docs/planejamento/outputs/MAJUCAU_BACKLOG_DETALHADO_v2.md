@@ -300,8 +300,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Revisão estática das chamadas de limpeza recursiva — 11/10/2026
 
 - A leitura de código encontrou uma única chamada de produção a `os.RemoveAll`, encapsulada em `securetemp.RemoveAll`. Os chamadores auditados passam caminhos criados por `securetemp.NewDir`; no Windows, essa criação usa DACL protegida, e nas outras plataformas restringe o acesso ao proprietário.
-- A função de limpeza exige caminho absoluto e recusa a raiz, mas não comprova por si só que o caminho veio de `NewDir`. Essa limitação ficou registrada na evidência `docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md`; os chamadores atuais não recebem caminhos diretamente da pessoa usuária.
-- BK-024 permanece em 30% porque a revisão estática não substitui falhas reais de disco/ACL nem validação em VM. O projeto permanece em 7,5% concluído e 92,5% restante. Nenhum teste, build, tela ou regra financeira foi alterado nesta revisão.
+- Backup, restauração e prévia CSV migraram para `securetemp.Workspace`; o método de limpeza não recebe caminho externo. As funções antigas baseadas em `string` permanecem obsoletas para compatibilidade; a evidência registra que elas não têm chamadas de produção encontradas.
+- `go build ./internal/securetemp ./internal/backup ./internal/integrations/csvstream` compilou os pacotes alterados em Windows; o cache dedicado foi removido com `SafeCleanup`. Nenhum teste foi executado.
+- BK-024 permanece em 30% até validação dos fluxos e controles em ambiente isolado. O projeto permanece em 7,5% concluído e 92,5% restante. Telas e regras financeiras não foram alteradas.
 
 ## 00 Descoberta e decisões
 

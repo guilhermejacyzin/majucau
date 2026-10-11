@@ -43,7 +43,7 @@ var (
 // never written to disk. Its hash table and filename sort runs remain on disk,
 // keeping heap use bounded as row and file counts grow.
 type DiskSourceIDSet struct {
-	dir          string
+	workspace    *securetemp.Workspace
 	indexPath    string
 	index        *os.File
 	location     *os.File
@@ -60,11 +60,11 @@ func NewDiskSourceIDSet(ctx context.Context) (*DiskSourceIDSet, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	dir, err := securetemp.NewDir(os.TempDir(), "majucau-csv-preview-")
+	workspace, err := securetemp.NewWorkspace(os.TempDir(), "majucau-csv-preview-")
 	if err != nil {
 		return nil, fmt.Errorf("create private CSV preview workspace: %w", err)
 	}
-	set := &DiskSourceIDSet{dir: dir, capacity: diskInitialCapacity}
+	set := &DiskSourceIDSet{workspace: workspace, capacity: diskInitialCapacity}
 	cleanup := func(cause error) (*DiskSourceIDSet, error) {
 		return nil, errors.Join(cause, set.Close())
 	}
@@ -94,7 +94,7 @@ func NewDiskSourceIDSet(ctx context.Context) (*DiskSourceIDSet, error) {
 	if err != nil {
 		return cleanup(fmt.Errorf("initialize CSV preview encryption: %w", err))
 	}
-	set.index, err = os.CreateTemp(dir, "seen-*.idx")
+	set.index, err = os.CreateTemp(workspace.Path(), "seen-*.idx")
 	if err != nil {
 		return cleanup(fmt.Errorf("create temporary CSV source index: %w", err))
 	}
@@ -102,7 +102,7 @@ func NewDiskSourceIDSet(ctx context.Context) (*DiskSourceIDSet, error) {
 	if err := set.index.Truncate(int64(set.capacity) * diskSlotSize); err != nil {
 		return cleanup(fmt.Errorf("initialize temporary CSV source index: %w", err))
 	}
-	set.location, err = os.CreateTemp(dir, "locations-*.enc")
+	set.location, err = os.CreateTemp(workspace.Path(), "locations-*.enc")
 	if err != nil {
 		return cleanup(fmt.Errorf("create temporary CSV location store: %w", err))
 	}
@@ -175,7 +175,7 @@ func (s *DiskSourceIDSet) CheckAndAdd(ctx context.Context, sourceID, file string
 }
 
 func (s *DiskSourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (result CSVFileQueue, returnErr error) {
-	if s == nil || s.closed || s.dir == "" || s.gcm == nil {
+	if s == nil || s.closed || s.workspace == nil || s.gcm == nil {
 		return nil, errors.New("temporary CSV source index is not initialized")
 	}
 	if err := ctx.Err(); err != nil {
@@ -251,7 +251,7 @@ func (s *DiskSourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (res
 }
 
 func (s *DiskSourceIDSet) Close() error {
-	if s == nil || (s.closed && s.dir == "") {
+	if s == nil || (s.closed && s.workspace == nil) {
 		return nil
 	}
 	s.closed = true
@@ -275,11 +275,11 @@ func (s *DiskSourceIDSet) Close() error {
 		s.noncePrefix[index] = 0
 	}
 	s.gcm = nil
-	if s.dir != "" {
-		if err := securetemp.RemoveAll(s.dir); err != nil {
+	if s.workspace != nil {
+		if err := s.workspace.RemoveAll(); err != nil {
 			closeErrors = append(closeErrors, fmt.Errorf("remove temporary CSV preview workspace: %w", err))
 		} else {
-			s.dir = ""
+			s.workspace = nil
 		}
 	}
 	return errors.Join(closeErrors...)
@@ -371,7 +371,7 @@ func (s *DiskSourceIDSet) sealName(plaintext, aad []byte) ([]byte, error) {
 }
 
 func (s *DiskSourceIDSet) writeNameRun(names []string) (string, error) {
-	file, err := os.CreateTemp(s.dir, "names-*.run")
+	file, err := os.CreateTemp(s.workspace.Path(), "names-*.run")
 	if err != nil {
 		return "", fmt.Errorf("create temporary ordered filename run: %w", err)
 	}
@@ -449,7 +449,7 @@ func (s *DiskSourceIDSet) grow() error {
 		return errors.New("temporary CSV source index capacity exceeded")
 	}
 	newCapacity := s.capacity * 2
-	newIndex, err := os.CreateTemp(s.dir, "seen-resize-*.idx")
+	newIndex, err := os.CreateTemp(s.workspace.Path(), "seen-resize-*.idx")
 	if err != nil {
 		return fmt.Errorf("grow temporary CSV source index: %w", err)
 	}
@@ -640,7 +640,7 @@ func (s *DiskSourceIDSet) mergeNameRuns(ctx context.Context, paths []string) (me
 	if len(paths) == 0 || len(paths) > diskMergeFanIn {
 		return "", errors.New("invalid temporary CSV filename merge group")
 	}
-	output, err := os.CreateTemp(s.dir, "names-merged-*.run")
+	output, err := os.CreateTemp(s.workspace.Path(), "names-merged-*.run")
 	if err != nil {
 		return "", fmt.Errorf("create merged temporary CSV filename run: %w", err)
 	}

@@ -8,7 +8,9 @@
 
 O destino do produto será uma implantação hospedada e centralizada, com acesso autenticado pela camada de aplicação. PostgreSQL permanecerá em uma rede privada, acessível somente pelos serviços confiáveis do Majucau. O aplicativo cliente não receberá credenciais de banco nem fará conexões diretas ao PostgreSQL.
 
-As pessoas terão identidades individuais. O perfil de consulta começa com privilégio de leitura; permissões de gravação ou administração exigem decisões específicas. O serviço central será responsável por sincronização diária, idempotência, auditoria e persistência. A seleção do provedor, orçamento, região dos dados e produto de identidade ainda não foi aprovada.
+As pessoas terão identidades individuais. O perfil de consulta começa com privilégio de leitura; permissões de gravação ou administração exigem decisões específicas. O serviço central será responsável por sincronização diária, idempotência, auditoria e persistência. O provedor, orçamento e região dos dados ainda não foram escolhidos.
+
+Gisele escolheu login próprio do Majucau, informou `financeiro@majucau.com.br` para o perfil `ADMIN` e `contato@majucau.com.br` para os Diretores, e respondeu que os Diretores usariam uma conta compartilhada. Essa última escolha conflita com a exigência de identidades individuais desta ADR: todas as ações apareceriam no histórico como feitas pela mesma conta, sem identificar qual Diretor as executou. A escolha compartilhada fica pendente de confirmação informada dessa consequência; até lá, não provisionar uma conta compartilhada. MFA, sessão, recuperação e demais detalhes de identidade também permanecem pendentes.
 
 A prévia de CSV permanece local e sem dependência do banco. Antes de gravar um arquivo no repositório central, o serviço deverá validar novamente o conteúdo e aplicar as regras já aprovadas. O canal de envio, retenção do arquivo e experiência de importação ainda precisam de desenho e aceite.
 
@@ -34,7 +36,7 @@ As telas aprovadas permanecem como estão. Uma mudança de apresentação ou reg
 3. forma final do cliente: Wails conectado ao serviço ou aplicação em navegador;
 4. onde e como a sincronização diária roda, com alertas e recuperação de atraso;
 5. canal seguro para os CSVs do local externo, retenção e eliminação dos temporários;
-6. identidade, MFA, perfis, auditoria e prazo de retenção dos dados.
+6. confirmação informada sobre conta compartilhada dos Diretores versus a exigência aprovada de identidades individuais; MFA, sessão, recuperação e prazo de retenção dos dados.
 
 ## Referências de segurança
 

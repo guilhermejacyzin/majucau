@@ -8,7 +8,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - A implementação atual usa `majucau.exe`, worker local e PostgreSQL dedicado local; preservar esse modo até o gate de migração.
 - A direção-alvo aprovada é hospedagem privada centralizada conforme `ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md`.
 - No alvo centralizado, serviço Go autenticado acessa PostgreSQL privado; clientes não recebem credencial e não conectam ao banco diretamente.
-- Provedor, região, identidade, canal dos CSVs, modelo de acesso e segredos no host continuam pendentes; não os escolher por suposição.
+- Provedor e região da hospedagem, canal dos CSVs, MFA, segredos no host e demais detalhes operacionais continuam pendentes; não os escolher por suposição. Para identidade, Gisele escolheu login próprio do Majucau e informou `financeiro@majucau.com.br` para `ADMIN` e `contato@majucau.com.br` para os Diretores. A conta compartilhada dos Diretores selecionada conflita com as identidades individuais da ADR-002 e não pode ser provisionada até que Gisele confirme, após conhecer o efeito na auditoria, que aceita essa alteração.
 - Empacotamento NSIS nativo continua necessário para o cliente Wails; Docker ou runtime Node não serão exigidos na máquina do usuário.
 
 ## Gates

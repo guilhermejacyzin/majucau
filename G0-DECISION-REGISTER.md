@@ -297,3 +297,11 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Os perfis `ACCOUNTING` e `VIEWER` ficam fora da versão 1.
 - Esta decisão define os perfis e capacidades funcionais da versão 1. A implementação ainda precisa aplicar as permissões no worker e alinhar a criação/provisionamento de usuários; até isso ser validado, os cadastros atuais não comprovam que o acesso esteja protegido por perfil.
 - A decisão não altera telas aprovadas nem regras financeiras.
+
+## Identidade da hospedagem — opção compartilhada pendente de confirmação informada
+
+- **Recebido de:** Gisele, nesta conversa Codex, em 2026-10-11 (America/Sao_Paulo).
+- O login será próprio do Majucau. `financeiro@majucau.com.br` foi informado para o perfil `ADMIN`; `contato@majucau.com.br`, para os Diretores.
+- Gisele selecionou uma conta compartilhada para os Diretores. Isso conflita com a exigência aprovada de identidade individual na ADR-002. Com a conta compartilhada, o histórico registra ações sob `contato@majucau.com.br`, sem distinguir qual Diretor consultou, sincronizou ou exportou.
+- A conta compartilhada não será provisionada até Gisele confirmar que aceita essa limitação de auditoria ou escolher contas individuais. MFA, sessão, recuperação e provisionamento continuam pendentes.
+- Este registro não altera telas, capacidades já aprovadas nem regras financeiras.

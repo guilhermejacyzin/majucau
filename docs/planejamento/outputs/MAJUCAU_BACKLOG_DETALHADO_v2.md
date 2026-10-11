@@ -169,10 +169,10 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 ### Sugestão de reserva implementada isoladamente — 11/10/2026
 
 - `internal/financial.SuggestedReserve` implementa a fórmula aprovada D-003-C usando uma série validada de 61 saldos e aritmética decimal exata. A função é separada do máximo D-003-A.
-- Os testes locais validam o exemplo de R$ 80.000, provam que o máximo D-003-A permanece R$ 20.000 nessa série e rejeitam série incompleta, reserva negativa e estouro. `go test ./internal/financial -count=1`, `go vet ./internal/financial` e `git diff --check` passaram; a CI remota ainda está pendente.
-- BK-006 avança de 15% para 20%. A ligação ao fluxo consolidado, a DRE própria, o principal líquido já investido e a apresentação permanecem pendentes. Nenhuma tela ou regra financeira foi alterada.
-- O backlog continua com 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (20%), BK-007 (20%), BK-013 (15%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
-- Pela média simples, `(6 × 100% + 0% + 20% + 20% + 15% + 70% + 80% + 55% + 20%) ÷ 127 = 6,9%`; restam 93,1%. Não há prazo global confiável enquanto as fontes reais e validações operacionais continuam pendentes.
+- Os testes locais validam o exemplo de R$ 80.000, provam que o máximo D-003-A permanece R$ 20.000 nessa série e rejeitam série incompleta, reserva negativa e estouro. `go test ./internal/financial -count=1`, `go vet ./internal/financial` e `git diff --check` passaram. A CI completa `38125567483`, no commit `0c74b1e`, também passou em Windows e PostgreSQL/Linux.
+- BK-006 avança de 20% para 25% com a validação remota. A ligação ao fluxo consolidado, a DRE própria, o principal líquido já investido e a apresentação permanecem pendentes. Nenhuma tela ou regra financeira foi alterada.
+- O backlog continua com 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (25%), BK-007 (20%), BK-013 (15%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples, `(6 × 100% + 0% + 25% + 20% + 15% + 70% + 80% + 55% + 20%) ÷ 127 = 7,0%`; restam 93,0%. Não há prazo global confiável enquanto as fontes reais e validações operacionais continuam pendentes.
 
 ## Dependências e ordem prática
 
@@ -350,7 +350,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-006 — Especificar tecnicamente a regra fechada da calculadora
 
-**Situação:** Em andamento. **Evolução:** 20% (estimativa de planejamento; a estrutura da planilha enviada foi preservada e comparada, em leitura somente para consulta, com as regras aprovadas. A planilha atual pede valores da DRE do Bling, soma separadamente recebimentos previstos da Nuvemshop e deixa manual o lucro acumulado e o valor já investido; isso não substitui D-003-A, a DRE própria do Majucau ou o fluxo diário consolidado. D-003-A continua ativa. A sugestão D-003-C, somente para consulta, agora tem função isolada validada localmente, sem alterar o máximo. A entrada em fluxo para os 61 dias ainda não tem chamada de produção nem consulta aos saldos diários. Mapeamento das fontes reais, ligação da calculadora e exemplos reproduzíveis continuam pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
+**Situação:** Em andamento. **Evolução:** 25% (estimativa de planejamento; a estrutura da planilha enviada foi preservada e comparada, em leitura somente para consulta, com as regras aprovadas. A planilha atual pede valores da DRE do Bling, soma separadamente recebimentos previstos da Nuvemshop e deixa manual o lucro acumulado e o valor já investido; isso não substitui D-003-A, a DRE própria do Majucau ou o fluxo diário consolidado. D-003-A continua ativa. A sugestão D-003-C, somente para consulta, tem função isolada coberta por testes e CI, sem alterar o máximo. A entrada em fluxo para os 61 dias ainda não tem chamada de produção nem consulta aos saldos diários. Mapeamento das fontes reais, ligação da calculadora e exemplos reproduzíveis continuam pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
 
 **Objetivo:** Permitir um cálculo reproduzível e compreensível.
 

@@ -70,5 +70,5 @@ pessoais ou valores reais da empresa na evidência.
 
 - `BlingReceivablesPage` agora registra separadamente se o fim da paginação é conhecido. A sincronização só persiste e pode avançar quando `hasNext` ou `total` vem informado.
 - Sem essa informação, a rotina encerra o lote como `FAILED` com `BLING_API_PAGINATION_UNKNOWN` antes de gravar a página. O rollback do savepoint preserva os dados RAW e o cursor do último lote válido.
-- `go test ./internal/integrations/bling`, `go vet ./internal/integrations/bling` e `git diff --check` passaram neste Windows, usando `artifacts/cache/`. A integração PostgreSQL foi incluída no teste E2E, mas não foi executada localmente porque não há DSN de teste; a CI desta mudança ainda está pendente.
+- `go test ./internal/integrations/bling`, `go vet ./internal/integrations/bling` e `git diff --check` passaram neste Windows, usando `artifacts/cache/`. A integração PostgreSQL não foi executada localmente porque não há DSN de teste; a CI `38121237550` passou nos jobs Windows e PostgreSQL e executou o teste de rollback/cursor.
 - O contrato da API, os campos financeiros, a última página real e o cursor incremental continuam sem homologação. Nenhuma regra financeira ou tela foi alterada.

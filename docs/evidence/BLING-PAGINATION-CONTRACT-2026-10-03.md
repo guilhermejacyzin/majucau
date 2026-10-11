@@ -47,5 +47,5 @@
 
 - O cliente agora diferencia `hasNext=false` confirmado de ausência de evidência sobre a próxima página. `HasNextKnown` só fica verdadeiro quando a resposta fornece `hasNext` ou `total`.
 - Antes de persistir uma página, o sincronizador exige essa confirmação. Se ela faltar, o lote registra `BLING_API_PAGINATION_UNKNOWN`, desfaz a gravação e mantém o cursor anterior. Uma resposta sem metadados deixa de poder parecer uma sincronização completa.
-- Testes locais cobrem resposta sem `pagination` e resposta que traz somente página/limite. O teste PostgreSQL também verifica que páginas RAW válidas e cursor não mudam; a execução integrada aguarda CI.
+- Testes locais cobrem resposta sem `pagination` e resposta que traz somente página/limite. A CI `38121237550` passou nos jobs Windows e PostgreSQL, incluindo o teste que verifica que páginas RAW válidas e cursor não mudam quando a resposta não confirma a última página.
 - Esta proteção não define o contrato real de paginação e não cria retomada incremental. A homologação com a conta e a documentação permanece pendente; não inferir fim de lista por página curta/vazia.

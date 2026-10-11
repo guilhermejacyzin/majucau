@@ -8,7 +8,7 @@ Foram revisadas 70 tarefas mantendo os IDs BK-000 a BK-126. As versões anterior
 
 ## Base vigente
 
-Somente Majucau, três diretores; Balanço Patrimonial permanece excluído. O cliente Wails/Windows e o PostgreSQL local são a etapa atual de transição. A direção aprovada é hospedar o serviço central em ambiente privado, com PostgreSQL sem acesso público (ADR-002). Provedor, orçamento, região, identidade e detalhes da operação diária continuam pendentes. A arquitetura usa backend Go, frontend React JavaScript e monólito DDD hexagonal. O mockup aprovado define o visual; as decisões aprovadas definem fontes, cálculos e comportamento.
+Somente Majucau, três diretores; Balanço Patrimonial permanece excluído. O cliente Wails/Windows e o PostgreSQL local são a etapa atual de transição. A direção aprovada é hospedar o serviço central em ambiente privado, com PostgreSQL sem acesso público (ADR-002). Provedor, orçamento, região, identidade e detalhes da operação diária continuam pendentes. A arquitetura usa backend Go, frontend React + TypeScript + Vite e monólito DDD hexagonal. O mockup aprovado define o visual; as decisões aprovadas definem fontes, cálculos e comportamento.
 
 Bling é uma das fontes principais de lançamentos. A DRE é calculada pelo motor Majucau segundo regras contábeis aprovadas; o relatório pronto do Bling serve para comparação, não como resultado final. Drive somente de leitura conserva 01_perdas_operacionais, 02_nuvem_pago/recebimentos_futuros e 03_nuvem_envio. Não existe pasta adicional de investimentos.
 
@@ -27,15 +27,22 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - O número de 2,4% e a indicação de desenvolvimento em 0% acima pertencem à revisão de 13/09/2026. Como o código e as evidências avançaram desde então sem atualização tarefa a tarefa neste arquivo, esses números são históricos e não devem ser apresentados como o progresso atual.
 - A matriz `REQUIREMENTS-TRACEABILITY.md` tem 51 requisitos, distribuídos assim nesta auditoria: 1 `VERIFIED`, 5 `DOCUMENTED`, 22 `PARTIAL`, 11 `BLOCKED` e 12 `NOT_STARTED`.
 - Apenas `VERIFIED` conta como requisito integralmente comprovado. Isso equivale a 1 de 51 (aproximadamente 2%) por contagem simples de requisitos; não é o percentual oficial do projeto, porque os requisitos têm tamanhos e pesos diferentes.
-- Portanto, ainda não há percentual global nem prazo de conclusão confiável. Para calculá-los, é necessário revisar BK-000 a BK-126 contra o código, os testes/evidências, os gates e as dependências atuais. Documentação isolada não fecha uma tarefa de implementação.
+- Portanto, ainda não há percentual global nem prazo de conclusão confiável. A auditoria tarefa a tarefa começou em 10/10/2026; veja a atualização abaixo. Documentação isolada não fecha uma tarefa de implementação.
 - Até essa revisão, comunicar o estado como “1 de 51 requisitos verificados; 22 parciais; 11 bloqueados; 12 não iniciados; 5 documentados”. Não converter automaticamente “não verificado” em “não feito”.
 
 ### Atualização da matriz — 10/10/2026
 
 - Recontagem da matriz atual: 51 requisitos — 1 `VERIFIED`, 4 `DOCUMENTED`, 26 `PARTIAL`, 11 `BLOCKED` e 9 `NOT_STARTED`.
 - Desde a conferência anterior, `ARC-01`, `ARC-03` e `OPS-01` avançaram de `NOT_STARTED` para `PARTIAL`; `UX-01` avançou de `DOCUMENTED` para `PARTIAL`, pois os testes e a CI foram comprovados, mas a comparação visual ainda falta.
-- O resultado continua sendo 1 de 51 requisitos totalmente verificado (aproximadamente 2% por contagem simples). Isso não é uma estimativa de conclusão por esforço. O percentual e prazo global permanecem indisponíveis até a revisão individual das 127 tarefas do backlog.
+- O resultado continua sendo 1 de 51 requisitos totalmente verificado (aproximadamente 2% por contagem simples). Isso não é uma estimativa de conclusão por esforço. O percentual e prazo global permanecem indisponíveis até a revisão individual das tarefas do backlog.
 - Evidência da recontagem: `docs/evidence/TRACEABILITY-COUNT-CORRECTION-2026-10-10.md`. A matriz `REQUIREMENTS-TRACEABILITY.md` permanece como fonte atual dos estados.
+
+### Auditoria do backlog — 10/10/2026
+
+- BK-000 foi revisada contra ADR-001, ADR-002, `AGENTS.md`, `G0-DECISION-REGISTER.md`, a política contábil da DRE e a análise v2. Seu aceite foi atendido e a tarefa foi concluída com evidência.
+- Uma das 127 tarefas foi auditada nesta rodada; 126 ainda aguardam revisão. As três tarefas que já apareciam como concluídas antes desta auditoria não foram revalidadas nela.
+- A planilha mostra 4 de 127 tarefas concluídas (3,1% por contagem simples), mas esse valor é apenas o estado do rastreador; não representa o percentual real de conclusão do produto. A estimativa global e o prazo continuam indisponíveis.
+- Esta auditoria não alterou código, telas aprovadas ou regras de negócio.
 
 ## Dependências e ordem prática
 
@@ -59,7 +66,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Planejamento. **Responsável sugerido:** Majucau + Arquitetura.
+**Situação:** Concluída. **Evolução:** 100%. **Tipo:** Planejamento. **Responsável sugerido:** Majucau + Arquitetura.
 
 **Objetivo:** Ter uma referência única para construir o produto.
 
@@ -67,13 +74,15 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Como fazer:**
 
-1. Preservar Majucau única empresa, três diretores, Windows local, Go, React JS e DDD hexagonal monolítico.
-2. Aplicar o fechamento mais recente aos cálculos, fontes, compras, produção, permissões e operação; mockup aprovado governa o visual.
-3. Registrar que o usuário confirmou somente atualização do backlog nesta rodada. Planejar implementação, mapeamento e validação como tarefas futuras.
+1. Preservar a Majucau como empresa única e os três diretores. Registrar separadamente a base atual Wails/Windows com PostgreSQL local, Go, React + TypeScript + Vite e monólito DDD hexagonal, e a direção aprovada de hospedagem privada centralizada conforme ADR-002; detalhes operacionais continuam pendentes.
+2. Aplicar o fechamento mais recente a cálculos, fontes, compras, produção, permissões e operação. O mockup aprovado governa o visual e as decisões aprovadas governam comportamento e cálculos. Mudanças posteriores aprovadas, como DRE própria, cards EBIT/EBITDA e CAPEX e exclusão do Balanço Patrimonial, permanecem rastreadas sem redesenhar telas ou reabrir regras.
+3. Manter como registro histórico que em 13/09/2026 o usuário autorizou somente atualizar o backlog naquela rodada. Decisões posteriores e atividades futuras de mapeamento, implementação e validação ficam registradas nas fontes de governança e nas tarefas correspondentes.
 
 **Critério de aceite:** Referência vigente, mudanças e atividades futuras estão rastreadas; regra definida não é apresentada como nova pergunta à Majucau.
 
 **Impacto:** Evita construir uma regra ou módulo diferente do esperado.
+
+**Evidência da conclusão (10/10/2026):** BK-000 auditado em 10/10/2026. Arquitetura/destino: ADR-001/002. Telas e regras aprovadas: G0. Pendências mantidas; sem alterações.
 
 **Dependências:** Sem tarefa prévia; observar contrato e evidências aplicáveis.
 
@@ -213,11 +222,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Como fazer:**
 
-1. Registrar lucro elegível pela DRE calculada no Majucau conforme regras contábeis aprovadas; preservar janela consolidada jan..M−2 e dedução única de Já Investido.
-2. Registrar Já Investido = aportes de principal − resgates de principal; rendimentos separados. Reserva = MAX(50.000; maior reserva aprovada vigente), conforme M-034 mantida pelo fechamento.
-3. Registrar Máximo = MAX(0; MIN(Caixa Semana Crítica − Reserva; Lucro Elegível)); Executável = MIN(Máximo; saldo transferível do Itaú). Semana crítica continua a de maior total de despesas.
-4. A porta da calculadora recebe os resultados financeiros consolidados, com período, fonte e qualidade. Ela não recebe bandeira, MDR, parcelamento ou tarifas de cartão.
-5. Localizar o contrato/campo consolidado de Caixa Semana Crítica e detalhes de fronteira temporal na documentação vigente; não escolher saldo inicial/final/mínimo por conveniência. É rastreabilidade técnica, sem nova pergunta de negócio.
+1. Usar o resultado líquido mensal calculado pela DRE do Majucau; preservar a janela de janeiro até dois meses antes do mês selecionado (M−2).
+2. Calcular Já Investido = aportes de principal − resgates de principal; manter rendimentos separados. Reserva mínima aprovada: R$ 50.000. Se o fluxo indicar que ela será comprometida, exibir uma sugestão de reserva alternativa, sem trocar o mínimo automaticamente. A usuária definirá no documento atualizado como calcular essa sugestão; até lá, não inventar um valor.
+3. Seguir a planilha enviada: Caixa Projetado na Pior Semana = saldo na semana crítica + recebimentos previstos da Nuvemshop. A semana crítica é a de maior total de despesas. Na integração, verificar se o saldo de origem já contém esses recebimentos para evitar contagem duplicada.
+4. Calcular Máximo Aplicável = MAX(0; MIN(Caixa Projetado na Pior Semana − Reserva Mínima; Lucro Elegível)). O lucro elegível é o acumulado de janeiro até M−2 menos Já Investido, uma única vez.
+5. Calcular Valor Executável Hoje = MIN(Máximo Aplicável; saldo transferível do Itaú) e exibir o saldo projetado restante após o valor máximo. A tela é de consulta; não executa transferência ou aplicação.
+6. A calculadora recebe resultados financeiros consolidados, com período, fonte e qualidade. Bandeira, MDR, parcelamento e tarifas de cartão não entram nela.
+7. Localizar o contrato/campo de Caixa Semana Crítica e detalhes de fronteira temporal na documentação vigente; não escolher saldo inicial/final/mínimo por conveniência. É rastreabilidade técnica, sem reabrir regra definida.
 
 **Critério de aceite:** Contrato financeiro fechado transcrito com referências e exemplos técnicos; nenhuma entrada ausente é inventada. A execução do cálculo depende das entradas comprovadas, sem exigir integração pronta para concluir a especificação.
 
@@ -231,7 +242,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-007 — Especificar as regras da DRE própria do Majucau
 
-**Situação:** Em andamento — princípios gerais recebidos; mapeamento e critérios específicos pendentes. **Evolução:** 10% (estimativa de planejamento, sem código ou aceite contábil). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações + Contabilidade.
+**Situação:** Em andamento. **Evolução:** 10% (estimativa de planejamento; regras gerais recebidas, validação contábil específica pendente). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações + Contabilidade.
 
 **Objetivo:** Calcular uma DRE própria, com classificação e competência aprovadas pela contabilidade.
 
@@ -469,7 +480,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Definir entidades, agregados, invariantes e eventos
 3. Compartilhar contratos e IDs, evitando modelos únicos gigantes
 4. Separar eventos de perdas operacionais de rendimento industrial; separar venda, direito a receber, liquidação, aporte, resgate, rendimento realizado e posição comprovada.
-5. Separar compras por quantidade, apropriação de custo e inteligência de cacau. Resultados reproduz Bling; calculadora recebe apenas contratos financeiros consolidados. Uma métrica tem um dono e um cálculo para todos os consumidores.
+5. Separar compras por quantidade, apropriação de custo e inteligência de cacau. O motor Majucau calcula a DRE segundo regras contábeis aprovadas, e o Bling é fonte dos lançamentos e referência de comparação. A calculadora recebe apenas contratos financeiros consolidados. Uma métrica tem um dono e um cálculo para todos os consumidores.
 
 **Critério de aceite:** Mapa mostra dono de cada fato, dependências direcionais e transações de negócio.
 
@@ -1044,7 +1055,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 4. Para Conta Caixa, usar API oficial ou alternativa de exportação estruturada oficial de investimentos já permitida, sem scraping nem pasta adicional no Drive.
 5. Campo específico não acessível = Dado indisponível no Bling. Produzir evidência técnica por componente, sem inferir, estimar, preencher ausência ou fabricar zero.
 
-**Critério de aceite:** Matriz de campos e resultados de validação registrados; nenhuma prova foi executada nesta atualização de backlog. As regras contábeis detalhadas ainda precisam ser fornecidas e aprovadas antes de implementar a DRE.
+**Critério de aceite:** Matriz de campos e resultados de validação registrados; nenhuma prova foi executada nesta atualização de backlog. As regras gerais foram recebidas; critérios específicos e mapeamento da empresa precisam de validação contábil antes da implementação da DRE.
 
 **Impacto:** Evita construir telas apoiadas em dados inexistentes.
 
@@ -1628,7 +1639,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 3. Campo sem correspondência ou não retornado gera diagnóstico e Dado indisponível no Bling, nunca conta coringa.
 4. Versionar a correspondência técnica e preservar período fechado; mudança de integração não altera histórico silenciosamente.
 
-**Critério de aceite:** Cada valor apresentado chega ao registro e classificação do Bling; não existe mapa gerencial concorrente nem troca de competência por inferência.
+**Critério de aceite:** Cada valor apresentado é rastreável ao registro, à conta e à classificação originais do Bling e ao mapeamento contábil aprovado no Majucau; não há mapa paralelo sem aprovação nem troca de competência por inferência.
 
 **Impacto:** Permite conferir a composição do resultado.
 
@@ -1649,11 +1660,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Como fazer:**
 
 1. Registrar eventos de perdas operacionais e recuperações de sua fonte específica, separando ocorrência, confirmação e liquidação.
-2. Vincular fatos correspondentes do Bling; rendimentos, perdas ou recuperações financeiras respeitam classificação e competência da origem.
-3. Não acrescentar nova receita/despesa à DRE reproduzida nem baixa de caixa por existir um evento no arquivo.
+2. Vincular fatos correspondentes do Bling e preservar sua classificação original como dado de origem; o tratamento na DRE do Majucau segue o mapeamento contábil aprovado e a competência comprovada.
+3. Não acrescentar receita/despesa à DRE apenas por existir um evento no arquivo, nem dar baixa de caixa sem movimento financeiro comprovado.
 4. Manter perdas operacionais separadas de yield, scrap e necessidade industrial de insumos.
 
-**Critério de aceite:** Mesmo evento não reduz resultado duas vezes; ressarcimento sem recebimento comprovado não vira caixa. Diagnóstico externo não reescreve a DRE oficial.
+**Critério de aceite:** Mesmo evento não reduz resultado duas vezes; ressarcimento sem recebimento comprovado não vira caixa. Diagnóstico externo não altera a DRE sem documento, competência e mapeamento aprovado.
 
 **Impacto:** Protege resultado e rastreabilidade das perdas.
 
@@ -1698,12 +1709,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Como fazer:**
 
-1. Preservar layout T06 e as linhas aprovadas; apresentar os valores calculados pelo Majucau com competência e contas rastreáveis.
-2. Usar a mesma camada de leitura/cálculo para cards, tabela, gráfico e detalhe em tela, com base de percentual explícita.
-3. Apresentar ausência de campo como Dado indisponível no Bling no espaço previsto; não copiar números ilustrativos nem inferir classificação fora das regras contábeis aprovadas.
-4. Mostrar dois cards informativos fora da tabela e do lucro: `CAPEX PAGO NO MÊS/PERÍODO` e `CAPEX ACUMULADO` desde o início do histórico confiável, conforme informado nos relatórios existentes. A usuária confirmou a presença dos dados nos relatórios; conectar esses valores ao snapshot do painel e conferir os períodos. Até a integração, ambos ficam indisponíveis; não usar pagamentos genéricos como substituto.
+1. Preservar o layout T06 e as linhas aprovadas; apresentar os valores calculados pelo Majucau com competência e contas rastreáveis.
+2. Usar a mesma camada de leitura/cálculo para cards, tabela, gráfico e detalhe em tela, com base de percentual explícita. Os cards são somente para consulta.
+3. Apresentar ausência de campo como Dado indisponível no espaço previsto; não copiar números ilustrativos nem inferir classificação fora das regras contábeis aprovadas.
+4. No topo da tela, no espaço aprovado para os indicadores onde hoje aparece `UNMAPPED`, exibir cards separados, somente para consulta. Dar destaque a `EBITDA` e `EBIT`, calculados a partir da DRE própria sem mudar suas linhas: EBITDA antes da depreciação; EBIT depois. Incluir também `CAPEX PAGO NO MÊS` e `CAPEX ACUMULADO` como informações separadas da tabela e do lucro. CAPEX pago no mês considera o pagamento efetivo no mês filtrado; CAPEX acumulado soma a categoria CAPEX dos relatórios desde o início do histórico confiável. Reduzir os cards apenas o necessário para caber no espaço aprovado; não alterar o restante da tela. Até a integração, mostrar Dado indisponível.
 
-**Critério de aceite:** Tabela reproduz motor; percentuais derivam dos valores e base aprovada; gráfico não contradiz o resultado; EBIT/EBITDA e os dois cards CAPEX não alteram o lucro ou as linhas da DRE; alerta `UNMAPPED` continua visível.
+**Critério de aceite:** Tabela e gráfico usam o cálculo aprovado e não se contradizem; EBIT/EBITDA aparecem em cards separados e destacados no topo, derivados da DRE sem alterar as linhas dela; os cards substituem `UNMAPPED` no espaço aprovado; CAPEX pago no mês e acumulado são consultas separadas, vêm da categoria CAPEX dos relatórios e não entram no lucro; nenhuma outra parte do layout aprovado é alterada.
 
 **Impacto:** Evita interpretação enganosa da rentabilidade.
 
@@ -1801,7 +1812,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Homologar categoria, sinal, origem/destino, aplicação e resgates parciais/totais. Já Investido = aportes de principal − resgates de principal; período/cobertura precisam ser comprovados.
 3. Obter posição, data e instituição somente se a fonte demonstrar esses campos; principal líquido não é automaticamente posição atual.
 4. Exibir componentes independentes comprováveis e declarar os ausentes. Não presumir reinvestimento de rendimento nem resgate zero por falha de identificação.
-5. Principal aplicado/resgatado não vira automaticamente receita/despesa. Rendimentos mantêm a classificação e competência da origem Bling; não há segunda classificação gerencial.
+5. Principal aplicado/resgatado não vira automaticamente receita/despesa. Preservar como dado a classificação e a competência informadas pelo Bling; a classificação na DRE Majucau segue as regras contábeis aprovadas, sem inventar uma segunda regra.
 
 **Critério de aceite:** Aportes e resgates reconciliam com fatos reais. Posição ausente não é inventada. Indicador dependente de resgate desconhecido permanece incompleto; indicador independente comprovado pode ser exibido.
 

@@ -24,12 +24,12 @@ Registro histórico de 13/09/2026: 70 tarefas revisadas; 3 levantamentos conclu�
 
 ## Regras do fechamento
 
-- **F-01 — Calculadora: contrato fechado:** Regra fechada: disponibilidade consolidada alimenta a calculadora. Contrato preserva jan..M−2, principal líquido e fórmulas consolidadas; DRE apresentada no Majucau agora reproduz o Bling. Cartão/MDR/parcelas não pertencem à calculadora.
-- **F-02 — DRE por competência do Bling:** Fonte primária: DRE por competência do Bling. Preservar classificação, contas e competência; não criar estrutura financeira/gerencial paralela ou fatos fictícios. Validar contra o próprio Bling.
+- **F-01 — Calculadora: contrato fechado:** O lucro elegível é a DRE própria acumulada de janeiro até M−2, menos Já Investido (principal aplicado menos principal resgatado). O caixa projetado na semana de maior despesa soma o saldo dessa semana aos recebimentos previstos da Nuvemshop, conferindo que não sejam contados duas vezes. O máximo aplicável respeita o lucro elegível e a reserva mínima de R$ 50.000; se ela puder ser comprometida, exibir uma sugestão de reserva alternativa. A fórmula dessa sugestão aguarda o documento atualizado da usuária. O valor executável também respeita o saldo transferível do Itaú. Cartão/MDR/parcelas não pertencem à calculadora.
+- **F-02 — DRE própria do Majucau (decisão posterior de 04/10/2026):** A orientação de 13/09 para reproduzir a DRE pronta do Bling foi substituída. O motor Majucau calcula sua DRE com as regras contábeis aprovadas; o relatório do Bling serve para comparação. Mapear contas e competência sem inventar classificações; critérios específicos da empresa aguardam validação contábil.
 - **F-03 — Balancete: reproduzir a origem:** O usuário informa base suficiente no Bling. Mapear recursos reais, reproduzir contas/saldos/competência e comparar totais; elemento específico não acessível = Dado indisponível no Bling.
 - **F-04 — Compra líquida e cobertura parcial:** Necessidade bruta − estoque utilizável − cobertura pendente que chega em tempo. Exemplo: 100−20−30=50 kg. Pedido parcial não exclui insumo; pedido tardio não cobre necessidade anterior à chegada.
 - **F-05 — Prioridade de compra:** Priorizar risco imediato de ruptura e impacto na produção usando cobertura, demanda, lead time, pedidos e datas reais. Distinguir temporalidade e cobertura; não inventar prioridade aleatória.
-- **F-06 — Custos e tarifas separados:** Bruto, variável, fixo, critério de rateio e custo apropriado separados. Usar apropriação Bling existente; não multiplicar tarifa integral por produto nem inventar rateio. Não misturar custo com quantidade a comprar.
+- **F-06 — Custos e tarifas separados:** Bruto, variável, fixo, critério de rateio e custo apropriado separados. Dados reais do Bling podem alimentar o cálculo; sua classificação não é adotada automaticamente sem validação pelas regras contábeis aprovadas. Não multiplicar tarifa integral por produto nem inventar rateio. Não misturar custo com quantidade a comprar.
 - **F-07 — Cacau independente do motor principal:** Inteligência adicional usa localidades reais dos pequenos produtores e sinais comparáveis. Refinar fontes de preço/clima sem impedir compras operacionais; ausência de sinal não cria região ou preço.
 - **F-08 — Produção e métrica única:** Realizado vem do Bling. T01 Produzido Geral e T10 detalhe usam mesma função, fonte, snapshot e universo; mesma métrica em qualquer componente tem mesmo resultado.
 - **F-09 — Status temporal de produção:** Realizado >= meta = atingida. Em andamento/abaixo dependem do plano no ponto temporal; sem granularidade, não inventar atraso, tolerância ou andamento linear.
@@ -64,7 +64,7 @@ As dez frentes HT abaixo são trabalho futuro, não novas perguntas de negócio.
 
 ## Cuidados incorporados à especificação
 
-- DRE/balancete têm cadeia própria de obtenção no Bling. Arquivos Nuvem, perdas e fretes não reconstroem uma segunda demonstração.
+- O Bling fornece lançamentos e campos de origem; o motor Majucau calcula a DRE pelo mapeamento contábil aprovado. O relatório pronto serve para comparação. Arquivos Nuvem, perdas e fretes mantêm escopos específicos e não preenchem linhas ausentes por hipótese.
 - Agenda futura → caixa projetado → disponibilidade → calculadora. Corte de movimentos realizados, data da coleta e competência permanecem conceitos separados.
 - Entrada ausente ou pendente de conciliação não vira zero. Pendente fica fora apenas dos indicadores que exigem reconciliação, com sua condição visível.
 - O campo/contrato Caixa Semana Crítica será localizado tecnicamente na referência consolidada. O fechamento da regra não autoriza escolher um saldo inicial/final/mínimo por conveniência.
@@ -87,7 +87,7 @@ As dez frentes HT abaixo são trabalho futuro, não novas perguntas de negócio.
 | BK-004 | Localizar e versionar os mockups e contratos aprovados | title, goal, action, steps, accept, status |
 | BK-005 | Detalhar os casos de pagamento divergente após decidir C-01 | steps, accept, status |
 | BK-006 | Especificar tecnicamente a regra fechada da calculadora | title, action, steps, accept, status |
-| BK-007 | Especificar a reprodução da DRE e do balancete do Bling | title, goal, action, steps, accept, status, owner |
+| BK-007 | Especificar as regras da DRE própria do Majucau | title, goal, action, steps, accept, status, owner |
 | BK-008 | Especificar necessidade líquida e acompanhamento da produção | title, action, steps, accept, status |
 | BK-009 | Especificar forecast, metas e planejamento de reposição | title, action, steps, accept, status, owner |
 | BK-010 | Homologar contratos do Bling e das três estruturas do Google Drive | steps, status |
@@ -118,8 +118,8 @@ As dez frentes HT abaixo são trabalho futuro, não novas perguntas de negócio.
 | BK-061 | Implementar seleção e memória da semana crítica | steps |
 | BK-064 | Preservar contas, classificações e competência do Bling | title, goal, action, steps, accept, deps |
 | BK-065 | Implementar perdas e recuperações sem dupla contagem | steps, accept |
-| BK-066 | Obter e reproduzir a DRE por competência do Bling | title, goal, action, steps, accept, deps |
-| BK-067 | Implementar T06 DRE | steps |
+| BK-066 | Calcular e conferir a DRE própria por competência | title, goal, action, steps, accept, deps |
+| BK-067 | Implementar T06 DRE | steps, accept |
 | BK-068 | Reproduzir o balancete a partir da base do Bling | title, action, steps, accept, deps |
 | BK-069 | Implementar T07 Balancete | steps |
 | BK-071 | Implementar movimentos de investimentos e posição comprovada no Bling | steps |
@@ -201,7 +201,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Monólito com DDD e arquitetura hexagonal; backend Go; frontend JavaScript com React.
+**Regra / trabalho vigente:** Monólito com DDD e arquitetura hexagonal; backend Go; frontend React + TypeScript + Vite.
 
 **Fonte:** Conversa atual; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -243,7 +243,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Origem atual do resultado é a DRE por competência do Bling, apresentada no Majucau. A interpretação anterior de uma DRE calculada/classificada independentemente foi superada.
+**Regra / trabalho vigente:** A orientação de 13/09/2026 para usar a DRE pronta do Bling foi substituída pela decisão aprovada em 04/10/2026. O resultado exibido é calculado pelo motor Majucau conforme as regras contábeis aprovadas; o relatório do Bling é referência de comparação. Critérios específicos e mapeamento das contas ainda dependem de validação contábil.
 
 **Fonte:** C_Conflitos!A5:L5; Consolidação das respostas do desenvolvimento — enviada pelo usuário em 13/09/2026; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -277,7 +277,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Perdas operacionais mantêm fonte própria; efeito financeiro e competência seguem os fatos registrados/classificados no Bling. Não criar ou deslocar linhas da DRE por inferência.
+**Regra / trabalho vigente:** Perdas operacionais mantêm sua fonte própria. Só entram na DRE quando houver documento/fato econômico e mapeamento contábil aprovado; caixa e competência são registrados separadamente. Não criar nem deslocar linhas por inferência.
 
 **Fonte:** D_Lacunas!A6:G6; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -287,7 +287,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Juros, taxas e rendimentos respeitam conta/classificação e competência existentes no Bling. Mapear tecnicamente, sem nova classificação de negócio.
+**Regra / trabalho vigente:** Juros, tarifas e rendimentos financeiros são avaliados por natureza, documento e competência. Os lançamentos do Bling são dados de origem; a classificação nas linhas da DRE segue as regras contábeis aprovadas. O relatório do Bling serve para comparação, não como cálculo final.
 
 **Fonte:** D_Lacunas!A7:G7; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -297,7 +297,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Apropriação Bling tem preferência; custos bruto/variável/fixo/critério/final separados. Não duplicar tarifa nem fabricar rateio sem dados.
+**Regra / trabalho vigente:** Custos e tarifas são classificados conforme regras contábeis e critério de apropriação aprovados. Dados reais do Bling podem alimentar o cálculo; sua classificação existente não é adotada automaticamente sem validação. Manter bruto/variável/fixo/rateio/custo final separados, sem duplicar tarifa ou inventar rateio.
 
 **Fonte:** D_Lacunas!A8:G8; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -327,7 +327,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** DRE usa origem Bling; sem nova estrutura ou fonte contábil paralela. Exceções externas têm função própria e não completam linhas ausentes com hipóteses.
+**Regra / trabalho vigente:** O Bling fornece lançamentos e campos de origem; o motor Majucau calcula a DRE com as regras contábeis aprovadas. As fontes externas mantêm suas funções específicas e não completam linhas ausentes com hipóteses.
 
 **Fonte:** D_Lacunas!A11:G11; Consolidação das respostas do desenvolvimento — enviada pelo usuário em 13/09/2026; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -367,7 +367,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Frete cobrado/custo/subsídio separados nos dados específicos; efeito na DRE respeita classificação/competência Bling, sem nova reclassificação.
+**Regra / trabalho vigente:** Frete cobrado, custo e subsídio permanecem separados nos dados específicos. Só afetam a DRE conforme documento, competência e mapeamento contábil aprovados; não se herda automaticamente a classificação do relatório do Bling.
 
 **Fonte:** D_Lacunas!A15:G15; Consolidação das respostas do desenvolvimento — enviada pelo usuário em 13/09/2026; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -377,7 +377,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Recuperação é evento rastreável; caixa depende de fato financeiro registrado e DRE respeita a origem. Aprovação de ressarcimento não cria dinheiro.
+**Regra / trabalho vigente:** Recuperação é evento rastreável; caixa depende de recebimento financeiro comprovado e inclusão na DRE segue documento e mapeamento contábil aprovados. Aprovação de ressarcimento não cria dinheiro.
 
 **Fonte:** D_Lacunas!A16:G16; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -585,7 +585,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** DRE por competência e balancete do projeto utilizam Bling e suas classificações. Validar totais tecnicamente; não solicitar estrutura contábil paralela.
+**Regra / trabalho vigente:** A DRE própria usa lançamentos de origem e regras contábeis aprovadas; o relatório do Bling serve para comparação. O balancete continua usando a base do Bling, conforme os campos disponíveis. Validar tecnicamente; não presumir campos ausentes.
 
 **Fonte:** T06/T07; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -595,7 +595,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Calculadora fechada. Consolidar fórmulas M-030/M-034 preservadas pelo fechamento, usando fonte DRE Bling e aportes líquidos de resgates; limite executável Itaú.
+**Regra / trabalho vigente:** Calculadora fechada. Consolidar fórmulas M-030/M-034 preservadas pelo fechamento, usando o lucro da DRE calculada pelo Majucau, disponibilidade consolidada e aportes líquidos de resgates; limite executável Itaú.
 
 **Fonte:** M-030..M-034; T08; Consolidação das respostas do desenvolvimento — enviada pelo usuário em 13/09/2026; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -961,11 +961,11 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Tarefas:** BK-040, BK-063
 
-### HT-06 — Extração e conferência da DRE Bling
+### HT-06 — Extração de dados e comparação da DRE própria
 
 **Situação:** Execução técnica pendente. **Natureza:** Homologação técnica.
 
-**Regra / trabalho vigente:** Mapear recursos/campos e correspondência técnica de linhas da DRE por competência; preservar classificação e validar totais contra Bling.
+**Regra / trabalho vigente:** Mapear lançamentos, campos e competência do Bling necessários à DRE própria; preservar a rastreabilidade e comparar o resultado calculado pelo Majucau com o relatório do Bling.
 
 **Fonte:** Consolidação das respostas do desenvolvimento — enviada pelo usuário em 13/09/2026; pendência 6; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -1015,21 +1015,21 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Regra fechada: disponibilidade consolidada alimenta a calculadora. Contrato preserva jan..M−2, principal líquido e fórmulas consolidadas; DRE apresentada no Majucau agora reproduz o Bling. Cartão/MDR/parcelas não pertencem à calculadora.
+**Regra / trabalho vigente:** O lucro elegível usa a DRE calculada pelo Majucau conforme regras aprovadas, acumulada de janeiro até M−2, menos Já Investido (aportes de principal menos resgates de principal; rendimentos separados). Seguindo a planilha enviada, o caixa projetado na semana de maior despesa soma o saldo da semana crítica e os recebimentos previstos da Nuvemshop; na integração, verificar que esses recebimentos não estejam já incluídos no saldo, para evitar duplicidade. O máximo aplicável é MAX(0; MIN(caixa projetado − reserva mínima de R$ 50.000; lucro elegível)). O valor executável é limitado ao saldo transferível do Itaú, e a tela é apenas de consulta. Se a reserva mínima puder ser comprometida, a tela deve sugerir outra reserva; o cálculo dessa sugestão será definido no documento atualizado pela usuária e não deve ser inventado antes disso. Cartão/MDR/parcelas não pertencem à calculadora.
 
-**Fonte:** Fechamento das questões ainda tratadas como abertas — 13/09/2026; §1
+**Fonte:** Fechamento das questões ainda tratadas como abertas — 13/09/2026; §1; planilha `Calculadora_Aplicacao_Lucro_Liquido_Profissional (1).xlsm`, enviada em 10/10/2026; esclarecimento posterior da usuária sobre sugestão de reserva alternativa.
 
 **Tarefas:** BK-006, BK-019, BK-061, BK-072
 
-### F-02 — DRE por competência do Bling
+### F-02 — DRE própria do Majucau; Bling para comparação
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Fonte primária: DRE por competência do Bling. Preservar classificação, contas e competência; não criar estrutura financeira/gerencial paralela ou fatos fictícios. Validar contra o próprio Bling.
+**Regra / trabalho vigente:** Decisão aprovada em 04/10/2026: o motor Majucau calcula sua DRE conforme as regras contábeis aprovadas; a DRE pronta do Bling é usada para comparação, não como resultado final. Preservar rastreabilidade da conta e classificação originais como dados de origem, além de documento e competência. A classificação apresentada pelo Majucau segue o mapeamento aprovado, não é herdada automaticamente do relatório do Bling. Critérios específicos da empresa aguardam validação contábil; ausência de regra ou dado não vira valor estimado.
 
-**Fonte:** Fechamento das questões ainda tratadas como abertas — 13/09/2026; §2
+**Fonte:** Decisão G0 de 04/10/2026; `docs/DRE-ACCOUNTING-POLICY-v1.md`; orientação anterior de 13/09/2026 substituída.
 
-**Tarefas:** BK-007, BK-040, BK-064, BK-066, BK-067
+**Tarefas:** BK-006, BK-007, BK-040, BK-064, BK-066, BK-067
 
 ### F-03 — Balancete: reproduzir a origem
 
@@ -1065,7 +1065,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Bruto, variável, fixo, critério de rateio e custo apropriado separados. Usar apropriação Bling existente; não multiplicar tarifa integral por produto nem inventar rateio. Não misturar custo com quantidade a comprar.
+**Regra / trabalho vigente:** Manter valores brutos, variáveis, fixos, critério de rateio e custo apropriado separados. Dados reais do Bling podem alimentar o cálculo, mas a classificação existente não é adotada automaticamente sem validação pelas regras contábeis aprovadas. Não multiplicar tarifa integral por produto, inventar rateio nem misturar custo com quantidade a comprar.
 
 **Fonte:** Fechamento das questões ainda tratadas como abertas — 13/09/2026; §3.3
 

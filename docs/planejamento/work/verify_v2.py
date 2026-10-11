@@ -20,7 +20,7 @@ assert 'cocoasignals' not in ancestors('purchasesscreen')
 assert 'inputprojection' in ancestors('purchaseeligibility')
 assert 'inventoryprojection' not in ancestors('productionprojection')
 assert not set(['losses','receivableingest','historicalcost','logisticsingest'])&set(by['dreengine']['deps'])
-assert sum(x['progress'] for x in t)==3
+assert sum(x['progress'] for x in t)==4
 assert all(x['progress']==0 for x in t if x['kind']=='Desenvolvimento')
 assert not any(x['status']=='Aguarda decisão' for x in t)
 assert all(x['goal'] and x['action'] and x['accept'] and x['impact'] and len(x['steps'])>=3 for x in t)
@@ -30,8 +30,8 @@ assert 'D+1' not in md
 p=O/'MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx'
 f=openpyxl.load_workbook(p,data_only=False);c=openpyxl.load_workbook(p,data_only=True)
 assert c['Evolucao']['B6'].value==127
-assert c['Evolucao']['B7'].value==3
-assert abs(c['Evolucao']['B8'].value-3/127)<1e-10
+assert c['Evolucao']['B7'].value==4
+assert abs(c['Evolucao']['B8'].value-4/127)<1e-10
 assert c['Evolucao']['B9'].value==0
 assert c['Evolucao']['B10'].value==10
 assert all(f['Tarefas'].cell(i+6,7).data_type=='f' for i in range(127))
@@ -43,6 +43,6 @@ for x in json.loads((W/'source_extract/manifest.json').read_text(encoding='utf-8
 for v in [1,2]:
     m=json.loads((W/f'revision_v{v}.json').read_text(encoding='utf-8'))
     assert hashlib.sha256(Path(m['source']).read_bytes()).hexdigest()==m['sha256']
-result={'tasks':127,'revised_tasks':70,'technical_fronts':10,'business_questions_reopened':0,'completed_planning':3,'development_progress':0,'acyclic_dependencies':True,'losses_required_before_release':True,'source_files_unchanged':19,'formula_errors':0,'validation':'Planning artifacts only; no product implementation or live integration tests.'}
+result={'tasks':127,'revised_tasks':70,'technical_fronts':10,'business_questions_reopened':0,'completed_planning':4,'development_progress':0,'acyclic_dependencies':True,'losses_required_before_release':True,'source_files_unchanged':19,'formula_errors':0,'validation':'Planning artifacts only; no product implementation or live integration tests.'}
 (W/'verification_v2.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
 print(json.dumps(result))

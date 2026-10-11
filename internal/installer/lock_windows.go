@@ -31,13 +31,14 @@ func AcquireInstallLock(name string) (*InstallLock, error) {
 	}
 	handle, err := windows.CreateMutex(nil, true, ptr)
 	if err != nil {
+		var closeErr error
 		if handle != 0 {
-			_ = windows.CloseHandle(handle)
+			closeErr = windows.CloseHandle(handle)
 		}
 		if errors.Is(err, windows.ERROR_ALREADY_EXISTS) {
-			return nil, ErrInstallerLocked
+			return nil, errors.Join(ErrInstallerLocked, closeErr)
 		}
-		return nil, ErrInstallerLockFailed
+		return nil, errors.Join(ErrInstallerLockFailed, closeErr)
 	}
 	return &InstallLock{handle: handle}, nil
 }
@@ -49,8 +50,5 @@ func (lock *InstallLock) Release() error {
 	releaseErr := windows.ReleaseMutex(lock.handle)
 	closeErr := windows.CloseHandle(lock.handle)
 	lock.handle = 0
-	if releaseErr != nil {
-		return releaseErr
-	}
-	return closeErr
+	return errors.Join(releaseErr, closeErr)
 }

@@ -34,4 +34,7 @@ func TestInstallLockPreventsConcurrentInstance(t *testing.T) {
 	if err := third.Release(); err != nil {
 		t.Fatal(err)
 	}
+	if err := third.Release(); err != nil {
+		t.Fatalf("repeated release should be harmless: %v", err)
+	}
 }

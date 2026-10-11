@@ -5,7 +5,9 @@ package securetemp
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"syscall"
 	"unsafe"
@@ -15,7 +17,7 @@ import (
 
 // NewDir creates a temporary directory with a protected DACL. The owner,
 // LocalSystem, and administrators can access the directory and its contents.
-func NewDir(parent, prefix string) (string, error) {
+func NewDir(parent, prefix string) (createdPath string, returnErr error) {
 	if !filepath.IsAbs(parent) {
 		return "", fmt.Errorf("private temporary directory parent must be absolute")
 	}
@@ -43,9 +45,31 @@ func NewDir(parent, prefix string) (string, error) {
 		uintptr(unsafe.Pointer(&descriptor)), uintptr(unsafe.Pointer(&descriptorSize)),
 	)
 	if result == 0 {
-		return "", fmt.Errorf("create private temporary directory security descriptor (last error %v)", callErr)
+		if callErr == nil || errors.Is(callErr, syscall.Errno(0)) {
+			callErr = errors.New("Windows returned failure without an error code")
+		}
+		return "", fmt.Errorf("create private temporary directory security descriptor: %w", callErr)
 	}
-	defer localFree.Call(uintptr(unsafe.Pointer(descriptor)))
+	if descriptor == nil {
+		return "", errors.New("Windows returned no temporary-directory security descriptor")
+	}
+	defer func() {
+		freed, _, freeErr := localFree.Call(uintptr(unsafe.Pointer(descriptor)))
+		if freed == 0 {
+			return
+		}
+		if freeErr == nil || errors.Is(freeErr, syscall.Errno(0)) {
+			freeErr = errors.New("LocalFree returned the allocated security descriptor")
+		}
+		cleanupErr := fmt.Errorf("release temporary-directory security descriptor: %w", freeErr)
+		if createdPath != "" {
+			if err := os.Remove(createdPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+				cleanupErr = errors.Join(cleanupErr, &CleanupError{Path: createdPath, Cause: err})
+			}
+			createdPath = ""
+		}
+		returnErr = errors.Join(returnErr, cleanupErr)
+	}()
 
 	attributes := windows.SecurityAttributes{
 		Length:             uint32(unsafe.Sizeof(windows.SecurityAttributes{})),
@@ -66,6 +90,9 @@ func NewDir(parent, prefix string) (string, error) {
 			return path, nil
 		}
 		if createErr != syscall.ERROR_ALREADY_EXISTS {
+			if createErr == nil || errors.Is(createErr, syscall.Errno(0)) {
+				createErr = errors.New("Windows returned failure without an error code")
+			}
 			return "", fmt.Errorf("create private temporary directory: %w", createErr)
 		}
 	}

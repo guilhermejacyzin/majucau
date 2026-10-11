@@ -26,7 +26,6 @@ func prepareLogDirectory(dir string) error {
 	if err != nil {
 		return fmt.Errorf("prepare private diagnostic log permissions: %w", err)
 	}
-	defer windows.LocalFree(windows.Handle(uintptr(unsafe.Pointer(security))))
 	attributes := &windows.SecurityAttributes{
 		Length:             uint32(unsafe.Sizeof(windows.SecurityAttributes{})),
 		SecurityDescriptor: security,
@@ -120,6 +119,9 @@ func validatePrivateACL(path string, directory bool) error {
 	security, err := windows.GetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
 	if err != nil {
 		return err
+	}
+	if security == nil {
+		return fmt.Errorf("diagnostic security descriptor is unavailable")
 	}
 	control, _, err := security.Control()
 	if err != nil || (directory && control&windows.SE_DACL_PROTECTED == 0) {

@@ -582,7 +582,13 @@ func makePipeSecurity(c NamedPipeConfig) (uintptr, func() error, error) {
 	var size uint32
 	r, _, err := convertStringSecurityDescriptorW.Call(uintptr(unsafe.Pointer(p)), 1, uintptr(unsafe.Pointer(&descriptor)), uintptr(unsafe.Pointer(&size)))
 	if r == 0 {
-		return 0, noRelease, win32CallFailure("ConvertStringSecurityDescriptorToSecurityDescriptorW", err)
+		return 0, noRelease, errors.Join(
+			win32CallFailure("ConvertStringSecurityDescriptorToSecurityDescriptorW", err),
+			freeLocalMemory("free failed named pipe security descriptor", descriptor),
+		)
+	}
+	if descriptor == 0 {
+		return 0, noRelease, errors.New("Windows returned no named pipe security descriptor")
 	}
 	return descriptor, func() error { return freeLocalMemory("free named pipe security descriptor", descriptor) }, nil
 }
@@ -658,6 +664,9 @@ func tokenSID(token syscall.Handle) (sid string, returnErr error) {
 	r, _, err = convertSidToStringSidW.Call(uintptr(unsafe.Pointer(tu.user.sid)), uintptr(unsafe.Pointer(&text)))
 	if r == 0 {
 		return "", win32CallFailure("convert client SID", err)
+	}
+	if text == nil {
+		return "", errors.New("Windows returned no client SID string")
 	}
 	defer func() {
 		returnErr = errors.Join(returnErr, freeLocalMemory("free converted client SID", uintptr(unsafe.Pointer(text))))

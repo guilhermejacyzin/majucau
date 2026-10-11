@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -19,8 +20,8 @@ const (
 	// IPC frames are capped at 1 MiB; secret bundles are control data, not a bulk-data channel.
 	maxDPAPISecretValueBytes = 1 << 20
 	// Leave bounded room for the DPAPI ciphertext wrapper while rejecting corrupt oversized files.
-	maxDPAPISecretBlobBytes  = maxDPAPISecretValueBytes + (64 << 10)
-	dpapiEntropyBytes        = 32
+	maxDPAPISecretBlobBytes = maxDPAPISecretValueBytes + (64 << 10)
+	dpapiEntropyBytes       = 32
 )
 
 type DPAPIStore struct {
@@ -210,7 +211,7 @@ func protect(value, entropy []byte) ([]byte, error) { return cryptCall(cryptProt
 func unprotect(value, entropy []byte) ([]byte, error) {
 	return cryptCall(cryptUnprotect, value, entropy)
 }
-func cryptCall(proc *syscall.LazyProc, value, entropy []byte) ([]byte, error) {
+func cryptCall(proc *syscall.LazyProc, value, entropy []byte) (result []byte, returnErr error) {
 	if len(value) == 0 {
 		value = []byte{0}
 	}
@@ -222,12 +223,45 @@ func cryptCall(proc *syscall.LazyProc, value, entropy []byte) ([]byte, error) {
 	out := dataBlob{}
 	r, _, err := proc.Call(uintptr(unsafe.Pointer(&in)), 0, uintptr(unsafe.Pointer(&ent)), 0, 0, 0, uintptr(unsafe.Pointer(&out)))
 	if r == 0 {
-		return nil, err
+		if err == nil || errors.Is(err, syscall.Errno(0)) {
+			err = errors.New("DPAPI returned failure without an error code")
+		} else {
+			err = fmt.Errorf("DPAPI operation: %w", err)
+		}
+		return nil, errors.Join(err, freeDPAPIOutput(out.pbData))
 	}
-	defer localFree.Call(uintptr(unsafe.Pointer(out.pbData)))
+	if out.pbData == nil || out.cbData == 0 {
+		return nil, errors.Join(errors.New("DPAPI returned an empty output buffer"), freeDPAPIOutput(out.pbData))
+	}
+	if out.cbData > maxDPAPISecretBlobBytes {
+		return nil, errors.Join(errors.New("DPAPI output exceeds the configured size limit"), freeDPAPIOutput(out.pbData))
+	}
+	defer func() {
+		if err := freeDPAPIOutput(out.pbData); err != nil {
+			for index := range result {
+				result[index] = 0
+			}
+			result = nil
+			returnErr = errors.Join(returnErr, err)
+		}
+	}()
 	// DPAPI owns the returned buffer. Copy it before LocalFree runs; returning
 	// the unsafe slice itself would leave the caller with freed memory.
-	result := make([]byte, int(out.cbData))
+	result = make([]byte, int(out.cbData))
 	copy(result, unsafe.Slice(out.pbData, int(out.cbData)))
 	return result, nil
+}
+
+func freeDPAPIOutput(output *byte) error {
+	if output == nil {
+		return nil
+	}
+	r, _, err := localFree.Call(uintptr(unsafe.Pointer(output)))
+	if r == 0 {
+		return nil
+	}
+	if err == nil || errors.Is(err, syscall.Errno(0)) {
+		err = errors.New("LocalFree returned the allocated DPAPI buffer")
+	}
+	return fmt.Errorf("release DPAPI output buffer: %w", err)
 }

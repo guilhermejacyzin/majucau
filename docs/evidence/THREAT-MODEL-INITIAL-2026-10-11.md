@@ -241,3 +241,34 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
   controlada, terminar o mapa de riscos e instalar/atualizar em VM limpa.
 - Nenhuma tela, regra financeira, permissão, DACL ou dado persistido foi
   alterado.
+
+## Complemento — recursos Windows em segredos, temporários e instalador
+
+**Data:** 11/10/2026
+
+**Tipo:** revisão de memória nativa e handles do Windows.
+
+- O resultado de `CryptProtectData`/`CryptUnprotectData` é copiado para memória
+  Go e a memória nativa agora é liberada com `LocalFree` verificado. Se a
+  liberação falhar, a cópia é zerada e a falha é devolvida; buffers vazios ou
+  acima do limite configurado são recusados.
+- A criação de pastas temporárias protegidas agora devolve erros ao liberar o
+  descritor. Se a pasta vazia já foi criada, o código tenta removê-la; se a
+  remoção também falhar, registra o caminho em `securetemp.CleanupError` para
+  limpeza manual autorizada.
+- A trava do instalador combina falhas ao liberar o mutex e fechar seu handle,
+  e também propaga eventual erro ao fechar o handle quando outra instalação já
+  está ativa.
+- Foi corrigida a liberação indevida de descritores retornados pelos wrappers
+  `SecurityDescriptorFromString`, `GetNamedSecurityInfo` e `GetSecurityInfo` do
+  `golang.org/x/sys/windows`: esses wrappers copiam os dados para a memória Go
+  e liberam o buffer nativo internamente. Não se chama `LocalFree` nos objetos
+  Go retornados.
+- `gofmt`, `git diff --check`, `go test -count=1` e `go vet` passaram no Windows
+  para `internal/security`, `internal/securetemp`, `internal/installer`,
+  `internal/diagnosticslog` e `internal/ipc`. Os caches ficaram em
+  `artifacts/cache`; foram removidos pelo módulo seguro ao final.
+- Falhas de limpeza ainda precisam de injeção controlada, e a auditoria maior
+  ainda requer instalação/atualização em VM limpa, validação de rede e testes
+  de acesso por perfil.
+- Nenhuma tela ou regra financeira foi alterada.

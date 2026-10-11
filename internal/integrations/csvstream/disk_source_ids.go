@@ -241,7 +241,7 @@ func (s *DiskSourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (CSV
 }
 
 func (s *DiskSourceIDSet) Close() error {
-	if s == nil || s.closed {
+	if s == nil || (s.closed && s.dir == "") {
 		return nil
 	}
 	s.closed = true
@@ -268,8 +268,9 @@ func (s *DiskSourceIDSet) Close() error {
 	if s.dir != "" {
 		if err := securetemp.RemoveAll(s.dir); err != nil {
 			closeErrors = append(closeErrors, fmt.Errorf("remove temporary CSV preview workspace: %w", err))
+		} else {
+			s.dir = ""
 		}
-		s.dir = ""
 	}
 	return errors.Join(closeErrors...)
 }
@@ -444,16 +445,12 @@ func (s *DiskSourceIDSet) grow() error {
 	}
 	newPath := newIndex.Name()
 	if err := newIndex.Truncate(int64(newCapacity) * diskSlotSize); err != nil {
-		_ = newIndex.Close()
-		_ = os.Remove(newPath)
-		return fmt.Errorf("initialize larger temporary CSV source index: %w", err)
+		return cleanupFailedTemporaryIndex(newIndex, newPath, fmt.Errorf("initialize larger temporary CSV source index: %w", err))
 	}
 	for oldPosition := uint64(0); oldPosition < s.capacity; oldPosition++ {
 		slot, err := s.readSlot(oldPosition)
 		if err != nil {
-			_ = newIndex.Close()
-			_ = os.Remove(newPath)
-			return err
+			return cleanupFailedTemporaryIndex(newIndex, newPath, err)
 		}
 		if slot[0] == 0 {
 			continue
@@ -461,22 +458,16 @@ func (s *DiskSourceIDSet) grow() error {
 		fingerprint := slot[1 : 1+sha256.Size]
 		position, err := initialDiskPosition(fingerprint, newCapacity)
 		if err != nil {
-			_ = newIndex.Close()
-			_ = os.Remove(newPath)
-			return err
+			return cleanupFailedTemporaryIndex(newIndex, newPath, err)
 		}
 		for {
 			other := make([]byte, diskSlotSize)
 			if _, err := newIndex.ReadAt(other, int64(position)*diskSlotSize); err != nil {
-				_ = newIndex.Close()
-				_ = os.Remove(newPath)
-				return fmt.Errorf("read larger temporary CSV source index: %w", err)
+				return cleanupFailedTemporaryIndex(newIndex, newPath, fmt.Errorf("read larger temporary CSV source index: %w", err))
 			}
 			if other[0] == 0 {
 				if _, err := newIndex.WriteAt(slot, int64(position)*diskSlotSize); err != nil {
-					_ = newIndex.Close()
-					_ = os.Remove(newPath)
-					return fmt.Errorf("rehash temporary CSV source index: %w", err)
+					return cleanupFailedTemporaryIndex(newIndex, newPath, fmt.Errorf("rehash temporary CSV source index: %w", err))
 				}
 				break
 			}
@@ -485,18 +476,27 @@ func (s *DiskSourceIDSet) grow() error {
 	}
 	oldIndex, oldPath := s.index, s.indexPath
 	if err := oldIndex.Close(); err != nil {
-		_ = newIndex.Close()
-		_ = os.Remove(newPath)
-		return fmt.Errorf("close old temporary CSV source index: %w", err)
-	}
-	if err := os.Remove(oldPath); err != nil {
-		_ = newIndex.Close()
-		return fmt.Errorf("replace old temporary CSV source index: %w", err)
+		return cleanupFailedTemporaryIndex(newIndex, newPath, fmt.Errorf("close old temporary CSV source index: %w", err))
 	}
 	s.index = newIndex
 	s.indexPath = newPath
 	s.capacity = newCapacity
+	if err := securetemp.RemoveFile(oldPath); err != nil {
+		return fmt.Errorf("remove old temporary CSV source index after resize: %w", err)
+	}
 	return nil
+}
+
+func cleanupFailedTemporaryIndex(index *os.File, path string, cause error) error {
+	if index != nil {
+		if err := index.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+			cause = errors.Join(cause, fmt.Errorf("close temporary CSV source index: %w", err))
+		}
+	}
+	if err := securetemp.RemoveFile(path); err != nil {
+		cause = errors.Join(cause, err)
+	}
+	return cause
 }
 
 func initialDiskPosition(fingerprint []byte, capacity uint64) (uint64, error) {
@@ -618,7 +618,7 @@ func (b *diskRunBuilder) finish(ctx context.Context) (string, error) {
 	return paths[0], nil
 }
 
-func (s *DiskSourceIDSet) mergeNameRuns(ctx context.Context, paths []string) (string, error) {
+func (s *DiskSourceIDSet) mergeNameRuns(ctx context.Context, paths []string) (mergedPath string, returnErr error) {
 	if len(paths) == 0 || len(paths) > diskMergeFanIn {
 		return "", errors.New("invalid temporary CSV filename merge group")
 	}
@@ -628,10 +628,17 @@ func (s *DiskSourceIDSet) mergeNameRuns(ctx context.Context, paths []string) (st
 	}
 	outputPath := output.Name()
 	removeOutput := true
+	outputClosed := false
 	defer func() {
 		if removeOutput {
-			_ = output.Close()
-			_ = os.Remove(outputPath)
+			if !outputClosed {
+				if err := output.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+					returnErr = errors.Join(returnErr, fmt.Errorf("close incomplete temporary CSV filename run: %w", err))
+				}
+			}
+			if err := securetemp.RemoveFile(outputPath); err != nil {
+				returnErr = errors.Join(returnErr, err)
+			}
 		}
 	}()
 	writer := bufio.NewWriterSize(output, 32*1024)
@@ -685,8 +692,10 @@ func (s *DiskSourceIDSet) mergeNameRuns(ctx context.Context, paths []string) (st
 		return "", fmt.Errorf("flush merged temporary CSV filename run: %w", err)
 	}
 	if err := output.Close(); err != nil {
+		outputClosed = true
 		return "", fmt.Errorf("close merged temporary CSV filename run: %w", err)
 	}
+	outputClosed = true
 	removeOutput = false
 	return outputPath, nil
 }

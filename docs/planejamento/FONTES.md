@@ -28,7 +28,7 @@ A pasta continha uma planilha e dezesseis PNGs. O PNG com nome ChatGPT repete a 
 
 ### Rechecagem do pacote inicial — 11/10/2026
 
-Os 17 nomes da tabela acima foram procurados na pasta Downloads da usuária e em `sources/private/material-original/`. Nenhum dos 17 arquivos foi encontrado nesses locais. A pasta `work/source_extract/`, que deveria conter a extração das vinte abas, também não existe neste checkout. Portanto, os hashes acima são o registro histórico; não foi possível recalculá-los nem rever as abas do arquivo original nesta conferência.
+Os 17 nomes da tabela acima foram procurados na pasta Downloads da usuária e em `sources/private/material-original/`; nenhum dos 17 arquivos originais foi encontrado nesses locais. **A extração das abas está preservada** em `docs/planejamento/work/source_extract/`: `workbook.json` representa 20 abas (286.067 bytes; SHA-256 `1b8cee72563b88fd359ebc2a984d9f5cbd41c7cbe12f63b521924c043f6abe7c`) e `manifest.json` registra 17 itens históricos (2.596 bytes; SHA-256 `86d1bcd91d404925ee6d180c09c7c5c231b835d6e5b99f73d4ee72bf16f71cb6`). A extração não substitui os arquivos binários originais: sem eles, não é possível recalcular seus hashes nem provar que a extração corresponde ao pacote recebido. Esta rechecagem confirmou a estrutura, mas não revisou o conteúdo das células. Os mockups posteriores em `docs/source/` são um conjunto separado e não substituem o pacote inicial. BK-001 continua aberta até os originais serem preservados ou a responsável aprovar expressamente hashes e extrações como suficientes.
 
 ## Material complementar recebido em outubro de 2026
 

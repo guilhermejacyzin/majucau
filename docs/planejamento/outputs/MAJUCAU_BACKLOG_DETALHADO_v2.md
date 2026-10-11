@@ -96,7 +96,7 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 ### Rechecagem do material de origem — 11/10/2026
 
 - Foram encontrados quatro arquivos complementares de outubro na pasta privada; os hashes conferem com o registro local de limpeza, e o Git os ignora. Eles não substituem os 17 arquivos do pacote histórico.
-- A busca pelos 17 nomes conhecidos não encontrou os arquivos em Downloads nem na pasta privada; a extração das vinte abas também está ausente. BK-001 segue em 0% aceito e aguarda o pacote histórico. Se ele não estiver disponível, a tarefa permanece pendente até que a responsável decida expressamente como tratar essa ausência; não será marcada como concluída só com os arquivos complementares.
+- A busca registrada pelos 17 nomes conhecidos não encontrou os arquivos originais em Downloads nem na pasta privada. Correção da rechecagem: a extração das vinte abas não está ausente; ela existe em `docs/planejamento/work/source_extract/`, com 20 abas em `workbook.json` e os 17 itens históricos em `manifest.json`. Os originais continuam necessários para recalcular os hashes e confirmar a correspondência da extração. BK-001 segue em 0% aceito até o pacote ser preservado ou a responsável aprovar expressamente hashes e extrações como suficientes; os quatro materiais complementares não substituem o pacote inicial.
 - Não houve alteração de tela ou regra financeira, nem execução de testes. A estimativa geral continua em 6,2% concluído e 93,8% restante.
 
 ## Dependências e ordem prática
@@ -342,7 +342,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Fonte:** docs/planejamento/FONTES.md; docs/source/README.md; extrações do pacote; revision_v1.json; revision_v2.json.
 
-**Evidência e pendência:** Os registros e os documentos v0/v1/v2 foram preservados. Em 11/10/2026, a conferência local encontrou os quatro materiais complementares de outubro na pasta privada e confirmou correspondência com o registro de limpeza; eles não são o pacote histórico. Nenhum dos 17 nomes do pacote inicial foi encontrado em Downloads ou em `sources/private/material-original/`, e `work/source_extract/` não existe neste checkout. Assim, não foi possível recalcular os hashes do pacote original nem revisar as vinte abas. A tarefa continua em 0% aceito e aguarda o pacote original; se ele não estiver disponível, o inventário permanece aberto até decisão expressa sobre a ausência, sem tratar os quatro arquivos complementares como substitutos.
+**Evidência e pendência:** Os registros e os documentos v0/v1/v2 foram preservados. Em 11/10/2026, a conferência local encontrou quatro materiais complementares de outubro na pasta privada e confirmou correspondência com o registro de limpeza; eles não são o pacote histórico. Os 17 originais não foram encontrados nos locais consultados. A extração preservada em `docs/planejamento/work/source_extract/` contém 20 abas em `workbook.json` e 17 referências históricas em `manifest.json`; portanto, a anotação anterior de que ela não existia estava incorreta. Sem os binários originais não se recalculam seus hashes nem se confirma a correspondência da extração. A estrutura foi conferida, mas o conteúdo das células não foi reanalisado nesta rechecagem. A tarefa continua em 0% aceito até os originais serem preservados ou a responsável aprovar expressamente hashes e extrações como suficientes.
 
 ### BK-002 — Verificar o ponto de partida no GitHub
 

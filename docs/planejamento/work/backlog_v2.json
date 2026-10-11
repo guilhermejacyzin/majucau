@@ -45,7 +45,7 @@
     "owner": "Produto + UX",
     "kind": "Planejamento",
     "status": "Em andamento",
-    "evidence": "Inventário histórico registra 16 PNGs, 15 imagens únicas, 20 abas, T10 duplicada e materiais ausentes; a extração tem 20 entradas de aba e as versões v0/v1/v2 estão preservadas. Os hashes dos originais constam em FONTES.md, mas sources/private/material-original não existe neste checkout e os nomes exatos não foram encontrados em Downloads. A responsável foi consultada se enviará os originais ou aceita hashes/extrações; resposta pendente. BK-001 permanece aberta até a decisão.",
+    "evidence": "Extração existe em docs/planejamento/work/source_extract/: workbook.json representa 20 abas e manifest.json conserva 17 itens/hashes históricos. Os 17 binários originais não foram localizados; a correspondência da extração não foi comprovada. Aceite aguarda os originais ou aprovação da responsável.",
     "weight": 1,
     "dependencies": [],
     "progress": 0
@@ -185,7 +185,7 @@
     "owner": "Majucau / Financeiro",
     "kind": "Planejamento",
     "status": "Em andamento",
-    "evidence": "Mapa em docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md: DRE/fluxo sem ligação de produção; faltam fonte de aportes/resgates e saldo Itaú transferível. Regra e tela preservadas.",
+    "evidence": "Mapa em docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md: DRE/fluxo sem ligação de produção; faltam fonte de aportes/resgates e saldo Itaú transferível. A responsável reiterou em 11/10/2026 que se preserve a estrutura da calculadora enviada; qualquer mapeamento ainda incerto aguarda confirmação. Regra e tela preservadas.",
     "weight": 1,
     "dependencies": [],
     "progress": 0.3
@@ -1286,14 +1286,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "",
+    "evidence": "60% — filtros de situação por rota e falha segura quando a última página é desconhecida; evidência em docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md. Resposta e cursor da conta real seguem sem homologação.",
     "weight": 1,
     "dependencies": [
       "BK-040",
       "BK-039",
       "BK-038"
     ],
-    "progress": 0.55
+    "progress": 0.6
   },
   {
     "key": "fileingestion",

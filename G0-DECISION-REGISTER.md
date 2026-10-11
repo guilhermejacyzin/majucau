@@ -253,6 +253,13 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - PDF e Excel ficam fora do escopo até nova aprovação.
 - O conteúdo detalhado de cada consulta continua pendente de validação.
 
+### Decisão posterior aprovada — exportação Excel T13–T15
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-11 (America/Sao_Paulo).
+- Nas telas T13 (Lançamentos e Pendências), T14 (Alertas) e T15 (Importações e Integrações), o botão **Exportar** deve gerar um arquivo Excel com as linhas da tabela e a data exibida na tela.
+- Esta decisão especifica o formato e o conteúdo básico dessas três exportações; não autoriza mudar as telas aprovadas nem regras de negócio. Filtros, recorte/paginação, consultas de detalhe e outros dados que não foram definidos continuam pendentes de especificação antes da implementação.
+- T02–T07 não estão incluídas nesta aprovação e T11 Compras permanece somente para consulta, sem exportação ou download.
+
 ## Diretriz aprovada — ordem das consultas pelo painel executivo
 
 - **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).

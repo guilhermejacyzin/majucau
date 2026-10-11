@@ -44,11 +44,11 @@
     "questions": "Aguardar orientação sobre os originais: envio para arquivo privado local ou aceitação de hashes e extrações como suficientes.",
     "owner": "Produto + UX",
     "kind": "Planejamento",
-    "status": "Em andamento",
-    "evidence": "Extração existe em docs/planejamento/work/source_extract/: workbook.json representa 20 abas e manifest.json conserva 17 itens/hashes históricos. Os 17 binários originais não foram localizados; a correspondência da extração não foi comprovada. Aceite aguarda os originais ou aprovação da responsável.",
+    "status": "Concluída",
+    "evidence": "Concluída 11/10: originais/cópias conferidos 17/17 por nome, tamanho e hash; ZIP intacto. Extração: 20 abas. Mockups: 19 hashes e 3 duplicatas conferidos. Detalhes: docs/planejamento/FONTES.md.",
     "weight": 1,
     "dependencies": [],
-    "progress": 0
+    "progress": 1.0
   },
   {
     "key": "repoaudit",
@@ -330,10 +330,10 @@
     "action": "Mapear os controles aprovados a casos de uso, dados e capacidades.",
     "steps": [
       "Preservar botões, navegação e exportações dos mockups/contratos congelados; não pedir nova aprovação da função existente. Exceção aprovada em 10/10/2026: T11 Compras somente mostra dados e não exporta nem baixa arquivos.",
-      "Definir tecnicamente contratos de detalhes, atualização e downloads somente onde a exportação estiver aprovada, preservando filtros, período, snapshot, dados e Excel onde especificado. T11 não oferece download.",
+      "T13–T15: exportar em Excel com as linhas da tabela e a data exibida na tela, conforme aprovação de 11/10/2026. Definir tecnicamente filtros, escopo/paginação e contratos de detalhe, preservando período, snapshot e dados da tela. T02–T07 ainda precisam de formato/conteúdo; T11 não oferece download.",
       "Resolução de pendência registra responsável, data, alteração, origem e justificativa; resolver exige tratar a causa e não apenas esconder o alerta."
     ],
-    "accept": "Cada controle aprovado tem caso de uso e capacidade associados; exportações autorizadas reproduzem a tela. T11 permanece somente para consulta, sem exportação/download. Ausência de arquivo de referência é localização documental, sem função inventada.",
+    "accept": "Cada controle aprovado tem caso de uso e capacidade associados; exportações autorizadas reproduzem a tela. T13–T15 geram Excel com as linhas da tabela e a data exibida. T11 permanece somente para consulta, sem exportação/download. Ausência de arquivo de referência é localização documental, sem função inventada.",
     "impact": "Evita botões decorativos e encerramento indevido de problemas.",
     "deps": [],
     "refs": "S/T/U CEIs; T02–T07; T13–T15; Fechamento vigente 13/09/2026, §§5–6",
@@ -341,10 +341,10 @@
     "owner": "Majucau + UX",
     "kind": "Planejamento",
     "status": "Em andamento",
-    "evidence": "",
+    "evidence": "25%: T02–T07/T13–T15 mapeadas; Excel com tabela e data da tela aprovado para T13–T15. Faltam filtros/escopo, rota e detalhes. Ver auditoria.",
     "weight": 1,
     "dependencies": [],
-    "progress": 0.1
+    "progress": 0.25
   },
   {
     "key": "accesspolicy",
@@ -722,14 +722,14 @@
     "owner": "Segurança + Arquitetura",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "Mapa e testes controlados em docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md. Busca estática adicional confirma CSV por linha, Bling com decoder direto e limite de 4 MiB/100 registros por página, e consultas de linhas com Rows.Next(); leituras completas restantes têm limites explícitos. BK-024 permanece em 30% porque ainda faltam falhas controladas, fechar o mapa de riscos e validar VM limpa, rede, disco cheio/ACL e acesso por perfil.",
+    "evidence": "ACL validada no Windows de desenvolvimento; faltam instalador com conta/credencial do worker e ensaio em VM. BK-024 parcial.",
     "weight": 1,
     "dependencies": [
       "BK-013",
       "BK-014",
       "BK-019"
     ],
-    "progress": 0.3
+    "progress": 0.35
   },
   {
     "key": "repoinit",
@@ -948,13 +948,13 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "",
+    "evidence": "e4e76cb: referência de erro ligada ao request_id do log; CI 38169879308 passou nos 4 jobs. Pendente conferência visual e ACL dos logs em instalação/VM.",
     "weight": 1,
     "dependencies": [
       "BK-027",
       "BK-024"
     ],
-    "progress": 0.8
+    "progress": 0.85
   },
   {
     "key": "identity",
@@ -1286,14 +1286,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "60% — filtros de situação por rota e falha segura quando a última página é desconhecida; evidência em docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md. Resposta e cursor da conta real seguem sem homologação.",
+    "evidence": "65% — cabeçalho JWT enable-jwt:1 em OAuth e chamadas autenticadas; filtros de situação por rota e falha segura quando a última página é desconhecida. CI 38172628938 passou. Resposta real e cursor seguem sem homologação; evidências em docs/evidence/BLING-JWT-MIGRATION-2026-10-11.md e BLING-PAGINATION-CONTRACT-2026-10-11.md.",
     "weight": 1,
     "dependencies": [
       "BK-040",
       "BK-039",
       "BK-038"
     ],
-    "progress": 0.6
+    "progress": 0.65
   },
   {
     "key": "fileingestion",
@@ -1785,15 +1785,15 @@
     "questions": "Q-20,F-19,F-20",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "BK-056 parcial (11/10): leitura incremental, com cancelamento e sem totais parciais em falha. Regras D-005-A preservadas; sem integração com fonte ou tela. Ver docs/evidence/AGING-STREAM-READER-2026-10-11.md.",
     "weight": 1,
     "dependencies": [
       "BK-046",
       "BK-053",
       "BK-020"
     ],
-    "progress": 0
+    "progress": 0.05
   },
   {
     "key": "receivablesscreen",

@@ -342,6 +342,23 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Pela média simples, `(7 × 100% + 30% + 20% + 15% + 15% + 15% + 5% + 35% + 70% + 85% + 65% + 20%) ÷ 127 = 8,5%`; restam 91,5%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
 - A execução local de `scripts/verify-backlog.ps1` confirmou 127 tarefas, 7 concluídas, 11 em andamento, 109 não iniciadas, 8,5% concluído e 91,5% restante. `git diff --check` passou. Não foram executados testes de produto.
 
+### Matriz das referências de exportação T02–T07 — 11/10/2026
+
+- A conferência das seis referências aprovadas confirmou o botão **Exportar** e registrou os campos, métricas e ações de leitura visíveis em cada tela. A matriz está em `docs/evidence/ACTION-EXPORT-STATIC-AUDIT-2026-10-11.md`, junto do mapeamento T13–T15.
+- O handoff antigo não abre os menus nem fixa formato por tela; a aprovação posterior permite exportar relatórios, mas ainda não define o formato nem todo o conteúdo. O contrato financeiro permanece o mesmo: usar dados, filtros, período, snapshot e métricas da tela. Nenhuma regra ou tela foi alterada.
+- T06 segue as decisões posteriores: DRE própria do Majucau, EBIT/EBITDA em cards de consulta, cards de CAPEX fora das linhas e do lucro; campos sem base confiável continuam indisponíveis. O mockup arquivado é anterior a essas decisões.
+- BK-012 avança de 15% para 20%. O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; BK-006 (30%), BK-007 (20%), BK-012 (20%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (65%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 20% + 15% + 15% + 5% + 35% + 70% + 85% + 65% + 20%) ÷ 127 = 8,5%`; restam 91,5%. É estimativa, não prontidão. Não há prazo global confiável.
+- `scripts/verify-backlog.ps1` confirmou 127 tarefas, 7 concluídas, 11 em andamento, 109 não iniciadas, 8,5% concluído e 91,5% restante; `git diff --check` passou. Não foram executados testes de produto nesta alteração documental.
+
+### Conteúdo Excel aprovado para T13–T15 — 11/10/2026
+
+- Gisele definiu que as exportações de T13 (Lançamentos e Pendências), T14 (Alertas) e T15 (Importações e Integrações) serão em Excel, com as linhas da tabela e a data exibida na tela. A decisão está no `G0-DECISION-REGISTER.md` e detalhada na matriz `docs/evidence/ACTION-EXPORT-STATIC-AUDIT-2026-10-11.md`.
+- Filtros, escopo/paginação, consultas de detalhe e rotas de exportação continuam pendentes. Esta definição não altera telas aprovadas ou regras de negócio; T02–T07 ainda precisam de especificação de formato e conteúdo, e T11 permanece sem exportação.
+- BK-012 avança de 20% para 25%; faltam 75% da tarefa. O backlog permanece com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (25%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (65%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 25% + 15% + 15% + 5% + 35% + 70% + 85% + 65% + 20%) ÷ 127 = 8,5%`; restam 91,5%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
+- `scripts/verify-backlog.ps1` confirmou 127 tarefas, 7 concluídas, 11 em andamento, 109 não iniciadas, 8,5% concluído e 91,5% restante. `docs/planejamento/work/verify_package.py` confirmou 127 tarefas sincronizadas, 76 links locais válidos e nenhuma fórmula com erro. `git diff --check` passou. Nenhum teste de produto foi executado para esta atualização documental.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -656,7 +673,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-012 — Especificar ações e exportações já previstas
 
-**Situação:** Em andamento. **Evolução:** 15% (a auditoria estática inicial foi ampliada com uma matriz parcial das referências T13–T15, mapeando os botões aprovados, campos visíveis, ações de leitura e capacidades. L-22/Q-13 já confirmam preservar as exportações, portanto não falta decidir se elas existem. A rota de relatório ainda não existe; falta mapear T02–T07 e completar os contratos de filtros/período, escopo dos dados, formato e detalhes para T13–T15, sem presumir conteúdo). **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
+**Situação:** Em andamento. **Evolução:** 25% (a auditoria estática inclui matriz parcial das referências T02–T07 e T13–T15, mapeando botões aprovados, campos visíveis, ações de leitura e capacidades. Gisele aprovou Excel com as linhas da tabela e a data exibida na tela para T13–T15. Ainda não há rota de relatório. Permanecem pendentes o formato/conteúdo de T02–T07, filtros e escopo, contratos de detalhe e enforcement da capacidade no worker; não presumir conteúdo). **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
 
 **Objetivo:** Especificar o que cada botão pode fazer.
 

@@ -28,6 +28,6 @@ Na planilha, uma tarefa pontua 100% somente quando está concluída e possui evi
 
 ### Estado atual do backlog — 11/10/2026
 
-O backlog detalhado registra **7 tarefas concluídas, 11 em andamento e 109 não iniciadas**. As tarefas em andamento são BK-006 (30%), BK-007 (20%), BK-012 (15%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (65%), BK-056 (5%) e BK-067 (20%). Pela média simples das evoluções registradas, o acompanhamento estima **8,5% concluído e 91,5% restante**. Essa média é uma estimativa de planejamento; não comprova prontidão para homologação ou produção.
+O backlog detalhado registra **7 tarefas concluídas, 11 em andamento e 109 não iniciadas**. As tarefas em andamento são BK-006 (30%), BK-007 (20%), BK-012 (25%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (65%), BK-056 (5%) e BK-067 (20%). Pela média simples das evoluções registradas, o acompanhamento estima **8,5% concluído e 91,5% restante**. Essa média é uma estimativa de planejamento; não comprova prontidão para homologação ou produção.
 
 Há código e evidências de CI para partes da fundação, mas ainda faltam validação com dados reais, homologação e revisão das tarefas não iniciadas. Não há prazo global confiável. Consulte o backlog v2 e `REQUIREMENTS-TRACEABILITY.md` antes de usar os números como critério de liberação.

@@ -57,4 +57,14 @@ Esta classificação registra o que os comandos fazem e confronta com as capacid
 - Não foram localizadas verificações de permissão por comando no worker. A conta compartilhada aprovada, por si só, não corrige essa lacuna.
 - A importação manual de CSVs do Bling e da Nuvem Pago foi aprovada para Diretores como parte de `INTEGRATION_SYNC`. A autorização ainda precisa ser aplicada no serviço/worker, com registro de sucesso e negação.
 
-O código e as telas permanecem inalterados nesta reauditoria. O próximo passo é desenhar autenticação/sessão do login próprio e adicionar a permissão de exportação de relatórios ao contrato; depois, aplicar no serviço/worker as capacidades aprovadas, incluindo importação CSV sob `INTEGRATION_SYNC`.
+Na auditoria original, o código de aplicação e as telas permaneceram inalterados. A permissão de exportação de relatórios foi acrescentada em migration aditiva, conforme registrado abaixo. Ainda faltam desenhar autenticação/sessão do login próprio e aplicar no serviço/worker as capacidades aprovadas, incluindo importação CSV sob `INTEGRATION_SYNC`.
+
+## Atualização do catálogo — 2026-10-11
+
+A migration aditiva `000003_director_report_export_permission.up.sql` registra
+`REPORT_EXPORT` e associa a capacidade somente aos perfis `ADMIN` e `DIRECTOR`,
+conforme decisão já aprovada no `G0-DECISION-REGISTER.md`. A migration não cria
+usuários, não abre uma rota de exportação e não aplica autorização no worker.
+Por isso, `SEC-02` e BK-013 continuam parciais; nenhum perfil foi provisionado
+e nenhuma tela foi alterada. A validação de aplicação da migration fica para a
+CI PostgreSQL após o push.

@@ -4,7 +4,7 @@ This directory is the SQL-first persistence boundary for Majucau Financial Intel
 
 ## Layout
 
-- `migrations/*.up.sql`: ordered, forward-only schema changes. `000001_init.up.sql` creates the schema; `000002_streaming_batch_counts.up.sql` widens sync-batch counters to `bigint` for large streaming imports.
+- `migrations/*.up.sql`: ordered, forward-only schema changes. `000001_init.up.sql` creates the schema; `000002_streaming_batch_counts.up.sql` widens sync-batch counters to `bigint` for large streaming imports; `000003_director_report_export_permission.up.sql` adds the approved `REPORT_EXPORT` capability to `ADMIN` and `DIRECTOR`.
 - `queries/`: SQL consumed by `sqlc` for health, integration status/revocation, RAW ingestion and idempotent receipt batches.
 - `privileges/runtime.sql`: least-privilege grants applied after migrations.
 - `sqlc.yaml`: PostgreSQL + `pgx/v5` generation configuration.

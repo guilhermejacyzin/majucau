@@ -52,12 +52,11 @@ anteriores.
   atrasado não recria a autorização.
 - Testes locais de `internal/integrations/bling` e `cmd/worker`, `go vet` e o
   scanner local de segredos passaram. O detector `go test -race` não pôde rodar
-  neste Windows porque `CGO_ENABLED=0` e não há compilador C instalado. Na CI
-  `38119637844`, a etapa `-race` Ubuntu e o job PostgreSQL passaram. O job
-  Windows parou no scanner de segredos porque um valor fictício de teste não
-  tinha o marcador `test-only`; a linha foi identificada, marcada, e o scanner
-  local passou após a correção. A CI deve ser executada novamente para confirmar
-  a correção do scanner e as demais etapas Windows.
+  neste Windows porque `CGO_ENABLED=0` e não há compilador C instalado. A CI
+  `38119637844` passou no detector `-race` Ubuntu e no job PostgreSQL; o Windows
+  apontou um falso positivo em um valor fictício sem marcador, corrigido no
+  commit `cc97182`. A CI completa `38120125096` passou nos jobs Windows e
+  PostgreSQL, incluindo os dois cenários `-race`.
 
 ## Limite e próximos passos
 

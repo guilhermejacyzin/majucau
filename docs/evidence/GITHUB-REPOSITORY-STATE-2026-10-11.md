@@ -21,5 +21,5 @@ Esta revalidação foi apenas documental. Nenhuma branch foi mesclada, nenhuma t
 ### Confirmação pública do estado da `main` — 11/10/2026
 
 - A API pública de metadados da branch (`GET /repos/guilhermejacyzin/majucau/branches/main`) retornou `protected: false` para `main`, no commit `39f8630390936717b2500c8b7ce923dc138cca72`. Portanto, a branch principal está sem proteção ativa neste momento; a consulta antiga com HTTP 403 não permitia concluir isso, mas esta consulta pública permite.
-- A CI local contém os jobs `verify-windows` e `verify-postgres`; isso identifica verificações disponíveis, mas não as torna obrigatórias no GitHub. A integração continua sem permissão para configurar proteção.
+- A CI contém os jobs `verify-backlog`, `verify-windows` e `verify-postgres`; isso identifica verificações disponíveis, mas não as torna obrigatórias no GitHub. `verify-backlog` executa em todo push/PR, inclusive mudanças só documentais. A integração continua sem permissão para configurar proteção.
 - Nenhuma regra de branch foi alterada. Para concluir BK-025, uma pessoa administradora precisa configurar proteção da `main` com revisão e verificações apropriadas em **GitHub → repositório Majucau → Settings → Branches**. Como essa configuração pode bloquear pushes/merges diretos, ela não foi aplicada automaticamente.

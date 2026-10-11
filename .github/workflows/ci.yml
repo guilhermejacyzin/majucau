@@ -60,6 +60,21 @@ jobs:
           done <<< "$changed_paths"
           echo "run_platform_checks=$run_checks" >> "$GITHUB_OUTPUT"
 
+  verify-backlog:
+    # Backlog validation must run even when the change only updates docs.
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify backlog counts and progress percentages
+        shell: pwsh
+        run: ./scripts/verify-backlog.ps1
+
+      - name: Verify backlog checker rejects inconsistent summaries
+        shell: pwsh
+        run: ./scripts/test-verify-backlog.ps1
+
   verify-windows:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.run_platform_checks == 'true' }}
@@ -73,14 +88,6 @@ jobs:
       npm_config_cache: '${{ github.workspace }}\artifacts\cache\npm'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Verify backlog counts and progress percentages
-        shell: pwsh
-        run: ./scripts/verify-backlog.ps1
-
-      - name: Verify backlog checker rejects inconsistent summaries
-        shell: pwsh
-        run: ./scripts/test-verify-backlog.ps1
 
       - name: Prepare centralized caches
         shell: pwsh

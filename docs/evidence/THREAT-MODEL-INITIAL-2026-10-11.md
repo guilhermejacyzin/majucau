@@ -389,3 +389,15 @@ BK-024 permanece em 30% e o projeto mantém a estimativa registrada de 7,5% conc
 - O helper escreve o ZIP num temporário ao lado do destino, fecha e sincroniza o arquivo, publica o destino com `os.Rename` e calcula o SHA-256 com `io.Copy`. Se a operação falhar, remove o temporário; a tentativa e seus limites constam em `internal/installer/diagnostics.go`.
 - Os backups continuam sendo a saída de maior porte: V1 é lido em fluxo para compatibilidade e V2 cifra/decifra blocos autenticados, conforme `docs/evidence/BACKUP-STREAMING-IMPLEMENTATION-2026-10-03.md`. Essa revisão não repetiu o teste operacional de backup/restore.
 - Permanecem pendentes o contrato dos relatórios por tela e a revisão operacional de ACL/limpeza em VM limpa. Nenhum teste ou build foi executado nesta revisão; BK-024 continua em 30%, sem mudança de telas ou regras financeiras.
+
+## Revisão estática das chamadas de limpeza recursiva — 11/10/2026
+
+**Tipo:** leitura de código e inventário das chamadas; nenhum teste foi executado.
+
+- A busca por `os.RemoveAll` encontrou uma única chamada de produção, encapsulada por `securetemp.RemoveAll`. Os chamadores de produção revisados passam diretórios retornados por `securetemp.NewDir`: prévia CSV, criação de backup e restauração. Nenhum chamador de produção fornece diretamente um caminho digitado por usuário.
+- `securetemp.RemoveAll` recusa caminho vazio, relativo ou raiz do volume e transforma falha em `securetemp.CleanupError`; a mensagem comum não revela o caminho. A implementação delega a remoção ao `os.RemoveAll` da biblioteca padrão Go.
+- No Windows, `securetemp.NewDir` cria pasta com DACL protegida para proprietário, SYSTEM e administradores. Nas outras plataformas, cria pasta temporária e restringe a permissão ao proprietário (`0700`). A ACL efetiva de uma máquina não foi medida nesta revisão.
+- A busca por exclusão recursiva em PowerShell encontrou o `Remove-Item -Recurse` dentro de `scripts/SafeCleanup.psm1`. O módulo valida o destino esperado dentro do projeto, rejeita reparse points nos pais e no conteúdo, e interrompe se a remoção falhar.
+- Limite de desenho a acompanhar: `securetemp.RemoveAll` valida que o caminho é absoluto e não é a raiz, mas não comprova por si só que o caminho veio de `NewDir` nem que está abaixo de um diretório pai permitido. Os chamadores atuais auditados usam o resultado de `NewDir`; novos chamadores devem preservar esse contrato. Uma proteção por tipo de workspace ou diretório-raiz restrito merece avaliação antes de aceitar qualquer caminho externo.
+- Esta leitura não prova comportamento em falhas reais de disco/ACL, encerramento forçado ou ambiente instalado. Continuam necessários ensaios em VM e a verificação operacional da ACL. Nenhum cache ou output foi criado nesta revisão; nenhum arquivo foi apagado.
+- Não houve alteração de código, dados persistidos, telas ou regras financeiras. BK-024 permanece em 30%; esta evidência estática não substitui as validações pendentes.

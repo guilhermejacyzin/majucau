@@ -297,6 +297,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - As leituras completas encontradas ficam limitadas a envelopes de controle, credenciais e metadados; os scripts usam `Read-BoundedTextFile` antes de `ReadToEnd`. A evidência detalha o escopo e os limites em `docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md`.
 - BK-024 continua em 30%: a revisão estática não substitui injeções de falha, validação operacional de disco/ACL, VM limpa, rede ou perfis. Nenhum teste ou build foi executado; telas e regras financeiras permaneceram intactas. O projeto segue em 7,5% concluído e 92,5% restante.
 
+### Revisão estática das chamadas de limpeza recursiva — 11/10/2026
+
+- A leitura de código encontrou uma única chamada de produção a `os.RemoveAll`, encapsulada em `securetemp.RemoveAll`. Os chamadores auditados passam caminhos criados por `securetemp.NewDir`; no Windows, essa criação usa DACL protegida, e nas outras plataformas restringe o acesso ao proprietário.
+- A função de limpeza exige caminho absoluto e recusa a raiz, mas não comprova por si só que o caminho veio de `NewDir`. Essa limitação ficou registrada na evidência `docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md`; os chamadores atuais não recebem caminhos diretamente da pessoa usuária.
+- BK-024 permanece em 30% porque a revisão estática não substitui falhas reais de disco/ACL nem validação em VM. O projeto permanece em 7,5% concluído e 92,5% restante. Nenhum teste, build, tela ou regra financeira foi alterado nesta revisão.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau

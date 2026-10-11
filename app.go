@@ -81,12 +81,15 @@ func (a *App) GetBootstrapState() BootstrapState {
 		Method:    ipc.MethodHealth,
 	})
 	if err != nil || !healthResponse.OK {
+		if healthResponse.RequestID != "" {
+			unavailable.Message = diagnosticMessage(unavailable.ErrorCode, unavailable.Message, healthResponse.RequestID)
+		}
 		return unavailable
 	}
 	var health application.HealthResponse
 	if err := json.Unmarshal(healthResponse.Payload, &health); err != nil {
 		unavailable.ErrorCode = "WORKER_INVALID_RESPONSE"
-		unavailable.Message = "O serviço local respondeu em formato inválido."
+		unavailable.Message = diagnosticMessage(unavailable.ErrorCode, "O serviço local respondeu em formato inválido.", healthResponse.RequestID)
 		return unavailable
 	}
 
@@ -96,23 +99,28 @@ func (a *App) GetBootstrapState() BootstrapState {
 		Method:    ipc.MethodIntegrationStatus,
 	})
 	if err != nil || !integrationResponse.OK {
+		message := "O status das integrações não pôde ser consultado."
+		if integrationResponse.RequestID != "" {
+			message = diagnosticMessage("INTEGRATION_STATUS_UNAVAILABLE", message, integrationResponse.RequestID)
+		}
 		return BootstrapState{
 			AppVersion:   appVersion,
 			Worker:       health,
 			Integrations: unavailableIntegrations(),
 			ErrorCode:    "INTEGRATION_STATUS_UNAVAILABLE",
-			Message:      "O status das integrações não pôde ser consultado.",
+			Message:      message,
 			CheckedAt:    checkedAt,
 		}
 	}
 	var integrations []application.IntegrationStatus
 	if err := json.Unmarshal(integrationResponse.Payload, &integrations); err != nil {
+		message := diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", integrationResponse.RequestID)
 		return BootstrapState{
 			AppVersion:   appVersion,
 			Worker:       health,
 			Integrations: unavailableIntegrations(),
 			ErrorCode:    "WORKER_INVALID_RESPONSE",
-			Message:      "O serviço local respondeu em formato inválido.",
+			Message:      message,
 			CheckedAt:    checkedAt,
 		}
 	}
@@ -173,7 +181,7 @@ func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
 	result := <-decoded
 	if result.tooLarge {
 		fallback.ErrorCode = "WORKER_INVALID_RESPONSE"
-		fallback.Message = "O serviço local respondeu em formato inválido."
+		fallback.Message = diagnosticMessage(fallback.ErrorCode, "O serviço local respondeu em formato inválido.", response.RequestID)
 		return fallback
 	}
 	if err != nil {
@@ -186,8 +194,11 @@ func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
 	}
 	if result.err != nil {
 		fallback.ErrorCode = "WORKER_INVALID_RESPONSE"
-		fallback.Message = "O serviço local respondeu em formato inválido."
+		fallback.Message = diagnosticMessage(fallback.ErrorCode, "O serviço local respondeu em formato inválido.", response.RequestID)
 		return fallback
+	}
+	if result.snapshot.ErrorCode != "" {
+		result.snapshot.Message = diagnosticMessage(result.snapshot.ErrorCode, result.snapshot.Message, response.RequestID)
 	}
 	return result.snapshot
 }
@@ -238,14 +249,15 @@ func (a *App) SaveBlingConfig(input application.BlingConfigRequest) application.
 	}
 	if !response.OK {
 		if response.Error == nil {
-			return application.BlingConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+			return application.BlingConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu sem explicar o erro.", response.RequestID)}
 		}
-		return application.BlingConfigResponse{ErrorCode: response.Error.Code, Message: response.Error.Message}
+		return application.BlingConfigResponse{ErrorCode: response.Error.Code, Message: workerErrorMessage(response)}
 	}
 	var result application.BlingConfigResponse
 	if err := json.Unmarshal(response.Payload, &result); err != nil {
-		return application.BlingConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.BlingConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
 	return result
 }
 
@@ -275,14 +287,15 @@ func (a *App) SaveNuvemshopConfig(input application.NuvemshopConfigRequest) appl
 	}
 	if !response.OK {
 		if response.Error == nil {
-			return application.NuvemshopConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+			return application.NuvemshopConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu sem explicar o erro.", response.RequestID)}
 		}
-		return application.NuvemshopConfigResponse{ErrorCode: response.Error.Code, Message: response.Error.Message}
+		return application.NuvemshopConfigResponse{ErrorCode: response.Error.Code, Message: workerErrorMessage(response)}
 	}
 	var result application.NuvemshopConfigResponse
 	if err := json.Unmarshal(response.Payload, &result); err != nil {
-		return application.NuvemshopConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.NuvemshopConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
 	return result
 }
 
@@ -311,8 +324,9 @@ func (a *App) StartBlingOAuth() application.BlingOAuthStartResponse {
 	}
 	var result application.BlingOAuthStartResponse
 	if err := json.Unmarshal(response.Payload, &result); err != nil {
-		return application.BlingOAuthStartResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.BlingOAuthStartResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
 	if result.AuthorizationURL != "" && a.ctx != nil {
 		runtime.BrowserOpenURL(a.ctx, result.AuthorizationURL)
 	}
@@ -347,8 +361,9 @@ func (a *App) GetBlingOAuthStatus(sessionID string) application.BlingOAuthStatus
 	}
 	var result application.BlingOAuthStatusResponse
 	if err := json.Unmarshal(response.Payload, &result); err != nil {
-		return application.BlingOAuthStatusResponse{SessionID: sessionID, ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.BlingOAuthStatusResponse{SessionID: sessionID, ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
 	return result
 }
 
@@ -376,8 +391,9 @@ func (a *App) TestBlingConnection() application.BlingOAuthTestResponse {
 	}
 	var result application.BlingOAuthTestResponse
 	if err := json.Unmarshal(response.Payload, &result); err != nil {
-		return application.BlingOAuthTestResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.BlingOAuthTestResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
 	return result
 }
 
@@ -405,8 +421,9 @@ func (a *App) DisconnectBlingOAuth() application.BlingOAuthDisconnectResponse {
 	}
 	var result application.BlingOAuthDisconnectResponse
 	if err := json.Unmarshal(response.Payload, &result); err != nil {
-		return application.BlingOAuthDisconnectResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.BlingOAuthDisconnectResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
 	return result
 }
 
@@ -438,8 +455,9 @@ func (a *App) SyncBling(input application.BlingSyncRequest) application.BlingSyn
 	}
 	var result application.BlingSyncResponse
 	if err := json.Unmarshal(response.Payload, &result); err != nil {
-		return application.BlingSyncResponse{Status: "FAILED", ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.BlingSyncResponse{Status: "FAILED", ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
 	return result
 }
 
@@ -451,10 +469,22 @@ func workerErrorCode(response ipc.Response) string {
 }
 
 func workerErrorMessage(response ipc.Response) string {
+	message := "O serviço local respondeu sem explicar o erro."
 	if response.Error == nil || response.Error.Message == "" {
-		return "O serviço local respondeu sem explicar o erro."
+		return diagnosticMessage(workerErrorCode(response), message, response.RequestID)
 	}
-	return response.Error.Message
+	message = response.Error.Message
+	return diagnosticMessage(workerErrorCode(response), message, response.RequestID)
+}
+
+func diagnosticMessage(errorCode, message, requestID string) string {
+	if errorCode == "" || requestID == "" {
+		return message
+	}
+	if message == "" {
+		return fmt.Sprintf("Referência técnica: %s", requestID)
+	}
+	return fmt.Sprintf("%s Referência técnica: %s.", message, requestID)
 }
 
 // PreviewBlingReceipts asks the worker to validate a local Bling export folder.
@@ -482,14 +512,15 @@ func (a *App) PreviewBlingReceipts(folder string) application.BlingReceiptImport
 	}
 	if !response.OK {
 		if response.Error == nil {
-			return application.BlingReceiptImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+			return application.BlingReceiptImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu sem explicar o erro.", response.RequestID)}
 		}
-		return application.BlingReceiptImportPreview{ErrorCode: response.Error.Code, Message: response.Error.Message}
+		return application.BlingReceiptImportPreview{ErrorCode: response.Error.Code, Message: workerErrorMessage(response)}
 	}
 	var preview application.BlingReceiptImportPreview
 	if err := json.Unmarshal(response.Payload, &preview); err != nil {
-		return application.BlingReceiptImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.BlingReceiptImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	preview.Message = diagnosticMessage(preview.ErrorCode, preview.Message, response.RequestID)
 	return preview
 }
 
@@ -518,14 +549,15 @@ func (a *App) ImportBlingReceipts(folder string) application.BlingReceiptImportR
 	}
 	if !response.OK {
 		if response.Error == nil {
-			return application.BlingReceiptImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+			return application.BlingReceiptImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu sem explicar o erro.", response.RequestID)}
 		}
-		return application.BlingReceiptImportResult{ErrorCode: response.Error.Code, Message: response.Error.Message}
+		return application.BlingReceiptImportResult{ErrorCode: response.Error.Code, Message: workerErrorMessage(response)}
 	}
 	var result application.BlingReceiptImportResult
 	if err := json.Unmarshal(response.Payload, &result); err != nil {
-		return application.BlingReceiptImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.BlingReceiptImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
 	return result
 }
 
@@ -554,14 +586,15 @@ func (a *App) PreviewNuvemPagoFuture(folder string) application.NuvemPagoFutureI
 	}
 	if !response.OK {
 		if response.Error == nil {
-			return application.NuvemPagoFutureImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+			return application.NuvemPagoFutureImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu sem explicar o erro.", response.RequestID)}
 		}
-		return application.NuvemPagoFutureImportPreview{ErrorCode: response.Error.Code, Message: response.Error.Message}
+		return application.NuvemPagoFutureImportPreview{ErrorCode: response.Error.Code, Message: workerErrorMessage(response)}
 	}
 	var preview application.NuvemPagoFutureImportPreview
 	if err := json.Unmarshal(response.Payload, &preview); err != nil {
-		return application.NuvemPagoFutureImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.NuvemPagoFutureImportPreview{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	preview.Message = diagnosticMessage(preview.ErrorCode, preview.Message, response.RequestID)
 	return preview
 }
 
@@ -590,14 +623,15 @@ func (a *App) ImportNuvemPagoFuture(folder string) application.NuvemPagoFutureIm
 	}
 	if !response.OK {
 		if response.Error == nil {
-			return application.NuvemPagoFutureImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu sem explicar o erro."}
+			return application.NuvemPagoFutureImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu sem explicar o erro.", response.RequestID)}
 		}
-		return application.NuvemPagoFutureImportResult{ErrorCode: response.Error.Code, Message: response.Error.Message}
+		return application.NuvemPagoFutureImportResult{ErrorCode: response.Error.Code, Message: workerErrorMessage(response)}
 	}
 	var result application.NuvemPagoFutureImportResult
 	if err := json.Unmarshal(response.Payload, &result); err != nil {
-		return application.NuvemPagoFutureImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: "O serviço local respondeu em formato inválido."}
+		return application.NuvemPagoFutureImportResult{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
 	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
 	return result
 }
 

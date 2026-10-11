@@ -75,3 +75,22 @@ A CI `38122175947` também gerou o artefato unsigned `majucau-g1-unsigned`
 `4025c2781e022de5cfeed2af0d6b5a42a05b38a2c56a3f6b2786f6445e01d2e9`), com
 expiração automática em 2026-10-12 07:47:26 UTC. Ele está registrado no
 controle local de limpeza. Nenhum artefato unsigned é uma versão de produção.
+
+## Complemento — referência técnica junto às mensagens de erro — 11/10/2026
+
+- A responsável autorizou acrescentar uma referência curta ao texto de erro,
+  preservando posição, estrutura e desenho da tela aprovada.
+- `app.go` agora inclui o `request_id` já usado pelo worker nos logs nas
+  mensagens de falhas recebidas nas operações de saúde, painel, integrações,
+  sincronização e importação. A mensagem informa “Referência técnica” seguida
+  pelo mesmo ID que aparece no evento `worker_request_completed`; o código de
+  erro continua separado e não muda.
+- O ID é acrescentado somente quando existe um código de erro e uma chamada
+  identificada. Falhas anteriores ao envio ao worker não recebem referência,
+  pois não há evento correspondente para localizar. A mensagem não inclui
+  segredos, conteúdo financeiro ou detalhes brutos do erro.
+- Revisão feita com `gofmt` e `git diff --check`. Nenhum teste ou build local foi
+  executado nesta etapa. A validação automatizada da CI e a conferência visual
+  da referência no protótipo continuam pendentes.
+- A mudança altera somente o texto complementar autorizado. Nenhum layout,
+  regra financeira, regra de negócio ou dado persistido foi alterado.

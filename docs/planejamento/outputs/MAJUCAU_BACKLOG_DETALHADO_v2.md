@@ -63,6 +63,15 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Sete tarefas tiveram auditoria atual concluída: BK-000, BK-002, BK-003, BK-004, BK-005, BK-025 e BK-067. BK-001 aguarda os materiais originais ou a decisão da responsável; 119 tarefas ainda aguardam revisão individual.
 - Prazo global continua sem estimativa confiável, pois ainda faltam essa revisão, fontes reais, validações e decisões operacionais.
 
+### Recontagem após auditoria de BK-030 — 11/10/2026
+
+- A CI de Go/Windows e PostgreSQL já contém testes, lint, análise de dependências e segredos, builds e checagens de artefatos em runners hospedados pelo GitHub. A auditoria encontrou que o instalador unsigned era enviado como artefato mesmo se uma verificação anterior falhasse. A condição foi alterada para `success()`; a CI pós-alteração ainda precisa confirmar o comportamento. Não houve execução local de testes.
+- BK-030 passa a `Em andamento`, com estimativa de 85%; resta confirmar a alteração na CI. Os requisitos de status checks obrigatórios e revisão de PR pertencem também à configuração remota do GitHub e ainda não foram confirmados (BK-025).
+- O backlog continua com 127 tarefas: 5 concluídas, 7 em andamento e 115 não iniciadas. As tarefas em andamento são BK-001 (0%), BK-006 (10%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-030 (85%) e BK-067 (20%).
+- Pela média simples configurada no backlog, o indicador passa a `(5 × 100% + 0% + 10% + 10% + 15% + 60% + 85% + 20%) ÷ 127 = 5,5%`; restam 94,5%. É uma estimativa do rastreador, não uma medição de esforço nem prova de prontidão para produção.
+- Oito tarefas tiveram auditoria atual concluída: BK-000, BK-002, BK-003, BK-004, BK-005, BK-025, BK-030 e BK-067. BK-001 aguarda os materiais originais ou a decisão da responsável; 118 tarefas ainda aguardam revisão individual.
+- Prazo global continua sem estimativa confiável, pois ainda faltam essa revisão, fontes reais, validações e decisões operacionais.
+
 ### Revalidação do GitHub — 11/10/2026
 
 - BK-002 foi revalidada em modo de leitura. `main` continua em `39f8630`; a branch `codex/majucau-artifact-consolidation` está em `1d90a0a`, 206 commits à frente e nenhum atrás; há cinco PRs abertos e nenhuma issue aberta. Evidência: `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-11.md`.
@@ -825,7 +834,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-030 — Configurar verificações automáticas do projeto
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia + Infraestrutura.
+**Situação:** Em andamento. **Evolução:** 85% (estimativa de planejamento; a CI já executa verificações de Go, frontend, PostgreSQL, segurança, dependências, builds e consolidação em runners hospedados. A publicação do instalador unsigned agora só ocorre após sucesso das etapas anteriores. A CI pós-alteração ainda precisa confirmar a mudança; exigência remota de checks antes do merge segue sem confirmação, também registrada em BK-025). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia + Infraestrutura.
 
 **Objetivo:** Detectar regressões antes da entrega.
 
@@ -844,6 +853,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Dependências:** BK-027, BK-028
 
 **Fonte:** Repositório público; recomendação GitHub Actions
+
+**Reauditoria estática de 2026-10-11:** `.github/workflows/ci.yml` limita as permissões do token a `contents: read`, executa o job Windows em `windows-2025` e o PostgreSQL em `ubuntu-24.04`, sem runner da rede da Majucau. O workflow roda em `push` e `pull_request`. A etapa `Upload unsigned G1 build` agora usa `if: success()`, de forma que uma verificação anterior falha e impede o envio do pacote; a execução automática da CI para este commit permanece pendente nesta revisão.
 
 ### BK-031 — Criar logs e rastreio técnico básicos
 

@@ -77,3 +77,11 @@ de cada dependência ou fluxo em execução. O diretório `artifacts/cache` esta
 ausente no momento da conferência. `DATA-04` permanece `PARTIAL` até executar
 carga com observação de memória e confirmar ACL/limpeza em VM Windows 10/11
 limpa.
+
+## Revalidação do estado atual — 11/10/2026
+
+- Revalidei no commit `5d1769875a6177710a8eef93cfe6d2aeca49d6d2` os limites já descritos: respostas do Bling de até 4 MiB e 100 registros por página; CSV processado por linha com limites de campo/registro; listagem de pastas em blocos de 256 nomes; linhas do painel em fluxo, com limite de 50 por tabela, campos de 4 KiB, registros de 16 KiB e resposta Wails de até 16 MiB; quadros IPC de até 512 KiB. Os caminhos de leitura completa continuam limitados por `io.LimitReader`.
+- A revisão confirmou que o painel decodifica os dados recebidos em fluxo e rejeita respostas acima de 16 MiB. Isso mantém um teto explícito de memória, embora o objeto final do painel seja materializado para a interface.
+- A CI [38182492594](https://github.com/guilhermejacyzin/majucau/actions/runs/38182492594) concluiu com sucesso nos quatro jobs: `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`. O Windows executou testes, análise estática, build do aplicativo/worker/instalador, geração de SBOM e limpeza/consolidação de saídas; PostgreSQL executou as verificações de integração e backup/restore descartável.
+- A CI não mede pico de memória sob carga real nem comprova ACL/limpeza em VM limpa. Também não homologa o cursor oficial do Bling. `DATA-04` permanece `PARTIAL`; a aprovação da CI não muda esse status.
+- Nenhuma tela, regra financeira ou comportamento do produto foi alterado nesta revalidação. O relatório unsigned gerado pela CI está identificado no registro local de limpeza, pois a conexão disponível não oferece exclusão de artefatos remotos.

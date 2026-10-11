@@ -211,6 +211,7 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 ### Conferência do pacote local do instalador — 11/10/2026
 
 - A inspeção somente para leitura do NSIS confirmou que ele valida o pacote e instala o aplicativo, worker e helper, além de copiar a migration inicial. O pacote não contém PostgreSQL nem provisiona, inicia ou verifica um serviço PostgreSQL dedicado.
+- `cmd/worker/database.go` lê `MAJUCAU_DATABASE_URL` do ambiente do processo, mas o instalador ainda não configura essa entrada nem há um fluxo aprovado/testado para entregar a senha do banco ao serviço com proteção de segredo. Não colocar uma DSN com senha na configuração persistente do serviço antes de fechar esse desenho.
 - As ferramentas PostgreSQL presentes no computador pertencem à instalação já existente, que não foi presumida exclusiva e continua intocada. Não foi criado cluster/serviço adicional nesta execução.
 - Esta evidência identifica uma dependência para o protótipo instalado completo: o provisionamento isolado do banco precisa entrar no caminho suportado de instalação e passar por validação de ciclo de vida/reboot. Ela não autoriza reaproveitar o serviço atual nem muda as telas ou regras de negócio/financeiras.
 - BK-014 continua em 15%; documentar o estado do instalador melhora o inventário, mas o critério de aceite da proposta operacional ainda não foi atendido. Evidência: `docs/evidence/WINDOWS-ENVIRONMENT-INVENTORY-2026-10-11.md`.

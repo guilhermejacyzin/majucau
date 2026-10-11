@@ -376,6 +376,8 @@ export namespace application {
 	    payables_due_today: DashboardMetric;
 	    payables_overdue: DashboardMetric;
 	    payments_month: DashboardMetric;
+	    capex_paid_month?: DashboardMetric;
+	    capex_accumulated?: DashboardMetric;
 	    receivable_rows?: DashboardReceivableRow[];
 	    payable_rows?: DashboardPayableRow[];
 	    error_code?: string;
@@ -397,6 +399,8 @@ export namespace application {
 	        this.payables_due_today = this.convertValues(source["payables_due_today"], DashboardMetric);
 	        this.payables_overdue = this.convertValues(source["payables_overdue"], DashboardMetric);
 	        this.payments_month = this.convertValues(source["payments_month"], DashboardMetric);
+	        this.capex_paid_month = this.convertValues(source["capex_paid_month"], DashboardMetric);
+	        this.capex_accumulated = this.convertValues(source["capex_accumulated"], DashboardMetric);
 	        this.receivable_rows = this.convertValues(source["receivable_rows"], DashboardReceivableRow);
 	        this.payable_rows = this.convertValues(source["payable_rows"], DashboardPayableRow);
 	        this.error_code = source["error_code"];

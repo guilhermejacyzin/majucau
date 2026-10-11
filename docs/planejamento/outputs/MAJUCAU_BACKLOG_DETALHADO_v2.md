@@ -132,6 +132,15 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - O backlog permanece com 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (15%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-031 (75%), BK-041 (55%) e BK-067 (20%).
 - Pela média simples do rastreador, `(6 × 100% + 0% + 15% + 10% + 15% + 60% + 75% + 55% + 20%) ÷ 127 = 6,7%`; restam 93,3%. Não há prazo global confiável enquanto há 113 tarefas não iniciadas, homologações e validações externas.
 
+### Testes próprios dos logs técnicos — 11/10/2026
+
+- BK-031 avançou de 75% para 80% após acrescentar testes de limites, rotação e retenção dos arquivos recentes, registro JSON e permissões privadas. O gravador também rejeita limites de rotação inválidos e um registro maior que o próprio limite do arquivo antes de gravar.
+- A CI `38122175947` passou nos jobs Windows e PostgreSQL/Linux. O job Linux executou os testes de arquivo e `go vet` do pacote; no Windows passaram a suíte Go, `go vet`, verificações de segurança, frontend, build e instalador. Testes locais de `internal/diagnosticslog` e `go vet` passaram no Windows.
+- Continuam pendentes o teste de ACL em uma instalação/VM limpa, uma referência que ligue o erro mostrado ao log (qualquer mudança na tela aguarda aprovação) e métricas de fila, que só serão definidas se o worker passar a ter uma fila real. Nenhuma tela ou regra financeira foi alterada; a estrutura da calculadora continua sendo a da planilha enviada.
+- O backlog tem 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (15%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples, `(6 × 100% + 0% + 15% + 10% + 15% + 60% + 80% + 55% + 20%) ÷ 127 = 6,7%`; restam 93,3%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão para produção.
+- Não há prazo global confiável enquanto 113 tarefas não foram iniciadas e permanecem decisões, fontes reais e validações operacionais pendentes. Evidência: `docs/evidence/WORKER-STRUCTURED-DIAGNOSTICS-2026-10-11.md`.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -913,7 +922,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-031 — Criar logs e rastreio técnico básicos
 
-**Situação:** Em andamento. **Evolução:** 75% (estimativa; logs do worker e correlação técnica básica implementados, com CI Windows/PostgreSQL aprovada. Falta aprovação do número curto que apareceria junto ao erro na tela, testes próprios e validação de ACL em instalação/VM, além de definir/medir tamanho de fila quando houver uma fila real). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 80% (estimativa; logs do worker, correlação técnica básica, limites de tamanho, rotação e testes próprios passaram na CI Windows/PostgreSQL-Linux. Falta validar ACL em instalação/VM, aprovar uma referência de diagnóstico junto ao erro na tela e definir/medir fila somente se uma fila real for criada). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Diagnosticar falhas sem expor dados sensíveis.
 

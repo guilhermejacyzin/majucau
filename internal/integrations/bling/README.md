@@ -3,22 +3,35 @@
 ## API oficial (caminho principal)
 
 O Bling/API v3 é a fonte de verdade para fatos financeiros operacionais, em
-modo somente leitura. O pacote agora contém um cliente técnico para:
+modo somente leitura. O pacote contém um cliente técnico para:
 
-- OAuth 2 Authorization Code e renovação por `refresh_token`;
-- `GET /contas/receber` com paginação (`pagina`/`limite`) e filtros explícitos;
-  o adapter usa até 100 registros por página como limite local de segurança.
-  A documentação geral do Bling informa 100 como padrão configurável, não como
-  máximo comprovado para esses endpoints;
+- OAuth 2 Authorization Code e renovação por `refresh_token`, com o cabeçalho
+  `enable-jwt: 1` exigido pela migração JWT;
+- `GET /contas/receber` e `GET /contas/pagar`, com paginação (`pagina`/`limite`)
+  e filtros explícitos por rota;
+- consulta de detalhe `GET /contas/pagar/{idContaPagar}`,
+  `GET /borderos/{idBordero}` e `GET /categorias/receitas-despesas/{id}`;
+- leitura de uma página de `GET /categorias/receitas-despesas`;
 - classificação segura de 401/403, 429, timeout, indisponibilidade e resposta
   fora do contrato;
 - preservação dos itens retornados como JSON bruto até a homologação dos
   campos reais da conta Bling.
 
+As leituras são limitadas a 4 MiB por resposta e 100 registros por página; 100
+é um teto local de segurança, não um máximo comprovado pelo Bling. Consultas
+`GET` repetíveis usam o retry comum do projeto, com até três tentativas totais
+para falhas transitórias. A troca e a renovação OAuth usam `POST` e não recebem
+retry automático.
+
 O cliente não grava credenciais, não escreve no Bling, não faz scraping e não
 assume campos financeiros que ainda não foram confirmados em uma resposta
 real. O segredo deve chegar somente ao worker, ser protegido por DPAPI e
 nunca ser enviado ao frontend, colocado em URL ou incluído em logs/erros.
+
+As consultas de detalhe e categorias aplicam o mesmo limite de resposta,
+cancelamento, JWT e retry seguro. Elas retornam apenas o objeto `data` como JSON
+bruto; ainda não persistem esses detalhes nem os transformam em fatos do
+Majucau. A leitura de categorias retorna uma página por chamada.
 
 O teste de conexão faz uma leitura mínima de `contas/receber` com uma linha.
 Isso prova transporte, autorização e formato básico, mas não equivale à
@@ -26,10 +39,21 @@ homologação funcional dos campos. A homologação BK-040 ainda precisa registr
 endpoint, campo, significado, ausência, limites e uma amostra sanitizada da
 conta autorizada antes da normalização contábil.
 
-A documentação geral confirma os parâmetros de paginação `pagina` e `limite`,
-mas não homologa o objeto de paginação da resposta nem um cursor incremental
-específico de `contas/receber`. O contrato observado e a lacuna estão registrados
-em `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-03.md`.
+A integração não considera uma página curta ou metadado ausente como prova de
+que a lista terminou: o chamador deve conferir `HasNextKnown` antes de avançar
+ou fechar a sincronização. O contrato público de recebíveis não documenta um
+marcador de última página nem um cursor incremental por alteração; por isso,
+essa homologação continua pendente. O detalhe está em
+`docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
+
+O schema público de categorias descreve `data[]`, sem informar como identificar
+a última página; o cliente não pode declarar a lista completa sem esse
+marcador. O endpoint `GET /caixas` ainda não está implementado no cliente. Ele
+é o caminho planejado para alimentar os cards CAPEX, mas os IDs de categoria e
+a correspondência dos movimentos com os relatórios da Majucau precisam ser
+confirmados antes de exibir valores. Os métodos atuais de conta a pagar,
+borderô e categoria não preenchem os cards nem alteram a DRE. Consulte
+`docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md`.
 
 O `ReceivablesAPISyncService` já fecha a etapa seguinte de infraestrutura: lê
 as páginas e grava cada página como evidência RAW append-only em uma transação

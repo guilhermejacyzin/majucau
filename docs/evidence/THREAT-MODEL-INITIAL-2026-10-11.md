@@ -292,10 +292,13 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
   passaram localmente. Também passaram os testes de todos os pacotes em
   `cmd`, `database` e `internal`, além de `go vet ./cmd/... ./database/... ./internal/...`.
   O comando `go test ./...` não conseguiu preparar somente o pacote principal:
-  `main.go` incorpora `frontend/dist`, que não estava gerada nesta cópia. A CI
-  prepara esse arquivo antes dos testes completos. Os caches desta execução
-  foram centralizados em `artifacts/cache` e removidos pelo módulo seguro após
-  as verificações; a CI desta revisão será registrada após o push.
+  `main.go` incorpora `frontend/dist`, que não estava gerada nesta cópia. Por
+  isso, o teste geral local parou na preparação do pacote principal. A [CI do
+  commit e565c39](https://github.com/guilhermejacyzin/majucau/actions/runs/38138263712)
+  preparou o bundle e passou em Go tests, Go vet, análise de vulnerabilidades,
+  build frontend, builds do desktop/worker, consolidação de outputs e nos quatro
+  jobs Windows/PostgreSQL/backlog. Os caches locais foram centralizados em
+  `artifacts/cache` e removidos pelo módulo seguro após as verificações.
 - Continuam pendentes ensaios controlados que provoquem falhas reais de limpeza,
   a auditoria mais ampla, VM limpa, validação de rede e testes de acesso por
   perfil.

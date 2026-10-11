@@ -11,4 +11,8 @@ O verificador do backlog e seu teste de rejeição estavam dentro do job `verify
 - Os jobs de Windows e PostgreSQL continuam condicionados a mudanças que precisem de validação do produto; a verificação documental do backlog não depende deles.
 - O novo status `verify-backlog` pode ser exigido junto dos status de produto quando a proteção de `main` for configurada por uma pessoa administradora.
 
-Esta alteração corrige o pipeline; o resultado da CI deste commit será registrado após a execução remota. Nenhuma tela ou regra financeira foi alterada.
+## Validação remota
+
+A execução `38130879386`, no commit `76ae8a9`, passou nos quatro jobs: `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`. O job novo validou contagens/percentuais e rejeitou o resumo incorreto de teste. Windows e PostgreSQL executaram a CI de produto completa com sucesso. O instalador unsigned temporário gerado por esse run está registrado para expiração/exclusão manual em `artifacts/retained/cleanup-register.md`.
+
+Nenhuma tela ou regra financeira foi alterada.

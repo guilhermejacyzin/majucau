@@ -203,7 +203,7 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 ### Verificação do backlog em mudanças só documentais — 11/10/2026
 
 - A CI anterior ao commit `9c4c727` executou apenas `detect-changes` em uma atualização documental e ignorou `verify-windows` e `verify-postgres`; por isso, o validador de contagens não rodou. Evidência: execução `38130699588` e `docs/evidence/BACKLOG-CI-ALWAYS-ON-2026-10-11.md`.
-- A CI agora possui um job `verify-backlog` separado, que roda o verificador e seu teste de rejeição em cada push e pull request, inclusive quando só documentos mudam. A primeira execução dessa configuração ainda precisa concluir.
+- A CI agora possui um job `verify-backlog` separado, que roda o verificador e seu teste de rejeição em cada push e pull request, inclusive quando só documentos mudam. A execução `38130879386` passou nesse job e também nos jobs completos de Windows e PostgreSQL.
 - BK-025 permanece em 70%: a conferência automatizada agora também cobre documentação, mas a branch `main` continua sem proteção e exige ação de uma pessoa administradora. Nenhuma tela ou regra financeira foi alterada.
 - O backlog tem 127 tarefas: 6 concluídas, 10 em andamento e 111 não iniciadas. Em andamento: BK-001 (0%), BK-006 (25%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
 - Pela média simples, `(6 × 100% + 0% + 25% + 20% + 10% + 15% + 15% + 70% + 80% + 55% + 20%) ÷ 127 = 7,2%`; restam 92,8%. Ainda não há prazo global confiável.

@@ -2,7 +2,7 @@
 
 ## Objetivo e limite
 
-Revisar a versão de código no commit `0846263` em busca de leituras que tragam
+Revisar a versão de código no commit `6b69298` em busca de leituras que tragam
 arquivos, respostas ou coleções inteiras para a memória. Esta é uma conferência
 estática por busca e leitura dos trechos identificados; não substitui medição de
 memória, testes de carga nem validação de permissões em uma máquina Windows
@@ -11,9 +11,11 @@ limpa. Nenhuma tela ou regra financeira foi alterada.
 ## Resultado da busca
 
 - Não foi encontrado `os.ReadFile` no código Go de produção.
-- As três ocorrências de `io.ReadAll` estão atrás de limites explícitos:
-  arquivo de segredo DPAPI, manifesto/chave pequena de backup e corpo de resposta
-  OAuth/Bling.
+- A revisão atual encontrou duas ocorrências de `io.ReadAll` no código Go de
+  produção. Ambas usam `io.LimitReader` com limite explícito e leem somente um
+  registro pequeno do pacote de backup ou o arquivo cifrado do DPAPI. A resposta
+  OAuth do Bling não está entre elas: ela é decodificada diretamente do corpo
+  HTTP com limite de bytes.
 - A listagem de pastas que podem crescer usa `os.File.ReadDir(256)` e grava os
   nomes em uma tabela temporária do PostgreSQL, sem manter a pasta inteira numa
   lista Go.
@@ -58,3 +60,20 @@ não fica duplicado em memória.
 Validação local em 2026-10-11: `go test ./internal/integrations/bling` e
 `go vet ./internal/integrations/bling` passaram. Isso não substitui medição de
 memória nem homologação com a conta real do Bling.
+
+## Revisão complementar dos leitores e da interface — 2026-10-11
+
+No commit `6b69298`, a busca estática foi ampliada para código de produção Go,
+`frontend/src` e scripts PowerShell. Na interface não foram encontrados usos de
+`fetch`, Axios, `arrayBuffer` ou `blob` para carregar dados diretamente; os
+fluxos passam pelos contratos Wails já descritos acima. Nos scripts, as leituras
+de JSON de preflight/health usam `Read-BoundedTextFile`; a busca não encontrou
+`ReadAllBytes`, `ReadAllText` ou `Get-Content -Raw`. As enumerações recursivas
+identificadas servem para verificar links antes de limpeza segura ou localizar
+um arquivo pequeno de preflight, e não para carregar o conteúdo dos arquivos.
+
+Essa revisão é estática: não mede o pico de memória e não prova o comportamento
+de cada dependência ou fluxo em execução. O diretório `artifacts/cache` estava
+ausente no momento da conferência. `DATA-04` permanece `PARTIAL` até executar
+carga com observação de memória e confirmar ACL/limpeza em VM Windows 10/11
+limpa.

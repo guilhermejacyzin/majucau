@@ -256,3 +256,40 @@ Esta é uma revisão estática dos dois caminhos CSV citados, não uma auditoria
 A CI [38093372456](https://github.com/guilhermejacyzin/majucau/actions/runs/38093372456), executada sobre o commit `43976d3`, passou integralmente nos jobs `verify-windows` e `verify-postgres`. O job Windows concluiu testes e `vet` de Go, lint/typecheck/test/build do frontend, análise de vulnerabilidades e segredos, geração SQL/migrations, builds do desktop/worker/instalador, smoke do bundle e instalador, SBOM/licenças, guardas e consolidação de outputs. O job PostgreSQL aplicou o schema, criou e restaurou backup em banco descartável e concluiu a integração.
 
 Isso comprova a suíte e os fluxos exercitados pelo pipeline nesta revisão; não comprova pico de memória com histórico real, ACL ou limpeza em VM Windows 10/11 limpa. `DATA-04` continua `PARTIAL`. O artefato unsigned temporário da CI está listado em `artifacts/retained/cleanup-register.md`. Nenhuma tela, regra financeira ou código de produção foi alterado.
+
+### Revisão ampliada dos caminhos de dados — 2026-10-11
+
+Foi feita uma leitura estática ampliada dos leitores CSV, paginação do Bling,
+consulta do painel, arquivos temporários da prévia e restauração de backups. A
+busca por leituras integrais encontrou apenas usos delimitados: segredos locais
+e respostas pequenas de controle/API passam por `LimitReader`; os dados
+financeiros em lote seguem por páginas, linhas ou blocos.
+
+- **CSV de recebimentos do Bling e recebíveis futuros do Nuvem Pago:** cada
+  linha é validada e entregue por callback. O leitor limita cada campo a 1 MiB,
+  cada registro a 4 MiB e cada registro a 256 campos. A quantidade total de
+  linhas/arquivos não tem teto fixo da aplicação; a deduplicação e a ordenação
+  usam arquivos temporários privados, com HMAC para identificadores e
+  criptografia autenticada para os locais dos registros. O temporário é
+  removido ao fechar o fluxo.
+- **API do Bling:** a leitura pede páginas de até 100 registros e limita cada
+  resposta a 4 MiB. O adaptador decodifica um registro por vez dentro da página;
+  a aplicação mantém apenas a página atual. A confirmação da forma real de
+  encerramento da paginação ainda depende de resposta/documentação homologada
+  da conta Bling. A consulta à documentação no Chrome ainda depende de liberar
+  o domínio; nenhum contorno foi usado.
+- **Painel:** a consulta usa uma transação somente leitura e repetível. Os
+  totais são calculados no banco; detalhes são escritos um por vez, limitados a
+  50 linhas por tabela, 4 KiB por campo e 16 KiB por registro.
+- **Backup:** o diretório de metadados ZIP é verificado antes de ser aberto e
+  limitado a 1 MiB; o pacote admite apenas 3 ou 4 arquivos. Manifesto e chave
+  têm limites próprios; os payloads V1/V2 são lidos em fluxo. V1 conserva seu
+  limite do formato antigo.
+
+Esta revisão é estática e cobre caminhos identificados, não prova o pico de
+memória sob carga real, todos os fluxos da aplicação, ACL efetiva em máquina
+instalada nem remoção após encerramento forçado. Esses pontos continuam
+pendentes e `DATA-04` permanece `PARTIAL`; não alterei código de produção, telas
+ou regras financeiras. Na calculadora, permanece a estrutura da planilha que
+Gisele enviou; a fórmula documentada em D-003-A continua usando o fluxo de caixa
+consolidado, sem adicionar recebimentos da Nuvemshop como parcela separada.

@@ -6,7 +6,7 @@ Verificar, em leitura somente, se os relatórios de contas a pagar preservados n
 
 ## O que os arquivos enviados mostram
 
-- O relatório geral cobre 01/01/2026 a 30/09/2026; o outro relatório cobre 01/09/2026 a 30/09/2026.
+- Rechecagem visual das cópias atuais enviadas: `Bling - Relatório de Contas a Pagar.pdf` cobre 01/01/2026 a 30/11/2026; `Bling - Relatório de Contas a Pagar Geral.pdf` cobre 01/01/2026 a 30/09/2026. A anotação anterior de 01/09/2026 a 30/09/2026 para o primeiro arquivo não corresponde à cópia atual e fica substituída por esta leitura.
 - As linhas exibem vencimento, liquidação, situação e valor pago, além dos dados de identificação da conta.
 - Esses PDFs não exibem a categoria de cada conta na mesma linha. Portanto, sozinhos, permitem observar pagamentos e datas, mas não identificar com segurança quais deles pertencem a CAPEX.
 - O print de resumo por categoria enviado na conversa mostra CAPEX e subcategorias, mas não deixa visível o período e não relaciona cada total aos pagamentos e datas dos PDFs. Ele confirma que há uma categoria CAPEX nos relatórios, mas não permite reconciliar os dois arquivos linha a linha.

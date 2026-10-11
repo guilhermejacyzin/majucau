@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"os"
 
 	"majucau.local/financial-intelligence/internal/ipc"
 )

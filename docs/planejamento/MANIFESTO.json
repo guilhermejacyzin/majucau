@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 197542,
-      "sha256": "3907c91e3034e5102b5ea52fe07e395536296eada34821cc76e08cc454d9c7bb"
+      "bytes": 197498,
+      "sha256": "e191d5895d91818708da6c22fefe566ce9b45eb7db7888dd5bee2f0739ca11c0"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -59,8 +59,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 48675,
-      "sha256": "7b0b8da46e0ffba079a16dcf4a07b44f4d731ef35e90efa25d8a9e26b4ccb6a5"
+      "bytes": 48769,
+      "sha256": "95cf0727de629d4d52504229928bf14234c45c7aae0f175ac0394e8c3ef13646"
     },
     {
       "path": "docs/planejamento/README.md",
@@ -70,7 +70,7 @@
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
       "bytes": 3282,
-      "sha256": "3888c40076268e067a1417a802ca337f98ef94a00c10f3e5ffbe85a46f457ac3"
+      "sha256": "154387e8b3fa206989c20983a12769aa09858f4e0621b5dc15a8f5ba214f04b9"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -89,8 +89,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 190212,
-      "sha256": "a27cec7679c3a4dbe2333c18619035961e718b184dda5229786333563e1b89af"
+      "bytes": 190395,
+      "sha256": "41e35ac1a4c63199f13bb5bd4fe0288061c92556f225470313e0c2cfcf2265c1"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -100,7 +100,7 @@
     {
       "path": "docs/planejamento/work/build_tracker.mjs",
       "bytes": 12713,
-      "sha256": "9149188cb481b7e40af5da16d9c449e2ca44ad333bd1c843aea2ea261d8a186f"
+      "sha256": "70a11cdfbe903c039f7c039d5606bc210f0f4eedff92b06365953c7ba62ff379"
     },
     {
       "path": "docs/planejamento/work/build_tracker_v1.mjs",
@@ -204,8 +204,8 @@
     },
     {
       "path": "docs/planejamento/work/previews_v2/Tarefas.png",
-      "bytes": 243594,
-      "sha256": "7f33caba6c1428e339611a89e151125acbe6600027af96b3429234f259508f7a"
+      "bytes": 283457,
+      "sha256": "150132375da978d46843b73237df1ef9171da518c2cf8b2296fc7aa7ee827d3a"
     },
     {
       "path": "docs/planejamento/work/previews_v2/Verificacoes.png",

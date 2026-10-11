@@ -243,3 +243,29 @@ worker, instalador e versão portátil sem assinatura, smoke de instalação e
 desinstalação, consolidação e upload dos outputs. Isso confirma o código e o
 pipeline desta alteração, mas não prova a conexão da calculadora com dados
 financeiros reais.
+
+## Mapeamento estático das fontes — 2026-10-11
+
+Esta revisão comparou D-003-A/D-003-C com `DATA-DICTIONARY-v1.md`, a migration
+`database/migrations/000001_init.up.sql` e os chamadores no código. Foi uma
+leitura estática: não acessou dados financeiros reais, não alterou schema e não
+executou testes.
+
+| Entrada da calculadora | Estrutura existente | O que falta comprovar/ligar |
+|---|---|---|
+| Lucro elegível de janeiro até M−2 | `statement_snapshots` (`statement_type='DRE'`) e `statement_lines`, com período, execução e versão da regra | Não há consulta de produção. Ainda é preciso usar a linha aprovada “Lucro/Prejuízo Líquido” do Majucau e validar a cobertura dos meses; não copiar a DRE pronta do Bling. |
+| Já investido | `investment_calculations.already_invested` guarda o valor calculado | O schema não tem tabela de movimentos de aplicação para somar aportes e subtrair resgates de principal. Rendimentos devem ficar separados. A planilha tem campo manual, mas ele não resolve o histórico. |
+| Menor saldo no fluxo D0–D+60 | `daily_balances` guarda abertura, entradas, saídas, ajustes, fechamento, tipo, cenário e execução. Existem tabelas de contribuição tipadas para recebíveis, recebimentos, pagáveis, pagamentos e ajustes. | `DailyProjectionFrom` é apenas um helper de domínio. Não foi encontrada rotina que grave/procure a série usada pela calculadora; faltam seleção da execução válida, leitor de produção e conferência da fonte/data. |
+| Reserva mínima | `investment_parameters.minimum_reserve` | O valor vigente aprovado é R$ 50.000. A calculadora ainda não seleciona a versão aprovada em vigor. |
+| Saldo transferível do Itaú | `financial_accounts` e `financial_balance_snapshots.reconciled_amount` podem guardar uma conta e seu saldo conciliado | Não há sincronizador de contas/saldos ligado à calculadora nem regra técnica comprovada que converta saldo conciliado em saldo transferível. Não presumir essa equivalência. |
+
+`investment_calculations` é uma estrutura de resultado, não uma fonte dos
+movimentos. O schema também conserva `include_expected_receipts` e o nome
+histórico `worst_week_cash`; nenhum deles autoriza somar recebimentos da
+Nuvemshop separadamente ou agrupar o mínimo por semana. O Data Dictionary foi
+alinhado à regra aprovada sem alteração da migration.
+
+**Conclusão:** a especificação ganhou um mapa verificável das estruturas e
+lacunas; isso não conecta a calculadora nem habilita valores. A próxima ligação
+depende, entre outros pontos, de identificar onde o histórico de aportes e
+resgates de principal é oficialmente registrado.

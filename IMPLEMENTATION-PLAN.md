@@ -41,7 +41,7 @@ G0 não será aprovado apenas por existir documentação. Cada P0 abaixo precisa
 | Fonte B2C/Nuvem Pago | Tarifário aprovado: cartão 1x/2x/3x em D+30 (2,59% + R$ 0,35; 4,49% + R$ 0,35; 5,44% + R$ 0,35), boleto D+2 (R$ 2,39) e PIX na hora (0,99%); ainda falta API/arquivo oficial com bruto, taxa efetiva, líquido, status e data de liquidação, ou retirada explícita do B2C confirmado do release |
 | OAuth Nuvemshop desktop | redirect HTTPS do relay registrado e aceito, state/replay/TTL testados e posição do provedor sobre PKCE documentada |
 | Classificação B2B | aprovação da regra conservadora e de seus casos ambíguos/overrides |
-| Aplicação financeira | planilha-oráculo ou aprovação formal da fórmula v1 proposta, com casos dourados |
+| Aplicação financeira | D-003-A foi formalmente aprovada e os casos dourados do cálculo isolado têm evidência de CI. A estrutura enviada da calculadora foi preservada; a comparação não autoriza somar Nuvemshop separadamente. O mapeamento das fontes reais e a chamada de produção continuam pendentes para os gates de implementação e homologação. |
 
 ## 3. Fase 0 - Governança e decisões
 

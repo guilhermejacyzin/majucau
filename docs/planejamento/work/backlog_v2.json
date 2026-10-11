@@ -185,10 +185,10 @@
     "owner": "Majucau / Financeiro",
     "kind": "Planejamento",
     "status": "Em andamento",
-    "evidence": "",
+    "evidence": "Mapa em docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md: DRE/fluxo sem ligação de produção; faltam fonte de aportes/resgates e saldo Itaú transferível. Regra e tela preservadas.",
     "weight": 1,
     "dependencies": [],
-    "progress": 0.25
+    "progress": 0.3
   },
   {
     "key": "accountingpolicy",

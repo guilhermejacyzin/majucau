@@ -349,10 +349,10 @@ Os nomes literais do handoff serão expostos como views tipadas sobre o modelo c
 |---|---|---|
 | `rule_version_id` | uuid | FK para a regra de aplicação aprovada |
 | `effective_from` | date | Início de vigência, sem sobrescrever histórico |
-| `minimum_reserve` | numeric(19,4) | Reserva mínima autorizada |
-| `eligible_profit_cutoff_months` | integer | Valor proposto: 2, representando M-2 |
-| `projection_horizon_days` | integer | Valor protegido: 60 |
-| `include_expected_receipts` | boolean | Somente quando houver fonte oficial/data válida |
+| `minimum_reserve` | numeric(19,4) | Valor vigente aprovado: R$ 50.000; mudanças exigem nova aprovação/versão |
+| `eligible_profit_cutoff_months` | integer | Valor aprovado: 2, representando M−2 |
+| `projection_horizon_days` | integer | Horizonte aprovado: 60 dias; D0–D+60 inclusive (61 fechamentos) |
+| `include_expected_receipts` | boolean | Campo existente no schema, sem uso ativo comprovado. Não autoriza somar recebimentos de uma fonte separada; D-003-A recebe o fluxo consolidado. Não alterar o schema nesta tarefa. |
 | `approved_by` | uuid | Responsável pela aprovação |
 | `approved_at` | timestamptz | Momento da aprovação |
 
@@ -362,17 +362,31 @@ Parâmetros aprovados são imutáveis; mudança cria nova vigência e novos snap
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| `eligible_accumulated_profit` | numeric(19,4) | Lucro líquido acumulado elegível até M-2 |
-| `already_invested` | numeric(19,4) | Valor já investido |
-| `available_profit` | numeric(19,4) | max(0, eligible - invested) |
-| `worst_week_cash` | numeric(19,4) | Menor saldo diário de fechamento encontrado dentro das semanas ISO dos próximos 60 dias |
-| `minimum_reserve` | numeric(19,4) | Reserva mínima aprovada |
-| `financial_limit` | numeric(19,4) | worst_week_cash - reserve |
-| `maximum_investment` | numeric(19,4) | max(0, min(financial_limit, available_profit)) |
+| `eligible_accumulated_profit` | numeric(19,4) | Lucro líquido da DRE própria do Majucau, acumulado de janeiro até M−2 |
+| `already_invested` | numeric(19,4) | Aportes de principal menos resgates de principal; rendimentos ficam separados |
+| `available_profit` | numeric(19,4) | max(0, eligible_accumulated_profit − already_invested) |
+| `worst_week_cash` | numeric(19,4) | Nome físico mantido por compatibilidade; guarda o menor `closing_balance` diário entre D0 e D+60, sem agrupar semanas |
+| `minimum_reserve` | numeric(19,4) | Reserva mínima aprovada de R$ 50.000 |
+| `financial_limit` | numeric(19,4) | max(0, worst_week_cash − minimum_reserve) |
+| `maximum_investment` | numeric(19,4) | max(0, min(available_profit, financial_limit)) |
 | `rule_version_id` | uuid | Versão da fórmula |
-| `status` | text | PROVISIONAL até existir modelo de referência aprovado |
+| `status` | text | PROVISIONAL enquanto os dados de entrada não estiverem comprovados; D-003-A está aprovada |
 
-Regra v1 proposta: considerar somente recebimentos `CONFIRMED` ou `PROJECTED` com fonte oficial e data válida; calcular o saldo diário D0..D+60; `worst_week_cash` é o menor `closing_balance` diário do horizonte; `financial_limit = max(0, worst_week_cash - minimum_reserve)`; `maximum_investment = max(0, min(available_profit, financial_limit))`. A regra permanece `PROVISIONAL` e o card fica bloqueado até a aprovação dessa definição ou a entrega da planilha de referência, seguida de casos dourados com tolerância de R$ 0,01.
+Regra vigente D-003-A, aprovada no registro G0: `available_profit = max(0, eligible_accumulated_profit − already_invested)`; `financial_limit = max(0, menor fechamento diário D0–D+60 − minimum_reserve)`; `maximum_investment = max(0, min(available_profit, financial_limit))`. Usar BRL e decimal exato. Recebimentos só entram como parte do fluxo consolidado, com fonte oficial e data válida; não somar recebimentos da Nuvemshop separadamente. Se qualquer dado necessário estiver ausente, o resultado dependente permanece indisponível, sem substituir ausência por zero.
+
+A sugestão D-003-C é um indicador separado, apenas informativo: `R$ 50.000 + max(0, caixa projetado em D0 − menor fechamento diário D0–D+60)`. Ela não altera a reserva mínima nem o valor máximo para aplicar.
+
+### 12.2 Mapeamento técnico existente e lacunas
+
+| Entrada | Estrutura prevista no banco | Situação observada no código |
+|---|---|---|
+| Lucro elegível | `statement_snapshots` com `statement_type='DRE'`, período e execução; valores em `statement_lines` | Não foi encontrada consulta de produção que some a linha aprovada “Lucro/Prejuízo Líquido” de janeiro até M−2. O código não deve copiar a DRE pronta do Bling. |
+| Principal já investido | Campo calculado em `investment_calculations` | Não há tabela/adapter de aportes e resgates de principal no schema atual; esse campo armazena somente o resultado. A origem do histórico ainda precisa ser identificada. |
+| Fluxo diário | `daily_balances` com data, abertura, entradas, saídas, ajustes, fechamento, tipo, cenário e execução | Há tabelas de contribuição tipadas para recebíveis, recebimentos, pagáveis, pagamentos e ajustes. Não foi encontrada consulta ou gravação de produção que alimente os 61 fechamentos usados pela calculadora. |
+| Reserva mínima | `investment_parameters.minimum_reserve` | A regra aprovada é R$ 50.000; a seleção de parâmetro vigente ainda não está ligada à calculadora. |
+| Saldo transferível do Itaú | `financial_accounts` e `financial_balance_snapshots.reconciled_amount` | O modelo permite guardar saldo conciliado de uma conta, mas a conta, a regra de transferibilidade e o sincronizador ainda não estão mapeados/implementados. Não usar o saldo conciliado como transferível por suposição. |
+
+As funções de domínio existem, mas o inventário estático não encontrou chamadas de produção para elas. Portanto, este mapeamento não comprova dados disponíveis nem libera a tela para apresentar valores calculados.
 
 ## 13. Status de dados
 

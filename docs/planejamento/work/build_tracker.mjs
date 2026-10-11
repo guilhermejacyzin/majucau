@@ -136,7 +136,7 @@ const view=await wb.inspect({kind:'table',range:'Evolucao!A5:C11',include:'value
 console.log(view.ndjson);
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!',options:{useRegex:true,maxResults:20},maxChars:1000});console.log(errors.ndjson);
 await fs.mkdir(path.join(base,'work/previews_v2'),{recursive:true});
-for(const [name,range] of [['Evolucao','A1:G35'],['Tarefas','A1:N11'],['Decisoes','A94:F99'],['Verificacoes','A84:F88'],['Cobertura','A1:E11']]){
+for(const [name,range] of [['Evolucao','A1:G35'],['Tarefas','A1:N12'],['Decisoes','A94:F99'],['Verificacoes','A84:F88'],['Cobertura','A1:E11']]){
  const png=await wb.render({sheetName:name==='Verificacoes'?'Decisoes':name,range,scale:1,format:'png'});
  await fs.writeFile(path.join(base,'work/previews_v2',name+'.png'),new Uint8Array(await png.arrayBuffer()));
 }

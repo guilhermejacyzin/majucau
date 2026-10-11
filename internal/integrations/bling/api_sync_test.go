@@ -10,7 +10,7 @@ func TestMarshalReceivablesPagePreservesUnhomologatedPayload(t *testing.T) {
 	total := 3
 	payload, err := marshalReceivablesPage(BlingReceivablesPage{
 		Records: []json.RawMessage{json.RawMessage(`{"id":42,"situacao":"pago"}`)},
-		Page:    1, Limit: 1, Total: &total, HasNext: true,
+		Page:    1, Limit: 1, Total: &total, HasNext: true, HasNextKnown: true,
 	})
 	if err != nil {
 		t.Fatal(err)

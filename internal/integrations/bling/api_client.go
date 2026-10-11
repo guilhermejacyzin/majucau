@@ -157,11 +157,14 @@ func (f ReceivablesFilter) normalized() (ReceivablesFilter, error) {
 // records a real, sanitized response from the customer's Bling account. No
 // guessed field mapping can silently become a financial fact.
 type BlingReceivablesPage struct {
-	Records []json.RawMessage
-	Page    int
-	Limit   int
-	Total   *int
-	HasNext bool
+	Records      []json.RawMessage
+	Page         int
+	Limit        int
+	Total        *int
+	HasNext      bool
+	// HasNextKnown is true only when the API supplies hasNext or total metadata.
+	// Without it, false HasNext cannot safely mean that the current page is last.
+	HasNextKnown bool
 }
 
 type blingPagination struct {
@@ -300,8 +303,10 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 		page.Total = envelope.Pagination.Total
 		if envelope.Pagination.HasNext != nil {
 			page.HasNext = *envelope.Pagination.HasNext
+			page.HasNextKnown = true
 		} else if page.Total != nil {
 			page.HasNext = page.Page*page.Limit < *page.Total
+			page.HasNextKnown = true
 		}
 	}
 	return page, nil

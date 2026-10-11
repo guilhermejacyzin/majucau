@@ -54,11 +54,35 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if page.Page != 2 || page.Limit != 2 || page.Total == nil || *page.Total != 5 || !page.HasNext {
+	if page.Page != 2 || page.Limit != 2 || page.Total == nil || *page.Total != 5 || !page.HasNext || !page.HasNextKnown {
 		t.Fatalf("unexpected pagination: %+v", page)
 	}
 	if len(page.Records) != 2 || !strings.Contains(string(page.Records[0]), `"id":123`) {
 		t.Fatalf("records were not preserved: %+v", page.Records)
+	}
+}
+
+func TestListReceivablesDoesNotAssumeLastPageWithoutCompletionMetadata(t *testing.T) {
+	for _, body := range []string{
+		`{"data":[{"id":321}]}`,
+		`{"data":[{"id":321}],"pagination":{"page":1,"limit":100}}`,
+	} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte(body))
+		}))
+		client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+		if err != nil {
+			server.Close()
+			t.Fatal(err)
+		}
+		page, err := client.ListReceivables(context.Background(), ReceivablesFilter{})
+		server.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if page.HasNextKnown || page.HasNext {
+			t.Fatalf("response without explicit completion metadata was treated as complete: %+v", page)
+		}
 	}
 }
 
@@ -81,7 +105,7 @@ func TestListPayablesUsesPayableEndpointAndPaymentFilter(t *testing.T) {
 		t.Fatal(err)
 	}
 	page, err := client.ListPayables(context.Background(), ReceivablesFilter{PaymentDateFrom: "2026-09-01", PaymentDateTo: "2026-09-30", Limit: 1})
-	if err != nil || len(page.Records) != 1 || !strings.Contains(string(page.Records[0]), `"id":77`) {
+	if err != nil || len(page.Records) != 1 || !strings.Contains(string(page.Records[0]), `"id":77`) || !page.HasNextKnown {
 		t.Fatalf("unexpected payable page: %+v, err=%v", page, err)
 	}
 }

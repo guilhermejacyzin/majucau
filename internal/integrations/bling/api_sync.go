@@ -24,6 +24,7 @@ var (
 	ErrBlingAPISyncClientRequired      = errors.New("bling api sync client is required")
 	ErrBlingAPISyncConnectionMissing   = errors.New("bling api sync connection is missing")
 	ErrBlingAPISyncPageLimit           = errors.New("bling api sync reached the page safety limit")
+	ErrBlingAPIPaginationUnknown       = errors.New("bling API response does not identify whether another page exists")
 )
 
 type APISyncResult struct {
@@ -115,6 +116,9 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 		page, err := s.list(ctx, current)
 		if err != nil {
 			return fail("BLING_API_READ_FAILED", err)
+		}
+		if !page.HasNextKnown {
+			return fail("BLING_API_PAGINATION_UNKNOWN", ErrBlingAPIPaginationUnknown)
 		}
 		payload, err := marshalReceivablesPage(page)
 		if err != nil {

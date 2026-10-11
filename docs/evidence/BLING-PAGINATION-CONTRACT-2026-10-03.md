@@ -42,3 +42,10 @@
 - Não alterei o código: adivinhar o campo de resposta ou encerrar pela quantidade de registros poderia pular dados em uma resposta incompleta.
 - `DATA-02` permanece `PARTIAL`. Não alterei o código nem presumi que uma página curta ou vazia seja o marcador final. Antes de corrigir o comportamento, precisamos confirmar como a resposta real encerra a paginação ou aprovar um procedimento seguro de leitura página a página.
 - Para ajudar nessa confirmação, uma resposta sanitizada precisa manter apenas os nomes dos campos de paginação e quantidades, removendo registros, IDs reais, valores financeiros, tokens e dados pessoais. Outra opção é ajustar a preferência salva do navegador para permitir o acesso ao Bling; a tentativa bloqueada não será contornada.
+
+## Proteção contra metadados de paginação ausentes — 2026-10-11
+
+- O cliente agora diferencia `hasNext=false` confirmado de ausência de evidência sobre a próxima página. `HasNextKnown` só fica verdadeiro quando a resposta fornece `hasNext` ou `total`.
+- Antes de persistir uma página, o sincronizador exige essa confirmação. Se ela faltar, o lote registra `BLING_API_PAGINATION_UNKNOWN`, desfaz a gravação e mantém o cursor anterior. Uma resposta sem metadados deixa de poder parecer uma sincronização completa.
+- Testes locais cobrem resposta sem `pagination` e resposta que traz somente página/limite. O teste PostgreSQL também verifica que páginas RAW válidas e cursor não mudam; a execução integrada aguarda CI.
+- Esta proteção não define o contrato real de paginação e não cria retomada incremental. A homologação com a conta e a documentação permanece pendente; não inferir fim de lista por página curta/vazia.

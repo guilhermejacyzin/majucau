@@ -77,10 +77,11 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		t.Fatalf("seed previous cursor: %v", err)
 	}
 
-	pageOne := BlingReceivablesPage{Page: 1, Limit: 1, HasNext: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-one-new"}`)}}
-	pageTwo := BlingReceivablesPage{Page: 2, Limit: 1, HasNext: false, Records: []json.RawMessage{json.RawMessage(`{"id":"page-two-new"}`)}}
+	pageOne := BlingReceivablesPage{Page: 1, Limit: 1, HasNext: true, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-one-new"}`)}}
+	pageTwo := BlingReceivablesPage{Page: 2, Limit: 1, HasNext: false, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-two-new"}`)}}
 	pageTwoFailure := errors.New("injected page read failure")
 	failSecondPage := true
+	unknownPagination := false
 	service := &apiResourceSyncService{
 		pool:         pool,
 		client:       &BlingAPIClient{},
@@ -90,6 +91,9 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		list: func(_ context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
 			switch filter.Page {
 			case 1:
+				if unknownPagination {
+					return BlingReceivablesPage{Page: 1, Limit: 1, Records: []json.RawMessage{json.RawMessage(`{"id":"page-one-unverified"}`)}}, nil
+				}
 				return pageOne, nil
 			case 2:
 				if failSecondPage {
@@ -166,6 +170,39 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		t.Fatalf("successful sync RAW current/total counts = %d/%d, want 2/3", currentPages, allPages)
 	}
 
+	unknownPagination = true
+	unknown, err := service.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
+	if !errors.Is(err, ErrBlingAPIPaginationUnknown) {
+		t.Fatalf("sync without page-completion metadata error = %v, want pagination unknown", err)
+	}
+	if unknown.Status != "FAILED" {
+		t.Fatalf("sync without page-completion metadata status = %q, want FAILED", unknown.Status)
+	}
+	var unknownStatus, unknownCode string
+	if err := pool.QueryRow(ctx, `
+		SELECT status, COALESCE(error_code, '')
+		FROM integration_sync_batches WHERE id = $1::uuid`, unknown.BatchID).Scan(&unknownStatus, &unknownCode); err != nil {
+		t.Fatalf("read unknown-pagination audit: %v", err)
+	}
+	if unknownStatus != "FAILED" || unknownCode != "BLING_API_PAGINATION_UNKNOWN" {
+		t.Fatalf("unknown-pagination audit = %q/%q", unknownStatus, unknownCode)
+	}
+	if err := pool.QueryRow(ctx, `SELECT cursor_value FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource).Scan(&cursor); err != nil {
+		t.Fatalf("read cursor after unknown pagination: %v", err)
+	}
+	if cursor != "page:2" {
+		t.Fatalf("unknown pagination advanced cursor to %q, want page:2", cursor)
+	}
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FILTER (WHERE is_current), count(*)
+		FROM raw_records WHERE connection_id = $1 AND source_entity = $2`, connection.ID, sourceEntity).Scan(&currentPages, &allPages); err != nil {
+		t.Fatalf("count RAW pages after unknown pagination: %v", err)
+	}
+	if currentPages != 2 || allPages != 3 {
+		t.Fatalf("unknown pagination changed RAW current/total counts to %d/%d, want 2/3", currentPages, allPages)
+	}
+
+	unknownPagination = false
 	replayed, err := service.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
 	if err != nil {
 		t.Fatalf("idempotent API sync replay: %v", err)

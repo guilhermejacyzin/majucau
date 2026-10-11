@@ -124,6 +124,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - O backlog tem 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (15%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-031 (75%), BK-041 (50%) e BK-067 (20%).
 - Pela média simples do rastreador, `(6 × 100% + 0% + 15% + 10% + 15% + 60% + 75% + 50% + 20%) ÷ 127 = 6,7%`; restam 93,3%. Não existe prazo global confiável enquanto há 113 tarefas não iniciadas, homologações e validações externas.
 
+### Proteção contra paginação não confirmada no Bling — 11/10/2026
+
+- BK-041 avançou de 50% para 55%. A sincronização agora exige que a resposta informe `hasNext` ou `total`; quando nenhum desses campos está disponível, registra `BLING_API_PAGINATION_UNKNOWN`, reverte os dados do lote e não avança o cursor. Assim, uma resposta válida mas sem marcador conhecido não é tratada como sincronização completa.
+- O teste unitário cobre respostas sem metadados e com somente `page`/`limit`. O teste PostgreSQL foi ampliado para provar que a falha preserva páginas RAW válidas e o cursor anterior. `go test ./internal/integrations/bling`, `go vet ./internal/integrations/bling` e `git diff --check` passaram localmente; o teste PostgreSQL integrado depende da CI, pois não há banco de teste configurado localmente.
+- Isso é uma proteção contra dados incompletos, não uma homologação do contrato do Bling. A confirmação real de como a resposta encerra a lista e a retomada incremental continuam pendentes. Nenhuma tela, regra financeira ou estrutura da calculadora foi alterada.
+- O backlog permanece com 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (15%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-031 (75%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples do rastreador, `(6 × 100% + 0% + 15% + 10% + 15% + 60% + 75% + 55% + 20%) ÷ 127 = 6,7%`; restam 93,3%. Não há prazo global confiável enquanto há 113 tarefas não iniciadas, homologações e validações externas.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -1160,7 +1168,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-041 — Implementar o adaptador de leitura do Bling
 
-**Situação:** Em andamento. **Evolução:** 50%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 55%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Ingerir dados oficiais sem alterar o ERP.
 
@@ -1176,7 +1184,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Critério de aceite:** Adaptador usa somente operações aprovadas; 401/429/falha de rede geram diagnóstico e retomada segura. Não contém scraping nem integração direta presumida com banco ou Mercado Pago. A alternativa oficial necessária tem recepção, autenticação e proveniência implementadas; repetição e versão corrigida são tratadas por BK-044.
 
-**Evidência da auditoria estática e correção parcial (11/10/2026):** já existem OAuth e armazenamento protegido no worker, cliente somente de leitura para contas a receber e a pagar, limites de resposta/página, retry seguro para GET, persistência RAW atômica e replay idempotente. A trava compartilhada entre os serviços de configuração e OAuth foi implementada; os testes locais dos pacotes Bling/worker e `go vet` passaram. A CI completa `38120125096` passou nos jobs Windows e PostgreSQL, incluindo os cenários `-race` no Ubuntu. O alerta anterior do scanner Windows era uma fixture de teste sem marcador e foi corrigido. A cobertura real de campos/recursos e o cursor oficial não foram homologados. A trava é local ao processo worker. Ver `docs/evidence/BLING-ADAPTER-STATIC-AUDIT-2026-10-11.md`. Estimativa parcial não representa integração pronta.
+**Evidência da auditoria estática e correção parcial (11/10/2026):** já existem OAuth e armazenamento protegido no worker, cliente somente de leitura para contas a receber e a pagar, limites de resposta/página, retry seguro para GET, persistência RAW atômica e replay idempotente. A trava compartilhada entre os serviços de configuração e OAuth foi implementada; os testes locais dos pacotes Bling/worker e `go vet` passaram. A CI completa `38120125096` passou nos jobs Windows e PostgreSQL, incluindo os cenários `-race` no Ubuntu. O alerta anterior do scanner Windows era uma fixture de teste sem marcador e foi corrigido. A sincronização agora falha com segurança se não consegue saber se a página recebida é a última; a verificação de rollback/cursor foi adicionada ao teste PostgreSQL e aguarda CI. A cobertura real de campos/recursos e o cursor oficial não foram homologados. A trava é local ao processo worker. Ver `docs/evidence/BLING-ADAPTER-STATIC-AUDIT-2026-10-11.md`. Estimativa parcial não representa integração pronta.
 
 **Impacto:** Mantém integração estável e credenciais protegidas.
 

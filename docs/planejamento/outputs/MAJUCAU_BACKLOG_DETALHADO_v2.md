@@ -3567,3 +3567,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A CI completa `38172628938` passou em `verify-backlog`, `verify-postgres` e `verify-windows`. O instalador unsigned de teste produzido pela CI não pôde ser apagado pela conexão disponível; está registrado em `artifacts/retained/cleanup-register.md` e expira em 12/10/2026.
 - BK-041 avança de 60% para 65% (35% restante); a conta real, o contrato de paginação e o cursor incremental continuam pendentes. O backlog segue com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,5% concluído, 91,5% restante. A previsão total ainda não é confiável.
 - Nenhuma tela aprovada ou regra financeira foi alterada. Evidência: `docs/evidence/BLING-JWT-MIGRATION-2026-10-11.md`.
+
+### Limpeza segura do fixture do verificador de backlog — 11/10/2026
+
+- `scripts/test-verify-backlog.ps1` valida `artifacts/tmp` com `SafeCleanup` antes de usar o caminho e remove somente o fixture com caminho relativo esperado. A pasta compartilhada não é apagada, para não afetar outras execuções.
+- `scripts/test-verify-backlog.ps1`, `scripts/test-safe-cleanup.ps1`, `scripts/verify-backlog.ps1` e `git diff --check` passaram localmente. Evidência: `docs/evidence/BACKLOG-VALIDATOR-SAFE-TEMP-2026-10-11.md`.
+- BK-025 permanece em 70% (30% restante); a proteção de branch e a exigência de verificações obrigatórias continuam dependendo de uma pessoa administradora. O backlog permanece em 127 tarefas: 7 concluídas, 11 em andamento, 109 não iniciadas, 8,5% concluído e 91,5% restante.
+- Nenhuma tela ou regra financeira foi alterada. A mudança é restrita ao teste de governança do backlog.

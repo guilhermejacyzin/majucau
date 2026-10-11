@@ -8,7 +8,8 @@ $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $artifactRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'artifacts'))
 $tempRoot = [System.IO.Path]::GetFullPath((Join-Path $artifactRoot 'tmp'))
 $tempPrefix = $tempRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
-$createdTempRoot = -not [System.IO.Directory]::Exists($tempRoot)
+$cleanupModule = Join-Path $PSScriptRoot 'SafeCleanup.psm1'
+Import-Module $cleanupModule -Force
 
 if (-not $tempRoot.StartsWith(
     $artifactRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar,
@@ -16,14 +17,16 @@ if (-not $tempRoot.StartsWith(
 )) {
     throw 'A pasta temporária do teste precisa permanecer dentro de artifacts/tmp.'
 }
-if ($createdTempRoot) {
-    [void][System.IO.Directory]::CreateDirectory($tempRoot)
-}
+Assert-MajucauProjectPath -ProjectRoot $repoRoot -Path $tempRoot -ExpectedType Directory
+[void][System.IO.Directory]::CreateDirectory($tempRoot)
+Assert-MajucauProjectPath -ProjectRoot $repoRoot -Path $tempRoot -ExpectedType Directory
 
 $fixturePath = [System.IO.Path]::GetFullPath((Join-Path $tempRoot ('backlog-check-' + [guid]::NewGuid().ToString('N') + '.md')))
+$fixtureRelativePath = Join-Path 'artifacts\tmp' ([System.IO.Path]::GetFileName($fixturePath))
 if (-not $fixturePath.StartsWith($tempPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw 'O arquivo temporário do teste saiu de artifacts/tmp.'
 }
+Assert-MajucauProjectPath -ProjectRoot $repoRoot -Path $fixturePath -ExpectedType File
 
 $validatorPath = Join-Path $PSScriptRoot 'verify-backlog.ps1'
 $utf8 = [System.Text.UTF8Encoding]::new($false)
@@ -68,19 +71,5 @@ try {
     Write-Output 'Teste do verificador aprovado: aceita contagens corretas e rejeita percentual divergente.'
 }
 finally {
-    if ([System.IO.File]::Exists($fixturePath)) {
-        $fixture = Get-Item -LiteralPath $fixturePath
-        if (($fixture.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-            throw 'O arquivo temporário do teste tornou-se um reparse point; ele foi preservado.'
-        }
-        $resolvedFixturePath = [System.IO.Path]::GetFullPath($fixture.FullName)
-        if (-not $resolvedFixturePath.StartsWith($tempPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-            throw 'O caminho do arquivo temporário mudou; ele foi preservado.'
-        }
-        Remove-Item -LiteralPath $resolvedFixturePath -Force
-    }
-    if ($createdTempRoot -and [System.IO.Directory]::Exists($tempRoot) -and
-        -not (Get-ChildItem -LiteralPath $tempRoot -Force | Select-Object -First 1)) {
-        Remove-Item -LiteralPath $tempRoot -Force
-    }
+    Remove-MajucauProjectFile -ProjectRoot $repoRoot -Path $fixturePath -ExpectedRelativePath $fixtureRelativePath
 }

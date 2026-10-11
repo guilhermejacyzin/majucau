@@ -2,8 +2,14 @@
 
 ## Estado
 
-Implementação parcial de BK-031. A verificação da CI será registrada depois do
-push. Este documento não declara o critério da tarefa completo.
+Implementação parcial de BK-031. A CI `38116971454`, no commit
+`ca7237e8b3e337a16d0ef50aec9643d778f3d24d`, terminou com sucesso em Windows e
+PostgreSQL. Os testes Go existentes, `go vet`, builds do desktop/worker e do
+instalador e a consolidação de outputs passaram. A pasta
+`internal/diagnosticslog` ainda não tem testes próprios; por isso, o resultado
+da CI confirma compilação e integração geral, mas não comprova o runtime da
+ACL em uma máquina instalada. Este documento não declara o critério da tarefa
+completo.
 
 ## O que foi preparado
 
@@ -39,11 +45,17 @@ push. Este documento não declara o critério da tarefa completo.
 - Não existe fila de processamento de lotes no worker síncrono atual. A métrica
   de profundidade da fila deve ser definida quando uma fila real for introduzida;
   não se deve reportar uma fila inexistente como tamanho zero.
-- A validação do comportamento Windows/ACL e a suíte da CI ainda estão
-  pendentes nesta revisão. Não foram executados testes locais.
+- A validação de runtime da ACL na conta instalada e o teste em uma VM limpa
+  continuam pendentes. Não foram executados testes locais.
 
 ## Limites de escopo
 
 Nenhuma tela aprovada, regra financeira ou dado de negócio foi alterado. A
 implementação cobre o limite IPC do worker; não registra cada chamada HTTP
 individual do provedor.
+
+O run gerou o artefato unsigned `majucau-g1-unsigned` (ID `11694326007`,
+55.971.795 bytes, expiração em 2026-10-12 06:13:32 UTC). A conexão atual não
+permite apagá-lo; ele foi incluído no registro local
+`artifacts/retained/cleanup-register.md` para expiração automática ou exclusão
+manual no GitHub Actions.

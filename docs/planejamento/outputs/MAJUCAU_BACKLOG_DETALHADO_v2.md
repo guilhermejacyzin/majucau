@@ -72,13 +72,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Oito tarefas tiveram auditoria atual concluída: BK-000, BK-002, BK-003, BK-004, BK-005, BK-025, BK-030 e BK-067. BK-001 aguarda os materiais originais ou a decisão da responsável; 118 tarefas ainda aguardam revisão individual.
 - Prazo global continua sem estimativa confiável, pois ainda faltam essa revisão, fontes reais, validações e decisões operacionais.
 
-### Recontagem durante BK-031 — 11/10/2026
+### Recontagem após CI de BK-031 — 11/10/2026
 
-- BK-031 avançou para 65%: o worker registra em JSON a operação, origem, identificador da requisição, tempo, código de erro, lote e contagens aprovadas; os arquivos têm rotação limitada e permissões privadas. Não são gravados payloads, tokens, mensagens técnicas brutas, dados financeiros ou caminhos de arquivos.
+- BK-031 avançou para 75%: o worker registra em JSON a operação, origem, identificador da requisição, tempo, código de erro, lote e contagens aprovadas; os arquivos têm rotação limitada e permissões privadas. Não são gravados payloads, tokens, mensagens técnicas brutas, dados financeiros ou caminhos de arquivos.
 - Permanecem pendentes a referência curta visível junto aos erros (aguardando decisão sobre alteração mínima da mensagem/tela) e a métrica de tamanho de fila. O worker não possui fila de lotes monitorável hoje; não registrar fila inexistente como zero. A ligação dos registros técnicos a uma referência exibida ao usuário também não foi aprovada.
-- O trabalho não altera telas nem regras financeiras. Validação de Windows e do comportamento de ACL depende da CI após o push; a execução local de testes foi omitida.
-- O backlog tem 127 tarefas: 6 concluídas, 7 em andamento e 114 não iniciadas. Em andamento: BK-001 (0%), BK-006 (10%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-031 (65%) e BK-067 (20%).
-- Pela média simples, o rastreador indica `(6 × 100% + 0% + 10% + 10% + 15% + 60% + 65% + 20%) ÷ 127 = 6,1%`; restam 93,9%. É estimativa do backlog, não prontidão nem conclusão por esforço.
+- A CI `38116971454` passou em Windows e PostgreSQL, incluindo testes Go, `go vet`, builds do desktop, worker e instalador e consolidação dos outputs. O novo package de logs não tem testes próprios; runtime de ACL em uma instalação/VM ainda não foi demonstrado. Não foram executados testes locais.
+- O trabalho não altera telas nem regras financeiras. O artefato unsigned publicado pela CI está registrado para expiração/exclusão manual em `artifacts/retained/cleanup-register.md`.
+- O backlog tem 127 tarefas: 6 concluídas, 7 em andamento e 114 não iniciadas. Em andamento: BK-001 (0%), BK-006 (10%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-031 (75%) e BK-067 (20%).
+- Pela média simples, o rastreador indica `(6 × 100% + 0% + 10% + 10% + 15% + 60% + 75% + 20%) ÷ 127 = 6,2%`; restam 93,8%. É estimativa do backlog, não prontidão nem conclusão por esforço.
 - Prazo de conclusão do projeto não é confiável enquanto 114 tarefas ainda não foram iniciadas e a revisão global, as fontes reais e decisões externas permanecem pendentes.
 
 ### Revalidação do GitHub — 11/10/2026
@@ -867,7 +868,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-031 — Criar logs e rastreio técnico básicos
 
-**Situação:** Em andamento. **Evolução:** 65% (estimativa; logs do worker e correlação técnica básica implementados. Falta aprovação do número curto que apareceria junto ao erro na tela e definir/medir tamanho de fila quando houver uma fila real). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 75% (estimativa; logs do worker e correlação técnica básica implementados, com CI Windows/PostgreSQL aprovada. Falta aprovação do número curto que apareceria junto ao erro na tela, testes próprios e validação de ACL em instalação/VM, além de definir/medir tamanho de fila quando houver uma fila real). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Diagnosticar falhas sem expor dados sensíveis.
 

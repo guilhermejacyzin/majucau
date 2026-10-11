@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
+
+	"majucau.local/financial-intelligence/internal/integrations/httpretry"
 )
 
 // withBlingReadRetry is shared by replay-safe GET requests. OAuth token
@@ -16,38 +17,26 @@ func withBlingReadRetry[T any](
 	method string,
 	attempts int,
 	wait func(context.Context, time.Duration) error,
-	delay func(int, time.Duration) time.Duration,
+	random func() float64,
 	request func() (T, error),
 ) (T, error) {
-	if method != http.MethodGet {
+	value, err := httpretry.Do(ctx, httpretry.Policy{
+		Method:      method,
+		MaxAttempts: attempts,
+		Retryable:   retryableBlingError,
+		RetryAfter: func(err error) time.Duration {
+			var apiErr *BlingAPIError
+			if errors.As(err, &apiErr) {
+				return apiErr.RetryAfter
+			}
+			return 0
+		},
+		Wait:   wait,
+		Random: random,
+	}, request)
+	if errors.Is(err, httpretry.ErrUnsafeMethod) {
 		var zero T
-		return zero, fmt.Errorf("%w: automatic retry is restricted to GET", ErrBlingAPIConfiguration)
+		return zero, fmt.Errorf("%w: %v", ErrBlingAPIConfiguration, err)
 	}
-	if attempts < 1 {
-		attempts = 1
-	}
-	if wait == nil {
-		wait = waitBlingRetry
-	}
-	for attempt := 1; attempt <= attempts; attempt++ {
-		value, err := request()
-		if err == nil {
-			return value, nil
-		}
-		if attempt == attempts || !retryableBlingError(err) {
-			var zero T
-			return zero, err
-		}
-		var apiErr *BlingAPIError
-		var retryAfter time.Duration
-		if errors.As(err, &apiErr) {
-			retryAfter = apiErr.RetryAfter
-		}
-		if err := wait(ctx, delay(attempt, retryAfter)); err != nil {
-			var zero T
-			return zero, err
-		}
-	}
-	var zero T
-	return zero, ErrBlingAPIUnavailable
+	return value, err
 }

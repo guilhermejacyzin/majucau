@@ -19,7 +19,7 @@ func TestBlingReadRetryRejectsNonGETBeforeCallingRequest(t *testing.T) {
 			waits++
 			return nil
 		},
-		func(int, time.Duration) time.Duration { return 0 },
+		func() float64 { return 0 },
 		func() (string, error) {
 			calls++
 			return "", errors.New("temporary")

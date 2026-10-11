@@ -3499,3 +3499,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A CI [38165490225](https://github.com/guilhermejacyzin/majucau/actions/runs/38165490225), no commit `43cbe22`, concluiu com sucesso. Os quatro jobs (`detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`) passaram; o primeiro confirmou o fallback para o `BEFORE_SHA` ausente e executou o teste de regressão.
 - A correção de governança está validada em CI. BK-025 permanece em 70%: ainda falta confirmação administrativa de proteção da branch e dos checks obrigatórios. O total do backlog não muda: 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas; 8,3% concluído e 91,7% restante.
 - O CI não substitui VM Windows limpa, pacote assinado, homologação de fontes reais nem os gates financeiros e funcionais. Nenhuma tela ou regra de negócio foi alterada.
+
+### Política compartilhada de retry HTTP — 11/10/2026
+
+- `internal/integrations/httpretry` aplica o retry aprovado como componente reutilizável para adapters de API: somente GET, três tentativas no máximo, backoff exponencial com jitter, `Retry-After` até 30 segundos e interrupção por cancelamento. O adapter continua responsável por classificar erros transitórios.
+- O cliente Bling passou a usar o componente; OAuth POST permanece sem repetição. Os testes locais do helper e do adapter Bling, `go vet` dos dois pacotes e `git diff --check` passaram. Evidência: `docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md`. A CI do commit atual ainda é necessária.
+- BK-041 permanece em 55% porque homologação da conta, cursor incremental e encerramento oficial da paginação continuam pendentes. BK-024 permanece em 35%: falta validação de rede, acesso, instalação e recuperação em ambiente limpo. O backlog continua em 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas; 8,3% concluído e 91,7% restante.
+- Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado.

@@ -81,10 +81,10 @@ O botão de sincronização permanece separado e não é acionado por esse fluxo
 
 | Recurso interno | Endpoint Bling comprovado | Uso e regra |
 |---|---|---|
-| Contas a receber | `GET /contas/receber` | B2B futuro após classificação Majucau; filtros por situação e datas |
+| Contas a receber | `GET /contas/receber` | B2B futuro após classificação Majucau; situação por `situacoes[]`; datas por `tipoFiltroData` (`E` emissão, `V` vencimento, `R` recebimento) com um par `dataInicial`/`dataFinal` |
 | Detalhe do recebível | `GET /contas/receber/{idContaReceber}` | Drill-down, saldo, vencimento, contato, categoria e origem |
 | Recebimentos realizados | `GET /contas/receber` | Filtrar registros pagos/recebidos e data de recebimento; não usar Nuvem para esse card |
-| Contas a pagar | `GET /contas/pagar` | Obrigações abertas, vencidas e futuras |
+| Contas a pagar | `GET /contas/pagar` | Obrigações abertas, vencidas e futuras; situação por `situacao`; datas de vencimento e pagamento em pares de filtros separados |
 | Detalhe da obrigação | `GET /contas/pagar/{idContaPagar}` | Saldo, vencimento original, categoria, portador e origem |
 | Pagamentos realizados | `GET /contas/pagar` | Filtrar pagos e data de pagamento |
 | Detalhe do pagamento | `GET /borderos/{idBordero}` | Guardar dados originais de pagamento/categoria; vínculo com obrigação ainda depende de validação |
@@ -98,6 +98,12 @@ O botão de sincronização permanece separado e não é acionado por esse fluxo
 | Notas fiscais | `GET /nfe` | Faturamento fiscal e rastreabilidade |
 
 O conector não utilizará endpoints de baixa ou escrita. O Majucau é consumidor analítico, não sistema de lançamento no MVP.
+
+#### Divergência de filtros de data — 11/10/2026
+
+A referência OpenAPI oficial dos dois endpoints usa contratos distintos: `contas/receber` recebe `tipoFiltroData` mais um único par `dataInicial`/`dataFinal`; `contas/pagar` recebe filtros próprios de vencimento e pagamento. O adapter atual ainda envia os pares `dataVencimento`, `dataRecebimento` e `dataPagamento` para ambas as rotas. Assim, a data escolhida na tela aprovada não está mapeada corretamente para o contrato publicado em todos os casos.
+
+A tela aprovada consulta as duas listas juntas. Quando o tipo selecionado não corresponde a uma das rotas, não está decidido se essa outra lista deve ser consultada sem filtro de data ou se deve ficar de fora daquela execução. Essa escolha afeta quais registros entram no sistema e aguarda a responsável. Até a resposta, não alterar a tela nem os filtros de data do adapter. Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
 
 Nota de contrato: a OpenAPI descreve `pagina`/`limite` para categorias, mas o
 schema público da resposta não declara `hasNext` nem `total`. O client não deve

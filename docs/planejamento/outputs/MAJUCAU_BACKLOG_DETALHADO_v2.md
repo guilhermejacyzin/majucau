@@ -273,6 +273,18 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-041 avança de 55% para 60%. A resposta real da conta, o marcador que encerra a paginação, a retomada incremental e a homologação de todos os recursos continuam pendentes. Nenhuma tela ou regra financeira foi alterada. Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
 - O backlog continua com 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas. Pela média simples, `(6 × 100% + 0% + 30% + 20% + 10% + 15% + 15% + 30% + 70% + 80% + 60% + 20%) ÷ 127 = 7,5%`; restam 92,5%. Não há estimativa global confiável de conclusão.
 
+### Divergência de filtros de data do Bling — 11/10/2026
+
+- A OpenAPI oficial confirma contratos diferentes: contas a receber usa `tipoFiltroData` e um par `dataInicial`/`dataFinal`; contas a pagar tem filtros separados de vencimento e pagamento. O adapter ainda envia campos genéricos de data para as duas rotas.
+- A tela aprovada sincroniza as duas listas ao mesmo tempo. Para `Recebimento` e `Pagamento`, é preciso definir se a lista à qual aquela data não se aplica continua sendo consultada sem esse filtro ou fica fora da execução. A pergunta foi enviada à responsável. Nenhuma tela, regra financeira ou filtro de data foi alterado enquanto a resposta não chega.
+- BK-041 permanece em 60%; a homologação das datas, da resposta da conta e da última página continuam pendentes. Evidência: `API-INTEGRATION-MAP.md` e `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
+- As contagens seguem em 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas; 7,5% concluído e 92,5% restante. O percentual não muda com o registro de uma pendência ainda sem solução.
+
+### Confirmação da estrutura da calculadora — 11/10/2026
+
+- A responsável confirmou que a calculadora deve preservar a estrutura da planilha enviada. Essa é a referência para a implementação futura; não alterar fórmulas, fontes de dados ou apresentação sem conferir o documento e pedir confirmação quando houver dúvida.
+- Esta confirmação não resolve a divergência técnica dos filtros de data do Bling e não muda telas, regras financeiras ou percentuais do backlog.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau

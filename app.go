@@ -482,9 +482,9 @@ func diagnosticMessage(errorCode, message, requestID string) string {
 		return message
 	}
 	if message == "" {
-		return fmt.Sprintf("Referência técnica: %s", requestID)
+		return fmt.Sprintf("Código de referência: %s", requestID)
 	}
-	return fmt.Sprintf("%s Referência técnica: %s.", message, requestID)
+	return fmt.Sprintf("%s Código de referência: %s.", message, requestID)
 }
 
 // PreviewBlingReceipts asks the worker to validate a local Bling export folder.

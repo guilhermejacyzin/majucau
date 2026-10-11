@@ -82,7 +82,7 @@ controle local de limpeza. Nenhum artefato unsigned é uma versão de produção
   preservando posição, estrutura e desenho da tela aprovada.
 - `app.go` agora inclui o `request_id` já usado pelo worker nos logs nas
   mensagens de falhas recebidas nas operações de saúde, painel, integrações,
-  sincronização e importação. A mensagem informa “Referência técnica” seguida
+  sincronização e importação. A mensagem informa “Código de referência” seguido
   pelo mesmo ID que aparece no evento `worker_request_completed`; o código de
   erro continua separado e não muda.
 - O ID é acrescentado somente quando existe um código de erro e uma chamada
@@ -90,7 +90,11 @@ controle local de limpeza. Nenhum artefato unsigned é uma versão de produção
   pois não há evento correspondente para localizar. A mensagem não inclui
   segredos, conteúdo financeiro ou detalhes brutos do erro.
 - Revisão feita com `gofmt` e `git diff --check`. Nenhum teste ou build local foi
-  executado nesta etapa. A validação automatizada da CI e a conferência visual
-  da referência no protótipo continuam pendentes.
+  executado nesta etapa. A CI `38169796225` passou em `verify-backlog`, mas o
+  gate `detect-changes` parou porque os corpos de dois commits não usaram os
+  rótulos exatos das porcentagens exigidos por `CONTRIBUTING.md`; por isso,
+  `verify-windows` e `verify-postgres` foram pulados e o código ainda não foi
+  validado pela CI. A conferência visual da referência no protótipo também está
+  pendente.
 - A mudança altera somente o texto complementar autorizado. Nenhum layout,
   regra financeira, regra de negócio ou dado persistido foi alterado.

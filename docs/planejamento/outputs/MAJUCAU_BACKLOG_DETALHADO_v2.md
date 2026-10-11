@@ -3512,6 +3512,6 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Referência técnica nos erros visíveis — 11/10/2026
 
 - A responsável autorizou acrescentar uma referência curta à mensagem existente, sem mover ou redesenhar telas.
-- A camada Wails agora repassa para a mensagem o `request_id` que o worker já grava no log. A mudança cobre erros retornados pelo worker nas consultas de saúde, painel, configurações, OAuth, sincronização e importações; o código de erro e os dados financeiros não mudam.
-- `gofmt` e `git diff --check` passaram. Não foram executados testes nem build local nesta etapa; a CI e a conferência visual do protótipo ainda precisam confirmar a mudança.
+- A camada Wails agora repassa para a mensagem o `request_id` que o worker já grava no log, com o rótulo “Código de referência”. A mudança cobre erros retornados pelo worker nas consultas de saúde, painel, configurações, OAuth, sincronização e importações; o código de erro e os dados financeiros não mudam.
+- `gofmt` e `git diff --check` passaram. Não foram executados testes nem build local nesta etapa. A CI `38169796225` validou o backlog, mas parou no gate de mensagens de commit; as verificações Windows e PostgreSQL foram puladas. Uma nova execução será disparada após corrigir o formato exigido pelo `CONTRIBUTING.md`.
 - BK-031 permanece em 80% até a validação automatizada e a validação de ACL em instalação/VM. O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; estimativa simples de 8,3% concluído e 91,7% restante. Não há prazo confiável para a conclusão global.

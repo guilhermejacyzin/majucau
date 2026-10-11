@@ -42,12 +42,14 @@ As imagens exibem posição e última sincronização, mas não definem todos os
 ## Estado da implementação observado
 
 - O código atual tem uma opção de exportação desativada no menu do cabeçalho e não possui rota Wails/IPC para exportação de relatórios. Logo, a função aprovada ainda não está implementada.
+- Revalidação do código em 11/10/2026: `frontend/src/mockupDashboard.tsx` declara as colunas de T13/T14, mas `MockupDashboard` só associa linhas às tabelas de Contas a Receber e Contas a Pagar; em T13/T14, a tabela permanece vazia e mostra “Sem dados confirmados”. A navegação de Integrações em `frontend/src/App.tsx` renderiza `IntegrationsView`, que não é a tabela de lotes T15 da referência aprovada. O menu Exportar segue desativado e não há data nem população de linhas reais para gerar os três arquivos. Portanto, habilitar exportação nesta etapa produziria arquivo vazio ou dependente de dados de exemplo, o que não atende à aprovação.
+- Para T13–T15, a parte já aprovada continua sendo: Excel, linhas da tabela e a data exibida. O conjunto de linhas em caso de paginação continua aguardando definição da responsável. Antes do gerador, é necessário fornecer os dados confirmados e a data do mesmo recorte exibido em cada tela; não copiar conteúdo ilustrativo dos mockups.
 - A migration de `REPORT_EXPORT` registra a capacidade para `ADMIN` e `DIRECTOR`, mas isso não comprova enforcement no worker; ver auditoria de acesso e BK-013.
 - A implementação de leitura e exportação deverá preservar a mesma população e contexto apresentados na respectiva tela. Uma falha ou ausência de dados não pode virar zero, nem a exportação pode disparar sincronização, importação ou mudança de estado.
 - A matriz acima cobre as referências T13–T15. T02–T07 e o vínculo completo entre controles aprovados, consultas e contratos de exportação ainda precisam ser conferidos para concluir BK-012.
 
 ## Próxima etapa
 
-Concluir o mapeamento dos controles de T02–T07, incluindo formato e conteúdo, e definir para T13–T15 filtros, escopo/paginação e contratos de detalhe. Depois, desenhar o contrato das rotas Wails/IPC e vincular a capacidade aprovada. Não redesenhar nem retirar os botões das referências. T11 permanece sem exportação.
+Concluir o mapeamento dos controles de T02–T07, incluindo formato e conteúdo; aguardar a decisão sobre linhas paginadas de T13–T15; e definir as fontes/leitores dos dados reais e da data exibida. Depois, desenhar o contrato das rotas Wails/IPC e provar o enforcement de `REPORT_EXPORT` no worker. Não redesenhar nem retirar os botões das referências. T11 permanece sem exportação.
 
 **Progresso de BK-012:** 25% (inventário e matriz parcial de T02–T07 e T13–T15; formato/conteúdo aprovados para T13–T15: Excel com tabela e data exibida. Faltam detalhes de filtros/escopo, contratos de detalhe, formato/conteúdo de T02–T07, rotas e enforcement de capacidades no worker). Nenhuma tela ou regra de negócio foi modificada.

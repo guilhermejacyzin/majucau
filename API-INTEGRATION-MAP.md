@@ -99,6 +99,11 @@ O botão de sincronização permanece separado e não é acionado por esse fluxo
 
 O conector não utilizará endpoints de baixa ou escrita. O Majucau é consumidor analítico, não sistema de lançamento no MVP.
 
+Nota de contrato: a OpenAPI descreve `pagina`/`limite` para categorias, mas o
+schema público da resposta não declara `hasNext` nem `total`. O client não deve
+inferir o fim da lista por quantidade de itens; quando uma categoria já estiver
+referenciada no detalhe de uma conta, pode consultá-la pelo ID.
+
 ### 3.3 Paginação e limites
 
 - parâmetros `pagina` e `limite`;

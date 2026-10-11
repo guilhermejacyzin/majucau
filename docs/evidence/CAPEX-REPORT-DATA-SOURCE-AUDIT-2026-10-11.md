@@ -18,13 +18,13 @@ Esta auditoria não conclui que o Bling não tenha a informação. Conclui somen
 Na OpenAPI pública consultada em 11/10/2026:
 
 - `GET /contas/pagar` aceita filtros de data de pagamento e é paginado; o contrato da resposta de lista documenta campos básicos, sem a categoria.
-- `GET /contas/pagar/{idContaPagar}` documenta a categoria pelo identificador e os IDs dos borderôs ligados à conta.
-- `GET /borderos/{idBordero}` documenta a data do borderô, a categoria e os pagamentos com o valor pago.
-- `GET /categorias/receitas-despesas` fornece categorias paginadas, inclusive identificadores e descrições para resolver o nome da categoria.
+- `GET /contas/pagar/{idContaPagar}` documenta a categoria pelo identificador e uma lista de IDs de borderôs relacionados à conta.
+- `GET /borderos/{idBordero}` documenta a data do borderô, a categoria e a lista de pagamentos com valor pago, contato e número do documento. O item de pagamento não documenta o ID da conta a pagar.
+- `GET /categorias/receitas-despesas` recebe página e limite, mas o schema público da resposta documenta somente `data[]`, sem `hasNext` nem `total`. A listagem atual, corretamente, não considera uma página sem marcador como a última; a consulta de uma categoria pelo ID já pode ser feita quando esse ID vier confirmado no detalhe da conta.
 
 Referências: [OpenAPI oficial — contas a pagar e filtro por pagamento](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), [OpenAPI oficial — categoria no detalhe da conta](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), [OpenAPI oficial — borderôs e valores pagos](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) e [OpenAPI oficial — categorias de receitas e despesas](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json).
 
-O contrato público mostra um caminho técnico possível, mas ainda falta uma resposta real sanitizada para confirmar como o Bling da Majucau liga pagamentos, borderôs e contas — especialmente em pagamentos parciais ou em parcelas. A documentação pública não comprova os dados históricos existentes na conta.
+O contrato público mostra um caminho técnico possível, mas ainda falta uma resposta real sanitizada para confirmar como o Bling da Majucau liga pagamentos, borderôs e contas — especialmente em pagamentos parciais, parcelas ou um borderô com mais de um pagamento. Como cada pagamento do borderô não traz um ID da conta no schema documentado, não distribuir seu valor entre contas por aproximação. A documentação pública também não comprova os dados históricos existentes na conta.
 
 ## Estado no Majucau
 

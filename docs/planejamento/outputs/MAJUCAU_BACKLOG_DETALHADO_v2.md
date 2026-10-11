@@ -43,7 +43,7 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - BK-004 foi revisada contra o inventário das fontes, o mapa MOCAP e as decisões vigentes: 15 imagens T1–T15/C11 estão presentes e seus hashes conferem; as correções de menu e T6 estão registradas. Nenhuma tela foi alterada.
 - BK-002 foi reauditada contra a API pública do GitHub: main está em 39f8630; a branch de trabalho publicada está em b94bb3a, 178 commits à frente; há cinco PRs abertos e nenhuma issue. A nota anterior de repositório vazio é histórica.
 - BK-001 foi reaberta: o inventário e as extrações estão disponíveis, mas os arquivos binários originais não estão no local privado; aguardamos a orientação da responsável sobre preservá-los.
-- Quatro tarefas têm auditoria atual concluída: BK-000, BK-002, BK-004 e BK-005. BK-001 aguarda os originais ou autorização para aceitar hashes/extrações; 122 tarefas ainda aguardam revisão, incluindo a conclusão histórica BK-003, não revalidada.
+- Cinco tarefas têm auditoria atual concluída: BK-000, BK-002, BK-003, BK-004 e BK-005. BK-001 aguarda os originais ou autorização para aceitar hashes/extrações; 121 tarefas ainda aguardam revisão.
 - A planilha mostra 5 de 127 tarefas concluídas (3,9% por contagem simples). É estado do rastreador, não percentual real de conclusão do produto. Prazo global ainda indisponível.
 - Esta auditoria não alterou código, telas aprovadas ou regras de negócio.
 
@@ -187,9 +187,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Dependências:** BK-001
 
-**Fonte:** `docs/source/README.md`; `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md`; `docs/FUNCTIONAL-DECOMPOSITION-v1.md`; `G0-DECISION-REGISTER.md`; hashes das 15 referências conferidos em 11/10/2026
+**Fonte:** `docs/source/README.md`; `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md`; `docs/FUNCTIONAL-DECOMPOSITION-v1.md`; `G0-DECISION-REGISTER.md`; hashes das 15 referências conferidos em 10/10/2026
 
-**Evidência:** As 15 referências do inventário existem e os 15 SHA-256 conferem; o MOCAP mapeia 15 rotas e registra Balanço Patrimonial fora do escopo, ausência de rota separada “Aplicações” e correções aprovadas da T6. Contratos de cálculo continuam vinculados às tarefas financeiras específicas.
+**Evidência:** As 15 referências do inventário existem e os 15 SHA-256 conferem; o MOCAP mapeia 15 rotas e registra Balanço Patrimonial fora do escopo, ausência de rota separada “Aplicações” e correções aprovadas da T6. A inspeção visual das imagens T1–T15 foi revalidada em 10/10/2026; discrepâncias e ambiguidades têm destino registrado em [MOCAP-SCREEN-AUDIT-2026-10-10.md](../../evidence/MOCAP-SCREEN-AUDIT-2026-10-10.md). Os valores dos mockups são ilustrativos, não regras; o botão “Gerar pedidos” da imagem de Compras permanece em conflito com o contrato aprovado e aguarda esclarecimento antes de qualquer mudança nessa tela. Contratos de cálculo continuam vinculados às tarefas financeiras específicas.
 
 **Regras e verificações vinculadas:** Q-01,Q-02,F-13
 

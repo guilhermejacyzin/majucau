@@ -1,0 +1,35 @@
+# Revisão visual das telas T1–T15 — 10/10/2026
+
+## Objetivo e limites
+
+Revalidar as imagens que já estão no repositório, comparar os exemplos visíveis com as decisões posteriores e direcionar diferenças para o backlog. Foram examinadas T1–T15; `T1-Visao-Executiva-2026-09-20.png` é cópia exata de T1 e `C11-mockup-2026-09-20.png`/`C11.png` são cópias exatas de T11, conforme o inventário de hashes em `docs/source/README.md`.
+
+Esta revisão não altera telas, códigos, cálculos ou regras de negócio. Os valores nas imagens são exemplos visuais, não dados reais nem regras aprovadas. As imagens antigas também mantêm itens de menu que decisões posteriores retiraram.
+
+## Resultado por tela
+
+| Tela | Referência e destino no backlog | Resultado da revisão |
+|---|---|---|
+| T1 — Visão Executiva | `T1-mockup-2026-09-20.png`; BK-102 | Os indicadores e gráficos são exemplos. O menu da imagem ainda mostra “Balanço Patrimonial” e “Aplicações”; decisões posteriores os retiraram da versão 1. Não reintroduzir por causa da imagem histórica. |
+| T2 — Fluxo de Caixa | `T2-mockup-2026-09-20.png`; BK-062 | Mantêm-se as divergências de reserva, janela de datas e alerta já registradas como FIN-01 a FIN-03. Os valores não podem ser usados para preencher o produto. A definição de “semana crítica” segue pendente. |
+| T3 — Contas a Receber | `T3-mockup-2026-09-20.png`; BK-057 | Permanecem as diferenças de universo/total entre cartões e a conciliação com T5, registradas como FIN-04, FIN-05, FIN-08 e FIN-09. Precisam de fonte e denominador comuns antes de se tornarem cálculos do produto. |
+| T4 — Contas a Pagar | `T4-mockup-2026-09-20.png`; BK-059 | Permanecem FIN-06 e FIN-07: o cartão e a distribuição divergem em R$ 180, e uma obrigação ainda não vencida aparece como atrasada na data de referência. Os exemplos não definem regra de vencimento. |
+| T5 — Conciliação | `T5-mockup-2026-09-20.png`; BK-055 | Os estados de algumas transações não coincidem com T3 e a taxa de conciliação usa denominador diferente (FIN-08/09). O sistema precisa separar situação do título de situação do vínculo de conciliação, conforme contrato aprovado; não inferir correção pelos números da imagem. |
+| T6 — DRE | `T6-mockup-2026-09-20.png`; BK-067 | A tabela ilustrativa chega a R$ 74.380, mas margem e gráfico não reconciliam conforme FIN-10/11. A decisão posterior mantém a DRE própria do Majucau e aprovou cards separados de EBIT, EBITDA e CAPEX fora da tabela; a imagem antiga não substitui essa decisão. CAPEX não entra no lucro. |
+| T7 — Balancete | `T7-mockup-2026-09-20.png`; BK-069 | Débitos e créditos do cabeçalho coincidem. Continuam FIN-12/13: o sinal de certas contas requer convenção contábil e “saldo zero” não prova saldo final conhecido quando os saldos iniciais estão abertos. A imagem ainda contém links históricos para Balanço Patrimonial e Aplicações. |
+| T8 — Calculadora de Aplicação | `T8-mockup-2026-09-20.png`; BK-073 | Os números não demonstram a fórmula: a capacidade ilustrada de R$ 96.800 supera o lucro elegível de R$ 74.380 e a memória não resolve a diferença (FIN-14 a FIN-17). A planilha atual confirma reserva mínima de R$ 50.000 e um campo de saldo da semana crítica, mas não define a fórmula de uma reserva alternativa. Foi apresentada à responsável uma proposta separada, ainda aguardando aprovação. A calculadora continua somente para consulta; nenhum valor ilustrativo deve ser copiado. |
+| T9 — Estoque | `T9-mockup-2026-09-20.png`; BK-078 | No exemplo, a soma das seis quantidades “Utilizável” na tabela é 110,5 t, contra 111,7 t no cartão; a distribuição também difere do total em 0,1 t por arredondamento/escopo não explicado. Registrar para reconciliação da mesma posição, sem transformar as quantidades em regra. |
+| T10 — Produção | `T10-mockup-2026-09-20.png`; BK-081 | No conjunto mostrado, os totais de planejado (18,4 t), em andamento (7,2 t) e concluído (10,1 t) batem com os cartões; as contagens do gráfico somam 35 ordens. O gráfico representa 35 ordens, enquanto a tabela mostra seis exemplos. Isso é compatível com recorte parcial, mas o universo precisa ficar claro quando ligado aos dados reais. |
+| T11 — Compras | `T11-mockup-2026-09-20.png`; BK-082/BK-084/BK-086 | Há diferenças entre os cartões e a tabela: “4 itens/R$ 286.750” não coincide com os quatro valores estimados (total R$ 512.500); a necessidade líquida 28,4 t difere das quantidades em toneladas da tabela (18,0 + 3,5 + 8,0 = 29,5 t), sem contar embalagens. A tela também mostra “Gerar pedidos”, embora o contrato de BK-086 proíba criar pedidos no Bling e aceite exportação. A intenção desse botão precisa ser esclarecida antes de alterar a tela ou implementar ação. |
+| T12 — Projeções | `T12-mockup-2026-09-20.png`; BK-096 | Os percentuais pessimista (−9,4%) e otimista (+10,0%) são compatíveis com os valores-base ilustrados. O restante depende de filtros, janela e fontes definidos em BK-096; a imagem sozinha não valida modelo, previsão ou regras de demanda. |
+| T13 — Lançamentos e Pendências | `T13-mockup-2026-09-20.png`; BK-099 | O gráfico soma 92 itens (50 abertos, 9 bloqueados, 12 pendentes, 12 sem mapeamento e 9 antigos), mas os cartões mostram contagens de tipos possivelmente sobrepostos. Os conceitos de status e tipo não têm denominador comum evidente. Exigir que cartões, lista e gráfico expliquem seus filtros e não somem duas vezes o mesmo item. |
+| T14 — Alertas | `T14-mockup-2026-09-20.png`; BK-101 | Os cartões de alertas ativos somam 51; os valores exibidos por módulo também somam 51, mas o centro do gráfico declara 57. Percentuais usam 57 como denominador e somam aproximadamente 88,4%. Os 14 resolvidos são outra janela. Reconciliar o total do gráfico/percentuais e separar alertas ativos de resolvidos. |
+| T15 — Importações/Integrações | `T15-mockup-2026-09-20.png`; BK-052 | Os estados dos lotes somam 128, como o cartão. As porcentagens chegam a 100,1% por arredondamento. O topo usa os últimos 30 dias e a tabela mostra apenas alguns lotes, portanto os números de exemplo não precisam somar entre si; a tela real deve identificar período e universo e preservar as regras de idempotência/reprocessamento. |
+
+## Decisões e próximos passos
+
+- O inventário, as inconsistências visuais e as ambiguidades estão associados às tarefas BK-052, BK-055, BK-057, BK-059, BK-062, BK-067, BK-069, BK-073, BK-078, BK-081, BK-082, BK-084, BK-086, BK-096, BK-099, BK-101 e BK-102.
+- Não se alterou nenhuma tela aprovada nem regra de negócio. Valores dos desenhos não foram copiados como dados ou exemplos de produção.
+- A fórmula da reserva sugerida da T8 continua aguardando aprovação da responsável. O contrato existente da calculadora não muda enquanto isso.
+- A referência T11/C11 e o contrato BK-086 divergem quanto ao botão “Gerar pedidos”. A implementação permanece bloqueada nesse ponto até a responsável esclarecer a função esperada; a regra de integração somente leitura permanece vigente.
+- Esta conferência visual não substitui validação contábil, conferência dos dados reais, revisão funcional das interações ou homologação com a responsável.

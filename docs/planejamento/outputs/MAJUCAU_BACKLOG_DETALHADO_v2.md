@@ -192,6 +192,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 
 ## Dependências e ordem prática
 
+### Verificação do ciclo de suporte do Windows — 11/10/2026
+
+- A documentação oficial confirma que o suporte regular do Windows 10 Pro 22H2 terminou em 14/10/2025. O programa ESU exige inscrição e é temporário; instalar apenas o pacote preparatório não inscreve a máquina. A situação de ESU deste computador não foi verificada.
+- BK-014 avança de 10% para 15%. A máquina inventariada segue classificada como ambiente de desenvolvimento, não como host operacional. O equipamento final, a comprovação de ESU ou atualização para Windows suportado e as demais condições operacionais permanecem pendentes.
+- Nenhuma atualização, inscrição, instalação ou configuração do Windows foi realizada. Evidência: `docs/evidence/WINDOWS-ENVIRONMENT-INVENTORY-2026-10-11.md`; fontes oficiais Microsoft estão vinculadas nela.
+- O backlog tem 127 tarefas: 6 concluídas, 10 em andamento e 111 não iniciadas. Em andamento: BK-001 (0%), BK-006 (25%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples, `(6 × 100% + 0% + 25% + 20% + 10% + 15% + 15% + 70% + 80% + 55% + 20%) ÷ 127 = 7,2%`; restam 92,8%. Não há estimativa confiável de conclusão enquanto permanecem 111 tarefas não iniciadas, decisões e validações externas.
+
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
 
 1. Transcrever contratos fechados e localizar referências; desenhar domínios, acesso, persistência e operação local.
@@ -569,7 +577,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-014 — Inventariar o Windows e propor a operação local
 
-**Situação:** Em andamento. **Evolução:** 10% (inventário somente para leitura do ambiente Windows usado nesta sessão, documentado em `docs/evidence/WINDOWS-ENVIRONMENT-INVENTORY-2026-10-11.md`. A máquina não foi presumida como host de produção; capacidade de energia/rede, direitos de instalação e requisitos do host operacional permanecem pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Infraestrutura + Segurança.
+**Situação:** Em andamento. **Evolução:** 15% (inventário somente para leitura do ambiente Windows usado nesta sessão e verificação do fim do suporte regular do Windows 10 Pro 22H2. A situação de inscrição ESU não foi verificada, e a máquina não foi presumida como host de produção; capacidade de energia/rede, direitos de instalação e escolha/validação do host operacional permanecem pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Infraestrutura + Segurança.
 
 **Objetivo:** Dimensionar uma instalação que a Majucau consiga operar.
 

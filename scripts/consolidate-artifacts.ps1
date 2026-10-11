@@ -4,16 +4,17 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-Import-Module (Join-Path $PSScriptRoot 'SafeCleanup.psm1') -Force
+# ArtifactManifest imports SafeCleanup privately; load it again in this caller scope.
 Import-Module (Join-Path $PSScriptRoot 'ArtifactManifest.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'SafeCleanup.psm1') -Force
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $artifactRoot = Join-Path $projectRoot 'artifacts'
 $windowsRoot = Join-Path $artifactRoot 'windows'
 
-SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $artifactRoot -ExpectedType Directory
-SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $windowsRoot -ExpectedType Directory
+Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $artifactRoot -ExpectedType Directory
+Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $windowsRoot -ExpectedType Directory
 New-Item -ItemType Directory -Force -Path $windowsRoot | Out-Null
-SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $windowsRoot -ExpectedType Directory
+Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $windowsRoot -ExpectedType Directory
 
 $copyIfPresent = @(
     @{ Source = 'build\bin\majucau.exe'; Destination = 'windows\majucau.exe' },
@@ -26,11 +27,11 @@ foreach ($item in $copyIfPresent) {
     $source = Join-Path $projectRoot $item.Source
     if ($item.Source.Contains('*')) {
         $sourceDirectory = Join-Path $projectRoot (Split-Path $item.Source)
-        SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $sourceDirectory -ExpectedType Directory
+        Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $sourceDirectory -ExpectedType Directory
         $sourceFilter = Split-Path $item.Source -Leaf
         $files = Get-ChildItem -LiteralPath $sourceDirectory -Filter $sourceFilter -File -ErrorAction SilentlyContinue
         foreach ($file in $files) {
-            SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $file.FullName -ExpectedType File
+            Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $file.FullName -ExpectedType File
             Copy-Item -LiteralPath $file.FullName -Destination $windowsRoot -Force
         }
         continue
@@ -39,7 +40,7 @@ foreach ($item in $copyIfPresent) {
     if (-not (Test-Path -LiteralPath $source)) {
         continue
     }
-    SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $source -ExpectedType File
+    Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $source -ExpectedType File
 
     $destination = Join-Path $artifactRoot $item.Destination
     if (Test-Path -Path $destination -PathType Container) {
@@ -56,16 +57,16 @@ Write-MajucauArtifactManifest -ProjectRoot $projectRoot -ManifestPath $manifest
 if (-not $KeepSourceOutputs) {
     foreach ($relativePath in @('build\bin', 'frontend\dist', 'tmp')) {
         $sourcePath = Join-Path $projectRoot $relativePath
-        SafeCleanup\Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $sourcePath -ExpectedRelativePath $relativePath
+        Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $sourcePath -ExpectedRelativePath $relativePath
     }
 
     $webview2StagingFile = Join-Path $projectRoot 'build\windows\installer\tmp\MicrosoftEdgeWebview2Setup.exe'
-    SafeCleanup\Remove-MajucauProjectFile -ProjectRoot $projectRoot -Path $webview2StagingFile -ExpectedRelativePath 'build\windows\installer\tmp\MicrosoftEdgeWebview2Setup.exe'
+    Remove-MajucauProjectFile -ProjectRoot $projectRoot -Path $webview2StagingFile -ExpectedRelativePath 'build\windows\installer\tmp\MicrosoftEdgeWebview2Setup.exe'
     $webview2StagingRoot = Split-Path -Parent $webview2StagingFile
-    SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $webview2StagingRoot -ExpectedType Directory
+    Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $webview2StagingRoot -ExpectedType Directory
     if ((Test-Path -LiteralPath $webview2StagingRoot -PathType Container) -and
         -not (Get-ChildItem -LiteralPath $webview2StagingRoot -Force | Select-Object -First 1)) {
-        SafeCleanup\Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $webview2StagingRoot -ExpectedRelativePath 'build\windows\installer\tmp'
+        Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $webview2StagingRoot -ExpectedRelativePath 'build\windows\installer\tmp'
     }
 }
 

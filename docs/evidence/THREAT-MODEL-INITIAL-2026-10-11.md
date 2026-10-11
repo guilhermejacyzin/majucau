@@ -297,6 +297,14 @@ BK-024 permanece em 30%: esta conferência documenta mais evidência de streamin
 
 BK-024 permanece em 30% e o projeto mantém a estimativa registrada de 7,5% concluído: este complemento identifica uma decisão de arquitetura pendente, não fecha a validação operacional nem o mapa de riscos.
 
+## Complemento — conferência de caches e outputs locais — 11/10/2026
+
+- `artifacts/cache`, `artifacts/verification` e `frontend/dist` não existiam no início desta conferência. O `artifacts/retained` foi preservado porque contém a instância de PostgreSQL de desenvolvimento e seus arquivos de operação.
+- O NSIS 3.13 foi restaurado de um arquivo já registrado para limpeza manual. O SHA-256 do ZIP coincide com o hash oficial anotado no registro local; `makensis.exe /VERSION` respondeu `v3.13`. A ferramenta fica em `artifacts/cache/nsis-3.13`, local central necessário para gerar o instalador. Go 1.26.9 também foi confirmado instalado no computador.
+- Tentei remover somente três ZIPs antigos já classificados como dispensáveis no registro local (instalador Go redundante, cópia NSIS válida agora extraída e cópia NSIS com hash divergente). A revisão automática bloqueou a remoção (`blocked by policy`); nenhum desses arquivos foi removido e não tentei outro método. Eles continuam guardados em `artifacts/retained/manual-cleanup` para remoção manual.
+- A Junction antiga em `docs/planejamento/artifacts/cache/backlog-tracker/node_modules` continua apontando para dependências compartilhadas do Codex e permanece registrada para limpeza manual; não foi seguida nem removida. Nenhuma saída de build foi criada nesta revisão.
+- Não foram executados testes ou build do produto. A conferência de cache não alterou telas, dados de negócio ou código funcional.
+
 ## Complemento — erros de encerramento nos fluxos CSV em streaming
 
 **Data:** 11/10/2026

@@ -229,6 +229,12 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Uma consulta manual anterior foi executada fora desses scripts e baixou três versões de dependências para o cache de módulos compartilhado do perfil. Como esse cache pode ser usado por outros projetos, não foi apagado; os caminhos exatos foram registrados no registro local ignorado `artifacts/retained/cleanup-register.md` para decisão manual. Os comandos seguintes usarão os caminhos de cache do repositório.
 - O parser PowerShell e as verificações de caminho dos três scripts passaram. A evidência sanitizada está em `docs/evidence/CACHE-CLEANUP-2026-10-11.md`. BK-025 continua em 70%, pois a proteção da branch `main` e os checks obrigatórios ainda dependem de uma administradora. Percentual global permanece 7,4% concluído e 92,6% restante.
 
+### Retry compartilhado nas consultas Bling — 11/10/2026
+
+- As duas implementações repetidas de retry foram consolidadas em `withBlingReadRetry`. As consultas GET preservam três chamadas no máximo, espera exponencial com jitter, `Retry-After` limitado a 30 segundos e encerramento por cancelamento/erro permanente. A troca de token OAuth continua sem retry automático.
+- `go test -count=1 ./internal/integrations/bling` e `go vet ./internal/integrations/bling` passaram. `GOCACHE`, `GOMODCACHE` e `GOTMPDIR` foram limitados a `artifacts/cache`; a pasta foi removida ao final.
+- BK-041 permanece em 55%, pois ainda faltam homologação real dos campos e cursor/paginação oficial do Bling. A mudança não altera regra financeira, tela ou chamada à conta real. Evidência: `docs/evidence/BLING-ADAPTER-STATIC-AUDIT-2026-10-11.md`.
+
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
 
 1. Transcrever contratos fechados e localizar referências; desenhar domínios, acesso, persistência e operação local.

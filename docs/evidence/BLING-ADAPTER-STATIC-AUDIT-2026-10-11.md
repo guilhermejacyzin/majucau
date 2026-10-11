@@ -72,3 +72,17 @@ pessoais ou valores reais da empresa na evidência.
 - Sem essa informação, a rotina encerra o lote como `FAILED` com `BLING_API_PAGINATION_UNKNOWN` antes de gravar a página. O rollback do savepoint preserva os dados RAW e o cursor do último lote válido.
 - `go test ./internal/integrations/bling`, `go vet ./internal/integrations/bling` e `git diff --check` passaram neste Windows, usando `artifacts/cache/`. A integração PostgreSQL não foi executada localmente porque não há DSN de teste; a CI `38121237550` passou nos jobs Windows e PostgreSQL e executou o teste de rollback/cursor.
 - O contrato da API, os campos financeiros, a última página real e o cursor incremental continuam sem homologação. Nenhuma regra financeira ou tela foi alterada.
+
+## Retry único para consultas repetíveis — 2026-10-11
+
+- As duas consultas GET do adapter (`api_client.go` e `api_resources.go`) agora
+  usam `withBlingReadRetry`, que concentra classificação de falha transitória,
+  máximo de tentativas, backoff/jitter, `Retry-After` e cancelamento.
+- O POST de troca/renovação OAuth continua fora desse mecanismo e não é repetido,
+  pois pode consumir código ou refresh token de uso único.
+- `go test -count=1 ./internal/integrations/bling` e
+  `go vet ./internal/integrations/bling` passaram no Windows. Os três caches Go
+  foram direcionados a `artifacts/cache` e removidos pela rotina segura ao fim.
+- Nenhuma chamada foi feita à conta real do Bling; telas, payloads financeiros
+  e regras de negócio não mudaram. BK-041 continua em 55% porque a homologação
+  dos campos e da paginação oficial ainda falta.

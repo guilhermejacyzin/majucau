@@ -157,11 +157,11 @@ func (f ReceivablesFilter) normalized() (ReceivablesFilter, error) {
 // records a real, sanitized response from the customer's Bling account. No
 // guessed field mapping can silently become a financial fact.
 type BlingReceivablesPage struct {
-	Records      []json.RawMessage
-	Page         int
-	Limit        int
-	Total        *int
-	HasNext      bool
+	Records []json.RawMessage
+	Page    int
+	Limit   int
+	Total   *int
+	HasNext bool
 	// HasNextKnown is true only when the API supplies hasNext or total metadata.
 	// Without it, false HasNext cannot safely mean that the current page is last.
 	HasNextKnown bool
@@ -235,32 +235,9 @@ func (c *BlingAPIClient) TestConnection(ctx context.Context) (BlingConnectionPro
 }
 
 func (c *BlingAPIClient) doFinancialResourceRequest(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {
-	attempts := c.maxAttempts
-	if attempts < 1 {
-		attempts = 1
-	}
-	for attempt := 1; attempt <= attempts; attempt++ {
-		page, err := c.doFinancialResourceAttempt(req, filter)
-		if err == nil {
-			return page, nil
-		}
-		if attempt == attempts || !retryableBlingError(err) {
-			return BlingReceivablesPage{}, err
-		}
-		var apiErr *BlingAPIError
-		var retryAfter time.Duration
-		if errors.As(err, &apiErr) {
-			retryAfter = apiErr.RetryAfter
-		}
-		wait := c.wait
-		if wait == nil {
-			wait = waitBlingRetry
-		}
-		if err := wait(req.Context(), c.retryDelay(attempt, retryAfter)); err != nil {
-			return BlingReceivablesPage{}, err
-		}
-	}
-	return BlingReceivablesPage{}, ErrBlingAPIUnavailable
+	return withBlingReadRetry(req.Context(), c.maxAttempts, c.wait, c.retryDelay, func() (BlingReceivablesPage, error) {
+		return c.doFinancialResourceAttempt(req, filter)
+	})
 }
 
 func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {

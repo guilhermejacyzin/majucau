@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // GetPayable reads one account-payable detail from Bling and preserves its
@@ -59,32 +58,9 @@ func (c *BlingAPIClient) getDataRecord(ctx context.Context, resource string) (js
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
-	attempts := c.maxAttempts
-	if attempts < 1 {
-		attempts = 1
-	}
-	for attempt := 1; attempt <= attempts; attempt++ {
-		record, err := c.getDataRecordAttempt(req)
-		if err == nil {
-			return record, nil
-		}
-		if attempt == attempts || !retryableBlingError(err) {
-			return nil, err
-		}
-		var apiErr *BlingAPIError
-		var retryAfterDuration time.Duration
-		if errors.As(err, &apiErr) {
-			retryAfterDuration = apiErr.RetryAfter
-		}
-		wait := c.wait
-		if wait == nil {
-			wait = waitBlingRetry
-		}
-		if err := wait(req.Context(), c.retryDelay(attempt, retryAfterDuration)); err != nil {
-			return nil, err
-		}
-	}
-	return nil, ErrBlingAPIUnavailable
+	return withBlingReadRetry(req.Context(), c.maxAttempts, c.wait, c.retryDelay, func() (json.RawMessage, error) {
+		return c.getDataRecordAttempt(req)
+	})
 }
 
 func (c *BlingAPIClient) getDataRecordAttempt(req *http.Request) (json.RawMessage, error) {

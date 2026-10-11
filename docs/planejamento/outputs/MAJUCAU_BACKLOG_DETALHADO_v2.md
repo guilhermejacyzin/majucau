@@ -22,13 +22,20 @@ As regras funcionais existentes permanecem fechadas. A decisão posterior aprovo
 
 Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. Peso inicial 1 mede quantidade. Evolução geral = soma(peso × conclusão) / soma(pesos). O denominador inclui tarefas condicionais ainda previstas; quando o escopo for efetivamente alterado, registrar a versão e revisar pesos/denominador. Não existe atualização automática pelo GitHub.
 
-### Auditoria do estado atual — 04/10/2026
+### Auditoria histórica — 04/10/2026
 
 - O número de 2,4% e a indicação de desenvolvimento em 0% acima pertencem à revisão de 13/09/2026. Como o código e as evidências avançaram desde então sem atualização tarefa a tarefa neste arquivo, esses números são históricos e não devem ser apresentados como o progresso atual.
 - A matriz `REQUIREMENTS-TRACEABILITY.md` tem 51 requisitos, distribuídos assim nesta auditoria: 1 `VERIFIED`, 5 `DOCUMENTED`, 22 `PARTIAL`, 11 `BLOCKED` e 12 `NOT_STARTED`.
 - Apenas `VERIFIED` conta como requisito integralmente comprovado. Isso equivale a 1 de 51 (aproximadamente 2%) por contagem simples de requisitos; não é o percentual oficial do projeto, porque os requisitos têm tamanhos e pesos diferentes.
 - Portanto, ainda não há percentual global nem prazo de conclusão confiável. Para calculá-los, é necessário revisar BK-000 a BK-126 contra o código, os testes/evidências, os gates e as dependências atuais. Documentação isolada não fecha uma tarefa de implementação.
 - Até essa revisão, comunicar o estado como “1 de 51 requisitos verificados; 22 parciais; 11 bloqueados; 12 não iniciados; 5 documentados”. Não converter automaticamente “não verificado” em “não feito”.
+
+### Atualização da matriz — 10/10/2026
+
+- Recontagem da matriz atual: 51 requisitos — 1 `VERIFIED`, 4 `DOCUMENTED`, 26 `PARTIAL`, 11 `BLOCKED` e 9 `NOT_STARTED`.
+- Desde a conferência anterior, `ARC-01`, `ARC-03` e `OPS-01` avançaram de `NOT_STARTED` para `PARTIAL`; `UX-01` avançou de `DOCUMENTED` para `PARTIAL`, pois os testes e a CI foram comprovados, mas a comparação visual ainda falta.
+- O resultado continua sendo 1 de 51 requisitos totalmente verificado (aproximadamente 2% por contagem simples). Isso não é uma estimativa de conclusão por esforço. O percentual e prazo global permanecem indisponíveis até a revisão individual das 127 tarefas do backlog.
+- Evidência da recontagem: `docs/evidence/TRACEABILITY-COUNT-CORRECTION-2026-10-10.md`. A matriz `REQUIREMENTS-TRACEABILITY.md` permanece como fonte atual dos estados.
 
 ## Dependências e ordem prática
 

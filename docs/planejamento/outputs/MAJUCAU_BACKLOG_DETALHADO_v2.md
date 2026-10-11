@@ -3506,5 +3506,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 - `internal/integrations/httpretry` aplica o retry aprovado como componente reutilizável para adapters de API: somente GET, três tentativas no máximo, backoff exponencial com jitter, `Retry-After` até 30 segundos e interrupção por cancelamento. O adapter continua responsável por classificar erros transitórios.
 - O cliente Bling passou a usar o componente; OAuth POST permanece sem repetição. Os testes locais do helper e do adapter Bling, `go vet` dos dois pacotes e `git diff --check` passaram. A CI completa [38166703369](https://github.com/guilhermejacyzin/majucau/actions/runs/38166703369) passou nos quatro jobs, incluindo Windows e PostgreSQL. Evidência: `docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md`.
-- BK-041 permanece em 55% porque homologação da conta, cursor incremental e encerramento oficial da paginação continuam pendentes. BK-024 permanece em 35%: falta validação de rede, acesso, instalação e recuperação em ambiente limpo. O backlog continua em 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas; 8,3% concluído e 91,7% restante.
+- Correção do resumo desta atualização: BK-041 já estava em 60% após o ajuste dos filtros por endpoint, registrado no commit `2fb2f870`; o percentual de 55% nesta nota estava desatualizado. A homologação da conta, o cursor incremental e o encerramento oficial da paginação continuam pendentes. BK-024 permanece em 35%: faltam validações de rede, acesso, instalação e recuperação em ambiente limpo. O backlog continua em 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas; 8,3% concluído e 91,7% restante.
 - Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado.
+
+### Referência técnica nos erros visíveis — 11/10/2026
+
+- A responsável autorizou acrescentar uma referência curta à mensagem existente, sem mover ou redesenhar telas.
+- A camada Wails agora repassa para a mensagem o `request_id` que o worker já grava no log. A mudança cobre erros retornados pelo worker nas consultas de saúde, painel, configurações, OAuth, sincronização e importações; o código de erro e os dados financeiros não mudam.
+- `gofmt` e `git diff --check` passaram. Não foram executados testes nem build local nesta etapa; a CI e a conferência visual do protótipo ainda precisam confirmar a mudança.
+- BK-031 permanece em 80% até a validação automatizada e a validação de ACL em instalação/VM. O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; estimativa simples de 8,3% concluído e 91,7% restante. Não há prazo confiável para a conclusão global.

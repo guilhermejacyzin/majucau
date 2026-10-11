@@ -23,6 +23,7 @@
 3. Fazer commits pequenos no branch de trabalho e enviar ao remoto autorizado.
 4. Só marcar `VERIFIED` quando a evidência requerida pelo requisito estiver registrada; uma CI verde não aprova automaticamente um módulo inteiro.
 5. Após cada execução, resumir em linguagem simples o que foi feito, o que falta, percentual restante da tarefa, percentual restante do projeto e estimativa de conclusão. Se o prazo total depender de credenciais, fonte oficial, decisão funcional ou VM indisponível, registrar a dependência e não inventar uma data.
+6. Executar `scripts/verify-backlog.ps1` na CI para comparar as tarefas detalhadas com as contagens e os percentuais da recontagem mais recente. `scripts/test-verify-backlog.ps1` também confirma que o verificador rejeita um resumo incorreto. A leitura é por linha, com limites de 8 MiB por arquivo e 256 Ki caracteres por linha; uma divergência falha a verificação antes dos testes de produto.
 
 ## Atualização de dependências
 

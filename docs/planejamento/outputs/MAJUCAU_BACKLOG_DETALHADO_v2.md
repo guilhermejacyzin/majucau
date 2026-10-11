@@ -158,6 +158,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Pela média simples, `(6 × 100% + 0% + 15% + 20% + 15% + 60% + 80% + 55% + 20%) ÷ 127 = 6,8%`; restam 93,2%. O número é estimativa do rastreador, não prontidão para produção.
 - Não há prazo global confiável enquanto 113 tarefas não foram iniciadas e as validações contábeis, fontes reais e decisões operacionais permanecem pendentes.
 
+### Conferência automática do resumo do backlog — 11/10/2026
+
+- `scripts/verify-backlog.ps1` foi criado para ler as tarefas uma por vez, conferir IDs repetidos, estado e percentual de cada uma e comparar contagens e média com a última recontagem antes da lista detalhada.
+- A conferência e seu teste de rejeição de resumo incorreto foram ligados à CI Windows e passaram localmente. Ainda falta a validação remota da CI deste commit.
+- BK-025 avança de 60% para 65% pela conferência automática do resumo; a confirmação administrativa das regras de proteção da branch ainda está pendente. Nenhuma tela ou regra financeira foi alterada.
+- O backlog mantém 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (15%), BK-007 (20%), BK-013 (15%), BK-025 (65%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples, `(6 × 100% + 0% + 15% + 20% + 15% + 65% + 80% + 55% + 20%) ÷ 127 = 6,9%`; restam 93,1%. É estimativa do rastreador, não prontidão para produção.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -803,7 +811,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-025 — Preparar o repositório e as convenções do projeto
 
-**Situação:** Em andamento. **Evolução:** 60% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` explica o fluxo seguro de mudanças, commits e evidências. A lista de rulesets do GitHub está vazia, mas a integração recebeu HTTP 403 ao consultar a proteção clássica de `main`; falta confirmação de uma pessoa administradora sobre revisões e verificações exigidas). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 65% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` explica o fluxo seguro de mudanças, commits e evidências. `scripts/verify-backlog.ps1` confere automaticamente contagens e percentuais da recontagem mais recente e foi ligado à CI. A lista de rulesets do GitHub está vazia, mas a integração recebeu HTTP 403 ao consultar a proteção clássica de `main`; falta confirmação de uma pessoa administradora sobre revisões e verificações exigidas). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Criar uma base reproduzível para a equipe.
 

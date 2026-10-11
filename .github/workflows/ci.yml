@@ -74,6 +74,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Verify backlog counts and progress percentages
+        shell: pwsh
+        run: ./scripts/verify-backlog.ps1
+
+      - name: Verify backlog checker rejects inconsistent summaries
+        shell: pwsh
+        run: ./scripts/test-verify-backlog.ps1
+
       - name: Prepare centralized caches
         shell: pwsh
         run: |

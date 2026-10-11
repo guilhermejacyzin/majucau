@@ -721,15 +721,15 @@
     "questions": "R-02",
     "owner": "Segurança + Arquitetura",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "Mapa inicial em docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md: ativos, riscos, controles e verificações propostas. Revisão estática, sem testes; falta mapear todas as fontes, implementar controles e validar.",
     "weight": 1,
     "dependencies": [
       "BK-013",
       "BK-014",
       "BK-019"
     ],
-    "progress": 0
+    "progress": 0.2
   },
   {
     "key": "repoinit",

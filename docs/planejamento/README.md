@@ -6,7 +6,7 @@
 - [Análise e decisões](outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md).
 - [Planilha de evolução](outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx).
 - Dados estruturados: [tarefas atuais](work/backlog_v2.json), [decisões](work/decisions_v2.json), [cobertura](work/scope_v2.json) e [registro histórico de alterações de 13/09/2026](work/revision_v2.json). O registro histórico não substitui a situação atual das tarefas.
-- [Verificações executadas na preparação original](work/verification_v2.json) e [prévias da planilha](work/previews_v2).
+- [Verificações executadas na preparação original](work/verification_v2.json) e [prévias históricas da planilha](work/previews_v2). Novas prévias temporárias são geradas em `../../artifacts/verification/backlog-v2` e removidas depois da conferência.
 
 ## Histórico preservado
 
@@ -19,7 +19,7 @@ As v0/v1 conservam dúvidas, interpretações e regras depois substituídas. Con
 
 ## Arquivos de apoio
 
-`work/` conserva dados JSON, extrações das vinte abas, auditorias, scripts de geração/revisão/verificação e prévias visuais. Esses scripts tratam os artefatos do backlog; não constituem o backend ou frontend do Majucau.
+`work/` conserva dados JSON, extrações das vinte abas, auditorias e scripts de geração/revisão/verificação. Prévia temporária nova e outros outputs de conferência ficam centralizados em `../../artifacts/` e podem ser removidos depois do uso. Esses scripts tratam os artefatos do backlog; não constituem o backend ou frontend do Majucau.
 
 O [manifesto](MANIFESTO.json) relaciona arquivos e hashes SHA-256 deste pacote. Arquivos originais recebidos, dependências instaladas e saídas temporárias de inspeção não estão incluídos. O conteúdo criado a partir das fontes está preservado; os [originais são identificados separadamente](FONTES.md).
 

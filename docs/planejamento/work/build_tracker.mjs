@@ -6,6 +6,16 @@ const base=path.resolve('.');
 const tasks=JSON.parse(await fs.readFile(path.join(base,'work/backlog_v2.json'),'utf8'));
 const decisions=JSON.parse(await fs.readFile(path.join(base,'work/decisions_v2.json'),'utf8'));
 const scope=JSON.parse(await fs.readFile(path.join(base,'work/scope_v2.json'),'utf8'));
+const statusDate=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo'}).format(new Date());
+const statusCounts={
+ completed:tasks.filter(t=>t.status==='Concluída').length,
+ inProgress:tasks.filter(t=>t.status==='Em andamento').length,
+ notStarted:tasks.filter(t=>t.status==='Não iniciada').length,
+};
+const totalWeight=tasks.reduce((total,t)=>total+t.weight,0);
+const progressPercent=tasks.reduce((total,t)=>total+(t.progress??0)*t.weight,0)/totalWeight*100;
+const remainingPercent=100-progressPercent;
+const percentText=value=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value);
 const wb=Workbook.create();
 const summary=wb.worksheets.add('Evolucao');
 const backlog=wb.worksheets.add('Tarefas');
@@ -70,7 +80,7 @@ sc.freezePanes.freezeRows(5);sc.tables.add(`A5:E${sl}`,true,'MajucauCobertura');
 
 baseStyle(summary,'A1:G43');widths(summary,{A:295,B:125,C:170,D:28,E:340,F:150,G:150});summary.tabColor=dark;
 title(summary,'A2','Majucau — evolução do backlog');
-summary.getRange('A3').values=[['Status atualizado em 11/10/2026 | fechamento funcional de 13/09/2026']];
+summary.getRange('A3').values=[[`Status atualizado em ${statusDate} | fechamento funcional de 13/09/2026`]];
 summary.getRange('A3').format.font={name:'Arial',size:10,italic:true,color:muted};
 headers(summary,'A5:C5',['Medida','Valor','Interpretação']);
 const metrics=[['Tarefas no catálogo',n,'Escopo provisório'],['Levantamentos concluídos',null,'Com evidência de aceite'],['Evolução estimada por peso',null,'Estimativa; não é prontidão'],['Desenvolvimento aceito',null,'Somente concluído com evidência'],['Frentes técnicas',null,'HT: execução futura']];
@@ -116,7 +126,7 @@ summary.getRange('E18:E27').format.rowHeight=29;
 summary.getRange('A28').values=[['Responsáveis são papéis sugeridos; prazo e esforço aguardam a equipe.']];
 summary.getRange('A30').values=[['Fonte: imagens e planilha MAJUCAU_CONSOLIDACAO_DEV_GATE_RC3_CEI_CONFIGURACOES_T16_T17.xlsx fornecidas pelo usuário.']];
 summary.getRange('A31').values=[['Fechamento de 13/09/2026; decisões posteriores registradas no G0-DECISION-REGISTER.md até 11/10/2026.']];
-summary.getRange('A33').values=[['Backlog em 11/10/2026: 6 concluídas, 10 em andamento e 111 não iniciadas. Estimativa média: 7,2%; restantes 92,8%. BK-001 aguarda decisão sobre arquivos originais. Regra definida não equivale a implementação concluída.']];
+summary.getRange('A33').values=[[`Backlog em ${statusDate}: ${statusCounts.completed} concluídas, ${statusCounts.inProgress} em andamento e ${statusCounts.notStarted} não iniciadas. Estimativa: ${percentText(progressPercent)}%; restante: ${percentText(remainingPercent)}%. É uma estimativa, não prova de prontidão.`]];
 summary.getRange('A34').values=[['D-1: análise/conciliação normal até ontem; agenda futura continua na projeção.']];
 summary.getRange('A35').values=[['Nenhuma regra foi reaberta nesta auditoria. Paginação do Bling e outras pendências técnicas continuam em verificação.']];
 summary.getRange('A30:A31').format.font={name:'Arial',size:10,italic:true,color:muted};
@@ -135,10 +145,11 @@ wb.recalculate();
 const view=await wb.inspect({kind:'table',range:'Evolucao!A5:C11',include:'values,formulas',tableMaxRows:7,tableMaxCols:3,maxChars:2500});
 console.log(view.ndjson);
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!',options:{useRegex:true,maxResults:20},maxChars:1000});console.log(errors.ndjson);
-await fs.mkdir(path.join(base,'work/previews_v2'),{recursive:true});
+const previewDir=path.resolve(base,'..','..','artifacts','verification','backlog-v2');
+await fs.mkdir(previewDir,{recursive:true});
 for(const [name,range] of [['Evolucao','A1:G35'],['Tarefas','A1:N12'],['Decisoes','A94:F99'],['Verificacoes','A84:F88'],['Cobertura','A1:E11']]){
  const png=await wb.render({sheetName:name==='Verificacoes'?'Decisoes':name,range,scale:1,format:'png'});
- await fs.writeFile(path.join(base,'work/previews_v2',name+'.png'),new Uint8Array(await png.arrayBuffer()));
+ await fs.writeFile(path.join(previewDir,name+'.png'),new Uint8Array(await png.arrayBuffer()));
 }
 const file=await SpreadsheetFile.exportXlsx(wb);
 await file.save(path.join(base,'outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx'));

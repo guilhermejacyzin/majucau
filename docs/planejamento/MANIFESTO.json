@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 197498,
-      "sha256": "e191d5895d91818708da6c22fefe566ce9b45eb7db7888dd5bee2f0739ca11c0"
+      "bytes": 200059,
+      "sha256": "7b896ca3486c2bb1cfe86d54d007d9f769923f36db45762495ed99c5f8f05b6f"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -59,18 +59,18 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 48769,
-      "sha256": "95cf0727de629d4d52504229928bf14234c45c7aae0f175ac0394e8c3ef13646"
+      "bytes": 48833,
+      "sha256": "ef26e0b9620dd2a7d06c86e2207a287eec910b0f1018a4b9e3494c263f39a62d"
     },
     {
       "path": "docs/planejamento/README.md",
-      "bytes": 3710,
-      "sha256": "5a32734c240e103b0a0e301096fbb22c7cd1e642f6a413595f21966303619ae3"
+      "bytes": 3963,
+      "sha256": "901eda94681bd8423ef941c89bb812ca51a1172cee9754d2aeb95187f7d1ce70"
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 3282,
-      "sha256": "154387e8b3fa206989c20983a12769aa09858f4e0621b5dc15a8f5ba214f04b9"
+      "bytes": 3296,
+      "sha256": "f77e59cd0c6d503937a0907d9241e38b94ab1bb0872934ec4eff4d92dcf75ae9"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -89,8 +89,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 190395,
-      "sha256": "41e35ac1a4c63199f13bb5bd4fe0288061c92556f225470313e0c2cfcf2265c1"
+      "bytes": 190612,
+      "sha256": "2d7f8b26ae0a39c618e8337a850ae60a063504cc47512d3f1e6bcf89b0fb4e70"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -99,8 +99,8 @@
     },
     {
       "path": "docs/planejamento/work/build_tracker.mjs",
-      "bytes": 12713,
-      "sha256": "70a11cdfbe903c039f7c039d5606bc210f0f4eedff92b06365953c7ba62ff379"
+      "bytes": 13460,
+      "sha256": "d09cca3a26f0a55b49bdfec07df8ee5fce787a01a2944b27b6fc251917c9cb7e"
     },
     {
       "path": "docs/planejamento/work/build_tracker_v1.mjs",
@@ -379,8 +379,8 @@
     },
     {
       "path": "docs/planejamento/work/verify_package.py",
-      "bytes": 6659,
-      "sha256": "67b34d04f608bc181242f431994c8b4135bfeb4007e31c797b7df8c82df3ecbb"
+      "bytes": 6643,
+      "sha256": "c9521388e8a468c5d35b560fd2dfb166be07b10c1618c7470db6c70e4d66e98e"
     },
     {
       "path": "docs/planejamento/work/verify_v1.py",

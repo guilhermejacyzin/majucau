@@ -224,6 +224,12 @@ Tarefas condicionais de fontes externas do cacau permanecem previstas, sem bloqu
 
 Além do aceite específico: regras vigentes e capacidades aplicadas no backend, visual congelado preservado, métricas compartilhadas, ausência distinta de zero, origem e competência rastreáveis, períodos fechados preservados, verificações proporcionais executadas e evidência registrada. Os 167 cenários da planilha original são previstos e precisam ser atualizados nas regras superadas; não foram executados nesta etapa.
 
+### Recontagem após o mapa inicial de segurança — 11/10/2026
+
+- BK-024 avançou para 20% e `Em andamento`. O mapa inicial registrou ativos, caminhos dos dados, controles já encontrados, lacunas e verificações futuras em `docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md`. Foi uma revisão estática: nenhum teste foi executado, nenhuma tela ou regra financeira mudou, e segurança não foi declarada concluída.
+- O backlog tem 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas. Em andamento: BK-001 (0%), BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (20%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples, `(6 × 100% + 0% + 30% + 20% + 10% + 15% + 15% + 20% + 70% + 80% + 55% + 20%) ÷ 127 = 7,4%`; restam 92,6%. É uma estimativa do backlog, não uma medida de esforço nem prova de prontidão. O prazo global continua sem estimativa confiável.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -824,7 +830,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-024 — Planejar segurança e proteção dos dados
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Segurança + Arquitetura.
+**Situação:** Em andamento. **Evolução:** 20%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Segurança + Arquitetura.
 
 **Objetivo:** Identificar falhas possíveis antes de expor o sistema.
 
@@ -838,6 +844,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 4. Projetar identidade técnica do Drive com permissão somente de leitura, restrição às estruturas autorizadas e credenciais apenas no servidor; escrita interna não concede escrita na origem.
 
 **Critério de aceite:** Riscos têm tratamento e testes associados; nenhuma credencial entra no Git ou no navegador. O desenho não usa a pasta de fontes como destino de exportação, logs ou backup.
+
+**Evidência atual:** [Mapa inicial de ativos, riscos, controles, lacunas e verificações](../../evidence/THREAT-MODEL-INITIAL-2026-10-11.md). Revisão estática, sem testes; o mapeamento completo, controles e validações continuam pendentes.
 
 **Impacto:** Protege os dados financeiros e operacionais.
 

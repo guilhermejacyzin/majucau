@@ -3551,13 +3551,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A camada Wails agora repassa para a mensagem o `request_id` que o worker já grava no log, com o rótulo “Código de referência”. A mudança cobre erros retornados pelo worker nas consultas de saúde, painel, configurações, OAuth, sincronização e importações; o código de erro e os dados financeiros não mudam.
 - Os commits iniciais foram recusados pelo verificador de mensagens porque os campos percentuais usaram rótulos diferentes dos exigidos em `CONTRIBUTING.md`; não reescrevi os commits publicados. O commit de correção no formato exato disparou a CI `38169879308`, que passou em `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`.
 - `gofmt`, `git diff --check` e a CI completa passaram. Não foram executados testes locais nesta etapa. A conferência visual no protótipo e a validação de ACL em instalação/VM continuam pendentes.
-- BK-031 avança de 80% para 85% (15% restante). O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; estimativa ponderada de 8,4% concluído e 91,6% restante. Não há prazo confiável para concluir o projeto: faltam 109 tarefas não iniciadas e validações externas.
+- BK-031 avança de 80% para 85% (15% restante). O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; a média simples é 8,5% concluído e 91,5% restante. Não há prazo confiável para concluir o projeto: faltam 109 tarefas não iniciadas e validações externas.
 
 ### Validação de prefixos temporários — 11/10/2026
 
 - `securetemp.NewWorkspace` passou a recusar `/` e `\\` em prefixos e ganhou testes para entradas relativas, absolutas e caminho válido. Isso impede que a API crie o workspace fora da pasta pai por causa do prefixo.
 - `go test -count=1 ./internal/securetemp`, `go vet ./internal/securetemp` e `git diff --check` passaram no Windows. O cache foi isolado e limpo em `artifacts/cache/`.
-- BK-024 permanece em 35% (65% restante), pois esta correção não substitui os testes de ACL sob o serviço, instalação/VM limpa, falhas de disco nem as demais lacunas do mapa de riscos. O backlog continua com 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas: 8,4% concluído, 91,6% restante. Ainda não há prazo global confiável.
+- BK-024 permanece em 35% (65% restante), pois esta correção não substitui os testes de ACL sob o serviço, instalação/VM limpa, falhas de disco nem as demais lacunas do mapa de riscos. O backlog continua com 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas: 8,5% concluído, 91,5% restante. Ainda não há prazo global confiável.
 
 ### Migração de autenticação JWT do Bling — 11/10/2026
 
@@ -3565,5 +3565,5 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O adaptador agora envia esse cabeçalho em todas essas chamadas. Testes verificam authorization code, refresh token, consultas de lista e detalhe, e token Bearer de 3.000 caracteres. O host `https://api.bling.com.br/Api/v3` já era o endereço atual.
 - Os testes focalizados de Bling e `securetemp`, `go vet`, o verificador do backlog e `git diff --check` passaram localmente no Windows; caches temporários foram removidos.
 - A CI completa `38172628938` passou em `verify-backlog`, `verify-postgres` e `verify-windows`. O instalador unsigned de teste produzido pela CI não pôde ser apagado pela conexão disponível; está registrado em `artifacts/retained/cleanup-register.md` e expira em 12/10/2026.
-- BK-041 avança de 60% para 65% (35% restante); a conta real, o contrato de paginação e o cursor incremental continuam pendentes. O backlog segue com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,4% concluído, 91,6% restante. A previsão total ainda não é confiável.
+- BK-041 avança de 60% para 65% (35% restante); a conta real, o contrato de paginação e o cursor incremental continuam pendentes. O backlog segue com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,5% concluído, 91,5% restante. A previsão total ainda não é confiável.
 - Nenhuma tela aprovada ou regra financeira foi alterada. Evidência: `docs/evidence/BLING-JWT-MIGRATION-2026-10-11.md`.

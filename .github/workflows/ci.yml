@@ -70,6 +70,9 @@ jobs:
           PUSH_DELETED: ${{ github.event.deleted }}
         run: python3 scripts/verify-commit-messages.py
 
+      - name: Test commit-message checker handles unavailable prior tips
+        run: python3 scripts/test_verify_commit_messages.py
+
   verify-backlog:
     # Backlog validation must run even when the change only updates docs.
     runs-on: windows-2025

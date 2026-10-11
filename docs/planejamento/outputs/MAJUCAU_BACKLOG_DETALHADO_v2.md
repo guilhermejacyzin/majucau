@@ -3486,3 +3486,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - `govulncheck` não reportou vulnerabilidade alcançável. Registrou `GO-2026-5932` na parte OpenPGP não usada de `golang.org/x/crypto@v0.56.0`, sem versão corrigida. O projeto usa Argon2 desse módulo; manter o alerta monitorado e não trocar a criptografia sem revisão.
 - Evidência: `docs/evidence/LOCAL-VERIFICATION-2026-10-11.md`. É validação local, não substitui CI no commit, PostgreSQL ponta a ponta, VM limpa, assinatura, validação funcional ou os gates de produção. Os percentuais do backlog não mudam por uma execução de verificação; projeto continua em 8,3% concluído e 91,7% restante.
 - Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado.
+
+## Governança da CI para reescrita autorizada — 2026-10-11
+
+- A CI `38165227608` parou no verificador de commit porque o runner limpo não tinha o `BEFORE_SHA` antigo da reescrita autorizada; Windows e PostgreSQL ficaram ignorados. A verificação de backlog passou.
+- O checker agora usa a lista de commits do evento como fallback, e a CI testa esse caso. A simulação local de `BEFORE_SHA` ausente, a seleção dos commits `9d77684`/`caa6ef4` e `git diff --check` passaram; a CI da correção ainda aguarda novo push.
+- Evidência: `docs/evidence/CI-FORCE-PUSH-COMMIT-CHECK-2026-10-11.md`. Percentual geral não muda: 8,3% concluído, 91,7% restante (127 tarefas; 7 concluídas, 11 em andamento, 109 não iniciadas).
+- Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado.

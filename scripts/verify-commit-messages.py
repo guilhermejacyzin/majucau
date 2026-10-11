@@ -54,7 +54,12 @@ def push_event_commits() -> list[str]:
     if not head or set(head) == {"0"}:
         return []
     if before and set(before) != {"0"}:
-        return git("rev-list", "--reverse", "--no-merges", f"{before}..{head}").splitlines()
+        try:
+            return git("rev-list", "--reverse", "--no-merges", f"{before}..{head}").splitlines()
+        except subprocess.CalledProcessError:
+            # A force-push can make the previous tip unavailable in a fresh
+            # checkout. Fall back to the commit list supplied with the event.
+            pass
 
     # A new branch has no usable `before` revision. The event payload lists the
     # commits that arrived in this push without forcing validation of old history.

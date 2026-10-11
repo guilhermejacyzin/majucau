@@ -161,6 +161,10 @@ ou ilegível (`ErrBlingAPIInvalidResponse`) e formato inválido
 `PARTIAL`: faltam carga com memória medida e comprovação de ACL/limpeza em VM
 Windows limpa.
 
+## Recuperação da validação de mensagens em force-push — 2026-10-11
+
+A reescrita autorizada das mensagens causou a CI `38165227608` a falhar antes dos testes de produto: o checkout limpo não continha o `BEFORE_SHA` antigo, e o script de governança não recorria à lista de commits do evento. `scripts/verify-commit-messages.py` agora usa o payload do push quando o SHA anterior não está disponível. Um teste de regressão foi adicionado e ligado à CI. O teste e a simulação local com SHA anterior ausente passaram; a aprovação do próprio pipeline ainda depende do próximo push. Evidência: `docs/evidence/CI-FORCE-PUSH-COMMIT-CHECK-2026-10-11.md`.
+
 ## Verificação local completa — 2026-10-11
 
 `scripts/verify.ps1` passou localmente em Windows/PowerShell 7 no commit `be9cbae`: suíte Go, `go vet`, verificações de migração e sqlc, scan de segredos, contrato NSIS, frontend (lint, tipos, 24 testes, build) e `npm audit`. `govulncheck` não encontrou vulnerabilidade alcançável, mas reportou `GO-2026-5932` no pacote OpenPGP não usado do módulo `golang.org/x/crypto@v0.56.0`, sem versão corrigida indicada. O app importa `argon2` desse módulo e não importa OpenPGP; manter monitoramento antes de qualquer troca criptográfica. A evidência detalhada e os limites estão em `docs/evidence/LOCAL-VERIFICATION-2026-10-11.md`. Isso não prova CI do GitHub, teste em VM limpa, PostgreSQL ponta a ponta nem prontidão de produção.

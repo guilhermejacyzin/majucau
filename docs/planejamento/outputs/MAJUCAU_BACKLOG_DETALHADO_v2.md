@@ -174,6 +174,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - O backlog continua com 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. Em andamento: BK-001 (0%), BK-006 (25%), BK-007 (20%), BK-013 (15%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
 - Pela média simples, `(6 × 100% + 0% + 25% + 20% + 15% + 70% + 80% + 55% + 20%) ÷ 127 = 7,0%`; restam 93,0%. Não há prazo global confiável enquanto as fontes reais e validações operacionais continuam pendentes.
 
+### Inventário parcial do ambiente Windows de desenvolvimento — 11/10/2026
+
+- BK-014 avançou de 0% para 10% com a leitura somente para consulta do Windows, CPU, memória, espaço em disco, conectividade reportada e serviços relacionados. O PostgreSQL 18 encontrado não foi presumido exclusivo nem alterado. A evidência omite nomes de host, contas, endereços de rede e credenciais.
+- O inventário descreve somente o computador usado no desenvolvimento. Não confirma o host operacional ou de produção; energia, estabilidade da rede, permissões e rotinas de backup/recuperação para o ambiente escolhido ainda precisam ser validadas. A direção aprovada de hospedagem privada centralizada permanece inalterada.
+- Nenhum serviço, banco, porta, tela ou regra financeira foi modificado. Evidência: `docs/evidence/WINDOWS-ENVIRONMENT-INVENTORY-2026-10-11.md`.
+- O backlog tem 127 tarefas: 6 concluídas, 9 em andamento e 112 não iniciadas. Em andamento: BK-001 (0%), BK-006 (25%), BK-007 (20%), BK-013 (15%), BK-014 (10%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples, `(6 × 100% + 0% + 25% + 20% + 15% + 10% + 70% + 80% + 55% + 20%) ÷ 127 = 7,0%`; restam 93,0%. Não há prazo global confiável enquanto permanecem fontes reais, decisões operacionais e validações externas pendentes.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -553,7 +561,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-014 — Inventariar o Windows e propor a operação local
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Planejamento. **Responsável sugerido:** Infraestrutura + Segurança.
+**Situação:** Em andamento. **Evolução:** 10% (inventário somente para leitura do ambiente Windows usado nesta sessão, documentado em `docs/evidence/WINDOWS-ENVIRONMENT-INVENTORY-2026-10-11.md`. A máquina não foi presumida como host de produção; capacidade de energia/rede, direitos de instalação e requisitos do host operacional permanecem pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Infraestrutura + Segurança.
 
 **Objetivo:** Dimensionar uma instalação que a Majucau consiga operar.
 

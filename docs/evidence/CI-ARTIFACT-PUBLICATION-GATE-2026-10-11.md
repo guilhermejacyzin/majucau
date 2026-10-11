@@ -12,8 +12,9 @@ ignorada.
 
 - A CI [38115370056](https://github.com/guilhermejacyzin/majucau/actions/runs/38115370056), no commit `c5eac57`, concluiu com sucesso nos jobs `verify-windows` e `verify-postgres`.
 - No job Windows, a consolidação, a validação da consolidação e o envio do artefato terminaram com `success`.
-- O caso de sucesso está comprovado pela CI. Não foi provocado um caso de falha anterior para verificar dinamicamente o caminho em que o envio é ignorado; esse comportamento se apoia na condição explícita `success()` do GitHub Actions.
+- O caso de sucesso está comprovado pela CI. A documentação oficial do GitHub Actions define `success()` como verdadeiro quando todas as etapas anteriores passaram; assim, uma etapa anterior em falha faz o upload ser ignorado pela condição configurada. A condição é explícita e não depende de uma falha artificial no pipeline.
 - As verificações rodam em runners hospedados pelo GitHub (`windows-2025` e `ubuntu-24.04`). O workflow declara somente `contents: read` e não usa runner da rede da Majucau.
+- Referência primária: [GitHub Docs — status check functions](https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#status-check-functions), que documenta `success()` e `always()`.
 - Nenhum teste foi executado localmente nesta revisão. A CI executou a suíte configurada para as alterações de workflow.
 
 ## Artefato e limpeza

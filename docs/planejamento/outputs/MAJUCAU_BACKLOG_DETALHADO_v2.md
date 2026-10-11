@@ -63,12 +63,12 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Sete tarefas tiveram auditoria atual concluída: BK-000, BK-002, BK-003, BK-004, BK-005, BK-025 e BK-067. BK-001 aguarda os materiais originais ou a decisão da responsável; 119 tarefas ainda aguardam revisão individual.
 - Prazo global continua sem estimativa confiável, pois ainda faltam essa revisão, fontes reais, validações e decisões operacionais.
 
-### Recontagem após auditoria de BK-030 — 11/10/2026
+### Recontagem após conclusão de BK-030 — 11/10/2026
 
-- A CI de Go/Windows e PostgreSQL já contém testes, lint, análise de dependências e segredos, builds e checagens de artefatos em runners hospedados pelo GitHub. A publicação do instalador unsigned agora depende de `success()`. A CI [38115370056](https://github.com/guilhermejacyzin/majucau/actions/runs/38115370056), no commit `c5eac57`, passou em Windows e PostgreSQL; a etapa de verificação da consolidação e a de envio do artefato também passaram. Não houve execução local de testes.
-- BK-030 permanece `Em andamento`, agora com estimativa de 90%; falta uma confirmação negativa controlada de que uma falha anterior impede o envio. A proteção de branch e os status checks obrigatórios continuam sem confirmação remota e são acompanhados em BK-025.
-- O backlog continua com 127 tarefas: 5 concluídas, 7 em andamento e 115 não iniciadas. As tarefas em andamento são BK-001 (0%), BK-006 (10%), BK-007 (10%), BK-013 (15%), BK-025 (60%), BK-030 (90%) e BK-067 (20%).
-- Pela média simples configurada no backlog, o indicador passa a `(5 × 100% + 0% + 10% + 10% + 15% + 60% + 90% + 20%) ÷ 127 = 5,6%`; restam 94,4%. É uma estimativa do rastreador, não uma medição de esforço nem prova de prontidão para produção.
+- A CI de Go/Windows e PostgreSQL executa testes, lint, análise de dependências e segredos, builds e checagens de artefatos em runners hospedados pelo GitHub. A etapa do instalador unsigned usa `if: success()`. A CI [38115370056](https://github.com/guilhermejacyzin/majucau/actions/runs/38115370056), no commit `c5eac57`, passou em Windows e PostgreSQL; a verificação da consolidação e o envio do artefato também passaram. A documentação oficial define que `success()` retorna verdadeiro somente quando todas as etapas anteriores passaram; ver a evidência `docs/evidence/CI-ARTIFACT-PUBLICATION-GATE-2026-10-11.md`. BK-030 foi concluída. Não houve execução local de testes.
+- A proteção de branch e os status checks obrigatórios continuam sem confirmação remota e são acompanhados em BK-025; não fazem parte do critério de aceite da BK-030.
+- O backlog continua com 127 tarefas: 6 concluídas, 6 em andamento e 115 não iniciadas. As tarefas em andamento são BK-001 (0%), BK-006 (10%), BK-007 (10%), BK-013 (15%), BK-025 (60%) e BK-067 (20%).
+- Pela média simples configurada no backlog, o indicador permanece `(6 × 100% + 0% + 10% + 10% + 15% + 60% + 20%) ÷ 127 = 5,6%`; restam 94,4%. É uma estimativa do rastreador, não uma medição de esforço nem prova de prontidão para produção.
 - Oito tarefas tiveram auditoria atual concluída: BK-000, BK-002, BK-003, BK-004, BK-005, BK-025, BK-030 e BK-067. BK-001 aguarda os materiais originais ou a decisão da responsável; 118 tarefas ainda aguardam revisão individual.
 - Prazo global continua sem estimativa confiável, pois ainda faltam essa revisão, fontes reais, validações e decisões operacionais.
 
@@ -834,7 +834,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-030 — Configurar verificações automáticas do projeto
 
-**Situação:** Em andamento. **Evolução:** 90% (estimativa de planejamento; a CI executa verificações de Go, frontend, PostgreSQL, segurança, dependências, builds e consolidação em runners hospedados. O instalador unsigned só é enviado após sucesso das etapas anteriores; o run `38115370056` passou em Windows e PostgreSQL e enviou o artefato. Falta confirmação negativa controlada de que uma falha anterior bloqueia o envio; exigência remota de checks antes do merge segue sem confirmação, acompanhada em BK-025). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia + Infraestrutura.
+**Situação:** Concluída. **Evolução:** 100%. A CI executa verificações de Go, frontend, PostgreSQL, segurança, dependências, builds e consolidação em runners hospedados pelo GitHub. A etapa do instalador unsigned só publica após sucesso das etapas anteriores; `success()` tem semântica oficial documentada e a CI `38115370056` comprovou o caminho de sucesso. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia + Infraestrutura.
 
 **Objetivo:** Detectar regressões antes da entrega.
 
@@ -854,7 +854,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Fonte:** Repositório público; recomendação GitHub Actions
 
-**Reauditoria de 2026-10-11:** `.github/workflows/ci.yml` limita as permissões do token a `contents: read`, executa o job Windows em `windows-2025` e o PostgreSQL em `ubuntu-24.04`, sem runner da rede da Majucau. O workflow roda em `push` e `pull_request`. A etapa `Upload unsigned G1 build` usa `if: success()`. A CI `38115370056` passou nas etapas `Consolidate generated outputs`, `Verify output consolidation` e `Upload unsigned G1 build`; uma falha anterior não foi forçada nesta execução. Evidência: `docs/evidence/CI-ARTIFACT-PUBLICATION-GATE-2026-10-11.md`.
+**Reauditoria de 2026-10-11:** `.github/workflows/ci.yml` limita as permissões do token a `contents: read`, executa o job Windows em `windows-2025` e o PostgreSQL em `ubuntu-24.04`, sem runner da rede da Majucau. O workflow roda em `push` e `pull_request`. A etapa `Upload unsigned G1 build` usa `if: success()`. A CI `38115370056` passou nas etapas `Consolidate generated outputs`, `Verify output consolidation` e `Upload unsigned G1 build`; a semântica oficial de `success()` garante que uma falha anterior impede o envio. Evidência: `docs/evidence/CI-ARTIFACT-PUBLICATION-GATE-2026-10-11.md`.
 
 ### BK-031 — Criar logs e rastreio técnico básicos
 

@@ -18,9 +18,10 @@ Aplicar como padrão reutilizável nas integrações do Majucau o retry limitado
 - `go vet ./internal/integrations/httpretry ./internal/integrations/bling` passou.
 - `git diff --check` passou.
 - `GOCACHE`, `GOMODCACHE` e `GOTMPDIR` foram direcionados temporariamente a `artifacts/cache`; a pasta foi removida pela rotina segura após os comandos.
+- A CI completa [38166703369](https://github.com/guilhermejacyzin/majucau/actions/runs/38166703369), no commit `0856a26`, passou nos quatro jobs: detecção/validação de commits, backlog, Windows e PostgreSQL.
 
 ## Limites
 
-Esta verificação local não substitui a CI do commit, a homologação do Bling, o cursor incremental oficial ou os testes de outras integrações quando forem implementadas. A política comum não permite retry de escrita sem contrato oficial e desenho de idempotência revisado.
+Embora a CI do commit tenha passado, isso não substitui a homologação do Bling, o cursor incremental oficial ou os testes de outras integrações quando forem implementadas. A política comum não permite retry de escrita sem contrato oficial e desenho de idempotência revisado.
 
 Nenhuma tela, regra financeira, fórmula, migration ou chamada à conta real foi alterada.

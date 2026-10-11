@@ -2141,7 +2141,8 @@
       "Preservar o layout T06 e as linhas aprovadas; apresentar os valores calculados pelo Majucau com competência e contas rastreáveis.",
       "Usar a mesma camada de leitura/cálculo para cards, tabela, gráfico e detalhe em tela, com base de percentual explícita. Os cards são somente para consulta.",
       "Apresentar ausência de campo como Dado indisponível no espaço previsto; não copiar números ilustrativos nem inferir classificação fora das regras contábeis aprovadas.",
-      "No topo da tela, no espaço aprovado para os indicadores onde hoje aparece `UNMAPPED`, exibir cards separados, somente para consulta. Dar destaque a `EBITDA` e `EBIT`, calculados a partir da DRE própria sem mudar suas linhas: EBITDA antes da depreciação; EBIT depois. Incluir também `CAPEX PAGO NO MÊS` e `CAPEX ACUMULADO` como informações separadas da tabela e do lucro. CAPEX pago no mês considera o pagamento efetivo no mês filtrado; CAPEX acumulado soma a categoria CAPEX dos relatórios desde o início do histórico confiável. Reduzir os cards apenas o necessário para caber no espaço aprovado; não alterar o restante da tela. Até a integração, mostrar Dado indisponível."
+      "No topo da tela, no espaço aprovado para os indicadores onde hoje aparece `UNMAPPED`, exibir cards separados, somente para consulta. Dar destaque a `EBITDA` e `EBIT`, calculados a partir da DRE própria sem mudar suas linhas: EBITDA antes da depreciação; EBIT depois. Incluir também `CAPEX PAGO NO MÊS` e `CAPEX ACUMULADO` como informações separadas da tabela e do lucro. CAPEX pago no mês considera o pagamento efetivo no mês filtrado; CAPEX acumulado soma a categoria CAPEX dos relatórios desde o início do histórico confiável. Reduzir os cards apenas o necessário para caber no espaço aprovado; não alterar o restante da tela. Até a integração, mostrar Dado indisponível.",
+      "Fonte técnica identificada em 11/10/2026: API Bling `GET /caixas` com filtros por data/categoria, `GET /caixas/{idCaixa}` para detalhe da movimentação e `GET /categorias/receitas-despesas` para obter a árvore de categorias. Integrar esses recursos em streaming, sem adivinhar IDs nem classificar por fornecedor/histórico; conferir a saída contra o relatório antes de expor valores. PDFs de contas a pagar continuam sem categoria por linha."
     ],
     "accept": "Tabela e gráfico usam o cálculo aprovado e não se contradizem; EBIT/EBITDA aparecem em cards separados e destacados no topo, derivados da DRE sem alterar as linhas dela; os cards substituem `UNMAPPED` no espaço aprovado; CAPEX pago no mês e acumulado são consultas separadas, vêm da categoria CAPEX dos relatórios e não entram no lucro; nenhuma outra parte do layout aprovado é alterada.",
     "impact": "Evita interpretação enganosa da rentabilidade.",
@@ -2150,12 +2151,12 @@
       "reactfoundation",
       "designsystem"
     ],
-    "refs": "T06; Fechamento vigente 13/09/2026, §§2,5",
+    "refs": "T06; Fechamento vigente 13/09/2026, §§2,5; API Bling v3: GET /caixas, GET /caixas/{idCaixa}, GET /categorias/receitas-despesas; docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md",
     "questions": "Q-22,F-02",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "",
+    "evidence": "20%: cards de consulta presentes; fonte técnica oficial identificada, ainda não integrada. Falta homologar a hierarquia real de categorias CAPEX e conciliar movimentações com os relatórios antes de preencher CAPEX pago no mês e acumulado.",
     "weight": 1,
     "dependencies": [
       "BK-066",

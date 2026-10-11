@@ -220,3 +220,18 @@ reais. Esta conferência foi documental e não executou testes.
 com dados reais e exemplos reproduzíveis pendentes. Esta seção descreve a cópia
 disponível em 11/10; a versão binária da conferência de 04/10 não está disponível
 neste checkout para comparação de arquivo.
+
+## Testes do processador diário em fluxo — 2026-10-11
+
+Foram acrescentados testes unitários para `DailyProjectionFrom`. O leitor de
+teste gera 1.000 movimentos sob demanda, sem montar uma lista de entrada; a
+projeção resultante mantém os 61 dias esperados e os totais de D0 e D+60. Outros
+casos confirmam que erro do leitor e estouro de moeda interrompem o cálculo sem
+retornar uma projeção parcial, e que um leitor ausente é recusado.
+
+No Windows local passaram `go test ./internal/financial -count=1`,
+`go vet ./internal/financial` e `git diff --check`. Isso valida o helper de
+projeção e os limites do seu contrato; não valida integração com fontes reais,
+consulta de produção a `daily_balances` ou uso da calculadora. Nenhuma fórmula,
+tela ou regra financeira foi alterada. O vínculo com o fluxo consolidado e as
+entradas reais continua pendente.

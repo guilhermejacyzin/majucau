@@ -1,6 +1,7 @@
 package financial
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -26,6 +27,82 @@ func TestProjectionHasD0ThroughD60AndContinuity(t *testing.T) {
 	}
 	if rows[0].Type != Provisional || rows[1].Type != Projected || rows[60].Date.Sub(rows[0].Date) != 60*24*time.Hour {
 		t.Fatal("date/type contract broken")
+	}
+}
+
+func TestDailyProjectionFromConsumesMovementsAsStream(t *testing.T) {
+	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	const dailyRecords = 1_000
+	increment := money(t, "0.0001")
+	largeOutflow := money(t, "25")
+	emitted := 0
+
+	rows, err := DailyProjectionFrom(start, money(t, "100"), func() (Movement, bool, error) {
+		if emitted < dailyRecords {
+			emitted++
+			return Movement{Date: start, Inflows: increment}, true, nil
+		}
+		if emitted == dailyRecords {
+			emitted++
+			return Movement{Date: start.AddDate(0, 0, 60), Outflows: largeOutflow}, true, nil
+		}
+		return Movement{}, false, nil
+	})
+	if err != nil {
+		t.Fatalf("DailyProjectionFrom() error = %v", err)
+	}
+	if emitted != dailyRecords+1 {
+		t.Fatalf("stream yielded %d movements, want %d", emitted, dailyRecords+1)
+	}
+	if len(rows) != 61 {
+		t.Fatalf("projection has %d days, want 61", len(rows))
+	}
+	if rows[0].Inflows.String() != "0.1000" || rows[0].ClosingBalance.String() != "100.1000" {
+		t.Fatalf("D0 totals are incorrect: %#v", rows[0])
+	}
+	if rows[60].Outflows.String() != "25.0000" || rows[60].ClosingBalance.String() != "75.1000" {
+		t.Fatalf("D+60 totals are incorrect: %#v", rows[60])
+	}
+}
+
+func TestDailyProjectionFromPropagatesReaderErrors(t *testing.T) {
+	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	wantErr := errors.New("movement source stopped")
+	calls := 0
+	rows, err := DailyProjectionFrom(start, money(t, "100"), func() (Movement, bool, error) {
+		calls++
+		if calls == 1 {
+			return Movement{Date: start, Inflows: money(t, "1")}, true, nil
+		}
+		return Movement{}, false, wantErr
+	})
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("DailyProjectionFrom() error = %v, want %v", err, wantErr)
+	}
+	if rows != nil {
+		t.Fatalf("failed stream returned partial projection: %#v", rows)
+	}
+	if _, err := DailyProjectionFrom(start, money(t, "100"), nil); err != ErrInvalidProjection {
+		t.Fatalf("nil movement reader error = %v, want %v", err, ErrInvalidProjection)
+	}
+}
+
+func TestDailyProjectionFromPropagatesMoneyOverflow(t *testing.T) {
+	start := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	maximum := money(t, "922337203685477.5807")
+	emitted := false
+	rows, err := DailyProjectionFrom(start, maximum, func() (Movement, bool, error) {
+		if emitted {
+			return Movement{}, false, nil
+		}
+		emitted = true
+		return Movement{Date: start, Inflows: money(t, "0.0001")}, true, nil
+	})
+	if !errors.Is(err, domain.ErrMoneyOverflow) {
+		t.Fatalf("overflow error = %v, want %v", err, domain.ErrMoneyOverflow)
+	}
+	if rows != nil {
+		t.Fatalf("overflow returned partial projection: %#v", rows)
 	}
 }
 
@@ -307,4 +384,3 @@ func TestB2BRuleAndCNPJ(t *testing.T) {
 		t.Fatal("override without reason must remain conservative")
 	}
 }
-

@@ -141,6 +141,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Pela média simples, `(6 × 100% + 0% + 15% + 10% + 15% + 60% + 80% + 55% + 20%) ÷ 127 = 6,7%`; restam 93,3%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão para produção.
 - Não há prazo global confiável enquanto 113 tarefas não foram iniciadas e permanecem decisões, fontes reais e validações operacionais pendentes. Evidência: `docs/evidence/WORKER-STRUCTURED-DIAGNOSTICS-2026-10-11.md`.
 
+### Testes do fluxo diário em streaming — 11/10/2026
+
+- A `DailyProjectionFrom` agora tem testes próprios: o leitor gera 1.000 movimentos sob demanda, produz uma série limitada a D0–D+60 e mantém os totais corretos; erros da fonte, leitor ausente e estouro de moeda falham sem devolver uma série parcial.
+- `go test ./internal/financial -count=1`, `go vet ./internal/financial` e `git diff --check` passaram no Windows. O teste confirma o helper de cálculo em fluxo; ainda não há chamada de produção, consulta ao saldo diário real nem conexão com a calculadora.
+- BK-006 permanece em 15%, pois os dados reais de entrada e a ligação ao fluxo consolidado continuam pendentes. A estrutura da planilha enviada, telas e regras financeiras não foram alteradas.
+- O backlog continua com 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. A média simples permanece em 6,7% concluído e 93,3% restante; não há prazo global confiável.
+- Evidência: `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -317,7 +325,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-006 — Especificar tecnicamente a regra fechada da calculadora
 
-**Situação:** Em andamento. **Evolução:** 15% (estimativa de planejamento; a estrutura da planilha enviada foi preservada e comparada, em leitura somente para consulta, com as regras aprovadas. A planilha atual pede valores da DRE do Bling, soma separadamente recebimentos previstos da Nuvemshop e deixa manual o lucro acumulado e o valor já investido; isso não substitui D-003-A, a DRE própria do Majucau ou o fluxo diário consolidado. D-003-A continua ativa e a sugestão de reserva foi aprovada só para consulta. A entrada em fluxo para os 61 dias existe, mas ainda não tem chamada de produção nem consulta aos saldos diários. Mapeamento das fontes reais, ligação da calculadora e exemplos reproduzíveis continuam pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
+**Situação:** Em andamento. **Evolução:** 15% (estimativa de planejamento; a estrutura da planilha enviada foi preservada e comparada, em leitura somente para consulta, com as regras aprovadas. A planilha atual pede valores da DRE do Bling, soma separadamente recebimentos previstos da Nuvemshop e deixa manual o lucro acumulado e o valor já investido; isso não substitui D-003-A, a DRE própria do Majucau ou o fluxo diário consolidado. D-003-A continua ativa e a sugestão de reserva foi aprovada só para consulta. A entrada em fluxo para os 61 dias tem testes próprios, mas ainda não tem chamada de produção nem consulta aos saldos diários. Mapeamento das fontes reais, ligação da calculadora e exemplos reproduzíveis continuam pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Majucau / Financeiro.
 
 **Objetivo:** Permitir um cálculo reproduzível e compreensível.
 

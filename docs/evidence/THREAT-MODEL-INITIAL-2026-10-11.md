@@ -175,3 +175,15 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
 - O cache de compilação e os módulos do Go foram direcionados temporariamente para `artifacts/cache` e removidos depois pelo módulo `scripts/SafeCleanup.psm1`; a remoção foi confirmada.
 - O teste valida os cenários automatizados já existentes no pacote. Ele não comprova instalação/atualização em VM limpa nem injeta falhas de fechamento de arquivo, token, permissão ou disco. Esses ensaios continuam pendentes.
 - Nenhuma tela, regra financeira, fórmula, permissão ou arquivo de dados de produto foi alterado nesta validação.
+
+## Complemento — falhas ao fechar recursos do pré-teste Windows
+
+**Data:** 11/10/2026
+
+**Tipo:** correção de caminhos de erro, revisão estática e teste do pacote no Windows.
+
+- `probePendingReboot` e `probeWebView2` agora propagam erro ao fechar chaves do Registro; quando a leitura do valor também falha, os dois erros são preservados juntos.
+- `probePath` agora propaga falha ao fechar os handles usados para verificar a pasta pai ou um destino existente. A falha continua sendo convertida por `Evaluate` em `PROBE_FAILED` sem expor caminho ou mensagem do Windows.
+- Falhas ao abrir um caminho continuam sendo representadas como inacessibilidade, como antes. Não foram alteradas as condições funcionais de prontidão nem o conteúdo exibido em caso normal.
+- `gofmt`, `git diff --check` e `go test -count=1 ./internal/installer` foram executados no Windows; o pacote passou (`0.437s`). Os caches foram direcionados a `artifacts/cache` e removidos pelo módulo seguro do projeto.
+- Não foi possível injetar uma falha real de fechamento com os testes existentes. Instalação/atualização em VM limpa e ensaios controlados de falha continuam pendentes.

@@ -79,16 +79,20 @@ func probePendingReboot() (bool, error) {
 			continue
 		}
 		if candidate.value == "" {
-			key.Close()
+			if err := key.Close(); err != nil {
+				return false, err
+			}
 			return true, nil
 		}
-		_, _, err = key.GetStringsValue(candidate.value)
-		key.Close()
-		if err == nil {
+		_, _, valueErr := key.GetStringsValue(candidate.value)
+		if closeErr := key.Close(); closeErr != nil {
+			return false, errors.Join(valueErr, closeErr)
+		}
+		if valueErr == nil {
 			return true, nil
 		}
-		if err != registry.ErrNotExist {
-			return false, err
+		if valueErr != registry.ErrNotExist {
+			return false, valueErr
 		}
 	}
 	return false, nil
@@ -136,7 +140,10 @@ func probePath(path string) (PathObservation, error) {
 	parentAccessible := false
 	if parentExists {
 		if handle, err := os.Open(parent); err == nil {
-			parentAccessible = handle.Close() == nil
+			if closeErr := handle.Close(); closeErr != nil {
+				return PathObservation{}, closeErr
+			}
+			parentAccessible = true
 		}
 	}
 	info, err := os.Stat(clean)
@@ -144,7 +151,9 @@ func probePath(path string) (PathObservation, error) {
 		handle, openErr := os.Open(clean)
 		accessible := openErr == nil
 		if handle != nil {
-			accessible = handle.Close() == nil
+			if closeErr := handle.Close(); closeErr != nil {
+				return PathObservation{}, closeErr
+			}
 		}
 		return PathObservation{Exists: true, IsDirectory: info.IsDir(), ParentExists: parentExists, Accessible: accessible, LocationSafe: locationSafe}, nil
 	}
@@ -225,7 +234,9 @@ func probeWebView2() (WebViewObservation, error) {
 			continue
 		}
 		version, _, valueErr := key.GetStringValue("pv")
-		key.Close()
+		if closeErr := key.Close(); closeErr != nil {
+			return WebViewObservation{}, errors.Join(valueErr, closeErr)
+		}
 		if valueErr == nil && safeVersion(version) {
 			return WebViewObservation{Installed: true, Version: version}, nil
 		}

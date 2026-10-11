@@ -150,6 +150,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - O backlog continua com 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. A média simples permanece em 6,7% concluído e 93,3% restante; não há prazo global confiável.
 - Evidência: `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`.
 
+### Recontagem após conferência das regras da DRE — 11/10/2026
+
+- A política `docs/DRE-ACCOUNTING-POLICY-v1.md` registra a estrutura das linhas já aprovadas, o que entra e não entra, o caminho de estoque/produção/CPV, o tratamento de máquinas/depreciação, tributos recuperáveis, as proibições de classificação automática e as informações que serão necessárias das fontes. Ela preserva as telas e linhas aprovadas. Não é parecer contábil final.
+- BK-007 avança de 10% para 20% pelo registro organizado dos princípios que Gisele enviou. Não houve mudança na regra nem na tela. Validação com a contabilidade, critérios específicos da empresa, mapeamento de contas/eventos e dados reais continuam pendentes.
+- O backlog mantém 127 tarefas: 6 concluídas, 8 em andamento e 113 não iniciadas. BK-007 passa a 20%; as demais tarefas em andamento mantêm seus percentuais.
+- Pela média simples, `(6 × 100% + 0% + 15% + 20% + 15% + 60% + 80% + 55% + 20%) ÷ 127 = 6,8%`; restam 93,2%. O número é estimativa do rastreador, não prontidão para produção.
+- Não há prazo global confiável enquanto 113 tarefas não foram iniciadas e as validações contábeis, fontes reais e decisões operacionais permanecem pendentes.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -354,7 +362,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-007 — Especificar as regras da DRE própria do Majucau
 
-**Situação:** Em andamento. **Evolução:** 10% (estimativa de planejamento; regras gerais recebidas, validação contábil específica pendente). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações + Contabilidade.
+**Situação:** Em andamento. **Evolução:** 20% (estimativa de planejamento; os princípios enviados por Gisele estão organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`, incluindo estrutura de classificação, estoque/CPV, máquinas/depreciação, tributos recuperáveis e dados mínimos. Essa documentação preserva as linhas e a tela aprovadas. Ainda faltam validação com a contabilidade, critérios específicos da empresa, mapeamento de contas/eventos e conferência com dados reais). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações + Contabilidade.
 
 **Objetivo:** Calcular uma DRE própria, com classificação e competência aprovadas pela contabilidade.
 

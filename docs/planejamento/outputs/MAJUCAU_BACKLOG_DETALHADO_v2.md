@@ -3465,3 +3465,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Testes do pacote `internal/security` e `go vet` passaram. O helper não é usado por logs de produção; o logger atual continua usando campos permitidos individualmente.
 - BK-031 permanece em 80% (20% restante), pois continua pendente mostrar ao usuário o identificador de diagnóstico e validar ACL/instalação. O projeto permanece em 8,3% concluído e 91,7% restante.
 - Nenhuma tela, regra financeira ou dado persistido mudou. Evidência: `docs/evidence/LOG-REDACTION-KEY-NORMALIZATION-2026-10-11.md`.
+
+## Resposta OAuth do Bling em streaming — 11/10/2026
+
+- A troca de token agora decodifica o JSON direto do corpo HTTP com limite de 4 MiB, valida um único objeto e não mantém o corpo bruto completo em outro buffer. Testes do pacote Bling e `go vet` passaram localmente.
+- A evidência está em `docs/evidence/OAUTH-TOKEN-STREAMING-2026-10-11.md`; a rastreabilidade foi atualizada em `REQUIREMENTS-TRACEABILITY.md`.
+- BK-024 permanece em 35% e DATA-04 continua parcial: esta correção cobre a resposta OAuth, mas ainda faltam carga com memória medida, validação da conta real e ensaios de ACL/limpeza em VM Windows limpa. O backlog permanece em 127 tarefas, 7 concluídas, 11 em andamento e 109 não iniciadas; 8,3% concluído e 91,7% restante.
+- Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado. Não houve chamada à conta real do Bling nesta execução.

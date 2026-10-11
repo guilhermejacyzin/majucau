@@ -97,6 +97,46 @@ func TestListReceivablesDoesNotAssumeLastPageWithoutCompletionMetadata(t *testin
 	}
 }
 
+func TestListReceivablesRejectsInvalidPaginationMetadata(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		body string
+	}{
+		{name: "zero page", body: `{"data":[],"pagination":{"page":0,"limit":10,"total":0}}`},
+		{name: "page does not match request", body: `{"data":[],"pagination":{"page":2,"limit":10,"total":0}}`},
+		{name: "over-limit page size", body: `{"data":[],"pagination":{"page":1,"limit":101,"total":0}}`},
+		{name: "negative total", body: `{"data":[],"pagination":{"page":1,"limit":10,"total":-1}}`},
+		{name: "empty total with records", body: `{"data":[{"id":321}],"pagination":{"page":1,"limit":10,"total":0}}`},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte(test.body))
+			}))
+			defer server.Close()
+			client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := client.ListReceivables(context.Background(), ReceivablesFilter{Limit: 10}); !errors.Is(err, ErrBlingAPISchemaMismatch) {
+				t.Fatalf("invalid pagination error = %v, want schema mismatch", err)
+			}
+		})
+	}
+}
+
+func TestHasNextFromTotalAvoidsIntegerOverflow(t *testing.T) {
+	if !hasNextFromTotal(1, 100, 101) {
+		t.Fatal("first page of 101 records should have a next page")
+	}
+	if hasNextFromTotal(2, 100, 200) {
+		t.Fatal("second page of 200 records should be the last page")
+	}
+	maxInt := int(^uint(0) >> 1)
+	if hasNextFromTotal(maxInt, 100, maxInt) {
+		t.Fatal("very large page metadata must not overflow into a false next page")
+	}
+}
+
 func TestListPayablesUsesPayableEndpointAndPaymentFilter(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/Api/v3/contas/pagar" {

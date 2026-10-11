@@ -283,22 +283,44 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 	}
 	page := BlingReceivablesPage{Records: envelope.Data, Page: filter.Page, Limit: filter.Limit}
 	if envelope.Pagination != nil {
-		if envelope.Pagination.Page != nil && *envelope.Pagination.Page > 0 {
+		if envelope.Pagination.Page != nil {
+			if *envelope.Pagination.Page < 1 || *envelope.Pagination.Page != filter.Page {
+				return BlingReceivablesPage{}, fmt.Errorf("%w: pagination page does not match the request", ErrBlingAPISchemaMismatch)
+			}
 			page.Page = *envelope.Pagination.Page
 		}
-		if envelope.Pagination.Limit != nil && *envelope.Pagination.Limit > 0 {
+		if envelope.Pagination.Limit != nil {
+			if *envelope.Pagination.Limit < 1 || *envelope.Pagination.Limit > BlingMaxPageSize {
+				return BlingReceivablesPage{}, fmt.Errorf("%w: pagination limit is outside the supported range", ErrBlingAPISchemaMismatch)
+			}
 			page.Limit = *envelope.Pagination.Limit
+		}
+		if envelope.Pagination.Total != nil && *envelope.Pagination.Total < 0 {
+			return BlingReceivablesPage{}, fmt.Errorf("%w: pagination total cannot be negative", ErrBlingAPISchemaMismatch)
+		}
+		if envelope.Pagination.Total != nil && *envelope.Pagination.Total == 0 && len(envelope.Data) > 0 {
+			return BlingReceivablesPage{}, fmt.Errorf("%w: pagination total is empty but the response contains records", ErrBlingAPISchemaMismatch)
 		}
 		page.Total = envelope.Pagination.Total
 		if envelope.Pagination.HasNext != nil {
 			page.HasNext = *envelope.Pagination.HasNext
 			page.HasNextKnown = true
 		} else if page.Total != nil {
-			page.HasNext = page.Page*page.Limit < *page.Total
+			page.HasNext = hasNextFromTotal(page.Page, page.Limit, *page.Total)
 			page.HasNextKnown = true
 		}
 	}
 	return page, nil
+}
+
+// hasNextFromTotal compares page position without multiplying untrusted
+// pagination values, which could overflow and falsely mark a list complete.
+func hasNextFromTotal(page, limit, total int) bool {
+	if page < 1 || limit < 1 || total < 1 {
+		return false
+	}
+	fullPages := total / limit
+	return page < fullPages || (page == fullPages && total%limit != 0)
 }
 
 func decodeBlingReceivablesEnvelope(reader io.Reader, limit int64) (blingReceivablesEnvelope, error) {

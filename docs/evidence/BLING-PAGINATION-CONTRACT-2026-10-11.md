@@ -31,3 +31,9 @@ A inspeção da resposta da conta Bling da Majucau não foi concluída: a prefer
 ## Limites desta evidência
 
 Esta é uma leitura da documentação pública, não uma chamada autenticada à conta da empresa. Ela não comprova os campos que a resposta real devolve nem a disponibilidade efetiva dos filtros na conta. Nenhuma tela ou regra financeira foi alterada. A correção técnica do filtro foi verificada pelo teste focal do adapter; a paginação e os filtros da conta real continuam sem homologação.
+
+## Validação defensiva dos metadados — 11/10/2026
+
+- O adapter trata os metadados de paginação recebidos como entrada não confiável. Se a resposta incluir `page`, ele deve ser positivo e corresponder à página solicitada; `limit` deve ficar entre 1 e o limite local de 100; `total` não pode ser negativo nem declarar zero quando a resposta contém registros.
+- O cálculo de continuação baseado em `total` usa divisão e resto, sem multiplicar valores fornecidos pelo servidor. Isso evita overflow inteiro que poderia marcar uma página como final incorretamente.
+- Testes cobrem página zero/diferente da solicitada, limite acima do teto, total negativo/contraditório e valores que causariam overflow na multiplicação. A suíte focal de Bling e `go vet` passaram localmente. A resposta real da conta continua sem homologação; os testes não tornam `total` um campo oficialmente confirmado.

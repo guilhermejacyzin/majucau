@@ -64,7 +64,14 @@ type CashMovementsFilter struct {
 	DateTo   string
 }
 
+const maxCashMovementDateFilterBytes = 64
+
 func (f CashMovementsFilter) normalized() (CashMovementsFilter, error) {
+	f.DateFrom = strings.TrimSpace(f.DateFrom)
+	f.DateTo = strings.TrimSpace(f.DateTo)
+	if len(f.DateFrom) > maxCashMovementDateFilterBytes || len(f.DateTo) > maxCashMovementDateFilterBytes {
+		return CashMovementsFilter{}, fmt.Errorf("%w: date filters exceed %d bytes", ErrBlingAPIConfiguration, maxCashMovementDateFilterBytes)
+	}
 	if f.Page == 0 {
 		f.Page = 1
 	}
@@ -96,8 +103,8 @@ func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovem
 	query := pathURL.Query()
 	query.Set("pagina", strconv.Itoa(filter.Page))
 	query.Set("limite", strconv.Itoa(filter.Limit))
-	setOptionalQuery(query, "dataInicial", strings.TrimSpace(filter.DateFrom))
-	setOptionalQuery(query, "dataFinal", strings.TrimSpace(filter.DateTo))
+	setOptionalQuery(query, "dataInicial", filter.DateFrom)
+	setOptionalQuery(query, "dataFinal", filter.DateTo)
 	pathURL.RawQuery = query.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pathURL.String(), nil)

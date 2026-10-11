@@ -13,7 +13,7 @@ modo somente leitura. O pacote contém um cliente técnico para:
   `GET /borderos/{idBordero}`, `GET /caixas/{idCaixa}` e
   `GET /categorias/receitas-despesas/{id}`;
 - leitura de uma página limitada de `GET /caixas`, com os filtros documentados
-  de página, limite e período;
+  de página, limite e período; cada filtro de data aceita no máximo 64 bytes;
 - leitura de uma página de `GET /categorias/receitas-despesas`;
 - classificação segura de 401/403, 429, timeout, indisponibilidade e resposta
   fora do contrato;

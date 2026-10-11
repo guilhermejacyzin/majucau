@@ -210,6 +210,21 @@ func TestListCashMovementsDoesNotAssumeEndWithoutPaginationMetadata(t *testing.T
 	}
 }
 
+func TestListCashMovementsRejectsOversizedDateFilterBeforeNetworkCall(t *testing.T) {
+	doer := &errorHTTPDoer{err: errors.New("network should not be called")}
+	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	filter := CashMovementsFilter{DateFrom: strings.Repeat("x", maxCashMovementDateFilterBytes+1)}
+	if _, err := client.ListCashMovements(context.Background(), filter); !errors.Is(err, ErrBlingAPIConfiguration) {
+		t.Fatalf("oversized date filter error = %v, want configuration error", err)
+	}
+	if doer.calls != 0 {
+		t.Fatalf("network calls = %d, want 0", doer.calls)
+	}
+}
+
 func TestGetCashMovementRejectsInvalidIDBeforeNetworkCall(t *testing.T) {
 	doer := &errorHTTPDoer{err: errors.New("network should not be called")}
 	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")

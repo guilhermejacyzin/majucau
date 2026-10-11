@@ -174,7 +174,7 @@ func (s *DiskSourceIDSet) CheckAndAdd(ctx context.Context, sourceID, file string
 	return "", 0, false, errors.New("temporary CSV source index is full")
 }
 
-func (s *DiskSourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (CSVFileQueue, error) {
+func (s *DiskSourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (result CSVFileQueue, returnErr error) {
 	if s == nil || s.closed || s.dir == "" || s.gcm == nil {
 		return nil, errors.New("temporary CSV source index is not initialized")
 	}
@@ -185,7 +185,15 @@ func (s *DiskSourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (CSV
 	if err != nil {
 		return nil, fmt.Errorf("open CSV import folder: %w", err)
 	}
-	defer directory.Close()
+	directoryClosed := false
+	defer func() {
+		if directoryClosed {
+			return
+		}
+		if closeErr := directory.Close(); closeErr != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("close CSV import folder: %w", closeErr))
+		}
+	}()
 	builder := diskRunBuilder{set: s}
 	ignoredCount := 0
 	for {
@@ -223,8 +231,10 @@ func (s *DiskSourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (CSV
 		}
 	}
 	if err := directory.Close(); err != nil {
+		directoryClosed = true
 		return nil, fmt.Errorf("close CSV import folder: %w", err)
 	}
+	directoryClosed = true
 	finalPath, err := builder.finish(ctx)
 	if err != nil {
 		return nil, err
@@ -369,13 +379,13 @@ func (s *DiskSourceIDSet) writeNameRun(names []string) (string, error) {
 	writer := bufio.NewWriterSize(file, 32*1024)
 	for _, name := range names {
 		if err := s.writeQueueName(writer, name); err != nil {
-			_ = file.Close()
-			return "", fmt.Errorf("write temporary ordered filename run: %w", err)
+			closeErr := file.Close()
+			return "", errors.Join(fmt.Errorf("write temporary ordered filename run: %w", err), wrapCloseError("close incomplete temporary ordered filename run", closeErr))
 		}
 	}
 	if err := writer.Flush(); err != nil {
-		_ = file.Close()
-		return "", fmt.Errorf("flush temporary ordered filename run: %w", err)
+		closeErr := file.Close()
+		return "", errors.Join(fmt.Errorf("flush temporary ordered filename run: %w", err), wrapCloseError("close incomplete temporary ordered filename run", closeErr))
 	}
 	if err := file.Close(); err != nil {
 		return "", fmt.Errorf("close temporary ordered filename run: %w", err)
@@ -645,7 +655,9 @@ func (s *DiskSourceIDSet) mergeNameRuns(ctx context.Context, paths []string) (me
 	readers := make([]*diskRunReader, 0, len(paths))
 	defer func() {
 		for _, reader := range readers {
-			_ = reader.file.Close()
+			if err := reader.file.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+				returnErr = errors.Join(returnErr, fmt.Errorf("close temporary CSV filename run: %w", err))
+			}
 		}
 	}()
 	items := make(diskRunHeap, 0, len(paths))
@@ -767,16 +779,28 @@ func (q *diskFileQueue) IgnoredCount() int {
 	return q.ignoredCount
 }
 
-func (q *diskFileQueue) Close() {
+func (q *diskFileQueue) Close() error {
 	if q == nil || q.closed {
-		return
+		return nil
 	}
 	q.closed = true
+	var closeErr error
 	if q.file != nil {
-		_ = q.file.Close()
+		closeErr = q.file.Close()
 		q.file = nil
 	}
 	q.reader = nil
 	q.set = nil
 	q.ctx = nil
+	if closeErr != nil {
+		return fmt.Errorf("close temporary CSV filename queue: %w", closeErr)
+	}
+	return nil
+}
+
+func wrapCloseError(operation string, err error) error {
+	if err == nil || errors.Is(err, os.ErrClosed) {
+		return nil
+	}
+	return fmt.Errorf("%s: %w", operation, err)
 }

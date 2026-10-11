@@ -60,7 +60,11 @@ func TestDiskSourceIDSetDeduplicatesWithoutPersistingPlaintextAndCleansUp(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(queue.Close)
+	t.Cleanup(func() {
+		if err := queue.Close(); err != nil {
+			t.Errorf("close temporary CSV file queue: %v", err)
+		}
+	})
 	if queue.IgnoredCount() != 1 {
 		t.Fatalf("ignored file count = %d, want 1", queue.IgnoredCount())
 	}
@@ -71,7 +75,9 @@ func TestDiskSourceIDSetDeduplicatesWithoutPersistingPlaintextAndCleansUp(t *tes
 	if queuedName, ok, err = queue.Next(); err != nil || ok {
 		t.Fatalf("queue should be exhausted: %q, %v, %v", queuedName, ok, err)
 	}
-	queue.Close()
+	if err := queue.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	entries, err := os.ReadDir(workspace)
 	if err != nil {

@@ -27,16 +27,16 @@ type diagnosticRequestHandler struct {
 	logger *slog.Logger
 }
 
-func newWorkerDiagnosticLogger() (*slog.Logger, func(), error) {
+func newWorkerDiagnosticLogger() (*slog.Logger, func() error, error) {
 	programData := strings.TrimSpace(os.Getenv("ProgramData"))
 	if programData == "" {
-		return slog.New(slog.NewJSONHandler(os.Stderr, nil)), func() {}, os.ErrNotExist
+		return slog.New(slog.NewJSONHandler(os.Stderr, nil)), func() error { return nil }, os.ErrNotExist
 	}
 	fileLogger, err := diagnosticslog.New(filepath.Join(programData, "Majucau", "Logs"))
 	if err != nil {
-		return slog.New(slog.NewJSONHandler(os.Stderr, nil)), func() {}, err
+		return slog.New(slog.NewJSONHandler(os.Stderr, nil)), func() error { return nil }, err
 	}
-	return fileLogger.Slog(), func() { _ = fileLogger.Close() }, nil
+	return fileLogger.Slog(), fileLogger.Close, nil
 }
 
 func (h diagnosticRequestHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {

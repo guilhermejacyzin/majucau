@@ -80,7 +80,7 @@ func StreamReceiptsFolderPreview(ctx context.Context, folder string, seen csvstr
 	return streamReceiptsFolder(ctx, folder, seen, nil, reject, onFile, true)
 }
 
-func streamReceiptsFolder(ctx context.Context, folder string, seen csvstream.SourceIDIndex, accept StreamReceiptHandler, reject StreamReceiptIssueHandler, onFile StreamReceiptFileHandler, preview bool) (FolderStreamSummary, error) {
+func streamReceiptsFolder(ctx context.Context, folder string, seen csvstream.SourceIDIndex, accept StreamReceiptHandler, reject StreamReceiptIssueHandler, onFile StreamReceiptFileHandler, preview bool) (summary FolderStreamSummary, returnErr error) {
 	if seen == nil {
 		return FolderStreamSummary{}, errors.New("receipt import deduplication is required")
 	}
@@ -94,14 +94,22 @@ func streamReceiptsFolder(ctx context.Context, folder string, seen csvstream.Sou
 	if err != nil {
 		return FolderStreamSummary{}, err
 	}
-	defer queue.Close()
+	defer func() {
+		if closeErr := queue.Close(); closeErr != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("close receipt filename queue: %w", closeErr))
+		}
+	}()
 	root, err := os.OpenRoot(folder)
 	if err != nil {
 		return FolderStreamSummary{}, fmt.Errorf("open receipt import root: %w", err)
 	}
-	defer root.Close()
+	defer func() {
+		if closeErr := root.Close(); closeErr != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("close receipt import root: %w", closeErr))
+		}
+	}()
 
-	summary := FolderStreamSummary{IgnoredCount: queue.IgnoredCount()}
+	summary = FolderStreamSummary{IgnoredCount: queue.IgnoredCount()}
 	for {
 		if err := ctx.Err(); err != nil {
 			return FolderStreamSummary{}, err
@@ -135,11 +143,17 @@ func streamReceiptsFolder(ctx context.Context, folder string, seen csvstream.Sou
 				return ctx.Err()
 			})
 			if err := ctx.Err(); err != nil {
-				_ = file.Close()
+				closeErr := file.Close()
+				if closeErr != nil {
+					err = errors.Join(err, fmt.Errorf("close receipt CSV %q: %w", name, closeErr))
+				}
 				return FolderStreamSummary{}, err
 			}
 			if errors.Is(validationErr, csvlimit.ErrLimitExceeded) {
-				_ = file.Close()
+				closeErr := file.Close()
+				if closeErr != nil {
+					validationErr = errors.Join(validationErr, fmt.Errorf("close receipt CSV %q: %w", name, closeErr))
+				}
 				return FolderStreamSummary{}, validationErr
 			}
 			if validationErr != nil {
@@ -161,8 +175,11 @@ func streamReceiptsFolder(ctx context.Context, folder string, seen csvstream.Sou
 			}
 			validationHash = validationHasher.Sum(nil)
 			if _, err := file.Seek(0, io.SeekStart); err != nil {
-				_ = file.Close()
-				return FolderStreamSummary{}, fmt.Errorf("rewind receipt CSV for preview: %w", err)
+				rewindErr := fmt.Errorf("rewind receipt CSV for preview: %w", err)
+				if closeErr := file.Close(); closeErr != nil {
+					rewindErr = errors.Join(rewindErr, fmt.Errorf("close receipt CSV %q: %w", name, closeErr))
+				}
+				return FolderStreamSummary{}, rewindErr
 			}
 		}
 		hasher := sha256.New()
@@ -207,11 +224,14 @@ func streamReceiptsFolder(ctx context.Context, folder string, seen csvstream.Sou
 			return nil
 		})
 		closeErr := file.Close()
-		if closeErr != nil {
-			return FolderStreamSummary{}, fmt.Errorf("close receipt CSV %q: %w", name, closeErr)
-		}
 		if err := ctx.Err(); err != nil {
+			if closeErr != nil {
+				err = errors.Join(err, fmt.Errorf("close receipt CSV %q: %w", name, closeErr))
+			}
 			return FolderStreamSummary{}, err
+		}
+		if closeErr != nil {
+			return FolderStreamSummary{}, errors.Join(fmt.Errorf("close receipt CSV %q: %w", name, closeErr), parseErr)
 		}
 		if preview && !bytes.Equal(validationHash, hasher.Sum(nil)) {
 			return FolderStreamSummary{}, fmt.Errorf("receipt CSV %q changed during preview", name)

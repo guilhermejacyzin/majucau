@@ -226,7 +226,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Recontagem após a revisão de memória e handles do Windows — 11/10/2026
 
-- BK-024 avançou para 30% e segue `Em andamento`. Além do mapa de riscos, foram corrigidos e verificados fechamentos de conexão pendente, evento, processo/token, buffers DPAPI, descritores temporários e mutex do instalador. A evidência está em `docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md`. A segurança geral não está concluída.
+- BK-024 segue em 30% e `Em andamento`. Além do mapa de riscos, foram corrigidos e verificados fechamentos de conexão pendente, evento, processo/token, buffers DPAPI, descritores temporários, mutex do instalador e recursos de importação CSV em streaming. A evidência está em `docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md`. A segurança geral não está concluída; faltam injeção controlada de falhas de limpeza, VM limpa, rede e acesso por perfil.
 - O backlog tem 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas. Em andamento: BK-001 (0%), BK-006 (30%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-024 (30%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
 - Pela média simples, `(6 × 100% + 0% + 30% + 20% + 10% + 15% + 15% + 30% + 70% + 80% + 55% + 20%) ÷ 127 = 7,4%`; restam 92,6%. É uma estimativa do backlog, não uma medida de esforço nem prova de prontidão. O prazo global continua sem estimativa confiável.
 
@@ -845,7 +845,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Critério de aceite:** Riscos têm tratamento e testes associados; nenhuma credencial entra no Git ou no navegador. O desenho não usa a pasta de fontes como destino de exportação, logs ou backup.
 
-**Evidência atual:** [Mapa inicial de ativos, riscos, controles, lacunas e verificações](../../evidence/THREAT-MODEL-INITIAL-2026-10-11.md). Inclui revisões estáticas e verificações no instalador, backups, Named Pipe, DPAPI, temporários, diagnósticos e mutex. O teste com dois PostgreSQL 18.6 descartáveis passou na [CI #403](https://github.com/guilhermejacyzin/majucau/actions/runs/38135368926); a revisão anterior do Named Pipe passou na [CI #406](https://github.com/guilhermejacyzin/majucau/actions/runs/38137190197). Ainda faltam testar falhas de limpeza de forma controlada, fechar o mapa de riscos e validar instalação/atualização em VM limpa e o acesso remoto por perfil.
+**Evidência atual:** [Mapa inicial de ativos, riscos, controles, lacunas e verificações](../../evidence/THREAT-MODEL-INITIAL-2026-10-11.md). Inclui revisões estáticas e verificações no instalador, backups, Named Pipe, DPAPI, temporários, diagnósticos, mutex e propagação de erros no encerramento de importações em streaming. O teste com dois PostgreSQL 18.6 descartáveis passou na [CI #403](https://github.com/guilhermejacyzin/majucau/actions/runs/38135368926); a revisão anterior do Named Pipe passou na [CI #406](https://github.com/guilhermejacyzin/majucau/actions/runs/38137190197). Testes e `go vet` locais para worker, CSV streaming, Bling e Nuvem Pago passaram nesta execução; a CI desta alteração ainda será verificada. Ainda faltam testar falhas de limpeza de forma controlada, fechar o mapa de riscos e validar instalação/atualização em VM limpa e o acesso remoto por perfil.
 
 **Impacto:** Protege os dados financeiros e operacionais.
 

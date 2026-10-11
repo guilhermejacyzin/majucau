@@ -47,7 +47,7 @@ type SourceIDIndex interface {
 type CSVFileQueue interface {
 	Next() (string, bool, error)
 	IgnoredCount() int
-	Close()
+	Close() error
 }
 
 func NewSourceIDSet(ctx context.Context, tx pgx.Tx) (*SourceIDSet, error) {

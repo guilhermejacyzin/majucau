@@ -35,7 +35,7 @@ type queuedFile struct {
 	name    string
 }
 
-func (s *SourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (CSVFileQueue, error) {
+func (s *SourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (result CSVFileQueue, returnErr error) {
 	if s == nil || s.tx == nil {
 		return nil, errors.New("CSV source ID set is not initialized")
 	}
@@ -43,7 +43,15 @@ func (s *SourceIDSet) QueueCSVFiles(ctx context.Context, folder string) (CSVFile
 	if err != nil {
 		return nil, fmt.Errorf("open CSV import folder: %w", err)
 	}
-	defer directory.Close()
+	directoryClosed := false
+	defer func() {
+		if directoryClosed {
+			return
+		}
+		if closeErr := directory.Close(); closeErr != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("close CSV import folder: %w", closeErr))
+		}
+	}()
 
 	if _, err := s.tx.Exec(ctx, `
 CREATE TEMP TABLE csv_import_files (
@@ -93,8 +101,10 @@ CREATE TEMP TABLE csv_import_files (
 		}
 	}
 	if err := directory.Close(); err != nil {
+		directoryClosed = true
 		return nil, fmt.Errorf("close import folder: %w", err)
 	}
+	directoryClosed = true
 	if _, err := s.tx.Exec(ctx, `CREATE INDEX csv_import_files_order_idx ON pg_temp.csv_import_files (sort_key COLLATE "C", name COLLATE "C")`); err != nil {
 		return nil, fmt.Errorf("index temporary CSV filenames: %w", err)
 	}
@@ -184,10 +194,11 @@ func (q *FileQueue) IgnoredCount() int {
 	return q.ignoredCount
 }
 
-func (q *FileQueue) Close() {
+func (q *FileQueue) Close() error {
 	if q != nil {
 		q.batch = nil
 		q.tx = nil
 		q.ctx = nil
 	}
+	return nil
 }

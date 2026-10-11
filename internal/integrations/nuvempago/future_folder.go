@@ -75,7 +75,7 @@ func StreamFutureFolderPreview(ctx context.Context, folder string, seen csvstrea
 	return streamFutureFolder(ctx, folder, seen, nil, reject, onFile, true)
 }
 
-func streamFutureFolder(ctx context.Context, folder string, seen csvstream.SourceIDIndex, accept StreamFutureHandler, reject StreamFutureIssueHandler, onFile StreamFutureFileHandler, preview bool) (FutureFolderStreamSummary, error) {
+func streamFutureFolder(ctx context.Context, folder string, seen csvstream.SourceIDIndex, accept StreamFutureHandler, reject StreamFutureIssueHandler, onFile StreamFutureFileHandler, preview bool) (summary FutureFolderStreamSummary, returnErr error) {
 	if seen == nil {
 		return FutureFolderStreamSummary{}, errors.New("future import deduplication is required")
 	}
@@ -89,14 +89,22 @@ func streamFutureFolder(ctx context.Context, folder string, seen csvstream.Sourc
 	if err != nil {
 		return FutureFolderStreamSummary{}, err
 	}
-	defer queue.Close()
+	defer func() {
+		if closeErr := queue.Close(); closeErr != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("close future filename queue: %w", closeErr))
+		}
+	}()
 	root, err := os.OpenRoot(folder)
 	if err != nil {
 		return FutureFolderStreamSummary{}, fmt.Errorf("open future import root: %w", err)
 	}
-	defer root.Close()
+	defer func() {
+		if closeErr := root.Close(); closeErr != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("close future import root: %w", closeErr))
+		}
+	}()
 
-	summary := FutureFolderStreamSummary{IgnoredCount: queue.IgnoredCount()}
+	summary = FutureFolderStreamSummary{IgnoredCount: queue.IgnoredCount()}
 	for {
 		if err := ctx.Err(); err != nil {
 			return FutureFolderStreamSummary{}, err
@@ -130,11 +138,17 @@ func streamFutureFolder(ctx context.Context, folder string, seen csvstream.Sourc
 				return ctx.Err()
 			})
 			if err := ctx.Err(); err != nil {
-				_ = file.Close()
+				closeErr := file.Close()
+				if closeErr != nil {
+					err = errors.Join(err, fmt.Errorf("close future CSV %q: %w", name, closeErr))
+				}
 				return FutureFolderStreamSummary{}, err
 			}
 			if errors.Is(validationErr, csvlimit.ErrLimitExceeded) {
-				_ = file.Close()
+				closeErr := file.Close()
+				if closeErr != nil {
+					validationErr = errors.Join(validationErr, fmt.Errorf("close future CSV %q: %w", name, closeErr))
+				}
 				return FutureFolderStreamSummary{}, validationErr
 			}
 			if validationErr != nil {
@@ -156,8 +170,11 @@ func streamFutureFolder(ctx context.Context, folder string, seen csvstream.Sourc
 			}
 			validationHash = validationHasher.Sum(nil)
 			if _, err := file.Seek(0, io.SeekStart); err != nil {
-				_ = file.Close()
-				return FutureFolderStreamSummary{}, fmt.Errorf("rewind future CSV for preview: %w", err)
+				rewindErr := fmt.Errorf("rewind future CSV for preview: %w", err)
+				if closeErr := file.Close(); closeErr != nil {
+					rewindErr = errors.Join(rewindErr, fmt.Errorf("close future CSV %q: %w", name, closeErr))
+				}
+				return FutureFolderStreamSummary{}, rewindErr
 			}
 		}
 		hasher := sha256.New()
@@ -204,11 +221,14 @@ func streamFutureFolder(ctx context.Context, folder string, seen csvstream.Sourc
 			return nil
 		})
 		closeErr := file.Close()
-		if closeErr != nil {
-			return FutureFolderStreamSummary{}, fmt.Errorf("close future CSV %q: %w", name, closeErr)
-		}
 		if err := ctx.Err(); err != nil {
+			if closeErr != nil {
+				err = errors.Join(err, fmt.Errorf("close future CSV %q: %w", name, closeErr))
+			}
 			return FutureFolderStreamSummary{}, err
+		}
+		if closeErr != nil {
+			return FutureFolderStreamSummary{}, errors.Join(fmt.Errorf("close future CSV %q: %w", name, closeErr), parseErr)
 		}
 		if preview && !bytes.Equal(validationHash, hasher.Sum(nil)) {
 			return FutureFolderStreamSummary{}, fmt.Errorf("future CSV %q changed during preview", name)

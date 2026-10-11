@@ -3,15 +3,20 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
 	"majucau.local/financial-intelligence/internal/ipc"
 )
 
-func runWorker(ctx context.Context) error {
+func runWorker(ctx context.Context) (returnErr error) {
 	logger, closeLogger, logErr := newWorkerDiagnosticLogger()
-	defer closeLogger()
+	defer func() {
+		if closeErr := closeLogger(); closeErr != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("close worker diagnostic log: %w", closeErr))
+		}
+	}()
 	if logErr != nil {
 		logger.Error("worker diagnostic file unavailable", slog.String("error_code", "DIAGNOSTICS_LOG_UNAVAILABLE"))
 	}

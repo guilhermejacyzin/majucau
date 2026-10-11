@@ -272,3 +272,31 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
   ainda requer instalação/atualização em VM limpa, validação de rede e testes
   de acesso por perfil.
 - Nenhuma tela ou regra financeira foi alterada.
+
+## Complemento — erros de encerramento nos fluxos CSV em streaming
+
+**Data:** 11/10/2026
+
+**Tipo:** correção de propagação de falhas durante encerramento e limpeza.
+
+- Filas de nomes CSV agora informam falhas ao fechar. A fila temporária em disco,
+  os leitores das partes de ordenação e os diretórios de importação também
+  devolvem os erros de fechamento ao chamador.
+- As prévias e importações de recebimentos do Bling e de recebimentos futuros do
+  Nuvem Pago propagam falhas ao fechar arquivos, diretório raiz e fila, inclusive
+  quando há cancelamento, tamanho de linha excedido ou falha ao reiniciar a
+  leitura. O motivo original e o erro de fechamento são preservados juntos.
+- O worker agora retorna ao serviço eventual erro ao fechar o arquivo de log
+  técnico, em vez de descartá-lo.
+- `gofmt`, `git diff --check`, os testes e `go vet` dos quatro pacotes alterados
+  passaram localmente. Também passaram os testes de todos os pacotes em
+  `cmd`, `database` e `internal`, além de `go vet ./cmd/... ./database/... ./internal/...`.
+  O comando `go test ./...` não conseguiu preparar somente o pacote principal:
+  `main.go` incorpora `frontend/dist`, que não estava gerada nesta cópia. A CI
+  prepara esse arquivo antes dos testes completos. Os caches desta execução
+  foram centralizados em `artifacts/cache` e removidos pelo módulo seguro após
+  as verificações; a CI desta revisão será registrada após o push.
+- Continuam pendentes ensaios controlados que provoquem falhas reais de limpeza,
+  a auditoria mais ampla, VM limpa, validação de rede e testes de acesso por
+  perfil.
+- Nenhuma tela, regra financeira, permissão ou dado persistido foi alterado.

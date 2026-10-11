@@ -429,3 +429,10 @@ BK-024 permanece em 30% e o projeto mantém a estimativa registrada de 7,5% conc
 - Uma transação já encerrada é tratada como resultado normal. Uma falha real ao desfazer passa a fazer parte do erro retornado; o chamador não recebe contadores como se a operação tivesse terminado normalmente.
 - `go test` e `go vet` passaram nos quatro pacotes afetados. A evidência e o limite de validação local estão em `TRANSACTION-ROLLBACK-ERRORS-2026-10-11.md`.
 - Isso melhora a observabilidade da limpeza de transações, mas não fecha BK-024: faltam falhas controladas adicionais, validação PostgreSQL ponta a ponta e ensaios em VM, rede e perfis.
+
+## Normalização dos nomes de campos sensíveis — 11/10/2026
+
+- A revisão encontrou um caso em que `RedactJSON` reconhecia nomes como `access_token`, mas não grafias equivalentes como `accessToken`, `clientSecret` ou `API-Key`.
+- A comparação agora ignora diferença entre maiúsculas/minúsculas e separadores comuns. O teste cobre tokens, segredos, chave de API, autorização, cookie e campos aninhados.
+- `go test -count=1 ./internal/security` e `go vet ./internal/security` passaram. A função ainda não é chamada em produção; o logger atual continua usando campos permitidos individualmente, sem receber payload livre. Portanto, esta correção do helper não é apresentada como fechamento de mascaramento dos logs de produção.
+- Detalhes: `LOG-REDACTION-KEY-NORMALIZATION-2026-10-11.md`. BK-031 continua em 80%.

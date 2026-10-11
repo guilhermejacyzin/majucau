@@ -1117,6 +1117,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Implementação parcial (2026-10-11):** `docs/evidence/WORKER-STRUCTURED-DIAGNOSTICS-2026-10-11.md`. O worker registra requisições com campos limitados e IDs de lote. A duração e falhas podem ser agregadas dos eventos; a fila não existe neste caminho síncrono e, portanto, ainda não possui métrica. O usuário vê códigos de erro, mas ainda não vê o ID único que permite filtrar uma requisição específica no log.
 
+**Complemento de mascaramento (2026-10-11):** `RedactJSON` agora reconhece nomes comuns de credenciais independentemente de camelCase, hífen ou separadores, com teste e `go vet` aprovados. O helper não tem chamador de produção; o logger mantém a estratégia de campos permitidos, sem payload livre. Isso não fecha o critério de BK-031, que permanece em 80%. Ver `docs/evidence/LOG-REDACTION-KEY-NORMALIZATION-2026-10-11.md`.
+
 **Critério de aceite:** Erro visível ao usuário possui referência que encontra diagnóstico técnico sem tokens ou extratos completos.
 
 **Impacto:** Facilita suporte e investigação.
@@ -3456,3 +3458,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - `go test -count=1` e `go vet` passaram nos quatro pacotes; não houve teste PostgreSQL real nesta execução. Evidência: `docs/evidence/TRANSACTION-ROLLBACK-ERRORS-2026-10-11.md`.
 - BK-024 permanece em 35%: essa mudança fecha uma lacuna de propagação de erro, mas não substitui validação ponta a ponta nem os ensaios operacionais pendentes. O backlog permanece em 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,3% concluído e 91,7% restante.
 - Nenhuma tela, regra financeira ou fórmula foi alterada. A planilha enviada continua sendo a referência da estrutura da calculadora; não adicionar separadamente recebimentos da Nuvemshop ao caixa da calculadora.
+
+## Complemento ao redator de campos sensíveis — 11/10/2026
+
+- `internal/security.RedactJSON` passou a comparar chaves após normalizar maiúsculas/minúsculas e separadores, cobrindo variações comuns como `accessToken`, `clientSecret`, `API-Key` e nomes aninhados. O limite de 1 MiB foi mantido.
+- Testes do pacote `internal/security` e `go vet` passaram. O helper não é usado por logs de produção; o logger atual continua usando campos permitidos individualmente.
+- BK-031 permanece em 80% (20% restante), pois continua pendente mostrar ao usuário o identificador de diagnóstico e validar ACL/instalação. O projeto permanece em 8,3% concluído e 91,7% restante.
+- Nenhuma tela, regra financeira ou dado persistido mudou. Evidência: `docs/evidence/LOG-REDACTION-KEY-NORMALIZATION-2026-10-11.md`.

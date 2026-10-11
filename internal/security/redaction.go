@@ -3,18 +3,24 @@ package security
 import (
 	"encoding/json"
 	"strings"
+	"unicode"
 )
 
 const maxRedactJSONBytes = 1 << 20
 
-var sensitiveNames = map[string]bool{"token": true, "access_token": true, "refresh_token": true, "client_secret": true, "secret": true, "password": true, "authorization": true, "cookie": true}
+var sensitiveNames = map[string]struct{}{
+	"token": {}, "accesstoken": {}, "refreshtoken": {}, "idtoken": {}, "sessiontoken": {},
+	"clientsecret": {}, "secret": {}, "secretkey": {}, "privatekey": {}, "apikey": {},
+	"password": {}, "passwd": {}, "credential": {}, "credentials": {},
+	"authorization": {}, "proxyauthorization": {}, "cookie": {}, "setcookie": {},
+}
 
 func RedactValue(v any) any {
 	switch x := v.(type) {
 	case map[string]any:
 		out := make(map[string]any, len(x))
 		for k, value := range x {
-			if sensitiveNames[strings.ToLower(k)] {
+			if isSensitiveName(k) {
 				out[k] = RedactString(toString(value))
 			} else {
 				out[k] = RedactValue(value)
@@ -31,6 +37,18 @@ func RedactValue(v any) any {
 		return v
 	}
 }
+
+func isSensitiveName(name string) bool {
+	normalized := strings.Map(func(r rune) rune {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			return -1
+		}
+		return unicode.ToLower(r)
+	}, name)
+	_, ok := sensitiveNames[normalized]
+	return ok
+}
+
 func RedactString(value string) string {
 	if value == "" {
 		return "[REDACTED]"

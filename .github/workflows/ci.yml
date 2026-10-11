@@ -431,6 +431,12 @@ jobs:
           go-version: '1.26.6'
           cache: false
 
+      - name: Test bounded diagnostic logs on Linux
+        run: go test ./internal/diagnosticslog -count=1
+
+      - name: Vet diagnostic logs on Linux
+        run: go vet ./internal/diagnosticslog
+
       - name: Install PostgreSQL 18 client
         run: |
           sudo apt-get update

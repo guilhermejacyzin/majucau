@@ -17,7 +17,10 @@ const (
 	maxEncodedRecord       = 32 << 10
 )
 
-var ErrRecordTooLarge = errors.New("diagnostic log record exceeds its size limit")
+var (
+	ErrRecordTooLarge      = errors.New("diagnostic log record exceeds its size limit")
+	ErrInvalidRotationCaps = errors.New("diagnostic log rotation limits are invalid")
+)
 
 // Logger writes JSON diagnostics to one bounded, rotating local file set.
 // Callers must only pass allowlisted fields and must never pass payloads,
@@ -65,6 +68,9 @@ type rotatingWriter struct {
 }
 
 func newRotatingWriter(dir string, maxBytes int64, maxFiles int) (*rotatingWriter, error) {
+	if maxBytes <= 0 || maxFiles < 2 {
+		return nil, ErrInvalidRotationCaps
+	}
 	w := &rotatingWriter{dir: dir, maxBytes: maxBytes, maxFiles: maxFiles}
 	if err := w.openCurrent(); err != nil {
 		return nil, err
@@ -73,7 +79,7 @@ func newRotatingWriter(dir string, maxBytes int64, maxFiles int) (*rotatingWrite
 }
 
 func (w *rotatingWriter) Write(p []byte) (int, error) {
-	if len(p) > maxEncodedRecord {
+	if len(p) > maxEncodedRecord || int64(len(p)) > w.maxBytes {
 		return 0, ErrRecordTooLarge
 	}
 	w.mu.Lock()

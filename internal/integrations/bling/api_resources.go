@@ -30,6 +30,15 @@ func (c *BlingAPIClient) GetBordero(ctx context.Context, id int64) (json.RawMess
 	return c.getDataRecord(ctx, "borderos/"+strconv.FormatInt(id, 10))
 }
 
+// GetFinancialCategory reads one Bling income/expense category and preserves
+// its payload as RAW JSON. The category is not mapped to a Majucau rule here.
+func (c *BlingAPIClient) GetFinancialCategory(ctx context.Context, id int64) (json.RawMessage, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("%w: financial category ID must be positive", ErrBlingAPIConfiguration)
+	}
+	return c.getDataRecord(ctx, "categorias/receitas-despesas/"+strconv.FormatInt(id, 10))
+}
+
 // ListFinancialCategories reads one bounded page of Bling income/expense
 // categories. Callers must use HasNextKnown; an omitted pagination marker is
 // never treated as the end of the list.

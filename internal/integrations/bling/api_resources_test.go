@@ -23,6 +23,8 @@ func TestGetPayableAndBorderoReadBoundedRawDetails(t *testing.T) {
 			_, _ = w.Write([]byte(`{"data":{"id":123,"categoria":{"id":9}}}`))
 		case "/Api/v3/borderos/456":
 			_, _ = w.Write([]byte(`{"data":{"id":456,"pagamentos":[{"valorPago":12.34}]}}`))
+		case "/Api/v3/categorias/receitas-despesas/9":
+			_, _ = w.Write([]byte(`{"data":{"id":9,"descricao":"CAPEX"}}`))
 		default:
 			t.Fatalf("unexpected path %q", r.URL.Path)
 		}
@@ -40,6 +42,10 @@ func TestGetPayableAndBorderoReadBoundedRawDetails(t *testing.T) {
 	bordero, err := client.GetBordero(context.Background(), 456)
 	if err != nil || !strings.Contains(string(bordero), `"valorPago":12.34`) {
 		t.Fatalf("bordero = %s, err = %v", bordero, err)
+	}
+	category, err := client.GetFinancialCategory(context.Background(), 9)
+	if err != nil || !strings.Contains(string(category), `"descricao":"CAPEX"`) {
+		t.Fatalf("category = %s, err = %v", category, err)
 	}
 }
 

@@ -28,7 +28,7 @@ O contrato público mostra um caminho técnico possível, mas ainda falta uma re
 
 ## Estado no Majucau
 
-- O adaptador lê e preserva páginas RAW de contas a pagar. Agora também oferece consultas somente de leitura para o detalhe de uma conta a pagar, o detalhe de um borderô e páginas de categorias financeiras. Os detalhes são devolvidos como JSON original, com limite de resposta, cancelamento e retry seguro; a lista de categorias exige metadados explícitos para decidir que terminou. Testes locais do pacote Bling cobrem esses contratos.
+- O adaptador lê e preserva páginas RAW de contas a pagar. Agora também oferece consultas somente de leitura para o detalhe de uma conta a pagar, de um borderô e de uma categoria, além de páginas de categorias financeiras. Os detalhes são devolvidos como JSON original, com limite de resposta, cancelamento e retry seguro; a lista de categorias exige metadados explícitos para decidir que terminou. Testes locais do pacote Bling cobrem esses contratos sintéticos.
 - Esses novos métodos ainda não persistem os detalhes no banco, não ligam pagamentos às contas e não alimentam o snapshot. Portanto, não normalizam categoria nem geram valores de CAPEX.
 - A consulta atual do painel não calcula nem preenche `CAPEX PAGO NO MÊS` ou `CAPEX ACUMULADO`. Os cards continuam sem valor confirmado.
 - A tela e a regra aprovadas permanecem: pagamentos de CAPEX no período filtrado e acumulado desde o início do histórico confiável, em cards informativos fora da tabela e do lucro da DRE.

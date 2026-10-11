@@ -66,8 +66,8 @@ uma resposta real sanitizada da conta autorizada.
 `BlingAPIClient.ListPayables` também cobre `GET /contas/pagar`, e o sync RAW
 genérico diferencia `bling.contas_receber.page` de `bling.contas_pagar.page`.
 Os dois recursos continuam somente leitura e sem normalização financeira.
-O client também lê o detalhe de uma conta a pagar e de um borderô e lista
-categorias por página. As respostas de detalhe permanecem em JSON original e
+O client também lê o detalhe de uma conta a pagar, de um borderô e de uma
+categoria, além de listar categorias por página. As respostas de detalhe permanecem em JSON original e
 limitado; ainda não são persistidas nem ligadas ao snapshot de CAPEX. A listagem
 de categorias só pode ser continuada ou encerrada quando a API fornece um
 marcador de paginação explícito.
@@ -88,6 +88,7 @@ O botão de sincronização permanece separado e não é acionado por esse fluxo
 | Detalhe da obrigação | `GET /contas/pagar/{idContaPagar}` | Saldo, vencimento original, categoria, portador e origem |
 | Pagamentos realizados | `GET /contas/pagar` | Filtrar pagos e data de pagamento |
 | Detalhe do pagamento | `GET /borderos/{idBordero}` | Guardar dados originais de pagamento/categoria; vínculo com obrigação ainda depende de validação |
+| Detalhe de categoria | `GET /categorias/receitas-despesas/{idCategoria}` | Resolver categoria de origem sem classificá-la na DRE Majucau |
 | Contas financeiras | `GET /contas-contabeis` | Operação documentada como obtenção de contas financeiras |
 | Caixa/banco | `GET /caixas` | Débito/crédito, data, categoria, conta e situação de conciliação |
 | Categorias | `GET /categorias/receitas-despesas` | Base para mapeamento financeiro e DRE |

@@ -60,6 +60,16 @@ jobs:
           done <<< "$changed_paths"
           echo "run_platform_checks=$run_checks" >> "$GITHUB_OUTPUT"
 
+      - name: Verify required commit message fields
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_DELETED: ${{ github.event.deleted }}
+        run: python3 scripts/verify-commit-messages.py
+
   verify-backlog:
     # Backlog validation must run even when the change only updates docs.
     runs-on: windows-2025

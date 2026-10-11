@@ -51,9 +51,14 @@ Este guia ajuda a fazer mudanças pequenas e seguras. Antes de começar, consult
   O que é: tarefa que está subindo
   O que foi feito: resumo técnico detalhado
   Próximo passo: detalhe do próximo passo
-  Quanto falta da tarefa: percentual
-  Quanto falta do projeto: percentual
+  Quanto falta da tarefa [id]: 70%
+  Quanto falta do projeto: 92,5%
   ```
+
+- A CI confere esses campos nos commits incluídos em cada `push` e no commit
+  mais recente que não seja de merge em cada pull request. Mensagens históricas
+  anteriores à regra não são revalidadas; assim, a governança passa a valer sem
+  exigir reescrita do histórico já publicado.
 
 - Publique somente na branch de trabalho autorizada. Não faça force push,
   merge em `main` ou publicação em produção como parte de uma mudança comum.

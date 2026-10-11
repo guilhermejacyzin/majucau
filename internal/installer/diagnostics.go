@@ -161,12 +161,17 @@ func writeZipEntry(archive *zip.Writer, name string, content []byte) error {
 	return err
 }
 
-func fileSHA256(path string) (string, error) {
+func fileSHA256(path string) (digestText string, returnErr error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("close diagnostic bundle: %w", err))
+			digestText = ""
+		}
+	}()
 	digest := sha256.New()
 	if _, err := io.Copy(digest, file); err != nil {
 		return "", err

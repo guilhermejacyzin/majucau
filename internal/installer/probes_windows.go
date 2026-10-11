@@ -3,6 +3,7 @@
 package installer
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -39,12 +40,17 @@ func probePlatform() (PlatformInfo, error) {
 	}, nil
 }
 
-func probeAdministrator() (bool, error) {
+func probeAdministrator() (isAdministrator bool, returnErr error) {
 	var token windows.Token
 	if err := windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_QUERY, &token); err != nil {
 		return false, err
 	}
-	defer token.Close()
+	defer func() {
+		if err := token.Close(); err != nil {
+			isAdministrator = false
+			returnErr = errors.Join(returnErr, err)
+		}
+	}()
 	var elevation uint32
 	var returned uint32
 	err := windows.GetTokenInformation(token, windows.TokenElevation,

@@ -4,6 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -21,10 +23,10 @@ const defaultReleaseManifestPath = "release-manifest.json"
 // Release manifests are control data and must stay small enough to parse with
 // a bounded amount of memory, even when a package is untrusted.
 const (
-	maxReleaseManifestBytes        int64 = 4 << 20
-	maxReleaseManifestEntries            = 4096
-	maxReleaseManifestPathBytes          = 1024
-	maxManifestVersionFieldBytes         = 128
+	maxReleaseManifestBytes      int64 = 4 << 20
+	maxReleaseManifestEntries          = 4096
+	maxReleaseManifestPathBytes        = 1024
+	maxManifestVersionFieldBytes       = 128
 )
 
 const ManifestValidationSchemaVersion = "1.0"
@@ -39,13 +41,13 @@ const (
 // be accepted by a future update/restore flow. The manifest itself is not
 // included in Artifacts because including its own digest would be recursive.
 type ReleaseManifest struct {
-	ManifestVersion string           `json:"manifest_version"`
-	AppVersion      string           `json:"app_version"`
-	SchemaVersion   string           `json:"schema_version"`
-	MinSchema      string           `json:"min_schema_version"`
-	MaxSchema      string           `json:"max_schema_version"`
-	Migrations     []ManifestFile   `json:"migrations"`
-	Artifacts      []ManifestFile   `json:"artifacts"`
+	ManifestVersion string         `json:"manifest_version"`
+	AppVersion      string         `json:"app_version"`
+	SchemaVersion   string         `json:"schema_version"`
+	MinSchema       string         `json:"min_schema_version"`
+	MaxSchema       string         `json:"max_schema_version"`
+	Migrations      []ManifestFile `json:"migrations"`
+	Artifacts       []ManifestFile `json:"artifacts"`
 }
 
 type ManifestFile struct {
@@ -61,8 +63,8 @@ type ManifestIssue struct {
 }
 
 type ManifestValidation struct {
-	Valid  bool             `json:"valid"`
-	Issues []ManifestIssue  `json:"issues,omitempty"`
+	Valid    bool            `json:"valid"`
+	Issues   []ManifestIssue `json:"issues,omitempty"`
 	Manifest ReleaseManifest `json:"manifest"`
 }
 
@@ -70,8 +72,8 @@ type ManifestValidation struct {
 // It never writes files, starts services, invokes PostgreSQL or mutates the
 // machine. A valid result is a prerequisite for, but is not evidence of, a
 // successful backup, restore, update or rollback.
-func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) ManifestValidation {
-	result := ManifestValidation{Valid: false}
+func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) (result ManifestValidation) {
+	result = ManifestValidation{Valid: false}
 	root = strings.TrimSpace(root)
 	if root == "" || !filepath.IsAbs(root) {
 		result.add(ManifestIssuePackageInvalid, "", "package root must be an absolute directory")
@@ -101,13 +103,23 @@ func ValidateReleaseManifest(root, manifestPath, currentSchemaVersion string) Ma
 		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "package root is unavailable")
 		return result
 	}
-	defer packageRoot.Close()
+	defer func() {
+		if err := packageRoot.Close(); err != nil {
+			result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest is unavailable")
+			result.Valid = false
+		}
+	}()
 	manifestFile, err := openRegularPackageFile(packageRoot, cleanManifestPath)
 	if err != nil {
 		result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest is unavailable")
 		return result
 	}
-	defer manifestFile.Close()
+	defer func() {
+		if err := manifestFile.Close(); err != nil {
+			result.add(ManifestIssuePackageInvalid, cleanManifestPath, "manifest is unavailable")
+			result.Valid = false
+		}
+	}()
 	manifestReader := &io.LimitedReader{R: manifestFile, N: maxReleaseManifestBytes + 1}
 	decoder := json.NewDecoder(manifestReader)
 	decoder.DisallowUnknownFields()
@@ -205,12 +217,16 @@ func validSHA256(value string) bool {
 	return err == nil
 }
 
-func validateManifestFile(root *os.Root, relativePath string, expected ManifestFile) error {
+func validateManifestFile(root *os.Root, relativePath string, expected ManifestFile) (returnErr error) {
 	file, err := openRegularPackageFile(root, relativePath)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("close package file: %w", err))
+		}
+	}()
 
 	digest := sha256.New()
 	size, err := io.Copy(digest, file)
@@ -226,7 +242,7 @@ func validateManifestFile(root *os.Root, relativePath string, expected ManifestF
 	return nil
 }
 
-func openRegularPackageFile(root *os.Root, relativePath string) (*os.File, error) {
+func openRegularPackageFile(root *os.Root, relativePath string) (fileResult *os.File, returnErr error) {
 	parts := strings.Split(relativePath, "/")
 	if root == nil || len(parts) == 0 {
 		return nil, os.ErrNotExist
@@ -235,7 +251,15 @@ func openRegularPackageFile(root *os.Root, relativePath string) (*os.File, error
 	currentOwned := false
 	defer func() {
 		if currentOwned {
-			_ = current.Close()
+			if err := current.Close(); err != nil {
+				returnErr = errors.Join(returnErr, fmt.Errorf("close package directory: %w", err))
+				if fileResult != nil {
+					if fileErr := fileResult.Close(); fileErr != nil {
+						returnErr = errors.Join(returnErr, fmt.Errorf("close package file: %w", fileErr))
+					}
+					fileResult = nil
+				}
+			}
 		}
 	}()
 	for _, segment := range parts[:len(parts)-1] {
@@ -248,9 +272,10 @@ func openRegularPackageFile(root *os.Root, relativePath string) (*os.File, error
 			return nil, err
 		}
 		if currentOwned {
-			if err := current.Close(); err != nil {
-				_ = next.Close()
-				return nil, err
+			previous := current
+			currentOwned = false
+			if err := previous.Close(); err != nil {
+				return nil, errors.Join(err, next.Close())
 			}
 		}
 		current = next
@@ -268,14 +293,13 @@ func openRegularPackageFile(root *os.Root, relativePath string) (*os.File, error
 	}
 	openedInfo, err := file.Stat()
 	if err != nil {
-		_ = file.Close()
-		return nil, err
+		return nil, errors.Join(err, file.Close())
 	}
 	if !os.SameFile(info, openedInfo) {
-		_ = file.Close()
-		return nil, os.ErrNotExist
+		return nil, errors.Join(os.ErrNotExist, file.Close())
 	}
-	return file, nil
+	fileResult = file
+	return fileResult, nil
 }
 
 func cleanManifestRelativePath(value string) (string, bool) {

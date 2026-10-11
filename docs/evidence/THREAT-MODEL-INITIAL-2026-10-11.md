@@ -152,3 +152,14 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
 - `WriteDiagnosticBundle` agora verifica o fechamento do ZIP também quando uma das entradas falha. Em qualquer erro, fecha o pacote e o arquivo temporário, tenta remover a cópia incompleta e combina falhas de limpeza com o erro original.
 - A mensagem pública continua sanitizada por `ErrDiagnosticOutput`; a falha de remoção mantém o caminho disponível via `securetemp.CleanupError`. O ZIP final só é publicado por rename depois de fechado e sincronizado.
 - Foi feita revisão estática, `gofmt` em `internal/installer/diagnostics.go` e `git diff --check`. Não foram executados testes. Nenhuma tela, regra financeira ou dado de produção foi alterado.
+
+## Complemento — falhas ao fechar recursos da validação do instalador
+
+**Data:** 11/10/2026
+
+**Tipo:** correção de caminhos de erro e revisão estática. Não foram executados testes.
+
+- A validação do manifesto lê arquivos em fluxo. Se o fechamento do arquivo, da pasta do pacote ou de uma pasta interna falhar, o pacote não é marcado como válido e nenhum arquivo aberto é devolvido ao chamador.
+- A leitura do journal não devolve estado se não conseguir fechar o arquivo. A geração do hash do pacote de diagnóstico propaga a falha ao fechar a leitura. No Windows, a verificação do token de administrador também falha com erro se não conseguir fechar o handle.
+- As mensagens públicas continuam genéricas; não incluem caminho completo nem detalhe do sistema operacional. O conteúdo do manifesto, journal e pacote não mudou.
+- A revisão foi estática, com `gofmt` e `git diff --check`. Não foram executados testes nem build Windows. Falhas de fechamento ainda precisam de cenário controlado antes de liberar o instalador.

@@ -76,7 +76,7 @@ func NewJournalStore(path string) (*JournalStore, error) {
 	return &JournalStore{path: clean}, nil
 }
 
-func (s *JournalStore) Load() (JournalState, error) {
+func (s *JournalStore) Load() (stateResult JournalState, returnErr error) {
 	if s == nil || s.path == "" {
 		return JournalState{}, ErrJournalInvalid
 	}
@@ -87,7 +87,12 @@ func (s *JournalStore) Load() (JournalState, error) {
 		}
 		return JournalState{}, fmt.Errorf("%w: read", ErrJournalCorrupt)
 	}
-	defer journalFile.Close()
+	defer func() {
+		if err := journalFile.Close(); err != nil {
+			returnErr = errors.Join(returnErr, fmt.Errorf("%w: close", ErrJournalCorrupt))
+			stateResult = JournalState{}
+		}
+	}()
 	limitedReader := &io.LimitedReader{R: journalFile, N: maxInstallerJournalBytes + 1}
 	decoder := json.NewDecoder(limitedReader)
 	var state JournalState

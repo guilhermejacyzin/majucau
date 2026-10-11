@@ -182,6 +182,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - O backlog tem 127 tarefas: 6 concluídas, 9 em andamento e 112 não iniciadas. Em andamento: BK-001 (0%), BK-006 (25%), BK-007 (20%), BK-013 (15%), BK-014 (10%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
 - Pela média simples, `(6 × 100% + 0% + 25% + 20% + 15% + 10% + 70% + 80% + 55% + 20%) ÷ 127 = 7,0%`; restam 93,0%. Não há prazo global confiável enquanto permanecem fontes reais, decisões operacionais e validações externas pendentes.
 
+### Auditoria parcial das ações e exportações — 11/10/2026
+
+- BK-012 avançou de 0% para 10% após conferir, em leitura somente, os controles atuais do painel e as rotas IPC/Wails disponíveis. A evidência separa os controles funcionais dos controles desativados ou ainda sem ação conectada.
+- A exportação de relatórios não tem rota no IPC/Wails atual. Embora a capacidade geral de Diretores exportarem relatórios esteja aprovada, os formatos, dados, filtros e permissões por tela continuam indefinidos em L-22/Q-13. A tela T11 permanece somente para consulta, conforme a decisão explícita.
+- Os métodos de configuração, sincronização e importação CSV foram inventariados, mas isso não comprova autorização por perfil; essa verificação permanece em BK-013. Nenhuma tela ou permissão foi alterada. Evidência: `docs/evidence/ACTION-EXPORT-STATIC-AUDIT-2026-10-11.md`.
+- O backlog tem 127 tarefas: 6 concluídas, 10 em andamento e 111 não iniciadas. Em andamento: BK-001 (0%), BK-006 (25%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (10%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
+- Pela média simples, `(6 × 100% + 0% + 25% + 20% + 10% + 15% + 10% + 70% + 80% + 55% + 20%) ÷ 127 = 7,1%`; restam 92,9%. Ainda não há prazo global confiável: faltam 111 tarefas não iniciadas e dependências de dados e aprovação.
+
 ## Dependências e ordem prática
 
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
@@ -512,7 +520,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-012 — Especificar ações e exportações já previstas
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
+**Situação:** Em andamento. **Evolução:** 10% (auditoria estática inicial dos controles atuais e das chamadas disponíveis, registrada em `docs/evidence/ACTION-EXPORT-STATIC-AUDIT-2026-10-11.md`. A matriz tela por tela, as rotas de exportação e os contratos de detalhe/atualização ainda faltam; para T13–T15, L-22/Q-13 continuam abertos). **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
 
 **Objetivo:** Especificar o que cada botão pode fazer.
 

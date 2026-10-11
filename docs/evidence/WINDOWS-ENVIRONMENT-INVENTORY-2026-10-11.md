@@ -26,6 +26,25 @@ Os valores livres de memória e disco variam com o uso. O nome do computador, co
 - A instalação local aprovada mantém banco, worker e aplicativo isolados, com serviço sob identidade própria, inicialização controlada e preflight. Este inventário não substitui validação em instalação limpa.
 - Para acesso compartilhado, o alvo continua sendo serviço central autenticado com PostgreSQL privado; os clientes não recebem acesso direto ao banco.
 
+## Conferência do instalador do Majucau — 2026-10-11
+
+- O instalador NSIS foi lido sem executá-lo. Ele valida a máquina e o pacote,
+  instala o aplicativo, o worker e o helper, e copia uma migration do banco.
+- O pacote atual não inclui os binários do PostgreSQL nem cria, configura,
+  inicia ou verifica um serviço PostgreSQL dedicado. A documentação do pacote
+  portátil também informa que o PostgreSQL local dedicado é uma dependência
+  externa quando esse fluxo for habilitado.
+- As ferramentas `initdb`, `pg_ctl` e `psql` existem na instalação PostgreSQL
+  já presente nesta máquina. Isso não comprova que o cluster ativo seja da
+  Majucau e não autoriza reutilizá-lo. O serviço encontrado segue intocado.
+- Assim, esta máquina pode apoiar desenvolvimento com uma instância separada,
+  mas o instalador ainda não entrega o requisito de instalação completa,
+  isolada e operável após reinicialização. Não foi criado outro cluster nem
+  serviço nesta verificação.
+- Nenhuma tela, regra financeira, banco, porta, serviço ou arquivo de dados foi
+  alterado. O achado foi acrescentado à pendência de BK-014; seu progresso
+  permanece em 15%.
+
 ## Situação de suporte do Windows
 
 - A Microsoft informa que o suporte regular do Windows 10 Home/Pro 22H2 terminou em 14/10/2025. Portanto, a versão observada neste computador não deve ser presumida como coberta por atualizações regulares de segurança em 2026.

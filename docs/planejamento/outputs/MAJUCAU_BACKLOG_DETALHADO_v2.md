@@ -208,6 +208,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - O backlog tem 127 tarefas: 6 concluídas, 10 em andamento e 111 não iniciadas. Em andamento: BK-001 (0%), BK-006 (25%), BK-007 (20%), BK-012 (10%), BK-013 (15%), BK-014 (15%), BK-025 (70%), BK-031 (80%), BK-041 (55%) e BK-067 (20%).
 - Pela média simples, `(6 × 100% + 0% + 25% + 20% + 10% + 15% + 15% + 70% + 80% + 55% + 20%) ÷ 127 = 7,2%`; restam 92,8%. Ainda não há prazo global confiável.
 
+### Conferência do pacote local do instalador — 11/10/2026
+
+- A inspeção somente para leitura do NSIS confirmou que ele valida o pacote e instala o aplicativo, worker e helper, além de copiar a migration inicial. O pacote não contém PostgreSQL nem provisiona, inicia ou verifica um serviço PostgreSQL dedicado.
+- As ferramentas PostgreSQL presentes no computador pertencem à instalação já existente, que não foi presumida exclusiva e continua intocada. Não foi criado cluster/serviço adicional nesta execução.
+- Esta evidência identifica uma dependência para o protótipo instalado completo: o provisionamento isolado do banco precisa entrar no caminho suportado de instalação e passar por validação de ciclo de vida/reboot. Ela não autoriza reaproveitar o serviço atual nem muda as telas ou regras de negócio/financeiras.
+- BK-014 continua em 15%; documentar o estado do instalador melhora o inventário, mas o critério de aceite da proposta operacional ainda não foi atendido. Evidência: `docs/evidence/WINDOWS-ENVIRONMENT-INVENTORY-2026-10-11.md`.
+- O total e a média do backlog não mudam: 6 concluídas, 11 em andamento e 110 não iniciadas; estimativa simples de 7,4% concluído e 92,6% restante. Não há prazo global confiável.
+
 IDs e grupos temáticos foram preservados; sua ordem numérica não é cronograma. As dependências de cada tarefa governam a execução. Em particular, a projeção de insumos BK-094 precede a recomendação BK-082/BK-084.
 
 1. Transcrever contratos fechados e localizar referências; desenhar domínios, acesso, persistência e operação local.

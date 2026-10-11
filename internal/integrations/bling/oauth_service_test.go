@@ -252,12 +252,12 @@ func TestBlingOAuthDisconnectWaitsForInFlightAuthorization(t *testing.T) {
 		if strings.HasSuffix(req.URL.Path, "/oauth/token") {
 			close(tokenRequestStarted)
 			<-releaseTokenExchange
-			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(`{"access_token":"access-after-login","refresh_token":"refresh-after-login","token_type":"Bearer","scope":"read_finance","expires_in":21600}`)), Header: make(http.Header)}, nil
+			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(`{"access_token":"test-only-access","refresh_token":"test-only-refresh","token_type":"Bearer","scope":"read_finance","expires_in":21600}`)), Header: make(http.Header)}, nil
 		}
 		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(`{"data":[],"pagination":{"page":1,"limit":1,"total":0}}`)), Header: make(http.Header)}, nil
 	})
 	store := &memorySecretStore{values: map[string][]byte{}}
-	initial, err := json.Marshal(blingSecretBundle{ClientSecret: "client-secret-fixture"})
+	initial, err := json.Marshal(blingSecretBundle{ClientSecret: "client-secret-fixture"}) // test-only fixture
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -91,6 +91,9 @@ scripts/                 bootstrap, validação e build
 
 ## Desenvolvimento local
 
+Antes de alterar o projeto, leia [Como contribuir](CONTRIBUTING.md),
+`AGENTS.md` e as decisões aprovadas no `G0-DECISION-REGISTER.md`.
+
 Pré-requisitos: Windows 10/11 x64, Go 1.26.9, Node.js 24.x, Wails CLI 2.13.0, `sqlc` 1.31.1, WebView2 Runtime e PostgreSQL descartável para testes reais de migration.
 
 ```powershell

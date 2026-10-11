@@ -54,6 +54,14 @@ Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. P
 - Os números 3,9% e 4,2% respondem perguntas diferentes: 3,9% é a proporção de tarefas totalmente concluídas; 4,2% inclui o avanço parcial registrado nas tarefas em andamento.
 - Prazo global continua sem estimativa confiável: BK-001 aguarda materiais/decisão da responsável, outros módulos dependem de fontes e aprovações, e a revisão técnica das 127 tarefas ainda não terminou.
 
+### Recontagem após auditoria de BK-025 — 11/10/2026
+
+- BK-025 foi revisada contra `README.md`, `.gitignore`, `AGENTS.md`, `.github/workflows/ci.yml` e a nova `CONTRIBUTING.md`. A base do repositório e as instruções estão disponíveis; a proteção efetiva de branches e a exigência de revisores no GitHub ainda não foram confirmadas. BK-025 passa a `Em andamento`, com estimativa de 60%; nenhum ajuste em tela ou regra de negócio foi feito.
+- O backlog continua com 127 tarefas: 5 concluídas, 5 em andamento e 117 não iniciadas. As tarefas em andamento são BK-001 (0%), BK-006 (10%), BK-007 (10%), BK-013 (15%) e BK-025 (60%).
+- Pela média simples configurada no backlog, o indicador passa a `(5 × 100% + 0% + 10% + 10% + 15% + 60%) ÷ 127 = 4,7%`; restam 95,3%. É uma estimativa do rastreador, não uma medição de esforço nem prova de prontidão para produção.
+- Seis tarefas tiveram auditoria atual concluída: BK-000, BK-002, BK-003, BK-004, BK-005 e BK-025. BK-001 aguarda os materiais originais ou a decisão da responsável; 120 tarefas ainda aguardam revisão individual.
+- Prazo global continua sem estimativa confiável, pois ainda faltam essa revisão, fontes reais, validações e decisões operacionais.
+
 ### Revalidação do GitHub — 11/10/2026
 
 - BK-002 foi revalidada em modo de leitura. `main` continua em `39f8630`; a branch `codex/majucau-artifact-consolidation` está em `1d90a0a`, 206 commits à frente e nenhum atrás; há cinco PRs abertos e nenhuma issue aberta. Evidência: `docs/evidence/GITHUB-REPOSITORY-STATE-2026-10-11.md`.
@@ -704,7 +712,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-025 — Preparar o repositório e as convenções do projeto
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 60% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` agora explica o fluxo seguro de mudanças, commits e evidências. Ainda falta conferir e configurar, se necessário, as proteções reais de branch e revisão no GitHub). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Criar uma base reproduzível para a equipe.
 
@@ -723,6 +731,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Dependências:** BK-002, BK-017, BK-015
 
 **Fonte:** GitHub vazio; BK arquitetura
+
+**Evidência da auditoria de 2026-10-11:** `README.md`, `.gitignore`, `AGENTS.md`, `.github/workflows/ci.yml` e `CONTRIBUTING.md`. `git ls-files` não encontrou caches, artefatos gerados, arquivos de ambiente ou chaves nos caminhos pesquisados. A configuração de revisão/permissões do GitHub não é comprovada pelos arquivos locais e permanece pendente de verificação no repositório remoto.
 
 ### BK-026 — Preparar o ambiente de desenvolvimento local
 

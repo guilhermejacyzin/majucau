@@ -49,8 +49,8 @@ function Write-MajucauArtifactManifest {
         throw 'O inventário só pode ser gravado em artifacts/MANIFEST.txt.'
     }
 
-    Assert-MajucauProjectPath -ProjectRoot $projectRootFull -Path $artifactRoot -ExpectedType Directory
-    Assert-MajucauProjectPath -ProjectRoot $projectRootFull -Path $manifestFull -ExpectedType File
+    SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRootFull -Path $artifactRoot -ExpectedType Directory
+    SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRootFull -Path $manifestFull -ExpectedType File
 
     $encoding = [System.Text.UTF8Encoding]::new($false)
     $writer = [System.IO.StreamWriter]::new($manifestFull, $false, $encoding)
@@ -66,7 +66,7 @@ function Write-MajucauArtifactManifest {
             if (-not (Test-Path -LiteralPath $directory -PathType Container)) {
                 continue
             }
-            Assert-MajucauProjectPath -ProjectRoot $projectRootFull -Path $directory -ExpectedType Directory
+            SafeCleanup\Assert-MajucauProjectPath -ProjectRoot $projectRootFull -Path $directory -ExpectedType Directory
             Write-MajucauManifestDirectory -Directory $directory -ArtifactRoot $artifactRoot -Writer $writer
         }
     }

@@ -163,3 +163,15 @@ O mapa está mais detalhado, mas SEC-R01, SEC-R02, SEC-R03, SEC-R07, SEC-R08, SE
 - A leitura do journal não devolve estado se não conseguir fechar o arquivo. A geração do hash do pacote de diagnóstico propaga a falha ao fechar a leitura. No Windows, a verificação do token de administrador também falha com erro se não conseguir fechar o handle.
 - As mensagens públicas continuam genéricas; não incluem caminho completo nem detalhe do sistema operacional. O conteúdo do manifesto, journal e pacote não mudou.
 - A revisão foi estática, com `gofmt` e `git diff --check`. Não foram executados testes nem build Windows. Falhas de fechamento ainda precisam de cenário controlado antes de liberar o instalador.
+
+## Complemento — testes automatizados do pacote do instalador
+
+**Data:** 11/10/2026
+
+**Tipo:** teste automatizado local no Windows; não é uma homologação de instalação em máquina limpa.
+
+- Comando executado sem reutilizar resultado anterior do teste: `go test -count=1 ./internal/installer`.
+- Resultado: **passou** (`ok majucau.local/financial-intelligence/internal/installer 0.400s`), usando Go `go1.26.9 windows/amd64`.
+- O cache de compilação e os módulos do Go foram direcionados temporariamente para `artifacts/cache` e removidos depois pelo módulo `scripts/SafeCleanup.psm1`; a remoção foi confirmada.
+- O teste valida os cenários automatizados já existentes no pacote. Ele não comprova instalação/atualização em VM limpa nem injeta falhas de fechamento de arquivo, token, permissão ou disco. Esses ensaios continuam pendentes.
+- Nenhuma tela, regra financeira, fórmula, permissão ou arquivo de dados de produto foi alterado nesta validação.

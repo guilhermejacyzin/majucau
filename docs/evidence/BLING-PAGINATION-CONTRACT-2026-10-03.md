@@ -49,3 +49,15 @@
 - Antes de persistir uma página, o sincronizador exige essa confirmação. Se ela faltar, o lote registra `BLING_API_PAGINATION_UNKNOWN`, desfaz a gravação e mantém o cursor anterior. Uma resposta sem metadados deixa de poder parecer uma sincronização completa.
 - Testes locais cobrem resposta sem `pagination` e resposta que traz somente página/limite. A CI `38121237550` passou nos jobs Windows e PostgreSQL, incluindo o teste que verifica que páginas RAW válidas e cursor não mudam quando a resposta não confirma a última página.
 - Esta proteção não define o contrato real de paginação e não cria retomada incremental. A homologação com a conta e a documentação permanece pendente; não inferir fim de lista por página curta/vazia.
+
+## Conferência dos filtros dos dois endpoints — 2026-10-11
+
+Foi conferida novamente a [OpenAPI oficial do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), incluindo os dois endpoints usados pelo sincronizador:
+
+- `GET /contas/receber` documenta `pagina` e `limite`; os filtros de data são `tipoFiltroData` (`E` emissão, `V` vencimento, `R` recebimento) junto com `dataInicial`/`dataFinal`. A situação usa `situacoes[]`. A resposta 200 descreve `data` como lista, sem metadado documentado de última página.
+- `GET /contas/pagar` documenta `pagina` e `limite`, filtros distintos de emissão, vencimento e pagamento, e situação singular `situacao`. A resposta 200 também descreve `data` como lista, sem metadado documentado de última página.
+- A documentação não apresenta filtros de `dataAlteracao` para esses dois endpoints. A existência genérica de filtros com esse nome em outros recursos não homologa seu uso aqui.
+
+O cliente atual constrói os filtros dos dois endpoints por uma função compartilhada (`internal/integrations/bling/api_client.go`). Os nomes enviados para Contas a Receber não correspondem aos parâmetros de data e situação publicados na OpenAPI; Contas a Pagar tem parâmetros próprios. A tela atual seleciona Vencimento, Recebimento ou Pagamento e informa que a execução lê os dois grupos. Não está definido se, ao escolher Recebimento ou Pagamento, a execução deve consultar somente o grupo correspondente ou também consultar o outro grupo sem filtro de período. Essa escolha pode mudar o conjunto de lançamentos importados.
+
+Nenhum filtro foi alterado. A sincronização mantém a proteção contra resposta sem confirmação de última página. Antes de corrigir o mapeamento dos filtros, é necessária confirmação do comportamento esperado para os dois grupos. Telas aprovadas e regras financeiras permanecem intactas.

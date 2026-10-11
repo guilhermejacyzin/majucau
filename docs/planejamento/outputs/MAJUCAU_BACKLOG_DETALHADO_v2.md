@@ -304,6 +304,14 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - As APIs públicas de criação e remoção por `string` foram removidas; o teste existente da ACL Windows agora usa `Workspace`. A compilação `go build ./internal/securetemp ./internal/backup ./internal/integrations/csvstream` passou em Windows após a migração. O cache temporário foi removido com `SafeCleanup`; nenhum teste foi executado.
 - BK-024 permanece em 30% até validação dos fluxos e controles em ambiente isolado. O projeto permanece em 7,5% concluído e 92,5% restante. Telas e regras financeiras não foram alteradas.
 
+### Recontagem após proteção de ACL do cofre DPAPI — 11/10/2026
+
+- `NewDPAPIStore` agora falha com segurança se a pasta pai não tiver DACL privada e valida/aplica ACL protegida na pasta do cofre, entropia, segredos e temporários. Também rejeita reparse points, serializa as operações e zera buffers cifrados após o uso.
+- `go test ./internal/security`, `go vet ./internal/security` e `git diff --check` passaram no Windows de desenvolvimento; o teste conferiu diretamente as ACLs da pasta e dos arquivos. Isso não comprova o comportamento sob a conta do serviço nem numa instalação limpa.
+- BK-024 avança de 30% para 35%, mas permanece em andamento. Ainda faltam provisionar a pasta pai no instalador, registrar/configurar o serviço e a credencial do banco, testar sob a identidade real do worker, cobrir falhas e validar em VM limpa, rede e perfis.
+- O backlog permanece com 127 tarefas: 6 concluídas, 11 em andamento e 110 não iniciadas. A soma simples estimada passa a `(6 × 100% + 0% + 30% + 20% + 10% + 15% + 15% + 35% + 70% + 80% + 60% + 20%) ÷ 127 = 7,5%`; restam 92,5%. Não há prazo global confiável.
+- Nenhuma tela, regra financeira, fórmula ou dado persistido foi alterado. A estrutura enviada da calculadora continua sendo a referência aprovada.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -904,7 +912,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-024 — Planejar segurança e proteção dos dados
 
-**Situação:** Em andamento. **Evolução:** 30%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Segurança + Arquitetura.
+**Situação:** Em andamento. **Evolução:** 35%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Segurança + Arquitetura.
 
 **Objetivo:** Identificar falhas possíveis antes de expor o sistema.
 
@@ -922,6 +930,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Evidência atual:** [Mapa inicial de ativos, riscos, controles, lacunas e verificações](../../evidence/THREAT-MODEL-INITIAL-2026-10-11.md). Inclui revisões estáticas e verificações no instalador, backups, Named Pipe, DPAPI, temporários, diagnósticos, mutex e propagação de erros no encerramento de importações em streaming. A busca estática adicional confirma leitura de CSV por linha, decodificação direta das respostas do Bling com limite de corpo/página e percurso de linhas do dashboard/fila; as exceções de leitura completa têm limites explícitos. A revisão de `MkdirTemp`, `CreateTemp`, remoção recursiva e remoção de arquivos encontrou os fluxos de dados grandes usando workspace privado; remoção recursiva de produção fica concentrada na API de `securetemp`. Arquivos temporários fora desses workspaces são controles limitados ou a troca atômica do DPAPI. Uma revisão separada confirmou que o NSIS atual não registra o serviço nem configura a ACL da pasta persistente de secrets, embora o código DPAPI dependa dessa proteção; esse provisionamento precisa ser implementado junto e validado em VM. Essas análises estáticas não provam ACL efetiva nem recuperação em falha de disco. Os testes com PostgreSQL descartável passaram nas [CI #403](https://github.com/guilhermejacyzin/majucau/actions/runs/38135368926) e [CI #408](https://github.com/guilhermejacyzin/majucau/actions/runs/38138263712); a revisão anterior do Named Pipe passou na [CI #406](https://github.com/guilhermejacyzin/majucau/actions/runs/38137190197). A CI #410 passou nos quatro jobs, com testes Go, `go vet`, análise de vulnerabilidades, builds Windows do desktop/worker, SBOM, smoke do instalador, verificação do backlog e consolidação de outputs. Os testes locais de `securetemp` e `csvstream` também passaram. Ainda faltam outras falhas controladas, fechar o mapa de riscos e validar instalação/atualização em VM limpa, disco/ACL, rede e acesso remoto por perfil.
 
 **Impacto:** Protege os dados financeiros e operacionais.
+
+**Evidência adicionada em 11/10/2026:** O cofre DPAPI aplica e valida DACLs protegidas na pasta e nos arquivos, com teste Windows e `go vet` aprovados sob a identidade de desenvolvimento. O instalador ainda não provisiona a pasta pai nem a identidade/credencial do worker; portanto, SEC-R03 continua bloqueador e BK-024 segue parcial.
 
 **Dependências:** BK-013, BK-014, BK-019
 

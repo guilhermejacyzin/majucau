@@ -11,7 +11,7 @@ import (
 )
 
 func TestDPAPIStoreRoundTripAndPersistence(t *testing.T) {
-	store, err := NewDPAPIStore(t.TempDir())
+	store, err := newTestDPAPIStore(t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,12 @@ func TestDPAPIStoreRoundTripAndPersistence(t *testing.T) {
 
 func TestDPAPIStoreRejectsOversizedEntropyAndSecretFiles(t *testing.T) {
 	ctx := context.Background()
-	badEntropyDir := t.TempDir()
+	badEntropyRoot := t.TempDir()
+	prepareTestSecretDirectory(t, badEntropyRoot)
+	badEntropyDir := filepath.Join(badEntropyRoot, "vault")
+	if err := os.Mkdir(badEntropyDir, 0700); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(filepath.Join(badEntropyDir, ".entropy"), bytes.Repeat([]byte{0xA5}, dpapiEntropyBytes+1), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +77,7 @@ func TestDPAPIStoreRejectsOversizedEntropyAndSecretFiles(t *testing.T) {
 		t.Fatal("entropy file larger than its fixed 32-byte format must be rejected")
 	}
 
-	store, err := NewDPAPIStore(t.TempDir())
+	store, err := newTestDPAPIStore(t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,5 +89,45 @@ func TestDPAPIStoreRejectsOversizedEntropyAndSecretFiles(t *testing.T) {
 	}
 	if _, err := store.Get(ctx, "bling_test"); err == nil {
 		t.Fatal("oversized encrypted secret file must be rejected before DPAPI processing")
+	}
+}
+
+func TestDPAPIStoreRestrictsDirectoryAndSecretFiles(t *testing.T) {
+	store, err := newTestDPAPIStore(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Put(context.Background(), "bling_test", []byte("test-only-secret")); err != nil {
+		t.Fatal(err)
+	}
+	for _, target := range []struct {
+		path      string
+		directory bool
+	}{
+		{path: store.dir, directory: true},
+		{path: filepath.Join(store.dir, ".entropy")},
+		{path: store.path("bling_test")},
+	} {
+		if err := validatePrivateSecretACL(target.path, target.directory, store.userSID); err != nil {
+			t.Errorf("secret path is not restricted: %v", err)
+		}
+	}
+}
+
+func newTestDPAPIStore(t *testing.T) (*DPAPIStore, error) {
+	t.Helper()
+	root := t.TempDir()
+	prepareTestSecretDirectory(t, root)
+	return NewDPAPIStore(filepath.Join(root, "vault"))
+}
+
+func prepareTestSecretDirectory(t *testing.T, path string) {
+	t.Helper()
+	userSID, err := currentProcessSID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := setPrivateSecretACL(path, true, userSID); err != nil {
+		t.Fatalf("prepare private test directory: %v", err)
 	}
 }

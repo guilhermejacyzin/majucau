@@ -10,6 +10,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"syscall"
 	"unsafe"
 
@@ -27,16 +29,33 @@ const (
 type DPAPIStore struct {
 	dir     string
 	entropy []byte
+	userSID string
+	mu      sync.Mutex
 }
 
 func NewDPAPIStore(dir string) (*DPAPIStore, error) {
-	if dir == "" {
+	if strings.TrimSpace(dir) == "" {
 		return nil, errors.New("secret directory is required")
 	}
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	if !filepath.IsAbs(dir) {
+		return nil, errors.New("secret directory must be absolute")
+	}
+	dir = filepath.Clean(dir)
+	userSID, err := currentProcessSID()
+	if err != nil {
+		return nil, errors.New("current Windows identity is unavailable for the secret vault")
+	}
+	if err := preparePrivateSecretDirectory(dir, userSID); err != nil {
 		return nil, err
 	}
 	entropyPath := filepath.Join(dir, ".entropy")
+	if _, statErr := os.Lstat(entropyPath); statErr == nil {
+		if err := preparePrivateSecretFile(entropyPath, userSID); err != nil {
+			return nil, err
+		}
+	} else if !os.IsNotExist(statErr) {
+		return nil, errors.New("secret vault entropy file is unavailable")
+	}
 	e, err := readBoundedSecretFile(entropyPath, dpapiEntropyBytes)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err
@@ -46,8 +65,8 @@ func NewDPAPIStore(dir string) (*DPAPIStore, error) {
 		if _, err := rand.Read(candidate); err != nil {
 			return nil, err
 		}
-		// The installer must apply the worker-service ACL to this file and its
-		// directory. It is persisted so a worker restart can decrypt its vault.
+		// The directory is already restricted to this process identity, SYSTEM,
+		// and Administrators; the entropy file inherits no broader access.
 		file, createErr := os.OpenFile(entropyPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 		if createErr == nil {
 			if _, writeErr := file.Write(candidate); writeErr != nil {
@@ -60,10 +79,16 @@ func NewDPAPIStore(dir string) (*DPAPIStore, error) {
 			if createErr != nil {
 				return nil, errors.Join(createErr, securetemp.RemoveFile(entropyPath))
 			}
+			if aclErr := preparePrivateSecretFile(entropyPath, userSID); aclErr != nil {
+				return nil, errors.Join(aclErr, securetemp.RemoveFile(entropyPath))
+			}
 			e = candidate
 		} else if os.IsExist(createErr) {
 			// Another worker initialization won the race. Both instances must use
 			// the persisted winner so they never encrypt with different entropy.
+			if err := preparePrivateSecretFile(entropyPath, userSID); err != nil {
+				return nil, err
+			}
 			e, err = readBoundedSecretFile(entropyPath, dpapiEntropyBytes)
 			if err != nil {
 				return nil, err
@@ -75,10 +100,12 @@ func NewDPAPIStore(dir string) (*DPAPIStore, error) {
 	if len(e) != dpapiEntropyBytes {
 		return nil, errors.New("invalid DPAPI entropy")
 	}
-	return &DPAPIStore{dir: dir, entropy: e}, nil
+	return &DPAPIStore{dir: dir, entropy: e, userSID: userSID}, nil
 }
 func (s *DPAPIStore) path(ref string) string { return filepath.Join(s.dir, ref+".dpapi") }
 func (s *DPAPIStore) Put(_ context.Context, ref string, value []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if err := ValidateSecretRef(ref); err != nil {
 		return err
 	}
@@ -89,16 +116,32 @@ func (s *DPAPIStore) Put(_ context.Context, ref string, value []byte) error {
 	if err != nil {
 		return err
 	}
-	return atomicWrite(s.path(ref), blob, 0600)
+	defer zeroBytes(blob)
+	path := s.path(ref)
+	if _, err := os.Lstat(path); err == nil {
+		if err := preparePrivateSecretFile(path, s.userSID); err != nil {
+			return err
+		}
+	} else if !os.IsNotExist(err) {
+		return errors.New("secret vault entry is unavailable")
+	}
+	return atomicWrite(path, blob, 0600, s.userSID)
 }
 func (s *DPAPIStore) Get(_ context.Context, ref string) ([]byte, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if err := ValidateSecretRef(ref); err != nil {
 		return nil, err
 	}
-	b, err := readBoundedSecretFile(s.path(ref), maxDPAPISecretBlobBytes)
+	path := s.path(ref)
+	if err := preparePrivateSecretFile(path, s.userSID); err != nil {
+		return nil, err
+	}
+	b, err := readBoundedSecretFile(path, maxDPAPISecretBlobBytes)
 	if err != nil {
 		return nil, err
 	}
+	defer zeroBytes(b)
 	return unprotect(b, s.entropy)
 }
 
@@ -127,11 +170,26 @@ func readBoundedSecretFile(path string, limit int) ([]byte, error) {
 	return data, nil
 }
 
+func zeroBytes(value []byte) {
+	for index := range value {
+		value[index] = 0
+	}
+}
+
 func (s *DPAPIStore) Delete(_ context.Context, ref string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if err := ValidateSecretRef(ref); err != nil {
 		return err
 	}
-	err := os.Remove(s.path(ref))
+	path := s.path(ref)
+	if err := preparePrivateSecretFile(path, s.userSID); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	err := os.Remove(path)
 	if os.IsNotExist(err) {
 		return nil
 	}
@@ -155,7 +213,7 @@ const (
 	moveFileWriteThrough    = 0x8
 )
 
-func atomicWrite(path string, value []byte, mode os.FileMode) (returnErr error) {
+func atomicWrite(path string, value []byte, mode os.FileMode, userSID string) (returnErr error) {
 	temporary, err := os.CreateTemp(filepath.Dir(path), ".secret-*.tmp")
 	if err != nil {
 		return err
@@ -171,6 +229,9 @@ func atomicWrite(path string, value []byte, mode os.FileMode) (returnErr error) 
 			returnErr = errors.Join(returnErr, securetemp.RemoveFile(temporaryPath))
 		}
 	}()
+	if err := preparePrivateSecretFile(temporaryPath, userSID); err != nil {
+		return err
+	}
 
 	if err := temporary.Chmod(mode); err != nil {
 		return err

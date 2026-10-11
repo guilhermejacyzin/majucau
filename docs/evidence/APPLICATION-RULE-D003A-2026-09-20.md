@@ -182,7 +182,13 @@ crítica” e “Recebimentos previstos da Nuvemshop”; a fórmula atual soma e
 dois valores antes de descontar a reserva. A planilha não contém uma lista de
 saldos por dia até 60 dias: o saldo da pior semana é uma entrada única.
 
-A responsável confirmou que a estrutura enviada deve permanecer, mas a
-participação da Nuvemshop na soma não está clara frente à correção verbal
-anterior. Foi solicitada confirmação antes de qualquer implementação. Nenhuma
-tela, planilha ou regra financeira foi alterada nesta conferência.
+A responsável confirmou que a estrutura da calculadora enviada deve
+permanecer. Essa confirmação preserva a apresentação aprovada; ela não aprova
+a soma separada de recebimentos da Nuvemshop. Prevalece a regra financeira já
+registrada em 10/10: usar o menor saldo diário do fluxo consolidado em D0–D+60,
+sem somar Nuvemshop novamente. A fonte e o cálculo pertencem ao fluxo
+consolidado aprovado; a conexão dos dados reais à calculadora ainda está
+pendente de implementação e comprovação. Nenhuma tela, planilha ou regra
+financeira foi alterada nesta conferência.
+
+**Situação:** Estrutura confirmada; integração técnica pendente.

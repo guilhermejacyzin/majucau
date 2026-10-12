@@ -23,17 +23,18 @@ Os perfis `ACCOUNTING` e `VIEWER` ficam fora da versão 1. A conta compartilhada
 
 ## Situação técnica verificada
 
-- As migrations existentes registram `DASHBOARD_READ`, `INTEGRATION_READ`, `INTEGRATION_SYNC` e `BACKUP_EXPORT` para `DIRECTOR`; a migration `000003_director_report_export_permission.up.sql` acrescenta `REPORT_EXPORT` para `ADMIN` e `DIRECTOR`.
-- `INTEGRATION_SYNC` ainda descreve iniciar **ou cancelar** uma sincronização. Essa descrição não será usada para presumir a aprovação de cancelamento por Diretores.
+- As migrations `000001`–`000003` registravam perfis além dos aprovados e juntavam iniciar/cancelar em `INTEGRATION_SYNC`. A migration aditiva `000004_v1_access_catalog_alignment.up.sql` limita o catálogo da versão 1 a `ADMIN` e `DIRECTOR`, retira as permissões dos perfis fora do escopo e separa `INTEGRATION_CANCEL`.
+- `DIRECTOR` mantém somente consulta, sincronização/importação CSV aprovada, backup e exportação de relatórios. `INTEGRATION_CANCEL` fica associado somente a `ADMIN` enquanto a permissão de cancelamento dos Diretores continuar sem aprovação.
+- A migration `000004` falha sem alterar os dados se ainda houver usuário vinculado a `FINANCE`, `ACCOUNTING` ou `VIEWER`; ela não promove nem reatribui contas automaticamente.
 - A leitura estática do worker não encontrou checagem de perfil/permissão em cada comando. Portanto, o conteúdo da migration não comprova que as ações estejam protegidas durante a execução.
 - O login próprio do Majucau foi escolhido, mas o mecanismo de sessão, MFA, recuperação, provisionamento e identidade para hospedagem continuam pendentes. A estrutura local vinculada ao SID do Windows não comprova autenticação na hospedagem.
 
 ## Próximo passo
 
-Confirmar se Diretores podem cancelar uma sincronização em andamento. Depois, especificar e implementar a autenticação/provisionamento e aplicar cada permissão no serviço/worker, com auditoria de ações permitidas e negadas. Nenhuma permissão foi alterada nesta atualização.
+Confirmar se Diretores podem cancelar uma sincronização em andamento. Depois, implementar login/provisionamento e aplicar cada permissão no serviço/worker, com auditoria de ações permitidas e negadas. A migration organiza o catálogo aprovado, mas não protege comandos até o enforcement existir. Nenhuma tela ou regra financeira foi alterada.
 
 ## Fontes
 
 - `G0-DECISION-REGISTER.md` — perfis de acesso, conta compartilhada e importação CSV.
-- `database/migrations/000001_init.up.sql` e `database/migrations/000003_director_report_export_permission.up.sql`.
+- `database/migrations/000001_init.up.sql`, `database/migrations/000003_director_report_export_permission.up.sql` e `database/migrations/000004_v1_access_catalog_alignment.up.sql`.
 - `docs/evidence/ACCESS-CONTROL-AUDIT-2026-10-11.md`.

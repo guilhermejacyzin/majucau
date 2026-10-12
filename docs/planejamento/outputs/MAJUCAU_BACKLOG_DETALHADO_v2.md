@@ -371,6 +371,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A alteração ficou restrita ao CSS dessa faixa e reduz o tamanho dos cards para caberem juntos. A tabela da DRE, o alerta de pendências, as demais partes aprovadas da tela e as regras financeiras não foram alteradas. Todos os cards continuam somente para consulta; valores sem fonte validada permanecem indisponíveis.
 - A etapa de disposição visual foi implementada. A compilação `npm run build` (TypeScript + Vite) passou e a prévia local foi inspecionada visualmente a 900 px: os cards aparecem em três colunas e os valores sem fonte continuam indisponíveis. A faixa de oito colunas em telas acima de 1360 px está configurada no CSS, mas não foi verificada por captura nessa largura. O output e o cache temporários foram removidos e registrados localmente. Nenhum teste de produto foi executado. BK-067 permanece estimada em 20% (80% restante), pois a DRE própria, integração Bling, mapeamento contábil e conciliação ainda não foram concluídos. A média simples do backlog permanece em 8,6% concluído (91,4% restante); não há prazo total confiável. `git diff --check` passou.
 
+### Alinhamento do catálogo de acesso da versão 1 — 12/10/2026
+
+- A nova migration `000004_v1_access_catalog_alignment.up.sql` aplica ao catálogo do banco a matriz aprovada: somente `ADMIN` e `DIRECTOR`; os perfis antigos `FINANCE`, `ACCOUNTING` e `VIEWER` são removidos junto com suas permissões. Se algum usuário ainda estiver ligado a um desses perfis, a migration falha com mensagem explícita, sem promover ou reatribuir a conta.
+- A migration separa `INTEGRATION_CANCEL` de `INTEGRATION_SYNC`; cancelar fica exclusivo para `ADMIN` até haver aprovação para Diretores. A sincronização e a importação dos CSVs aprovados continuam na capacidade de Diretor. Isso alinha o catálogo, mas ainda não aplica autorização nos comandos do worker.
+- BK-013 avança de 15% para 20% (80% restante). O backlog permanece com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (25%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (68%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 25% + 20% + 15% + 35% + 70% + 85% + 68% + 5% + 20%) ÷ 127 = 8,6%`; restam 91,4%. É estimativa do backlog, não prontidão; não há prazo global confiável. A implementação e validação do login, sessão e enforcement do worker continuam pendentes. Nenhuma tela ou regra financeira foi alterada.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -709,7 +716,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-013 — Especificar perfis, capacidades, vigência e auditoria
 
-**Situação:** Em andamento. **Evolução:** 15% (estimativa documental: schema, permissões iniciais, caminho de autorização do worker e capacidades aprovadas; login próprio do Majucau, endereços por perfil e uso aprovado de uma conta compartilhada para Diretores, com limitação de auditoria registrada. A migration `000003_director_report_export_permission.up.sql` inclui `REPORT_EXPORT` para `ADMIN` e `DIRECTOR` e foi aplicada pela CI `38113352327`. A migration ainda usa `windows_sid` e a autorização não é aplicada no worker. A importação manual de CSV do Bling e da Nuvem Pago foi aprovada para Diretores como parte de `INTEGRATION_SYNC`; MFA, sessão, recuperação, provisionamento e enforcement continuam pendentes). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Segurança.
+**Situação:** Em andamento. **Evolução:** 20% (estimativa; a matriz aprovada para a versão 1 agora está alinhada ao catálogo do banco por `000004_v1_access_catalog_alignment.up.sql`: somente `ADMIN` e `DIRECTOR`; perfis antigos fora do escopo são retirados com falha segura se houver usuário vinculado; cancelamento da sincronização fica separado e exclusivo para `ADMIN`. Login próprio, atribuição de identidade, MFA, sessão, recuperação e provisionamento continuam pendentes. `system_users` ainda usa `windows_sid`, e o worker não aplica as permissões por comando; a migration alinha o catálogo, não autentica nem protege ações). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Segurança.
 
 **Objetivo:** Definir quem pode consultar ou alterar cada recurso.
 

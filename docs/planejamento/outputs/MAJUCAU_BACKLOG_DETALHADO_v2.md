@@ -3667,3 +3667,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O protótipo permanece aberto para conferência; a limpeza dos processos e arquivos de execução ainda depende de fechar a janela e verificar o encerramento.
 - BK-026 permanece em 55% (45% restante): revisão visual/funcional, encerramento seguro e máquina limpa continuam pendentes. Projeto: 9,1% concluído, 90,9% restante, sem prazo total confiável. A planilha e suas fórmulas não mudaram.
 - Nenhuma tela aprovada, regra financeira ou regra de negócio foi alterada. Não foram executados testes do produto.
+
+### Rechecagem da paginação oficial do Bling — 12/10/2026
+
+- A OpenAPI pública atual de `GET /contas/receber` confirma os parâmetros `pagina` e `limite`, mas a resposta publicada descreve apenas `data[]`; não documenta marcador de última página, total de páginas ou cursor incremental. A rota documenta filtros `tipoFiltroData`, `dataInicial` e `dataFinal`, mas não `dataAlteracaoInicial`/`Final`.
+- A captura recebida da responsável confirma que a navegação no Chrome está permitida para `developer.bling.com.br` e `www.bling.com.br`; o registro antigo de bloqueio do navegador foi atualizado. Nenhuma chamada autenticada nem leitura de dados financeiros reais foi feita nesta conferência.
+- Sem uma resposta autenticada ou um contrato oficial para concluir a lista, o adapter continua falhando com segurança quando não consegue provar o fim. Não alterei esse comportamento, os filtros, as telas nem regras financeiras.
+- BK-041 permanece em 69% (31% restante); o projeto permanece em 9,1% (90,9% restante). Não há prazo total confiável. Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.

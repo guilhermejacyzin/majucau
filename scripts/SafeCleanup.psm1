@@ -145,4 +145,4 @@ function Remove-MajucauProjectFile {
     Remove-Item -LiteralPath $pathFull -Force -ErrorAction Stop
 }
 
-Export-ModuleMember -Function Assert-MajucauProjectPath, Remove-MajucauProjectDirectory, Remove-MajucauProjectFile
+Export-ModuleMember -Function Assert-MajucauProjectPath, Assert-MajucauNoReparseDescendants, Remove-MajucauProjectDirectory, Remove-MajucauProjectFile

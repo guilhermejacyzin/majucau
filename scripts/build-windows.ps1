@@ -5,6 +5,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+$projectLocationPushed = $false
+$verificationStarted = $false
+$buildOutputsStarted = $false
+$artifactsPublished = $false
+$buildRunId = [guid]::NewGuid().ToString('N')
+$artifactBaseline = $null
 $artifactRoot = Join-Path $projectRoot 'artifacts'
 $goToolBinRoot = Join-Path $artifactRoot 'tools\go\bin'
 $env:GOCACHE = Join-Path $artifactRoot 'cache\go-build'
@@ -34,16 +40,24 @@ function Invoke-NativeChecked {
     }
 }
 
-& (Join-Path $PSScriptRoot 'verify.ps1')
+Import-Module (Join-Path $PSScriptRoot 'SafeCleanup.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'BuildFailureRetention.psm1') -Force
 
-Push-Location $projectRoot
 try {
+    $verificationStarted = $true
+    & (Join-Path $PSScriptRoot 'verify.ps1')
+
+    $artifactBaseline = New-MajucauArtifactBaseline -ProjectRoot $projectRoot -RunId $buildRunId
+    Push-Location $projectRoot
+    $projectLocationPushed = $true
+    $buildOutputsStarted = $true
     Invoke-NativeChecked $wailsCommand @('build', '-clean', '-trimpath')
     Invoke-NativeChecked $goCommand @('build', '-trimpath', '-o', (Join-Path $projectRoot 'build\bin\majucau-worker.exe'), './cmd/worker')
     Invoke-NativeChecked $goCommand @('build', '-trimpath', '-o', (Join-Path $projectRoot 'build\bin\installer-helper.exe'), './cmd/installer-helper')
 
     if ($Installer) {
         Invoke-NativeChecked $wailsCommand @('build', '-s', '-skipbindings', '-trimpath')
+        $artifactsPublished = $true
         & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1') -KeepSourceOutputs
         & (Join-Path $PSScriptRoot 'write-release-manifest.ps1')
         & (Join-Path $PSScriptRoot 'prepare-webview2.ps1')
@@ -78,13 +92,56 @@ try {
             throw 'O Wails não produziu o instalador NSIS. Verifique se makensis está instalado e disponível no PATH.'
         }
     } else {
+        $artifactsPublished = $true
         & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1') -KeepSourceOutputs
         & (Join-Path $PSScriptRoot 'write-release-manifest.ps1')
     }
 
     & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1')
     & (Join-Path $PSScriptRoot 'package-portable.ps1')
+    try {
+        Complete-MajucauArtifactBaseline -ProjectRoot $projectRoot -Baseline $artifactBaseline
+    }
+    catch {
+        Write-Warning "O build terminou, mas a cópia temporária precisa de revisão manual: $($artifactBaseline.Root). Consulte artifacts/retained/cleanup-register.md."
+    }
+    $artifactBaseline = $null
+}
+catch {
+    $retentionError = $null
+    if ($verificationStarted -or $buildOutputsStarted) {
+        try {
+            $retainedOutputs = Preserve-MajucauFailedBuildOutputs -ProjectRoot $projectRoot -RunId $buildRunId -IncludePublishedArtifacts:$artifactsPublished
+            if ($retainedOutputs.Moved.Count -gt 0 -or $retainedOutputs.NotMoved.Count -gt 0) {
+                Write-Warning "A execução falhou. As saídas encontradas foram registradas em artifacts/retained/cleanup-register.md."
+            }
+        }
+        catch {
+            $retentionError = $_
+        }
+    }
+    if ($null -ne $artifactBaseline) {
+        try {
+            if ($artifactsPublished) {
+                $restoration = Restore-MajucauArtifactBaseline -ProjectRoot $projectRoot -Baseline $artifactBaseline
+                if (-not $restoration.Restored) {
+                    $retentionError = 'A versão anterior permanece preservada em artifacts/cache; confira artifacts/retained/cleanup-register.md.'
+                }
+            } else {
+                Complete-MajucauArtifactBaseline -ProjectRoot $projectRoot -Baseline $artifactBaseline
+            }
+        }
+        catch {
+            $retentionError = $_
+        }
+    }
+    if ($null -ne $retentionError) {
+        throw 'A execução falhou. A recuperação/limpeza automática não terminou; preserve os caminhos em artifacts/cache e consulte artifacts/retained/cleanup-register.md antes de qualquer limpeza.'
+    }
+    throw
 }
 finally {
-    Pop-Location
+    if ($projectLocationPushed) {
+        Pop-Location
+    }
 }

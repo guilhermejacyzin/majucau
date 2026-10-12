@@ -20,6 +20,10 @@ Este guia ajuda a fazer mudanças pequenas e seguras. Antes de começar, consult
 - Caches e saídas geradas ficam em `artifacts/`. Remova saídas recriáveis ao
   terminar; preserve caches necessários e registre resíduos que precisem de
   remoção manual no registro local de limpeza.
+- A compilação deve manter os artefatos publicados anteriormente até terminar
+  o empacotamento. Se falhar após começar a publicar uma nova versão, guarde as
+  saídas parciais sob `artifacts/retained/manual-cleanup/`, registre os caminhos
+  localmente e restaure os artefatos válidos anteriores quando for seguro.
 
 ## Antes de abrir uma mudança
 

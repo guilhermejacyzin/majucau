@@ -1202,9 +1202,9 @@
       "Impedir execução concorrente duplicada da mesma carga",
       "Aplicar cancelamento, timeout e retomada após reinício",
       "Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.",
-      "Programar a atualização diária para 09:30 em America/Sao_Paulo. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Definir filtros do Bling e caminhos persistentes acessíveis ao serviço antes de ativar a coleta automática."
+      "Programar a atualização diária para 09:30 em America/Sao_Paulo. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Para o Bling, buscar alterações desde o último checkpoint confirmado e manter atualizadas as contas com vencimento nos próximos 60 dias, após validar esses filtros no contrato oficial. Definir e aprovar um meio seguro de leitura persistente das pastas Drive pelo serviço antes de ativar a coleta de arquivos."
     ],
-    "accept": "Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em America/Sao_Paulo; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica PENDING e o último dado válido nunca é mostrado como atual; filtros do Bling e pastas acessíveis ao serviço são configuração aprovada e persistida.",
+    "accept": "Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em America/Sao_Paulo; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica PENDING e o último dado válido nunca é mostrado como atual; a consulta Bling usa o último checkpoint confirmado e a janela aprovada de vencimentos D0–D+60 com contrato oficial validado; o acesso às pastas Drive é autorizado, seguro e persistente.",
     "impact": "Sustenta sincronização e reprocessamento local.",
     "deps": [
       "gofoundation",

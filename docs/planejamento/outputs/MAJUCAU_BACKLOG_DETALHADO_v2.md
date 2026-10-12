@@ -1415,9 +1415,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Impedir execução concorrente duplicada da mesma carga
 3. Aplicar cancelamento, timeout e retomada após reinício
 4. Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.
-5. Programar a atualização diária para 09:30 em `America/Sao_Paulo`. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Definir filtros do Bling e caminhos persistentes acessíveis ao serviço antes de ativar a coleta automática.
+5. Programar a atualização diária para 09:30 em `America/Sao_Paulo`. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Para o Bling, buscar alterações desde o último checkpoint confirmado e manter atualizadas as contas com vencimento nos próximos 60 dias, após validar esses filtros no contrato oficial. Definir e aprovar um meio seguro de leitura persistente das pastas Drive pelo serviço antes de ativar a coleta de arquivos.
 
-**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em `America/Sao_Paulo`; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica `PENDING` e o último dado válido nunca é mostrado como atual; filtros do Bling e pastas acessíveis ao serviço são configuração aprovada e persistida.
+**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em `America/Sao_Paulo`; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica `PENDING` e o último dado válido nunca é mostrado como atual; a consulta Bling usa o último checkpoint confirmado e a janela aprovada de vencimentos D0–D+60 com contrato oficial validado; o acesso às pastas Drive é autorizado, seguro e persistente.
 
 **Impacto:** Sustenta sincronização e reprocessamento local.
 
@@ -3738,7 +3738,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Confirmação do horário da atualização diária — 12/10/2026
 
 - Gisele confirmou que a rotina diária deve começar às 09:30 no horário de Brasília (`America/Sao_Paulo`). O horário e o fuso estão definidos; não falta nova confirmação para esse ponto.
-- Registro histórico: na data desta nota, ainda faltava definir o que fazer quando um arquivo estivesse ausente. Gisele aprovou depois, nesta conversa em 12/10/2026, processar as fontes disponíveis e deixar as ausentes pendentes, sem mostrar dados antigos como atuais. A implementação ainda depende dos filtros diários do Bling e dos caminhos persistentes de pastas acessíveis ao serviço.
+- Registro histórico: na data desta nota, ainda faltavam definir filtros do Bling, acesso ao Drive e tratamento de fonte ausente. Gisele aprovou depois, nesta conversa em 12/10/2026, processar as fontes disponíveis e deixar as ausentes pendentes, sem mostrar dados antigos como atuais; também definiu buscar alterações desde a última execução e os próximos 60 dias. A execução ainda depende de validar o contrato oficial da API e aprovar um acesso persistente ao Drive.
 - BK-039 permanece em 0% (100% restante). O projeto permanece na estimativa registrada de 9,1% concluído (90,9% restante), sem previsão global confiável.
 - Decisão registrada em `G0-DECISION-REGISTER.md`; o diagnóstico anterior do Bling e as evidências de hospedagem foram atualizados para não apontar o fuso como pendente.
 

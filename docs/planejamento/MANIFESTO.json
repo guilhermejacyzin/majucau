@@ -19,13 +19,13 @@
     },
     {
       "path": "docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md",
-      "bytes": 13929,
-      "sha256": "14afeea67e712f8f93cb825d4537f0c69301f945d3321ae49ce7f3a3d1dc6441"
+      "bytes": 14044,
+      "sha256": "8c8c7ca9bb2c0d42c486cd1daeafc9243e3de1880803b111be290958eef1a151"
     },
     {
       "path": "docs/evidence/DASHBOARD-REFRESH-AFTER-INTEGRATION-2026-10-12.md",
-      "bytes": 1472,
-      "sha256": "16140821ce13ed0a90233b510a37d1c4b4539906fe0bd496278e39fae0d9529d"
+      "bytes": 1573,
+      "sha256": "2a66970e016201724135bcab28db34499aec3000870a10bc144069f3aff978be"
     },
     {
       "path": "docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md",
@@ -64,8 +64,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 285241,
-      "sha256": "8d4e9677144e580a64bcd12a7a6c265a4ab1c06e7ef2266d4f129b65afa374cb"
+      "bytes": 285629,
+      "sha256": "ccae632f9fc519c584ea111791892e1e44869503c8c131bdb2e39eef1c3d4ce5"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -114,8 +114,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 192959,
-      "sha256": "7b696317bbcd0b1360445af365ff933ee5b396d17a1627fd80d4f6d3227c55c6"
+      "bytes": 193262,
+      "sha256": "74d93165a47d9437b255ae19bbde8276ad65a058e7d576ec7bb90c9c13628ee3"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",

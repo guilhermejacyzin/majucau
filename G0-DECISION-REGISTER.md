@@ -324,3 +324,11 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - A atualização automática dos dados deve ocorrer diariamente às 09:30, dando tempo para que os arquivos externos sejam colocados nas pastas antes do processamento.
 - O fuso horário que define 09:30 e a resposta quando algum arquivo ainda não estiver disponível nesse horário precisam ser confirmados antes da implementação. Não presumir espera, importação parcial ou uso silencioso de dados antigos.
 - Este requisito de horário não altera telas aprovadas nem regras financeiras.
+
+## Localização aprovada — documentos externos ao Bling
+
+- **Confirmada por:** Gisele, nesta conversa Codex, em 2026-10-12 (America/Sao_Paulo).
+- Pasta compartilhada do Google Drive: `Majucau`.
+- Estrutura de pastas registrada: `01_perdas_operacionais`, `02_nuvem_pago/recebimentos_futuros` e `03_nuvem_envio`.
+- Este registro confirma a localização e os nomes informados para os arquivos externos. O link/ID exato da pasta, a forma de autenticação do sistema e os detalhes de acesso ainda precisam ser configurados; não presumir credenciais ou conexão ativa.
+- Esta decisão registra a estrutura de armazenamento e não altera regras financeiras, telas aprovadas nem os formatos/contratos dos arquivos.

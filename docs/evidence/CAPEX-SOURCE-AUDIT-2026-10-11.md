@@ -70,3 +70,14 @@ Não foram copiados nomes, números de documentos ou valores individuais. A regr
 dos cards e a tela permanecem iguais; os valores seguem indisponíveis até haver
 uma ligação confiável entre a categoria e cada pagamento, pela API homologada ou
 por um relatório detalhado equivalente.
+
+## Caminho de associação no esquema atual — 12/10/2026
+
+A revisão do modelo local identificou um caminho possível, mas ainda não implementado:
+
+- `payables.category` guarda a categoria da conta a pagar.
+- `payments` guarda data e valor pagos, mas não guarda a categoria.
+- `payment_allocations` pode ligar um pagamento à conta a pagar correspondente.
+- A busca no adapter Bling não encontrou persistência de pagamentos, movimentações de caixa, nem preenchimento desse vínculo.
+
+Assim, o valor CAPEX pago só poderá ser separado com segurança após importar o pagamento e sua ligação idempotente à conta categorizada. O acumulado continua seguindo a decisão registrada: ativos reconhecidos como CAPEX desde o início do histórico confiável. Não somar todos os pagamentos, nem usar fornecedor ou histórico como classificação. Até haver dados vinculados e conferidos com os relatórios, manter ambos os cards indisponíveis.

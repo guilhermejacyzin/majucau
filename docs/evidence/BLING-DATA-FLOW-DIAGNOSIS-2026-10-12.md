@@ -16,9 +16,9 @@ Isso não confirma que a conta real esteja conectada ou que uma sincronização 
 
 ## Evidência de execução e limite
 
-Na janela de logs examinada durante o diagnóstico em 12/10, apareceram consultas de saúde do worker, estado das integrações e painel. Não apareceram eventos de início/autorização OAuth, teste da conexão ou `bling.sync`. Isso significa que não há evidência registrada de que a conta tenha sido autorizada ou de que a sincronização tenha sido iniciada naquela janela. Não prova, sozinho, que o adapter falhou.
+Na janela atual do worker, iniciada em 12/10 às 17:23, aparecem somente consultas de saúde do worker, estado das integrações e painel. Não aparecem chamadas para iniciar autorização OAuth, testar a conexão ou sincronizar o Bling. Isso confirma que, nessa sessão, o Majucau ainda não recebeu o comando para conectar/testar/sincronizar; portanto, não há evidência de que o adapter tenha falhado ao consultar a API.
 
-O log técnico também informou `DIAGNOSTICS_LOG_UNAVAILABLE`, então a observabilidade daquela execução foi incompleta. O estado efetivo da conta precisa ser confirmado pelo indicador da integração no próprio Majucau. Não registrar Client ID, Client Secret, tokens, payloads ou valores reais como evidência.
+O worker informou `DIAGNOSTICS_LOG_UNAVAILABLE` porque a pasta de logs de instalação em `%ProgramData%\Majucau` não existe neste ambiente de desenvolvimento. O worker continuou funcionando e enviou os registros sanitizados para `artifacts/retained/postgresql-dev/worker.stderr.log`, conforme o modo de inicialização local. Esse aviso não bloqueou as chamadas ao Bling. O estado efetivo da conta precisa ser confirmado pelo indicador da integração no próprio Majucau. Não registrar Client ID, Client Secret, tokens, payloads ou valores reais como evidência.
 
 ## Próxima verificação
 

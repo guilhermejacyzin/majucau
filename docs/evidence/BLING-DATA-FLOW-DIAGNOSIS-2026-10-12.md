@@ -45,6 +45,16 @@ Após reiniciar o protótipo, confirmar primeiro se o cadastro do aplicativo Bli
 
 Esta correção foi revisada estaticamente e formatada, mas os testes e o protótipo não foram executados nesta etapa. A validação em execução continua pendente após a reinicialização e a conexão real do Bling.
 
+## Revalidação do JWT e do retorno OAuth — 12/10/2026
+
+- A documentação oficial atual exige `enable-jwt: 1` na obtenção do token, na renovação e nas chamadas autenticadas, além do formato `Authorization: Bearer`. O código do Majucau já segue esses requisitos em `internal/integrations/bling/oauth.go` e `api_client.go`. A base configurada também é a URL nova `https://api.bling.com.br/Api/v3`; a URL antiga foi descontinuada em 30/04/2026. Referências: [migração JWT](https://developer.bling.com.br/migracao-jwt), [aplicativos e OAuth](https://developer.bling.com.br/aplicativos) e [migração da URL base](https://developer.bling.com.br/migracao-url).
+- O print de Integrações mostra Client ID e Redirect URI vazios e status “Não conectado”. As bolinhas do campo de segredo não comprovam que haja segredo salvo. Portanto, o fluxo OAuth não começou; não é evidência de que o cabeçalho JWT esteja falhando.
+- Há uma incompatibilidade de configuração que precisa ser esclarecida: a interface sugere uma URL `https://`, mas o serviço local só aceita e abre um callback de loopback `http://127.0.0.1:<porta>/<caminho>`. A documentação do Bling determina que o retorno use o “Link de redirecionamento” cadastrado e que a URL seja a mesma no fluxo de troca de token, mas não confirma se esse tipo de endereço local é aceito pelo cadastro.
+- Não presumir um endereço, não inserir credenciais pelo chat e não mudar a tela ou o OAuth até verificar a URL que está cadastrada e se o Bling aceita o callback local. Caso o cadastro exija HTTPS, será necessária uma solução de retorno aprovada; simplesmente salvar HTTPS não funciona com o listener loopback atual.
+- Para solicitar dados, o protótipo exige configuração e autorização OAuth, depois “Testar conexão” e “Sincronizar agora” com um filtro de data ou situação. Abrir a Visão Executiva não inicia leitura da API.
+
+Esta verificação usou documentação pública oficial e inspeção estática do código. Nenhuma chamada foi feita à conta real, nenhum teste foi executado e nenhuma tela, regra financeira ou credencial foi alterada.
+
 ## Proteções
 
 Esta revisão não alterou telas aprovadas, regras financeiras, configuração do Bling, banco de dados ou credenciais. Nenhuma chamada foi feita à conta real nesta execução; os resultados descritos acima são inspeção do código e da janela de logs já coletada.

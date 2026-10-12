@@ -631,6 +631,7 @@ export namespace main {
 	}
 	export class WailsDashboardSnapshot {
 	    as_of: string;
+	    last_bling_sync_at?: string;
 	    data_state: string;
 	    receivables: application.DashboardMetric;
 	    future_b2c: application.DashboardMetric;
@@ -654,6 +655,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.as_of = source["as_of"];
+	        this.last_bling_sync_at = source["last_bling_sync_at"];
 	        this.data_state = source["data_state"];
 	        this.receivables = this.convertValues(source["receivables"], application.DashboardMetric);
 	        this.future_b2c = this.convertValues(source["future_b2c"], application.DashboardMetric);

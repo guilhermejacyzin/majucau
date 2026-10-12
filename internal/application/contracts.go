@@ -244,6 +244,7 @@ type DashboardPayableRow struct {
 // inventory or forecast values from RAW payloads.
 type DashboardSnapshot struct {
 	AsOf               time.Time                `json:"as_of"`
+	LastBlingSyncAt    *time.Time               `json:"last_bling_sync_at,omitempty"`
 	DataState          string                   `json:"data_state"`
 	Receivables        DashboardMetric          `json:"receivables"`
 	FutureB2C          DashboardMetric          `json:"future_b2c"`

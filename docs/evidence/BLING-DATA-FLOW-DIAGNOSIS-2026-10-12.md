@@ -18,11 +18,22 @@ Isso não confirma que a conta real esteja conectada ou que uma sincronização 
 
 Na janela atual do worker, iniciada em 12/10 às 17:23, aparecem somente consultas de saúde do worker, estado das integrações e painel. Não aparecem chamadas para iniciar autorização OAuth, testar a conexão ou sincronizar o Bling. Isso confirma que, nessa sessão, o Majucau ainda não recebeu o comando para conectar/testar/sincronizar; portanto, não há evidência de que o adapter tenha falhado ao consultar a API.
 
-O worker informou `DIAGNOSTICS_LOG_UNAVAILABLE` porque a pasta de logs de instalação em `%ProgramData%\Majucau` não existe neste ambiente de desenvolvimento. O worker continuou funcionando e enviou os registros sanitizados para `artifacts/retained/postgresql-dev/worker.stderr.log`, conforme o modo de inicialização local. Esse aviso não bloqueou as chamadas ao Bling. O estado efetivo da conta precisa ser confirmado pelo indicador da integração no próprio Majucau. Não registrar Client ID, Client Secret, tokens, payloads ou valores reais como evidência.
+O worker informou `DIAGNOSTICS_LOG_UNAVAILABLE` porque a pasta de logs de instalação em `%ProgramData%\Majucau` não existe neste ambiente de desenvolvimento. O worker continuou funcionando e enviou os registros sanitizados para `artifacts/retained/postgresql-dev/worker.stderr.log`, conforme o modo de inicialização local. Esse aviso não bloqueou chamadas ao Bling. O print da tela Integrações recebido em 12/10/2026 mostra o Bling como “Não conectado”, Client ID e Redirect URI vazios, permissões “aguardando autorização” e “Último sucesso: —”. As bolinhas no campo Client Secret são o texto de exemplo definido pela interface e não provam que um segredo foi salvo. Não registrar Client ID, Client Secret, tokens, payloads ou valores reais como evidência.
+
+## Conferência do print e do painel — 12/10/2026
+
+- O código já envia `Authorization: Bearer` e `enable-jwt: 1` nas consultas autenticadas. Isso confirma o cabeçalho JWT no código, mas não uma autorização da conta real.
+- A configuração, a autorização, o teste e a sincronização são etapas separadas. O painel não inicia a sincronização; a primeira tentativa depende de preencher a configuração no Majucau, autorizar no Bling e iniciar um filtro de sincronização.
+- No build mostrado no print da Visão Executiva, “Última sincronização” usava `snapshot.as_of`, que é a hora da consulta ao painel. A correção agora usa o fim do lote Bling mais recente com estado `SUCCESS` ou `PARTIAL`; sem lote, o valor fica “—”. OAuth e teste de conexão não contam como sincronização.
+- A métrica “A receber” era marcada como `CONFIRMED` mesmo com zero registros, permitindo mostrar R$ 0,00 sem dados. Agora, zero registros resulta em estado `UNAVAILABLE`, que a tela existente já exibe como “—”. O layout e os textos não mudaram; nenhuma regra financeira foi alterada. Uma sincronização com cobertura suficiente para confirmar saldo zero ainda exigiria metadados de cobertura, que o lote atual não guarda.
+- A tentativa de leitura direta do site do Bling foi recusada pela política de permissão salva do navegador, apesar dos prints anteriores das configurações. Não foi usado outro caminho para contornar o bloqueio.
+- O log mais recente continua contendo apenas saúde do worker, status de integração e consulta do painel; não há operação OAuth, teste ou sincronização Bling registrada.
 
 ## Próxima verificação
 
-Consultar na área Integrações o status do Bling e, se disponível, “Última tentativa” e “Último sucesso”. Se estiver conectado sem sucesso anterior, executar primeiro “Testar conexão”; depois, com um filtro autorizado, usar “Sincronizar agora” e registrar somente código de erro, mensagem sanitizada e contadores. Não presumir uma janela financeira nem ativar sincronização automática antes de concluir BK-039 e as decisões de agendamento pendentes.
+Após reiniciar o protótipo, preencher no Majucau o Client ID, Client Secret e Redirect URI registrados para o aplicativo Bling, salvar, conectar e autorizar a conta. Em seguida, testar a conexão e iniciar a sincronização com um filtro aprovado. Não enviar segredos pelo chat. A rotina diária das 09:30 permanece pendente porque o fuso horário e o comportamento quando arquivos externos ainda não chegaram não foram definidos; não presumir essas decisões.
+
+Esta correção foi revisada estaticamente e formatada, mas os testes e o protótipo não foram executados nesta etapa. A validação em execução continua pendente após a reinicialização e a conexão real do Bling.
 
 ## Proteções
 

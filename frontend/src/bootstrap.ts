@@ -24,6 +24,7 @@ export type DashboardReceivableRow = { customer?: string; origin: string; due_da
 export type DashboardPayableRow = { supplier?: string; document?: string; due_date: string; value: string; category?: string; status: string }
 export type DashboardSnapshot = {
   as_of: string
+  last_bling_sync_at?: string
   data_state: 'CONFIRMED' | 'PARTIAL' | 'UNAVAILABLE'
   receivables: DashboardMetric
   future_b2c: DashboardMetric
@@ -183,7 +184,7 @@ function isDashboardPayableRow(value: unknown): value is DashboardPayableRow {
 function isDashboardSnapshot(value: unknown): value is DashboardSnapshot {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<DashboardSnapshot>
-  return typeof candidate.as_of === 'string' && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payments_month) && (candidate.capex_paid_month === undefined || isDashboardMetric(candidate.capex_paid_month)) && (candidate.capex_accumulated === undefined || isDashboardMetric(candidate.capex_accumulated)) && (candidate.receivable_rows === undefined || (Array.isArray(candidate.receivable_rows) && candidate.receivable_rows.every(isDashboardReceivableRow))) && (candidate.payable_rows === undefined || (Array.isArray(candidate.payable_rows) && candidate.payable_rows.every(isDashboardPayableRow)))
+  return typeof candidate.as_of === 'string' && (candidate.last_bling_sync_at === undefined || typeof candidate.last_bling_sync_at === 'string') && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payments_month) && (candidate.capex_paid_month === undefined || isDashboardMetric(candidate.capex_paid_month)) && (candidate.capex_accumulated === undefined || isDashboardMetric(candidate.capex_accumulated)) && (candidate.receivable_rows === undefined || (Array.isArray(candidate.receivable_rows) && candidate.receivable_rows.every(isDashboardReceivableRow))) && (candidate.payable_rows === undefined || (Array.isArray(candidate.payable_rows) && candidate.payable_rows.every(isDashboardPayableRow)))
 }
 
 export function createDashboardSnapshotAdapter(source: DashboardSnapshotSource = readWailsDashboardSnapshot): DashboardSnapshotAdapter {

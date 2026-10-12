@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/internal/application"
@@ -115,6 +116,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		receivablesCount, futureCount, receiptsTotalCount, receiptsMonthCount            int64
 		receivablesOverdueCount, payablesCount, payablesTodayCount, payablesOverdueCount int64
 		paymentsTotalCount, paymentsMonthCount                                           int64
+		lastBlingSyncAt                                                                  pgtype.Timestamptz
 	)
 	err := tx.QueryRow(ctx, dashboardStreamSummarySQL,
 		businessDate.Format("2006-01-02"),
@@ -129,6 +131,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&payablesTodayValue, &payablesTodayCount,
 		&payablesOverdueValue, &payablesOverdueCount,
 		&paymentsMonthValue, &paymentsMonthCount, &paymentsTotalCount,
+		&lastBlingSyncAt,
 	)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
@@ -137,10 +140,16 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	if receivablesCount > 0 || futureCount > 0 || receiptsTotalCount > 0 || payablesCount > 0 || paymentsTotalCount > 0 {
 		state = "PARTIAL"
 	}
+	var lastBlingSyncTime *time.Time
+	if lastBlingSyncAt.Valid {
+		value := lastBlingSyncAt.Time.UTC()
+		lastBlingSyncTime = &value
+	}
 	return application.DashboardSnapshot{
 		AsOf:               asOf,
+		LastBlingSyncAt:    lastBlingSyncTime,
 		DataState:          state,
-		Receivables:        metric(receivablesValue, receivablesCount, "CONFIRMED", "BLING + NUVEM_PAGO"),
+		Receivables:        metric(receivablesValue, receivablesCount, stateForCount(receivablesCount), "BLING + NUVEM_PAGO"),
 		FutureB2C:          metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
 		ReceiptsMonth:      metric(receiptsMonthValue, receiptsMonthCount, stateForCount(receiptsTotalCount), "BLING"),
 		ReceivablesOverdue: metric(receivablesOverdueValue, receivablesOverdueCount, stateForCount(receivablesCount), "BLING + NUVEM_PAGO"),
@@ -327,14 +336,21 @@ WITH eligible_receivables AS (
     ) AS month_count,
     COUNT(id) FILTER (WHERE source_system = 'BLING') AS total_count
   FROM payments
+), last_bling_sync AS (
+  SELECT MAX(b.finished_at) AS finished_at
+    FROM integration_sync_batches b
+    JOIN integration_connections c ON c.id = b.connection_id
+   WHERE c.provider = 'BLING'
+     AND b.status IN ('SUCCESS', 'PARTIAL')
 )
 SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        rc.month_value, rc.month_count, rc.total_count,
        r.overdue_value, r.overdue_count,
        p.total_value, p.total_count, p.today_value, p.today_count,
        p.overdue_value, p.overdue_count,
-       pm.month_value, pm.month_count, pm.total_count
-FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm
+       pm.month_value, pm.month_count, pm.total_count,
+       last_bling_sync.finished_at
+FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync
 `
 
 const dashboardReceivableRowsSQL = `

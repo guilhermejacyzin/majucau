@@ -47,6 +47,7 @@ type WailsIntegrationStatus struct {
 
 type WailsDashboardSnapshot struct {
 	AsOf               string                               `json:"as_of"`
+	LastBlingSyncAt    *string                              `json:"last_bling_sync_at,omitempty"`
 	DataState          string                               `json:"data_state"`
 	Receivables        application.DashboardMetric          `json:"receivables"`
 	FutureB2C          application.DashboardMetric          `json:"future_b2c"`
@@ -115,6 +116,7 @@ func wailsIntegrationStatuses(values []application.IntegrationStatus) []WailsInt
 func wailsDashboardSnapshot(value application.DashboardSnapshot) WailsDashboardSnapshot {
 	return WailsDashboardSnapshot{
 		AsOf:               wailsTimestamp(value.AsOf),
+		LastBlingSyncAt:    wailsOptionalTimestamp(value.LastBlingSyncAt),
 		DataState:          value.DataState,
 		Receivables:        value.Receivables,
 		FutureB2C:          value.FutureB2C,

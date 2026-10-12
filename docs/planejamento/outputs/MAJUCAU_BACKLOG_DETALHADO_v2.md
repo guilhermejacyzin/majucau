@@ -1407,9 +1407,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Impedir execução concorrente duplicada da mesma carga
 3. Aplicar cancelamento, timeout e retomada após reinício
 4. Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.
-5. Programar a atualização diária para 09:30, após o tempo para colocar os arquivos externos nas pastas. Confirmar o fuso horário e a ação se algum arquivo estiver ausente antes de implementar esse comportamento.
+5. Programar a atualização diária para 09:30 em `America/Sao_Paulo` (horário de Brasília), após o tempo para colocar os arquivos externos nas pastas. O horário e o fuso foram aprovados; definir a ação se algum arquivo estiver ausente antes de implementar esse comportamento.
 
-**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 no fuso aprovado e o sistema trata explicitamente arquivos externos ausentes.
+**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em `America/Sao_Paulo` e o sistema trata explicitamente arquivos externos ausentes.
 
 **Impacto:** Sustenta sincronização e reprocessamento local.
 
@@ -3722,3 +3722,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-102 permanece em 1% (99% restante), BK-026 em 55% (45% restante), BK-041 em 69% (31% restante) e BK-067 em 20% (80% restante). O backlog continua com 127 tarefas, 7 concluídas, 13 em andamento e 107 não iniciadas; média registrada de 9,1% concluída e 90,9% restante. Não há previsão global confiável enquanto a integração real e a homologação do protótipo estiverem pendentes.
 - A CI produziu um instalador temporário não assinado, registrado para remoção manual ou expiração em `artifacts/retained/cleanup-register.md`. O cache local recriável `artifacts/cache/go-build` foi removido com `SafeCleanup` depois de confirmar que não havia processo de compilação Go ativo; o protótipo, o worker, o PostgreSQL, o banco e os caches necessários permaneceram intactos.
 - Evidência: `docs/evidence/DASHBOARD-SYNC-INDICATOR-CI-2026-10-12.md`. Nenhum teste foi executado manualmente nesta atualização.
+
+### Confirmação do horário da atualização diária — 12/10/2026
+
+- Gisele confirmou que a rotina diária deve começar às 09:30 no horário de Brasília (`America/Sao_Paulo`). O horário e o fuso estão definidos; não falta nova confirmação para esse ponto.
+- Continua sem resposta o que fazer se um arquivo externo não estiver disponível às 09:30. A implementação da rotina continua sem início até essa regra operacional ser definida; nenhuma tela ou regra financeira foi alterada.
+- BK-039 permanece em 0% (100% restante). O projeto permanece na estimativa registrada de 9,1% concluído (90,9% restante), sem previsão global confiável.
+- Decisão registrada em `G0-DECISION-REGISTER.md`; o diagnóstico anterior do Bling e as evidências de hospedagem foram atualizados para não apontar o fuso como pendente.

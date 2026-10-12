@@ -322,7 +322,8 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 
 - **Recebido de:** Gisele, nesta conversa Codex, em 2026-10-11 (America/Sao_Paulo).
 - A atualização automática dos dados deve ocorrer diariamente às 09:30, dando tempo para que os arquivos externos sejam colocados nas pastas antes do processamento.
-- O fuso horário que define 09:30 e a resposta quando algum arquivo ainda não estiver disponível nesse horário precisam ser confirmados antes da implementação. Não presumir espera, importação parcial ou uso silencioso de dados antigos.
+- **Complemento aprovado por:** Gisele, nesta conversa Codex, em 2026-10-12 (America/Sao_Paulo): 09:30 significa o fuso `America/Sao_Paulo` (horário de Brasília).
+- Continua pendente a resposta quando algum arquivo ainda não estiver disponível nesse horário. Não presumir espera, importação parcial ou uso silencioso de dados antigos.
 - Este requisito de horário não altera telas aprovadas nem regras financeiras.
 
 ## Localização aprovada — documentos externos ao Bling

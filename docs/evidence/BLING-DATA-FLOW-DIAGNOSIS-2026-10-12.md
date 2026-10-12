@@ -12,7 +12,7 @@ Isso não confirma que a conta real esteja conectada ou que uma sincronização 
 - `internal/integrations/bling/api_client.go`: consulta somente leitura usa `https://api.bling.com.br/Api/v3`, `Authorization: Bearer` e `enable-jwt: 1`.
 - `frontend/src/App.tsx`: a área Integrações apresenta as ações “Salvar configuração”, “Conectar”, “Testar conexão” e “Sincronizar agora” separadamente. O painel informa que os dados não são sincronizados automaticamente e exige filtro explícito.
 - `cmd/worker/handler.go`: a operação de sincronização retorna `BLING_SYNC_FILTER_REQUIRED` quando não recebe janela de datas ou situação.
-- `docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md`, BK-039: agendamento, recuperação de trabalho e atualização diária às 09:30 seguem não iniciados; o comportamento para arquivos externos ausentes e o fuso horário continuam por definir.
+- `docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md`, BK-039: agendamento, recuperação de trabalho e atualização diária às 09:30 seguem não iniciados. Gisele confirmou `America/Sao_Paulo` em 12/10; o comportamento para arquivos externos ausentes continua por definir.
 
 ## Evidência de execução e limite
 
@@ -41,7 +41,7 @@ Antes de orientar o preenchimento, precisamos confirmar que o aplicativo cadastr
 
 ## Próxima verificação
 
-Após reiniciar o protótipo, confirmar primeiro se o cadastro do aplicativo Bling aceita o endereço local exigido pelo worker e se a porta/caminho coincidem exatamente. Só então preencher no Majucau o Client ID, Client Secret e Redirect URI, salvar, conectar e autorizar a conta. Em seguida, testar a conexão e iniciar a sincronização com um filtro aprovado. Não enviar segredos pelo chat. A rotina diária das 09:30 permanece pendente porque o fuso horário e o comportamento quando arquivos externos ainda não chegaram não foram definidos; não presumir essas decisões.
+Após reiniciar o protótipo, confirmar primeiro se o cadastro do aplicativo Bling aceita o endereço local exigido pelo worker e se a porta/caminho coincidem exatamente. Só então preencher no Majucau o Client ID, Client Secret e Redirect URI, salvar, conectar e autorizar a conta. Em seguida, testar a conexão e iniciar a sincronização com um filtro aprovado. Não enviar segredos pelo chat. A rotina diária das 09:30 em `America/Sao_Paulo` continua pendente de implementação; também falta definir o comportamento quando arquivos externos ainda não chegaram.
 
 Esta correção foi revisada estaticamente e formatada, mas os testes e o protótipo não foram executados nesta etapa. A validação em execução continua pendente após a reinicialização e a conexão real do Bling.
 

@@ -41,7 +41,7 @@ O princípio de menor privilégio recomenda dar a cada usuário somente as permi
 
 - Provedor, região e orçamento mensal.
 - Se o acesso dos usuários será pela internet com autenticação forte ou por rede privada/VPN.
-- Fuso horário do agendamento das 09:30 e o que fazer quando algum arquivo estiver atrasado ou ausente; o serviço deve preservar a última informação válida enquanto isso não estiver definido.
+- O fuso do agendamento foi confirmado como `America/Sao_Paulo`; falta decidir o que fazer quando algum arquivo estiver atrasado ou ausente. O serviço deve preservar a última informação válida enquanto isso não estiver definido.
 - Autorização de leitura do Drive limitada às pastas necessárias, além da forma de guardar e renovar a credencial.
 - MFA, sessão e recuperação de acesso.
 - Retenção de backups cifrados e comprovação de restauração.

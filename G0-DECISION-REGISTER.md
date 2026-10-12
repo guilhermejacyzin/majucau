@@ -323,7 +323,9 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - **Recebido de:** Gisele, nesta conversa Codex, em 2026-10-11 (America/Sao_Paulo).
 - A atualização automática dos dados deve ocorrer diariamente às 09:30, dando tempo para que os arquivos externos sejam colocados nas pastas antes do processamento.
 - **Complemento aprovado por:** Gisele, nesta conversa Codex, em 2026-10-12 (America/Sao_Paulo): 09:30 significa o fuso `America/Sao_Paulo` (horário de Brasília).
-- Continua pendente a resposta quando algum arquivo ainda não estiver disponível nesse horário. Não presumir espera, importação parcial ou uso silencioso de dados antigos.
+- **Comportamento aprovado por:** Gisele, nesta conversa Codex, em 2026-10-12 (America/Sao_Paulo): processar as fontes recebidas; marcar as fontes ausentes como pendentes. Preservar o último dado válido e nunca apresentá-lo como se fosse atual.
+- O resultado do ciclo deve refletir conclusão parcial se alguma fonte estiver pendente; uma fonte ausente não equivale a zero nem invalida gravações concluídas atomicamente pelas outras fontes.
+- O horário e o comportamento de ausência não definem, por si só, o filtro da consulta diária Bling, nem os caminhos persistentes das pastas acessíveis à identidade do serviço. Esses detalhes técnicos continuam pendentes e não devem ser presumidos.
 - Este requisito de horário não altera telas aprovadas nem regras financeiras.
 
 ## Localização aprovada — documentos externos ao Bling

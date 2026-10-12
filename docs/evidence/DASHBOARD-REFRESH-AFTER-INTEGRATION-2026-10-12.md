@@ -16,4 +16,4 @@ A mudança somente relê dados locais. Não inicia autorização OAuth, chamadas
 
 ## Limites
 
-Esta atualização não busca dados novos no Bling. A conta continua dependendo de configuração, autorização, teste de conexão e comando manual de sincronização. A atualização automática diária das 09:30 em `America/Sao_Paulo` continua em BK-039; falta definir o tratamento quando algum arquivo externo estiver ausente.
+Esta atualização não busca dados novos no Bling. A conta continua dependendo de configuração, autorização, teste de conexão e comando manual de sincronização. A atualização automática diária das 09:30 em `America/Sao_Paulo` continua em BK-039. Gisele aprovou atualizar as fontes disponíveis e marcar as ausentes como pendentes; faltam implementar o agendamento e definir o filtro diário do Bling e os caminhos persistentes acessíveis ao serviço.

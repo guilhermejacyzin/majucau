@@ -1202,9 +1202,9 @@
       "Impedir execução concorrente duplicada da mesma carga",
       "Aplicar cancelamento, timeout e retomada após reinício",
       "Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.",
-      "Programar a atualização diária para 09:30, após o tempo para colocar os arquivos externos nas pastas. Confirmar o fuso horário e a ação se algum arquivo estiver ausente antes de implementar esse comportamento."
+      "Programar a atualização diária para 09:30 em America/Sao_Paulo. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Definir filtros do Bling e caminhos persistentes acessíveis ao serviço antes de ativar a coleta automática."
     ],
-    "accept": "Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 no fuso aprovado e o sistema trata explicitamente arquivos externos ausentes.",
+    "accept": "Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em America/Sao_Paulo; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica PENDING e o último dado válido nunca é mostrado como atual; filtros do Bling e pastas acessíveis ao serviço são configuração aprovada e persistida.",
     "impact": "Sustenta sincronização e reprocessamento local.",
     "deps": [
       "gofoundation",

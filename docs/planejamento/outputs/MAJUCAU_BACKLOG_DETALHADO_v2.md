@@ -1415,9 +1415,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Impedir execução concorrente duplicada da mesma carga
 3. Aplicar cancelamento, timeout e retomada após reinício
 4. Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.
-5. Programar a atualização diária para 09:30 em `America/Sao_Paulo` (horário de Brasília), após o tempo para colocar os arquivos externos nas pastas. O horário e o fuso foram aprovados; definir a ação se algum arquivo estiver ausente antes de implementar esse comportamento.
+5. Programar a atualização diária para 09:30 em `America/Sao_Paulo`. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Definir filtros do Bling e caminhos persistentes acessíveis ao serviço antes de ativar a coleta automática.
 
-**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em `America/Sao_Paulo` e o sistema trata explicitamente arquivos externos ausentes.
+**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em `America/Sao_Paulo`; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica `PENDING` e o último dado válido nunca é mostrado como atual; filtros do Bling e pastas acessíveis ao serviço são configuração aprovada e persistida.
 
 **Impacto:** Sustenta sincronização e reprocessamento local.
 
@@ -3738,7 +3738,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Confirmação do horário da atualização diária — 12/10/2026
 
 - Gisele confirmou que a rotina diária deve começar às 09:30 no horário de Brasília (`America/Sao_Paulo`). O horário e o fuso estão definidos; não falta nova confirmação para esse ponto.
-- Continua sem resposta o que fazer se um arquivo externo não estiver disponível às 09:30. A implementação da rotina continua sem início até essa regra operacional ser definida; nenhuma tela ou regra financeira foi alterada.
+- Registro histórico: na data desta nota, ainda faltava definir o que fazer quando um arquivo estivesse ausente. Gisele aprovou depois, nesta conversa em 12/10/2026, processar as fontes disponíveis e deixar as ausentes pendentes, sem mostrar dados antigos como atuais. A implementação ainda depende dos filtros diários do Bling e dos caminhos persistentes de pastas acessíveis ao serviço.
 - BK-039 permanece em 0% (100% restante). O projeto permanece na estimativa registrada de 9,1% concluído (90,9% restante), sem previsão global confiável.
 - Decisão registrada em `G0-DECISION-REGISTER.md`; o diagnóstico anterior do Bling e as evidências de hospedagem foram atualizados para não apontar o fuso como pendente.
 

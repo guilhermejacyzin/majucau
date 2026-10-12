@@ -78,11 +78,11 @@ O callback loopback de aplicativo desktop não está comprovado na documentaçã
 
 Na aprovação do G0, em 2026-08-16, a planilha referenciada pelo handoff não havia sido fornecida. Por isso, D-003-A foi aprovada como fórmula própria do Majucau, sem alegar equivalência com a referência.
 
-Em 2026-10-04, Gisele forneceu `Calculadora_Aplicacao_Lucro_Liquido_Profissional.xlsm` e pediu que a parte de segurança considerasse o fluxo de caixa. A planilha foi recebida e analisada; o mapeamento inicial e a dúvida ainda aberta estão em `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`. D-003-A continua vigente até a comparação ser fechada e qualquer alteração do valor máximo ser aprovada.
+Em 2026-10-04, Gisele forneceu `Calculadora_Aplicacao_Lucro_Liquido_Profissional.xlsm` e pediu que a parte de segurança considerasse o fluxo de caixa. A planilha foi recebida e analisada; o mapeamento está em `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`. Em 2026-10-12, o arquivo reenviado foi confirmado como idêntico em bytes ao original (SHA-256 `33d3aa26aad47563e315461a32b1fcf199bc28999090e1188bf71ec66e3d14a2`). A comparação estrutural das fórmulas foi concluída; a equivalência financeira e a ligação às fontes reais permanecem pendentes. D-003-A continua vigente, sem alteração do valor máximo.
 
 Em 2026-10-10, Gisele esclareceu que recebimentos da Nuvemshop não são uma regra aprovada para a calculadora. A fórmula ativa deve usar o fluxo consolidado já aprovado; não somar recebimentos da Nuvemshop separadamente por causa de uma linha da planilha.
 
-Em 2026-10-11, Gisele reiterou que a calculadora deve preservar a estrutura da planilha que enviou. Não acrescentar uma soma de recebimentos da Nuvemshop nem trocar a estrutura por outra proposta. A planilha serve de referência para mapear campos e fluxo; qualquer diferença entre ela e uma regra já aprovada (por exemplo, a DRE própria do Majucau) precisa ser identificada antes da implementação. D-003-A permanece vigente até a comparação e eventual aprovação de mudança; esta confirmação não altera fórmulas financeiras.
+Em 2026-10-11, Gisele reiterou que a calculadora deve preservar a estrutura da planilha que enviou. Não acrescentar uma soma de recebimentos da Nuvemshop nem trocar a estrutura por outra proposta. A planilha serve de referência para mapear campos e fluxo; qualquer diferença entre ela e uma regra já aprovada (por exemplo, a DRE própria do Majucau) precisa ser identificada antes da implementação. A revisão de 2026-10-12 confirmou que a cópia ainda contém uma instrução para usar o resultado da DRE do Bling e uma soma separada de recebimentos da Nuvemshop; esses trechos são divergências da referência antiga, não regras aprovadas do Majucau. A comparação estrutural está concluída; conciliação com dados reais e exemplos reproduzíveis continuam pendentes. Esta confirmação não altera fórmulas financeiras nem a estrutura aprovada da tela.
 
 ### D-003-A — Aprovar fórmula Majucau v1 como novo oráculo (recomendada)
 
@@ -96,15 +96,15 @@ maximum_investment = max(0, min(available_profit, financial_limit))
 
 Somente recebimentos com fonte oficial e data válida participam. O cálculo usa BRL, decimal exato e `ROUND_HALF_UP` em duas casas apenas na fronteira de apresentação/reconciliação.
 
-**Consequência:** criou uma regra auditável, sem alegar equivalência com uma planilha ainda não conferida.
+**Consequência:** criou uma regra auditável, sem alegar equivalência financeira com uma planilha cuja estrutura já foi conferida, mas cujos campos ainda não foram conciliados com dados reais.
 
 ### D-003-B — Aguardar a planilha original
 
-**Consequência:** era a opção antes da entrega da planilha. A referência foi recebida em 2026-10-04; a comparação está pendente e não suspende D-003-A.
+**Consequência:** era a opção antes da entrega da planilha. A referência foi recebida em 2026-10-04 e sua comparação estrutural foi concluída em 2026-10-12; a conciliação com dados reais permanece pendente e não suspende D-003-A.
 
 ### Evidência para fechar
 
-- comparar os componentes da planilha com os campos do fluxo consolidado, sem somar recebimentos da Nuvemshop separadamente; mapear saldo e corte temporal da semana crítica;
+- reconciliar com dados reais os componentes mapeados para o fluxo consolidado, sem somar recebimentos da Nuvemshop separadamente; confirmar os 61 fechamentos diários e o corte temporal;
 - casos dourados incluindo limite negativo, lucro insuficiente, pior saldo, reserva e recebimento sem fonte oficial;
 - diferença máxima de R$ 0,01.
 

@@ -287,3 +287,34 @@ Nuvemshop não são somados separadamente ao fluxo consolidado.
 
 Esta conferência foi somente leitura; nenhum macro foi executado. Nenhuma
 fórmula, tela ou regra financeira foi alterada.
+
+## Confirmação do arquivo reenviado — 2026-10-12
+
+O arquivo `Calculadora_Aplicacao_Lucro_Liquido_Profissional (1).xlsm` reenviado
+em 2026-10-12 tem 11.093 bytes e SHA-256
+`33d3aa26aad47563e315461a32b1fcf199bc28999090e1188bf71ec66e3d14a2`, igual ao
+arquivo recebido anteriormente. A pasta de trabalho contém uma única aba
+(`Calculadora`) e 16 fórmulas. A leitura foi somente consulta; nenhum macro foi
+executado e nenhum valor financeiro preenchido na cópia foi reproduzido nesta
+evidência.
+
+A revisão dos rótulos e fórmulas confirmou os seguintes pontos da cópia antiga:
+
+- A instrução em `B5` pede copiar “Resultado Líquido do Exercício” da DRE do
+  Bling. A regra aprovada é calcular a DRE no Majucau; o relatório do Bling serve
+  para comparação.
+- `E11` é entrada manual de “Já Investido” e participa da fórmula de lucro
+  acumulado em `E12`; isso não comprova aportes e resgates de principal. O sistema
+  precisa usar movimentos rastreáveis, mantendo rendimentos separados.
+- `E15` é um saldo semanal digitado e `E16` é uma previsão separada da
+  Nuvemshop; `E20` soma esses campos. A regra aprovada usa o fluxo consolidado e
+  o menor fechamento diário de D0 a D+60. Portanto, essa soma antiga não deve ser
+  copiada para o cálculo do Majucau.
+- `E21` aplica a reserva e o lucro acumulado ao máximo calculado. A comparação
+  estrutural confirma como a planilha organiza os campos, mas não comprova que os
+  dados manuais representem as fontes e o período aprovados.
+
+D-003-A e D-003-C permanecem inalteradas. Continuam pendentes a consulta de
+produção à DRE própria, o histórico comprovado de aplicações/resgates de
+principal, a série consolidada de 61 saldos diários e a seleção da reserva
+vigente. Nenhum cálculo, tela, regra financeira ou valor de entrada foi alterado.

@@ -3774,3 +3774,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Diagnóstico encerrado; BK-041 permanece em 69% (31% restante) até configurar e autorizar a conta, validar o retorno, confirmar paginação/cursor e homologar uma sincronização real. Nenhuma tela ou regra financeira foi alterada; nenhum teste foi executado nesta etapa.
 - O backlog segue com 127 tarefas: 7 concluídas, 14 em andamento e 106 não iniciadas; média simples de 9,8% concluída e 90,2% restante. Não há prazo total confiável.
 - Evidência: `docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md`.
+
+### Reconfirmação da calculadora reenviada — 12/10/2026
+
+- O arquivo reenviado tem o mesmo SHA-256 do original e contém a mesma aba e as mesmas fórmulas. A leitura confirmou a instrução antiga para copiar o lucro da DRE do Bling, o campo manual de principal já investido e a soma separada de recebimentos da Nuvemshop.
+- Esses trechos foram comparados com as decisões aprovadas: DRE própria do Majucau, histórico comprovado de aportes/resgates e fluxo de caixa consolidado. Não são copiados como regra do sistema. D-003-A e D-003-C permanecem intactas.
+- BK-006 permanece em 30% (70% restante): a revisão documental está concluída, mas as fontes reais, a ligação de produção e exemplos reproduzíveis ainda faltam. BK-007 permanece em 20% (80% restante). O projeto permanece em 9,8% estimados (90,2% restante); não há prazo confiável enquanto integrações e homologação real estiverem pendentes.
+- Nenhuma tela, fórmula, regra financeira ou valor foi alterado. A evidência detalhada e o hash estão em `docs/evidence/APPLICATION-RULE-D003A-2026-09-20.md`.

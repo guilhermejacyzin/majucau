@@ -6,6 +6,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $artifactRoot = Join-Path $projectRoot 'artifacts'
+$goToolBinRoot = Join-Path $artifactRoot 'tools\go\bin'
 $env:GOCACHE = Join-Path $artifactRoot 'cache\go-build'
 $goModCacheRoot = Join-Path $artifactRoot 'cache\go-mod'
 $env:GOMODCACHE = $goModCacheRoot
@@ -17,7 +18,8 @@ if (-not (Test-Path -LiteralPath $goModCacheBoundary)) {
     @('module majucau.local/artifact-cache', '', 'go 1.26.0') |
         Set-Content -LiteralPath $goModCacheBoundary -Encoding utf8
 }
-$wailsCommand = if ($env:MAJUCAU_WAILS) { $env:MAJUCAU_WAILS } else { (Get-Command wails -ErrorAction Stop).Source }
+$wailsLocal = Join-Path $goToolBinRoot 'wails.exe'
+$wailsCommand = if ($env:MAJUCAU_WAILS) { $env:MAJUCAU_WAILS } elseif (Test-Path -LiteralPath $wailsLocal) { $wailsLocal } else { (Get-Command wails -ErrorAction Stop).Source }
 $goCommand = if ($env:MAJUCAU_GO) { $env:MAJUCAU_GO } else { (Get-Command go -ErrorAction Stop).Source }
 $env:Path = "$(Split-Path -Parent $goCommand);$env:Path"
 
@@ -45,7 +47,24 @@ try {
         & (Join-Path $PSScriptRoot 'consolidate-artifacts.ps1') -KeepSourceOutputs
         & (Join-Path $PSScriptRoot 'write-release-manifest.ps1')
         & (Join-Path $PSScriptRoot 'prepare-webview2.ps1')
-        $makensisCommand = (Get-Command makensis -ErrorAction Stop).Source
+        $makensisLocal = Join-Path $artifactRoot 'tools\nsis-3.13\Bin\makensis.exe'
+        $makensisRoots = @()
+        if ($env:ProgramFiles) { $makensisRoots += (Join-Path -Path $env:ProgramFiles -ChildPath 'NSIS') }
+        $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+        if ($programFilesX86) { $makensisRoots += (Join-Path -Path $programFilesX86 -ChildPath 'NSIS') }
+        $makensisInstalled = $makensisRoots |
+            ForEach-Object { Join-Path $_ 'makensis.exe' } |
+            Where-Object { Test-Path -LiteralPath $_ } |
+            Select-Object -First 1
+        $makensisCommand = if ($env:MAJUCAU_MAKENSIS) {
+            $env:MAJUCAU_MAKENSIS
+        } elseif (Test-Path -LiteralPath $makensisLocal) {
+            $makensisLocal
+        } elseif ($makensisInstalled) {
+            $makensisInstalled
+        } else {
+            (Get-Command makensis -ErrorAction Stop).Source
+        }
         Push-Location (Join-Path $projectRoot 'build\windows\installer')
         try {
             Invoke-NativeChecked $makensisCommand @('project.nsi')

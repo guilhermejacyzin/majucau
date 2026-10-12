@@ -94,7 +94,7 @@ scripts/                 bootstrap, validação e build
 Antes de alterar o projeto, leia [Como contribuir](CONTRIBUTING.md),
 `AGENTS.md` e as decisões aprovadas no `G0-DECISION-REGISTER.md`.
 
-Pré-requisitos: Windows 10/11 x64, Go 1.26.9, Node.js 24.x, Wails CLI 2.13.0, `sqlc` 1.31.1, WebView2 Runtime e PostgreSQL descartável para testes reais de migration.
+Pré-requisitos: Windows 10/11 x64, Go 1.26.9, Node.js 24.x, WebView2 Runtime e PostgreSQL descartável para testes reais de migration. O bootstrap instala Wails CLI 2.13.0, `sqlc` 1.31.1 e `govulncheck` 1.7.0 em `artifacts/tools/go/bin`; caches e temporários ficam sob `artifacts/cache/`.
 
 ```powershell
 ./scripts/bootstrap.ps1
@@ -102,6 +102,8 @@ Pré-requisitos: Windows 10/11 x64, Go 1.26.9, Node.js 24.x, Wails CLI 2.13.0, `
 ./scripts/build-windows.ps1
 ./scripts/build-windows.ps1 -Installer
 ```
+
+Para gerar o instalador, também é necessário NSIS 3.13. O script encontra uma cópia em `artifacts/tools/nsis-3.13/Bin`, nos diretórios padrão do Windows ou no `PATH`. A instalação de NSIS é separada do bootstrap e exige obter a versão oficial 3.13.
 
 Os executáveis e instaladores finais são consolidados em `artifacts/windows/`, com o inventário em `artifacts/MANIFEST.txt`. O pipeline também gera `majucau-windows-x64-portable.zip` com hashes para validação local; esse bundle não é o instalador de produção. Os caches de Go, npm e WebView2 ficam em `artifacts/cache/`; bundles de verificação e relatórios de smoke ficam em `artifacts/verification/`. A CI usa os mesmos diretórios e publica os resultados a partir de `artifacts/`, inclusive quando uma etapa falha. Após a consolidação, as saídas intermediárias (`build/bin`, `build/windows/installer/tmp/MicrosoftEdgeWebview2Setup.exe`, `frontend/dist` e `tmp`) são removidas por padrão. Use `-KeepSourceOutputs` somente para diagnóstico local.
 

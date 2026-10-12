@@ -7,6 +7,7 @@ $artifactRoot = Join-Path $projectRoot 'artifacts'
 $verificationRoot = Join-Path $artifactRoot 'verification'
 $env:GOCACHE = Join-Path $artifactRoot 'cache\go-build'
 $goModCacheRoot = Join-Path $artifactRoot 'cache\go-mod'
+$goToolBinRoot = Join-Path $artifactRoot 'tools\go\bin'
 $env:GOMODCACHE = $goModCacheRoot
 $env:GOTMPDIR = Join-Path $artifactRoot 'cache\go-tmp'
 $env:npm_config_cache = Join-Path $artifactRoot 'cache\npm'
@@ -18,8 +19,10 @@ if (-not (Test-Path -LiteralPath $goModCacheBoundary)) {
 }
 $goCommand = if ($env:MAJUCAU_GO) { $env:MAJUCAU_GO } else { (Get-Command go -ErrorAction Stop).Source }
 $env:Path = "$(Split-Path -Parent $goCommand);$env:Path"
-$sqlcCommand = if ($env:MAJUCAU_SQLC) { $env:MAJUCAU_SQLC } else { (Get-Command sqlc -ErrorAction Stop).Source }
-$vulncheckCommand = if ($env:MAJUCAU_GOVULNCHECK) { $env:MAJUCAU_GOVULNCHECK } else { (Get-Command govulncheck -ErrorAction Stop).Source }
+$sqlcLocal = Join-Path $goToolBinRoot 'sqlc.exe'
+$vulncheckLocal = Join-Path $goToolBinRoot 'govulncheck.exe'
+$sqlcCommand = if ($env:MAJUCAU_SQLC) { $env:MAJUCAU_SQLC } elseif (Test-Path -LiteralPath $sqlcLocal) { $sqlcLocal } else { (Get-Command sqlc -ErrorAction Stop).Source }
+$vulncheckCommand = if ($env:MAJUCAU_GOVULNCHECK) { $env:MAJUCAU_GOVULNCHECK } elseif (Test-Path -LiteralPath $vulncheckLocal) { $vulncheckLocal } else { (Get-Command govulncheck -ErrorAction Stop).Source }
 $goPackages = @('.', './cmd/...', './database/...', './internal/...')
 
 function Invoke-NativeChecked {

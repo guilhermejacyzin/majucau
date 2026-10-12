@@ -394,6 +394,15 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 85% + 69% + 5% + 20%) ÷ 127 = 8,7%`; restam 91,3%. É estimativa do backlog, não prontidão; não há prazo global confiável.
 - Nenhuma tela, regra financeira ou valor real foi alterado. A conta Bling segue na tela de login e não foram consultados dados financeiros reais.
 
+### Preparação do ambiente local — 12/10/2026
+
+- BK-026 avançou de 0% para 35%. O bootstrap agora instala Wails 2.13.0, sqlc 1.31.1 e govulncheck 1.7.0 em `artifacts/tools/go/bin`; os scripts de validação e build procuram essas cópias locais. O NSIS 3.13 foi extraído para `artifacts/tools/nsis-3.13` após conferência do hash oficial e o build procura essa ferramenta local antes dos caminhos globais.
+- `scripts/bootstrap.ps1` foi executado com sucesso: dependências Go e frontend instaladas; `npm ci` reportou 0 vulnerabilidades. As versões locais foram consultadas. Isso confirma a preparação desta máquina, não uma instalação em máquina limpa.
+- Faltam uma configuração de exemplo segura e a validação de início em máquina limpa. Não criamos `.env.example` porque o worker lê a DSN pelo ambiente e o fluxo seguro de entrega da credencial ainda está pendente em BK-014/BK-018; documentar um arquivo que o app não carrega poderia induzir configuração insegura. O PostgreSQL desconhecido continua intocado.
+- O backlog mantém 127 tarefas: 7 concluídas, 12 em andamento e 108 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-026 (35%), BK-031 (85%), BK-041 (69%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples do rastreador, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 35% + 85% + 69% + 5% + 20%) ÷ 127 = 8,9%`; restam 91,1%. É uma estimativa do backlog, não prontidão nem medição de esforço. Não há prazo global confiável enquanto permanecem tarefas não iniciadas, decisões operacionais e validações externas.
+- Evidência: `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. Nenhuma tela aprovada ou regra financeira foi alterada. Não foram executados testes do produto.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -1057,7 +1066,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-026 — Preparar o ambiente de desenvolvimento local
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 35%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Permitir execução reproduzível fora da produção.
 
@@ -1072,6 +1081,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Critério de aceite:** Ambiente sobe seguindo documentação e não acessa dados de produção por padrão.
 
 **Impacto:** Diminui tempo perdido com diferenças entre máquinas.
+
+**Evidência atual:** `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. Ferramentas fixadas e preparação local documentadas; ainda faltam configuração de exemplo segura e validação em máquina limpa.
 
 **Dependências:** BK-025, BK-018, BK-014
 

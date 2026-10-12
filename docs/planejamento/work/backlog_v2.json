@@ -787,15 +787,15 @@
     "questions": "",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md",
     "weight": 1,
     "dependencies": [
       "BK-025",
       "BK-018",
       "BK-014"
     ],
-    "progress": 0
+    "progress": 0.35
   },
   {
     "key": "gofoundation",

@@ -124,3 +124,18 @@ limite local não é usado como se tivesse sido enviado ao Bling. O código
 continua falhando com segurança quando não há prova de fim da paginação. Nada
 foi persistido, classificado ou usado para preencher os cards.
 O navegador mostra a tela de login do Bling; nenhum dado real foi consultado.
+
+## Nova tentativa de consulta da conta — 12/10/2026
+
+A lista de permissões do Google Chrome enviada pela responsável mostra
+`https://www.bling.com.br` como “Sempre permitir”. Mesmo assim, a ferramenta de
+navegação recusou a leitura da aba da conta com a mensagem de que uma preferência
+salva bloqueia o acesso. A recusa aconteceu antes de carregar ou ler qualquer
+dado da conta. Não tentei contornar a barreira por outra aba ou por comandos de
+navegador.
+
+Os PDFs foram conferidos novamente em 12/10/2026. Os dois trazem datas de
+liquidação e valores pagos, mas não a categoria por lançamento; o print mostra
+CAPEX somente agrupado, sem período ou vínculo com os documentos. Assim, a
+conclusão operacional permanece: não calcular nem preencher os cards até a
+categoria e o pagamento poderem ser conciliados com segurança.

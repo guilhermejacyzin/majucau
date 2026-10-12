@@ -8,8 +8,10 @@ valor individual foi copiado para este repositório.
 
 ## O que os arquivos mostram
 
-- O relatório de setembro cobre 01/09/2026 a 30/09/2026.
-- O relatório geral cobre 01/01/2026 a 30/09/2026.
+- Na conferência inicial dos arquivos recebidos em 04/10, o relatório mensal
+  cobria 01/09/2026 a 30/09/2026 e o geral cobria 01/01/2026 a 30/09/2026.
+- O relatório detalhado atualizado, recebido em 11/10, cobre 01/01/2026 a
+  30/11/2026; o arquivo geral continua cobrindo 01/01/2026 a 30/09/2026.
 - Os dois relatórios detalhados mostram fornecedor, histórico, número do
   documento, vencimento, data de liquidação, situação e valor pago.
 - Esses PDFs não mostram a categoria CAPEX em cada lançamento.
@@ -48,3 +50,23 @@ homologar a árvore real de CAPEX da conta, associar lançamentos à categoria e
 reconciliar os valores com os relatórios enviados. Até essa conferência, os
 cards continuam mostrando dado indisponível. Nenhum dado financeiro real foi
 copiado para esta evidência.
+
+## Rechecagem dos arquivos disponíveis — 12/10/2026
+
+Os dois PDFs foram conferidos novamente, incluindo a primeira página renderizada
+e a estrutura textual das quatro páginas de cada arquivo. O relatório detalhado
+mais recente mostra período de 01/01/2026 a 30/11/2026; o relatório identificado
+como geral mostra 01/01/2026 a 30/09/2026. Ambos apresentam as colunas de
+fornecedor, histórico, vencimento, liquidação, situação e valor pago. Nenhum
+dos PDFs contém a categoria nos registros.
+
+O print separado continua comprovando que existe uma visão agrupada de CAPEX e
+subcategorias. Ele não informa o período do filtro nem associa cada categoria a
+um documento, data de liquidação e valor pago. Portanto, os materiais confirmam
+que CAPEX aparece no Bling, mas ainda não permitem conciliar o total agrupado
+com os pagamentos individuais nem calcular os dois cards com segurança.
+
+Não foram copiados nomes, números de documentos ou valores individuais. A regra
+dos cards e a tela permanecem iguais; os valores seguem indisponíveis até haver
+uma ligação confiável entre a categoria e cada pagamento, pela API homologada ou
+por um relatório detalhado equivalente.

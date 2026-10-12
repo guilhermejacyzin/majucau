@@ -59,8 +59,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 49231,
-      "sha256": "3abe81bd2d90a5088fd91dd765525496212e10c04bddf9a771b37a48c2f3fd52"
+      "bytes": 49148,
+      "sha256": "0f1ed88e9c0ce9a704320a116d685da38f22c62f5d36d9396ec3b2ae49f3367c"
     },
     {
       "path": "docs/planejamento/README.md",
@@ -94,8 +94,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 192310,
-      "sha256": "7e0a3fbcaac8372a48b0cfdfbd357fe68ef2e4f4148dbf6b5f5a43ea692644b6"
+      "bytes": 192184,
+      "sha256": "6cab97ce77803c28eb8b8d968e0ab7e59d36e2b2c973b7e02a0c292288f730b2"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",

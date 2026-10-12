@@ -341,10 +341,10 @@
     "owner": "Majucau + UX",
     "kind": "Planejamento",
     "status": "Em andamento",
-    "evidence": "25%: T02–T07/T13–T15 mapeadas; Excel com tabela e data da tela aprovado para T13–T15. Faltam filtros/escopo, rota e detalhes. Ver auditoria.",
+    "evidence": "30%: T02–T07/T13–T15 parcialmente mapeadas. Excel aprovado para T13–T15; falta ligar consulta, rota e autorização.",
     "weight": 1,
     "dependencies": [],
-    "progress": 0.25
+    "progress": 0.3
   },
   {
     "key": "accesspolicy",
@@ -367,10 +367,10 @@
     "owner": "Arquitetura + Segurança",
     "kind": "Planejamento",
     "status": "Em andamento",
-    "evidence": "",
+    "evidence": "20%: matriz ADMIN/DIRECTOR alinhada. Login, sessão e aplicação das permissões no worker seguem pendentes.",
     "weight": 1,
     "dependencies": [],
-    "progress": 0.15
+    "progress": 0.2
   },
   {
     "key": "localrequirements",
@@ -1286,14 +1286,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "65% — cabeçalho JWT enable-jwt:1 em OAuth e chamadas autenticadas; filtros de situação por rota e falha segura quando a última página é desconhecida. CI 38172628938 passou. Resposta real e cursor seguem sem homologação; evidências em docs/evidence/BLING-JWT-MIGRATION-2026-10-11.md e BLING-PAGINATION-CONTRACT-2026-10-11.md.",
+    "evidence": "68%: JWT/retry e leitura de receber, pagar e caixa. Homologação real, fim/cursor e integração da fonte de caixa pendentes.",
     "weight": 1,
     "dependencies": [
       "BK-040",
       "BK-039",
       "BK-038"
     ],
-    "progress": 0.65
+    "progress": 0.68
   },
   {
     "key": "fileingestion",

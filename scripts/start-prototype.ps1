@@ -22,6 +22,7 @@ $originalEnvironment = @{}
 $cleanupErrors = [System.Collections.Generic.List[string]]::new()
 
 Import-Module (Join-Path $PSScriptRoot 'SafeCleanup.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'BoundedText.psm1') -Force
 Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $artifactRoot -ExpectedType Directory
 Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $instanceRoot -ExpectedType Directory
 Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $dataRoot -ExpectedType Directory
@@ -32,7 +33,7 @@ foreach ($name in @('MAJUCAU_DATABASE_URL', 'MAJUCAU_SECRET_DIR', 'GOCACHE', 'GO
 
 try {
     if (-not (Test-Path -LiteralPath (Join-Path $dataRoot 'PG_VERSION') -PathType Leaf) -or
-        (Get-Content -Raw -LiteralPath (Join-Path $dataRoot 'PG_VERSION')).Trim() -ne '18') {
+        (Read-BoundedTextFile -Path (Join-Path $dataRoot 'PG_VERSION') -MaxBytes 128).Trim() -ne '18') {
         throw 'O banco de desenvolvimento isolado PostgreSQL 18 não está preparado. Nenhum banco existente foi alterado.'
     }
     if (-not (Test-Path -LiteralPath $credentialPath -PathType Leaf)) {
@@ -109,7 +110,7 @@ try {
         $startedDatabase = $true
     }
 
-    $encryptedPassword = (Get-Content -Raw -LiteralPath $credentialPath).Trim()
+    $encryptedPassword = (Read-BoundedTextFile -Path $credentialPath -MaxBytes 65536).Trim()
     $securePassword = ConvertTo-SecureString -String $encryptedPassword
     $runtimePassword = (New-Object System.Net.NetworkCredential('', $securePassword)).Password
     $encodedPassword = [Uri]::EscapeDataString($runtimePassword)

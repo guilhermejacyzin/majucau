@@ -1084,7 +1084,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Impacto:** Diminui tempo perdido com diferenças entre máquinas.
 
-**Evidência atual:** `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. O roteiro abriu o protótipo usando o banco local isolado; faltam homologação visual/funcional, investigação dos avisos do Wails, configuração de exemplo segura e validação em máquina limpa.
+**Evidência atual:** `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. O roteiro abriu o protótipo usando o banco local isolado; as leituras de `PG_VERSION` e da credencial cifrada no inicializador agora têm limites explícitos via leitor em blocos. Faltam homologação visual/funcional, investigação dos avisos do Wails, configuração de exemplo segura e validação em máquina limpa. O percentual continua em 55% até validação em execução.
 
 **Dependências:** BK-025, BK-018, BK-014
 

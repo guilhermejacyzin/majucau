@@ -39,3 +39,9 @@
 - O worker registrou `DIAGNOSTICS_LOG_UNAVAILABLE`: a pasta padrão `%ProgramData%\Majucau` não existe neste ambiente de desenvolvimento. O worker continua respondendo e usa o fallback sanitizado em `stderr`, que `scripts/start-prototype.ps1` direciona para `artifacts/retained/postgresql-dev/worker.stderr.log`. Na sessão ativa, o fallback contém chamadas de saúde, estado das integrações e painel, mas não chamadas OAuth, teste ou sincronização do Bling. Esse aviso não impede a API; o logger do serviço instalado ainda precisa ser validado numa instalação/VM.
 - O percentual da BK-026 permanece em 55% (45% restante), pois ainda faltam conferir visualmente as telas, validar o encerramento e testar em uma máquina limpa. O backlog geral permanece em 9,1% (90,9% restante), sem prazo total confiável.
 - Nenhuma tela aprovada, regra financeira ou regra de negócio foi modificada. Não foram executados testes do produto.
+
+## Leitura limitada na inicialização — 12/10/2026
+
+- `scripts/start-prototype.ps1` agora usa o leitor limitado do projeto para `PG_VERSION` (até 128 bytes) e para a credencial cifrada local (até 64 KiB), em vez de ler esses arquivos sem teto.
+- O ambiente ativo não foi reiniciado e os processos/arquivos retidos não foram removidos. A mudança ainda precisa de validação em execução e numa máquina limpa; por isso BK-026 continua em 55%.
+- Não foram alteradas telas aprovadas, regras financeiras, banco de dados ou credenciais. Nenhum teste foi executado.

@@ -92,3 +92,10 @@ limpa.
 - A ausência de marcador de continuação permanece desconhecida: página curta não encerra a leitura. A rota ainda não está ligada à persistência; não há estimativa de CAPEX a partir desses dados.
 - Os testes focais do adapter e `go vet` passaram localmente; a CI [38184670780](https://github.com/guilhermejacyzin/majucau/actions/runs/38184670780) passou nos jobs Windows e PostgreSQL. Isso valida os limites e contratos sintéticos, não mede pico de memória com dados reais nem homologa a paginação da conta.
 - A inspeção da documentação da conta do Bling continua pendente por bloqueio de navegação no Chrome. Para terminar a homologação, é necessário confirmar os campos reais da resposta e a forma oficial de avançar de página. Nenhuma tela ou regra financeira foi alterada.
+
+## Revalidação do inicializador local — 12/10/2026
+
+- A busca ampliada encontrou duas leituras sem limite em `scripts/start-prototype.ps1`: o pequeno arquivo `PG_VERSION` do PostgreSQL local e o arquivo cifrado `runtime.dpapi` com a senha de desenvolvimento.
+- Ambas foram trocadas por `Read-BoundedTextFile`, que lê em blocos e interrompe quando ultrapassa o teto configurado: 128 bytes para `PG_VERSION` e 64 KiB para o conteúdo cifrado. O conteúdo da senha continua fora do Git e dos logs.
+- Esta mudança cobre somente os dados pequenos de configuração usados ao iniciar o ambiente local. Ela não altera leitura financeira, interfaces ou regras de negócio.
+- A revisão foi estática; nenhum teste ou inicialização foi executado nesta etapa. A conferência em execução e a validação de máquina limpa continuam pendentes. `DATA-04` permanece parcial.

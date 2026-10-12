@@ -493,13 +493,13 @@
     "questions": "",
     "owner": "Arquitetura",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "BK-017: limites, contratos, transações e dependências em docs/architecture/GO-MODULAR-BOUNDARIES.md; o worker fecha o pool que cria. O fechamento aguarda BK-016.",
     "weight": 1,
     "dependencies": [
       "BK-016"
     ],
-    "progress": 0
+    "progress": 0.9
   },
   {
     "key": "storage",

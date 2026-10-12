@@ -5,6 +5,7 @@
 - [Backlog detalhado](outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md).
 - [Análise e decisões](outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md).
 - [Planilha de evolução](outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx).
+- [Limites da arquitetura Go](../architecture/GO-MODULAR-BOUNDARIES.md).
 - Dados estruturados: [tarefas atuais](work/backlog_v2.json), [decisões](work/decisions_v2.json), [cobertura](work/scope_v2.json) e [registro histórico de alterações de 13/09/2026](work/revision_v2.json). O registro histórico não substitui a situação atual das tarefas.
 - [Verificações executadas na preparação original](work/verification_v2.json) e [prévias históricas da planilha](work/previews_v2). Novas prévias temporárias são geradas em `../../artifacts/verification/backlog-v2` e removidas depois da conferência.
 

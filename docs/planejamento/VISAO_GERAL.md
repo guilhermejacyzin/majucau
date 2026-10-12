@@ -9,6 +9,7 @@ Planejamento do sistema de gestão e análise da Majucau. A **versão 2** é a r
 | [Backlog detalhado v2](outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md) | 127 tarefas, da BK-000 à BK-126: objetivo, o que fazer, como fazer, impacto, dependências e aceite. |
 | [Planilha de evolução v2](outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx) | Tarefas, evolução calculada, decisões e cobertura dos módulos. |
 | [Análise e decisões v2](outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md) | Regras vigentes, alterações do fechamento e dez frentes de verificação técnica futura. |
+| [Limites da arquitetura Go](../architecture/GO-MODULAR-BOUNDARIES.md) | Módulos, contratos, dependências e transações verificadas em BK-017. |
 | [Índice completo](README.md) | Histórico, auditorias, dados estruturados, prévias e scripts. |
 | [Fontes e rastreabilidade](FONTES.md) | Inventário e identificação das referências usadas. |
 
@@ -28,6 +29,8 @@ Na planilha, uma tarefa pontua 100% somente quando está concluída e possui evi
 
 ### Estado atual do backlog — 12/10/2026
 
-O backlog registra **7 tarefas concluídas, 12 em andamento e 108 não iniciadas**. As tarefas em andamento são BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-031 (85%), BK-041 (69%), BK-056 (5%) e BK-067 (20%). Pela média simples das 127 tarefas, o acompanhamento estima **9,1% concluído e 90,9% restante**. Essa média é uma estimativa de planejamento; não comprova prontidão para homologação ou produção.
+O backlog registra **7 tarefas concluídas, 14 em andamento e 106 não iniciadas**. As tarefas em andamento são BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-031 (85%), BK-041 (69%), BK-056 (5%), BK-067 (20%) e BK-102 (1%). Pela média simples das 127 tarefas, o acompanhamento estima **9,8% concluído e 90,2% restante**. Essa média é uma estimativa de planejamento; não comprova prontidão para homologação ou produção.
+
+BK-017 avançou com o registro dos limites arquiteturais e a propriedade explícita do pool PostgreSQL pelo worker. O fechamento formal aguarda BK-016, sua dependência de modelagem dos domínios do negócio.
 
 Há código e evidências de CI para partes da fundação, mas ainda faltam validação com dados reais, homologação e revisão das tarefas não iniciadas. Não há prazo global confiável. Consulte o backlog v2 e `REQUIREMENTS-TRACEABILITY.md` antes de usar os números como critério de liberação.

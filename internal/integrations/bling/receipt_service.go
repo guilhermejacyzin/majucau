@@ -41,12 +41,6 @@ func NewReceiptImportService(pool *pgxpool.Pool) *ReceiptImportService {
 	return &ReceiptImportService{pool: pool}
 }
 
-func (s *ReceiptImportService) Close() {
-	if s != nil && s.pool != nil {
-		s.pool.Close()
-	}
-}
-
 func (s *ReceiptImportService) Import(ctx context.Context, folder string) (out ReceiptImportResult, returnErr error) {
 	if s == nil || s.pool == nil {
 		return ReceiptImportResult{}, ErrReceiptDatabaseUnavailable

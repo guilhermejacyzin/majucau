@@ -30,8 +30,8 @@ func runWorker(ctx context.Context) (returnErr error) {
 }
 
 func (h workerHandler) Close() {
-	if h.receiptImporter != nil {
-		h.receiptImporter.Close()
+	if h.resources != nil {
+		h.resources.Close()
 	}
 }
 

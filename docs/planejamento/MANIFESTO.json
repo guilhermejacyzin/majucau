@@ -13,9 +13,14 @@
       "sha256": "029635e92b8839840959d6a3a0a64992a6277032527e762db67e027718e13ae2"
     },
     {
+      "path": "docs/architecture/GO-MODULAR-BOUNDARIES.md",
+      "bytes": 6860,
+      "sha256": "5f6a0b3597ff14e3160605ae5f29736e805dafa7b4a1e1e08cea5f9009e9784d"
+    },
+    {
       "path": "docs/evidence/DASHBOARD-REFRESH-AFTER-INTEGRATION-2026-10-12.md",
-      "bytes": 1347,
-      "sha256": "ebefa9763cbc3f04ae6ca124e6592319c496db285c6afd9949a04a640b1d25db"
+      "bytes": 1339,
+      "sha256": "dd993b2aab322d7577508d51f60e0daf3569d67f4c453e7cc63a5c1b6c553200"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -49,8 +54,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 270445,
-      "sha256": "ffa20bbdaeb3f786e533bf5fb68e6c98b2a241fa826a505545fbe622a8458889"
+      "bytes": 281769,
+      "sha256": "e83f7094a877b580b8a7a9cb1534797f68813091238ac093690702938acc7a7f"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -64,13 +69,13 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 49290,
-      "sha256": "225316745f98b8c172e4b5c3daadfaffc76f55e01ef2965b7f3c89476a44eaf1"
+      "bytes": 49384,
+      "sha256": "36db40d90785778700d28d76dea8f29f1946edc54504e794e0c8643a46fe19c5"
     },
     {
       "path": "docs/planejamento/README.md",
-      "bytes": 3963,
-      "sha256": "901eda94681bd8423ef941c89bb812ca51a1172cee9754d2aeb95187f7d1ce70"
+      "bytes": 4036,
+      "sha256": "5aa3974b23b8a00210a5160e3d1fdcf32a7e681850f794a870519b4a59030ed0"
     },
     {
       "path": "docs/planejamento/RELATORIOS-CATALOGO-RASCUNHO-2026-10-04.md",
@@ -79,8 +84,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 3288,
-      "sha256": "e50cbcbc1627805253d2a24267b2e40b582d076595fb5bd2a91238d0f6c7dc20"
+      "bytes": 3674,
+      "sha256": "210905fdf8f29cadcdd15e4debc622305ca09d89372d90fa663dfd34a2f3ee5c"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -99,8 +104,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 192426,
-      "sha256": "8ef419d0cb153e80b3aed7fc0e5a13b55b62fbae3bf9ef1d33432453c9b208b2"
+      "bytes": 192591,
+      "sha256": "17e04e7accbf135aec64cca37c1fe7178f97fc3aa2c8ad0608e20b8868684eb4"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",

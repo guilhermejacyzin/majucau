@@ -405,6 +405,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Pela média simples do rastreador, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 55% + 85% + 69% + 5% + 20% + 1%) ÷ 127 = 9,1%`; restam 90,9%. É uma estimativa do backlog, não prontidão nem medição de esforço. Não há prazo global confiável enquanto permanecem tarefas não iniciadas, decisões operacionais e validações externas.
 - Evidência: `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. Nenhuma tela aprovada ou regra financeira foi alterada. Não foram executados testes do produto.
 
+### Estado atual do backlog — 12/10/2026
+
+- O backlog mantém 127 tarefas: 7 concluídas, 14 em andamento e 106 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-031 (85%), BK-041 (69%), BK-056 (5%), BK-067 (20%) e BK-102 (1%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 90% + 35% + 70% + 55% + 85% + 69% + 5% + 20% + 1%) ÷ 127 = 9,8%`; restam 90,2%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -845,7 +851,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-017 — Definir a estrutura hexagonal do monólito Go
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Arquitetura.
+**Situação:** Em andamento. **Evolução:** 90%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Arquitetura.
 
 **Objetivo:** Manter regras testáveis e independentes das integrações.
 
@@ -864,6 +870,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Dependências:** BK-016
 
 **Fonte:** Stack definida pelo usuário
+
+**Evidência atual:** `docs/architecture/GO-MODULAR-BOUNDARIES.md` registra os módulos Go, as portas existentes, dependências permitidas, composição, fronteiras transacionais e o mapa de imports conferido. `cmd/worker` agora fecha o pool PostgreSQL compartilhado no ponto que o criou. Os 10% restantes aguardam a conclusão da dependência BK-016, que define os contextos e o vocabulário de negócio.
 
 ### BK-018 — Definir persistência, migrações e precisão dos dados
 
@@ -3748,3 +3756,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O retorno OAuth precisa ser confirmado antes da correção: o Majucau escuta em callback local, mas a tela sugere HTTPS e o guia do Bling não confirma suporte ao loopback. Não vou presumir o endereço nem alterar tela aprovada. Próximo dado necessário: endereço exibido no campo “Link de redirecionamento” do cadastro do aplicativo; ocultar Client ID e Client Secret.
 - BK-041 permanece em 69% (31% restante), porque o aplicativo real ainda não foi configurado/autorizado e não houve teste de conexão nem sincronização homologada. O projeto permanece em 9,1% estimados (90,9% restante); sem prazo global confiável.
 - Nenhuma tela, regra financeira ou regra de negócio foi alterada; nenhum teste foi executado. Referência: `docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md`.
+
+### Auditoria da arquitetura modular Go — 12/10/2026
+
+- A leitura do grafo de imports confirmou que `internal/domain` depende apenas da biblioteca padrão e de fuso horário embutido; `internal/financial` depende do domínio; `internal/application` depende do domínio e da biblioteca padrão. Integrações, painel e segurança ficam nos adaptadores. O worker é o ponto que liga interfaces às implementações.
+- `docs/architecture/GO-MODULAR-BOUNDARIES.md` registra as interfaces de provedor, repositório, relógio e arquivo; as dependências permitidas; a composição; e as transações de sincronização Bling, importação CSV e leitura do painel. A revisão também confirmou que a CI ainda não fiscaliza automaticamente toda a direção dos imports.
+- A raiz do worker passou a ser dona explícita do pool PostgreSQL e a fechá-lo ao encerrar. Os serviços que compartilham esse pool não fecham mais um recurso que não criaram.
+- BK-017 avança para 90% (10% restante). A dependência BK-016, que mapeia contextos e vocabulário de negócio, continua não iniciada; por isso o fechamento formal de BK-017 depende de decisão sobre manter ou liberar essa ordem. Nenhuma tela, regra financeira ou dado persistido foi alterado. Não executei testes locais.
+- O backlog mantém 127 tarefas: 7 concluídas, 14 em andamento e 106 não iniciadas; a média simples é 9,8% concluída e 90,2% restante. Não há prazo global confiável.

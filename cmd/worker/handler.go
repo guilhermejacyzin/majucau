@@ -18,11 +18,13 @@ import (
 
 type receiptImporter interface {
 	Import(context.Context, string) (bling.ReceiptImportResult, error)
-	Close()
 }
 
 type futureImporter interface {
 	Import(context.Context, string) (nuvempago.FutureImportResult, error)
+}
+
+type resourceCloser interface {
 	Close()
 }
 
@@ -47,6 +49,7 @@ type blingRawSyncer interface {
 
 type workerHandler struct {
 	health          application.StaticHealth
+	resources       resourceCloser
 	receiptImporter receiptImporter
 	futureImporter  futureImporter
 	blingConfig     blingConfigSaver
@@ -59,6 +62,10 @@ type workerHandler struct {
 
 func newWorkerHandler() workerHandler {
 	pool := newDatabasePoolFromEnvironment()
+	var resources resourceCloser
+	if pool != nil {
+		resources = pool
+	}
 	var importer receiptImporter
 	var future futureImporter
 	var configSaver blingConfigSaver
@@ -80,7 +87,7 @@ func newWorkerHandler() workerHandler {
 			rawSync = oauthService.(blingRawSyncer)
 		}
 	}
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader, dashboardReader: dashboardReader}
+	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader, dashboardReader: dashboardReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {

@@ -36,12 +36,6 @@ func NewFutureImportService(pool *pgxpool.Pool) *FutureImportService {
 	return &FutureImportService{pool: pool}
 }
 
-func (s *FutureImportService) Close() {
-	if s != nil && s.pool != nil {
-		s.pool.Close()
-	}
-}
-
 func (s *FutureImportService) Import(ctx context.Context, folder string) (out FutureImportResult, returnErr error) {
 	if s == nil || s.pool == nil {
 		return FutureImportResult{}, ErrFutureDatabaseUnavailable

@@ -1469,6 +1469,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Diagnóstico do fluxo de dados (12/10/2026):** o código separa configuração, autorização, teste de conexão e sincronização; abrir o painel não inicia a coleta. A primeira leitura manual exige filtro de data ou situação. A atualização diária às 09:30 pertence a BK-039, ainda não iniciada. Na sessão local iniciada às 17:23, os logs sanitizados mostram apenas saúde, estado das integrações e painel; não houve comando OAuth, teste ou sync, então essa sessão ainda não pediu dados ao Bling. `DIAGNOSTICS_LOG_UNAVAILABLE` refere-se à pasta de logs de instalação ausente no protótipo; o worker continuou e registrou eventos no `worker.stderr.log`. Conferir o status visível no Majucau e executar o fluxo aprovado antes de investigar uma falha do adapter. Ver `docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md`. O percentual de BK-041 permanece 69%; esta evidência não é homologação.
 
+**Auditoria de retry HTTP (12/10/2026):** uma busca estática confirmou que as listagens financeiras e os detalhes de registros Bling chamam a política comum `internal/integrations/httpretry`, com até três tentativas, erros transitórios classificados pelo adapter, espera limitada por `Retry-After`, jitter e cancelamento. A troca de token OAuth via POST permanece sem retry. Não foram encontrados outros clientes HTTP externos em produção Go; as operações de leitura atuais não escapam da política. Não foi necessária correção de código. Os testes existentes e a CI citados na evidência de 11/10 já cobrem o helper e o adapter; nenhum teste foi executado nesta revisão. BK-041 permanece em 69%, pois configuração, autorização, cursor/paginação oficial e sincronização com a conta real seguem pendentes. Ver `docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md`.
+
 **Impacto:** Mantém integração estável e credenciais protegidas.
 
 **Dependências:** BK-040, BK-039, BK-038
@@ -3729,3 +3731,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Continua sem resposta o que fazer se um arquivo externo não estiver disponível às 09:30. A implementação da rotina continua sem início até essa regra operacional ser definida; nenhuma tela ou regra financeira foi alterada.
 - BK-039 permanece em 0% (100% restante). O projeto permanece na estimativa registrada de 9,1% concluído (90,9% restante), sem previsão global confiável.
 - Decisão registrada em `G0-DECISION-REGISTER.md`; o diagnóstico anterior do Bling e as evidências de hospedagem foram atualizados para não apontar o fuso como pendente.
+
+### Auditoria dos caminhos de retry HTTP — 12/10/2026
+
+- Conferidos estaticamente os pontos de transporte do Bling, os limites das tentativas e os métodos repetíveis. Todas as leituras atuais usam `internal/integrations/httpretry`; POST OAuth continua sem repetição automática. Não foi encontrada falha que exigisse alteração de código.
+- A conexão do Bling continua sem dados porque a tela permanece sem Client ID/Redirect URI e sem autorização, conforme o print de Integrações; isso não decorre da política de retry. Não foi possível validar com a conta real.
+- BK-041 permanece em 69% (31% restante) até homologar autenticação, recursos e paginação/cursor oficiais. O projeto permanece em 9,1% estimados (90,9% restante); o prazo global ainda depende das pendências externas e da auditoria do restante do backlog.
+- Nenhuma tela, regra financeira ou regra de negócio foi alterada. Não foram executados testes locais.

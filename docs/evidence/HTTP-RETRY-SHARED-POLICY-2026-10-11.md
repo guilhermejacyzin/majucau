@@ -25,3 +25,15 @@ Aplicar como padrão reutilizável nas integrações do Majucau o retry limitado
 Embora a CI do commit tenha passado, isso não substitui a homologação do Bling, o cursor incremental oficial ou os testes de outras integrações quando forem implementadas. A política comum não permite retry de escrita sem contrato oficial e desenho de idempotência revisado.
 
 Nenhuma tela, regra financeira, fórmula, migration ou chamada à conta real foi alterada.
+
+## Auditoria de cobertura dos caminhos HTTP — 2026-10-12
+
+Uma nova busca estática cobriu todos os usos de `http.Client.Do` e de `.Do(req)` na produção Go:
+
+- Listagens de contas a receber/pagar e movimentos financeiros entram em `doFinancialResourceRequestWithLimit`, que aplica `withBlingReadRetry` antes de cada tentativa.
+- Detalhes individuais de títulos, borderôs, caixas e categorias entram em `getDataRecord`, também protegido por `withBlingReadRetry`.
+- Categorias usam a mesma rota de listagem. A chamada de `rate_limit.go` é o limitador que delega cada tentativa ao transporte; não é um caminho de API separado.
+- A troca de código/refresh token OAuth continua como `POST` direto, sem retry automático, pois repetir pode consumir código ou refresh token de uso único.
+- Não foram encontrados outros clientes HTTP de integrações externas na produção Go atual. Novos adapters devem usar `internal/integrations/httpretry` para operações repetíveis e idempotentes após confirmar replay seguro.
+
+**Resultado:** a revisão não encontrou chamada de leitura do Bling fora da política comum nem retry automático de escrita. Nenhuma correção de código foi necessária nesta revisão. Não foram executados testes localmente; os resultados de testes e CI acima pertencem aos commits previamente validados. A conexão real do Bling segue bloqueada pela configuração/autorização ausentes, que são uma causa separada do retry.

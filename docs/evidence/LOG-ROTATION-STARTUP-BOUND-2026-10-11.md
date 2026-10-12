@@ -26,6 +26,7 @@ arquivo existente. No Windows, a inspeção também recusa links e reparse point
 
 ## Limites restantes
 
-Esta alteração não valida a instalação do serviço em VM Windows 10/11 e não
-mostra uma referência de diagnóstico na tela. BK-031 continua parcial. Nenhuma
-tela aprovada ou regra financeira foi alterada.
+Esta alteração não valida a instalação do serviço em VM Windows 10/11. A
+referência de diagnóstico foi acrescentada depois, conforme o complemento em
+`WORKER-STRUCTURED-DIAGNOSTICS-2026-10-11.md`; a conferência visual ainda está
+pendente. BK-031 continua parcial. Nenhuma regra financeira foi alterada.

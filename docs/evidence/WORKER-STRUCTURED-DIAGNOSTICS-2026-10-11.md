@@ -43,10 +43,11 @@ feito. Este documento não declara o critério da tarefa completo.
 
 ## O que ainda falta
 
-- A tela atual mostra códigos de erro, mas descarta o identificador único da
-  chamada. Por isso, ainda não é possível filtrar com precisão um erro exibido
-  pelo usuário. A tela está protegida e a mudança mínima para exibir uma
-  referência está aguardando decisão da responsável.
+- A tela agora mostra o “Código de referência” nas falhas recebidas de uma
+  chamada identificada pelo worker, permitindo localizar o evento técnico
+  correspondente. Falhas que acontecem antes do envio ao worker não têm essa
+  referência. A conferência visual da mensagem na tela aprovada e a validação
+  da ACL dos logs em instalação/VM continuam pendentes.
 - Os eventos permitem contar falhas e calcular a duração observada por
   operação. Ainda não há painel/endpoint de métricas nem agregação persistente.
 - Não existe fila de processamento de lotes no worker síncrono atual. A métrica

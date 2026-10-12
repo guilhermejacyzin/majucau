@@ -48,3 +48,12 @@ Esta correção foi revisada estaticamente e formatada, mas os testes e o protó
 ## Proteções
 
 Esta revisão não alterou telas aprovadas, regras financeiras, configuração do Bling, banco de dados ou credenciais. Nenhuma chamada foi feita à conta real nesta execução; os resultados descritos acima são inspeção do código e da janela de logs já coletada.
+
+## Rechecagem do protótipo e do acesso — 12/10/2026
+
+- A permissão do navegador mostrada pela responsável lista `https://www.bling.com.br` como “Sempre permitir”, mas a ferramenta de navegação do assistente ainda recusou a leitura do site por uma preferência salva. Não houve tentativa por outro navegador ou caminho.
+- A interface `majucau-dev.exe` em execução iniciou às 18:07:01; o commit `3bf03a9`, que corrige os dois indicadores, foi criado às 18:07:49. Portanto, a instância aberta começou antes da correção e precisa ser reaberta para exibi-la.
+- O log sanitizado do worker terminou às 18:14:44 e contém chamadas `health.get`, `integration.status` e `dashboard.snapshot`; não registra início OAuth, teste de conexão nem sincronização. Isso reforça que o adapter ainda não recebeu uma operação para consultar o Bling.
+- A instância não foi encerrada durante esta conferência para preservar o protótipo aberto. A validação visual da correção permanece pendente de reabertura; a conexão real permanece pendente de configuração/autorização e de uma sincronização filtrada.
+
+Não foram alterados código, telas, regras financeiras, credenciais ou dados. Nenhum teste foi executado.

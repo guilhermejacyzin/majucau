@@ -1465,6 +1465,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Compatibilidade com autenticação JWT do Bling (11/10/2026):** implementado `enable-jwt: 1` na troca e renovação de token e em todas as chamadas autenticadas de leitura. Testes cobrem OAuth, consultas de recursos e Bearer JWT com 3.000 caracteres. O host já usa `api.bling.com.br`; o cofre não impõe limite curto de token. A autenticação com a conta real ainda não foi homologada. Ver `docs/evidence/BLING-JWT-MIGRATION-2026-10-11.md`. BK-041 passa de 60% para 65%; o avanço não encerra a tarefa.
 
+**Diagnóstico do fluxo de dados (12/10/2026):** o código separa configuração, autorização, teste de conexão e sincronização; abrir o painel não inicia a coleta. A primeira leitura manual exige filtro de data ou situação. A atualização diária às 09:30 pertence a BK-039, ainda não iniciada. A janela de logs examinada não contém eventos OAuth/teste/sync e teve `DIAGNOSTICS_LOG_UNAVAILABLE`; portanto, ainda não comprova tentativa com a conta real nem permite apontar falha do adapter. Conferir o status visível no Majucau antes de alterar código. Ver `docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md`. O percentual de BK-041 permanece 69%; esta evidência não é homologação.
+
 **Impacto:** Mantém integração estável e credenciais protegidas.
 
 **Dependências:** BK-040, BK-039, BK-038

@@ -99,5 +99,11 @@ controle local de limpeza. Nenhum artefato unsigned é uma versão de produção
   `verify-windows` e `verify-postgres`. Isso inclui os testes automatizados,
   compilação e empacotamento. A conferência visual no protótipo e a validação da
   ACL dos logs em instalação/VM continuam pendentes.
+- **Prévia visual parcial — 12/10/2026:** a tela de Integrações foi aberta sem
+  conectar o Bling nem usar dados financeiros. O bloco de falha mostrou o código
+  estável acima da mensagem, sem mover componentes. Como o worker estava
+  indisponível, essa tela não tinha um `request_id`; portanto, esta inspeção não
+  confirma visualmente a referência correlacionada ao log. Ainda falta conferir
+  uma falha recebida do worker com referência e validar a ACL em instalação/VM.
 - A mudança altera somente o texto complementar autorizado. Nenhum layout,
   regra financeira, regra de negócio ou dado financeiro/operacional foi alterado.

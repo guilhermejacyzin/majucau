@@ -1172,6 +1172,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Atualização após referência visível — 11/10/2026:** com autorização da responsável, `app.go` agora acrescenta à mensagem já existente o identificador que o worker registra no log. A CI `38169879308` passou nos quatro jobs, incluindo Windows, PostgreSQL, testes, compilação e instalador. BK-031 está em 85%; faltam conferência visual no protótipo e validação da ACL dos logs em instalação/VM. A recontagem atual do rastreador é 8,5% concluída e 91,5% restante (127 tarefas; 7 concluídas, 11 em andamento e 109 não iniciadas). A mensagem complementar não move elementos nem redesenha a tela e não altera regras de negócio ou financeiras. Evidência: `docs/evidence/WORKER-STRUCTURED-DIAGNOSTICS-2026-10-11.md`.
 
+**Conferência visual parcial — 12/10/2026:** a prévia local confirmou que o código estável e a mensagem de indisponibilidade aparecem em linhas separadas, sem mudança de posição. Como o worker não estava disponível, não foi possível conferir ali um `request_id` correspondente ao log. BK-031 permanece em 85%; falta essa conferência com erro identificado pelo worker e a validação da ACL em instalação/VM. A evidência registra o alcance e a limitação da prévia.
+
 **Critério de aceite:** Erro visível ao usuário possui referência que encontra diagnóstico técnico sem tokens ou extratos completos.
 
 **Impacto:** Facilita suporte e investigação.

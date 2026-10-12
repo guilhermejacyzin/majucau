@@ -21,6 +21,7 @@
 | GOV-02 | Não desenvolver previsão por SKU/demanda, produção, otimização de estoque, compras recomendadas, pricing avançado, CRM, marketing, Appmax, Mercado Pago ou Itaú | pp. 3–4, §4 | Plano §1, “Fora do escopo”; AGENTS “Produto e plataforma” | G0 | Revisão de dependências, rotas e backlog sem itens fora do escopo | DOCUMENTED |
 | GOV-03 | Entregar ADR, ERD, mapa de APIs, dicionário e plano antes do código; manter `AGENTS.md` | pp. 24, 29–30, §§45–53 | Cinco artefatos G0; AGENTS; Registro G0 | G0/G1 | Aprovação explícita e `AGENTS.md` na raiz do repositório | VERIFIED |
 | GOV-04 | Regra material não muda sem aprovação expressa e nova evidência | p. 28, §50 | Data §§14–15; AGENTS “Invariantes”; Registro G0 | G0/G3/G5 | Versão, aprovação, diff e regressão por regra | BLOCKED |
+| GOV-05 | Proteger a branch `main` e exigir a CI de backlog, Windows e PostgreSQL antes de integrar mudanças | Objetivo de governança da responsável; `AGENTS.md`; `CONTRIBUTING.md` | `.github/workflows/ci.yml`; configurações de branches/rulesets do GitHub | G1 | Em 2026-10-12, a API do GitHub retornou `protected: false` para `main` e nenhum ruleset. A conta conectada tem permissão `write`, sem acesso administrativo para configurar a proteção. Uma pessoa administradora precisa exigir `verify-backlog`, `verify-windows` e `verify-postgres`. Nenhuma configuração foi alterada | BLOCKED |
 
 ## Arquitetura, plataforma e operação
 

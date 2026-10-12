@@ -14,17 +14,24 @@ import (
 )
 
 const (
-	maxColumns      = 64
-	maxRowBytes     = 64 << 10
-	maxCellUTF16    = 32767
+	// MaxColumns caps the number of table columns supported by one report.
+	MaxColumns = 64
+	// MaxRowBytes caps the combined UTF-8 bytes emitted for one row.
+	MaxRowBytes = 64 << 10
+	// MaxCellUTF16 is Excel's maximum text length for one cell.
+	MaxCellUTF16    = 32767
 	maxSheetNameUTF = 31
 	maxSheetRows    = 1_048_576
 	firstDataRow    = 3 // Row 1 carries the displayed date; row 2 is the table header.
 )
 
-// RowSource supplies one table row at a time. Implementations should keep
-// their own source (for example, a database cursor) open only for the export
-// and close it when Next returns an error or no more rows.
+// RowSource supplies one table row at a time. Implementations must enforce
+// MaxColumns, MaxRowBytes, and MaxCellUTF16 before materializing a row. The
+// writer checks these limits after Next returns, which bounds output but cannot
+// prevent a faulty source from allocating an oversized database value first.
+// Database-backed sources should use bounded projections and database-side
+// length checks. Implementations should keep their source open only for the
+// export and release it on error or when no more rows remain.
 type RowSource interface {
 	Next(context.Context) ([]string, bool, error)
 }
@@ -128,7 +135,7 @@ func validateReport(report Report) error {
 	if !validSheetName(report.SheetName) {
 		return errors.New("spreadsheet sheet name is invalid")
 	}
-	if len(report.Columns) == 0 || len(report.Columns) > maxColumns {
+	if len(report.Columns) == 0 || len(report.Columns) > MaxColumns {
 		return errors.New("spreadsheet column count is invalid")
 	}
 	if strings.TrimSpace(report.DisplayDate) == "" {
@@ -174,7 +181,7 @@ func writeRow(ctx context.Context, writer io.Writer, rowNumber int, values []str
 		if err := validateCell(value); err != nil {
 			return err
 		}
-		if len(value) > maxRowBytes-rowBytes {
+		if len(value) > MaxRowBytes-rowBytes {
 			return errors.New("spreadsheet row byte limit exceeded")
 		}
 		rowBytes += len(value)
@@ -212,7 +219,7 @@ func validateCell(value string) error {
 		if character > 0xffff {
 			units++
 		}
-		if units > maxCellUTF16 {
+		if units > MaxCellUTF16 {
 			return errors.New("spreadsheet cell exceeds the Excel text limit")
 		}
 	}

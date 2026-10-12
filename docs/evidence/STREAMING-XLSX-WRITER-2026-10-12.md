@@ -11,6 +11,13 @@
 - Foram aplicados limites de 64 colunas, 64 KiB por linha, 32.767 unidades
   UTF-16 por célula e o máximo de linhas do formato Excel. Texto inválido para
   XML, linhas incompatíveis e cancelamento encerram a geração com erro.
+- A origem precisa aplicar esses limites antes de montar a linha em memória.
+  O gerador consegue rejeitar uma linha grande depois que a recebe, mas não
+  consegue evitar uma alocação excessiva feita por uma fonte defeituosa. Por
+  isso o contrato agora expõe os limites e orienta futuras consultas do banco a
+  verificar o tamanho antes de trazer campos para a aplicação. Essa proteção
+  ainda não foi comprovada por uma consulta real, pois a origem do relatório
+  não foi integrada.
 - A implementação usa somente a biblioteca padrão do Go; nenhuma dependência
   nova foi adicionada.
 
@@ -21,6 +28,11 @@
   cancelamento.
 - `go vet ./internal/reportexport`: aprovado.
 - `git diff --check`: aprovado.
+
+Na revisão de segurança desta etapa, não foram executados novos testes locais.
+Os resultados acima correspondem ao commit anterior, cuja CI passou nos jobs
+Windows, PostgreSQL e verificação do backlog. A mudança de contrato registrada
+nesta revisão será avaliada pela CI do novo commit.
 
 ## O que ainda falta
 

@@ -722,7 +722,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Regras e verificações vinculadas:** L-22,L-23,Q-13,F-14
 
-**Evidência técnica parcial — 12/10/2026:** `internal/reportexport` produz XLSX em fluxo, com células textuais, limites explícitos e cancelamento. `go test ./internal/reportexport -count=1`, `go vet ./internal/reportexport` e `git diff --check` passaram. O arquivo ainda não pode ser disponibilizado: faltam rota, consulta real e autorização `REPORT_EXPORT` aplicada no worker. T11 Compras permanece sem download. Evidência: `docs/evidence/STREAMING-XLSX-WRITER-2026-10-12.md`.
+**Evidência técnica parcial — 12/10/2026:** `internal/reportexport` produz XLSX em fluxo, com células textuais, limites explícitos e cancelamento. `go test ./internal/reportexport -count=1`, `go vet ./internal/reportexport` e `git diff --check` passaram no commit anterior. Uma revisão posterior tornou públicos os limites de coluna, linha e célula e registrou que a fonte precisa validá-los antes de materializar cada linha; a validação interna do gerador acontece depois que recebe os dados e, sozinha, não prova o pico de memória da consulta. Essa proteção depende de uma fonte real, ainda não integrada. O arquivo ainda não pode ser disponibilizado: faltam rota, consulta real e autorização `REPORT_EXPORT` aplicada no worker. T11 Compras permanece sem download. Evidência: `docs/evidence/STREAMING-XLSX-WRITER-2026-10-12.md`.
 
 ### BK-013 — Especificar perfis, capacidades, vigência e auditoria
 

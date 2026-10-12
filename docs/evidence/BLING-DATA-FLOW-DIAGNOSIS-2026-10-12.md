@@ -57,3 +57,10 @@ Esta revisão não alterou telas aprovadas, regras financeiras, configuração d
 - A instância não foi encerrada durante esta conferência para preservar o protótipo aberto. A validação visual da correção permanece pendente de reabertura; a conexão real permanece pendente de configuração/autorização e de uma sincronização filtrada.
 
 Não foram alterados código, telas, regras financeiras, credenciais ou dados. Nenhum teste foi executado.
+
+## Nova tentativa de acesso ao Bling — 12/10/2026
+
+- Depois da responsável confirmar a permissão e autorizar o acesso, tentei abrir a aba de login já existente do Bling no Chrome. A ferramenta recusou a navegação por uma preferência de segurança salva para `www.bling.com.br`, apesar do print das configurações mostrar “Sempre permitir”.
+- A recusa ocorreu antes de abrir a página; não foi possível clicar em “Entrar”, consultar a área de desenvolvedores nem fazer qualquer chamada à API. Não tentei outro navegador ou outro caminho.
+- Isso não aponta falha da senha nem da API. O print anterior da tela Integrações segue mostrando Client ID e Redirect URI vazios e o Bling como “Não conectado”; a configuração OAuth da integração continua pendente.
+- O próximo diagnóstico de conexão deve confirmar o endereço de retorno OAuth aceito/cadastrado no app Bling e compatibilizá-lo com o callback loopback exigido pelo worker, sem alterar a tela aprovada. Não preencher um endereço presumido nem compartilhar Client ID/segredo no chat.

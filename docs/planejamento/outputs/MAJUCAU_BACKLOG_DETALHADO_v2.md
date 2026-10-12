@@ -3613,3 +3613,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Os testes do pacote Bling passaram localmente e `go vet` passou; caches de Go ficaram em `artifacts/cache/` durante a validação e foram removidos pela rotina segura. A CI deste commit ainda precisa executar.
 - BK-041 avança de 65% para 68% (32% restante). O backlog continua com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,6% concluído e 91,4% restante. O restante depende de homologação real, persistência RAW/idempotente, cursor, demais recursos e reconciliação.
 - Nenhuma tela, regra financeira ou dado real foi alterado. Evidências: `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md` e `internal/integrations/bling/api_resources_test.go`.
+
+### Revisão do contrato público de paginação para CAPEX — 12/10/2026
+
+- A especificação oficial atual confirma que `GET /caixas` recebe `pagina`, datas e `idsCategorias`, mas não documenta `limite` nessa rota nem metadados de total/próxima página na resposta. Para categorias, documenta `pagina` e `limite` com padrão 100, mas a resposta também lista apenas `data`.
+- O adapter atual envia `limite` em `/caixas` e não declara fim sem um indicador explícito. Essa diferença foi registrada em `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md`; o código continua sem alteração até confirmar a resposta real, para não correr o risco de declarar uma importação incompleta como concluída.
+- A política salva do navegador bloqueou o acesso à conta `https://www.bling.com.br`; a permissão liberada para `https://developer.bling.com.br` é somente da documentação. Não foram consultados IDs da conta nem dados financeiros reais.
+- BK-067 permanece em 20% (80% restante); BK-041 e o percentual geral não mudam por esta análise documental. Pelo último registro, o projeto está em 8,6% e restam 91,4% das 127 tarefas; a previsão global continua sem base confiável.
+- Nenhuma tela, regra financeira, fórmula ou dado real foi alterado. Não foram gerados caches ou outputs nesta execução.

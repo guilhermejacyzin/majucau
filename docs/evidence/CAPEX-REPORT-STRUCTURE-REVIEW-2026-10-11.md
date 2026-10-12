@@ -74,3 +74,38 @@ isso, os valores dos cards permanecem indisponíveis.
 
 Nenhum valor financeiro, nome de fornecedor, identificador ou credencial foi
 copiado para este registro.
+
+## Revisão da especificação pública de paginação — 12/10/2026
+
+Foi consultado o OpenAPI oficial atual do Bling. Para `GET /caixas`, ele lista
+`pagina`, `dataInicial`, `dataFinal` e `idsCategorias` (array de inteiros). A
+resposta documentada contém `data` como uma lista de lançamentos; o contrato
+publicado não descreve nessa rota o parâmetro `limite`, nem um total de páginas
+ou indicador de próxima página. Já `GET /categorias/receitas-despesas` lista
+`pagina` e `limite` (padrão 100), mas também documenta a resposta como `data`
+sem metadados de continuação.
+
+Isso revela uma diferença que precisa ser resolvida antes da integração: o
+adaptador atual envia `limite` para `/caixas` e depende de uma indicação de
+continuação para declarar a leitura completa. A especificação não confirma
+esses dois detalhes. Não foi alterado o código nem adotada a hipótese de que
+página curta ou vazia encerra a leitura, para evitar que uma sincronização
+incompleta seja tratada como sucesso. A lista de categorias confirma que há
+filtro por IDs de categoria, mas não confirma os IDs e a hierarquia CAPEX da
+conta Majucau.
+
+Referências oficiais consultadas em 12/10/2026:
+
+- [OpenAPI oficial atual do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json)
+- [Changelog do Bling — formato de data em `/caixas`](https://developer.bling.com.br/changelogs)
+- [Migração para autenticação JWT](https://developer.bling.com.br/migracao-jwt)
+
+O navegador não permitiu consultar a conta: a política salva bloqueou acesso a
+`https://www.bling.com.br`. A permissão anteriormente exibida para
+`https://developer.bling.com.br` cobre a documentação, que é outro endereço.
+Portanto, não foi possível confirmar a resposta real, os IDs de categoria ou a
+conciliação dos relatórios. A BK-067 continua em 20% e a integração CAPEX não
+deve preencher os cards até a homologação.
+
+Nenhuma tela aprovada, regra financeira, dado real ou credencial foi alterado
+ou registrado.

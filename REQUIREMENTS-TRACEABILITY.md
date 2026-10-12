@@ -177,3 +177,11 @@ O teste Windows de `internal/securetemp` agora verifica que falhas simultâneas 
 ## Cancelamento da fila CSV já carregada — 2026-10-11
 
 `FileQueue.Next` confere cancelamento antes de entregar cada nome, inclusive quando ele já está no bloco carregado. Testes PostgreSQL cobrem ordenação de 515 nomes ao longo de mais de dois blocos, entradas ignoradas e cancelamento imediato. A CI [38176651727](https://github.com/guilhermejacyzin/majucau/actions/runs/38176651727) passou nos quatro jobs, incluindo PostgreSQL e Windows. Evidência: `docs/evidence/CSV-FILE-QUEUE-CANCELLATION-2026-10-11.md`. `DATA-04` e BK-024 permanecem parciais até medição de memória sob carga, validação de ACL/limpeza em VM limpa e outros ensaios operacionais.
+
+## Revisão da paginação Bling e dependências de CAPEX — 2026-10-12
+
+A OpenAPI pública atual de `GET /caixas` confirma os filtros de data e categoria, mas não documenta o parâmetro `limite` nem um total de páginas ou indicador de próxima página. O adapter lê uma página limitada e preserva os dados brutos, mas não pode declarar a sincronização completa com segurança até homologar o fim da lista. O endpoint de categorias também não documenta metadados para identificar a última página. A execução real da conta ainda depende de acesso ao Bling no navegador.
+
+Para CAPEX, a fonte técnica está identificada: movimentos de caixa/banco ligados à árvore real de categorias CAPEX. Ainda faltam confirmar os IDs/hierarquia na conta, percorrer todas as páginas, persistir os movimentos e conciliar com o relatório fornecido. Portanto os cards continuam sem valores disponíveis; não estimar nem preencher zero. Os indicadores aprovados permanecem somente para consulta e CAPEX continua fora das linhas e do lucro da DRE.
+
+Referências detalhadas: `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md` e `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`. Requisitos associados: INT-01, INT-04 e DATA-02; backlog BK-041 (paginação/sincronização) e BK-067 (cards CAPEX). Nenhuma tela aprovada, regra financeira ou dado real foi alterado nesta revisão.

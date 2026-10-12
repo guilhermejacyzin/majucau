@@ -9,7 +9,7 @@ export function GetBlingOAuthStatus(arg1:string):Promise<application.BlingOAuthS
 
 export function GetBootstrapState():Promise<main.BootstrapState>;
 
-export function GetDashboardSnapshot():Promise<application.DashboardSnapshot>;
+export function GetDashboardSnapshot():Promise<main.WailsDashboardSnapshot>;
 
 export function ImportBlingReceipts(arg1:string):Promise<application.BlingReceiptImportResult>;
 

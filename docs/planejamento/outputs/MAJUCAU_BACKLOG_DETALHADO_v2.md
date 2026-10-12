@@ -3657,3 +3657,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O WebView2 abriu, mas a execução do Wails terminou depois. A geração de bindings mostrou avisos `Not found: time.Time`; ainda falta conferir se afetam funções com datas. O visual e as funções da interface não foram homologados. A pasta do banco e a credencial DPAPI são locais e não são publicadas; o serviço PostgreSQL da porta 5432 não foi usado.
 - A tarefa BK-026 passou para 55% (45% restante). Faltam a homologação visual/funcional, investigar os avisos do Wails, preparar uma configuração de exemplo segura e validar o roteiro em máquina limpa. A planilha foi sincronizada: 7 concluídas, 12 em andamento e 108 não iniciadas; média estimada de 9,1% concluído e 90,9% restante.
 - A planilha manteve o desenho e as fórmulas de resumo. Nenhuma tela do produto, regra financeira ou regra de negócio foi modificada. Não foram executados testes do produto.
+
+### Correção dos vínculos de data e segunda inicialização do protótipo — 12/10/2026
+
+- A ponte Wails agora envia datas ISO/RFC3339Nano como texto, compatível com os tipos que a interface já usava. Os contratos internos mantêm `time.Time`; os dados e a apresentação da tela não mudaram.
+- Wails regenerou os vínculos TypeScript com `checked_at`, `last_success_at`, `last_attempt_at` e `as_of` como texto. Aplicativo e interface compilaram sem o aviso `Not found: time.Time`, e o WebView2 foi criado.
+- O worker respondeu às consultas de saúde, integrações e resumo do painel usando somente o PostgreSQL isolado do Majucau em `127.0.0.1:55438`. A conta Bling e dados financeiros reais não foram consultados.
+- O worker registrou `DIAGNOSTICS_LOG_UNAVAILABLE`: nesta execução local, o arquivo de diagnóstico protegido não foi aberto e o motivo exato não foi exposto no log comum. Continuou atendendo e enviou eventos sanitizados para o log retido em `artifacts/retained/postgresql-dev/`. A inicialização do serviço instalado continua sem validação.
+- O protótipo permanece aberto para conferência; a limpeza dos processos e arquivos de execução ainda depende de fechar a janela e verificar o encerramento.
+- BK-026 permanece em 55% (45% restante): revisão visual/funcional, encerramento seguro e máquina limpa continuam pendentes. Projeto: 9,1% concluído, 90,9% restante, sem prazo total confiável. A planilha e suas fórmulas não mudaram.
+- Nenhuma tela aprovada, regra financeira ou regra de negócio foi alterada. Não foram executados testes do produto.

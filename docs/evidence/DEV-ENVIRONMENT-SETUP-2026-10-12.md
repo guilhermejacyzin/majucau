@@ -18,7 +18,7 @@
 
 - Criar uma configuração de exemplo sem credenciais reais e com dados sintéticos, depois de confirmar que ela é realmente carregada pelo aplicativo. Hoje o worker lê `MAJUCAU_DATABASE_URL` do ambiente; documentar um `.env.example` sem suporte de carregamento não configuraria o aplicativo e poderia confundir a pessoa desenvolvedora.
 - Validar a inicialização em uma máquina limpa e confirmar que nenhum dado de produção é usado. Essa etapa depende de fechar a persistência/credencial em BK-018 e a operação local em BK-014.
-- Reabrir o protótipo, conferir visualmente as telas já aprovadas sem alterá-las e verificar as funções principais; investigar os avisos `time.Time`. Confirmar também o novo tratamento de encerramento e validar o roteiro em máquina limpa.
+- Conferir visualmente as telas aprovadas sem alterá-las, verificar as funções principais e confirmar o encerramento seguro. Validar o roteiro em máquina limpa.
 - O serviço PostgreSQL `postgresql-x64-18` encontrado no Windows não foi acessado nem alterado por não estar comprovado como exclusivo do Majucau. A pasta do banco de desenvolvimento separado fica registrada localmente em `artifacts/retained/postgresql-dev/`; este documento não afirma que o serviço está ativo nem que a inicialização foi homologada.
 
 ## Limites e escopo
@@ -28,3 +28,13 @@
 - Não foram executados testes do produto nesta etapa.
 - A tarefa BK-026 segue em andamento, com progresso estimado em 55%. A inicialização local ocorreu, mas a homologação visual/funcional e em máquina limpa continua pendente.
 - Os logs gerados nesta execução permanecem somente em `artifacts/retained/postgresql-dev/` para análise do diagnóstico e da inicialização. Eles não foram enviados ao GitHub; a lista de arquivos está no registro local de limpeza.
+
+## Segunda inicialização e correção dos tipos de data — 2026-10-12
+
+- O Wails antes mostrava `Not found: time.Time` ao gerar os vínculos entre o aplicativo e a interface. A ponte agora converte datas para texto ISO/RFC3339Nano, como a interface já esperava; os contratos internos continuam usando `time.Time`.
+- O Wails regenerou os vínculos: `checked_at`, `last_success_at`, `last_attempt_at` e `as_of` passaram a ser `string` no TypeScript. A compilação do aplicativo e da interface terminou com sucesso, sem os avisos de `time.Time`; o WebView2 foi criado.
+- A inicialização local confirmou respostas de saúde do worker, estado das integrações e consulta do resumo do painel. Usou somente o PostgreSQL separado do Majucau, em `127.0.0.1:55438`. Não houve conexão ao Bling nem consulta de dados financeiros reais.
+- A janela do protótipo permanece aberta para conferência. Por isso, worker, banco isolado e logs continuam ativos/retidos dentro de `artifacts/`; o roteiro fará a limpeza prevista quando a janela for fechada. A conferência visual e funcional ainda não foi feita.
+- O worker registrou `DIAGNOSTICS_LOG_UNAVAILABLE`: nesta execução, o arquivo de diagnóstico protegido não foi aberto. O motivo exato não foi exposto no log comum. O worker continuou respondendo e enviou registros técnicos sanitizados para `worker.stderr.log` em `artifacts/retained/postgresql-dev/`. O log do serviço instalado ainda não foi validado.
+- O percentual da BK-026 permanece em 55% (45% restante), pois ainda faltam conferir visualmente as telas, validar o encerramento e testar em uma máquina limpa. O backlog geral permanece em 9,1% (90,9% restante), sem prazo total confiável.
+- Nenhuma tela aprovada, regra financeira ou regra de negócio foi modificada. Não foram executados testes do produto.

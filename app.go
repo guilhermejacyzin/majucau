@@ -27,13 +27,110 @@ type App struct {
 	clientFactory func() (ipc.Client, error)
 }
 
+// Wails DTOs keep timestamps as ISO strings at the UI boundary. Internal
+// application contracts retain time.Time for parsing and persistence.
+type WailsHealthResponse struct {
+	Service      string                         `json:"service"`
+	Version      string                         `json:"version"`
+	State        application.HealthState        `json:"state"`
+	CheckedAt    string                         `json:"checked_at"`
+	Dependencies []application.DependencyHealth `json:"dependencies,omitempty"`
+}
+
+type WailsIntegrationStatus struct {
+	Provider      domain.Origin            `json:"provider"`
+	Status        domain.IntegrationStatus `json:"status"`
+	LastSuccessAt *string                  `json:"last_success_at,omitempty"`
+	LastAttemptAt *string                  `json:"last_attempt_at,omitempty"`
+	ErrorCode     string                   `json:"error_code,omitempty"`
+}
+
+type WailsDashboardSnapshot struct {
+	AsOf               string                               `json:"as_of"`
+	DataState          string                               `json:"data_state"`
+	Receivables        application.DashboardMetric          `json:"receivables"`
+	FutureB2C          application.DashboardMetric          `json:"future_b2c"`
+	ReceiptsMonth      application.DashboardMetric          `json:"receipts_month"`
+	ReceivablesOverdue application.DashboardMetric          `json:"receivables_overdue"`
+	Payables           application.DashboardMetric          `json:"payables"`
+	PayablesDueToday   application.DashboardMetric          `json:"payables_due_today"`
+	PayablesOverdue    application.DashboardMetric          `json:"payables_overdue"`
+	PaymentsMonth      application.DashboardMetric          `json:"payments_month"`
+	CapexPaidMonth     *application.DashboardMetric         `json:"capex_paid_month,omitempty"`
+	CapexAccumulated   *application.DashboardMetric         `json:"capex_accumulated,omitempty"`
+	ReceivableRows     []application.DashboardReceivableRow `json:"receivable_rows,omitempty"`
+	PayableRows        []application.DashboardPayableRow    `json:"payable_rows,omitempty"`
+	ErrorCode          string                               `json:"error_code,omitempty"`
+	Message            string                               `json:"message,omitempty"`
+}
+
 type BootstrapState struct {
-	AppVersion   string                          `json:"app_version"`
-	Worker       application.HealthResponse      `json:"worker"`
-	Integrations []application.IntegrationStatus `json:"integrations"`
-	ErrorCode    string                          `json:"error_code,omitempty"`
-	Message      string                          `json:"message,omitempty"`
-	CheckedAt    time.Time                       `json:"checked_at"`
+	AppVersion   string                   `json:"app_version"`
+	Worker       WailsHealthResponse      `json:"worker"`
+	Integrations []WailsIntegrationStatus `json:"integrations"`
+	ErrorCode    string                   `json:"error_code,omitempty"`
+	Message      string                   `json:"message,omitempty"`
+	CheckedAt    string                   `json:"checked_at"`
+}
+
+func wailsTimestamp(value time.Time) string {
+	return value.Format(time.RFC3339Nano)
+}
+
+func wailsOptionalTimestamp(value *time.Time) *string {
+	if value == nil {
+		return nil
+	}
+	formatted := wailsTimestamp(*value)
+	return &formatted
+}
+
+func wailsHealthResponse(value application.HealthResponse) WailsHealthResponse {
+	return WailsHealthResponse{
+		Service:      value.Service,
+		Version:      value.Version,
+		State:        value.State,
+		CheckedAt:    wailsTimestamp(value.CheckedAt),
+		Dependencies: value.Dependencies,
+	}
+}
+
+func wailsIntegrationStatuses(values []application.IntegrationStatus) []WailsIntegrationStatus {
+	if values == nil {
+		return nil
+	}
+	result := make([]WailsIntegrationStatus, 0, len(values))
+	for _, value := range values {
+		result = append(result, WailsIntegrationStatus{
+			Provider:      value.Provider,
+			Status:        value.Status,
+			LastSuccessAt: wailsOptionalTimestamp(value.LastSuccessAt),
+			LastAttemptAt: wailsOptionalTimestamp(value.LastAttemptAt),
+			ErrorCode:     value.ErrorCode,
+		})
+	}
+	return result
+}
+
+func wailsDashboardSnapshot(value application.DashboardSnapshot) WailsDashboardSnapshot {
+	return WailsDashboardSnapshot{
+		AsOf:               wailsTimestamp(value.AsOf),
+		DataState:          value.DataState,
+		Receivables:        value.Receivables,
+		FutureB2C:          value.FutureB2C,
+		ReceiptsMonth:      value.ReceiptsMonth,
+		ReceivablesOverdue: value.ReceivablesOverdue,
+		Payables:           value.Payables,
+		PayablesDueToday:   value.PayablesDueToday,
+		PayablesOverdue:    value.PayablesOverdue,
+		PaymentsMonth:      value.PaymentsMonth,
+		CapexPaidMonth:     value.CapexPaidMonth,
+		CapexAccumulated:   value.CapexAccumulated,
+		ReceivableRows:     value.ReceivableRows,
+		PayableRows:        value.PayableRows,
+		ErrorCode:          value.ErrorCode,
+		Message:            value.Message,
+	}
 }
 
 func NewApp() *App {
@@ -50,16 +147,16 @@ func (a *App) GetBootstrapState() BootstrapState {
 	checkedAt := time.Now().UTC()
 	unavailable := BootstrapState{
 		AppVersion: appVersion,
-		Worker: application.HealthResponse{
+		Worker: wailsHealthResponse(application.HealthResponse{
 			Service:   "majucau-worker",
 			Version:   "unknown",
 			State:     application.HealthUnavailable,
 			CheckedAt: checkedAt,
-		},
-		Integrations: unavailableIntegrations(),
+		}),
+		Integrations: wailsIntegrationStatuses(unavailableIntegrations()),
 		ErrorCode:    "WORKER_UNAVAILABLE",
 		Message:      "O serviço local ainda não está disponível.",
-		CheckedAt:    checkedAt,
+		CheckedAt:    wailsTimestamp(checkedAt),
 	}
 
 	client, err := a.clientFactory()
@@ -105,11 +202,11 @@ func (a *App) GetBootstrapState() BootstrapState {
 		}
 		return BootstrapState{
 			AppVersion:   appVersion,
-			Worker:       health,
-			Integrations: unavailableIntegrations(),
+			Worker:       wailsHealthResponse(health),
+			Integrations: wailsIntegrationStatuses(unavailableIntegrations()),
 			ErrorCode:    "INTEGRATION_STATUS_UNAVAILABLE",
 			Message:      message,
-			CheckedAt:    checkedAt,
+			CheckedAt:    wailsTimestamp(checkedAt),
 		}
 	}
 	var integrations []application.IntegrationStatus
@@ -117,31 +214,31 @@ func (a *App) GetBootstrapState() BootstrapState {
 		message := diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", integrationResponse.RequestID)
 		return BootstrapState{
 			AppVersion:   appVersion,
-			Worker:       health,
-			Integrations: unavailableIntegrations(),
+			Worker:       wailsHealthResponse(health),
+			Integrations: wailsIntegrationStatuses(unavailableIntegrations()),
 			ErrorCode:    "WORKER_INVALID_RESPONSE",
 			Message:      message,
-			CheckedAt:    checkedAt,
+			CheckedAt:    wailsTimestamp(checkedAt),
 		}
 	}
 	return BootstrapState{
 		AppVersion:   appVersion,
-		Worker:       health,
-		Integrations: integrations,
-		CheckedAt:    checkedAt,
+		Worker:       wailsHealthResponse(health),
+		Integrations: wailsIntegrationStatuses(integrations),
+		CheckedAt:    wailsTimestamp(checkedAt),
 	}
 }
 
 // GetDashboardSnapshot asks the worker for normalized financial metrics. The
 // worker is the only component allowed to query PostgreSQL; failures remain
 // explicit so the frontend cannot turn missing data into zeros.
-func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
-	fallback := application.DashboardSnapshot{
+func (a *App) GetDashboardSnapshot() WailsDashboardSnapshot {
+	fallback := wailsDashboardSnapshot(application.DashboardSnapshot{
 		AsOf:      time.Now().UTC(),
 		DataState: "UNAVAILABLE",
 		ErrorCode: "WORKER_UNAVAILABLE",
 		Message:   "O serviço local ainda não está disponível.",
-	}
+	})
 	client, err := a.clientFactory()
 	if err != nil {
 		return fallback
@@ -200,7 +297,7 @@ func (a *App) GetDashboardSnapshot() application.DashboardSnapshot {
 	if result.snapshot.ErrorCode != "" {
 		result.snapshot.Message = diagnosticMessage(result.snapshot.ErrorCode, result.snapshot.Message, response.RequestID)
 	}
-	return result.snapshot
+	return wailsDashboardSnapshot(result.snapshot)
 }
 
 func decodeDashboardSnapshot(reader io.Reader, maxBytes int64) (application.DashboardSnapshot, bool, error) {

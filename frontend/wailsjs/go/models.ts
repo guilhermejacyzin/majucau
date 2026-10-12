@@ -364,67 +364,6 @@ export namespace application {
 	        this.status = source["status"];
 	    }
 	}
-	export class DashboardSnapshot {
-	    // Go type: time
-	    as_of: any;
-	    data_state: string;
-	    receivables: DashboardMetric;
-	    future_b2c: DashboardMetric;
-	    receipts_month: DashboardMetric;
-	    receivables_overdue: DashboardMetric;
-	    payables: DashboardMetric;
-	    payables_due_today: DashboardMetric;
-	    payables_overdue: DashboardMetric;
-	    payments_month: DashboardMetric;
-	    capex_paid_month?: DashboardMetric;
-	    capex_accumulated?: DashboardMetric;
-	    receivable_rows?: DashboardReceivableRow[];
-	    payable_rows?: DashboardPayableRow[];
-	    error_code?: string;
-	    message?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new DashboardSnapshot(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.as_of = this.convertValues(source["as_of"], null);
-	        this.data_state = source["data_state"];
-	        this.receivables = this.convertValues(source["receivables"], DashboardMetric);
-	        this.future_b2c = this.convertValues(source["future_b2c"], DashboardMetric);
-	        this.receipts_month = this.convertValues(source["receipts_month"], DashboardMetric);
-	        this.receivables_overdue = this.convertValues(source["receivables_overdue"], DashboardMetric);
-	        this.payables = this.convertValues(source["payables"], DashboardMetric);
-	        this.payables_due_today = this.convertValues(source["payables_due_today"], DashboardMetric);
-	        this.payables_overdue = this.convertValues(source["payables_overdue"], DashboardMetric);
-	        this.payments_month = this.convertValues(source["payments_month"], DashboardMetric);
-	        this.capex_paid_month = this.convertValues(source["capex_paid_month"], DashboardMetric);
-	        this.capex_accumulated = this.convertValues(source["capex_accumulated"], DashboardMetric);
-	        this.receivable_rows = this.convertValues(source["receivable_rows"], DashboardReceivableRow);
-	        this.payable_rows = this.convertValues(source["payable_rows"], DashboardPayableRow);
-	        this.error_code = source["error_code"];
-	        this.message = source["message"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 	export class DependencyHealth {
 	    name: string;
 	    state: string;
@@ -440,85 +379,6 @@ export namespace application {
 	        this.state = source["state"];
 	        this.detail = source["detail"];
 	    }
-	}
-	export class HealthResponse {
-	    service: string;
-	    version: string;
-	    state: string;
-	    // Go type: time
-	    checked_at: any;
-	    dependencies?: DependencyHealth[];
-	
-	    static createFrom(source: any = {}) {
-	        return new HealthResponse(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.service = source["service"];
-	        this.version = source["version"];
-	        this.state = source["state"];
-	        this.checked_at = this.convertValues(source["checked_at"], null);
-	        this.dependencies = this.convertValues(source["dependencies"], DependencyHealth);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class IntegrationStatus {
-	    provider: string;
-	    status: string;
-	    // Go type: time
-	    last_success_at?: any;
-	    // Go type: time
-	    last_attempt_at?: any;
-	    error_code?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new IntegrationStatus(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.provider = source["provider"];
-	        this.status = source["status"];
-	        this.last_success_at = this.convertValues(source["last_success_at"], null);
-	        this.last_attempt_at = this.convertValues(source["last_attempt_at"], null);
-	        this.error_code = source["error_code"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class NuvemPagoFutureImportFile {
 	    name: string;
@@ -671,27 +531,44 @@ export namespace application {
 
 export namespace main {
 	
-	export class BootstrapState {
-	    app_version: string;
-	    worker: application.HealthResponse;
-	    integrations: application.IntegrationStatus[];
+	export class WailsIntegrationStatus {
+	    provider: string;
+	    status: string;
+	    last_success_at?: string;
+	    last_attempt_at?: string;
 	    error_code?: string;
-	    message?: string;
-	    // Go type: time
-	    checked_at: any;
 	
 	    static createFrom(source: any = {}) {
-	        return new BootstrapState(source);
+	        return new WailsIntegrationStatus(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.app_version = source["app_version"];
-	        this.worker = this.convertValues(source["worker"], application.HealthResponse);
-	        this.integrations = this.convertValues(source["integrations"], application.IntegrationStatus);
+	        this.provider = source["provider"];
+	        this.status = source["status"];
+	        this.last_success_at = source["last_success_at"];
+	        this.last_attempt_at = source["last_attempt_at"];
 	        this.error_code = source["error_code"];
-	        this.message = source["message"];
-	        this.checked_at = this.convertValues(source["checked_at"], null);
+	    }
+	}
+	export class WailsHealthResponse {
+	    service: string;
+	    version: string;
+	    state: string;
+	    checked_at: string;
+	    dependencies?: application.DependencyHealth[];
+	
+	    static createFrom(source: any = {}) {
+	        return new WailsHealthResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.service = source["service"];
+	        this.version = source["version"];
+	        this.state = source["state"];
+	        this.checked_at = source["checked_at"];
+	        this.dependencies = this.convertValues(source["dependencies"], application.DependencyHealth);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -712,6 +589,107 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class BootstrapState {
+	    app_version: string;
+	    worker: WailsHealthResponse;
+	    integrations: WailsIntegrationStatus[];
+	    error_code?: string;
+	    message?: string;
+	    checked_at: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BootstrapState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.app_version = source["app_version"];
+	        this.worker = this.convertValues(source["worker"], WailsHealthResponse);
+	        this.integrations = this.convertValues(source["integrations"], WailsIntegrationStatus);
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	        this.checked_at = source["checked_at"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class WailsDashboardSnapshot {
+	    as_of: string;
+	    data_state: string;
+	    receivables: application.DashboardMetric;
+	    future_b2c: application.DashboardMetric;
+	    receipts_month: application.DashboardMetric;
+	    receivables_overdue: application.DashboardMetric;
+	    payables: application.DashboardMetric;
+	    payables_due_today: application.DashboardMetric;
+	    payables_overdue: application.DashboardMetric;
+	    payments_month: application.DashboardMetric;
+	    capex_paid_month?: application.DashboardMetric;
+	    capex_accumulated?: application.DashboardMetric;
+	    receivable_rows?: application.DashboardReceivableRow[];
+	    payable_rows?: application.DashboardPayableRow[];
+	    error_code?: string;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WailsDashboardSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.as_of = source["as_of"];
+	        this.data_state = source["data_state"];
+	        this.receivables = this.convertValues(source["receivables"], application.DashboardMetric);
+	        this.future_b2c = this.convertValues(source["future_b2c"], application.DashboardMetric);
+	        this.receipts_month = this.convertValues(source["receipts_month"], application.DashboardMetric);
+	        this.receivables_overdue = this.convertValues(source["receivables_overdue"], application.DashboardMetric);
+	        this.payables = this.convertValues(source["payables"], application.DashboardMetric);
+	        this.payables_due_today = this.convertValues(source["payables_due_today"], application.DashboardMetric);
+	        this.payables_overdue = this.convertValues(source["payables_overdue"], application.DashboardMetric);
+	        this.payments_month = this.convertValues(source["payments_month"], application.DashboardMetric);
+	        this.capex_paid_month = this.convertValues(source["capex_paid_month"], application.DashboardMetric);
+	        this.capex_accumulated = this.convertValues(source["capex_accumulated"], application.DashboardMetric);
+	        this.receivable_rows = this.convertValues(source["receivable_rows"], application.DashboardReceivableRow);
+	        this.payable_rows = this.convertValues(source["payable_rows"], application.DashboardPayableRow);
+	        this.error_code = source["error_code"];
+	        this.message = source["message"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 
 }
 

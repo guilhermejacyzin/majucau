@@ -3622,3 +3622,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-067 permanece em 20% (80% restante); BK-041 e o percentual geral não mudam por esta análise documental. Pelo último registro, o projeto está em 8,6% e restam 91,4% das 127 tarefas; a previsão global continua sem base confiável.
 - A revisão também corrigiu `internal/integrations/bling/README.md`: o limite enviado por `GET /caixas` é local e não consta na OpenAPI atual; o término da paginação segue sem contrato confirmado. BK-041 permanece em 68% (32% restante). Não houve mudança no comportamento do adapter.
 - Nenhuma tela, regra financeira, fórmula ou dado real foi alterado. Não foram gerados caches ou outputs nesta execução.
+
+### Reauditoria da proteção da branch principal — 12/10/2026
+
+- A API pública do GitHub confirma `protected: false` para `main`; a consulta de regrasets do repositório retornou lista vazia. A conta conectada tem permissão `write`; não tem acesso administrativo para consultar ou configurar branch protection. Nenhuma configuração do GitHub foi alterada.
+- BK-025 permanece em 70% (30% restante), pendente de uma pessoa administradora ativar proteção para `main` e exigir os checks apropriados. Evidências consultadas: [branch `main`](https://api.github.com/repos/guilhermejacyzin/majucau/branches/main) e [rulesets do repositório](https://api.github.com/repos/guilhermejacyzin/majucau/rulesets).
+- O backlog continua com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,6% concluído e 91,4% restante. A previsão global permanece sem base confiável.
+- Nenhuma tela, regra financeira, fórmula ou dado real foi alterado; não foram gerados caches ou outputs locais nesta execução.

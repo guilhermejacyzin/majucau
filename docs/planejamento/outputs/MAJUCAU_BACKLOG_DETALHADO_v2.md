@@ -386,6 +386,14 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-012 avança de 25% para 30%; faltam 70%. O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (68%), BK-056 (5%) e BK-067 (20%).
 - Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 85% + 68% + 5% + 20%) ÷ 127 = 8,6%`; restam 91,4%. Continua sem prazo global confiável. Nenhuma tela aprovada ou regra financeira foi alterada. Evidência: `docs/evidence/STREAMING-XLSX-WRITER-2026-10-12.md`.
 
+### Correção do parâmetro de `/caixas` — 12/10/2026
+
+- A especificação oficial atual não documenta `limite` para `GET /caixas`. O adapter deixou de enviar esse parâmetro; o limite máximo de registros foi renomeado para `MaxRecords` e continua aplicado localmente ao conteúdo lido. O parâmetro `limite` permanece em recursos que o documentam, como a lista de categorias.
+- BK-041 avança de 68% para 69% (31% restante). A paginação real, o marcador de última página, o cursor incremental, a árvore CAPEX da conta e a persistência/integração da fonte continuam pendentes. A consulta ainda falha com segurança quando a completude não pode ser comprovada.
+- O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (69%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 85% + 69% + 5% + 20%) ÷ 127 = 8,7%`; restam 91,3%. É estimativa do backlog, não prontidão; não há prazo global confiável.
+- Nenhuma tela, regra financeira ou valor real foi alterado. A conta Bling segue na tela de login e não foram consultados dados financeiros reais.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -1424,7 +1432,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-041 — Implementar o adaptador de leitura do Bling
 
-**Situação:** Em andamento. **Evolução:** 68% (estimativa; além das consultas já existentes, o adaptador agora lê páginas limitadas de movimentações de caixa por período e detalhes por ID, preservando JSON bruto; ainda não persiste nem integra essa fonte, não homologou a paginação real/categoria da conta e não retoma cursor incremental). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 69% (estimativa; além das consultas já existentes, o adaptador lê páginas limitadas de movimentações de caixa por período e detalhes por ID, preservando JSON bruto; a consulta `/caixas` usa somente parâmetros documentados e mantém o limite de registros local. Ainda não persiste nem integra essa fonte, não homologou a paginação real/categoria da conta e não retoma cursor incremental). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Ingerir dados oficiais sem alterar o ERP.
 

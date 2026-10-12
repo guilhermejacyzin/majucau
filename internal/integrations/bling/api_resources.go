@@ -54,14 +54,15 @@ func (c *BlingAPIClient) ListFinancialCategories(ctx context.Context, page, limi
 	return c.listFinancialResource(ctx, "categorias/receitas-despesas", ReceivablesFilter{Page: page, Limit: limit})
 }
 
-// CashMovementsFilter contains only the date and page parameters documented
-// for GET /caixas. Category IDs are intentionally omitted until their exact
-// query encoding is homologated against the official contract.
+// CashMovementsFilter contains the documented date/page parameters and a
+// local response record cap. MaxRecords is not sent to Bling because the
+// current GET /caixas contract does not document a limit query parameter.
+// Category IDs remain omitted until their query encoding is homologated.
 type CashMovementsFilter struct {
-	Page     int
-	Limit    int
-	DateFrom string
-	DateTo   string
+	Page       int
+	MaxRecords int
+	DateFrom   string
+	DateTo     string
 }
 
 const maxCashMovementDateFilterBytes = 64
@@ -75,21 +76,22 @@ func (f CashMovementsFilter) normalized() (CashMovementsFilter, error) {
 	if f.Page == 0 {
 		f.Page = 1
 	}
-	if f.Limit == 0 {
-		f.Limit = BlingMaxPageSize
+	if f.MaxRecords == 0 {
+		f.MaxRecords = BlingMaxPageSize
 	}
 	if f.Page < 1 {
 		return CashMovementsFilter{}, fmt.Errorf("%w: page must be positive", ErrBlingAPIConfiguration)
 	}
-	if f.Limit < 1 || f.Limit > BlingMaxPageSize {
-		return CashMovementsFilter{}, fmt.Errorf("%w: limit must be between 1 and %d", ErrBlingAPIConfiguration, BlingMaxPageSize)
+	if f.MaxRecords < 1 || f.MaxRecords > BlingMaxPageSize {
+		return CashMovementsFilter{}, fmt.Errorf("%w: max records must be between 1 and %d", ErrBlingAPIConfiguration, BlingMaxPageSize)
 	}
 	return f, nil
 }
 
 // ListCashMovements reads one bounded page from GET /caixas and preserves
-// each item as RAW JSON. HasNextKnown must be checked before a caller treats
-// the result as complete; a short page is not proof that pagination ended.
+// each item as RAW JSON. MaxRecords is an application-side cap, not a query
+// parameter. HasNextKnown must be checked before a caller treats the result as
+// complete; a short page is not proof that pagination ended.
 func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovementsFilter) (BlingAPIResourcePage, error) {
 	if c == nil || c.baseURL == nil || c.httpClient == nil {
 		return BlingReceivablesPage{}, ErrBlingAPIConfiguration
@@ -102,7 +104,6 @@ func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovem
 	pathURL.Path = strings.TrimRight(pathURL.Path, "/") + "/caixas"
 	query := pathURL.Query()
 	query.Set("pagina", strconv.Itoa(filter.Page))
-	query.Set("limite", strconv.Itoa(filter.Limit))
 	setOptionalQuery(query, "dataInicial", filter.DateFrom)
 	setOptionalQuery(query, "dataFinal", filter.DateTo)
 	pathURL.RawQuery = query.Encode()
@@ -114,7 +115,7 @@ func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovem
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 	req.Header.Set("enable-jwt", "1")
-	return c.doFinancialResourceRequest(req, ReceivablesFilter{Page: filter.Page, Limit: filter.Limit})
+	return c.doFinancialResourceRequestWithoutPageLimit(req, ReceivablesFilter{Page: filter.Page, Limit: filter.MaxRecords})
 }
 
 func (c *BlingAPIClient) getDataRecord(ctx context.Context, resource string) (json.RawMessage, error) {

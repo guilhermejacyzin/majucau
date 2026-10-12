@@ -161,11 +161,14 @@ func (f ReceivablesFilter) normalized() (ReceivablesFilter, error) {
 type BlingReceivablesPage struct {
 	Records []json.RawMessage
 	Page    int
+	// Limit is the server/request page size when known. It is zero when no
+	// limit was sent and the response does not report one.
 	Limit   int
 	Total   *int
 	HasNext bool
-	// HasNextKnown is true only when the API supplies hasNext or total metadata.
-	// Without it, false HasNext cannot safely mean that the current page is last.
+	// HasNextKnown is true only when the API supplies hasNext or a total that
+	// can be compared with a known page size. A total alone cannot establish the
+	// last page when its size is unknown.
 	HasNextKnown bool
 }
 
@@ -247,12 +250,23 @@ func (c *BlingAPIClient) TestConnection(ctx context.Context) (BlingConnectionPro
 }
 
 func (c *BlingAPIClient) doFinancialResourceRequest(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+	return c.doFinancialResourceRequestWithLimit(req, filter, true)
+}
+
+// doFinancialResourceRequestWithoutPageLimit is used for endpoints whose
+// public contract does not accept a page-size parameter. The local record cap
+// still limits decoding but cannot be used to infer pagination completion.
+func (c *BlingAPIClient) doFinancialResourceRequestWithoutPageLimit(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+	return c.doFinancialResourceRequestWithLimit(req, filter, false)
+}
+
+func (c *BlingAPIClient) doFinancialResourceRequestWithLimit(req *http.Request, filter ReceivablesFilter, requestedLimitKnown bool) (BlingReceivablesPage, error) {
 	return withBlingReadRetry(req.Context(), req.Method, c.maxAttempts, c.wait, c.random, func() (BlingReceivablesPage, error) {
-		return c.doFinancialResourceAttempt(req, filter)
+		return c.doFinancialResourceAttempt(req, filter, requestedLimitKnown)
 	})
 }
 
-func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter ReceivablesFilter, requestedLimitKnown bool) (BlingReceivablesPage, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		if req.Context().Err() != nil {
@@ -281,7 +295,11 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 		}
 		return BlingReceivablesPage{}, fmt.Errorf("%w: response is not valid bounded json", ErrBlingAPIInvalidResponse)
 	}
-	page := BlingReceivablesPage{Records: envelope.Data, Page: filter.Page, Limit: filter.Limit}
+	page := BlingReceivablesPage{Records: envelope.Data, Page: filter.Page}
+	pageLimitKnown := requestedLimitKnown
+	if requestedLimitKnown {
+		page.Limit = filter.Limit
+	}
 	if envelope.Pagination != nil {
 		if envelope.Pagination.Page != nil {
 			if *envelope.Pagination.Page < 1 || *envelope.Pagination.Page != filter.Page {
@@ -294,6 +312,7 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 				return BlingReceivablesPage{}, fmt.Errorf("%w: pagination limit is outside the supported range", ErrBlingAPISchemaMismatch)
 			}
 			page.Limit = *envelope.Pagination.Limit
+			pageLimitKnown = true
 		}
 		if envelope.Pagination.Total != nil && *envelope.Pagination.Total < 0 {
 			return BlingReceivablesPage{}, fmt.Errorf("%w: pagination total cannot be negative", ErrBlingAPISchemaMismatch)
@@ -305,7 +324,7 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 		if envelope.Pagination.HasNext != nil {
 			page.HasNext = *envelope.Pagination.HasNext
 			page.HasNextKnown = true
-		} else if page.Total != nil {
+		} else if page.Total != nil && pageLimitKnown {
 			page.HasNext = hasNextFromTotal(page.Page, page.Limit, *page.Total)
 			page.HasNextKnown = true
 		}

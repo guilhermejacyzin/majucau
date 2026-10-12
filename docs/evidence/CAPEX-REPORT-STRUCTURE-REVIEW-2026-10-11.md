@@ -109,3 +109,18 @@ deve preencher os cards até a homologação.
 
 Nenhuma tela aprovada, regra financeira, dado real ou credencial foi alterado
 ou registrado.
+
+## Correção da consulta de movimentações — 12/10/2026
+
+A revisão do OpenAPI oficial confirmou que `GET /caixas` não documenta o
+parâmetro `limite`. O adapter deixou de enviá-lo e agora chama o campo interno
+de segurança `MaxRecords`: ele limita a quantidade máxima de registros aceitos
+localmente, sem acrescentar um parâmetro não documentado à API. Datas e página
+continuam na consulta; o filtro por categoria segue pendente de homologação.
+
+A ausência de metadados de continuação ainda impede declarar a leitura completa.
+Um `total` sem o tamanho real da página não é suficiente para inferir o fim;
+limite local não é usado como se tivesse sido enviado ao Bling. O código
+continua falhando com segurança quando não há prova de fim da paginação. Nada
+foi persistido, classificado ou usado para preencher os cards.
+O navegador mostra a tela de login do Bling; nenhum dado real foi consultado.

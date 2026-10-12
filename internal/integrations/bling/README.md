@@ -54,13 +54,20 @@ essa homologação continua pendente. O detalhe está em
 Os schemas públicos de categorias e de caixa descrevem `data[]`, sem informar
 como identificar a última página; o cliente não pode declarar a lista completa
 sem esse marcador. O adaptador agora oferece `ListCashMovements` e
-`GetCashMovement`, que aplicam limites, JWT, cancelamento e retry seguro, e
-preservam a resposta como RAW. A leitura de caixa ainda não é persistida nem
-integrada ao snapshot. A lista não envia filtro por ID de categoria até que sua
-codificação exata seja homologada. Os IDs/hierarquia de CAPEX e a
+`GetCashMovement`, que aplicam limite local de registros, JWT, cancelamento e
+retry seguro, e preservam a resposta como RAW. Em `GET /caixas`, esse limite
+não é enviado como parâmetro `limite`, pois a OpenAPI atual não o documenta.
+A leitura de caixa ainda não é persistida nem integrada ao snapshot. A lista
+não envia filtro por ID de categoria até que sua codificação exata seja
+homologada. Os IDs/hierarquia de CAPEX e a
 correspondência dos movimentos com os relatórios da Majucau precisam ser
 confirmados antes de exibir valores. Consulte
 `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md`.
+
+Um `total` sem tamanho de página conhecido não basta para inferir se há próxima
+página: o limite local de registros não é usado como se tivesse sido enviado
+ao Bling. A leitura permanece incompleta até receber um marcador explícito ou
+homologar o contrato real da conta.
 
 O `ReceivablesAPISyncService` já fecha a etapa seguinte de infraestrutura: lê
 as páginas e grava cada página como evidência RAW append-only em uma transação

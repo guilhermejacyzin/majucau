@@ -1286,14 +1286,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "68%: JWT/retry e leitura de receber, pagar e caixa. Homologação real, fim/cursor e integração da fonte de caixa pendentes.",
+    "evidence": "69%: JWT/retry e leitura de receber, pagar e caixa; /caixas usa somente parâmetros documentados e mantém limite local. Homologação real, fim/cursor e integração CAPEX pendentes.",
     "weight": 1,
     "dependencies": [
       "BK-040",
       "BK-039",
       "BK-038"
     ],
-    "progress": 0.68
+    "progress": 0.69
   },
   {
     "key": "fileingestion",

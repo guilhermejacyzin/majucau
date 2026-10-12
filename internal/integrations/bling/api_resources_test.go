@@ -161,7 +161,7 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 		if r.Method != http.MethodGet || r.URL.Path != "/Api/v3/caixas" {
 			t.Fatalf("request = %s %s, want GET /Api/v3/caixas", r.Method, r.URL.Path)
 		}
-		if r.URL.Query().Get("pagina") != "2" || r.URL.Query().Get("limite") != "2" {
+		if r.URL.Query().Get("pagina") != "2" || r.URL.Query().Has("limite") {
 			t.Fatalf("pagination query = %s", r.URL.RawQuery)
 		}
 		if r.URL.Query().Get("dataInicial") != "2026-09-01" || r.URL.Query().Get("dataFinal") != "2026-09-30" {
@@ -182,7 +182,7 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 	}
 
 	page, err := client.ListCashMovements(context.Background(), CashMovementsFilter{
-		Page: 2, Limit: 2, DateFrom: "2026-09-01", DateTo: "2026-09-30",
+		Page: 2, MaxRecords: 2, DateFrom: "2026-09-01", DateTo: "2026-09-30",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -192,20 +192,20 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 	}
 }
 
-func TestListCashMovementsDoesNotAssumeEndWithoutPaginationMetadata(t *testing.T) {
+func TestListCashMovementsDoesNotInferEndFromTotalWithoutPageSize(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(`{"data":[{"id":789}]}`))
+		_, _ = w.Write([]byte(`{"data":[{"id":789}],"pagination":{"total":5}}`))
 	}))
 	defer server.Close()
 	client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
 	if err != nil {
 		t.Fatal(err)
 	}
-	page, err := client.ListCashMovements(context.Background(), CashMovementsFilter{Limit: 1})
+	page, err := client.ListCashMovements(context.Background(), CashMovementsFilter{MaxRecords: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if page.HasNextKnown || page.HasNext {
+	if page.HasNextKnown || page.HasNext || page.Limit != 0 {
 		t.Fatalf("page without completion metadata was treated as complete: %+v", page)
 	}
 }

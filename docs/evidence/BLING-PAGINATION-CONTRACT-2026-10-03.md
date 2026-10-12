@@ -61,3 +61,11 @@ Foi conferida novamente a [OpenAPI oficial do Bling](https://developer.bling.com
 O cliente atual constrói os filtros dos dois endpoints por uma função compartilhada (`internal/integrations/bling/api_client.go`). Os nomes enviados para Contas a Receber não correspondem aos parâmetros de data e situação publicados na OpenAPI; Contas a Pagar tem parâmetros próprios. A tela atual seleciona Vencimento, Recebimento ou Pagamento e informa que a execução lê os dois grupos. Não está definido se, ao escolher Recebimento ou Pagamento, a execução deve consultar somente o grupo correspondente ou também consultar o outro grupo sem filtro de período. Essa escolha pode mudar o conjunto de lançamentos importados.
 
 Nenhum filtro foi alterado. A sincronização mantém a proteção contra resposta sem confirmação de última página. Antes de corrigir o mapeamento dos filtros, é necessária confirmação do comportamento esperado para os dois grupos. Telas aprovadas e regras financeiras permanecem intactas.
+
+## Janela desejada para atualização diária — 2026-10-12
+
+- Gisele definiu que a atualização automática procure alterações desde a execução anterior e mantenha os dados dos próximos 60 dias.
+- A regra de integridade do projeto exige usar o último checkpoint confirmado em commit, e não a última tentativa; uma execução falha não pode avançar o período nem pular dados.
+- A OpenAPI oficial já conferida para `GET /contas/receber` e `GET /contas/pagar` não documenta filtros `dataAlteracaoInicial`/`dataAlteracaoFinal` nem metadados de última página. A intenção de coleta, portanto, ainda não tem um contrato técnico comprovado para esses endpoints.
+- O sincronizador atual falha com `BLING_API_PAGINATION_UNKNOWN` quando a resposta não confirma se há outra página; essa proteção deve ser mantida. Não declarar coleta completa, não avançar o checkpoint e não apresentar dados antigos como atuais até obter contrato endpoint-específico ou evidência sanitizada válida da resposta autorizada.
+- Esta decisão não altera o corte D-1 da análise normal, as regras financeiras nem as telas. A consulta automática Bling permanece pendente de validação de cobertura e paginação.

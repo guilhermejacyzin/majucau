@@ -12,7 +12,7 @@ Isso não confirma que a conta real esteja conectada ou que uma sincronização 
 - `internal/integrations/bling/api_client.go`: consulta somente leitura usa `https://api.bling.com.br/Api/v3`, `Authorization: Bearer` e `enable-jwt: 1`.
 - `frontend/src/App.tsx`: a área Integrações apresenta as ações “Salvar configuração”, “Conectar”, “Testar conexão” e “Sincronizar agora” separadamente. O painel informa que os dados não são sincronizados automaticamente e exige filtro explícito.
 - `cmd/worker/handler.go`: a operação de sincronização retorna `BLING_SYNC_FILTER_REQUIRED` quando não recebe janela de datas ou situação.
-- `docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md`, BK-039: agendamento e recuperação de trabalho seguem não iniciados. Gisele confirmou 09:30 em `America/Sao_Paulo`, aprovou processar fontes disponíveis e deixar as ausentes pendentes, e definiu buscar alterações Bling desde o último checkpoint e manter dados dos próximos 60 dias. Ainda é necessário validar os filtros com o contrato oficial e definir um acesso persistente ao Drive para o serviço.
+- `docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md`, BK-039: agendamento e recuperação de trabalho seguem não iniciados. Gisele confirmou 09:30 em `America/Sao_Paulo`, aprovou processar fontes disponíveis e deixar as ausentes pendentes, e definiu buscar alterações Bling desde o último checkpoint e manter dados dos próximos 60 dias. A evidência OpenAPI local consultada em 11/10 não documenta filtro de alteração nem metadados de última página para esses endpoints, então a coleta não pode ser marcada completa até esse contrato ser comprovado. Também falta definir acesso persistente ao Drive pelo serviço.
 
 ## Evidência de execução e limite
 
@@ -41,7 +41,7 @@ Antes de orientar o preenchimento, precisamos confirmar que o aplicativo cadastr
 
 ## Próxima verificação
 
-Após reiniciar o protótipo, confirmar primeiro se o cadastro do aplicativo Bling aceita o endereço local exigido pelo worker e se a porta/caminho coincidem exatamente. Só então preencher no Majucau o Client ID, Client Secret e Redirect URI, salvar, conectar e autorizar a conta. Em seguida, testar a conexão e iniciar a sincronização com um filtro aprovado. Não enviar segredos pelo chat. A rotina diária às 09:30 em `America/Sao_Paulo`, a regra para fontes ausentes e a janela desejada do Bling já foram aprovadas; a implementação segue em BK-039. Ainda faltam validar os filtros no contrato oficial e definir acesso persistente ao Drive pelo serviço.
+Após reiniciar o protótipo, confirmar primeiro se o cadastro do aplicativo Bling aceita o endereço local exigido pelo worker e se a porta/caminho coincidem exatamente. Só então preencher no Majucau o Client ID, Client Secret e Redirect URI, salvar, conectar e autorizar a conta. Em seguida, testar a conexão e iniciar a sincronização com um filtro aprovado. Não enviar segredos pelo chat. A rotina diária às 09:30 em `America/Sao_Paulo`, a regra para fontes ausentes e a janela desejada do Bling já foram aprovadas; a implementação segue em BK-039. A evidência oficial local não documenta o filtro incremental nem como confirmar a última página, portanto é necessária uma prova válida desses dois pontos antes de coletar automaticamente. Também falta definir acesso persistente ao Drive pelo serviço.
 
 Esta correção foi revisada estaticamente e formatada, mas os testes e o protótipo não foram executados nesta etapa. A validação em execução continua pendente após a reinicialização e a conexão real do Bling.
 

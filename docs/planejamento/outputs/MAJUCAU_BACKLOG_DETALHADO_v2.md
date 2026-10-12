@@ -3765,3 +3765,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A raiz do worker passou a ser dona explícita do pool PostgreSQL e a fechá-lo ao encerrar. Os serviços que compartilham esse pool não fecham mais um recurso que não criaram.
 - BK-017 avança para 90% (10% restante). A dependência BK-016, que mapeia contextos e vocabulário de negócio, continua não iniciada; por isso o fechamento formal de BK-017 depende de decisão sobre manter ou liberar essa ordem. Nenhuma tela, regra financeira ou dado persistido foi alterado. A suíte `go test -count=1 ./...` passou em 12/10/2026 após as correções deste registro.
 - O backlog mantém 127 tarefas: 7 concluídas, 14 em andamento e 106 não iniciadas; a média simples é 9,8% concluída e 90,2% restante. Não há prazo global confiável.
+
+### Encerramento do diagnóstico da integração Bling — 12/10/2026
+
+- A correção investigada foi concluída como diagnóstico: o código segue o padrão JWT exigido e usa a URL atual da API. A tela enviada mostra a integração sem Client ID, Redirect URI ou autorização; a senha salva no Chrome é a senha de acesso à conta e não substitui o Client Secret do aplicativo.
+- A tentativa de abrir a conta no navegador continuou bloqueada pela política salva, mesmo após a permissão “Sempre permitir”. Não foi usado caminho alternativo. Não há registro de OAuth, teste de conexão ou sincronização nos logs disponíveis; o painel não busca dados automaticamente.
+- Fica registrado um ponto a resolver antes da homologação: confirmar o endereço de retorno OAuth aceito no aplicativo Bling. O Majucau local exige `http://127.0.0.1:<porta>/<caminho>`, mas a tela sugere HTTPS. Não alterei interface nem fluxo OAuth sem confirmação do contrato.
+- Diagnóstico encerrado; BK-041 permanece em 69% (31% restante) até configurar e autorizar a conta, validar o retorno, confirmar paginação/cursor e homologar uma sincronização real. Nenhuma tela ou regra financeira foi alterada; nenhum teste foi executado nesta etapa.
+- O backlog segue com 127 tarefas: 7 concluídas, 14 em andamento e 106 não iniciadas; média simples de 9,8% concluída e 90,2% restante. Não há prazo total confiável.
+- Evidência: `docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md`.

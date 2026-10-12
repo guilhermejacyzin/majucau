@@ -123,7 +123,7 @@ func TestWriteXLSXRejectsInvalidRowsAndCellContent(t *testing.T) {
 		{name: "empty date", date: " ", columns: []string{"Descrição"}, row: []string{"value"}, want: "display date"},
 		{name: "wrong column count", date: "12/10/2026", columns: []string{"Descrição"}, row: []string{"one", "two"}, want: "does not match"},
 		{name: "invalid XML control", date: "12/10/2026", columns: []string{"Descrição"}, row: []string{"bad\x01text"}, want: "invalid XML character"},
-		{name: "long cell", date: "12/10/2026", columns: []string{"Descrição"}, row: []string{strings.Repeat("x", maxCellUTF16+1)}, want: "Excel text limit"},
+		{name: "long cell", date: "12/10/2026", columns: []string{"Descrição"}, row: []string{strings.Repeat("x", MaxCellUTF16+1)}, want: "Excel text limit"},
 		{name: "long row", date: "12/10/2026", columns: []string{"A", "B", "C"}, row: []string{strings.Repeat("x", 22000), strings.Repeat("y", 22000), strings.Repeat("z", 22000)}, want: "row byte limit"},
 	}
 	for _, test := range tests {

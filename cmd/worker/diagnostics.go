@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"majucau.local/financial-intelligence/internal/diagnosticslog"
+	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/ipc"
 )
 
@@ -105,6 +106,9 @@ func (h diagnosticRequestHandler) logCompletion(req ipc.Request, response ipc.Re
 	if errorCode != "" {
 		attrs = append(attrs, slog.String("error_code", errorCode))
 	}
+	if status := safeBlingIntegrationStatus(req.Method, response.Payload); status != "" {
+		attrs = append(attrs, slog.String("bling_integration_status", status))
+	}
 	if status := safeDiagnosticStatus(fields.Status); status != "" {
 		attrs = append(attrs, slog.String("batch_status", status))
 	}
@@ -151,6 +155,33 @@ type responseSummary struct {
 		BatchID     string `json:"batch_id"`
 		RecordsRead *int64 `json:"records_read"`
 	} `json:"payables"`
+}
+
+type integrationStatusSummary struct {
+	Provider string `json:"provider"`
+	Status   string `json:"status"`
+}
+
+func safeBlingIntegrationStatus(method ipc.Method, payload []byte) string {
+	const maxStatusPayload = 4 << 10
+	if method != ipc.MethodIntegrationStatus || len(payload) == 0 || len(payload) > maxStatusPayload {
+		return ""
+	}
+	var integrations []integrationStatusSummary
+	if err := json.Unmarshal(payload, &integrations); err != nil {
+		return ""
+	}
+	for _, integration := range integrations {
+		if domain.Origin(integration.Provider) != domain.OriginBling {
+			continue
+		}
+		status := domain.IntegrationStatus(integration.Status)
+		if status.Valid() {
+			return string(status)
+		}
+		return ""
+	}
+	return ""
 }
 
 func diagnosticSource(method ipc.Method) string {

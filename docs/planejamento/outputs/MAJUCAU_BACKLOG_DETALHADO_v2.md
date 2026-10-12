@@ -1204,6 +1204,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Conferência visual parcial — 12/10/2026:** a prévia local confirmou que o código estável e a mensagem de indisponibilidade aparecem em linhas separadas, sem mudança de posição. Como o worker não estava disponível, não foi possível conferir ali um `request_id` correspondente ao log. BK-031 permanece em 85%; falta essa conferência com erro identificado pelo worker e a validação da ACL em instalação/VM. A evidência registra o alcance e a limitação da prévia.
 
+**Status Bling nos logs — 12/10/2026:** `integration.status` agora registra somente `bling_integration_status` quando o provedor é BLING, o estado é conhecido e a resposta fica dentro de 4 KiB. Testes do worker e `go vet` passaram. A alteração vale após reiniciar o protótipo; não reiniciei a sessão aberta. BK-031 permanece em 85% porque a ACL instalada/VM e a correlação visual com uma falha real ainda não foram homologadas. Ver `docs/evidence/WORKER-STRUCTURED-DIAGNOSTICS-2026-10-11.md`.
+
 **Critério de aceite:** Erro visível ao usuário possui referência que encontra diagnóstico técnico sem tokens ou extratos completos.
 
 **Impacto:** Facilita suporte e investigação.

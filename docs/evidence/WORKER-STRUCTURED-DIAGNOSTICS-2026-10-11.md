@@ -107,3 +107,20 @@ controle local de limpeza. Nenhum artefato unsigned é uma versão de produção
   uma falha recebida do worker com referência e validar a ACL em instalação/VM.
 - A mudança altera somente o texto complementar autorizado. Nenhum layout,
   regra financeira, regra de negócio ou dado financeiro/operacional foi alterado.
+
+## Registro limitado do estado da integração Bling — 2026-10-12
+
+- `cmd/worker/diagnostics.go` registra `bling_integration_status` quando recebe
+  a resposta de `integration.status`, somente para o provedor `BLING` e quando
+  o estado pertence ao enum conhecido pelo domínio. A resposta precisa ter no
+  máximo 4 KiB.
+- O evento não inclui horário da tentativa/sucesso, código de erro do provedor,
+  credenciais, resposta completa nem estado de outras integrações. Se o JSON,
+  provedor, estado, método ou tamanho não forem aceitos, o campo é omitido.
+- `go test -count=1 ./cmd/worker` e `go vet ./cmd/worker` passaram nesta
+  execução. Os caches de compilação exclusivos foram criados em
+  `artifacts/cache/` e removidos por `SafeCleanup` ao final.
+- O protótipo e o worker já abertos não foram reiniciados. A nova informação
+  aparecerá nos logs após a próxima inicialização do protótipo; a validação da
+  ACL em instalação/VM continua pendente. BK-031 permanece em 85%.
+- Nenhuma tela aprovada, regra financeira ou regra de negócio foi alterada.

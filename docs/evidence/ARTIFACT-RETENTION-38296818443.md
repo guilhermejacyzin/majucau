@@ -13,3 +13,4 @@ O GitHub Actions concluiu com sucesso a verificação do commit `35f8818708be40a
 O pacote é unsigned e serve apenas ao protótipo; não é um release de produção. Foi mantido para permitir homologação. A conexão GitHub disponível permite consultar/baixar, mas não excluir o artefato. Para excluí-lo antes da expiração, abra o run, acesse **Actions > Artifacts** e remova `majucau-g1-unsigned`. Os dados completos e a instrução também foram guardados no registro local ignorado `artifacts/retained/cleanup-register.md`.
 
 Nenhuma tela, regra financeira ou dado de negócio foi alterado.
+O verificador de governança do commit documental inicial (`9769f27`) rejeitou a forma abreviada do campo de percentual do projeto. O requisito é `Quanto falta do projeto:`. A correção fica neste commit de acompanhamento; o run original permanece no histórico para auditoria.

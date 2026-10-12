@@ -365,6 +365,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (25%), BK-013 (15%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (68%), BK-056 (5%) e BK-067 (20%).
 - Pela média simples, `(7 × 100% + 30% + 20% + 25% + 15% + 15% + 35% + 70% + 85% + 68% + 5% + 20%) ÷ 127 = 8,6%`; restam 91,4%. É estimativa do backlog, não prontidão. Não há prazo global confiável.
 
+### Ajuste de tamanho dos cards da DRE — 12/10/2026
+
+- A faixa inferior da T06 agora acomoda em telas largas os oito cards aprovados: CMV/CPV, despesas, perdas, tributos, EBIT, EBITDA, CAPEX pago no mês e CAPEX acumulado. Em larguras menores, eles quebram em quatro, três ou uma coluna conforme os pontos de adaptação já definidos.
+- A alteração ficou restrita ao CSS dessa faixa e reduz o tamanho dos cards para caberem juntos. A tabela da DRE, o alerta de pendências, as demais partes aprovadas da tela e as regras financeiras não foram alteradas. Todos os cards continuam somente para consulta; valores sem fonte validada permanecem indisponíveis.
+- A etapa de disposição visual foi implementada. BK-067 permanece estimada em 20% (80% restante), pois a DRE própria, integração Bling, mapeamento contábil e conciliação ainda não foram concluídos. A média simples do backlog permanece em 8,6% concluído (91,4% restante); não há prazo total confiável. `git diff --check` passou; não foram executados testes de produto nesta alteração.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau

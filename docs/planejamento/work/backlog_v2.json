@@ -788,14 +788,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md",
+    "evidence": "docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md; scripts/start-prototype.ps1 iniciou o protótipo com PostgreSQL isolado; validação visual/funcional e em máquina limpa pendente",
     "weight": 1,
     "dependencies": [
       "BK-025",
       "BK-018",
       "BK-014"
     ],
-    "progress": 0.35
+    "progress": 0.55
   },
   {
     "key": "gofoundation",

@@ -396,11 +396,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Preparação do ambiente local — 12/10/2026
 
-- BK-026 avançou de 0% para 35%. O bootstrap agora instala Wails 2.13.0, sqlc 1.31.1 e govulncheck 1.7.0 em `artifacts/tools/go/bin`; os scripts de validação e build procuram essas cópias locais. O NSIS 3.13 foi extraído para `artifacts/tools/nsis-3.13` após conferência do hash oficial e o build procura essa ferramenta local antes dos caminhos globais.
+- BK-026 avançou de 35% para 55%: além do ambiente preparado, o roteiro local iniciou o worker, o banco isolado e a interface. O bootstrap instala Wails 2.13.0, sqlc 1.31.1 e govulncheck 1.7.0 em `artifacts/tools/go/bin`; o NSIS 3.13 também está disponível localmente após conferência do hash oficial.
 - `scripts/bootstrap.ps1` foi executado com sucesso: dependências Go e frontend instaladas; `npm ci` reportou 0 vulnerabilidades. As versões locais foram consultadas. Isso confirma a preparação desta máquina, não uma instalação em máquina limpa.
 - Faltam uma configuração de exemplo segura e a validação de início em máquina limpa. Não criamos `.env.example` porque o worker lê a DSN pelo ambiente e o fluxo seguro de entrega da credencial ainda está pendente em BK-014/BK-018; documentar um arquivo que o app não carrega poderia induzir configuração insegura. O PostgreSQL desconhecido continua intocado.
-- O backlog mantém 127 tarefas: 7 concluídas, 12 em andamento e 108 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-026 (35%), BK-031 (85%), BK-041 (69%), BK-056 (5%) e BK-067 (20%).
-- Pela média simples do rastreador, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 35% + 85% + 69% + 5% + 20%) ÷ 127 = 8,9%`; restam 91,1%. É uma estimativa do backlog, não prontidão nem medição de esforço. Não há prazo global confiável enquanto permanecem tarefas não iniciadas, decisões operacionais e validações externas.
+- Wails abriu o WebView2, mas a execução terminou depois. Durante a geração de bindings, exibiu avisos repetidos `Not found: time.Time`; a interface ainda precisa de conferência visual e funcional, e os avisos precisam ser investigados antes da homologação.
+- Na primeira finalização, o roteiro sinalizou erro ao tentar encerrar um worker que já não existia; a consulta confirmou que o processo e o banco local estavam parados. O tratamento do encerramento foi ajustado e ainda precisa ser confirmado numa nova execução. Logs locais foram mantidos em `artifacts/retained/postgresql-dev/` e listados no registro local de limpeza.
+- O backlog mantém 127 tarefas: 7 concluídas, 12 em andamento e 108 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-031 (85%), BK-041 (69%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples do rastreador, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 55% + 85% + 69% + 5% + 20%) ÷ 127 = 9,1%`; restam 90,9%. É uma estimativa do backlog, não prontidão nem medição de esforço. Não há prazo global confiável enquanto permanecem tarefas não iniciadas, decisões operacionais e validações externas.
 - Evidência: `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. Nenhuma tela aprovada ou regra financeira foi alterada. Não foram executados testes do produto.
 
 ## 00 Descoberta e decisões
@@ -1066,7 +1068,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-026 — Preparar o ambiente de desenvolvimento local
 
-**Situação:** Em andamento. **Evolução:** 35%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 55%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Permitir execução reproduzível fora da produção.
 
@@ -1082,7 +1084,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Impacto:** Diminui tempo perdido com diferenças entre máquinas.
 
-**Evidência atual:** `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. Ferramentas fixadas e preparação local documentadas; ainda faltam configuração de exemplo segura e validação em máquina limpa.
+**Evidência atual:** `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. O roteiro abriu o protótipo usando o banco local isolado; faltam homologação visual/funcional, investigação dos avisos do Wails, configuração de exemplo segura e validação em máquina limpa.
 
 **Dependências:** BK-025, BK-018, BK-014
 
@@ -3648,3 +3650,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-025 permanece em 70% (30% restante), pendente de uma pessoa administradora ativar proteção para `main` e exigir os checks apropriados. Evidências consultadas: [branch `main`](https://api.github.com/repos/guilhermejacyzin/majucau/branches/main) e [rulesets do repositório](https://api.github.com/repos/guilhermejacyzin/majucau/rulesets).
 - O backlog continua com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas; 8,6% concluído e 91,4% restante. A previsão global permanece sem base confiável.
 - Nenhuma tela, regra financeira, fórmula ou dado real foi alterado; não foram gerados caches ou outputs locais nesta execução.
+
+### Inicialização do protótipo e alinhamento do progresso — 12/10/2026
+
+- Foi criado e executado `scripts/start-prototype.ps1`. O worker e a interface iniciaram usando somente o PostgreSQL 18 separado em `artifacts/retained/postgresql-dev`, limitado a `127.0.0.1:55438`. Os caches e temporários ficam dentro de `artifacts/`; o tratamento de encerramento foi corrigido após a primeira execução e ainda precisa de nova conferência.
+- O WebView2 abriu, mas a execução do Wails terminou depois. A geração de bindings mostrou avisos `Not found: time.Time`; ainda falta conferir se afetam funções com datas. O visual e as funções da interface não foram homologados. A pasta do banco e a credencial DPAPI são locais e não são publicadas; o serviço PostgreSQL da porta 5432 não foi usado.
+- A tarefa BK-026 passou para 55% (45% restante). Faltam a homologação visual/funcional, investigar os avisos do Wails, preparar uma configuração de exemplo segura e validar o roteiro em máquina limpa. A planilha foi sincronizada: 7 concluídas, 12 em andamento e 108 não iniciadas; média estimada de 9,1% concluído e 90,9% restante.
+- A planilha manteve o desenho e as fórmulas de resumo. Nenhuma tela do produto, regra financeira ou regra de negócio foi modificada. Não foram executados testes do produto.

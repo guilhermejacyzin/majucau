@@ -103,6 +103,8 @@ Pré-requisitos: Windows 10/11 x64, Go 1.26.9, Node.js 24.x, WebView2 Runtime e 
 ./scripts/build-windows.ps1 -Installer
 ```
 
+Nesta máquina, após a preparação local do banco isolado e das credenciais DPAPI, abra o protótipo com `./scripts/start-prototype.ps1`. O script usa somente `artifacts/retained/postgresql-dev`, na porta `127.0.0.1:55438`; não acessa o serviço PostgreSQL da porta 5432. Ele prepara o worker com as ferramentas instaladas pelo bootstrap, inicia Wails e encerra os processos que iniciou ao fechar a janela. Não cria dados financeiros de exemplo. A pasta do banco e as credenciais são locais e não fazem parte do Git; outro computador precisa preparar sua própria instância.
+
 Para gerar o instalador, também é necessário NSIS 3.13. O script encontra uma cópia em `artifacts/tools/nsis-3.13/Bin`, nos diretórios padrão do Windows ou no `PATH`. A instalação de NSIS é separada do bootstrap e exige obter a versão oficial 3.13.
 
 Os executáveis e instaladores finais são consolidados em `artifacts/windows/`, com o inventário em `artifacts/MANIFEST.txt`. O pipeline também gera `majucau-windows-x64-portable.zip` com hashes para validação local; esse bundle não é o instalador de produção. Os caches de Go, npm e WebView2 ficam em `artifacts/cache/`; bundles de verificação e relatórios de smoke ficam em `artifacts/verification/`. A CI usa os mesmos diretórios e publica os resultados a partir de `artifacts/`, inclusive quando uma etapa falha. Após a consolidação, as saídas intermediárias (`build/bin`, `build/windows/installer/tmp/MicrosoftEdgeWebview2Setup.exe`, `frontend/dist` e `tmp`) são removidas por padrão. Use `-KeepSourceOutputs` somente para diagnóstico local.

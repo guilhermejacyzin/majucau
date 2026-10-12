@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"majucau.local/financial-intelligence/internal/application"
 )
@@ -75,6 +76,16 @@ func (row scriptedDashboardSummaryRow) Scan(dest ...any) error {
 				return pgx.ErrNoRows
 			}
 			*target = converted
+		case *pgtype.Timestamptz:
+			if value == nil {
+				*target = pgtype.Timestamptz{}
+				continue
+			}
+			converted, ok := value.(time.Time)
+			if !ok {
+				return pgx.ErrNoRows
+			}
+			*target = pgtype.Timestamptz{Time: converted, Valid: true}
 		default:
 			return pgx.ErrNoRows
 		}
@@ -144,7 +155,8 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 	if err := json.Unmarshal(output.Bytes(), &snapshot); err != nil {
 		t.Fatalf("stream output is not valid snapshot JSON: %v", err)
 	}
-	if !snapshot.AsOf.Equal(asOf) || snapshot.DataState != "PARTIAL" || snapshot.Receivables.Value != "100.0000" {
+	wantLastSync := time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC)
+	if !snapshot.AsOf.Equal(asOf) || snapshot.DataState != "PARTIAL" || snapshot.Receivables.Value != "100.0000" || snapshot.LastBlingSyncAt == nil || !snapshot.LastBlingSyncAt.Equal(wantLastSync) {
 		t.Fatalf("unexpected snapshot summary: %+v", snapshot)
 	}
 	if len(snapshot.ReceivableRows) != 1 || snapshot.ReceivableRows[0].Customer != "Cliente" || len(snapshot.PayableRows) != 1 || snapshot.PayableRows[0].Supplier != "Fornecedor" {
@@ -260,7 +272,7 @@ func dashboardSummaryValues() []any {
 		"100.0000", int64(2), "40.0000", int64(1),
 		"25.0000", int64(1), int64(3), "5.0000", int64(1),
 		"80.0000", int64(2), "10.0000", int64(1), "4.0000", int64(1),
-		"30.0000", int64(1), int64(2),
+		"30.0000", int64(1), int64(2), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
 	}
 }
 
@@ -269,6 +281,6 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
-		"0.0000", int64(0), int64(0),
+		"0.0000", int64(0), int64(0), nil,
 	}
 }

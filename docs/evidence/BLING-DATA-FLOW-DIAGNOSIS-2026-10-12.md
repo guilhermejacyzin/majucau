@@ -29,9 +29,19 @@ O worker informou `DIAGNOSTICS_LOG_UNAVAILABLE` porque a pasta de logs de instal
 - A tentativa de leitura direta do site do Bling foi recusada pela política de permissão salva do navegador, apesar dos prints anteriores das configurações. Não foi usado outro caminho para contornar o bloqueio.
 - O log mais recente continua contendo apenas saúde do worker, status de integração e consulta do painel; não há operação OAuth, teste ou sincronização Bling registrada.
 
+## Conferência do endereço de retorno OAuth — 12/10/2026
+
+Foi identificada uma incompatibilidade que pode impedir a conexão:
+
+- `frontend/src/App.tsx` mostra `https://...` como exemplo no campo “Redirect URI”.
+- `internal/integrations/bling/credentials.go` aceita HTTPS ao salvar, mas `internal/integrations/bling/oauth_service.go` só inicia a autorização com `http://127.0.0.1:<porta>/<caminho>` e abre essa porta local para receber o retorno. Assim, uma URL HTTPS pode ser salva e depois falhar ao clicar em “Conectar”.
+- A [documentação oficial do Bling sobre aplicativos](https://developer.bling.com.br/aplicativos) diz que o endereço cadastrado é usado no retorno da autorização e que o Client ID e o Client Secret aparecem nas informações do aplicativo. Ela não confirma se o cadastro do Bling aceita o endereço local exigido pelo Majucau.
+
+Antes de orientar o preenchimento, precisamos confirmar que o aplicativo cadastrado no Bling aceita o endereço local e a porta que o Majucau usa. Não inventar um endereço nem pedir credenciais pelo chat. A diferença entre a dica visual e o contrato do worker fica registrada para uma correção técnica, sem alteração da tela aprovada.
+
 ## Próxima verificação
 
-Após reiniciar o protótipo, preencher no Majucau o Client ID, Client Secret e Redirect URI registrados para o aplicativo Bling, salvar, conectar e autorizar a conta. Em seguida, testar a conexão e iniciar a sincronização com um filtro aprovado. Não enviar segredos pelo chat. A rotina diária das 09:30 permanece pendente porque o fuso horário e o comportamento quando arquivos externos ainda não chegaram não foram definidos; não presumir essas decisões.
+Após reiniciar o protótipo, confirmar primeiro se o cadastro do aplicativo Bling aceita o endereço local exigido pelo worker e se a porta/caminho coincidem exatamente. Só então preencher no Majucau o Client ID, Client Secret e Redirect URI, salvar, conectar e autorizar a conta. Em seguida, testar a conexão e iniciar a sincronização com um filtro aprovado. Não enviar segredos pelo chat. A rotina diária das 09:30 permanece pendente porque o fuso horário e o comportamento quando arquivos externos ainda não chegaram não foram definidos; não presumir essas decisões.
 
 Esta correção foi revisada estaticamente e formatada, mas os testes e o protótipo não foram executados nesta etapa. A validação em execução continua pendente após a reinicialização e a conexão real do Bling.
 

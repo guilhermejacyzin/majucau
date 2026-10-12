@@ -480,6 +480,34 @@ jobs:
       - name: Apply schema to disposable PostgreSQL
         run: |
           for migration in database/migrations/*.up.sql; do
+            if [[ "$migration" == "database/migrations/000004_v1_access_catalog_alignment.up.sql" ]]; then
+              test_sid='S-1-5-21-0000000000-0000000000-0000000000-4242'
+              psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "
+                INSERT INTO system_users (windows_sid, display_name, role_id)
+                SELECT '$test_sid', 'migration guard verification', id
+                  FROM roles WHERE code = 'VIEWER';
+              "
+
+              if migration_output="$(psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration" 2>&1)"; then
+                echo 'Migration 000004 unexpectedly accepted a user with a retired role.' >&2
+                exit 1
+              fi
+              if [[ "$migration_output" != *'Cannot retire legacy roles while users still reference them'* ]]; then
+                printf '%s\n' "$migration_output" >&2
+                echo 'Migration 000004 failed for a reason other than its retired-role safety guard.' >&2
+                exit 1
+              fi
+
+              legacy_role_count="$(psql "$MAJUCAU_TEST_DATABASE_URL" -Atqc "SELECT COUNT(*) FROM roles WHERE code IN ('FINANCE', 'ACCOUNTING', 'VIEWER')")"
+              guarded_user_count="$(psql "$MAJUCAU_TEST_DATABASE_URL" -Atqc "SELECT COUNT(*) FROM system_users u JOIN roles r ON r.id = u.role_id WHERE u.windows_sid = '$test_sid' AND r.code = 'VIEWER'")"
+              if [[ "$legacy_role_count" != '3' || "$guarded_user_count" != '1' ]]; then
+                echo 'Migration 000004 changed data despite rejecting the retired-role user.' >&2
+                exit 1
+              fi
+
+              psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM system_users WHERE windows_sid = '$test_sid'"
+              echo 'Migration 000004 retired-role guard and rollback: PASS'
+            fi
             psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
 

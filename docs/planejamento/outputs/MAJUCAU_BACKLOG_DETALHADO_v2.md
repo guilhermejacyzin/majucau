@@ -379,6 +379,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-013 avança de 15% para 20% (80% restante). O backlog permanece com 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (25%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (68%), BK-056 (5%) e BK-067 (20%).
 - Pela média simples, `(7 × 100% + 30% + 20% + 25% + 20% + 15% + 35% + 70% + 85% + 68% + 5% + 20%) ÷ 127 = 8,6%`; restam 91,4%. É estimativa do backlog, não prontidão; não há prazo global confiável. A implementação e validação do login, sessão e enforcement do worker continuam pendentes. Nenhuma tela ou regra financeira foi alterada.
 
+### Gerador XLSX em fluxo para T13–T15 — 12/10/2026
+
+- O componente `internal/reportexport` escreve a data exibida, os cabeçalhos e as linhas uma por vez; usa texto inline para impedir fórmulas e rejeita conteúdo inválido ou acima dos limites. Não foi adicionada dependência.
+- Testes do pacote e `go vet` passaram no Windows. O componente não lê o banco, não cria uma rota e não altera o botão. A autorização de exportação ainda não é conferida no worker; integração continua fechada até existir esse controle e uma origem confirmada para a tabela.
+- BK-012 avança de 25% para 30%; faltam 70%. O backlog mantém 127 tarefas: 7 concluídas, 11 em andamento e 109 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-031 (85%), BK-041 (68%), BK-056 (5%) e BK-067 (20%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 85% + 68% + 5% + 20%) ÷ 127 = 8,6%`; restam 91,4%. Continua sem prazo global confiável. Nenhuma tela aprovada ou regra financeira foi alterada. Evidência: `docs/evidence/STREAMING-XLSX-WRITER-2026-10-12.md`.
+
 ## 00 Descoberta e decisões
 
 ### BK-000 — Confirmar a base de escopo e as decisões da Majucau
@@ -693,7 +700,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-012 — Especificar ações e exportações já previstas
 
-**Situação:** Em andamento. **Evolução:** 25% (a auditoria estática inclui matriz parcial das referências T02–T07 e T13–T15, mapeando botões aprovados, campos visíveis, ações de leitura e capacidades. Gisele aprovou Excel com as linhas da tabela e a data exibida na tela para T13–T15. Ainda não há rota de relatório. Permanecem pendentes o formato/conteúdo de T02–T07, filtros e escopo, contratos de detalhe e enforcement da capacidade no worker; não presumir conteúdo). **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
+**Situação:** Em andamento. **Evolução:** 30% (a auditoria estática inclui matriz parcial das referências T02–T07 e T13–T15, mapeando botões aprovados, campos visíveis, ações de leitura e capacidades. Gisele aprovou Excel com as linhas da tabela e a data exibida na tela para T13–T15. Há agora um gerador XLSX em fluxo com limites e proteção contra fórmulas; ele ainda não está ligado às telas nem às consultas. Permanecem pendentes a rota, a autorização efetiva no worker, o arquivo temporário privado, o formato/conteúdo de T02–T07, filtros e escopo, contratos de detalhe e testes de ponta a ponta; não presumir conteúdo). **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
 
 **Objetivo:** Especificar o que cada botão pode fazer.
 
@@ -714,6 +721,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Fonte:** S/T/U CEIs; T02–T07; T13–T15; `G0-DECISION-REGISTER.md` (decisão posterior de T11 em 10/10/2026); Fechamento vigente 13/09/2026, §§5–6
 
 **Regras e verificações vinculadas:** L-22,L-23,Q-13,F-14
+
+**Evidência técnica parcial — 12/10/2026:** `internal/reportexport` produz XLSX em fluxo, com células textuais, limites explícitos e cancelamento. `go test ./internal/reportexport -count=1`, `go vet ./internal/reportexport` e `git diff --check` passaram. O arquivo ainda não pode ser disponibilizado: faltam rota, consulta real e autorização `REPORT_EXPORT` aplicada no worker. T11 Compras permanece sem download. Evidência: `docs/evidence/STREAMING-XLSX-WRITER-2026-10-12.md`.
 
 ### BK-013 — Especificar perfis, capacidades, vigência e auditoria
 

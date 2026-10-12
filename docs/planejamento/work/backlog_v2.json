@@ -3346,7 +3346,7 @@
     "questions": "Q-02,F-08",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [
@@ -3358,7 +3358,7 @@
       "BK-096",
       "BK-101"
     ],
-    "progress": 0
+    "progress": 0.01
   },
   {
     "key": "extrascreens",

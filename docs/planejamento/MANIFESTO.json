@@ -13,6 +13,11 @@
       "sha256": "029635e92b8839840959d6a3a0a64992a6277032527e762db67e027718e13ae2"
     },
     {
+      "path": "docs/evidence/DASHBOARD-REFRESH-AFTER-INTEGRATION-2026-10-12.md",
+      "bytes": 1347,
+      "sha256": "ebefa9763cbc3f04ae6ca124e6592319c496db285c6afd9949a04a640b1d25db"
+    },
+    {
       "path": "docs/planejamento/FONTES.md",
       "bytes": 6751,
       "sha256": "126e6e3bc68b974eefe701cd48de41c7eb37afbb1fdfc3748591c0ae85a9e90e"
@@ -44,8 +49,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 256495,
-      "sha256": "24791c90d4f48449dca08db632ff404ccd9415f673f16021a1c09cc40c1a9bb1"
+      "bytes": 270445,
+      "sha256": "ffa20bbdaeb3f786e533bf5fb68e6c98b2a241fa826a505545fbe622a8458889"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -59,8 +64,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 49146,
-      "sha256": "b6f462e0308e56bcf02e3a83990979ee7840abc859dc8a60a6aee443399630ed"
+      "bytes": 49290,
+      "sha256": "225316745f98b8c172e4b5c3daadfaffc76f55e01ef2965b7f3c89476a44eaf1"
     },
     {
       "path": "docs/planejamento/README.md",
@@ -74,8 +79,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 3296,
-      "sha256": "d67c92ea91cf70ef82305b9a91d4d8b1861e1d9a442503f5e51d62ae1c7c646b"
+      "bytes": 3288,
+      "sha256": "e50cbcbc1627805253d2a24267b2e40b582d076595fb5bd2a91238d0f6c7dc20"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -94,8 +99,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 192241,
-      "sha256": "0902b8caa426ef99f620c18ef5e74341f7303da22099e48b55679551f1f980ea"
+      "bytes": 192426,
+      "sha256": "8ef419d0cb153e80b3aed7fc0e5a13b55b62fbae3bf9ef1d33432453c9b208b2"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -399,8 +404,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 13791,
-      "sha256": "d860c2472eee09e93a77636a4b7f7b5dc60ec4449e559afdf84316168d7807e3"
+      "bytes": 14993,
+      "sha256": "88e1f199e7b63256ed4da4e453b8cc2a96d8eea16c4271a110f8e92013fd259e"
     },
     {
       "path": "tools/exportar_planejamento.py",

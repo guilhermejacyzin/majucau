@@ -345,6 +345,7 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
   const [bootstrap, setBootstrap] = useState<BootstrapState | null>(null)
   const [dashboardSnapshot, setDashboardSnapshot] = useState<DashboardSnapshot | null>(null)
   const mainRef = useRef<HTMLElement>(null)
+  const previousScreenRef = useRef<Screen>('executive')
   useEffect(() => {
     let active = true
     void adapter.getState().then((state) => { if (active) setBootstrap(state) })
@@ -355,6 +356,16 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
     void snapshotAdapter.getSnapshot().then((snapshot) => { if (active) setDashboardSnapshot(snapshot) })
     return () => { active = false }
   }, [snapshotAdapter])
+  useEffect(() => {
+    const returnedFromIntegrations = previousScreenRef.current === 'integrations' && screen !== 'integrations'
+    previousScreenRef.current = screen
+    if (!returnedFromIntegrations) return undefined
+
+    let active = true
+    void adapter.getState().then((state) => { if (active) setBootstrap(state) })
+    void snapshotAdapter.getSnapshot().then((snapshot) => { if (active) setDashboardSnapshot(snapshot) })
+    return () => { active = false }
+  }, [adapter, screen, snapshotAdapter])
   const navigate = (next: Screen) => { setScreen(next); window.requestAnimationFrame(() => mainRef.current?.focus()) }
   return <div className="app-shell"><MockupSidebar screen={screen} onNavigate={navigate} /><main className="main-area" ref={mainRef} tabIndex={-1}>{bootstrap === null ? <BootstrapLoading /> : screen === 'integrations' ? <IntegrationsView bootstrap={bootstrap} blingPreview={blingPreview} blingImporter={blingImporter} futurePreview={futurePreview} futureImporter={futureImporter} blingConfig={blingConfig} nuvemshopConfig={nuvemshopConfig} blingOAuth={blingOAuth} /> : <MockupDashboard screen={screen} snapshot={dashboardSnapshot ?? undefined} onNavigate={navigate} />} {bootstrap && <WorkerFooter bootstrap={bootstrap} />}</main></div>
 }

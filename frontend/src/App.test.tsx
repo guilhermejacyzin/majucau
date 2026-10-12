@@ -7,7 +7,7 @@ import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPr
 
 const connectedBootstrap: BootstrapState = { app_version: '0.1.0-g1', worker: { service: 'majucau-worker', version: 'test-worker', state: 'OK', checked_at: '2026-08-16T12:00:00Z' }, integrations: [{ provider: 'BLING', status: 'CONNECTED', last_success_at: '2026-08-16T11:58:00Z', last_attempt_at: '2026-08-16T11:58:00Z' }, { provider: 'NUVEMSHOP', status: 'PARTIALLY_AVAILABLE' }, { provider: 'NUVEM_PAGO', status: 'UNAVAILABLE' }], checked_at: '2026-08-16T12:00:00Z' }
 const adapterFor = (state: BootstrapState): BootstrapAdapter => ({ getState: () => Promise.resolve(state) })
-const snapshotAdapterFor = (value = '100.0000'): DashboardSnapshotAdapter => ({ getSnapshot: () => Promise.resolve({ as_of: '2026-09-21T12:00:00Z', data_state: 'PARTIAL', receivables: { value, count: 1, state: 'CONFIRMED', source_system: 'BLING + NUVEM_PAGO' }, future_b2c: { state: 'UNAVAILABLE', source_system: 'NUVEM_PAGO' }, receipts_month: { state: 'UNAVAILABLE', source_system: 'BLING' }, receivables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING + NUVEM_PAGO' }, payables: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_due_today: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING' }, payments_month: { state: 'UNAVAILABLE', source_system: 'BLING' } }) })
+const snapshotAdapterFor = (value = '100.0000'): DashboardSnapshotAdapter => ({ getSnapshot: () => Promise.resolve({ as_of: '2026-09-21T12:00:00Z', last_bling_sync_at: '2026-09-21T11:30:00Z', data_state: 'PARTIAL', receivables: { value, count: 1, state: 'CONFIRMED', source_system: 'BLING + NUVEM_PAGO' }, future_b2c: { state: 'UNAVAILABLE', source_system: 'NUVEM_PAGO' }, receipts_month: { state: 'UNAVAILABLE', source_system: 'BLING' }, receivables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING + NUVEM_PAGO' }, payables: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_due_today: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING' }, payments_month: { state: 'UNAVAILABLE', source_system: 'BLING' } }) })
 
 describe('shell financeiro', () => {
   it('exibe a composição oficial do mockup T1 sem números inventados', async () => {
@@ -43,11 +43,41 @@ describe('shell financeiro', () => {
     expect(screen.getByRole('table')).not.toHaveTextContent('CAPEX')
   })
 
-  it('exibe métrica normalizada somente quando o snapshot a confirma', async () => {
+  it('exibe métrica confirmada e usa a data da última sincronização Bling', async () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={snapshotAdapterFor()} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     expect(await screen.findByText('R$ 100,00')).toBeInTheDocument()
-    expect(screen.getByText('21/09/2026, 09:00')).toBeInTheDocument()
+    expect(screen.getByText('21/09/2026, 08:30')).toBeInTheDocument()
+  })
+
+  it('não mostra a hora da consulta como se fosse sincronização do Bling', async () => {
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => ({ ...await snapshotAdapterFor().getSnapshot(), last_bling_sync_at: undefined }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    expect(screen.getByText(/Última sincronização:/)).toHaveTextContent('Última sincronização: —')
+  })
+
+  it('atualiza o painel ao voltar da área de Integrações', async () => {
+    const user = userEvent.setup()
+    let snapshotReads = 0
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        return snapshotAdapterFor(snapshotReads === 1 ? '100.0000' : '125.0000').getSnapshot()
+      },
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    expect(await screen.findByText('R$ 100,00')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    await screen.findByRole('heading', { name: 'Integrações' })
+    await user.click(screen.getByRole('button', { name: 'Visão Executiva' }))
+
+    expect(await screen.findByText('R$ 125,00')).toBeInTheDocument()
+    expect(snapshotReads).toBe(2)
   })
 
   it('renderiza linhas normalizadas nas tabelas de recebíveis do mockup', async () => {

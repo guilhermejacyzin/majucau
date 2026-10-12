@@ -401,8 +401,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Faltam uma configuração de exemplo segura e a validação de início em máquina limpa. Não criamos `.env.example` porque o worker lê a DSN pelo ambiente e o fluxo seguro de entrega da credencial ainda está pendente em BK-014/BK-018; documentar um arquivo que o app não carrega poderia induzir configuração insegura. O PostgreSQL desconhecido continua intocado.
 - Wails abriu o WebView2, mas a execução terminou depois. Durante a geração de bindings, exibiu avisos repetidos `Not found: time.Time`; a interface ainda precisa de conferência visual e funcional, e os avisos precisam ser investigados antes da homologação.
 - Na primeira finalização, o roteiro sinalizou erro ao tentar encerrar um worker que já não existia; a consulta confirmou que o processo e o banco local estavam parados. O tratamento do encerramento foi ajustado e ainda precisa ser confirmado numa nova execução. Logs locais foram mantidos em `artifacts/retained/postgresql-dev/` e listados no registro local de limpeza.
-- O backlog mantém 127 tarefas: 7 concluídas, 12 em andamento e 108 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-031 (85%), BK-041 (69%), BK-056 (5%) e BK-067 (20%).
-- Pela média simples do rastreador, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 55% + 85% + 69% + 5% + 20%) ÷ 127 = 9,1%`; restam 90,9%. É uma estimativa do backlog, não prontidão nem medição de esforço. Não há prazo global confiável enquanto permanecem tarefas não iniciadas, decisões operacionais e validações externas.
+- O backlog mantém 127 tarefas: 7 concluídas, 13 em andamento e 107 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-031 (85%), BK-041 (69%), BK-056 (5%), BK-067 (20%) e BK-102 (1%).
+- Pela média simples do rastreador, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 55% + 85% + 69% + 5% + 20% + 1%) ÷ 127 = 9,1%`; restam 90,9%. É uma estimativa do backlog, não prontidão nem medição de esforço. Não há prazo global confiável enquanto permanecem tarefas não iniciadas, decisões operacionais e validações externas.
 - Evidência: `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. Nenhuma tela aprovada ou regra financeira foi alterada. Não foram executados testes do produto.
 
 ## 00 Descoberta e decisões
@@ -2954,7 +2954,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-102 — Implementar T01 Visão Executiva
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 1%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Consolidar indicadores aprovados para gestão.
 
@@ -3697,3 +3697,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Com autorização explícita da usuária para corrigir apenas os valores, mantendo desenho, textos e regras financeiras, o cabeçalho passa a usar o fim do lote Bling mais recente concluído como `SUCCESS` ou `PARTIAL`; sem lote, apresenta “—”. Recebíveis sem registros passam a `UNAVAILABLE`, evitando R$ 0,00 sem confirmação. Nenhum layout, rótulo ou fórmula financeira mudou.
 - A ferramenta de navegador ainda recusa a leitura direta do Bling pela preferência de permissão salva; não foi contornada. O protótipo aberto não foi reiniciado e esta alteração não foi validada em execução.
 - BK-041 permanece em 69% (31% restante), pois a conta real segue desconectada e faltam contrato de paginação validado e sincronização homologada. BK-039 permanece sem início: o horário 09:30 está solicitado, mas fuso horário e conduta quando faltarem arquivos externos ainda não foram definidos. O projeto permanece em 9,1% concluído (90,9% restante); sem prazo total confiável.
+
+### Atualização do painel ao voltar de Integrações — 12/10/2026
+
+- Ao sair da tela Integrações e retornar a qualquer tela do painel, a interface agora consulta de novo o estado das integrações e o snapshot local. Assim, uma sincronização manual concluída pode aparecer sem fechar e abrir o protótipo. Essa atualização só lê os dados já persistidos; ela não inicia chamadas ao Bling nem cria sincronização automática.
+- Não houve mudança de desenho, rótulos, fórmulas ou regras financeiras. Foram acrescentadas verificações para atualizar o valor ao voltar da tela de Integrações e para não confundir a hora de consulta do painel com a última sincronização confirmada.
+- Validação: `frontend/src/App.test.tsx` — 16 testes passaram; `npm run typecheck`, ESLint nos dois arquivos alterados e `git diff --check` passaram. O protótipo local não foi reiniciado; a confirmação visual no executável em uso permanece pendente.
+- BK-102 passa a “Em andamento”, 1% (99% restante). Recontagem do backlog: 127 tarefas, 7 concluídas, 13 em andamento e 107 não iniciadas; média 9,1% concluída e 90,9% restante. O prazo do projeto segue sem estimativa confiável.
+- Evidência: `docs/evidence/DASHBOARD-REFRESH-AFTER-INTEGRATION-2026-10-12.md`.

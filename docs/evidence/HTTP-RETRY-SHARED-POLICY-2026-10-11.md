@@ -26,6 +26,17 @@ Embora a CI do commit tenha passado, isso não substitui a homologação do Blin
 
 Nenhuma tela, regra financeira, fórmula, migration ou chamada à conta real foi alterada.
 
+## Correção da classificação de falhas de transporte — 2026-10-12
+
+Uma revisão mais profunda encontrou uma lacuna na implementação anterior: o adapter convertia qualquer erro de transporte em “indisponível”, e o classificador entendia qualquer indisponibilidade como transitória. Assim, erros permanentes de certificado ou configuração podiam consumir as tentativas disponíveis.
+
+- O adapter agora identifica timeouts, EOF/EOF inesperado, DNS temporário e falhas de conexão transitórias (reset, recusa, aborto, host/rede indisponível e pipe quebrado).
+- Outros erros de transporte continuam produzindo a mensagem segura “Bling indisponível”, mas não são repetidos. O erro de rede original não é exposto.
+- HTTP 408/429/5xx continua usando a política comum. Autenticação, autorização, schema, resposta inválida, cancelamento do chamador e POST OAuth seguem sem retry.
+- Foram acrescentados casos para reset de conexão (repete dentro do limite) e certificado TLS não confiável (uma tentativa, sem espera). A suíte Go completa passou em 12/10/2026.
+
+Esta correção só altera resiliência da integração. Nenhuma tela, regra financeira, fórmula, migration ou chamada à conta real foi alterada.
+
 ## Auditoria de cobertura dos caminhos HTTP — 2026-10-12
 
 Uma nova busca estática cobriu todos os usos de `http.Client.Do` e de `.Do(req)` na produção Go:

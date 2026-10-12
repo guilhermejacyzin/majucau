@@ -54,7 +54,7 @@ Quanto falta do projeto: N%
 
 - Fluxos de dados crescentes devem ser processados em streaming com buffers e limites explícitos; envelopes pequenos de controle também têm limite de bytes.
 - Persistência de RAW, fatos normalizados, cursor e conclusão de lote mantém atomicidade; replay é idempotente.
-- Retry é padrão apenas para falhas transitórias e chamadas que podem ser repetidas com segurança. Operações sem garantia oficial de replay seguro não são repetidas por presunção.
+- Retry é padrão apenas para falhas transitórias e chamadas que podem ser repetidas com segurança. Operações sem garantia oficial de replay seguro não são repetidas por presunção. O padrão comum limita a três tentativas, usa backoff com jitter e respeita `Retry-After` até 30 segundos. Timeouts, EOF/EOF inesperado, DNS temporário e falhas de conexão como reset/recusa podem ser repetidos; certificado TLS inválido, DNS permanente e erro de configuração não.
 - Entrada externa deve ser validada, limitada, cancelável e protegida contra exposição de PII/segredos. Falhas nunca viram valores financeiros zero.
 
 ## Caches, outputs e retenção

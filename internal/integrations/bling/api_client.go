@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"majucau.local/financial-intelligence/internal/integrations/httpretry"
@@ -60,6 +62,22 @@ type BlingAPIError struct {
 	StatusCode int
 	Code       string
 	RetryAfter time.Duration
+}
+
+// blingTransportFailure preserves a safe public error while retaining whether
+// the underlying transport failure is temporary enough for a replay-safe GET.
+// The raw transport error is intentionally not exposed because it may contain
+// account URLs or other request details.
+type blingTransportFailure struct {
+	retryable bool
+}
+
+func (e *blingTransportFailure) Error() string {
+	return fmt.Sprintf("%v: request failed", ErrBlingAPIUnavailable)
+}
+
+func (e *blingTransportFailure) Unwrap() error {
+	return ErrBlingAPIUnavailable
 }
 
 func (e *BlingAPIError) Error() string {
@@ -272,7 +290,7 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 		if req.Context().Err() != nil {
 			return BlingReceivablesPage{}, req.Context().Err()
 		}
-		return BlingReceivablesPage{}, fmt.Errorf("%w: request failed", ErrBlingAPIUnavailable)
+		return BlingReceivablesPage{}, newBlingTransportFailure(err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
@@ -460,11 +478,42 @@ func decodeBlingReceivablesEnvelope(reader io.Reader, limit int64) (blingReceiva
 }
 
 func retryableBlingError(err error) bool {
+	var transportFailure *blingTransportFailure
+	if errors.As(err, &transportFailure) {
+		return transportFailure.retryable
+	}
 	var apiErr *BlingAPIError
 	if errors.As(err, &apiErr) {
 		return apiErr.StatusCode == http.StatusRequestTimeout || apiErr.StatusCode == http.StatusTooManyRequests || isBlingServerError(apiErr.StatusCode)
 	}
-	return errors.Is(err, ErrBlingAPIUnavailable)
+	return false
+}
+
+func newBlingTransportFailure(err error) error {
+	return &blingTransportFailure{retryable: isRetryableBlingTransportError(err)}
+}
+
+func isRetryableBlingTransportError(err error) bool {
+	if err == nil || errors.Is(err, context.Canceled) {
+		return false
+	}
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+	var networkError net.Error
+	if errors.As(err, &networkError) && networkError.Timeout() {
+		return true
+	}
+	var dnsError *net.DNSError
+	if errors.As(err, &dnsError) {
+		return dnsError.IsTimeout || dnsError.IsTemporary
+	}
+	return errors.Is(err, syscall.ECONNRESET) ||
+		errors.Is(err, syscall.ECONNREFUSED) ||
+		errors.Is(err, syscall.ECONNABORTED) ||
+		errors.Is(err, syscall.EHOSTUNREACH) ||
+		errors.Is(err, syscall.ENETUNREACH) ||
+		errors.Is(err, syscall.EPIPE)
 }
 
 func isBlingServerError(statusCode int) bool {

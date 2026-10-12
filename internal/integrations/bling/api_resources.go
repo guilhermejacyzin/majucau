@@ -143,7 +143,7 @@ func (c *BlingAPIClient) getDataRecordAttempt(req *http.Request) (json.RawMessag
 		if req.Context().Err() != nil {
 			return nil, req.Context().Err()
 		}
-		return nil, fmt.Errorf("%w: request failed", ErrBlingAPIUnavailable)
+		return nil, newBlingTransportFailure(err)
 	}
 	defer resp.Body.Close()
 	if err := req.Context().Err(); err != nil {

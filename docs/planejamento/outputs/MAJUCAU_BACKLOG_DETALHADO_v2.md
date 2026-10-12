@@ -3744,10 +3744,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Auditoria dos caminhos de retry HTTP — 12/10/2026
 
-- Conferidos estaticamente os pontos de transporte do Bling, os limites das tentativas e os métodos repetíveis. Todas as leituras atuais usam `internal/integrations/httpretry`; POST OAuth continua sem repetição automática. Não foi encontrada falha que exigisse alteração de código.
+- A auditoria confirmou que todas as leituras atuais do Bling usam `internal/integrations/httpretry` e que POST OAuth continua sem repetição automática. Uma revisão mais profunda encontrou, porém, uma classificação ampla demais: qualquer erro de transporte era marcado como transitório, inclusive certificado TLS inválido e erro permanente de configuração. A correção agora repete apenas timeouts, EOF/EOF inesperado, DNS temporário e falhas de conexão transitórias; outros erros mantêm mensagem segura e não são repetidos.
+- Foram adicionados casos para reset de conexão e certificado TLS não confiável. A suíte Go completa passou; nenhuma chamada à conta real foi feita.
 - A conexão do Bling continua sem dados porque a tela permanece sem Client ID/Redirect URI e sem autorização, conforme o print de Integrações; isso não decorre da política de retry. Não foi possível validar com a conta real.
-- BK-041 permanece em 69% (31% restante) até homologar autenticação, recursos e paginação/cursor oficiais. O projeto permanece em 9,1% estimados (90,9% restante); o prazo global ainda depende das pendências externas e da auditoria do restante do backlog.
-- Nenhuma tela, regra financeira ou regra de negócio foi alterada. Não foram executados testes locais.
+- BK-041 permanece em 69% (31% restante) até homologar autenticação, recursos e paginação/cursor oficiais. O projeto está em 9,8% estimados (90,2% restante); o prazo global ainda depende das pendências externas e da auditoria do restante do backlog.
+- Nenhuma tela, regra financeira ou regra de negócio foi alterada. Ver `docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md`.
 
 ### Causa identificada para a ausência de dados do Bling — 12/10/2026
 
@@ -3762,5 +3763,5 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A leitura do grafo de imports confirmou que `internal/domain` depende apenas da biblioteca padrão e de fuso horário embutido; `internal/financial` depende do domínio; `internal/application` depende do domínio e da biblioteca padrão. Integrações, painel e segurança ficam nos adaptadores. O worker é o ponto que liga interfaces às implementações.
 - `docs/architecture/GO-MODULAR-BOUNDARIES.md` registra as interfaces de provedor, repositório, relógio e arquivo; as dependências permitidas; a composição; e as transações de sincronização Bling, importação CSV e leitura do painel. A revisão também confirmou que a CI ainda não fiscaliza automaticamente toda a direção dos imports.
 - A raiz do worker passou a ser dona explícita do pool PostgreSQL e a fechá-lo ao encerrar. Os serviços que compartilham esse pool não fecham mais um recurso que não criaram.
-- BK-017 avança para 90% (10% restante). A dependência BK-016, que mapeia contextos e vocabulário de negócio, continua não iniciada; por isso o fechamento formal de BK-017 depende de decisão sobre manter ou liberar essa ordem. Nenhuma tela, regra financeira ou dado persistido foi alterado. Não executei testes locais.
+- BK-017 avança para 90% (10% restante). A dependência BK-016, que mapeia contextos e vocabulário de negócio, continua não iniciada; por isso o fechamento formal de BK-017 depende de decisão sobre manter ou liberar essa ordem. Nenhuma tela, regra financeira ou dado persistido foi alterado. A suíte `go test -count=1 ./...` passou em 12/10/2026 após as correções deste registro.
 - O backlog mantém 127 tarefas: 7 concluídas, 14 em andamento e 106 não iniciadas; a média simples é 9,8% concluída e 90,2% restante. Não há prazo global confiável.

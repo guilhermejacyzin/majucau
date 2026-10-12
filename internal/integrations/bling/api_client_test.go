@@ -2,11 +2,15 @@ package bling
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -346,6 +350,71 @@ func TestListReceivablesRetriesTransportTimeoutsWithinBudget(t *testing.T) {
 	}
 	if doer.calls != client.maxAttempts || waits != client.maxAttempts-1 {
 		t.Fatalf("timeout retries = %d attempts, %d waits; want %d attempts and %d waits", doer.calls, waits, client.maxAttempts, client.maxAttempts-1)
+	}
+}
+
+func TestListReceivablesRetriesConnectionReset(t *testing.T) {
+	doer := &errorHTTPDoer{err: &url.Error{
+		Op: "Get", URL: "https://api.bling.com.br/Api/v3/contas/receber", Err: syscall.ECONNRESET,
+	}}
+	client, err := NewBlingAPIClient(doer, "https://api.bling.com.br/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waits := 0
+	client.wait = func(context.Context, time.Duration) error { waits++; return nil }
+	client.random = func() float64 { return 0 }
+
+	_, err = client.ListReceivables(context.Background(), ReceivablesFilter{})
+	if !errors.Is(err, ErrBlingAPIUnavailable) {
+		t.Fatalf("connection reset error = %v, want unavailable", err)
+	}
+	if doer.calls != defaultBlingMaxAttempts || waits != defaultBlingMaxAttempts-1 {
+		t.Fatalf("connection reset made %d attempts and %d waits, want %d attempts and %d waits", doer.calls, waits, defaultBlingMaxAttempts, defaultBlingMaxAttempts-1)
+	}
+}
+
+func TestListReceivablesDoesNotRetryPermanentTransportError(t *testing.T) {
+	doer := &errorHTTPDoer{err: &url.Error{
+		Op: "Get", URL: "https://api.bling.com.br/Api/v3/contas/receber", Err: x509.UnknownAuthorityError{},
+	}}
+	client, err := NewBlingAPIClient(doer, "https://api.bling.com.br/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	waits := 0
+	client.wait = func(context.Context, time.Duration) error { waits++; return nil }
+
+	_, err = client.ListReceivables(context.Background(), ReceivablesFilter{})
+	if !errors.Is(err, ErrBlingAPIUnavailable) {
+		t.Fatalf("certificate error = %v, want unavailable", err)
+	}
+	if doer.calls != 1 || waits != 0 {
+		t.Fatalf("permanent certificate error made %d attempts and %d waits, want one attempt and no wait", doer.calls, waits)
+	}
+}
+
+func TestRetryableBlingTransportErrorClassification(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{name: "unexpected eof", err: io.ErrUnexpectedEOF, want: true},
+		{name: "temporary dns", err: &net.DNSError{IsTemporary: true}, want: true},
+		{name: "permanent dns", err: &net.DNSError{IsNotFound: true}, want: false},
+		{name: "reset connection", err: syscall.ECONNRESET, want: true},
+		{name: "connection refused", err: syscall.ECONNREFUSED, want: true},
+		{name: "tls certificate", err: x509.UnknownAuthorityError{}, want: false},
+		{name: "caller canceled", err: context.Canceled, want: false},
+		{name: "unclassified", err: errors.New("permanent transport configuration error"), want: false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := isRetryableBlingTransportError(test.err); got != test.want {
+				t.Fatalf("isRetryableBlingTransportError(%v) = %t, want %t", test.err, got, test.want)
+			}
+		})
 	}
 }
 

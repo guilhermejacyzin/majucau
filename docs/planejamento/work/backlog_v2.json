@@ -1286,7 +1286,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "69%: JWT/retry e leitura de receber, pagar e caixa; /caixas usa somente parâmetros documentados e mantém limite local. Homologação real, fim/cursor e integração CAPEX pendentes.",
+    "evidence": "69%: JWT/retry limitado com classificação de transporte transitório e leitura de receber, pagar e caixa; /caixas usa somente parâmetros documentados e mantém limite local. Homologação real, fim/cursor e integração CAPEX pendentes.",
     "weight": 1,
     "dependencies": [
       "BK-040",

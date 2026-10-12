@@ -23,6 +23,11 @@
       "sha256": "dd993b2aab322d7577508d51f60e0daf3569d67f4c453e7cc63a5c1b6c553200"
     },
     {
+      "path": "docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md",
+      "bytes": 4882,
+      "sha256": "7b3e6792cb06060181f8015d1ae499ae52a303130c0b6f7b6421ae0a541001cb"
+    },
+    {
       "path": "docs/planejamento/FONTES.md",
       "bytes": 6751,
       "sha256": "126e6e3bc68b974eefe701cd48de41c7eb37afbb1fdfc3748591c0ae85a9e90e"
@@ -54,8 +59,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 281769,
-      "sha256": "e83f7094a877b580b8a7a9cb1534797f68813091238ac093690702938acc7a7f"
+      "bytes": 282257,
+      "sha256": "1bf5b26d76c6d8773056bcc180948da64b369c3e7e226d00c44362470644e0d8"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -104,8 +109,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 192591,
-      "sha256": "17e04e7accbf135aec64cca37c1fe7178f97fc3aa2c8ad0608e20b8868684eb4"
+      "bytes": 192647,
+      "sha256": "53e69bd7c12a8f614dc698781eac12343a2f1c4356bad550fa6b627f7b6c8dba"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",

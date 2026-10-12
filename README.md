@@ -55,7 +55,17 @@ O frontend nunca acessa PostgreSQL nem APIs externas diretamente. O worker é a 
 
 ## Direção de hospedagem aprovada
 
-A decisão de 2026-10-03 é usar um serviço central autenticado com PostgreSQL em rede privada, para alimentar os dados diariamente e atender dois locais de consulta. A implementação atual permanece local até a migração G8. A prévia CSV continua local e sem banco; a gravação remota terá validação no serviço. Os documentos externos ao Bling ficam na pasta compartilhada Google Drive `Majucau`, nas subpastas `01_perdas_operacionais`, `02_nuvem_pago/recebimentos_futuros` e `03_nuvem_envio`. O endereço/ID da pasta e a forma de conexão do sistema ainda não estão configurados.
+A decisão de 2026-10-03 é usar um serviço central autenticado com PostgreSQL em rede privada, para alimentar os dados diariamente e atender dois locais de consulta. A implementação atual permanece local até a migração G8. A prévia CSV continua local e sem banco; a gravação remota terá validação no serviço.
+
+## Onde ficam os documentos externos ao Bling
+
+No Google Drive, abra a pasta compartilhada **Majucau**. A estrutura registrada no projeto é:
+
+- `01_perdas_operacionais`
+- `02_nuvem_pago/recebimentos_futuros`
+- `03_nuvem_envio`
+
+O link/ID da pasta e a conexão do sistema com o Drive ainda não estão configurados.
 
 ## Decisões G0 aprovadas
 

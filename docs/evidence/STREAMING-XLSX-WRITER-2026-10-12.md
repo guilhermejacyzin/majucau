@@ -34,8 +34,9 @@ Os resultados acima correspondem ao commit anterior, cuja CI passou nos jobs
 Windows, PostgreSQL e verificação do backlog. A CI de `81cc18a` passou em
 PostgreSQL e backlog, mas a compilação Windows encontrou um teste que ainda
 referenciava o nome interno anterior de um limite. A referência foi atualizada
-para o nome público. Esta correção aguarda a nova CI; nenhum teste foi executado
-localmente.
+para o nome público. A CI [38291839210](https://github.com/guilhermejacyzin/majucau/actions/runs/38291839210),
+do commit `979a8e0`, passou nos jobs Windows, PostgreSQL e verificação do
+backlog. Nenhum teste foi executado localmente nesta revisão.
 
 ## O que ainda falta
 

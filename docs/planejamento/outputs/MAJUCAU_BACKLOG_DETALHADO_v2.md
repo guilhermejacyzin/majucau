@@ -3908,3 +3908,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A validação apontou que o Windows PowerShell 5.1 não interpretava corretamente os verificadores salvos em UTF-8 sem BOM. Corrigi a codificação dos dois scripts e ajustei o caminho padrão do backlog para ser encontrado nessa versão do PowerShell.
 - O verificador e seu teste passaram no Windows PowerShell 5.1.19041.6456 e no PowerShell 7.6.5. O resumo calculado permaneceu em 127 tarefas: 7 concluídas, 18 em andamento, 102 não iniciadas, 11% concluído e 89% restante.
 - Esta é uma correção de ferramenta de governança; os percentuais das funcionalidades do backlog não mudaram. Nenhuma tela aprovada ou regra financeira foi alterada. Evidência: `docs/evidence/BACKLOG-VERIFIER-POWERSHELL-COMPAT-2026-10-13.md`.
+
+### Rechecagem do caminho de dados CAPEX — 13/10/2026
+
+- A OpenAPI oficial confirma que a conta a pagar lista os IDs de seus borderôs; cada borderô fornece data, categoria e valores pagos. Categorias incluem o ID da categoria pai. Portanto, existe uma ligação técnica por ID para buscar e deduplicar os pagamentos, sem associar por fornecedor ou número de documento.
+- O detalhe do pagamento dentro do borderô não identifica a conta a pagar individual. Ainda será necessário conferir na conta real se a categoria e a data do borderô batem com o relatório, inclusive nos casos de pagamento parcial ou borderô com várias contas. Nenhum valor será dividido por aproximação.
+- As consultas de detalhe já existem no adapter, mas ainda não são persistidas como RAW nem alimentam os cards. CAPEX pago e acumulado continuam indisponíveis até completar essa ingestão, provar a leitura completa e reconciliar com o relatório oficial.
+- BK-041 e BK-067 mantêm seus percentuais; esta revisão esclarece a fonte técnica, mas não implementa persistência, cálculo nem integração ao painel. Nenhuma tela ou regra financeira foi alterada. Evidência: `docs/evidence/CAPEX-REPORT-DATA-SOURCE-AUDIT-2026-10-11.md`.

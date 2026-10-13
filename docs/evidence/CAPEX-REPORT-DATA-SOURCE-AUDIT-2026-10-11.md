@@ -36,3 +36,15 @@ O contrato público mostra um caminho técnico possível, mas ainda falta uma re
 ## Próximo passo técnico seguro
 
 Persistir em RAW os detalhes e categorias, em blocos limitados e com idempotência/transação; estabelecer vínculo auditável entre conta, categoria, borderô, pagamento e data. Respeitar o limite da API ao consultar muitos detalhes. Antes de apresentar números, validar o contrato com uma resposta sanitizada da conta, cobrir pagamento parcial e reconciliar um período do sistema com o relatório oficial. Se a associação entre conta e pagamento não puder ser provada, manter o valor como indisponível.
+
+## Rechecagem do contrato oficial — 2026-10-13
+
+Consultei novamente a OpenAPI oficial atual do Bling. Ela confirma uma ligação por identificador entre a conta a pagar e seus borderôs: o detalhe de uma conta contém `categoria.id` e `borderos[]`; o detalhe de cada borderô contém `data`, `categoria.id` e `pagamentos[]`, com `valorPago` em cada pagamento. O cadastro de categorias inclui `idCategoriaPai`, o que permite seguir a hierarquia sem comparar nomes de fornecedor ou número de documento.
+
+Isso corrige uma parte da conclusão anterior: não é necessário adivinhar qual borderô está ligado a uma conta, pois a própria conta lista os IDs dos borderôs. O pagamento individual dentro do borderô ainda não traz o ID da conta. Assim, os totais agregados podem ser investigados usando os IDs de borderô e deduplicando cada borderô uma única vez; não se pode repartir um pagamento do borderô entre contas por aproximação.
+
+O caminho de implementação fica mais claro: percorrer as contas pagas; buscar seus detalhes; obter cada borderô referenciado uma única vez; preservar os registros RAW com identidade estável; e validar a categoria e a data do pagamento contra o relatório do Bling. A hierarquia de categoria pode ser confirmada pelos IDs e `idCategoriaPai`. A lista de categorias não documenta um marcador de última página, portanto não deve ser considerada completa só porque uma página veio curta.
+
+Ainda falta confirmar na conta real se `bordero.data` corresponde à data de liquidação exibida no relatório, se a categoria do borderô coincide com a categoria da conta e como ficam pagamentos parciais ou borderôs ligados a mais de uma conta. A primeira sincronização precisa comparar um período com o relatório oficial. Até lá, os cards permanecem sem valores confirmados. A tela e as regras aprovadas não foram alteradas.
+
+Referência: [OpenAPI oficial atual do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), esquemas `ContasPagarDadosDTO`, `BorderosDadosDTO`, `BorderosPagamentoDTO` e `CategoriasReceitasDespesasDadosBaseDTO`.

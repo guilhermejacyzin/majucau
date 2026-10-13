@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 
 if ([string]::IsNullOrWhiteSpace($Path)) {
     $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $Path = Join-Path $scriptDirectory '..\docs\planejamento\outputs\MAJUCAU_BACKLOG_DETALHADO_v2.md'
+    $Path = Join-Path $scriptDirectory '..\artifacts\planejamento\outputs\MAJUCAU_BACKLOG_DETALHADO_v2.md'
     if ([string]::IsNullOrWhiteSpace($StructuredPath)) {
         $StructuredPath = Join-Path $scriptDirectory '..\docs\planejamento\work\backlog_v2.json'
     }

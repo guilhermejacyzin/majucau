@@ -3817,3 +3817,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O OAuth local do Majucau ainda aceita somente `http://127.0.0.1:<porta>/<caminho>`. Não alterei esse fluxo nem telas enquanto a ponte não puder ser revisada; nenhuma regra financeira foi afetada.
 - BK-041 continua em 69% (31% restante), pendente de validar a ponte, autorizar e conectar a conta, confirmar paginação e homologar uma sincronização real. A estimativa global continua em 10,2% concluída (89,8% restante), sem prazo total confiável.
 - Próximo passo: confirmar se a ponte entrega a autorização ao aplicativo Majucau aberto no computador, ou disponibilizar o código da ponte para revisão. Evidência: `docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md`.
+
+### Cobertura das migrations no instalador NSIS — 12/10/2026
+
+- A revisão estática encontrou que o manifesto listava todas as migrations SQL, enquanto o trecho NSIS copiava só `000001_init.up.sql` para a conferência do pacote. O instalador agora incorpora todos os arquivos `*.sql` antes de validar o manifesto; migrations seguem sem execução durante essa etapa.
+- Não executei teste nem build local. A compilação/verificadores da CI e a instalação em máquina limpa continuam como confirmação pendente. Nenhuma tela, banco ou regra financeira foi alterada.
+- BK-026 permanece em 55% (45% restante) até a validação em ambiente limpo; BK-027 permanece em 25%. A estimativa global permanece em 10,2% concluída (89,8% restante), sem prazo global confiável.
+- Evidência: `docs/evidence/INSTALLER-MIGRATION-MANIFEST-COVERAGE-2026-10-12.md`.

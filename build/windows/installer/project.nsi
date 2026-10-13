@@ -148,7 +148,9 @@ Function .onInit
    File /oname=$PLUGINSDIR\package\majucau.exe "${MAJUCAU_DESKTOP_SOURCE}"
    File /oname=$PLUGINSDIR\package\majucau-worker.exe "${MAJUCAU_WORKER_SOURCE}"
    File /oname=$PLUGINSDIR\package\installer-helper.exe "${MAJUCAU_HELPER_SOURCE}"
-   File /oname=$PLUGINSDIR\package\migrations\000001_init.up.sql "${MAJUCAU_MIGRATION_SOURCE}\000001_init.up.sql"
+   ; Embed every migration listed in the release manifest before verifying the package.
+   SetOutPath "$PLUGINSDIR\package\migrations"
+   File "${MAJUCAU_MIGRATION_SOURCE}\*.sql"
    ExecWait '"$PLUGINSDIR\majucau-installer-helper.exe" verify-package --package-dir "$PLUGINSDIR\package" --manifest "release-manifest.json" --current-schema "1.0"' $3
    ${If} $3 != 0
        IfSilent MajuauPackageSilent MajuauPackageInteractive

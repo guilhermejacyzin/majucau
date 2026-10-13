@@ -13,6 +13,11 @@
       "sha256": "5b866449ca4c225206692f18c52b3bb643e0b8a641c4db3d4714c0545ecc1350"
     },
     {
+      "path": "README.md",
+      "bytes": 15212,
+      "sha256": "5e626222a3367cd0eb1f627993aa3aacdf36b9f0cbd484c395e93275d3065522"
+    },
+    {
       "path": "artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v0.md",
       "bytes": 71160,
       "sha256": "0f465f3365092a9036ab36602116100daa5ab98ba55c967877ab08e22de6776b"
@@ -68,6 +73,11 @@
       "sha256": "7ec5245f194a922785b7641bccf35f9b4cb2b9008693664f0030a72d70d6716f"
     },
     {
+      "path": "docs/evidence/ARTIFACT-LOCATION-INVENTORY-2026-10-11.md",
+      "bytes": 3586,
+      "sha256": "3df32910390e006f3546e67ca14b4dcdd27accd336a8a97657a82f2f7fc837be"
+    },
+    {
       "path": "docs/evidence/BACKLOG-TRACKER-RECONCILIATION-2026-10-13.md",
       "bytes": 2504,
       "sha256": "4a20c2706e4278ebefc82feb68d24df7a51ff774438833ab11039ad405cd5a25"
@@ -86,6 +96,11 @@
       "path": "docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md",
       "bytes": 5899,
       "sha256": "2252f974bc49b180931af21fdd6a98f451d6ed8db0b4683e2c5f956ffed387e5"
+    },
+    {
+      "path": "docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md",
+      "bytes": 1854,
+      "sha256": "8688f6f5de35c81527490bff7e98ee4c845de37ff62c43e3ba892e49b2f7e3b1"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -113,6 +128,11 @@
       "sha256": "ad276c1bf6e3ccd6b86cdec6f93592bd2f0234d44cf44e9cad3792e2ca7e9828"
     },
     {
+      "path": "docs/planejamento/work/backlog.json",
+      "bytes": 137628,
+      "sha256": "123619465d3f4a4a18a1151a7974053c5ada26a5681ccc70779b41ee3f125b22"
+    },
+    {
       "path": "docs/planejamento/work/backlog_v1.json",
       "bytes": 157157,
       "sha256": "3b1861f6902dfccd46261e4ba2c04ac8b44eda1a4cfec7c09bfb5418a37d8e42"
@@ -123,14 +143,14 @@
       "sha256": "281eab84be6ccd575892c61548076ff5f97eb3e36eb4f84e0b29ac23eb29106b"
     },
     {
-      "path": "docs/planejamento/work/backlog.json",
-      "bytes": 137628,
-      "sha256": "123619465d3f4a4a18a1151a7974053c5ada26a5681ccc70779b41ee3f125b22"
-    },
-    {
       "path": "docs/planejamento/work/build_backlog.py",
       "bytes": 82862,
       "sha256": "6513c3cc31f6b5357f2a0e89c9ee2dbaf447534f5cee8c66f1e9b541edbc1d9d"
+    },
+    {
+      "path": "docs/planejamento/work/build_tracker.mjs",
+      "bytes": 14096,
+      "sha256": "60ef9be3b5f4d648dc827003ccf2193c6ae7ac6a07e0974ba03186b05a79f912"
     },
     {
       "path": "docs/planejamento/work/build_tracker_v1.mjs",
@@ -138,9 +158,9 @@
       "sha256": "1d717fd00b2967c57a052cb8a2f48dc7f2aef44c1469cd1dfd562d6c151a8b96"
     },
     {
-      "path": "docs/planejamento/work/build_tracker.mjs",
-      "bytes": 14096,
-      "sha256": "60ef9be3b5f4d648dc827003ccf2193c6ae7ac6a07e0974ba03186b05a79f912"
+      "path": "docs/planejamento/work/decisions.json",
+      "bytes": 24096,
+      "sha256": "36115aea3b7306fd7dbe854427481daf2fbd845217209aec1db8a04f7cb8c2c3"
     },
     {
       "path": "docs/planejamento/work/decisions_v1.json",
@@ -151,11 +171,6 @@
       "path": "docs/planejamento/work/decisions_v2.json",
       "bytes": 99712,
       "sha256": "c91944175b2adf63dae3224d4b54cd12dec3cef9d55779c94b0ebf6d0de458bd"
-    },
-    {
-      "path": "docs/planejamento/work/decisions.json",
-      "bytes": 24096,
-      "sha256": "36115aea3b7306fd7dbe854427481daf2fbd845217209aec1db8a04f7cb8c2c3"
     },
     {
       "path": "docs/planejamento/work/financeiro.md",
@@ -176,6 +191,26 @@
       "path": "docs/planejamento/work/prepare_tracker_v2.py",
       "bytes": 2637,
       "sha256": "11283f573a31a80c6e63221a92cf9a7b91264b435b2b7edf01f1200b5ec65e34"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Cobertura.png",
+      "bytes": 50900,
+      "sha256": "e43860b7cf79b44cc0842b7d4f3991d5083dcb235e3ee7e0e6e8e15a85e9075f"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Decisoes.png",
+      "bytes": 72889,
+      "sha256": "3cc13a3d1c4a9e7f00c819922cead8c887da281debe9a773ab394161fd1fb21e"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Evolucao.png",
+      "bytes": 166770,
+      "sha256": "ef0a4c0b0cb2d5cf181ed4a309854fb37c0414adac545f2460360b297c0b31e9"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Tarefas.png",
+      "bytes": 72660,
+      "sha256": "72efbe0c78d22d5a3d643528a282ef9df23af569139d8afb3b4403051bc0ee7e"
     },
     {
       "path": "docs/planejamento/work/previews_v1/Cobertura.png",
@@ -228,26 +263,6 @@
       "sha256": "d4aa30496d84b2a90322507046247174ada2c5c59733eb481885d938e78d3782"
     },
     {
-      "path": "docs/planejamento/work/previews/Cobertura.png",
-      "bytes": 50900,
-      "sha256": "e43860b7cf79b44cc0842b7d4f3991d5083dcb235e3ee7e0e6e8e15a85e9075f"
-    },
-    {
-      "path": "docs/planejamento/work/previews/Decisoes.png",
-      "bytes": 72889,
-      "sha256": "3cc13a3d1c4a9e7f00c819922cead8c887da281debe9a773ab394161fd1fb21e"
-    },
-    {
-      "path": "docs/planejamento/work/previews/Evolucao.png",
-      "bytes": 166770,
-      "sha256": "ef0a4c0b0cb2d5cf181ed4a309854fb37c0414adac545f2460360b297c0b31e9"
-    },
-    {
-      "path": "docs/planejamento/work/previews/Tarefas.png",
-      "bytes": 72660,
-      "sha256": "72efbe0c78d22d5a3d643528a282ef9df23af569139d8afb3b4403051bc0ee7e"
-    },
-    {
       "path": "docs/planejamento/work/read_sources.py",
       "bytes": 1253,
       "sha256": "556c6ca45111a35aa238232896bb70aac27dad8d73ab7e6bf22221067b6852d7"
@@ -273,14 +288,14 @@
       "sha256": "3b57cadc236b97a4e5b0d1386fe5f218f8cfad3320930254fa8502edb734f642"
     },
     {
-      "path": "docs/planejamento/work/scope_v2.json",
-      "bytes": 4420,
-      "sha256": "71e79cfe1d03f3efb01ab50e8baedee15a33e231caa93a4042bd4592ae1e5bf0"
-    },
-    {
       "path": "docs/planejamento/work/scope.json",
       "bytes": 3494,
       "sha256": "e10f4a2e19655f625a30d24bcb7460415de93f0edb493f8834df41edaa709257"
+    },
+    {
+      "path": "docs/planejamento/work/scope_v2.json",
+      "bytes": 4420,
+      "sha256": "71e79cfe1d03f3efb01ab50e8baedee15a33e231caa93a4042bd4592ae1e5bf0"
     },
     {
       "path": "docs/planejamento/work/source_extract/00_Resumo.txt",
@@ -338,11 +353,6 @@
       "sha256": "aa1f5f681a3d9690f0281ed3554720d4ee9cd0161200a632ec55724af01dc56a"
     },
     {
-      "path": "docs/planejamento/work/source_extract/manifest.json",
-      "bytes": 2596,
-      "sha256": "86d1bcd91d404925ee6d180c09c7c5c231b835d6e5b99f73d4ee72bf16f71cb6"
-    },
-    {
       "path": "docs/planejamento/work/source_extract/Q_CEI_Tela_11.txt",
       "bytes": 14051,
       "sha256": "82ad1c8bbf2cbcb73fa9fee7e71dc638b8d6499c2b2d359ce825f42ade9941de"
@@ -378,11 +388,6 @@
       "sha256": "787f65253e34b60859598c9ffda8c0fcf637e0679007ad38a79e27ddcfa7d367"
     },
     {
-      "path": "docs/planejamento/work/source_extract/workbook.json",
-      "bytes": 286067,
-      "sha256": "1b8cee72563b88fd359ebc2a984d9f5cbd41c7cbe12f63b521924c043f6abe7c"
-    },
-    {
       "path": "docs/planejamento/work/source_extract/X_Mockup_Tela_17.txt",
       "bytes": 253,
       "sha256": "8c07334d176623f921ee4bef33a723c2db3375a51b93f1d943acc979dbf3fd17"
@@ -393,6 +398,21 @@
       "sha256": "036ca03ad2f6f9caf7d690e42ecad5954d39f539c7719bd1a05b93b6049f9209"
     },
     {
+      "path": "docs/planejamento/work/source_extract/manifest.json",
+      "bytes": 2596,
+      "sha256": "86d1bcd91d404925ee6d180c09c7c5c231b835d6e5b99f73d4ee72bf16f71cb6"
+    },
+    {
+      "path": "docs/planejamento/work/source_extract/workbook.json",
+      "bytes": 286067,
+      "sha256": "1b8cee72563b88fd359ebc2a984d9f5cbd41c7cbe12f63b521924c043f6abe7c"
+    },
+    {
+      "path": "docs/planejamento/work/verification.json",
+      "bytes": 428,
+      "sha256": "bbee0c018c5aeacb0741022f47d9a8236dbe374e57fed840405c4ccc727c9404"
+    },
+    {
       "path": "docs/planejamento/work/verification_v1.json",
       "bytes": 444,
       "sha256": "4e8f6e839d1122b1b38c8328f36f2bad2cda63ebc8d6da14066987f45966e366"
@@ -401,11 +421,6 @@
       "path": "docs/planejamento/work/verification_v2.json",
       "bytes": 385,
       "sha256": "4c2e6e48c7fef1a3d396788e90dcd0c9d34658d3e2557406e3c1df6124c5472c"
-    },
-    {
-      "path": "docs/planejamento/work/verification.json",
-      "bytes": 428,
-      "sha256": "bbee0c018c5aeacb0741022f47d9a8236dbe374e57fed840405c4ccc727c9404"
     },
     {
       "path": "docs/planejamento/work/verify_deliverables.py",
@@ -428,19 +443,9 @@
       "sha256": "7cd9b54f9c56a4e749fb20fce072b284f3856d2f6661ab90cd06a8f67a01e85f"
     },
     {
-      "path": "README.md",
-      "bytes": 15212,
-      "sha256": "5e626222a3367cd0eb1f627993aa3aacdf36b9f0cbd484c395e93275d3065522"
-    },
-    {
       "path": "tools/exportar_planejamento.py",
       "bytes": 1926,
       "sha256": "f89c888f5e05cbdf6ba9fc0b565a839a70330b359c0f362c14ef20a93625ac03"
-    },
-    {
-      "path": "docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md",
-      "bytes": 1854,
-      "sha256": "8688f6f5de35c81527490bff7e98ee4c845de37ff62c43e3ba892e49b2f7e3b1"
     }
   ]
 }

@@ -21,6 +21,8 @@ Temporários sensíveis de execução são uma exceção necessária: devem perm
 
 ## Limites
 
-Esta é uma fotografia do checkout local em 11/10/2026, não uma prova de que todos os processos futuros usarão a pasta central. Nenhuma pasta foi apagada ou movida, nenhum segredo foi lido e nenhum teste de produto foi executado.
+O inventário começou em 11/10/2026. Na atualização de 13/10/2026, os nove relatórios oficiais foram movidos para a pasta central; nenhum banco, cache ativo ou dado local foi removido. As prévias temporárias e o atalho de dependências criados para gerar/revisar a planilha foram removidos com a rotina segura. O pacote foi conferido localmente: 127 tarefas, 108 decisões, 80 links locais e zero erros de fórmula.
 
 **Registro da decisão — 13/10/2026:** a responsável determinou que todos os caches e outputs gerados sejam consolidados em um único local. Os relatórios oficiais permanecem versionados e foram transferidos para `artifacts/planejamento/outputs/`; caches e prévias temporárias permanecem em `artifacts/cache/` e `artifacts/verification/`. Dados locais e caches ativos não foram removidos nesta alteração.
+
+**Verificação remota — 13/10/2026:** a CI [38381106600](https://github.com/guilhermejacyzin/majucau/actions/runs/38381106600) passou nos quatro grupos depois que o caminho padrão do verificador foi atualizado para a pasta central.

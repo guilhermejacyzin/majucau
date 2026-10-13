@@ -407,8 +407,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 13/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-027 (25%), BK-031 (85%), BK-041 (75%), BK-042 (40%), BK-043 (40%), BK-056 (5%), BK-067 (20%) e BK-102 (1%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 90% + 35% + 70% + 55% + 25% + 85% + 75% + 40% + 40% + 5% + 20% + 1%) ÷ 127 = 10,8%`; restam 89,2%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- O backlog mantém 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (25%), BK-031 (85%), BK-041 (75%), BK-042 (40%), BK-043 (40%), BK-056 (5%), BK-067 (20%) e BK-102 (1%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 90% + 35% + 70% + 60% + 25% + 85% + 75% + 40% + 40% + 5% + 20% + 1%) ÷ 127 = 10,9%`; restam 89,1%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 
 ## 00 Descoberta e decisões
@@ -1076,7 +1076,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-026 — Preparar o ambiente de desenvolvimento local
 
-**Situação:** Em andamento. **Evolução:** 55%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 60%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Permitir execução reproduzível fora da produção.
 
@@ -1092,7 +1092,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Impacto:** Diminui tempo perdido com diferenças entre máquinas.
 
-**Evidência atual:** `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. O roteiro abriu o protótipo usando o banco local isolado; as leituras de `PG_VERSION` e da credencial cifrada no inicializador agora têm limites explícitos via leitor em blocos. Faltam homologação visual/funcional, investigação dos avisos do Wails, configuração de exemplo segura e validação em máquina limpa. O percentual continua em 55% até validação em execução.
+**Evidência atual:** `docs/evidence/BUILD-PROTOTYPE-2026-10-13.md` e `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. O build Windows x64 do código atual, o instalador de homologação e o pacote portátil foram gerados; verificações Go, frontend, segurança, migrações, empacotamento e smoke do pacote passaram. O avanço para 60% registra que o protótipo atual já pode ser distribuído para homologação local. Ainda faltam aceite visual/funcional, exemplo de configuração sem segredos, instalação e execução em máquina limpa. O instalador é de homologação, não assinado e não aprovado para produção.
 
 **Dependências:** BK-025, BK-018, BK-014
 
@@ -3851,3 +3851,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-042 avança de 0% para 40% e BK-043 de 0% para 40%. Seguem pendentes a configuração das credenciais e da pasta real, a importação controlada dos arquivos, a aprovação de cada layout, a agenda de 09:30, a medição de memória sob carga e o ensaio em VM limpa. Nenhum fato financeiro é criado nesta etapa; as linhas ficam pendentes de decisão.
 - Recontagem: 127 tarefas, 7 concluídas, 18 em andamento e 102 não iniciadas. Pela mesma média simples do backlog, o projeto passa de 10,2% para aproximadamente 10,8% concluído (89,2% restante). O prazo total continua sem base confiável; a conexão ao Drive e a homologação ainda não foram feitas.
 - Nenhuma tela aprovada, regra financeira ou regra de negócio foi alterada. `DATA-04` permanece `PARTIAL`. Evidência: `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
+
+### Build atualizado para homologação local — 13/10/2026
+
+- O primeiro build revelou uma colisão de nomes no PowerShell: `$Installer` e `$installer` são a mesma variável, então o script falhava depois de gerar o instalador. O build preservou o pacote anterior e registrou a saída incompleta em `artifacts/retained/cleanup-register.md`.
+- Corrigido o nome da variável para `$installerArtifact`. O segundo `scripts/build-windows.ps1 -Installer` concluiu: testes Go, `go vet`, `govulncheck`, conferência de migrations, `sqlc`, scanner de segredos, lint, verificação de tipos, 26 testes frontend, build e `npm audit` passaram. O `govulncheck` encontrou zero vulnerabilidades alcançáveis; sinalizou uma dependência indireta que o código não parece chamar.
+- O `scripts/smoke-windows.ps1` passou, confirmando conteúdo e hashes do pacote portátil, manifesto, preflight, diagnóstico e inicialização/encerramento do worker.
+- Saídas ficam no local consolidado `artifacts/windows/`: `Majucau Financial Intelligence-amd64-installer.exe`, `majucau-windows-x64-portable.zip` e executáveis auxiliares. O instalador ainda não é assinado e o smoke não substitui instalação em VM limpa ou homologação real do Bling.
+- BK-026 avança de 55% para 60% (40% restante). BK-041 permanece em 75% (25% restante), pois falta autorização e sincronização real. BK-042 e BK-043 permanecem em 40% cada (60% restante). A média do backlog passa de 10,8% para 10,9% concluída (89,1% restante); não há prazo confiável para o projeto inteiro.
+- A tentativa falha foi revisada depois do build válido; a saída temporária foi removida com `SafeCleanup.psm1` e encerrada no registro local. Nenhuma tela aprovada nem regra financeira foi alterada.
+- Evidência: `docs/evidence/BUILD-PROTOTYPE-2026-10-13.md`.

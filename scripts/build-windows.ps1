@@ -86,9 +86,9 @@ try {
         finally {
             Pop-Location
         }
-        $installer = Get-ChildItem -LiteralPath (Join-Path $projectRoot 'build\bin') -Filter '*-installer.exe' -File |
+        $installerArtifact = Get-ChildItem -LiteralPath (Join-Path $projectRoot 'build\bin') -Filter '*-installer.exe' -File |
             Select-Object -First 1
-        if (-not $installer) {
+        if (-not $installerArtifact) {
             throw 'O Wails não produziu o instalador NSIS. Verifique se makensis está instalado e disponível no PATH.'
         }
     } else {

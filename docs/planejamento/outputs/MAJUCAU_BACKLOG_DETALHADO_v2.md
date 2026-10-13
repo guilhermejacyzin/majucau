@@ -1100,7 +1100,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-027 — Criar a fundação do backend Go
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 20% (estimativa; o worker Go já compõe os serviços por dependências, limita a conexão PostgreSQL a cinco segundos e encerra pelo contexto de serviço/Named Pipe. A inicialização agora registra um código sanitizado quando o banco está ausente, inválido ou indisponível. Ainda falta validar configuração de produção e prontidão dinâmica em instalação/VM; esta execução não rodou testes locais). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Dispor de processo executável com as fronteiras planejadas.
 
@@ -3804,3 +3804,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-016 passa de 0% para 20% porque foi concluída a primeira de cinco etapas listadas no backlog. Agregados, eventos, invariantes novos, dono final de cada fato e transações de negócio continuam pendentes; nenhum cálculo, regra financeira ou tela foi alterado.
 - A recontagem é: 127 tarefas, 7 concluídas, 15 em andamento e 105 não iniciadas. A média simples registrada passa de 9,8% para 10,0% concluído, com 90,0% restante. É uma medida de acompanhamento do backlog, não de prontidão.
 - BK-017 continua em 90% até BK-016 ser concluída. Não há prazo global confiável enquanto integrações reais, validações e as tarefas restantes dependerem de fontes, decisões ou ambiente de homologação.
+
+### Diagnóstico seguro de inicialização do PostgreSQL — 12/10/2026
+
+- BK-027 passa a 20%: a composição atual do worker já limita a abertura do PostgreSQL a cinco segundos; agora a inicialização diferencia `DATABASE_NOT_CONFIGURED`, `DATABASE_CONFIG_INVALID` e `DATABASE_UNAVAILABLE` e grava apenas esse código estável, sem incluir DSN ou erro bruto.
+- A interface, o banco, as regras financeiras e as operações de prévia local não mudaram. A verificação de prontidão em ambiente instalado ainda não foi feita.
+- A recontagem é: 127 tarefas, 7 concluídas, 16 em andamento e 104 não iniciadas; a média simples passa de 10,0% para 10,1% concluída (89,9% restante). Esta métrica não significa prontidão do protótipo. Não há prazo global confiável.

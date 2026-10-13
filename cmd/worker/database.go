@@ -20,17 +20,20 @@ import (
 // loopback PostgreSQL instance; local development without a database remains
 // usable for health and folder preview.
 func newReceiptImporterFromEnvironment() *bling.ReceiptImportService {
-	return bling.NewReceiptImportService(newDatabasePoolFromEnvironment())
+	pool, _ := newDatabasePoolFromEnvironment()
+	return bling.NewReceiptImportService(pool)
 }
 
-func newDatabasePoolFromEnvironment() *pgxpool.Pool {
+// newDatabasePoolFromEnvironment returns a stable diagnostic code instead of
+// exposing a DSN or driver error to logs when database setup is unavailable.
+func newDatabasePoolFromEnvironment() (*pgxpool.Pool, string) {
 	dsn := strings.TrimSpace(os.Getenv("MAJUCAU_DATABASE_URL"))
 	if dsn == "" {
-		return nil
+		return nil, "DATABASE_NOT_CONFIGURED"
 	}
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil
+		return nil, "DATABASE_CONFIG_INVALID"
 	}
 	config.MaxConns = 4
 	config.MinConns = 1
@@ -38,13 +41,13 @@ func newDatabasePoolFromEnvironment() *pgxpool.Pool {
 	defer cancel()
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		return nil
+		return nil, "DATABASE_UNAVAILABLE"
 	}
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
-		return nil
+		return nil, "DATABASE_UNAVAILABLE"
 	}
-	return pool
+	return pool, ""
 }
 
 type postgresIntegrationStatusReader struct {

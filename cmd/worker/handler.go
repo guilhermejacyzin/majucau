@@ -48,20 +48,21 @@ type blingRawSyncer interface {
 }
 
 type workerHandler struct {
-	health          application.StaticHealth
-	resources       resourceCloser
-	receiptImporter receiptImporter
-	futureImporter  futureImporter
-	blingConfig     blingConfigSaver
-	nuvemshopConfig nuvemshopConfigSaver
-	blingOAuth      blingOAuthService
-	blingSync       blingRawSyncer
-	statusReader    application.IntegrationStatusReader
-	dashboardReader application.DashboardSnapshotStreamer
+	health            application.StaticHealth
+	databaseErrorCode string
+	resources         resourceCloser
+	receiptImporter   receiptImporter
+	futureImporter    futureImporter
+	blingConfig       blingConfigSaver
+	nuvemshopConfig   nuvemshopConfigSaver
+	blingOAuth        blingOAuthService
+	blingSync         blingRawSyncer
+	statusReader      application.IntegrationStatusReader
+	dashboardReader   application.DashboardSnapshotStreamer
 }
 
 func newWorkerHandler() workerHandler {
-	pool := newDatabasePoolFromEnvironment()
+	pool, databaseErrorCode := newDatabasePoolFromEnvironment()
 	var resources resourceCloser
 	if pool != nil {
 		resources = pool
@@ -87,7 +88,7 @@ func newWorkerHandler() workerHandler {
 			rawSync = oauthService.(blingRawSyncer)
 		}
 	}
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader, dashboardReader: dashboardReader}
+	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader, dashboardReader: dashboardReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {

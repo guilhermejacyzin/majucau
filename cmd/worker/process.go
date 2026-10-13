@@ -22,6 +22,9 @@ func runWorker(ctx context.Context) (returnErr error) {
 	}
 	handler := newWorkerHandler()
 	defer handler.Close()
+	if handler.databaseErrorCode != "" {
+		logger.Warn("worker database-backed operations are unavailable", slog.String("error_code", handler.databaseErrorCode))
+	}
 	health := handler.health.CheckHealth(ctx)
 	if payload, err := json.Marshal(health); err == nil {
 		fmt.Println(string(payload))

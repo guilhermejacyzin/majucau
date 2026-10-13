@@ -72,3 +72,9 @@ O endpoint também depende de autorização OAuth da API. A senha de login ao si
   alterações desde o checkpoint. A sincronização continua fechando com erro e
   rollback se não consegue provar que recebeu a lista completa. A conta real
   ainda precisa de conexão e homologação.
+
+## Escopo da atualização automática diária — decisão de 12/10/2026
+
+- Gisele aprovou reler diariamente todas as Contas a Receber e Contas a Pagar do Bling. A coleta automática não deve depender de um filtro genérico de “alterado desde ontem” nem se limitar aos próximos 60 dias.
+- Essa escolha substitui o escopo anterior de busca incremental para a atualização automática. Não altera os filtros da sincronização manual, nem as regras financeiras ou o período de projeção dos relatórios.
+- Uma releitura completa depende de percorrer todas as páginas de cada lista. A documentação pública consultada ainda não define um marcador explícito de última página; por isso, não declarar sucesso nem avançar o estado de atualização até homologar uma forma segura de detectar o término.

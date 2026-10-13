@@ -3791,6 +3791,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-041 permanece em 69% (31% restante) até conexão e homologação reais; BK-039 permanece em 0% (100% restante), pois o agendador e o conector persistente do Drive ainda não foram implementados. A estimativa global registrada segue em 9,8% concluído (90,2% restante), sem prazo confiável.
 - Nenhuma tela aprovada ou regra financeira foi alterada. A cópia explicativa da tela de sincronização continua aguardando aprovação; os resultados `NOT_APPLICABLE` e a frase de resumo não foram modificados.
 
+### Atualização do escopo automático do Bling — 12/10/2026
+
+- Gisele aprovou reler todas as contas do Bling diariamente, porque a documentação consultada não confirma um filtro geral de alterações. Essa decisão substitui a limitação da coleta automática a alterações desde o último checkpoint ou aos próximos 60 dias. Os filtros manuais e a janela de projeção financeira permanecem como aprovados.
+- A atualização ocorre às 09:30 de Brasília. Arquivos externos ausentes ficam pendentes até às 09:30 do dia seguinte; as outras fontes disponíveis devem ser processadas separadamente.
+- A implementação da rotina ainda depende de um critério homologado para identificar a última página do Bling, de OAuth configurado/autorizado e do acesso persistente ao Drive. BK-039 permanece em 0%; BK-041 permanece em 69%. A média simples do projeto permanece em 9,8% concluída (90,2% restante), sem prazo total confiável.
+- Nenhuma tela aprovada ou regra financeira foi alterada. Evidências: `G0-DECISION-REGISTER.md`, `AGENTS.md` e `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
+
 ### Mapa inicial dos contextos do negócio — 12/10/2026
 
 - O novo `docs/architecture/DOMAIN-CONTEXT-MAP-v1.md` organiza Tesouraria, Conciliação, Resultados, Operação, Planejamento, Integrações e Acesso com base no backlog e nas decisões aprovadas. Ele distingue conceitos financeiros importantes e indica quais proprietários ainda precisam ser validados.

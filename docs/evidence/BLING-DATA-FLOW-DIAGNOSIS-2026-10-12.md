@@ -55,6 +55,13 @@ Esta correção foi revisada estaticamente e formatada, mas os testes e o protó
 
 Esta verificação usou documentação pública oficial e inspeção estática do código. Nenhuma chamada foi feita à conta real, nenhum teste foi executado e nenhuma tela, regra financeira ou credencial foi alterada.
 
+## Atualização do escopo diário aprovada — 12/10/2026
+
+- Gisele decidiu reler todas as contas do Bling diariamente, em vez de limitar a coleta automática a alterações desde o último checkpoint ou aos próximos 60 dias. A tela manual mantém os filtros já aprovados: vencimento consulta ambas as listas, recebimento somente Contas a Receber e pagamento somente Contas a Pagar.
+- Se um arquivo externo não estiver disponível às 09:30, ele continua pendente até a atualização das 09:30 do dia seguinte. As demais fontes disponíveis devem poder concluir de forma independente.
+- A releitura completa não pode ser ativada enquanto o serviço não souber confirmar, sem suposição, que percorreu todas as páginas. O acesso do worker ao Google Drive e a conexão OAuth do Bling também continuam pendentes.
+- Esta decisão muda o escopo da coleta automática; não altera telas aprovadas, cálculos, filtros manuais ou regras financeiras.
+
 ## Proteções
 
 Esta revisão não alterou telas aprovadas, regras financeiras, configuração do Bling, banco de dados ou credenciais. Nenhuma chamada foi feita à conta real nesta execução; os resultados descritos acima são inspeção do código e da janela de logs já coletada.

@@ -3,7 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"os"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	gen "majucau.local/financial-intelligence/database/gen"
 	"majucau.local/financial-intelligence/internal/application"
@@ -121,5 +126,32 @@ func TestWorkerSchemaHealthRequiresEveryCoreTable(t *testing.T) {
 				t.Fatal("incomplete or invalid schema result must not be ready")
 			}
 		})
+	}
+}
+
+func TestPostgresWorkerHealthProbeReportsMigratedSchema(t *testing.T) {
+	dsn := strings.TrimSpace(os.Getenv("MAJUCAU_TEST_DATABASE_URL"))
+	if dsn == "" {
+		t.Skip("set MAJUCAU_TEST_DATABASE_URL to run the PostgreSQL worker health integration test")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatal("create PostgreSQL pool for worker health integration test")
+	}
+	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		t.Fatal("PostgreSQL health integration test database is unavailable")
+	}
+
+	response := newWorkerHealthChecker(pool, "").CheckHealth(ctx)
+	if response.State != application.HealthOK {
+		t.Fatalf("worker health state = %q, want %q; dependencies=%+v", response.State, application.HealthOK, response.Dependencies)
+	}
+	if len(response.Dependencies) != 1 || response.Dependencies[0].State != application.HealthOK {
+		t.Fatalf("worker PostgreSQL dependency is not healthy: %+v", response.Dependencies)
 	}
 }

@@ -545,6 +545,9 @@ jobs:
             psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
 
+      - name: Verify worker health against migrated PostgreSQL
+        run: go test ./cmd/worker -run '^TestPostgresWorkerHealthProbeReportsMigratedSchema$' -count=1
+
       - name: Run backup creation and real restore against disposable PostgreSQL
         run: go test ./internal/backup -run '^TestCreateVerifyAndRestoreAgainstDisposablePostgres$' -count=1
 

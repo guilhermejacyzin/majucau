@@ -17,7 +17,7 @@ A verificação foi ligada a `scripts/verify.ps1` e ao job Windows da CI. Assim,
 ## Verificação desta execução
 
 - `scripts/verify-go-boundaries.ps1`: passou localmente em 13/10/2026.
-- A CI completa será executada após o push; este documento não afirma que ela já passou.
+- A CI completa do commit `67a689a` passou no run [38357428565](https://github.com/guilhermejacyzin/majucau/actions/runs/38357428565), incluindo Windows, PostgreSQL, testes Go, a nova verificação de arquitetura e o build do protótipo.
 - O endereço de retorno OAuth informado pela responsável coincide com o endereço HTTPS fixo que o Majucau aceita. Isso não comprova uma autorização real nem uma sincronização.
 
 ## Limite e impacto

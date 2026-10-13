@@ -99,3 +99,33 @@ limpa.
 - Ambas foram trocadas por `Read-BoundedTextFile`, que lê em blocos e interrompe quando ultrapassa o teto configurado: 128 bytes para `PG_VERSION` e 64 KiB para o conteúdo cifrado. O conteúdo da senha continua fora do Git e dos logs.
 - Esta mudança cobre somente os dados pequenos de configuração usados ao iniciar o ambiente local. Ela não altera leitura financeira, interfaces ou regras de negócio.
 - A revisão foi estática; nenhum teste ou inicialização foi executado nesta etapa. A conferência em execução e a validação de máquina limpa continuam pendentes. `DATA-04` permanece parcial.
+
+## Revisão ampliada e correção do formulário protegido — 13/10/2026
+
+Revisei novamente os caminhos de dados no código de produção Go, no frontend,
+nos conectores Bling/Drive e no gerador de planilhas. A busca não encontrou
+`os.ReadFile` nem `io.ReadAll` sem limite no código Go de produção. As leituras
+de respostas externas têm limites; listas financeiras ficam restritas a uma
+página de até 100 registros por vez; CSV/TSV/JSON e downloads do Drive são
+processados em fluxo; duplicatas de importação usam armazenamento temporário
+com limites. O backup V1 antigo e o V2 novo também leem e gravam os dados em
+blocos. O painel transmite linhas pelo IPC em blocos de até 512 KiB e mantém
+limites de até 50 linhas por tabela e 16 MiB para o snapshot completo.
+
+O gerador XLSX escreve uma linha por vez, mas ainda não existe uma fonte de
+banco e rota de exportação ligadas a ele. Quando forem implementadas, deverão
+validar os limites da linha antes de materializá-la.
+
+A revisão do Site encontrou uma exceção concreta: o formulário protegido que
+recebe o Client Secret do Bling usava `request.text()`, sem limitar o tamanho
+antes de ler todo o corpo. O commit `fdce727d8f3d868b5bea418d52208039054e7cf8`
+passou a ler em fluxo, interromper acima de 8 KiB e responder HTTP 413. O teste
+confirma o cancelamento do fluxo excedente. A suíte do Site passou com 28/28
+casos e o build validou o Worker. A versão 16 foi publicada em
+`https://majucau-bling-bridge.giselegalha.chatgpt.site`.
+
+Esta é uma revisão estática e focal; não mede pico de memória nem substitui
+homologação com arquivos reais. Permanecem necessárias a medição de carga, a
+conferência da remoção de temporários em VM Windows limpa, a conexão e
+sincronização reais do Bling e a fonte/rota de exportação XLSX. `DATA-04`
+continua `PARTIAL`. Nenhuma tela aprovada ou regra financeira foi alterada.

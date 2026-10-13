@@ -1,5 +1,13 @@
 # Retorno OAuth do Bling ao Majucau local — 13/10/2026
 
+> Atualização posterior: Gisele confirmou que o aplicativo Bling está cadastrado
+> com o retorno `https://majucau-bling-bridge.giselegalha.chatgpt.site/oauth/bling/callback`.
+> O código correspondente redireciona o navegador para o callback local fixo do
+> Majucau (`127.0.0.1:43821`) levando somente o código temporário e o `state`.
+> A versão pública atual é a 16 e mantém esse caminho. Isso confirma a
+> compatibilidade do retorno no código; uma conexão real ainda precisa ser
+> concluída e testada no aplicativo.
+
 ## Resultado em linguagem simples
 
 O Bling já está cadastrado para devolver a autorização ao endereço HTTPS do Site Majucau. O Majucau instalado no computador, porém, espera receber o retorno em `127.0.0.1`. O fluxo agora liga esses dois endereços: o Site entrega somente o código temporário ao aplicativo local, e o aplicativo troca o código pelo token usando a URL de retorno HTTPS registrada no Bling.

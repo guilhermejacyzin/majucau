@@ -1,5 +1,10 @@
 # Ingestão do Google Drive em fluxo — 13/10/2026
 
+> Atualização de 13/10/2026: a versão 16 do Site também corrigiu a leitura do
+> formulário protegido de configuração do segredo Bling. O corpo agora é lido
+> em fluxo, limitado a 8 KiB e cancelado se exceder o teto. A revisão e os
+> resultados estão em `DATA-STREAMING-STATIC-AUDIT-2026-10-11.md`.
+
 ## O que foi entregue
 
 A ponte do Majucau agora lê somente os arquivos das três estruturas já aprovadas do Drive. A listagem usa páginas de até 100 arquivos; o conteúdo baixa como fluxo, linha por linha, para CSV/TSV e registro por registro para JSON. O processamento calcula SHA-256 durante a leitura, sem carregar o arquivo inteiro na memória.
@@ -15,6 +20,7 @@ Chamadas externas repetíveis são somente GET e usam no máximo três tentativa
 ## Publicação e verificação
 
 - Código do Site publicado: versão 15, commit de origem `8edf1b4a57772ea0c1ba3cd1e452ba95806210d3`.
+- A versão 16, commit `fdce727d8f3d868b5bea418d52208039054e7cf8`, preservou a ponte OAuth e passou a limitar em fluxo o formulário de configuração do segredo a 8 KiB.
 - Endereço: <https://majucau-bling-bridge.giselegalha.chatgpt.site>.
 - O deploy terminou com sucesso e manteve a configuração pública já existente do Site.
 - O banco publicado contém `drive_import_row_hash_counts`, além das tabelas de lote, staging e auditoria. A conferência confirmou que as migrations 0004 e 0005 chegaram ao D1.

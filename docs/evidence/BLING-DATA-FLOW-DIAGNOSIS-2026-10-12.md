@@ -101,3 +101,11 @@ Não foram alterados código, telas, regras financeiras, credenciais ou dados. N
 - A atomicidade por recurso continua: cada lista é persistida com lote/checkpoint dentro da própria transação; quando vencimento consulta ambas e a segunda falha, o resultado geral permanece `PARTIAL`. A idempotência RAW existente não mudou.
 - A documentação pública ainda não confirma o filtro “alterado desde o último checkpoint” nem o marcador de última página de Contas a Receber. Portanto esta mudança corrige consultas manuais, mas não ativa a atualização diária automática.
 - A resposta do Bling sem metadados de fim continua levando a falha segura com rollback; a conexão e homologação com a conta Majucau seguem pendentes. A tela aprovada não foi editada. Os testes de regressão foram atualizados, mas não executados localmente nesta etapa; a CI será a validação automatizada após o push.
+
+## Endereço de retorno OAuth confirmado — 12/10/2026
+
+- A responsável informou que o campo “Link de redirecionamento” do aplicativo Bling aponta para um callback HTTPS externo em `/oauth/bling/callback`. O host não foi copiado para o repositório público; o valor completo continua disponível na conversa e no cadastro do aplicativo.
+- A documentação oficial do Bling identifica esse campo como o destino do retorno após a autorização. O authorization server redireciona o navegador para o endereço cadastrado, com `code` e `state`; consulte [Aplicativos e OAuth do Bling](https://developer.bling.com.br/aplicativos).
+- O código atual do Majucau aceita HTTPS ao salvar a configuração, mas o início do OAuth exige `http://127.0.0.1:<porta>/<caminho>` e abre um listener local nessa porta. Portanto, o HTTPS informado não é compatível com o callback implementado e a conexão não concluirá com essa configuração.
+- Não encontrei neste repositório um serviço que receba o callback HTTPS e o encaminhe com segurança ao worker local. A existência e o funcionamento desse encaminhamento ainda precisam ser confirmados. Não alterei OAuth, credenciais ou tela; nenhuma regra financeira foi afetada.
+- Próximo passo: confirmar se o endereço HTTPS é uma ponte funcional para o Majucau instalado. Se não for, escolher entre cadastrar um callback local aceito pelo Bling ou aprovar e desenhar uma ponte HTTPS segura antes de alterar o fluxo.

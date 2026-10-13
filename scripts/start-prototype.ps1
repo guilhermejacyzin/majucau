@@ -27,6 +27,59 @@ Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $artifactRoot -Expecte
 Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $instanceRoot -ExpectedType Directory
 Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $dataRoot -ExpectedType Directory
 
+function Protect-PrototypeSecretParent {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [string]$Path)
+
+    Assert-MajucauProjectPath -ProjectRoot $projectRoot -Path $Path -ExpectedType Directory
+    $userSid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    if ([string]::IsNullOrWhiteSpace($userSid)) {
+        throw 'A identidade Windows do usuário não pôde ser confirmada para proteger o cofre local.'
+    }
+
+    $icacls = Join-Path $env:SystemRoot 'System32\icacls.exe'
+    if (-not (Test-Path -LiteralPath $icacls -PathType Leaf)) {
+        throw 'A ferramenta Windows para proteger a pasta do cofre não está disponível.'
+    }
+    $grants = @(
+        ('*{0}:(OI)(CI)F' -f $userSid),
+        '*S-1-5-18:(OI)(CI)F',
+        '*S-1-5-32-544:(OI)(CI)F'
+    )
+    & $icacls $Path '/inheritance:r' '/grant:r' @grants *> $null
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Não foi possível restringir o acesso à pasta pai do cofre local.'
+    }
+
+    $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+    $rules = @($acl.Access)
+    if (-not $acl.AreAccessRulesProtected -or $rules.Count -ne 3) {
+        throw 'A proteção de acesso à pasta pai do cofre local não corresponde à configuração segura.'
+    }
+    $expectedSids = @($userSid, 'S-1-5-18', 'S-1-5-32-544')
+    $expectedInheritance = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    $actualSids = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($rule in $rules) {
+        $ruleSid = if ($rule.IdentityReference -is [System.Security.Principal.SecurityIdentifier]) {
+            $rule.IdentityReference.Value
+        } else {
+            $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+        }
+        if ($ruleSid -notin $expectedSids -or
+            -not $actualSids.Add($ruleSid) -or
+            $rule.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow -or
+            $rule.FileSystemRights -ne [System.Security.AccessControl.FileSystemRights]::FullControl -or
+            $rule.IsInherited -or
+            $rule.InheritanceFlags -ne $expectedInheritance -or
+            $rule.PropagationFlags -ne [System.Security.AccessControl.PropagationFlags]::None) {
+            throw 'A proteção de acesso à pasta pai do cofre local não corresponde à configuração segura.'
+        }
+    }
+    if ($actualSids.Count -ne $expectedSids.Count) {
+        throw 'A proteção de acesso à pasta pai do cofre local não corresponde à configuração segura.'
+    }
+}
+
 foreach ($name in @('MAJUCAU_DATABASE_URL', 'MAJUCAU_SECRET_DIR', 'GOCACHE', 'GOMODCACHE', 'GOTMPDIR', 'GOBIN', 'npm_config_cache', 'Path')) {
     $originalEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
@@ -85,6 +138,7 @@ try {
     $env:npm_config_cache = Join-Path $artifactCache 'npm'
     $env:Path = "$(Split-Path -Parent $goCommand);$goToolBinRoot;$(Join-Path $artifactCache 'bin');$env:Path"
     New-Item -ItemType Directory -Force -Path $env:GOCACHE, $goModCacheRoot, $env:GOTMPDIR, $goToolBinRoot, (Split-Path -Parent $workerPath), $vaultPath | Out-Null
+    Protect-PrototypeSecretParent -Path $credentialsRoot
 
     $goModCacheBoundary = Join-Path $goModCacheRoot 'go.mod'
     if (-not (Test-Path -LiteralPath $goModCacheBoundary)) {

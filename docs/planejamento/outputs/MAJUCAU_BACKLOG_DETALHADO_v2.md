@@ -3738,7 +3738,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Confirmação do horário da atualização diária — 12/10/2026
 
 - Gisele confirmou que a rotina diária deve começar às 09:30 no horário de Brasília (`America/Sao_Paulo`). O horário e o fuso estão definidos; não falta nova confirmação para esse ponto.
-- Registro histórico: na data desta nota, ainda faltavam definir filtros do Bling, acesso ao Drive e tratamento de fonte ausente. Gisele aprovou depois, nesta conversa em 12/10/2026, processar as fontes disponíveis e deixar as ausentes pendentes, sem mostrar dados antigos como atuais; também definiu buscar alterações desde a última execução e os próximos 60 dias. A execução ainda depende de validar o contrato oficial da API e aprovar um acesso persistente ao Drive.
+- Registro histórico desta nota: na época, ainda faltavam definir filtros do Bling, acesso ao Drive e tratamento de fonte ausente. Em 12/10/2026, Gisele aprovou processar as fontes disponíveis e deixar as ausentes pendentes até a próxima atualização. A escolha inicial de consultar alterações desde a execução anterior e manter os próximos 60 dias foi substituída pela decisão posterior, na mesma data, de reler todas as contas do Bling diariamente, registrada abaixo. A execução ainda depende de comprovar o fim da paginação e configurar acesso persistente ao Drive.
 - BK-039 permanece em 0% (100% restante). O projeto permanece na estimativa registrada de 9,1% concluído (90,9% restante), sem previsão global confiável.
 - Decisão registrada em `G0-DECISION-REGISTER.md`; o diagnóstico anterior do Bling e as evidências de hospedagem foram atualizados para não apontar o fuso como pendente.
 

@@ -17,8 +17,8 @@ import (
 )
 
 // TestProductionHTTPCallsUseReviewedPaths prevents a future adapter from
-// bypassing the shared retry policy with a new direct HTTP call. A newly
-// reviewed exception must be added here with its reason and evidence.
+// bypassing the shared retry policy with a direct HTTP call or transport
+// round trip. A reviewed exception must be added with its reason and evidence.
 func TestProductionHTTPCallsUseReviewedPaths(t *testing.T) {
 	root := moduleRoot(t)
 	var violations []string
@@ -66,7 +66,7 @@ func TestProductionHTTPCallsUseReviewedPaths(t *testing.T) {
 					return true
 				}
 
-				if selector.Sel.Name == "Do" {
+				if isHTTPExecutionMethod(selector.Sel.Name) {
 					name := expressionString(t, fset, selector)
 					key := filepath.ToSlash(relative) + ":" + functionName
 					observed[key] = append(observed[key], name)
@@ -158,6 +158,26 @@ func isHTTPConvenienceMethod(name string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func isHTTPExecutionMethod(name string) bool {
+	switch name {
+	case "Do", "RoundTrip":
+		return true
+	default:
+		return false
+	}
+}
+
+func TestHTTPExecutionMethodInventoryIncludesTransportRoundTrip(t *testing.T) {
+	for _, method := range []string{"Do", "RoundTrip"} {
+		if !isHTTPExecutionMethod(method) {
+			t.Errorf("HTTP execution method %q was not included in the inventory", method)
+		}
+	}
+	if isHTTPExecutionMethod("Close") {
+		t.Fatal("non-request method was included in the HTTP execution inventory")
 	}
 }
 

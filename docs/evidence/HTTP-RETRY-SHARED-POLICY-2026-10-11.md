@@ -26,6 +26,13 @@ Embora a CI do commit tenha passado, isso não substitui a homologação do Blin
 
 Nenhuma tela, regra financeira, fórmula, migration ou chamada à conta real foi alterada.
 
+## Cobertura de chamadas diretas de transporte — 2026-10-13
+
+- O inventário `TestProductionHTTPCallsUseReviewedPaths` agora registra também chamadas diretas a `RoundTrip`, além de `Do` e dos métodos de conveniência `Get`, `Head`, `Post` e `PostForm`. Uma nova chamada de transporte direta sem revisão faz o teste falhar.
+- Não há chamada `RoundTrip` direta no código de produção atual. A listagem e os detalhes Bling permanecem protegidos pelo retry comum de GET; a troca/renovação OAuth permanece POST de uso único, sem retry automático.
+- `go test -count=1 ./internal/integrations/httpretry ./internal/integrations/bling` passou; `go vet ./internal/integrations/httpretry ./internal/integrations/bling` passou. O teste PostgreSQL que depende de `MAJUCAU_TEST_DATABASE_URL` não foi executado nesta validação.
+- Esta ampliação fortalece o controle para integrações futuras; não altera o comportamento das chamadas atuais, não conecta à conta Bling e não muda telas ou regras financeiras.
+
 ## Correção da classificação de falhas de transporte — 2026-10-12
 
 Uma revisão mais profunda encontrou uma lacuna na implementação anterior: o adapter convertia qualquer erro de transporte em “indisponível”, e o classificador entendia qualquer indisponibilidade como transitória. Assim, erros permanentes de certificado ou configuração podiam consumir as tentativas disponíveis.

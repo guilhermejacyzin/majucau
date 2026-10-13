@@ -3870,3 +3870,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-026 avança de 55% para 60% (40% restante). BK-041 permanece em 75% (25% restante), pois falta autorização e sincronização real. BK-042 e BK-043 permanecem em 40% cada (60% restante). A média do backlog passa de 10,8% para 10,9% concluída (89,1% restante); não há prazo confiável para o projeto inteiro.
 - A tentativa falha foi revisada depois do build válido; a saída temporária foi removida com `SafeCleanup.psm1` e encerrada no registro local. Nenhuma tela aprovada nem regra financeira foi alterada.
 - Evidência: `docs/evidence/BUILD-PROTOTYPE-2026-10-13.md`.
+
+### Proteção contra chamadas de API fora do retry aprovado — 13/10/2026
+
+- Foi acrescentado `TestProductionHTTPCallsUseReviewedPaths` para conferir os pontos de chamada HTTP nos arquivos Go de produção. Se uma integração nova fizer uma chamada direta sem revisão, o comando de verificação falha e aponta arquivo e função. Chamadas GET repetíveis devem usar o retry comum; o POST OAuth continua sem repetição automática por ser de uso único.
+- `go test -count=1 ./internal/integrations/httpretry` passou. O código do aplicativo, telas, regras financeiras e conexão real não mudaram. Evidência: `docs/evidence/HTTP-RETRY-SOURCE-GUARD-2026-10-13.md`.
+- BK-041 permanece em 75% (25% restante), pois o guard protege futuras alterações, mas não substitui autorização, paginação confirmada nem sincronização homologada. A média simples segue em 10,9% concluída (89,1% restante); ainda não existe prazo total confiável.

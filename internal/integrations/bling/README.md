@@ -33,6 +33,16 @@ assume campos financeiros que ainda não foram confirmados em uma resposta
 real. O segredo deve chegar somente ao worker, ser protegido por DPAPI e
 nunca ser enviado ao frontend, colocado em URL ou incluído em logs/erros.
 
+Os filtros de data seguem o contrato por recurso: Contas a Receber usa
+`tipoFiltroData` (`V` para vencimento, `R` para recebimento) junto de
+`dataInicial`/`dataFinal`; Contas a Pagar usa `dataVencimentoInicial`/
+`dataVencimentoFinal` ou `dataPagamentoInicial`/`dataPagamentoFinal`. A
+sincronização manual por vencimento consulta os dois recursos; por recebimento,
+somente Contas a Receber; por pagamento, somente Contas a Pagar. Uma consulta
+com apenas situação mantém o comportamento anterior e consulta ambos. Estes
+filtros de data não fornecem, por si só, um cursor de alterações desde a última
+execução.
+
 As consultas de detalhe e categorias aplicam o mesmo limite de resposta,
 cancelamento, JWT e retry seguro. Elas retornam apenas o objeto `data` como JSON
 bruto; ainda não persistem esses detalhes nem os transformam em fatos do

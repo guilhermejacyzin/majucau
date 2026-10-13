@@ -53,3 +53,22 @@ Referências oficiais consultadas em 12/10/2026:
 - [Perguntas frequentes — registros por página](https://developer.bling.com.br/perguntas-frequentes)
 
 O endpoint também depende de autorização OAuth da API. A senha de login ao site não substitui essa autorização. Para confirmar o formato real, ainda é necessária uma consulta de leitura pela integração Majucau autorizada ou uma resposta sanitizada da consulta.
+
+## Correção da consulta por data aprovada — 12/10/2026
+
+- Gisele definiu o escopo dos filtros manuais: vencimento consulta Contas a
+  Receber e Contas a Pagar; recebimento consulta apenas Contas a Receber; e
+  pagamento consulta apenas Contas a Pagar.
+- O adapter agora monta os parâmetros de cada rota conforme a OpenAPI: em
+  Contas a Receber, `tipoFiltroData=V` ou `R` com `dataInicial`/`dataFinal`; em
+  Contas a Pagar, os pares específicos de vencimento ou pagamento. Filtros
+  incompatíveis com a rota e seleção simultânea de tipos de data falham antes
+  de enviar a requisição.
+- O serviço não faz uma consulta de teste em Contas a Receber antes de cada
+  sincronização; isso evita uma leitura financeira fora do escopo quando a
+  seleção é somente pagamentos. A atualização do token continua protegida e
+  pode ocorrer sem consultar uma lista financeira.
+- Esta correção não resolve o término da paginação nem o filtro automático de
+  alterações desde o checkpoint. A sincronização continua fechando com erro e
+  rollback se não consegue provar que recebeu a lista completa. A conta real
+  ainda precisa de conexão e homologação.

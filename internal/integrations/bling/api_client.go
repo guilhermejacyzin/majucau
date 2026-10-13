@@ -157,6 +157,35 @@ type ReceivablesFilter struct {
 	Status           string
 }
 
+const (
+	blingDateFilterNone     = ""
+	blingDateFilterDue      = "due"
+	blingDateFilterReceived = "received"
+	blingDateFilterPayment  = "payment"
+)
+
+func financialDateFilterMode(filter ReceivablesFilter) (string, error) {
+	modes := 0
+	mode := blingDateFilterNone
+	for _, candidate := range []struct {
+		mode     string
+		from, to string
+	}{
+		{blingDateFilterDue, filter.DueDateFrom, filter.DueDateTo},
+		{blingDateFilterReceived, filter.ReceivedDateFrom, filter.ReceivedDateTo},
+		{blingDateFilterPayment, filter.PaymentDateFrom, filter.PaymentDateTo},
+	} {
+		if strings.TrimSpace(candidate.from) != "" || strings.TrimSpace(candidate.to) != "" {
+			modes++
+			mode = candidate.mode
+		}
+	}
+	if modes > 1 {
+		return blingDateFilterNone, fmt.Errorf("%w: select only one financial date filter", ErrBlingAPIConfiguration)
+	}
+	return mode, nil
+}
+
 func (f ReceivablesFilter) normalized() (ReceivablesFilter, error) {
 	if f.Page == 0 {
 		f.Page = 1
@@ -230,17 +259,44 @@ func (c *BlingAPIClient) listFinancialResource(ctx context.Context, resource str
 	query := pathURL.Query()
 	query.Set("pagina", strconv.Itoa(filter.Page))
 	query.Set("limite", strconv.Itoa(filter.Limit))
-	setOptionalQuery(query, "dataVencimentoInicial", filter.DueDateFrom)
-	setOptionalQuery(query, "dataVencimentoFinal", filter.DueDateTo)
-	setOptionalQuery(query, "dataRecebimentoInicial", filter.ReceivedDateFrom)
-	setOptionalQuery(query, "dataRecebimentoFinal", filter.ReceivedDateTo)
-	setOptionalQuery(query, "dataPagamentoInicial", filter.PaymentDateFrom)
-	setOptionalQuery(query, "dataPagamentoFinal", filter.PaymentDateTo)
-	statusQueryName := "situacao"
-	if resource == "contas/receber" {
-		statusQueryName = "situacoes[]"
+	dateMode, err := financialDateFilterMode(filter)
+	if err != nil {
+		return BlingReceivablesPage{}, err
 	}
-	setOptionalQuery(query, statusQueryName, filter.Status)
+	switch resource {
+	case "contas/receber":
+		if dateMode == blingDateFilterPayment {
+			return BlingReceivablesPage{}, fmt.Errorf("%w: payment date is not available for accounts receivable", ErrBlingAPIConfiguration)
+		}
+		if dateMode != blingDateFilterNone {
+			query.Set("tipoFiltroData", "V")
+			from, to := filter.DueDateFrom, filter.DueDateTo
+			if dateMode == blingDateFilterReceived {
+				query.Set("tipoFiltroData", "R")
+				from, to = filter.ReceivedDateFrom, filter.ReceivedDateTo
+			}
+			setOptionalQuery(query, "dataInicial", from)
+			setOptionalQuery(query, "dataFinal", to)
+		}
+		setOptionalQuery(query, "situacoes[]", filter.Status)
+	case "contas/pagar":
+		if dateMode == blingDateFilterReceived {
+			return BlingReceivablesPage{}, fmt.Errorf("%w: received date is not available for accounts payable", ErrBlingAPIConfiguration)
+		}
+		if dateMode == blingDateFilterDue {
+			setOptionalQuery(query, "dataVencimentoInicial", filter.DueDateFrom)
+			setOptionalQuery(query, "dataVencimentoFinal", filter.DueDateTo)
+		}
+		if dateMode == blingDateFilterPayment {
+			setOptionalQuery(query, "dataPagamentoInicial", filter.PaymentDateFrom)
+			setOptionalQuery(query, "dataPagamentoFinal", filter.PaymentDateTo)
+		}
+		setOptionalQuery(query, "situacao", filter.Status)
+	default:
+		if dateMode != blingDateFilterNone || strings.TrimSpace(filter.Status) != "" {
+			return BlingReceivablesPage{}, fmt.Errorf("%w: financial filters are not available for this resource", ErrBlingAPIConfiguration)
+		}
+	}
 	pathURL.RawQuery = query.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pathURL.String(), nil)

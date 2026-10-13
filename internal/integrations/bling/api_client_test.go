@@ -46,8 +46,11 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 		if got := r.URL.Query().Get("limite"); got != "2" {
 			t.Fatalf("limite = %q", got)
 		}
-		if got := r.URL.Query().Get("dataRecebimentoInicial"); got != "2026-09-01" {
-			t.Fatalf("dataRecebimentoInicial = %q", got)
+		if got := r.URL.Query().Get("tipoFiltroData"); got != "R" {
+			t.Fatalf("tipoFiltroData = %q, want R (recebimento)", got)
+		}
+		if got := r.URL.Query().Get("dataInicial"); got != "2026-09-01" {
+			t.Fatalf("dataInicial = %q", got)
 		}
 		if got := r.URL.Query().Get("situacoes[]"); got != "2" {
 			t.Fatalf("situacoes[] = %q, want 2", got)
@@ -168,6 +171,79 @@ func TestListPayablesUsesPayableEndpointAndPaymentFilter(t *testing.T) {
 	page, err := client.ListPayables(context.Background(), ReceivablesFilter{PaymentDateFrom: "2026-09-01", PaymentDateTo: "2026-09-30", Limit: 1, Status: "2"})
 	if err != nil || len(page.Records) != 1 || !strings.Contains(string(page.Records[0]), `"id":77`) || !page.HasNextKnown {
 		t.Fatalf("unexpected payable page: %+v, err=%v", page, err)
+	}
+}
+
+func TestListPayablesUsesDueDateParametersFromBlingContract(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		if r.URL.Path != "/Api/v3/contas/pagar" {
+			t.Fatalf("path = %s", r.URL.Path)
+		}
+		if got := query.Get("dataVencimentoInicial"); got != "2026-09-01" {
+			t.Fatalf("dataVencimentoInicial = %q", got)
+		}
+		if got := query.Get("dataVencimentoFinal"); got != "2026-09-30" {
+			t.Fatalf("dataVencimentoFinal = %q", got)
+		}
+		if query.Has("tipoFiltroData") || query.Has("dataInicial") || query.Has("dataPagamentoInicial") {
+			t.Fatal("accounts-payable due-date request included unrelated date parameters")
+		}
+		_, _ = w.Write([]byte(`{"data":[],"pagination":{"page":1,"limit":1,"total":0}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.ListPayables(context.Background(), ReceivablesFilter{DueDateFrom: "2026-09-01", DueDateTo: "2026-09-30", Limit: 1}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestListReceivablesUsesDueDateFilterFromBlingContract(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		if r.URL.Path != "/Api/v3/contas/receber" {
+			t.Fatalf("path = %s", r.URL.Path)
+		}
+		if got := query.Get("tipoFiltroData"); got != "V" {
+			t.Fatalf("tipoFiltroData = %q, want V (vencimento)", got)
+		}
+		if got := query.Get("dataInicial"); got != "2026-09-01" {
+			t.Fatalf("dataInicial = %q", got)
+		}
+		if got := query.Get("dataFinal"); got != "2026-09-30" {
+			t.Fatalf("dataFinal = %q", got)
+		}
+		if query.Has("dataVencimentoInicial") || query.Has("dataPagamentoInicial") {
+			t.Fatal("accounts-receivable request included a date parameter from another endpoint contract")
+		}
+		_, _ = w.Write([]byte(`{"data":[],"pagination":{"page":1,"limit":1,"total":0}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.ListReceivables(context.Background(), ReceivablesFilter{DueDateFrom: "2026-09-01", DueDateTo: "2026-09-30", Limit: 1}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFinancialEndpointsRejectDateFiltersTheyDoNotSupport(t *testing.T) {
+	client, err := NewBlingAPIClient(&errorHTTPDoer{}, "https://api.bling.com.br/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.ListReceivables(context.Background(), ReceivablesFilter{PaymentDateFrom: "2026-09-01"}); !errors.Is(err, ErrBlingAPIConfiguration) {
+		t.Fatalf("receivables payment-date error = %v, want configuration error", err)
+	}
+	if _, err := client.ListPayables(context.Background(), ReceivablesFilter{ReceivedDateFrom: "2026-09-01"}); !errors.Is(err, ErrBlingAPIConfiguration) {
+		t.Fatalf("payables received-date error = %v, want configuration error", err)
+	}
+	if _, err := client.ListPayables(context.Background(), ReceivablesFilter{DueDateFrom: "2026-09-01", PaymentDateFrom: "2026-09-01"}); !errors.Is(err, ErrBlingAPIConfiguration) {
+		t.Fatalf("multiple date-filter error = %v, want configuration error", err)
 	}
 }
 

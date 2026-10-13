@@ -85,3 +85,12 @@ Não foram alterados código, telas, regras financeiras, credenciais ou dados. N
 - Continua pendente confirmar o endereço de retorno registrado no aplicativo Bling: a tela sugere HTTPS, enquanto o serviço local só recebe callback em `http://127.0.0.1:<porta>/<caminho>`. Não alterei a tela nem o OAuth, pois o endereço aceito pelo aplicativo não foi confirmado.
 - Próxima etapa para homologar os dados: configurar localmente Client ID, Client Secret e o endereço de retorno aceito; autorizar a conta; testar a conexão; então iniciar uma sincronização com filtro. Nunca enviar Client Secret ou token pelo chat.
 - O diagnóstico da ausência de chamadas está concluído. BK-041 continua em 69% (31% restante), pois ainda faltam conexão real, contrato de paginação/cursor e homologação. Nenhuma tela aprovada, regra financeira, regra de negócio ou credencial foi alterada. Nenhum teste foi executado nesta etapa.
+
+## Correção dos filtros de data do Bling — 12/10/2026
+
+- A responsável aprovou que “Vencimento” consulte as duas listas; “Recebimento”, somente Contas a Receber; e “Pagamento”, somente Contas a Pagar.
+- O cliente agora envia para cada rota os nomes documentados de parâmetros. Ele recusa filtros de data incompatíveis e uma chamada que tente combinar dois tipos de data.
+- A sincronização não faz mais um teste extra em Contas a Receber antes de coletar Contas a Pagar. Ela atualiza/renova o token protegido sem ler uma lista financeira e em seguida chama somente o recurso permitido pelo filtro.
+- A atomicidade por recurso continua: cada lista é persistida com lote/checkpoint dentro da própria transação; quando vencimento consulta ambas e a segunda falha, o resultado geral permanece `PARTIAL`. A idempotência RAW existente não mudou.
+- A documentação pública ainda não confirma o filtro “alterado desde o último checkpoint” nem o marcador de última página de Contas a Receber. Portanto esta mudança corrige consultas manuais, mas não ativa a atualização diária automática.
+- A resposta do Bling sem metadados de fim continua levando a falha segura com rollback; a conexão e homologação com a conta Majucau seguem pendentes. A tela aprovada não foi editada. Os testes de regressão foram atualizados, mas não executados localmente nesta etapa; a CI será a validação automatizada após o push.

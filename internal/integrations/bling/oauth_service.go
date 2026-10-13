@@ -263,45 +263,9 @@ func (s *BlingOAuthService) Test(ctx context.Context) (BlingOAuthTestResult, err
 }
 
 func (s *BlingOAuthService) testLocked(ctx context.Context) (BlingOAuthTestResult, error) {
-	connection, err := s.repo.Connection(ctx)
-	if err != nil {
-		return BlingOAuthTestResult{}, ErrBlingOAuthConfiguration
-	}
-	clientID, _, err := connectionOAuthConfig(connection)
+	bundle, err := s.ensureAccessTokenLocked(ctx)
 	if err != nil {
 		return BlingOAuthTestResult{}, err
-	}
-	bundle, err := loadBlingSecret(ctx, s.credentials.store)
-	if err != nil {
-		return BlingOAuthTestResult{}, err
-	}
-	if bundle.AccessToken == "" {
-		return BlingOAuthTestResult{}, ErrBlingOAuthNotConnected
-	}
-	if bundle.AccessTokenExpiresUnix > 0 && bundle.AccessTokenExpiresUnix <= s.now().Add(time.Minute).Unix() {
-		if bundle.RefreshToken == "" || (bundle.RefreshTokenExpiresUnix > 0 && bundle.RefreshTokenExpiresUnix <= s.now().Unix()) {
-			return BlingOAuthTestResult{}, ErrBlingOAuthNotConnected
-		}
-		oauthClient, clientErr := NewBlingOAuthClient(s.httpClient, "")
-		if clientErr != nil {
-			_ = s.repo.RecordTestFailure(ctx, "BLING_OAUTH_CLIENT_INVALID")
-			return BlingOAuthTestResult{}, clientErr
-		}
-		refreshed, refreshErr := oauthClient.RefreshAccessToken(ctx, clientID, bundle.ClientSecret, bundle.RefreshToken)
-		if refreshErr != nil {
-			_ = s.repo.RecordTestFailure(ctx, "BLING_REFRESH_FAILED")
-			return BlingOAuthTestResult{}, refreshErr
-		}
-		bundle = updateBundleWithToken(bundle, refreshed, s.now())
-		encoded, encodeErr := json.Marshal(bundle)
-		if encodeErr != nil || s.credentials.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
-			_ = s.repo.RecordTestFailure(ctx, "BLING_TOKEN_STORE_FAILED")
-			return BlingOAuthTestResult{}, ErrBlingOAuthStorage
-		}
-		if err := s.repo.CompleteOAuth(ctx, splitScopes(bundle.Scope), tokenExpiry(s.now(), refreshed.ExpiresIn), refreshExpiry(s.now(), bundle.RefreshToken)); err != nil {
-			_ = s.repo.RecordTestFailure(ctx, "BLING_TOKEN_METADATA_FAILED")
-			return BlingOAuthTestResult{}, ErrBlingOAuthStorage
-		}
 	}
 	client, err := NewBlingAPIClient(s.httpClient, "", bundle.AccessToken)
 	if err != nil {
@@ -316,6 +280,52 @@ func (s *BlingOAuthService) testLocked(ctx context.Context) (BlingOAuthTestResul
 		return BlingOAuthTestResult{}, ErrBlingOAuthStorage
 	}
 	return BlingOAuthTestResult{Status: "SUCCESS", PageRecordCount: probe.PageRecordCount}, nil
+}
+
+// ensureAccessTokenLocked loads or refreshes credentials without probing a
+// financial endpoint. The caller holds credentials.mu while using the result.
+func (s *BlingOAuthService) ensureAccessTokenLocked(ctx context.Context) (blingSecretBundle, error) {
+	connection, err := s.repo.Connection(ctx)
+	if err != nil {
+		return blingSecretBundle{}, ErrBlingOAuthConfiguration
+	}
+	clientID, _, err := connectionOAuthConfig(connection)
+	if err != nil {
+		return blingSecretBundle{}, err
+	}
+	bundle, err := loadBlingSecret(ctx, s.credentials.store)
+	if err != nil {
+		return blingSecretBundle{}, err
+	}
+	if bundle.AccessToken == "" {
+		return blingSecretBundle{}, ErrBlingOAuthNotConnected
+	}
+	if bundle.AccessTokenExpiresUnix > 0 && bundle.AccessTokenExpiresUnix <= s.now().Add(time.Minute).Unix() {
+		if bundle.RefreshToken == "" || (bundle.RefreshTokenExpiresUnix > 0 && bundle.RefreshTokenExpiresUnix <= s.now().Unix()) {
+			return blingSecretBundle{}, ErrBlingOAuthNotConnected
+		}
+		oauthClient, clientErr := NewBlingOAuthClient(s.httpClient, "")
+		if clientErr != nil {
+			_ = s.repo.RecordTestFailure(ctx, "BLING_OAUTH_CLIENT_INVALID")
+			return blingSecretBundle{}, clientErr
+		}
+		refreshed, refreshErr := oauthClient.RefreshAccessToken(ctx, clientID, bundle.ClientSecret, bundle.RefreshToken)
+		if refreshErr != nil {
+			_ = s.repo.RecordTestFailure(ctx, "BLING_REFRESH_FAILED")
+			return blingSecretBundle{}, refreshErr
+		}
+		bundle = updateBundleWithToken(bundle, refreshed, s.now())
+		encoded, encodeErr := json.Marshal(bundle)
+		if encodeErr != nil || s.credentials.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
+			_ = s.repo.RecordTestFailure(ctx, "BLING_TOKEN_STORE_FAILED")
+			return blingSecretBundle{}, ErrBlingOAuthStorage
+		}
+		if err := s.repo.CompleteOAuth(ctx, splitScopes(bundle.Scope), tokenExpiry(s.now(), refreshed.ExpiresIn), refreshExpiry(s.now(), bundle.RefreshToken)); err != nil {
+			_ = s.repo.RecordTestFailure(ctx, "BLING_TOKEN_METADATA_FAILED")
+			return blingSecretBundle{}, ErrBlingOAuthStorage
+		}
+	}
+	return bundle, nil
 }
 
 // Disconnect revokes the local authorization state without deleting imported
@@ -364,25 +374,28 @@ func (s *BlingOAuthService) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-// Sync performs an explicit, read-only RAW synchronization for both primary
-// Bling financial resources. The caller must provide the date/status filters;
-// this method never invents a financial window and never normalizes records.
+// Sync performs an explicit, read-only RAW synchronization using only the
+// Bling financial resources that support the selected date filter. Due dates
+// apply to both resources, received dates to receivables, and payment dates to
+// payables. Status-only requests retain the existing behavior and read both.
+// This method never invents a financial window and never normalizes records.
 func (s *BlingOAuthService) Sync(ctx context.Context, filter ReceivablesFilter) (BlingRawSyncResult, error) {
+	dateMode, err := financialDateFilterMode(filter)
+	if err != nil {
+		return BlingRawSyncResult{}, err
+	}
 	if s == nil || s.pool == nil {
 		return BlingRawSyncResult{}, ErrBlingAPISyncDatabaseUnavailable
 	}
 	var bundle blingSecretBundle
-	err := func() error {
+	err = func() error {
 		if s.repo == nil || s.credentials == nil || s.credentials.store == nil {
 			return ErrBlingOAuthConfiguration
 		}
 		s.credentials.mu.Lock()
 		defer s.credentials.mu.Unlock()
-		if _, err := s.testLocked(ctx); err != nil {
-			return err
-		}
 		var err error
-		bundle, err = loadBlingSecret(ctx, s.credentials.store)
+		bundle, err = s.ensureAccessTokenLocked(ctx)
 		return err
 	}()
 	if err != nil {
@@ -392,15 +405,28 @@ func (s *BlingOAuthService) Sync(ctx context.Context, filter ReceivablesFilter) 
 	if err != nil {
 		return BlingRawSyncResult{}, err
 	}
-	receivables, err := NewReceivablesAPISyncService(s.pool, client).Sync(ctx, filter)
-	if err != nil {
-		return BlingRawSyncResult{Status: "FAILED", Receivables: receivables}, err
+	notApplicable := APISyncResult{Status: "NOT_APPLICABLE"}
+	result := BlingRawSyncResult{Receivables: notApplicable, Payables: notApplicable}
+	if dateMode != blingDateFilterPayment {
+		result.Receivables, err = NewReceivablesAPISyncService(s.pool, client).Sync(ctx, filter)
+		if err != nil {
+			result.Status = "FAILED"
+			return result, err
+		}
 	}
-	payables, err := NewPayablesAPISyncService(s.pool, client).Sync(ctx, filter)
-	if err != nil {
-		return BlingRawSyncResult{Status: "PARTIAL", Receivables: receivables, Payables: payables}, err
+	if dateMode != blingDateFilterReceived {
+		result.Payables, err = NewPayablesAPISyncService(s.pool, client).Sync(ctx, filter)
+		if err != nil {
+			if result.Receivables.Status == "SUCCESS" {
+				result.Status = "PARTIAL"
+			} else {
+				result.Status = "FAILED"
+			}
+			return result, err
+		}
 	}
-	return BlingRawSyncResult{Status: "SUCCESS", Receivables: receivables, Payables: payables}, nil
+	result.Status = "SUCCESS"
+	return result, nil
 }
 
 func (s *BlingOAuthService) runSession(session *blingOAuthSession, clientID, redirectURI string) {

@@ -6,9 +6,9 @@ Planejamento do sistema de gestão e análise da Majucau. A **versão 2** é a r
 
 | Arquivo | Conteúdo |
 |---|---|
-| [Backlog detalhado v2](outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md) | 127 tarefas, da BK-000 à BK-126: objetivo, o que fazer, como fazer, impacto, dependências e aceite. |
-| [Planilha de evolução v2](outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx) | Tarefas, evolução calculada, decisões e cobertura dos módulos. |
-| [Análise e decisões v2](outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md) | Regras vigentes, alterações do fechamento e dez frentes de verificação técnica futura. |
+| [Backlog detalhado v2](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md) | 127 tarefas, da BK-000 à BK-126: objetivo, o que fazer, como fazer, impacto, dependências e aceite. |
+| [Planilha de evolução v2](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx) | Tarefas, evolução calculada, decisões e cobertura dos módulos. |
+| [Análise e decisões v2](../../artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md) | Regras vigentes, alterações do fechamento e dez frentes de verificação técnica futura. |
 | [Limites da arquitetura Go](../architecture/GO-MODULAR-BOUNDARIES.md) | Módulos, contratos, dependências e transações verificadas em BK-017. |
 | [Mapa inicial de contextos](../architecture/DOMAIN-CONTEXT-MAP-v1.md) | Responsabilidades técnicas documentadas e pontos de negócio que ainda precisam de validação em BK-016. |
 | [Índice completo](README.md) | Histórico, auditorias, dados estruturados, prévias e scripts. |

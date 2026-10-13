@@ -7,7 +7,13 @@ frontend/dist
 .vscode/
 *.log
 coverage/
-artifacts/
+artifacts/*
+!artifacts/planejamento/
+artifacts/planejamento/*
+!artifacts/planejamento/outputs/
+artifacts/planejamento/outputs/*
+!artifacts/planejamento/outputs/*.md
+!artifacts/planejamento/outputs/*.xlsx
 sources/private/
 .env
 .env.*

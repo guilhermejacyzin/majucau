@@ -13,6 +13,7 @@ root = Path(__file__).resolve().parents[1]
 repo = root.parents[1]
 tasks = json.loads((root / 'work/backlog_v2.json').read_text(encoding='utf-8'))
 decisions = json.loads((root / 'work/decisions_v2.json').read_text(encoding='utf-8'))
+outputs = repo / 'artifacts/planejamento/outputs'
 by = {t['key']:t for t in tasks}
 ids = [t['id'] for t in tasks]
 assert ids == [f'BK-{i:03}' for i in range(127)]
@@ -43,7 +44,7 @@ assert all(0 <= t['progress'] <= 1 for t in tasks)
 assert all(t['progress'] == 1 and t['evidence'] for t in tasks if t['status'] == 'Concluída')
 assert not any(t['status'] == 'Aguarda decisão' for t in tasks)
 assert len(decisions) == 108
-md = (root / 'outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md').read_text(encoding='utf-8')
+md = (outputs / 'MAJUCAU_BACKLOG_DETALHADO_v2.md').read_text(encoding='utf-8')
 headers = list(re.finditer(r'^### (BK-\d+) — ([^\n]+)', md, re.M))
 assert [match.group(1) for match in headers] == ids
 markdown_tasks = {}
@@ -68,7 +69,7 @@ estimated_progress = sum(task['progress'] * task['weight'] for task in tasks) / 
 assert 'D+1' not in md
 planning_accepted = sum(t['weight'] for t in tasks if t['kind'] == 'Planejamento' and t['status'] == 'Concluída' and t['evidence'])
 
-for xlsx in (root / 'outputs').glob('*.xlsx'):
+for xlsx in outputs.glob('*.xlsx'):
     cached = openpyxl.load_workbook(xlsx, data_only=True)
     assert not [(s.title,c.coordinate,c.value) for s in cached for row in s for c in row if c.data_type == 'e']
     if xlsx.name.endswith('_v2.xlsx'):
@@ -88,7 +89,8 @@ for xlsx in (root / 'outputs').glob('*.xlsx'):
 
 links = 0
 for path in repo.rglob('*.md'):
-    if '.git' in path.parts or 'artifacts' in path.parts or 'node_modules' in path.parts:
+    is_canonical_planning_output = path.is_relative_to(outputs)
+    if '.git' in path.parts or ('artifacts' in path.parts and not is_canonical_planning_output) or 'node_modules' in path.parts:
         continue
     text = path.read_text(encoding='utf-8')
     # O README anterior do proprietário conserva referências não incluídas nesta entrega.

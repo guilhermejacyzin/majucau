@@ -1329,7 +1329,7 @@ Refinar posteriormente as fontes e bases comparáveis antes da construção dos 
 
 A análise detalhada dos 16 PNGs (15 imagens únicas), das 20 abas e das inconsistências visuais permanece no documento da versão 0, como registro histórico de leitura. As regras atuais desta versão substituem suas suposições de fontes nos pontos descritos acima. Valores ilustrativos não se tornam dados reais.
 
-- [Texto da consolidação recebido](../FONTES.md#consolidacao-das-respostas).
+- [Texto da consolidação recebido](../../../docs/planejamento/FONTES.md#consolidacao-das-respostas).
 - [Análise original das imagens e planilha](<MAJUCAU_ANALISE_E_DECISOES_v0.md>).
 - [Backlog atualizado](<MAJUCAU_BACKLOG_DETALHADO_v1.md>).
 

@@ -1214,7 +1214,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 ## Fontes e preservação
 
-- [Fechamento enviado pelo usuário](<../FONTES.md#fechamento-das-questoes>).
+- [Fechamento enviado pelo usuário](<../../../docs/planejamento/FONTES.md#fechamento-das-questoes>).
 - Confirmação posterior do usuário: somente atualizar o backlog.
 - [Backlog vigente](<MAJUCAU_BACKLOG_DETALHADO_v2.md>).
 - [Análise original dos mockups e planilha](<MAJUCAU_ANALISE_E_DECISOES_v0.md>), preservada como histórico de leitura; regras superadas não orientam a implementação.

@@ -147,15 +147,17 @@ console.log(view.ndjson);
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!',options:{useRegex:true,maxResults:20},maxChars:1000});console.log(errors.ndjson);
 const previewDir=path.resolve(base,'..','..','artifacts','verification','backlog-v2');
 await fs.mkdir(previewDir,{recursive:true});
+const outputDir=path.resolve(base,'..','..','artifacts','planejamento','outputs');
+await fs.mkdir(outputDir,{recursive:true});
 for(const [name,range] of [['Evolucao','A1:G35'],['Tarefas','A1:N12'],['Decisoes','A94:F99'],['Verificacoes','A84:F88'],['Cobertura','A1:E11']]){
  const png=await wb.render({sheetName:name==='Verificacoes'?'Decisoes':name,range,scale:1,format:'png'});
  await fs.writeFile(path.join(previewDir,name+'.png'),new Uint8Array(await png.arrayBuffer()));
 }
 const file=await SpreadsheetFile.exportXlsx(wb);
-await file.save(path.join(base,'outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx'));
+await file.save(path.join(outputDir,'MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx'));
 // O artifact-tool grava a última inspeção ao lado da planilha. Mova-a para
 // artifacts/ para manter as saídas temporárias centralizadas fora de outputs/.
-const inspectOutput=path.join(base,'outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx.inspect.ndjson');
+const inspectOutput=path.join(outputDir,'MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx.inspect.ndjson');
 const inspectArchive=path.join(previewDir,'MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx.inspect.ndjson');
 if(await fs.access(inspectOutput).then(()=>true).catch(()=>false)){
  await fs.rm(inspectArchive,{force:true});

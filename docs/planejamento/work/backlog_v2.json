@@ -820,13 +820,13 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "30%: o worker compõe serviços, limita conexão ao PostgreSQL e encerra de forma controlada; a saúde verifica conexão e quatro tabelas essenciais com códigos sanitizados. CI 38373291264 passou. Faltam permissões completas do worker, configuração de produção e VM limpa. Evidência: docs/evidence/WORKER-DATABASE-SCHEMA-READINESS-2026-10-13.md.",
+    "evidence": "35%: o worker compõe serviços, limita conexão ao PostgreSQL e encerra de forma controlada; a saúde verifica conexão e quatro tabelas essenciais com códigos sanitizados. A CI 38379095626 aplicou database/privileges/runtime.sql em PostgreSQL descartável e confirmou permissões mínimas do papel runtime, bloqueio de alteração direta de RAW/auditoria e acesso apenas às funções de transição aprovadas. Ainda faltam validar provisionamento das permissões na instalação, configuração de produção e operação em VM limpa. Evidências: docs/evidence/WORKER-DATABASE-SCHEMA-READINESS-2026-10-13.md e docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md.",
     "weight": 1,
     "dependencies": [
       "BK-026",
       "BK-017"
     ],
-    "progress": 0.3
+    "progress": 0.35
   },
   {
     "key": "reactfoundation",

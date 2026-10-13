@@ -2,9 +2,9 @@
 
 ## Referência vigente: v2
 
-- [Backlog detalhado](outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md).
-- [Análise e decisões](outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md).
-- [Planilha de evolução](outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx).
+- [Backlog detalhado](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md).
+- [Análise e decisões](../../artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md).
+- [Planilha de evolução](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx).
 - [Limites da arquitetura Go](../architecture/GO-MODULAR-BOUNDARIES.md).
 - Dados estruturados: [tarefas atuais](work/backlog_v2.json), [decisões](work/decisions_v2.json), [cobertura](work/scope_v2.json) e [registro histórico de alterações de 13/09/2026](work/revision_v2.json). O registro histórico não substitui a situação atual das tarefas.
 - [Verificações executadas na preparação original](work/verification_v2.json) e [prévias históricas da planilha](work/previews_v2). Novas prévias temporárias são geradas em `../../artifacts/verification/backlog-v2` e removidas depois da conferência.
@@ -13,14 +13,14 @@
 
 | Versão | Backlog | Análise | Planilha |
 |---|---|---|---|
-| v0 — leitura original | [Documento](outputs/MAJUCAU_BACKLOG_DETALHADO_v0.md) | [Documento](outputs/MAJUCAU_ANALISE_E_DECISOES_v0.md) | [Excel](outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx) |
-| v1 — primeira consolidação | [Documento](outputs/MAJUCAU_BACKLOG_DETALHADO_v1.md) | [Documento](outputs/MAJUCAU_ANALISE_E_DECISOES_v1.md) | [Excel](outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v1.xlsx) |
+| v0 — leitura original | [Documento](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v0.md) | [Documento](../../artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v0.md) | [Excel](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx) |
+| v1 — primeira consolidação | [Documento](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v1.md) | [Documento](../../artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v1.md) | [Excel](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v1.xlsx) |
 
 As v0/v1 conservam dúvidas, interpretações e regras depois substituídas. Consulte a v2 para trabalho futuro. As auditorias [financeira](work/financeiro.md) e [operacional/UX](work/operacao_ux.md) são leituras históricas das imagens.
 
 ## Arquivos de apoio
 
-`work/` conserva dados JSON, extrações das vinte abas, auditorias e scripts de geração/revisão/verificação. Prévia temporária nova e outros outputs de conferência ficam centralizados em `../../artifacts/` e podem ser removidos depois do uso. Esses scripts tratam os artefatos do backlog; não constituem o backend ou frontend do Majucau.
+`work/` conserva dados JSON, extrações das vinte abas, auditorias e scripts de geração/revisão/verificação. Relatórios oficiais versionados ficam em `../../artifacts/planejamento/outputs/`; caches e saídas temporárias ficam sob `../../artifacts/cache/` e `../../artifacts/verification/` e podem ser removidos depois do uso. Esses scripts tratam os artefatos do backlog; não constituem o backend ou frontend do Majucau.
 
 O [manifesto](MANIFESTO.json) relaciona arquivos e hashes SHA-256 deste pacote. Arquivos originais recebidos, dependências instaladas e saídas temporárias de inspeção não estão incluídos. O conteúdo criado a partir das fontes está preservado; os [originais são identificados separadamente](FONTES.md).
 
@@ -40,7 +40,7 @@ Para recriar a planilha v2 a partir dos JSON existentes, em ambiente com a bibli
 node work/build_tracker.mjs
 ```
 
-O comando sobrescreve a planilha v2 e suas prévias; execute somente para atualizar conscientemente esses artefatos. Os scripts de revisão v1/v2 também reconstroem documentos a partir das versões anteriores e exigem o texto fonte correspondente. Não os execute sobre alterações manuais sem antes preservar essas alterações.
+O comando sobrescreve a planilha v2 em `../../artifacts/planejamento/outputs/` e cria prévias temporárias em `../../artifacts/verification/backlog-v2/`; execute somente para atualizar conscientemente esses artefatos. Os scripts de revisão v1/v2 também reconstroem documentos a partir das versões anteriores e exigem o texto fonte correspondente. Não os execute sobre alterações manuais sem antes preservar essas alterações.
 
 `prepare_tracker_v1.py` é um registro histórico da transformação inicial e dependia do gerador v0 daquela etapa, posteriormente substituído. Não faz parte do procedimento atual de regeneração. O gerador v1 final foi preservado em `build_tracker_v1.mjs`; `prepare_tracker_v2.py` produz o gerador v2 a partir dele.
 

@@ -7,7 +7,7 @@
 
 Este documento organiza os sete contextos já listados no backlog e registra o que as decisões e o código atuais permitem afirmar. Ele não define fórmulas, lançamentos contábeis, transições financeiras, telas ou novas funcionalidades. As lacunas ficam explícitas para aprovação antes de virarem comportamento.
 
-Fontes: BK-016 em `docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md`, `G0-DECISION-REGISTER.md`, `AGENTS.md` e `GO-MODULAR-BOUNDARIES.md`.
+Fontes: BK-016 em `artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md`, `G0-DECISION-REGISTER.md`, `AGENTS.md` e `GO-MODULAR-BOUNDARIES.md`.
 
 ## Contextos e responsabilidades registradas
 

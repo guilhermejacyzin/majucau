@@ -15,7 +15,7 @@ Na conferência deste checkout, `build/bin/`, `frontend/dist/` e `tmp/` não exi
 | `artifacts/retained/postgresql-dev/` | Banco de desenvolvimento isolado, credenciais protegidas por DPAPI e logs locais. | Preservar os dados da instalação. Há processos PostgreSQL ativos no Windows, mas não os associei ao diretório nem os parei. |
 | `frontend/node_modules/` | Dependências instaladas do frontend. | Preservar; havia processos Node ativos e não foi possível associá-los com segurança a uma aplicação específica. Não mover nem apagar durante essa execução. |
 | `docs/planejamento/artifacts/cache/` | Junction temporária antiga para o runtime compartilhado, registrada para limpeza manual. | Não apagar nem alterar o destino compartilhado; a remoção manual da junction já está documentada no registro local. |
-| `docs/planejamento/outputs/` | Nove relatórios oficiais v0–v2 em Markdown/Excel, todos versionados no Git e referenciados pela documentação de planejamento. | Manter no local atual até esclarecer se “todos os outputs em um só lugar” inclui também esses documentos oficiais versionados. Mover exige atualizar os links, o manifesto e o processo de geração. |
+| `artifacts/planejamento/outputs/` | Nove relatórios oficiais v0–v2 em Markdown/Excel, versionados no Git e referenciados pela documentação de planejamento. Caches e prévias continuam em subpastas dedicadas de `artifacts/`. | Consolidado em 13/10/2026, conforme instrução da responsável. Links, manifesto, verificador e gerador foram atualizados; os arquivos continuam versionados. |
 
 Temporários sensíveis de execução são uma exceção necessária: devem permanecer em diretório privado e ter limpeza garantida, conforme `AGENTS.md`; colocá-los em uma pasta de artefatos compartilhada poderia reduzir a proteção dos dados.
 
@@ -23,4 +23,4 @@ Temporários sensíveis de execução são uma exceção necessária: devem perm
 
 Esta é uma fotografia do checkout local em 11/10/2026, não uma prova de que todos os processos futuros usarão a pasta central. Nenhuma pasta foi apagada ou movida, nenhum segredo foi lido e nenhum teste de produto foi executado.
 
-**Decisão pendente:** confirmar se os relatórios oficiais em `docs/planejamento/outputs/` também precisam ser fisicamente movidos para a pasta central de artefatos. A mudança pode quebrar links e a geração atual; por isso, não foi feita por inferência.
+**Registro da decisão — 13/10/2026:** a responsável determinou que todos os caches e outputs gerados sejam consolidados em um único local. Os relatórios oficiais permanecem versionados e foram transferidos para `artifacts/planejamento/outputs/`; caches e prévias temporárias permanecem em `artifacts/cache/` e `artifacts/verification/`. Dados locais e caches ativos não foram removidos nesta alteração.

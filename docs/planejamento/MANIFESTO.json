@@ -9,8 +9,58 @@
     },
     {
       "path": ".gitignore",
-      "bytes": 191,
-      "sha256": "029635e92b8839840959d6a3a0a64992a6277032527e762db67e027718e13ae2"
+      "bytes": 384,
+      "sha256": "5b866449ca4c225206692f18c52b3bb643e0b8a641c4db3d4714c0545ecc1350"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v0.md",
+      "bytes": 71160,
+      "sha256": "0f465f3365092a9036ab36602116100daa5ab98ba55c967877ab08e22de6776b"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v1.md",
+      "bytes": 60693,
+      "sha256": "336964809e3a8b6edb3b59b09cb77fa83ef2e9a1cb09290a7c9b421ec6ca5eb6"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md",
+      "bytes": 73542,
+      "sha256": "51e74bc7db7c49bd05ae71036c6b5a9bbe6b8dce6079867e70bcf0488d822041"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v0.md",
+      "bytes": 109134,
+      "sha256": "e0eab53799a878940426937bc10af0a6f5700fe6d3c31e380530dd6e322df305"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v1.md",
+      "bytes": 128726,
+      "sha256": "2ad72a5192b172329db5b4c2108aff1b03b1279c8d6482da3002d4bce50a75bb"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
+      "bytes": 318745,
+      "sha256": "c34a6db6eabb8d01854ddbd3f859efafec10bde82fda9d2c1ebeedc2990447db"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
+      "bytes": 37191,
+      "sha256": "6b44113d7da1607d608cc5f6f875e397b85bed5453ddd05b9728e04f0d1e01b2"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v1.xlsx",
+      "bytes": 42665,
+      "sha256": "fd4228f6ee9acf3861badbf643463b51f10a18c80c64e0d7f01c5c67edebf3e5"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
+      "bytes": 50418,
+      "sha256": "61a2464a92874c1585b722f39d947ab92ebff78761db1ef40511cc2ca4b8b4ff"
+    },
+    {
+      "path": "docs/architecture/DOMAIN-CONTEXT-MAP-v1.md",
+      "bytes": 6224,
+      "sha256": "2debd0a3cea0fd8a9a943972348159ea1c61d24ff51e947632e1e88054694ac4"
     },
     {
       "path": "docs/architecture/GO-MODULAR-BOUNDARIES.md",
@@ -18,9 +68,14 @@
       "sha256": "7ec5245f194a922785b7641bccf35f9b4cb2b9008693664f0030a72d70d6716f"
     },
     {
+      "path": "docs/evidence/BACKLOG-TRACKER-RECONCILIATION-2026-10-13.md",
+      "bytes": 2504,
+      "sha256": "4a20c2706e4278ebefc82feb68d24df7a51ff774438833ab11039ad405cd5a25"
+    },
+    {
       "path": "docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md",
-      "bytes": 20905,
-      "sha256": "2e68113a3a18447113687e3114a18bf64ac4c513b9f1e3ced86fa8d11a4dab97"
+      "bytes": 20910,
+      "sha256": "a8e81a5f219ce74bbebb55deb9f79969653cdcd88ab7b67cf2f5ac2f6b1f898c"
     },
     {
       "path": "docs/evidence/DASHBOARD-REFRESH-AFTER-INTEGRATION-2026-10-12.md",
@@ -38,54 +93,9 @@
       "sha256": "126e6e3bc68b974eefe701cd48de41c7eb37afbb1fdfc3748591c0ae85a9e90e"
     },
     {
-      "path": "docs/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v0.md",
-      "bytes": 71160,
-      "sha256": "0f465f3365092a9036ab36602116100daa5ab98ba55c967877ab08e22de6776b"
-    },
-    {
-      "path": "docs/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v1.md",
-      "bytes": 60669,
-      "sha256": "33d656fee51c8c77598d69d107024223fd891a5e4a22fa870b48e7bbe526f132"
-    },
-    {
-      "path": "docs/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md",
-      "bytes": 73518,
-      "sha256": "1e93d09016e80bec4db17e2ee75120017c23273400ecfd12305cf27637dd8a33"
-    },
-    {
-      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v0.md",
-      "bytes": 109134,
-      "sha256": "e0eab53799a878940426937bc10af0a6f5700fe6d3c31e380530dd6e322df305"
-    },
-    {
-      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v1.md",
-      "bytes": 128726,
-      "sha256": "2ad72a5192b172329db5b4c2108aff1b03b1279c8d6482da3002d4bce50a75bb"
-    },
-    {
-      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 317288,
-      "sha256": "09bcdc42e853d304943a6751b8debbc6ca8f586df3510370aa6b7c6fe7a51442"
-    },
-    {
-      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
-      "bytes": 37191,
-      "sha256": "6b44113d7da1607d608cc5f6f875e397b85bed5453ddd05b9728e04f0d1e01b2"
-    },
-    {
-      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v1.xlsx",
-      "bytes": 42665,
-      "sha256": "fd4228f6ee9acf3861badbf643463b51f10a18c80c64e0d7f01c5c67edebf3e5"
-    },
-    {
-      "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 50271,
-      "sha256": "28e5d98a1c8281ff8b84bb58d67081a367fbf7c5092fc98fee55d4929a09212a"
-    },
-    {
       "path": "docs/planejamento/README.md",
-      "bytes": 4036,
-      "sha256": "5aa3974b23b8a00210a5160e3d1fdcf32a7e681850f794a870519b4a59030ed0"
+      "bytes": 4481,
+      "sha256": "b2cfd5a885230b23586881f2b7fc192ddfdaff47ddc031530512251669dc7110"
     },
     {
       "path": "docs/planejamento/RELATORIOS-CATALOGO-RASCUNHO-2026-10-04.md",
@@ -94,18 +104,13 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 4214,
-      "sha256": "62266c21495530ec28bb4bb8c3f7c4d0cdc98d43199cb6cd1c54fab94f5d7ce7"
+      "bytes": 4301,
+      "sha256": "315d18c3e27d9f17abc49da16146376ef045e21ffebcae95c2221e2224e22a1a"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
       "bytes": 26668,
       "sha256": "ad276c1bf6e3ccd6b86cdec6f93592bd2f0234d44cf44e9cad3792e2ca7e9828"
-    },
-    {
-      "path": "docs/planejamento/work/backlog.json",
-      "bytes": 137628,
-      "sha256": "123619465d3f4a4a18a1151a7974053c5ada26a5681ccc70779b41ee3f125b22"
     },
     {
       "path": "docs/planejamento/work/backlog_v1.json",
@@ -114,8 +119,13 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 190435,
-      "sha256": "42e269399dfd951cc58f080e1af8a3e6b59d193bb571bba1e2e6f45891d60566"
+      "bytes": 190762,
+      "sha256": "281eab84be6ccd575892c61548076ff5f97eb3e36eb4f84e0b29ac23eb29106b"
+    },
+    {
+      "path": "docs/planejamento/work/backlog.json",
+      "bytes": 137628,
+      "sha256": "123619465d3f4a4a18a1151a7974053c5ada26a5681ccc70779b41ee3f125b22"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -123,19 +133,14 @@
       "sha256": "6513c3cc31f6b5357f2a0e89c9ee2dbaf447534f5cee8c66f1e9b541edbc1d9d"
     },
     {
-      "path": "docs/planejamento/work/build_tracker.mjs",
-      "bytes": 13975,
-      "sha256": "b95afe92facfe7713661dc4f882724b5839b6e73194880cfc17f77577616b980"
-    },
-    {
       "path": "docs/planejamento/work/build_tracker_v1.mjs",
       "bytes": 12172,
       "sha256": "1d717fd00b2967c57a052cb8a2f48dc7f2aef44c1469cd1dfd562d6c151a8b96"
     },
     {
-      "path": "docs/planejamento/work/decisions.json",
-      "bytes": 24096,
-      "sha256": "36115aea3b7306fd7dbe854427481daf2fbd845217209aec1db8a04f7cb8c2c3"
+      "path": "docs/planejamento/work/build_tracker.mjs",
+      "bytes": 14096,
+      "sha256": "60ef9be3b5f4d648dc827003ccf2193c6ae7ac6a07e0974ba03186b05a79f912"
     },
     {
       "path": "docs/planejamento/work/decisions_v1.json",
@@ -146,6 +151,11 @@
       "path": "docs/planejamento/work/decisions_v2.json",
       "bytes": 99712,
       "sha256": "c91944175b2adf63dae3224d4b54cd12dec3cef9d55779c94b0ebf6d0de458bd"
+    },
+    {
+      "path": "docs/planejamento/work/decisions.json",
+      "bytes": 24096,
+      "sha256": "36115aea3b7306fd7dbe854427481daf2fbd845217209aec1db8a04f7cb8c2c3"
     },
     {
       "path": "docs/planejamento/work/financeiro.md",
@@ -166,26 +176,6 @@
       "path": "docs/planejamento/work/prepare_tracker_v2.py",
       "bytes": 2637,
       "sha256": "11283f573a31a80c6e63221a92cf9a7b91264b435b2b7edf01f1200b5ec65e34"
-    },
-    {
-      "path": "docs/planejamento/work/previews/Cobertura.png",
-      "bytes": 50900,
-      "sha256": "e43860b7cf79b44cc0842b7d4f3991d5083dcb235e3ee7e0e6e8e15a85e9075f"
-    },
-    {
-      "path": "docs/planejamento/work/previews/Decisoes.png",
-      "bytes": 72889,
-      "sha256": "3cc13a3d1c4a9e7f00c819922cead8c887da281debe9a773ab394161fd1fb21e"
-    },
-    {
-      "path": "docs/planejamento/work/previews/Evolucao.png",
-      "bytes": 166770,
-      "sha256": "ef0a4c0b0cb2d5cf181ed4a309854fb37c0414adac545f2460360b297c0b31e9"
-    },
-    {
-      "path": "docs/planejamento/work/previews/Tarefas.png",
-      "bytes": 72660,
-      "sha256": "72efbe0c78d22d5a3d643528a282ef9df23af569139d8afb3b4403051bc0ee7e"
     },
     {
       "path": "docs/planejamento/work/previews_v1/Cobertura.png",
@@ -238,6 +228,26 @@
       "sha256": "d4aa30496d84b2a90322507046247174ada2c5c59733eb481885d938e78d3782"
     },
     {
+      "path": "docs/planejamento/work/previews/Cobertura.png",
+      "bytes": 50900,
+      "sha256": "e43860b7cf79b44cc0842b7d4f3991d5083dcb235e3ee7e0e6e8e15a85e9075f"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Decisoes.png",
+      "bytes": 72889,
+      "sha256": "3cc13a3d1c4a9e7f00c819922cead8c887da281debe9a773ab394161fd1fb21e"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Evolucao.png",
+      "bytes": 166770,
+      "sha256": "ef0a4c0b0cb2d5cf181ed4a309854fb37c0414adac545f2460360b297c0b31e9"
+    },
+    {
+      "path": "docs/planejamento/work/previews/Tarefas.png",
+      "bytes": 72660,
+      "sha256": "72efbe0c78d22d5a3d643528a282ef9df23af569139d8afb3b4403051bc0ee7e"
+    },
+    {
       "path": "docs/planejamento/work/read_sources.py",
       "bytes": 1253,
       "sha256": "556c6ca45111a35aa238232896bb70aac27dad8d73ab7e6bf22221067b6852d7"
@@ -263,14 +273,14 @@
       "sha256": "3b57cadc236b97a4e5b0d1386fe5f218f8cfad3320930254fa8502edb734f642"
     },
     {
-      "path": "docs/planejamento/work/scope.json",
-      "bytes": 3494,
-      "sha256": "e10f4a2e19655f625a30d24bcb7460415de93f0edb493f8834df41edaa709257"
-    },
-    {
       "path": "docs/planejamento/work/scope_v2.json",
       "bytes": 4420,
       "sha256": "71e79cfe1d03f3efb01ab50e8baedee15a33e231caa93a4042bd4592ae1e5bf0"
+    },
+    {
+      "path": "docs/planejamento/work/scope.json",
+      "bytes": 3494,
+      "sha256": "e10f4a2e19655f625a30d24bcb7460415de93f0edb493f8834df41edaa709257"
     },
     {
       "path": "docs/planejamento/work/source_extract/00_Resumo.txt",
@@ -383,11 +393,6 @@
       "sha256": "036ca03ad2f6f9caf7d690e42ecad5954d39f539c7719bd1a05b93b6049f9209"
     },
     {
-      "path": "docs/planejamento/work/verification.json",
-      "bytes": 428,
-      "sha256": "bbee0c018c5aeacb0741022f47d9a8236dbe374e57fed840405c4ccc727c9404"
-    },
-    {
       "path": "docs/planejamento/work/verification_v1.json",
       "bytes": 444,
       "sha256": "4e8f6e839d1122b1b38c8328f36f2bad2cda63ebc8d6da14066987f45966e366"
@@ -398,14 +403,19 @@
       "sha256": "4c2e6e48c7fef1a3d396788e90dcd0c9d34658d3e2557406e3c1df6124c5472c"
     },
     {
+      "path": "docs/planejamento/work/verification.json",
+      "bytes": 428,
+      "sha256": "bbee0c018c5aeacb0741022f47d9a8236dbe374e57fed840405c4ccc727c9404"
+    },
+    {
       "path": "docs/planejamento/work/verify_deliverables.py",
       "bytes": 3059,
       "sha256": "8da7432f7f07f1524b621e76884d13d5f00010e57043ebb9ffbaa1fafa94f643"
     },
     {
       "path": "docs/planejamento/work/verify_package.py",
-      "bytes": 6643,
-      "sha256": "c9521388e8a468c5d35b560fd2dfb166be07b10c1618c7470db6c70e4d66e98e"
+      "bytes": 6780,
+      "sha256": "4e56421dffc9bf2e239f36517a8e043e67d3390b98ab423f062620fcadc9e8d2"
     },
     {
       "path": "docs/planejamento/work/verify_v1.py",
@@ -428,14 +438,9 @@
       "sha256": "f89c888f5e05cbdf6ba9fc0b565a839a70330b359c0f362c14ef20a93625ac03"
     },
     {
-      "path": "docs/architecture/DOMAIN-CONTEXT-MAP-v1.md",
-      "bytes": 6219,
-      "sha256": "37d089a1e5516222c4aa3b243bcb771bb68979f3378036024db529c2314d3341"
-    },
-    {
-      "path": "docs/evidence/BACKLOG-TRACKER-RECONCILIATION-2026-10-13.md",
-      "bytes": 2504,
-      "sha256": "4a20c2706e4278ebefc82feb68d24df7a51ff774438833ab11039ad405cd5a25"
+      "path": "docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md",
+      "bytes": 1854,
+      "sha256": "8688f6f5de35c81527490bff7e98ee4c845de37ff62c43e3ba892e49b2f7e3b1"
     }
   ]
 }

@@ -14,7 +14,7 @@ Isso não confirma que a conta real esteja conectada ou que uma sincronização 
 - `internal/integrations/bling/api_client.go`: consulta somente leitura usa `https://api.bling.com.br/Api/v3`, `Authorization: Bearer` e `enable-jwt: 1`.
 - `frontend/src/App.tsx`: a área Integrações apresenta as ações “Salvar configuração”, “Conectar”, “Testar conexão” e “Sincronizar agora” separadamente. O painel informa que os dados não são sincronizados automaticamente e exige filtro explícito.
 - `cmd/worker/handler.go`: a operação de sincronização retorna `BLING_SYNC_FILTER_REQUIRED` quando não recebe janela de datas ou situação.
-- `docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md`, BK-039: agendamento e recuperação de trabalho seguem não iniciados. Gisele aprovou atualização diária às 09:30 em `America/Sao_Paulo`, releitura de todas as contas do Bling, processamento independente das fontes disponíveis e pendência dos arquivos ausentes até às 09:30 do dia seguinte. A coleta não pode ser marcada completa até o fim da paginação ser comprovado. Também falta configurar acesso persistente do serviço ao Drive.
+- `artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md`, BK-039: agendamento e recuperação de trabalho seguem não iniciados. Gisele aprovou atualização diária às 09:30 em `America/Sao_Paulo`, releitura de todas as contas do Bling, processamento independente das fontes disponíveis e pendência dos arquivos ausentes até às 09:30 do dia seguinte. A coleta não pode ser marcada completa até o fim da paginação ser comprovado. Também falta configurar acesso persistente do serviço ao Drive.
 
 ## Evidência de execução e limite
 

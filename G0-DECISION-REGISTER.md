@@ -340,4 +340,5 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Pasta compartilhada do Google Drive: `Majucau`.
 - Estrutura de pastas registrada: `01_perdas_operacionais`, `02_nuvem_pago/recebimentos_futuros` e `03_nuvem_envio`.
 - Este registro confirma a localização e os nomes informados para os arquivos externos. O link/ID exato da pasta, a forma de autenticação do sistema e os detalhes de acesso ainda precisam ser configurados; não presumir credenciais ou conexão ativa.
-- Esta decisão registra a estrutura de armazenamento e não altera regras financeiras, telas aprovadas nem os formatos/contratos dos arquivos.
+- **Formatos diários confirmados por:** Gisele, nesta conversa Codex, em 2026-10-13 (America/Sao_Paulo): os arquivos externos incluem planilhas Excel nos formatos XLS e XLSX. Isso autoriza suporte técnico a esses formatos dentro das três estruturas aprovadas; não define abas, colunas, tratamento de fórmulas/células ou significado financeiro. Cada contrato deve ser homologado antes de produzir fatos; nenhuma macro será executada.
+- Esta decisão registra a estrutura de armazenamento e os formatos de arquivo recebidos, sem alterar regras financeiras ou telas aprovadas.

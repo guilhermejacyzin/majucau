@@ -44,8 +44,8 @@
     },
     {
       "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 318745,
-      "sha256": "c34a6db6eabb8d01854ddbd3f859efafec10bde82fda9d2c1ebeedc2990447db"
+      "bytes": 322327,
+      "sha256": "66d36edc984b6315e83ecf7f5a1f3408cce4860a23c333be3f5a721786e95691"
     },
     {
       "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -59,8 +59,8 @@
     },
     {
       "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 50418,
-      "sha256": "61a2464a92874c1585b722f39d947ab92ebff78761db1ef40511cc2ca4b8b4ff"
+      "bytes": 50510,
+      "sha256": "6b2131a9bc1e57c57fbd4f5ab054f2cabce0cab7cd51daca68e18071881cf0b7"
     },
     {
       "path": "docs/architecture/DOMAIN-CONTEXT-MAP-v1.md",
@@ -99,8 +99,8 @@
     },
     {
       "path": "docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md",
-      "bytes": 1854,
-      "sha256": "8688f6f5de35c81527490bff7e98ee4c845de37ff62c43e3ba892e49b2f7e3b1"
+      "bytes": 4423,
+      "sha256": "9f9b6f749450d8468addfffcf671e5c37546f0d3ff82198dac846ba82e64e2f3"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -139,8 +139,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 190762,
-      "sha256": "281eab84be6ccd575892c61548076ff5f97eb3e36eb4f84e0b29ac23eb29106b"
+      "bytes": 192208,
+      "sha256": "0a791ff4402740e0759b30943c2d4f04336fc1d7c3883ffd0188fb0648870003"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",

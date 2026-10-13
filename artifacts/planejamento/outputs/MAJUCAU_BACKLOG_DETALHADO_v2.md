@@ -1107,7 +1107,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-027 — Criar a fundação do backend Go
 
-**Situação:** Em andamento. **Evolução:** 35% (estimativa; o worker Go já compõe os serviços por dependências, limita a conexão PostgreSQL a cinco segundos e encerra pelo contexto de serviço/Named Pipe. A saúde verifica conexão e presença das quatro tabelas essenciais, com timeout total de 1,5 segundo e códigos sanitizados. A CI aplica e confere as permissões mínimas do papel runtime em PostgreSQL descartável, incluindo a proibição de alterar RAW/auditoria diretamente. Ainda faltam validar o provisionamento dessas permissões na instalação, a configuração de produção e a operação em instalação/VM limpa). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 40% (estimativa; o worker Go já compõe os serviços por dependências, limita a conexão PostgreSQL a cinco segundos e encerra pelo contexto de serviço/Named Pipe. A saúde verifica conexão e presença das quatro tabelas essenciais, com timeout total de 1,5 segundo e códigos sanitizados. A CI 38383732688 passou nos quatro grupos e conferiu a lista exata de permissões do papel runtime em PostgreSQL descartável, inclusive bloqueios de exclusão, escrita direta em RAW/auditoria e execução de rotinas não aprovadas. Ainda faltam validar o provisionamento dessas permissões na instalação, a configuração de produção e a operação em instalação/VM limpa). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Dispor de processo executável com as fronteiras planejadas.
 
@@ -1424,9 +1424,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Impedir execução concorrente duplicada da mesma carga
 3. Aplicar cancelamento, timeout e retomada após reinício
 4. Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.
-5. Programar a atualização diária às 09:30 em `America/Sao_Paulo`. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Se um arquivo chegar depois das 09:30, mantê-lo pendente até a atualização das 09:30 do dia seguinte; não iniciar uma coleta fora do horário por esse motivo. Para o Bling, reler diariamente todas as Contas a Receber e Contas a Pagar, sem limitar a coleta automática por data; só declarar a carga completa quando o término da paginação estiver comprovado. Isso substitui a antiga coleta por alterações/checkpoint e a restrição aos próximos 60 dias. Os filtros manuais permanecem conforme decisão aprovada. Definir e aprovar um meio seguro de leitura persistente das pastas Drive pelo serviço antes de ativar a coleta de arquivos.
+5. Programar a atualização diária às 09:30 em `America/Sao_Paulo`. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Se um arquivo chegar depois das 09:30, mantê-lo pendente até a atualização das 09:30 do dia seguinte; não iniciar uma coleta fora do horário por esse motivo. Para o Bling, reler diariamente todas as Contas a Receber e Contas a Pagar, sem limitar a coleta automática por data; usar checkpoint apenas para retomar páginas confirmadas após interrupção e só declarar a carga completa quando o término da paginação estiver comprovado. Os filtros manuais permanecem conforme decisão aprovada. Definir e aprovar um meio seguro de leitura persistente das pastas Drive pelo serviço antes de ativar a coleta de arquivos.
 
-**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em `America/Sao_Paulo`; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica `PENDING` e o último dado válido nunca é mostrado como atual; um arquivo que chegar após 09:30 só é processado na execução das 09:30 do dia seguinte; o Bling relê diariamente todas as Contas a Receber e Contas a Pagar e só conclui com evidência de que todas as páginas foram percorridas; o acesso às pastas Drive é autorizado, seguro e persistente.
+**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em `America/Sao_Paulo`; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica `PENDING` e o último dado válido nunca é mostrado como atual; um arquivo que chegar após 09:30 só é processado na execução das 09:30 do dia seguinte; o Bling relê diariamente todas as Contas a Receber e Contas a Pagar e só conclui com evidência de que todas as páginas foram percorridas; checkpoint permite retomar a carga interrompida sem reduzir o escopo diário; o acesso às pastas Drive é autorizado, seguro e persistente.
 
 **Impacto:** Sustenta sincronização e reprocessamento local.
 
@@ -1511,11 +1511,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Como fazer:**
 
 1. Configurar a identidade e os identificadores reais da pasta/estruturas; limitar leitura a 01_perdas_operacionais, 02_nuvem_pago/recebimentos_futuros e 03_nuvem_envio.
-2. Detectar arquivos, obter conteúdo consistente e calcular hash local; se houver alteração durante a leitura, não publicar lote parcial.
-3. Guardar controle e cópia de evidência necessária no armazenamento interno, conforme retenção homologada; nunca criar, mover, renomear, excluir, sobrescrever ou editar arquivos na origem.
-4. Tratar permissão revogada, indisponibilidade de rede e versão corrigida com diagnóstico e retomada interna.
+2. Reconhecer CSV, TSV, JSON, XLS e XLSX nas três estruturas; manter arquivos Excel pendentes até que o parser e o contrato de cada estrutura estejam homologados.
+3. Detectar arquivos, obter conteúdo consistente e calcular hash local; se houver alteração durante a leitura, não publicar lote parcial.
+4. Guardar controle e cópia de evidência necessária no armazenamento interno, conforme retenção homologada; nunca criar, mover, renomear, excluir, sobrescrever ou editar arquivos na origem.
+5. Tratar permissão revogada, indisponibilidade de rede e versão corrigida com diagnóstico e retomada interna.
 
-**Critério de aceite:** Leitura funciona com permissão somente de leitura; processar e reprocessar não altera nenhum arquivo do Drive. Arquivo parcial ou fora do contrato não produz fatos publicados.
+**Critério de aceite:** Leitura funciona com permissão somente de leitura; identifica CSV, TSV, JSON, XLS e XLSX nas três estruturas; processar e reprocessar não altera nenhum arquivo do Drive. Arquivo parcial ou fora do contrato não produz fatos publicados.
 
 **Impacto:** Protege os originais e mantém a trilha de importação dentro do Majucau.
 
@@ -1538,9 +1539,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 1. Validar colunas, encoding, separadores, datas, moeda e sinais
 2. Distinguir célula vazia, zero e conteúdo inválido
 3. Registrar rejeições por linha e rejeição total quando o contrato exigir
-4. Vincular parsers do Drive exclusivamente às três estruturas aprovadas. Se necessária após BK-040, implementar também interpretação da exportação estruturada oficial de investimentos do Bling recebida internamente por BK-041, fora do Drive; não habilitar fontes ilustrativas antigas.
+4. Implementar leitura de XLS e XLSX em fluxo, com limites de memória, tamanho compactado/descompactado, linhas, colunas, abas e células; não executar macros. Arquivos seguem pendentes até homologar a aba, cabeçalhos e tratamento de valores de cada estrutura.
+5. Vincular parsers do Drive exclusivamente às três estruturas aprovadas. Se necessária após BK-040, implementar também interpretação da exportação estruturada oficial de investimentos do Bling recebida internamente por BK-041, fora do Drive; não habilitar fontes ilustrativas antigas.
 
-**Critério de aceite:** Amostras válidas produzem registros esperados; arquivo incompatível explica o erro sem produzir números parciais ocultos. A alternativa oficial, quando necessária, tem parser e recepção atribuídos, com proveniência e deduplicação por BK-044; não cria uma quarta estrutura no Drive.
+**Critério de aceite:** Amostras válidas CSV, TSV, JSON, XLS e XLSX produzem registros esperados somente após homologação do contrato; importação de Excel respeita limites de leitura/extração e não executa macros; arquivo incompatível explica o erro sem produzir números parciais ocultos. A alternativa oficial, quando necessária, tem parser e recepção atribuídos, com proveniência e deduplicação por BK-044; não cria uma quarta estrutura no Drive.
 
 **Impacto:** Evita erros silenciosos de importação.
 
@@ -3947,3 +3949,18 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-027 avança de 30% para 35% (65% restante). Ainda faltam confirmar que o instalador configura esse papel corretamente, completar a configuração de produção e validar em VM limpa. Este teste não usa nem altera o PostgreSQL local da Majucau.
 - O backlog segue com 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas; média estimada de 11,0% concluída e 89,0% restante. Não há prazo global confiável.
 - Nenhuma tela aprovada ou regra financeira foi alterada. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
+
+### Allowlist do papel PostgreSQL do worker — 13/10/2026
+
+- A revisão removeu a permissão ampla de leitura, gravação e exclusão em todas as tabelas. O worker agora recebe apenas as permissões necessárias para as relações que consulta e atualiza. A auditoria e o RAW não podem ser alterados diretamente; o worker executa somente a função controlada que encerra a versão anterior de um registro RAW.
+- O verificador também confere acessos por coluna, funções e procedimentos, propriedade de objetos, sequências e tentativas de escrita proibidas. A CI [38383732688](https://github.com/guilhermejacyzin/majucau/actions/runs/38383732688) passou nos quatro grupos, incluindo PostgreSQL e Windows. O primeiro envio foi barrado pela regra de formato da mensagem do commit; a mensagem foi corrigida e a CI atual confirmou os campos obrigatórios.
+- BK-027 avança de 35% para 40% (60% restante). Ainda faltam conferir que o instalador aplica essa lista de permissões, concluir a configuração de produção e validar o sistema numa VM limpa. A política SQL não foi aplicada ao banco local nem a qualquer banco com dados financeiros.
+- O backlog continua com 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas. A média estimada passa a 11,1% concluída e 88,9% restante; não indica prontidão para produção nem permite prever uma data final.
+- Nenhuma tela aprovada, regra de negócio ou regra financeira foi alterada. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
+
+### Escopo diário do Bling e arquivos Excel no Drive — 13/10/2026
+
+- O JSON do backlog foi alinhado ao registro de decisões: a atualização diária do Bling relê todas as Contas a Receber e a Pagar. Checkpoints servem somente para retomar uma carga interrompida; não restringem os dados por alterações recentes ou vencimentos próximos. O lote só fecha quando todas as páginas forem confirmadas.
+- Gisele confirmou que os arquivos diários das três pastas aprovadas do Drive também incluem XLS e XLSX. BK-042 e BK-043 agora incluem suporte seguro em fluxo para esses formatos. O conector atual ainda os recusa; continuam pendentes o parser, os limites de extração e a homologação das abas, cabeçalhos e valores. Nenhuma planilha é tratada como fato financeiro até a aprovação do respectivo contrato.
+- BK-039, BK-042 e BK-043 permanecem com o progresso já medido; esta atualização corrige o escopo e não conta suporte Excel ainda não implementado como concluído. A média estimada do projeto permanece em 11,1% concluída e 88,9% restante.
+- Nenhuma tela aprovada, regra de negócio ou regra financeira foi alterada. Evidências: `G0-DECISION-REGISTER.md`, `REQUIREMENTS-TRACEABILITY.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.

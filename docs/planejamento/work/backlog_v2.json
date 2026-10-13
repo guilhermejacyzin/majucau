@@ -820,13 +820,13 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "35%: o worker compõe serviços, limita conexão ao PostgreSQL e encerra de forma controlada; a saúde verifica conexão e quatro tabelas essenciais com códigos sanitizados. A CI 38379095626 aplicou database/privileges/runtime.sql em PostgreSQL descartável e confirmou permissões mínimas do papel runtime, bloqueio de alteração direta de RAW/auditoria e acesso apenas às funções de transição aprovadas. Ainda faltam validar provisionamento das permissões na instalação, configuração de produção e operação em VM limpa. Evidências: docs/evidence/WORKER-DATABASE-SCHEMA-READINESS-2026-10-13.md e docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md.",
+    "evidence": "40%: o worker compõe serviços, limita conexão ao PostgreSQL e encerra de forma controlada; a saúde verifica conexão e quatro tabelas essenciais com códigos sanitizados. A CI 38383732688 passou nos quatro grupos e confirmou em PostgreSQL descartável a lista exata de leitura/escrita, bloqueio de exclusão e de gravação direta em RAW/auditoria, ausência de acessos por coluna ou sequências e execução somente da função de encerramento de versão RAW. Ainda faltam validar o provisionamento dessas permissões na instalação, a configuração de produção e a operação em VM limpa. Evidências: docs/evidence/WORKER-DATABASE-SCHEMA-READINESS-2026-10-13.md e docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md.",
     "weight": 1,
     "dependencies": [
       "BK-026",
       "BK-017"
     ],
-    "progress": 0.35
+    "progress": 0.4
   },
   {
     "key": "reactfoundation",
@@ -1202,9 +1202,9 @@
       "Impedir execução concorrente duplicada da mesma carga",
       "Aplicar cancelamento, timeout e retomada após reinício",
       "Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.",
-      "Programar a atualização diária para 09:30 em America/Sao_Paulo. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Para o Bling, buscar alterações desde o último checkpoint confirmado e manter atualizadas as contas com vencimento nos próximos 60 dias, após validar esses filtros no contrato oficial. Definir e aprovar um meio seguro de leitura persistente das pastas Drive pelo serviço antes de ativar a coleta de arquivos."
+      "Programar a atualização diária para 09:30 em America/Sao_Paulo. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Se um arquivo chegar após 09:30, mantê-lo pendente até a atualização das 09:30 do dia seguinte; não iniciar coleta fora do horário por esse motivo. Para o Bling, reler diariamente todas as Contas a Receber e Contas a Pagar, sem limitar a coleta automática por data; usar checkpoint apenas para retomar páginas confirmadas após interrupção e só fechar a carga quando o fim de todas as páginas estiver comprovado. Os filtros manuais permanecem conforme decisão aprovada. Definir e aprovar um meio seguro de leitura persistente das pastas Drive pelo serviço antes de ativar a coleta de arquivos."
     ],
-    "accept": "Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em America/Sao_Paulo; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica PENDING e o último dado válido nunca é mostrado como atual; a consulta Bling usa o último checkpoint confirmado e a janela aprovada de vencimentos D0–D+60 com contrato oficial validado; o acesso às pastas Drive é autorizado, seguro e persistente.",
+    "accept": "Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em America/Sao_Paulo; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica PENDING e o último dado válido nunca é mostrado como atual; um arquivo que chegar após 09:30 só é processado na execução das 09:30 do dia seguinte; o Bling relê diariamente todas as Contas a Receber e Contas a Pagar e só conclui com evidência de que todas as páginas foram percorridas; checkpoint permite retomar a carga interrompida sem reduzir o escopo diário; o acesso às pastas Drive é autorizado, seguro e persistente.",
     "impact": "Sustenta sincronização e reprocessamento local.",
     "deps": [
       "gofoundation",
@@ -1304,11 +1304,12 @@
     "action": "Construir adaptador de leitura do Drive e área de processamento dentro do Majucau.",
     "steps": [
       "Configurar a identidade e os identificadores reais da pasta/estruturas; limitar leitura a 01_perdas_operacionais, 02_nuvem_pago/recebimentos_futuros e 03_nuvem_envio.",
+      "Reconhecer CSV, TSV, JSON, XLS e XLSX nas três estruturas; manter arquivos Excel pendentes até que o parser e o contrato de cada estrutura estejam homologados.",
       "Detectar arquivos, obter conteúdo consistente e calcular hash local; se houver alteração durante a leitura, não publicar lote parcial.",
       "Guardar controle e cópia de evidência necessária no armazenamento interno, conforme retenção homologada; nunca criar, mover, renomear, excluir, sobrescrever ou editar arquivos na origem.",
       "Tratar permissão revogada, indisponibilidade de rede e versão corrigida com diagnóstico e retomada interna."
     ],
-    "accept": "Leitura funciona com permissão somente de leitura; processar e reprocessar não altera nenhum arquivo do Drive. Arquivo parcial ou fora do contrato não produz fatos publicados.",
+    "accept": "Leitura funciona com permissão somente de leitura; identifica CSV, TSV, JSON, XLS e XLSX nas três estruturas; processar e reprocessar não altera nenhum arquivo do Drive. Arquivo parcial ou fora do contrato não produz fatos publicados.",
     "impact": "Protege os originais e mantém a trilha de importação dentro do Majucau.",
     "deps": [
       "filecontracts",
@@ -1321,7 +1322,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "40%: a ponte do Site lista arquivos em páginas e baixa em fluxo, calcula hash, confere a versão e grava staging em blocos. Faltam credencial e pasta reais do Drive, importação controlada, confirmar leitura somente, agenda diária, medição de carga e VM limpa. Evidência: docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md.",
+    "evidence": "40%: a ponte do Site lista arquivos em páginas e baixa em fluxo, calcula hash, confere a versão e grava staging em blocos. Gisele confirmou em 13/10/2026 que os arquivos diários incluem XLS/XLSX, ainda recusados pela ponte. Faltam credencial e pasta reais do Drive, parser de Excel seguro em fluxo, importação controlada, confirmar leitura somente, agenda diária, medição de carga e VM limpa. Evidência: docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md.",
     "weight": 1,
     "dependencies": [
       "BK-010",
@@ -1342,9 +1343,10 @@
       "Validar colunas, encoding, separadores, datas, moeda e sinais",
       "Distinguir célula vazia, zero e conteúdo inválido",
       "Registrar rejeições por linha e rejeição total quando o contrato exigir",
+      "Implementar leitura de XLS e XLSX em fluxo, com limites de memória, tamanho compactado/descompactado, linhas, colunas, abas e células; não executar macros. Arquivos seguem pendentes até homologar a aba, cabeçalhos e tratamento de valores de cada estrutura.",
       "Vincular parsers do Drive exclusivamente às três estruturas aprovadas. Se necessária após BK-040, implementar também interpretação da exportação estruturada oficial de investimentos do Bling recebida internamente por BK-041, fora do Drive; não habilitar fontes ilustrativas antigas."
     ],
-    "accept": "Amostras válidas produzem registros esperados; arquivo incompatível explica o erro sem produzir números parciais ocultos. A alternativa oficial, quando necessária, tem parser e recepção atribuídos, com proveniência e deduplicação por BK-044; não cria uma quarta estrutura no Drive.",
+    "accept": "Amostras válidas CSV, TSV, JSON, XLS e XLSX produzem registros esperados somente após homologação do contrato; importação de Excel respeita limites de leitura/extração e não executa macros; arquivo incompatível explica o erro sem produzir números parciais ocultos. A alternativa oficial, quando necessária, tem parser e recepção atribuídos, com proveniência e deduplicação por BK-044; não cria uma quarta estrutura no Drive.",
     "impact": "Evita erros silenciosos de importação.",
     "deps": [
       "fileingestion"
@@ -1354,7 +1356,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "40%: estruturas CSV/TSV/JSON são lidas em fluxo com limites e staging; arquivos XLS/XLSX são recusados e nenhuma linha vira fato financeiro antes de aprovação do layout. Faltam contratos aprovados e amostras reais autorizadas, carga e ensaio em VM limpa. Evidência: docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md.",
+    "evidence": "40%: estruturas CSV/TSV/JSON são lidas em fluxo com limites e staging; arquivos XLS/XLSX ainda são recusados. Gisele confirmou em 13/10/2026 que Excel XLS/XLSX faz parte dos arquivos diários do Drive. Nenhuma linha vira fato financeiro antes de aprovação do layout. Faltam parser seguro de Excel, contratos aprovados e amostras reais autorizadas, carga e ensaio em VM limpa. Evidência: docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md.",
     "weight": 1,
     "dependencies": [
       "BK-042"

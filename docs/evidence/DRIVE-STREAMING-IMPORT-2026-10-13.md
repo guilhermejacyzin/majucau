@@ -33,6 +33,7 @@ Chamadas externas repetíveis são somente GET e usam no máximo três tentativa
 - Executar uma importação controlada com arquivos reais e sanitizados, conferir cada layout e aprovar os contratos antes de produzir fatos.
 - Confirmar permissão somente de leitura e a rotina diária de 09:30; o agendador ainda não foi criado.
 - Medir pico de memória/carga em arquivo real e exercitar falha de rede, retomada e limpeza em VM limpa.
-- XLS/XLSX continuam sem parser e são recusados; CSV, TSV e JSON são apenas classificados e mantidos pendentes até a decisão de cada layout.
+- Em 13/10/2026, Gisele confirmou que os arquivos diários do Drive também incluem Excel XLS e XLSX. Esses formatos continuam sem parser e são recusados; o requisito foi registrado em BK-042/BK-043. Antes de processá-los, implementar leitura em fluxo com limites de extração/tamanho e homologar a aba, os cabeçalhos e o tratamento dos valores de cada estrutura.
+- CSV, TSV e JSON são apenas classificados e mantidos pendentes até a decisão de cada layout.
 
 Não houve importação dos dados reais do Drive nesta execução. Nenhuma tela aprovada, fórmula, regra financeira ou regra de negócio foi alterada. `DATA-04` permanece `PARTIAL`.

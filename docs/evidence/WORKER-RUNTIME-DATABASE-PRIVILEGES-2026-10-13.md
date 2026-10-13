@@ -32,3 +32,10 @@ Nenhuma tela aprovada, regra de negócio ou regra financeira foi alterada.
 A revisão das consultas de produção encontrou uma concessão ampla: `majucau_runtime` recebia leitura, inclusão, alteração e exclusão em todas as tabelas do esquema, embora o código atual só grave dados de integração. O papel agora recebe somente a leitura das dez relações usadas pelos fluxos existentes e as operações de escrita específicas de configuração/status, lotes, cursores, RAW, recebimentos e recebíveis futuros. Exclusão, escrita em auditoria, tabelas contábeis e catálogo de acesso ficam bloqueados. A função de redação RAW não é executável pelo worker até haver uma operação autenticada que a use.
 
 O verificador foi ajustado para conferir, relação por relação, as permissões exatas de leitura e escrita, inclusive acessos concedidos por coluna; propriedade de objetos; execução de funções, procedimentos e demais rotinas; ausência de privilégios em sequências; e bloqueio de inclusão direta na auditoria. A nova versão aguarda a primeira execução completa da CI depois do push; ainda não foi aplicada ao banco local, a qualquer instalação nem a banco com dados da Majucau.
+
+## Resultado da política revisada — 13/10/2026
+
+- A CI [38383732688](https://github.com/guilhermejacyzin/majucau/actions/runs/38383732688) passou nos quatro grupos: backlog, detecção de mudanças, Windows e PostgreSQL.
+- O PostgreSQL descartável confirmou as permissões exatas de leitura e escrita, a ausência de exclusões, acessos por coluna, privilégios em sequências e rotinas públicas indevidas, além do bloqueio a alterações diretas em RAW/auditoria.
+- BK-027 avança de 35% para 40% (60% restante). O provisionamento dessas permissões no instalador, a configuração de produção e o ensaio em VM limpa continuam pendentes. O banco local não foi alterado.
+- A estimativa geral, pela média simples das 127 tarefas, passa de 11,0% para 11,1% concluída (88,9% restante). Nenhuma tela aprovada ou regra financeira foi alterada.

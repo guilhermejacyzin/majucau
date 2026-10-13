@@ -3819,6 +3819,14 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-041 continua em 69% (31% restante), pendente de validar a ponte, autorizar e conectar a conta, confirmar paginação e homologar uma sincronização real. A estimativa global continua em 10,2% concluída (89,8% restante), sem prazo total confiável.
 - Próximo passo: confirmar se a ponte entrega a autorização ao aplicativo Majucau aberto no computador, ou disponibilizar o código da ponte para revisão. Evidência: `docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md`.
 
+### Revisão do retorno OAuth e migração JWT da ponte — 13/10/2026
+
+- O código do Site foi revisado. Um teste de autorização chegou à página “Bling conectado”, mas o fluxo termina no Site público: ele protege o token no banco do Site e não tem rota para consultar dados financeiros e encaminhá-los ao Majucau local.
+- Corrigido e publicado o Site v10 para usar o endereço e o cabeçalho JWT novos do Bling, limitar a leitura da resposta de token a 64 KiB e remover o código temporário da barra de endereço após a autorização. As 14 verificações automatizadas existentes e a validação do pacote passaram. A tela de sucesso e as telas aprovadas do Majucau continuam iguais; regras financeiras não mudaram.
+- O callback HTTPS do Site continua diferente do callback local `http://127.0.0.1:<porta>/<caminho>` que o Majucau aceita. A autorização feita no Site não conectou o aplicativo local nem importou contas. A documentação técnica está em `docs/evidence/BLING-BRIDGE-JWT-MIGRATION-2026-10-13.md`.
+- BK-041 permanece em 69% (31% restante), pois faltam um caminho de autorização para o Majucau local, confirmar paginação e homologar a sincronização real. O backlog permanece estimado em 10,2% concluído (89,8% restante), sem prazo total confiável.
+- Próximo passo do protótipo: confirmar no cadastro do Bling se ele aceita o retorno local `http://127.0.0.1:43821/callback`; se aceitar, cadastrar esse endereço e usar o mesmo no Majucau. Não enviar segredo ou senha pelo chat. Se não aceitar, será necessário desenhar um encaminhamento autenticado entre o Site e o programa local antes de implementar.
+
 ### Cobertura das migrations no instalador NSIS — 12/10/2026
 
 - A revisão estática encontrou que o manifesto listava todas as migrations SQL, enquanto o trecho NSIS copiava só `000001_init.up.sql` para a conferência do pacote. O instalador agora incorpora todos os arquivos `*.sql` antes de validar o manifesto; migrations seguem sem execução durante essa etapa.

@@ -1,5 +1,7 @@
 # Diagnóstico do fluxo de dados do Bling — 2026-10-12
 
+> Atualização de 13/10/2026: ver `BLING-BRIDGE-JWT-MIGRATION-2026-10-13.md` para a revisão da ponte publicada no Site v10. A autorização chegou ao Site, mas ainda não há entrega de dados financeiros ao Majucau local.
+
 ## Conclusão desta revisão
 
 A integração Bling está implementada no código do Majucau. O código também inclui o cabeçalho `enable-jwt: 1` na troca/renovação de tokens e nas consultas autenticadas, conforme o guia de migração JWT do Bling.

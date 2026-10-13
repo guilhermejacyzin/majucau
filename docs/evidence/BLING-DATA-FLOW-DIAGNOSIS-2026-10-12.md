@@ -116,4 +116,5 @@ Não foram alterados código, telas, regras financeiras, credenciais ou dados. N
 - A consulta somente de leitura ao inventário de Sites encontrou um Site ativo e público destinado à ponte Bling. A versão mais recente publicada é a 9; não há repositório de código conectado para inspecionar sua implementação.
 - A consulta aos registros recentes do Site não encontrou chamadas no período consultado. Isso não prova que a ponte esteja quebrada, mas também não comprova que ela encaminhe `code` e `state` ao Majucau local.
 - O worker do Majucau continua aceitando somente um callback local `http://127.0.0.1:<porta>/<caminho>`. Ainda falta confirmar o comportamento da ponte ou obter seu código para revisão antes de alterar o OAuth.
+- Quando perguntada se a ponte encaminha a autorização ao Majucau aberto no computador, Gisele respondeu que não sabe. Portanto, o endereço cadastrado não é tratado como prova de que a conexão funciona.
 - Nenhuma chamada de autorização foi iniciada, nenhum segredo foi consultado e nenhuma configuração ou tela foi modificada. Nenhuma regra financeira foi afetada.

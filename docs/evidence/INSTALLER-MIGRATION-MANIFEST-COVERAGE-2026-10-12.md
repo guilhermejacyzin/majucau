@@ -12,4 +12,6 @@ Essa correção só afeta a composição e a conferência dos arquivos do pacote
 
 ## Limites
 
-A conferência foi estática: comparei o padrão de arquivos gerado pelo manifesto com o arquivo que o NSIS copiava antes. Não executei testes ou build localmente. A CI acionada pelo push deve confirmar a compilação e os verificadores existentes; a instalação em uma máquina limpa continua pendente.
+A comparação inicial foi estática; não executei testes ou build localmente. A CI `38337400706` passou nos quatro grupos. A etapa Windows compilou o NSIS e passou pelo smoke de instalação e remoção do instalador; também passou a compilação do aplicativo e os verificadores existentes. A verificação com PostgreSQL e o backlog também passaram.
+
+Isso confirma a montagem do pacote e seu smoke automatizado, mas não substitui a instalação em uma máquina limpa Windows 10/11 com PostgreSQL dedicado. O artefato unsigned dessa CI foi mantido temporariamente para validação manual e está registrado no arquivo local `artifacts/retained/cleanup-register.md`.

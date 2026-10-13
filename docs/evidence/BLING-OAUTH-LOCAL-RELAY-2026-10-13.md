@@ -45,3 +45,10 @@ BK-041 foi atualizado de 69% para 75% (25% restante): o caminho do retorno OAuth
 - Esta conferência confirma a correspondência do endereço, não uma autorização real nem uma sincronização. A tentativa de abrir o cadastro do Bling no Chrome foi recusada por uma preferência de segurança salva; nenhum caminho alternativo foi usado.
 - Continuam pendentes salvar no Majucau as credenciais do aplicativo, concluir a autorização, testar a conexão e homologar uma sincronização real. Client Secret, senha e tokens não foram consultados nem registrados.
 - BK-041 permanece em 75% (25% restante). A média do backlog é 10,9% concluída (89,1% restante). Nenhuma tela, regra financeira ou configuração da conta foi alterada.
+
+## Conferência da atividade local — 13/10/2026
+
+- Revisei novamente o log sanitizado do worker local. Ele tem 28 registros válidos; as operações registradas são consultas de saúde, estado das integrações e painel. Não há início de OAuth, teste de conexão ou sincronização do Bling nesta sessão.
+- Portanto, os dados ainda não foram pedidos à API nessa execução. Isso não demonstra falha da API: mostra que o fluxo de conectar/testar/sincronizar ainda não foi iniciado no protótipo.
+- O próximo passo operacional é salvar no Majucau as configurações do aplicativo Bling e usar **Conectar**, **Testar conexão** e **Sincronizar agora**, nessa ordem. A senha usada para entrar no site do Bling é diferente do Client Secret da integração; não enviar o Client Secret pelo chat.
+- BK-041 permanece em 75% (25% restante), porque ainda faltam uma autorização real, teste, leitura paginada e conferência dos dados importados. Não alterei telas, regras financeiras, credenciais ou configurações externas.

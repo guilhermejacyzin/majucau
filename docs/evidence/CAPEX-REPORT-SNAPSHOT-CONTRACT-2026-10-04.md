@@ -69,3 +69,11 @@ O leitor do painel transmite linhas tipadas de recebíveis, recebimentos, contas
 - A tentativa de abrir o Bling no Chrome foi bloqueada por uma preferência de segurança salva. Nenhum contorno foi tentado; esta revalidação usou somente os PDFs fornecidos.
 - Os valores e nomes de fornecedores dos documentos foram omitidos deste registro. Os originais continuam preservados na pasta privada local, fora do Git.
 - As cinco imagens temporárias usadas na inspeção visual foram removidas com a rotina segura do projeto; o registro local de limpeza contém os detalhes.
+
+## Rechecagem dos PDFs reenviados — 2026-10-12
+
+- Os arquivos atuais do Downloads foram conferidos novamente. `Bling - Relatório de Contas a Pagar.pdf` cobre 01/01/2026 a 30/11/2026; `Bling - Relatório de Contas a Pagar Geral.pdf` cobre 01/01/2026 a 30/09/2026. Ambos têm quatro páginas.
+- A inspeção visual das páginas e a busca no conteúdo das quatro páginas de cada arquivo confirmam que os PDFs listam histórico, vencimento, liquidação, situação e valor pago, mas não incluem categoria CAPEX por lançamento.
+- Correção de entendimento: **CAPEX aparece, sim, no resumo agrupado por categoria enviado em print**. O que esses dois PDFs não mostram é o vínculo entre a categoria CAPEX e cada pagamento, nem o período do filtro do print. Portanto, o CAPEX não está ausente dos relatórios do Bling; a evidência recebida ainda não identifica qual valor do resumo corresponde ao card mensal e qual corresponde ao acumulado desde o início.
+- Os cards `CAPEX PAGO NO MÊS` e `CAPEX ACUMULADO` já existem fora da tabela da DRE. O contrato do snapshot aceita as duas métricas, mas o leitor/backend ainda não as preenche; sem período e origem conciliáveis, continuam mostrando `—`.
+- Não foram copiados para o repositório valores, fornecedores, documentos ou credenciais. Os PDFs originais continuam fora do Git. Nenhuma tela ou regra financeira foi alterada.

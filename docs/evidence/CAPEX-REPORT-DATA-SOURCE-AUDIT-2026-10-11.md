@@ -58,3 +58,13 @@ O schema da lista documenta `data[]`, mas não documenta limite de página, tota
 `/caixas` informa movimentação de caixa e não prova, sozinho, o total de CAPEX reconhecido como investimento. Portanto, a rota de caixa pode apoiar o card pago mensal; o card acumulado continua dependendo da fonte de CAPEX reconhecido, do histórico completo e da reconciliação contábil. Não somar os dois conceitos nem tratar uma transferência ou lançamento genérico como CAPEX.
 
 Referência: [OpenAPI oficial atual do Bling — `GET /caixas`](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) e [changelog oficial de formato de datas de `/caixas`](https://developer.bling.com.br/changelogs).
+
+## Conferência visual complementar dos PDFs enviados — 13/10/2026
+
+- Revisei visualmente as oito páginas das duas cópias atuais dos relatórios. Nas linhas individuais aparecem fornecedor, histórico, número do documento, vencimento, liquidação, situação e valor pago; não há coluna de categoria CAPEX.
+- O print do relatório agrupado mostra CAPEX e subcategorias, mas não liga esse agrupamento a cada linha paga dos PDFs. Isso confirma que o resumo não deve ser usado como se trouxesse data e pagamento por item, nem os PDFs como se trouxessem categoria por item.
+- Sem essa ligação, os PDFs não bastam para calcular com segurança nem o CAPEX pago no mês nem o acumulado reconhecido desde o início do histórico confiável. Não extraí nem registrei nomes de fornecedores, números de documento ou valores financeiros.
+- A suíte local `go test -count=1 ./internal/integrations/bling` passou em 9,494 s e `go vet ./internal/integrations/bling` passou. A variável de banco de integração foi removida apenas no processo de teste, então o teste PostgreSQL de sincronização não foi executado. Isso valida o código sintético do pacote, não a autorização nem a resposta real da conta.
+- As imagens temporárias de revisão foram criadas dentro de `artifacts/tmp/` e removidas com a rotina segura do projeto após a inspeção. Nenhum output de revisão permaneceu.
+
+Nenhuma regra financeira, tela ou dado do Bling foi alterado. Os cards continuam sem valores até a integração ser autorizada e os registros poderem ser conciliados.

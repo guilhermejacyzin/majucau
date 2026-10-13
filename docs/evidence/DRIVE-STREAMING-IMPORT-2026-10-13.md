@@ -36,4 +36,23 @@ Chamadas externas repetíveis são somente GET e usam no máximo três tentativa
 - Em 13/10/2026, Gisele confirmou que os arquivos diários do Drive também incluem Excel XLS e XLSX. Esses formatos continuam sem parser e são recusados; o requisito foi registrado em BK-042/BK-043. Antes de processá-los, implementar leitura em fluxo com limites de extração/tamanho e homologar a aba, os cabeçalhos e o tratamento dos valores de cada estrutura.
 - CSV, TSV e JSON são apenas classificados e mantidos pendentes até a decisão de cada layout.
 
+## Investigação técnica de Excel — 13/10/2026
+
+Gisele confirmou que as planilhas `.XLS` e `.XLSX` chegam diariamente. A confirmação registra somente os formatos: não define qual aba usar, nem autoriza interpretar fórmulas, datas, valores ou transformar linhas em dados financeiros.
+
+A ponte atual executa em JavaScript no Cloudflare Workers e recebe o arquivo como `ReadableStream`. Seu leitor não oferece acesso aleatório aos bytes. A documentação do Google Drive permite baixar trechos por `Range`; os Streams do Workers permitem transformar conteúdo em blocos limitados. Isso permite projetar leitura de `.XLSX` por intervalos e análise incremental do XML, mas exige implementar e limitar explicitamente o ZIP, o conteúdo descompactado e as tabelas compartilhadas.
+
+Para `.XLS` (BIFF dentro de OLE/CFB), a busca por intervalo também é necessária para localizar setores do arquivo. Não encontramos um leitor JavaScript maduro que leia `.XLS` em fluxo e seja compatível com o Worker atual. O pacote `go-excel-reader` afirma ler `.XLS` e `.XLSX` linha por linha usando `io.ReadSeeker`, mas está na versão `0.x`, sem importadores conhecidos no pkg.go.dev, e mantém a tabela de textos compartilhados inteira em memória. Não é aprovado como dependência sem auditoria de código, limites e comportamento com arquivos reais. A alternativa Apache POI documenta leitores por eventos e baixo uso de memória para os dois formatos, mas requer um runtime Java, que o Worker atual não possui.
+
+**Recomendação para decisão de arquitetura:** usar o processador Go já existente no Majucau para buscar a fonte autorizada em fluxo, guardá-la temporariamente com proteção local, percorrer as abas e linhas do Excel usando um leitor avaliado, e gravar staging em blocos. A ponte Site continuaria apenas no fluxo de autorização; ela não receberia ou interpretaria dados financeiros. Essa opção evita instalar Java na máquina ou criar um serviço público adicional, mas move a leitura do Drive da ponte Worker para o serviço Go e requer decisões de acesso ao Drive e revisão do parser. Nenhuma implementação foi iniciada antes de confirmar esse limite de arquitetura.
+
+**Ponto para Gisele:** aprovar ou recusar que a leitura das planilhas passe pelo processador Go do Majucau, mantendo a interface e as regras financeiras atuais. Depois disso ainda será necessário decidir, com uma amostra sem dados pessoais, se devem ser percorridas todas as abas ou apenas uma; cada contrato continua pendente até aprovação.
+
+Fontes técnicas consultadas em 13/10/2026:
+
+- [Google Drive: download de arquivos e cabeçalho Range](https://developers.google.com/workspace/drive/api/guides/manage-downloads)
+- [Cloudflare Workers: Streams](https://developers.cloudflare.com/workers/runtime-apis/streams/)
+- [Apache POI: leitores de eventos para HSSF e XSSF](https://poi.apache.org/components/spreadsheet/)
+- [go-excel-reader: documentação e limites declarados](https://pkg.go.dev/github.com/jloor/go-excel-reader@v0.3.0)
+
 Não houve importação dos dados reais do Drive nesta execução. Nenhuma tela aprovada, fórmula, regra financeira ou regra de negócio foi alterada. `DATA-04` permanece `PARTIAL`.

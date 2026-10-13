@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
 import { tooltipCatalog } from './tooltips'
-import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPreviewAdapter, BootstrapAdapter, BootstrapState, DashboardSnapshotAdapter } from './bootstrap'
+import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPreviewAdapter, BootstrapAdapter, BootstrapState, DashboardSnapshotAdapter, NuvemshopConfigAdapter } from './bootstrap'
 
 const connectedBootstrap: BootstrapState = { app_version: '0.1.0-g1', worker: { service: 'majucau-worker', version: 'test-worker', state: 'OK', checked_at: '2026-08-16T12:00:00Z' }, integrations: [{ provider: 'BLING', status: 'CONNECTED', last_success_at: '2026-08-16T11:58:00Z', last_attempt_at: '2026-08-16T11:58:00Z' }, { provider: 'NUVEMSHOP', status: 'PARTIALLY_AVAILABLE' }, { provider: 'NUVEM_PAGO', status: 'UNAVAILABLE' }], checked_at: '2026-08-16T12:00:00Z' }
 const adapterFor = (state: BootstrapState): BootstrapAdapter => ({ getState: () => Promise.resolve(state) })
@@ -184,6 +184,21 @@ describe('shell financeiro', () => {
     await user.type(secret, 'secret-only-in-request')
     await user.click(screen.getByRole('button', { name: 'Salvar configuração' }))
     expect(await screen.findByText('BLING_CONFIG_REJECTED')).toBeInTheDocument()
+    expect(secret).toHaveValue('')
+  })
+
+  it('limpa o Client Secret da Nuvemshop e mantém os campos públicos', async () => {
+    const user = userEvent.setup()
+    let receivedSecret = ''
+    const nuvemshopConfigAdapter: NuvemshopConfigAdapter = { save: async (input) => { receivedSecret = input.client_secret; return { app_id: input.app_id, redirect_uri: input.redirect_uri, secret_configured: true, status: 'NOT_CONFIGURED' } } }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} nuvemshopConfigAdapter={nuvemshopConfigAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    const secret = screen.getAllByLabelText(/Client Secret/)[1]
+    await user.type(secret, 'nuvem-secret-only-in-request')
+    await user.click(screen.getByRole('button', { name: 'Salvar configuração da Nuvemshop' }))
+    expect(receivedSecret).toBe('nuvem-secret-only-in-request')
+    expect(await screen.findByText('Configuração salva')).toBeInTheDocument()
     expect(secret).toHaveValue('')
   })
 

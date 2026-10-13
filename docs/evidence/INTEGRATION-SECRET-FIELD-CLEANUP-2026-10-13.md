@@ -12,7 +12,7 @@ O campo do Client Secret era enviado diretamente ao worker, sem guardá-lo no es
 
 ## Verificação
 
-- `npm test -- --config <configuração temporária isolada> src/App.test.tsx`: 17 testes passaram, incluindo gravação aceita e rejeitada; o segredo foi apagado e os campos públicos permaneceram.
+- `npm test -- --config ../artifacts/cache/<execução>/vitest.config.ts src/App.test.tsx`: 18 testes passaram, incluindo Bling e Nuvemshop com sucesso e rejeição; o segredo foi apagado e os campos públicos permaneceram.
 - `npm run typecheck`: passou.
 - `npm run lint`: passou.
 - Caches e arquivos temporários dos comandos foram isolados em `artifacts/cache/` e removidos ao final. Os caches compartilhados existentes não foram tocados.

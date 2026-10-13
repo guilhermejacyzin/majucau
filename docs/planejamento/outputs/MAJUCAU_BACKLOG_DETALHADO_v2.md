@@ -600,7 +600,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-007 — Especificar as regras da DRE própria do Majucau
 
-**Situação:** Em andamento. **Evolução:** 20% (estimativa de planejamento; os princípios enviados por Gisele estão organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`, incluindo estrutura de classificação, estoque/CPV, máquinas/depreciação, tributos recuperáveis e dados mínimos. Essa documentação preserva as linhas e a tela aprovadas. Ainda faltam validação com a contabilidade, critérios específicos da empresa, mapeamento de contas/eventos e conferência com dados reais). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações + Contabilidade.
+**Situação:** Em andamento. **Evolução:** 20% (estimativa de planejamento; os princípios enviados por Gisele estão organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`, incluindo estrutura de classificação, estoque/CPV, máquinas/depreciação, tributos recuperáveis e dados mínimos. Foi preparado `docs/DRE-CONTABILIDADE-PENDENCIAS-v1.md` com perguntas simples para a validação contábil. Essa documentação preserva as linhas e a tela aprovadas. Ainda faltam respostas aprovadas da contabilidade, critérios específicos da empresa, mapeamento de contas/eventos e conferência com dados reais). **Tipo:** Planejamento. **Responsável sugerido:** Arquitetura + Integrações + Contabilidade.
 
 **Objetivo:** Calcular uma DRE própria, com classificação e competência aprovadas pela contabilidade.
 

@@ -27,3 +27,12 @@ O inventário começou em 11/10/2026. Na atualização de 13/10/2026, os nove re
 **Registro da decisão — 13/10/2026:** a responsável determinou que todos os caches e outputs gerados sejam consolidados em um único local. Os relatórios oficiais permanecem versionados e foram transferidos para `artifacts/planejamento/outputs/`; caches e prévias temporárias permanecem em `artifacts/cache/` e `artifacts/verification/`. Dados locais e caches ativos não foram removidos nesta alteração.
 
 **Verificação remota — 13/10/2026:** a CI [38381106600](https://github.com/guilhermejacyzin/majucau/actions/runs/38381106600) passou nos quatro grupos depois que o caminho padrão do verificador foi atualizado para a pasta central.
+
+## Limpeza local — 13/10/2026
+
+- Removidos com `scripts/SafeCleanup.psm1` o cache local `artifacts/cache/npm/` (logs temporários e marcador de atualização), a pasta vazia `artifacts/tmp/go/` e o pacote antigo de publicação `artifacts/working/bling-bridge-v0.5.7.tar` (26.300 bytes; SHA-256 `BE8CBBCA0978438A5ABBCE6185954990D4105996FCCCDF19ABBC422F75AE5CB3`). A versão publicada atual da ponte e seu checkout-fonte permanecem registrados e preservados.
+- `artifacts/verification/` estava vazio. A limpeza confirmou que os três caminhos removidos não existem mais.
+- Mantidos temporariamente enquanto o protótipo está em uso: `frontend/dist/`, `build/bin/majucau-dev.exe` e `artifacts/windows/`. A janela Wails, o aplicativo de desenvolvimento e o worker estavam em execução; apagar a saída embutida ou o executável poderia interromper a sessão de validação. `frontend/dist/` e `build/bin/` serão recriados pelo próximo build e devem ser limpos quando a sessão do protótipo for encerrada.
+- Mantidos em `artifacts/cache/` o runtime Go, módulos Go, cache de compilação, cache Vite e runtime WebView2, pois o ambiente local continua ativo e esses itens evitam reinstalação ou recompilação longa. O cache npm foi removido porque nenhum processo npm estava em execução.
+- As Junctions `artifacts/tmp/node_modules/`, `artifacts/cache/backlog-sync-20261011-01/node_modules/`, `artifacts/cache/bk017-workbook-tooling/node_modules/` e `artifacts/cache/spreadsheet-tool/node_modules/` continuam apontando para dependências compartilhadas do Codex. Permanecem registradas para remoção manual; não apagar nem alterar o destino compartilhado.
+- Não houve alteração no banco, nos dados locais, nas telas aprovadas ou nas regras financeiras. O arquivo pessoal `scripts/smoke-installer.ps1` permaneceu intocado.

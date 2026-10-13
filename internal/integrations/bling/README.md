@@ -15,7 +15,8 @@ modo somente leitura. O pacote contém um cliente técnico para:
 - leitura de uma página limitada de `GET /caixas`, com página e período; o
   cliente aplica até 100 registros somente como limite local. A OpenAPI
   pública atual não documenta o parâmetro `limite` nessa rota nem informa o
-  marcador de última página; cada filtro de data aceita no máximo 64 bytes;
+  marcador de última página; o filtro opcional `idsCategorias` aceita até 100
+  IDs positivos por consulta e cada filtro de data aceita no máximo 64 bytes;
 - leitura de uma página de `GET /categorias/receitas-despesas`;
 - classificação segura de 401/403, 429, timeout, indisponibilidade e resposta
   fora do contrato;
@@ -47,6 +48,11 @@ As consultas de detalhe e categorias aplicam o mesmo limite de resposta,
 cancelamento, JWT e retry seguro. Elas retornam apenas o objeto `data` como JSON
 bruto; ainda não persistem esses detalhes nem os transformam em fatos do
 Majucau. A leitura de categorias retorna uma página por chamada.
+
+O filtro `idsCategorias` é serializado como valores de query repetidos,
+seguindo o padrão `form` para arrays de query do OpenAPI. Cada ID é validado
+antes da chamada. Isso não identifica as categorias CAPEX da conta: seus IDs e
+subcategorias ainda precisam ser confirmados pela conexão real.
 
 O teste de conexão faz uma leitura mínima de `contas/receber` com uma linha.
 Isso prova transporte, autorização e formato básico, mas não equivale à

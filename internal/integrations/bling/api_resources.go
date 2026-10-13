@@ -54,24 +54,38 @@ func (c *BlingAPIClient) ListFinancialCategories(ctx context.Context, page, limi
 	return c.listFinancialResource(ctx, "categorias/receitas-despesas", ReceivablesFilter{Page: page, Limit: limit})
 }
 
-// CashMovementsFilter contains the documented date/page parameters and a
+// CashMovementsFilter contains documented date/page/category parameters and a
 // local response record cap. MaxRecords is not sent to Bling because the
 // current GET /caixas contract does not document a limit query parameter.
-// Category IDs remain omitted until their query encoding is homologated.
 type CashMovementsFilter struct {
-	Page       int
-	MaxRecords int
-	DateFrom   string
-	DateTo     string
+	Page        int
+	MaxRecords  int
+	DateFrom    string
+	DateTo      string
+	CategoryIDs []int64
 }
 
 const maxCashMovementDateFilterBytes = 64
+const maxCashMovementCategoryIDs = 100
 
 func (f CashMovementsFilter) normalized() (CashMovementsFilter, error) {
 	f.DateFrom = strings.TrimSpace(f.DateFrom)
 	f.DateTo = strings.TrimSpace(f.DateTo)
 	if len(f.DateFrom) > maxCashMovementDateFilterBytes || len(f.DateTo) > maxCashMovementDateFilterBytes {
 		return CashMovementsFilter{}, fmt.Errorf("%w: date filters exceed %d bytes", ErrBlingAPIConfiguration, maxCashMovementDateFilterBytes)
+	}
+	if len(f.CategoryIDs) > maxCashMovementCategoryIDs {
+		return CashMovementsFilter{}, fmt.Errorf("%w: category filter exceeds %d IDs", ErrBlingAPIConfiguration, maxCashMovementCategoryIDs)
+	}
+	seenCategoryIDs := make(map[int64]struct{}, len(f.CategoryIDs))
+	for _, id := range f.CategoryIDs {
+		if id <= 0 {
+			return CashMovementsFilter{}, fmt.Errorf("%w: category IDs must be positive", ErrBlingAPIConfiguration)
+		}
+		if _, exists := seenCategoryIDs[id]; exists {
+			return CashMovementsFilter{}, fmt.Errorf("%w: category IDs must be unique", ErrBlingAPIConfiguration)
+		}
+		seenCategoryIDs[id] = struct{}{}
 	}
 	if f.Page == 0 {
 		f.Page = 1
@@ -106,6 +120,9 @@ func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovem
 	query.Set("pagina", strconv.Itoa(filter.Page))
 	setOptionalQuery(query, "dataInicial", filter.DateFrom)
 	setOptionalQuery(query, "dataFinal", filter.DateTo)
+	for _, categoryID := range filter.CategoryIDs {
+		query.Add("idsCategorias", strconv.FormatInt(categoryID, 10))
+	}
 	pathURL.RawQuery = query.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pathURL.String(), nil)

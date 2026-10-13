@@ -164,6 +164,10 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 		if r.URL.Query().Get("pagina") != "2" || r.URL.Query().Has("limite") {
 			t.Fatalf("pagination query = %s", r.URL.RawQuery)
 		}
+		categoryIDs := r.URL.Query()["idsCategorias"]
+		if len(categoryIDs) != 2 || categoryIDs[0] != "11" || categoryIDs[1] != "22" {
+			t.Fatalf("category IDs = %v, want repeated idsCategorias=11&idsCategorias=22", categoryIDs)
+		}
 		if r.URL.Query().Get("dataInicial") != "2026-09-01" || r.URL.Query().Get("dataFinal") != "2026-09-30" {
 			t.Fatalf("date query = %s", r.URL.RawQuery)
 		}
@@ -182,13 +186,40 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 	}
 
 	page, err := client.ListCashMovements(context.Background(), CashMovementsFilter{
-		Page: 2, MaxRecords: 2, DateFrom: "2026-09-01", DateTo: "2026-09-30",
+		Page: 2, MaxRecords: 2, DateFrom: "2026-09-01", DateTo: "2026-09-30", CategoryIDs: []int64{11, 22},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page.Records) != 1 || !strings.Contains(string(page.Records[0]), `"id":789`) || !page.HasNextKnown || !page.HasNext {
 		t.Fatalf("page = %+v", page)
+	}
+}
+
+func TestListCashMovementsRejectsInvalidCategoryIDsBeforeNetworkCall(t *testing.T) {
+	doer := &errorHTTPDoer{err: errors.New("network should not be called")}
+	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name string
+		ids  []int64
+	}{
+		{name: "zero", ids: []int64{0}},
+		{name: "negative", ids: []int64{-1}},
+		{name: "duplicate", ids: []int64{11, 11}},
+		{name: "too many", ids: make([]int64, maxCashMovementCategoryIDs+1)},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := client.ListCashMovements(context.Background(), CashMovementsFilter{CategoryIDs: test.ids}); !errors.Is(err, ErrBlingAPIConfiguration) {
+				t.Fatalf("category IDs %v error = %v, want configuration error", test.ids, err)
+			}
+		})
+	}
+	if doer.calls != 0 {
+		t.Fatalf("network calls = %d, want 0", doer.calls)
 	}
 }
 

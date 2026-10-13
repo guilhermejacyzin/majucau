@@ -2102,7 +2102,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-067 — Implementar T06 DRE
 
-**Situação:** Em andamento. **Evolução:** 20% (estimativa de planejamento; os cards informativos EBIT, EBITDA, CAPEX pago no mês e CAPEX acumulado estão desenhados no espaço aprovado, somente para consulta, e o card numérico UNMAPPED foi retirado. A tabela e o lucro da DRE não incluem CAPEX. Ainda faltam cálculo da DRE própria com lineage, integração dos dados e valores confiáveis; hoje EBIT/EBITDA e CAPEX ficam indisponíveis). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 25% (estimativa de planejamento; os cards informativos EBIT, EBITDA, CAPEX pago no mês e CAPEX acumulado estão desenhados no espaço aprovado, somente para consulta, e o card numérico UNMAPPED foi retirado. A tabela e o lucro da DRE não incluem CAPEX. O cliente agora aceita filtro limitado por IDs de categoria na consulta de movimentações. Ainda faltam identificar os IDs reais, comprovar a paginação, persistir e conciliar os dados, ligar os valores ao snapshot e concluir a DRE própria; os valores continuam indisponíveis). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Explicar como o resultado foi formado.
 
@@ -2129,6 +2129,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Reauditoria estática de 2026-10-11:** `frontend/src/mockupDashboard.tsx` contém os quatro cards e filtra o card `UNMAPPED` dessa área; o alerta de lançamentos pendentes continua separado. `frontend/src/bootstrap.ts` e `internal/application/contracts.go` aceitam as métricas de CAPEX, mas a busca de código de produção não encontrou fonte que as preencha. EBIT/EBITDA continuam com valor indisponível. A evidência de CI anteriormente registrada em `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md` cobre a presença da interface; esta reauditoria não executou testes e não altera telas ou regras.
 
 **Revisão corrigida dos relatórios e API CAPEX — 11/10/2026:** os dois PDFs de Contas a Pagar mostram datas e valores por lançamento, mas não a categoria em cada linha; o print mostra CAPEX agrupado por categoria. A documentação oficial do Bling também confirma a rota de movimentações com filtros por data/categoria, detalhes de cada movimento e cadastro hierárquico de categorias. Portanto, não precisamos aguardar outro relatório para definir a fonte: falta integrar essa API, homologar a árvore CAPEX da conta e reconciliar os valores com o relatório antes de preencher os cards. A BK-067 permanece em 20%; os valores ainda ficam indisponíveis. Evidência sanitizada: `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md`. Nenhuma regra, tela ou valor financeiro foi alterado.
+
+**Implementação do filtro CAPEX — 13/10/2026:** a consulta `GET /caixas` agora pode receber até 100 IDs positivos de categoria. Testes sintéticos verificam os parâmetros repetidos e rejeitam IDs inválidos, repetidos e acima do limite antes da rede. `go test -count=1 ./internal/integrations/bling` e `go vet ./internal/integrations/bling` passaram. A BK-067 avança de 20% para 25% pelo componente técnico de filtro; nenhum ID da conta foi adivinhado. Persistência, paginação real, conciliação e valores dos cards continuam pendentes. Evidências: `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md` e `internal/integrations/bling/api_resources_test.go`.
 
 ### BK-068 — Reproduzir o balancete a partir da base do Bling
 

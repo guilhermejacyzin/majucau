@@ -139,10 +139,40 @@ jobs:
         run: go vet . ./cmd/... ./database/... ./internal/...
 
       - name: Install pinned Go verification tools
+        shell: pwsh
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
-          go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
-          go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $tools = @(
+            @{ Name = 'govulncheck'; Package = 'golang.org/x/vuln/cmd/govulncheck'; Version = 'v1.7.0' },
+            @{ Name = 'sqlc'; Package = 'github.com/sqlc-dev/sqlc/cmd/sqlc'; Version = 'v1.31.1' },
+            @{ Name = 'cyclonedx-gomod'; Package = 'github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod'; Version = 'v1.12.0' }
+          )
+
+          foreach ($tool in $tools) {
+            $installed = $false
+            for ($attempt = 1; $attempt -le 3; $attempt++) {
+              Write-Host "Instalando $($tool.Name), tentativa $attempt de 3."
+              & go install "$($tool.Package)@$($tool.Version)"
+              $exitCode = $LASTEXITCODE
+              if ($exitCode -eq 0) {
+                $installed = $true
+                break
+              }
+              if ($attempt -lt 3) {
+                Start-Sleep -Seconds ([Math]::Pow(2, $attempt))
+              }
+            }
+
+            if (-not $installed) {
+              throw "A instalação de $($tool.Name) falhou após 3 tentativas."
+            }
+
+            $executable = Join-Path $env:GOBIN "$($tool.Name).exe"
+            if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
+              throw "A instalação de $($tool.Name) terminou sem criar o executável esperado."
+            }
+          }
 
       - name: Install pinned CycloneDX validator
         shell: pwsh

@@ -34,7 +34,7 @@ As telas aprovadas permanecem como estão. Uma mudança de apresentação ou reg
 1. provedor, orçamento, região e requisitos de disponibilidade;
 2. acesso à aplicação pela internet com autenticação forte ou rede privada/VPN;
 3. forma final do cliente: Wails conectado ao serviço ou aplicação em navegador;
-4. onde e como a sincronização diária roda: a atualização foi solicitada para 09:30, após o tempo para colocar os arquivos externos nas pastas; fuso horário e comportamento quando algum arquivo não estiver disponível nesse horário ainda precisam ser definidos, além de alertas e recuperação de atraso;
+4. onde e como a sincronização diária roda: Gisele aprovou 09:30 em `America/Sao_Paulo`; as fontes disponíveis devem processar de forma independente e um arquivo ausente permanece pendente até às 09:30 do dia seguinte; o Bling relê todas as contas diariamente. A rotina ainda precisa ser implementada e integrada ao Drive. A compatibilidade com o padrão anterior de sincronização a cada 15 minutos está pendente de esclarecimento, assim como alertas e recuperação de atraso;
 5. canal seguro para os CSVs do local externo, retenção e eliminação dos temporários;
 6. MFA, sessão, recuperação e prazo de retenção dos dados; implementar e validar o provisionamento e a autorização dos perfis, mantendo explícita a limitação de auditoria da conta compartilhada dos Diretores.
 

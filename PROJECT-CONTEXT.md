@@ -10,7 +10,7 @@ O objetivo é entregar inteligência financeira executiva com dados de fontes of
 - No destino, clientes autenticados acessam um serviço Majucau por TLS; somente o serviço acessa o PostgreSQL privado. O login será próprio do Majucau: `financeiro@majucau.com.br` usa `ADMIN` e `contato@majucau.com.br` é uma conta compartilhada dos Diretores. Os logs identificam essa conta e a ação, não o Diretor individual. As capacidades aprovadas dos Diretores incluem consulta, sincronização com importação manual de CSV e exportação de backups e relatórios.
 - A prévia CSV permanece local e sem dependência de banco. O serviço central deverá validar novamente o conteúdo antes de persistir; canal de envio e retenção ainda dependem de decisão.
 - O fluxo do cliente continua sem terminal, Docker, Node.js ou configuração manual do PostgreSQL.
-- Provedor, orçamento e região ainda não foram escolhidos. A atualização diária foi solicitada para 09:30; o fuso horário e o comportamento quando algum arquivo externo ainda não estiver disponível precisam de confirmação antes da implementação.
+- Provedor, orçamento e região ainda não foram escolhidos. A rotina diária foi aprovada para 09:30 em `America/Sao_Paulo`: processa fontes disponíveis de forma independente; se um arquivo não estiver na pasta, ele permanece pendente até às 09:30 do dia seguinte; a coleta Bling relê todas as contas. A rotina ainda não foi implementada. A compatibilidade desta rotina diária com o padrão anterior de sincronização a cada 15 minutos está pendente de esclarecimento. O acesso persistente do serviço às pastas do Drive também continua pendente.
 
 Estado verificável em 2026-10-03:
 

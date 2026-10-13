@@ -52,3 +52,10 @@ BK-041 foi atualizado de 69% para 75% (25% restante): o caminho do retorno OAuth
 - Portanto, os dados ainda não foram pedidos à API nessa execução. Isso não demonstra falha da API: mostra que o fluxo de conectar/testar/sincronizar ainda não foi iniciado no protótipo.
 - O próximo passo operacional é salvar no Majucau as configurações do aplicativo Bling e usar **Conectar**, **Testar conexão** e **Sincronizar agora**, nessa ordem. A senha usada para entrar no site do Bling é diferente do Client Secret da integração; não enviar o Client Secret pelo chat.
 - BK-041 permanece em 75% (25% restante), porque ainda faltam uma autorização real, teste, leitura paginada e conferência dos dados importados. Não alterei telas, regras financeiras, credenciais ou configurações externas.
+
+## Diagnóstico da configuração local — 13/10/2026
+
+- A tela local do Majucau estava com Client ID e Redirect URI vazios e Bling em “Não conectado”. Preenchi os dois campos com os dados públicos enviados pela responsável; o campo Client Secret ficou intocado.
+- Ao salvar, o worker respondeu `BLING_SECRET_REQUIRED`. A configuração não foi salva, não houve tentativa de OAuth nem chamada à API do Bling. O Client Secret não foi lido, copiado ou registrado.
+- A senha de entrada do site Bling é diferente do Client Secret do aplicativo. Para continuar, a responsável precisa preencher o Client Secret diretamente no campo correspondente do Majucau e salvar. Depois disso, o fluxo pode seguir com autorização, teste e sincronização.
+- BK-041 permanece em 75% (25% restante). Nenhuma tela aprovada ou regra financeira foi alterada; os dados públicos estão apenas preenchidos no formulário local até o segredo ser informado.

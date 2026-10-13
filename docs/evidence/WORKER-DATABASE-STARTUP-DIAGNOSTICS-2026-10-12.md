@@ -14,6 +14,8 @@ O estado de saúde do worker agora verifica o PostgreSQL com timeout de 1,5 segu
 
 O worker continua disponível para operações que não precisam do banco, como a prévia local de arquivos. Esta informação não declara o banco pronto e não transforma ausência de dados em valor zero. Nenhuma tela, schema, regra de negócio ou cálculo financeiro foi alterado.
 
+O smoke do pacote portátil para Windows valida essa condição sem PostgreSQL: o serviço deve continuar ativo, informar `DEGRADED` e identificar a dependência com um código seguro. A checagem anterior exigia `OK`, o que contradizia a prontidão explícita implementada aqui; essa expectativa foi corrigida para o comportamento aprovado.
+
 ## Limites
 
 `DATABASE_UNAVAILABLE` ainda agrupa falhas de abertura e de confirmação da conexão; não classifica DNS, porta ou autenticação. O ping confirma disponibilidade da conexão, mas não valida versão de schema nem permissões das consultas da aplicação. A validação em instalação/VM continua pendente. Nenhum teste foi adicionado ou executado localmente nesta alteração; a CI do commit fará a verificação automatizada existente.

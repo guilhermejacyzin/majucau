@@ -112,7 +112,9 @@ try {
 Assert-Condition $workerStarted 'Worker não permaneceu ativo durante o smoke console.'
 Assert-Condition $workerProcess.HasExited "Worker de smoke não encerrou (PID=$($workerProcess.Id))."
 $workerHealth = (Read-BoundedTextFile -Path $workerStdout -MaxBytes 262144) | ConvertFrom-Json
-Assert-Condition ($workerHealth.service -eq 'majucau-worker' -and $workerHealth.state -eq 'OK') 'Health do worker não ficou OK.'
+$databaseHealth = @($workerHealth.dependencies | Where-Object { $_.name -eq 'postgresql' })
+Assert-Condition ($workerHealth.service -eq 'majucau-worker') 'Health reportou um serviço inesperado.'
+Assert-Condition ($workerHealth.state -eq 'DEGRADED' -and $databaseHealth.Count -eq 1 -and $databaseHealth[0].state -eq 'DEGRADED' -and $databaseHealth[0].detail -in @('DATABASE_NOT_CONFIGURED', 'DATABASE_CONFIG_INVALID', 'DATABASE_UNAVAILABLE')) 'Health não reportou a ausência do PostgreSQL com estado e código seguros.'
 
 $result = [ordered]@{
     schema_version = '1.0'
@@ -122,6 +124,7 @@ $result = [ordered]@{
     diagnostics_exit_code = $diagnosticsExit
     package_verification_exit_code = $packageVerificationExit
     worker_health = $workerHealth.state
+    database_health = $databaseHealth[0].state
     portable_files = $required + @('README-PORTABLE.txt', 'SHA256SUMS.txt')
     diagnostic_entries = @('diagnostic.json', 'README.txt')
 }

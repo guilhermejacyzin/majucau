@@ -1107,7 +1107,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-027 — Criar a fundação do backend Go
 
-**Situação:** Em andamento. **Evolução:** 25% (estimativa; o worker Go já compõe os serviços por dependências, limita a conexão PostgreSQL a cinco segundos e encerra pelo contexto de serviço/Named Pipe. A inicialização registra códigos sanitizados quando o banco está ausente, inválido ou indisponível; a consulta de saúde agora confirma a conexão com timeout de 1,5 segundo e informa degradação se o banco não responde. Ainda faltam validar schema/permissões de consultas, configuração de produção e operação em instalação/VM; esta execução não rodou testes locais). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 30% (estimativa; o worker Go já compõe os serviços por dependências, limita a conexão PostgreSQL a cinco segundos e encerra pelo contexto de serviço/Named Pipe. A saúde verifica conexão e presença das quatro tabelas essenciais, com timeout total de 1,5 segundo e códigos sanitizados. Ainda faltam validar permissões de consultas, configuração de produção e operação em instalação/VM). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Dispor de processo executável com as fronteiras planejadas.
 
@@ -1124,6 +1124,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Impacto:** Sustenta todas as funcionalidades.
 
 **Dependências:** BK-026, BK-017
+
+**Evidência de prontidão do esquema — 13/10/2026:** `cmd/worker/health.go` agora usa a consulta `SchemaHealth` existente para degradar o estado quando falta uma tabela essencial. `go test -count=1 ./cmd/worker` e `go vet ./cmd/worker` passaram localmente. A verificação cobre existência das tabelas, não as permissões completas do papel runtime, checksum das migrations ou operação em VM. Ver `docs/evidence/WORKER-DATABASE-SCHEMA-READINESS-2026-10-13.md`.
 
 **Fonte:** Requisito técnico para entregar e operar o produto.
 
@@ -3921,3 +3923,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A OpenAPI do Bling confirma que `GET /caixas` permite filtrar por data e categoria e fornece valor, situação, direção e origem em cada movimentação. É uma possível fonte direta para o card **CAPEX pago no mês**, após conciliar categoria/origem e total com o relatório da Majucau.
 - A resposta documentada contém somente `data[]`, sem limite nem marcador da última página. O adapter atual já limita cada página e preserva a conclusão como desconhecida quando não há metadado explícito; não existe ainda persistência dessa rota.
 - A rota de caixa não comprova o valor de CAPEX reconhecido como investimento. Não substituir com ela o card acumulado e não somar transferências ou movimentos genéricos. BK-041 e BK-067 permanecem com os percentuais registrados; nenhuma tela ou regra financeira foi alterada. Evidência: `docs/evidence/CAPEX-REPORT-DATA-SOURCE-AUDIT-2026-10-11.md`.
+
+### Prontidão do esquema PostgreSQL no worker — 13/10/2026
+
+- O worker agora verifica, além da conexão, se existem as tabelas essenciais de integrações, RAW, auditoria e saldos diários. Falta de tabela resulta em `DATABASE_SCHEMA_NOT_READY`; falha ao consultar o banco mantém `DATABASE_UNAVAILABLE`. A resposta usa o campo de diagnóstico já existente.
+- `go test -count=1 ./cmd/worker`, `go vet ./cmd/worker`, `git diff --check` e `scripts/verify-backlog.ps1` passaram. A CI do commit será conferida após o push; ainda não é considerada aprovada nesta evidência local.
+- BK-027 avança de 25% para 30% (70% restante). Ainda faltam validar permissões completas do papel runtime, migrations, configuração de produção e instalação/VM limpa. Nenhuma tela ou regra financeira foi alterada.
+- O backlog permanece em 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas; 11% concluído e 89% restante. Não há prazo global confiável enquanto permanecem 102 tarefas não iniciadas, integrações reais e validações de produção.
+- Evidência: `docs/evidence/WORKER-DATABASE-SCHEMA-READINESS-2026-10-13.md`.

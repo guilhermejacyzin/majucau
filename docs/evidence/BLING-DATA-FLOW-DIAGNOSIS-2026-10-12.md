@@ -120,3 +120,10 @@ Não foram alterados código, telas, regras financeiras, credenciais ou dados. N
 - O worker do Majucau continua aceitando somente um callback local `http://127.0.0.1:<porta>/<caminho>`. Ainda falta confirmar o comportamento da ponte ou obter seu código para revisão antes de alterar o OAuth.
 - Quando perguntada se a ponte encaminha a autorização ao Majucau aberto no computador, Gisele respondeu que não sabe. Portanto, o endereço cadastrado não é tratado como prova de que a conexão funciona.
 - Nenhuma chamada de autorização foi iniciada, nenhum segredo foi consultado e nenhuma configuração ou tela foi modificada. Nenhuma regra financeira foi afetada.
+
+## Atualização posterior — retorno confirmado e causa da ausência de dados — 13/10/2026
+
+- As conclusões desta seção são um registro histórico de 12/10. Depois, o Majucau recebeu a ponte HTTPS fixa e ela foi publicada; a responsável confirmou que o endereço configurado corresponde à ponte. Consulte `docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md` para o fluxo e as verificações atuais. A responsável não precisa avaliar tecnicamente se a ponte encaminha o retorno.
+- A conferência atual do protótipo encontrou o erro `BLING_SECRET_REQUIRED` ao salvar. Portanto, a integração ainda não começou a autorização nem fez chamadas financeiras ao Bling. A senha que o Chrome usa para entrar na conta não é o Client Secret do aplicativo.
+- Para concluir a conexão: preencher o **Client Secret** diretamente no Majucau, salvar e depois usar **Conectar**, **Testar conexão** e **Sincronizar agora**. Não enviar a chave pelo chat. O caminho oficial para localizar esse segredo está na [documentação de aplicativos do Bling](https://developer.bling.com.br/aplicativos).
+- BK-041 permanece em 75% (25% restante) até haver autorização real, teste, leitura paginada e conciliação. Nenhuma tela aprovada ou regra financeira foi alterada.

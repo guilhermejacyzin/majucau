@@ -30,7 +30,7 @@ Na planilha, uma tarefa pontua 100% somente quando está concluída e possui evi
 
 ### Estado atual do backlog — 13/10/2026
 
-O backlog registra **7 tarefas concluídas, 18 em andamento e 102 não iniciadas**. As tarefas em andamento são BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (25%), BK-031 (85%), BK-041 (75%), BK-042 (40%), BK-043 (40%), BK-056 (5%), BK-067 (20%) e BK-102 (1%). Pela média simples das 127 tarefas, o acompanhamento estima **10,9% concluído e 89,1% restante**. Essa média é uma estimativa de planejamento; não comprova prontidão para homologação ou produção.
+O backlog registra **7 tarefas concluídas, 18 em andamento e 102 não iniciadas**. As tarefas em andamento são BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (25%), BK-031 (85%), BK-041 (75%), BK-042 (40%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%). Pela média simples das 127 tarefas, o acompanhamento estima **11,0% concluído e 89,0% restante**. Essa média é uma estimativa de planejamento; não comprova prontidão para homologação ou produção.
 
 BK-016 avançou para 20% com um mapa técnico inicial dos sete contextos. A propriedade final dos fatos, agregados e eventos de negócio ainda aguarda validação. BK-017 avançou com o registro dos limites arquiteturais e a propriedade explícita do pool PostgreSQL pelo worker; o fechamento formal continua dependendo de BK-016.
 

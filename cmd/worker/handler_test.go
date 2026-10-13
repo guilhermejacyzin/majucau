@@ -228,3 +228,10 @@ func TestBlingSyncErrorClassificationIsSanitized(t *testing.T) {
 	}
 }
 
+func TestBlingOAuthConfigErrorDoesNotRequireUnsupportedLoopbackOnly(t *testing.T) {
+	message := blingOAuthErrorMessage(bling.ErrBlingOAuthConfiguration)
+	if !strings.Contains(message, "Salve o Client ID") || !strings.Contains(message, "Redirect URI") || strings.Contains(message, "loopback") {
+		t.Fatalf("configuration message is inaccurate for the approved HTTPS callback: %q", message)
+	}
+}
+

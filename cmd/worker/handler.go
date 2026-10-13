@@ -342,7 +342,7 @@ func blingOAuthErrorMessage(err error) string {
 	case "BLING_VAULT_UNAVAILABLE":
 		return "O cofre seguro do Windows não está disponível."
 	case "BLING_OAUTH_CONFIG_INVALID":
-		return "Use um Redirect URI loopback registrado no Bling: http://127.0.0.1:porta/caminho."
+		return "Salve o Client ID, o Client Secret e o Redirect URI cadastrado no aplicativo Bling antes de testar."
 	case "BLING_OAUTH_SESSION_INVALID":
 		return "A sessão de autorização expirou. Inicie a conexão novamente."
 	case "BLING_NOT_CONNECTED":

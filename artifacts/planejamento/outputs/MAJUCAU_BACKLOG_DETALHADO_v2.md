@@ -3966,3 +3966,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Gisele confirmou que os arquivos diários das três pastas aprovadas do Drive também incluem XLS e XLSX. BK-042 e BK-043 agora incluem suporte seguro em fluxo para esses formatos. O conector atual ainda os recusa; continuam pendentes o parser, os limites de extração e a homologação das abas, cabeçalhos e valores. Nenhuma planilha é tratada como fato financeiro até a aprovação do respectivo contrato.
 - BK-039, BK-042 e BK-043 permanecem com o progresso já medido; esta atualização corrige o escopo e não conta suporte Excel ainda não implementado como concluído. A média estimada do projeto permanece em 11,1% concluída e 88,9% restante.
 - Nenhuma tela aprovada, regra de negócio ou regra financeira foi alterada. Evidências: `G0-DECISION-REGISTER.md`, `REQUIREMENTS-TRACEABILITY.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
+
+### Diagnóstico seguro do erro de configuração do Bling — 13/10/2026
+
+- A conferência somente de leitura da tela local confirmou Client ID e Redirect URI preenchidos, mas o campo Client Secret vazio. A configuração ainda não foi salva; portanto, OAuth e chamadas financeiras não começaram. A senha para entrar no site do Bling não substitui o Client Secret do aplicativo.
+- O teste usa os dados gravados no banco local. Sem uma configuração salva, retorna `BLING_OAUTH_CONFIG_INVALID`; a mensagem anterior exigia loopback, apesar de o callback HTTPS aprovado estar implementado. A mensagem foi ajustada para explicar que Client ID, Client Secret e Redirect URI precisam ser salvos antes do teste.
+- BK-041 permanece em 75%; essa correção melhora o diagnóstico, mas não autoriza a conta, percorre páginas reais nem normaliza dados para o painel. A média do backlog permanece em 11,1% concluída e 88,9% restante. Nenhuma tela aprovada ou regra financeira foi alterada.
+- Evidência: `docs/evidence/BLING-CONNECTION-JWT-READINESS-2026-10-13.md`.

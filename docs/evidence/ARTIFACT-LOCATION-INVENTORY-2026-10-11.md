@@ -11,6 +11,7 @@ Na conferência deste checkout, `build/bin/`, `frontend/dist/` e `tmp/` não exi
 | Local | Conteúdo/função | Tratamento desta conferência |
 |---|---|---|
 | `artifacts/cache/` | Cache local de ferramentas e dependências; inclui junctions temporárias já anotadas no registro local de limpeza. | Preservar ferramentas necessárias. Não apagar nem alterar o destino compartilhado das junctions; seguir o registro local para limpeza manual. |
+| `artifacts/cache/sites/majucau-bling-bridge/` | Cópia de trabalho do código-fonte publicado do Site Majucau Bling Bridge, versão 16; necessária para concluir a avaliação e a implementação do leitor XLS/XLSX. | Manter durante esse trabalho; não é saída descartável enquanto a análise do importador estiver em andamento. Registrar para limpeza manual quando a substituição estiver concluída e o código-fonte necessário tiver sido preservado. |
 | `artifacts/windows/` | Executáveis e pacote de build conservados para validação manual do protótipo. | Manter por enquanto, como já registrado em `artifacts/retained/cleanup-register.md`; podem ser recriados. |
 | `artifacts/retained/postgresql-dev/` | Banco de desenvolvimento isolado, credenciais protegidas por DPAPI e logs locais. | Preservar os dados da instalação. Há processos PostgreSQL ativos no Windows, mas não os associei ao diretório nem os parei. |
 | `frontend/node_modules/` | Dependências instaladas do frontend. | Preservar; havia processos Node ativos e não foi possível associá-los com segurança a uma aplicação específica. Não mover nem apagar durante essa execução. |

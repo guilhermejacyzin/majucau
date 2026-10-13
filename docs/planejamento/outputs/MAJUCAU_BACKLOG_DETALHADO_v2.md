@@ -3902,3 +3902,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Próxima ação para homologar: Gisele deve digitar o Client Secret diretamente no campo do Majucau e salvar. O segredo não deve ser enviado pelo chat. Depois, ainda será necessário conectar, testar e comparar os registros importados com o Bling.
 - BK-041 permanece em 75% (25% restante). A média do backlog permanece em 11% concluído (89% restante). Não há prazo confiável para a sincronização real enquanto faltar a autorização e a confirmação do término da paginação.
 - Nenhuma tela aprovada, regra financeira ou regra de negócio foi alterada. Evidência: `docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md`.
+
+### Compatibilidade do controle de backlog no Windows — 13/10/2026
+
+- A validação apontou que o Windows PowerShell 5.1 não interpretava corretamente os verificadores salvos em UTF-8 sem BOM. Corrigi a codificação dos dois scripts e ajustei o caminho padrão do backlog para ser encontrado nessa versão do PowerShell.
+- O verificador e seu teste passaram no Windows PowerShell 5.1.19041.6456 e no PowerShell 7.6.5. O resumo calculado permaneceu em 127 tarefas: 7 concluídas, 18 em andamento, 102 não iniciadas, 11% concluído e 89% restante.
+- Esta é uma correção de ferramenta de governança; os percentuais das funcionalidades do backlog não mudaram. Nenhuma tela aprovada ou regra financeira foi alterada. Evidência: `docs/evidence/BACKLOG-VERIFIER-POWERSHELL-COMPAT-2026-10-13.md`.

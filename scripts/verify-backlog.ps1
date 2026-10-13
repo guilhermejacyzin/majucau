@@ -1,10 +1,15 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
-    [string]$Path = (Join-Path $PSScriptRoot '..\docs\planejamento\outputs\MAJUCAU_BACKLOG_DETALHADO_v2.md')
+    [string]$Path
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($Path)) {
+    $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $Path = Join-Path $scriptDirectory '..\docs\planejamento\outputs\MAJUCAU_BACKLOG_DETALHADO_v2.md'
+}
 
 $maxFileBytes = 8MB
 $maxLineChars = 256KB

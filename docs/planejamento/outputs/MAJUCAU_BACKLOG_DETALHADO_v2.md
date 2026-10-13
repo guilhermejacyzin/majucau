@@ -3927,7 +3927,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Prontidão do esquema PostgreSQL no worker — 13/10/2026
 
 - O worker agora verifica, além da conexão, se existem as tabelas essenciais de integrações, RAW, auditoria e saldos diários. Falta de tabela resulta em `DATABASE_SCHEMA_NOT_READY`; falha ao consultar o banco mantém `DATABASE_UNAVAILABLE`. A resposta usa o campo de diagnóstico já existente.
-- `go test -count=1 ./cmd/worker`, `go vet ./cmd/worker`, `git diff --check` e `scripts/verify-backlog.ps1` passaram. A CI do commit será conferida após o push; ainda não é considerada aprovada nesta evidência local.
+- `go test -count=1 ./cmd/worker`, `go vet ./cmd/worker`, `git diff --check` e `scripts/verify-backlog.ps1` passaram. A CI completa [38371847314](https://github.com/guilhermejacyzin/majucau/actions/runs/38371847314) também passou em Windows e PostgreSQL. Isso não equivale a validar a conta real ou a instalação em VM.
 - BK-027 avança de 25% para 30% (70% restante). Ainda faltam validar permissões completas do papel runtime, migrations, configuração de produção e instalação/VM limpa. Nenhuma tela ou regra financeira foi alterada.
 - O backlog permanece em 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas; 11% concluído e 89% restante. Não há prazo global confiável enquanto permanecem 102 tarefas não iniciadas, integrações reais e validações de produção.
 - Evidência: `docs/evidence/WORKER-DATABASE-SCHEMA-READINESS-2026-10-13.md`.

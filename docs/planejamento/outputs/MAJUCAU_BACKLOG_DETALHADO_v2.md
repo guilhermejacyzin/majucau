@@ -3915,3 +3915,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O detalhe do pagamento dentro do borderô não identifica a conta a pagar individual. Ainda será necessário conferir na conta real se a categoria e a data do borderô batem com o relatório, inclusive nos casos de pagamento parcial ou borderô com várias contas. Nenhum valor será dividido por aproximação.
 - As consultas de detalhe já existem no adapter, mas ainda não são persistidas como RAW nem alimentam os cards. CAPEX pago e acumulado continuam indisponíveis até completar essa ingestão, provar a leitura completa e reconciliar com o relatório oficial.
 - BK-041 e BK-067 mantêm seus percentuais; esta revisão esclarece a fonte técnica, mas não implementa persistência, cálculo nem integração ao painel. Nenhuma tela ou regra financeira foi alterada. Evidência: `docs/evidence/CAPEX-REPORT-DATA-SOURCE-AUDIT-2026-10-11.md`.
+
+### Rechecagem da rota de movimentações CAPEX — 13/10/2026
+
+- A OpenAPI do Bling confirma que `GET /caixas` permite filtrar por data e categoria e fornece valor, situação, direção e origem em cada movimentação. É uma possível fonte direta para o card **CAPEX pago no mês**, após conciliar categoria/origem e total com o relatório da Majucau.
+- A resposta documentada contém somente `data[]`, sem limite nem marcador da última página. O adapter atual já limita cada página e preserva a conclusão como desconhecida quando não há metadado explícito; não existe ainda persistência dessa rota.
+- A rota de caixa não comprova o valor de CAPEX reconhecido como investimento. Não substituir com ela o card acumulado e não somar transferências ou movimentos genéricos. BK-041 e BK-067 permanecem com os percentuais registrados; nenhuma tela ou regra financeira foi alterada. Evidência: `docs/evidence/CAPEX-REPORT-DATA-SOURCE-AUDIT-2026-10-11.md`.

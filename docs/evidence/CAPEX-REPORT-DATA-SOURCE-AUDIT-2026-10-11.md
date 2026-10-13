@@ -48,3 +48,13 @@ O caminho de implementação fica mais claro: percorrer as contas pagas; buscar 
 Ainda falta confirmar na conta real se `bordero.data` corresponde à data de liquidação exibida no relatório, se a categoria do borderô coincide com a categoria da conta e como ficam pagamentos parciais ou borderôs ligados a mais de uma conta. A primeira sincronização precisa comparar um período com o relatório oficial. Até lá, os cards permanecem sem valores confirmados. A tela e as regras aprovadas não foram alteradas.
 
 Referência: [OpenAPI oficial atual do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), esquemas `ContasPagarDadosDTO`, `BorderosDadosDTO`, `BorderosPagamentoDTO` e `CategoriasReceitasDespesasDadosBaseDTO`.
+
+## Rota adicional para CAPEX pago — 2026-10-13
+
+A OpenAPI também oferece `GET /caixas`, com filtros por período e IDs de categoria. Cada movimentação inclui ID, direção débito/crédito, situação, data, valor, categoria e origem. A origem distingue, entre outras opções, pagamento por borderô e lançamento ligado a uma conta a pagar. Isso torna essa rota uma candidata direta para calcular **CAPEX pago no mês**, desde que a categoria, a origem e o valor conciliem com o relatório da Majucau.
+
+O schema da lista documenta `data[]`, mas não documenta limite de página, total ou marcador da última página. O adapter atual já lê uma página limitada localmente e usa os nomes documentados dos filtros; ele corretamente não considera uma página curta como prova de conclusão. Ainda não há persistência RAW dessa rota nem inclusão nos cards.
+
+`/caixas` informa movimentação de caixa e não prova, sozinho, o total de CAPEX reconhecido como investimento. Portanto, a rota de caixa pode apoiar o card pago mensal; o card acumulado continua dependendo da fonte de CAPEX reconhecido, do histórico completo e da reconciliação contábil. Não somar os dois conceitos nem tratar uma transferência ou lançamento genérico como CAPEX.
+
+Referência: [OpenAPI oficial atual do Bling — `GET /caixas`](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) e [changelog oficial de formato de datas de `/caixas`](https://developer.bling.com.br/changelogs).

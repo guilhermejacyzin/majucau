@@ -123,7 +123,7 @@ func TestBlingOAuthBridgeReturnsCodeToLocalSessionAndExchangesRegisteredRedirect
 		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
 	})
 	secretStore := &memorySecretStore{values: map[string][]byte{}}
-	initial, _ := json.Marshal(blingSecretBundle{ClientSecret: "client-secret-private"})
+	initial, _ := json.Marshal(blingSecretBundle{ClientSecret: "client-secret-private"}) // test-only fixture
 	if err := secretStore.Put(context.Background(), BlingCredentialSecretRef, initial); err != nil {
 		t.Fatal(err)
 	}

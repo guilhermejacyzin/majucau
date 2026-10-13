@@ -14,13 +14,13 @@
     },
     {
       "path": "docs/architecture/GO-MODULAR-BOUNDARIES.md",
-      "bytes": 6860,
-      "sha256": "5f6a0b3597ff14e3160605ae5f29736e805dafa7b4a1e1e08cea5f9009e9784d"
+      "bytes": 7058,
+      "sha256": "a7b821a25fce5d0f8b62e4c2123f045af4d132795c3b569280db7f20ecd4bd08"
     },
     {
       "path": "docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md",
-      "bytes": 14365,
-      "sha256": "c48aaa7c6cfbff7127b4f3890b28afc05540a633c7379f025875353ad03af69c"
+      "bytes": 15905,
+      "sha256": "95d6c4ad258f915554284980a2b730acd8cacb445d5cb196c8fd8577311ad6f8"
     },
     {
       "path": "docs/evidence/DASHBOARD-REFRESH-AFTER-INTEGRATION-2026-10-12.md",
@@ -64,8 +64,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 285629,
-      "sha256": "ccae632f9fc519c584ea111791892e1e44869503c8c131bdb2e39eef1c3d4ce5"
+      "bytes": 289511,
+      "sha256": "5a22b75af6c1020517b0ea33d220455ae4749ac10b46ea4464d8c32ee116391f"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -79,8 +79,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 49384,
-      "sha256": "36db40d90785778700d28d76dea8f29f1946edc54504e794e0c8643a46fe19c5"
+      "bytes": 49693,
+      "sha256": "30bf7d018e173ac4faa3f190187b92fb25131b0129b6e7314a5ac17629ca91d1"
     },
     {
       "path": "docs/planejamento/README.md",
@@ -94,8 +94,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 3674,
-      "sha256": "210905fdf8f29cadcdd15e4debc622305ca09d89372d90fa663dfd34a2f3ee5c"
+      "bytes": 3994,
+      "sha256": "20bbd109cd1aaa4eee8422b3eadbc5727b5ac098bc40f3f6c6f5044e0e479fe3"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -114,8 +114,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 193262,
-      "sha256": "74d93165a47d9437b255ae19bbde8276ad65a058e7d576ec7bb90c9c13628ee3"
+      "bytes": 193307,
+      "sha256": "12c92dd713b96648dc8055c5a4ebca97ee01e98b60542b051503b915361bdf15"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -426,6 +426,11 @@
       "path": "tools/exportar_planejamento.py",
       "bytes": 1926,
       "sha256": "f89c888f5e05cbdf6ba9fc0b565a839a70330b359c0f362c14ef20a93625ac03"
+    },
+    {
+      "path": "docs/architecture/DOMAIN-CONTEXT-MAP-v1.md",
+      "bytes": 6219,
+      "sha256": "37d089a1e5516222c4aa3b243bcb771bb68979f3378036024db529c2314d3341"
     }
   ]
 }

@@ -2,6 +2,8 @@
 
 Revisado em 12/10/2026 durante o fechamento de BK-017.
 
+Mapa técnico inicial dos sete contextos de negócio: [`DOMAIN-CONTEXT-MAP-v1.md`](DOMAIN-CONTEXT-MAP-v1.md). O mapa registra lacunas sem aprovar novos cálculos, regras ou mudanças de interface.
+
 ## Objetivo
 
 Este documento registra como o monólito Go separa regras, casos de uso, integrações e transporte. O objetivo é permitir trocar uma fonte externa ou um meio de armazenamento sem levar dependências de infraestrutura para as regras financeiras.

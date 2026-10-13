@@ -407,8 +407,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 12/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 14 em andamento e 106 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-031 (85%), BK-041 (69%), BK-056 (5%), BK-067 (20%) e BK-102 (1%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 90% + 35% + 70% + 55% + 85% + 69% + 5% + 20% + 1%) ÷ 127 = 9,8%`; restam 90,2%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- O backlog mantém 127 tarefas: 7 concluídas, 15 em andamento e 105 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-031 (85%), BK-041 (69%), BK-056 (5%), BK-067 (20%) e BK-102 (1%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 90% + 35% + 70% + 55% + 85% + 69% + 5% + 20% + 1%) ÷ 127 = 10,0%`; restam 90,0%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 
 ## 00 Descoberta e decisões
@@ -827,7 +827,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-016 — Modelar os domínios e o vocabulário do negócio
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Arquitetura.
+**Situação:** Em andamento. **Evolução:** 20% (mapa técnico inicial dos sete contextos concluído; ainda sem aprovar propriedade final de todos os fatos, agregados, eventos ou invariantes novos). **Tipo:** Desenvolvimento. **Responsável sugerido:** Arquitetura.
 
 **Objetivo:** Separar regras sem fragmentar a aplicação em serviços.
 
@@ -841,13 +841,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 4. Separar eventos de perdas operacionais de rendimento industrial; separar venda, direito a receber, liquidação, aporte, resgate, rendimento realizado e posição comprovada.
 5. Separar compras por quantidade, apropriação de custo e inteligência de cacau. O motor Majucau calcula a DRE segundo regras contábeis aprovadas, e o Bling é fonte dos lançamentos e referência de comparação. A calculadora recebe apenas contratos financeiros consolidados. Uma métrica tem um dono e um cálculo para todos os consumidores.
 
-**Critério de aceite:** Mapa mostra dono de cada fato, dependências direcionais e transações de negócio.
+**Critério de aceite:** Mapa mostra dono de cada fato, dependências direcionais e transações de negócio. O mapa inicial em `docs/architecture/DOMAIN-CONTEXT-MAP-v1.md` conclui apenas a primeira etapa e marca explicitamente a propriedade dos fatos ainda não validada.
 
 **Impacto:** Evita regras duplicadas entre telas e módulos.
 
 **Dependências:** BK-000, BK-005, BK-006, BK-007, BK-008, BK-009
 
-**Fonte:** A_Matriz_Mestra; B_Intersecoes; H_Contrato_Dados; Consolidação 13/09/2026, §§6,10–12; Fechamento vigente 13/09/2026, §§1–4
+**Fonte:** A_Matriz_Mestra; B_Intersecoes; H_Contrato_Dados; Consolidação 13/09/2026, §§6,10–12; Fechamento vigente 13/09/2026, §§1–4; `docs/architecture/DOMAIN-CONTEXT-MAP-v1.md`
 
 ### BK-017 — Definir a estrutura hexagonal do monólito Go
 
@@ -871,7 +871,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Fonte:** Stack definida pelo usuário
 
-**Evidência atual:** `docs/architecture/GO-MODULAR-BOUNDARIES.md` registra os módulos Go, as portas existentes, dependências permitidas, composição, fronteiras transacionais e o mapa de imports conferido. `cmd/worker` agora fecha o pool PostgreSQL compartilhado no ponto que o criou. Os 10% restantes aguardam a conclusão da dependência BK-016, que define os contextos e o vocabulário de negócio.
+**Evidência atual:** `docs/architecture/GO-MODULAR-BOUNDARIES.md` registra os módulos Go, as portas existentes, dependências permitidas, composição, fronteiras transacionais e o mapa de imports conferido. `cmd/worker` agora fecha o pool PostgreSQL compartilhado no ponto que o criou. O mapa inicial de contextos está em `docs/architecture/DOMAIN-CONTEXT-MAP-v1.md`; BK-017 permanece em 90% enquanto BK-016 termina a definição de propriedade dos fatos e vocabulário.
 
 ### BK-018 — Definir persistência, migrações e precisão dos dados
 
@@ -3790,3 +3790,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A CI do commit `31efedf` passou nos quatro grupos no run [38326834210](https://github.com/guilhermejacyzin/majucau/actions/runs/38326834210). A instalação de ferramentas, geração da camada SQL, testes Go, varredura de segurança, construção do aplicativo e instalador Windows e consolidação dos outputs passaram. Não executei testes localmente. Os dados reais do Bling continuam sem homologação; a rotina diária não pode ser ativada enquanto faltar contrato confiável para o filtro incremental e para o fim da paginação, além do acesso seguro ao Drive.
 - BK-041 permanece em 69% (31% restante) até conexão e homologação reais; BK-039 permanece em 0% (100% restante), pois o agendador e o conector persistente do Drive ainda não foram implementados. A estimativa global registrada segue em 9,8% concluído (90,2% restante), sem prazo confiável.
 - Nenhuma tela aprovada ou regra financeira foi alterada. A cópia explicativa da tela de sincronização continua aguardando aprovação; os resultados `NOT_APPLICABLE` e a frase de resumo não foram modificados.
+
+### Mapa inicial dos contextos do negócio — 12/10/2026
+
+- O novo `docs/architecture/DOMAIN-CONTEXT-MAP-v1.md` organiza Tesouraria, Conciliação, Resultados, Operação, Planejamento, Integrações e Acesso com base no backlog e nas decisões aprovadas. Ele distingue conceitos financeiros importantes e indica quais proprietários ainda precisam ser validados.
+- BK-016 passa de 0% para 20% porque foi concluída a primeira de cinco etapas listadas no backlog. Agregados, eventos, invariantes novos, dono final de cada fato e transações de negócio continuam pendentes; nenhum cálculo, regra financeira ou tela foi alterado.
+- A recontagem é: 127 tarefas, 7 concluídas, 15 em andamento e 105 não iniciadas. A média simples registrada passa de 9,8% para 10,0% concluído, com 90,0% restante. É uma medida de acompanhamento do backlog, não de prontidão.
+- BK-017 continua em 90% até BK-016 ser concluída. Não há prazo global confiável enquanto integrações reais, validações e as tarefas restantes dependerem de fontes, decisões ou ambiente de homologação.

@@ -455,11 +455,11 @@
       "opsrules",
       "forecastpolicy"
     ],
-    "refs": "A_Matriz_Mestra; B_Intersecoes; H_Contrato_Dados; Consolidação 13/09/2026, §§6,10–12; Fechamento vigente 13/09/2026, §§1–4",
+    "refs": "A_Matriz_Mestra; B_Intersecoes; H_Contrato_Dados; Consolidação 13/09/2026, §§6,10–12; Fechamento vigente 13/09/2026, §§1–4; docs/architecture/DOMAIN-CONTEXT-MAP-v1.md",
     "questions": "",
     "owner": "Arquitetura",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
+    "status": "Em andamento",
     "evidence": "",
     "weight": 1,
     "dependencies": [
@@ -470,7 +470,7 @@
       "BK-008",
       "BK-009"
     ],
-    "progress": 0
+    "progress": 0.2
   },
   {
     "key": "hexagonal",

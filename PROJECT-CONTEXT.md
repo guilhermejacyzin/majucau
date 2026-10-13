@@ -10,7 +10,7 @@ O objetivo é entregar inteligência financeira executiva com dados de fontes of
 - No destino, clientes autenticados acessam um serviço Majucau por TLS; somente o serviço acessa o PostgreSQL privado. O login será próprio do Majucau: `financeiro@majucau.com.br` usa `ADMIN` e `contato@majucau.com.br` é uma conta compartilhada dos Diretores. Os logs identificam essa conta e a ação, não o Diretor individual. As capacidades aprovadas dos Diretores incluem consulta, sincronização com importação manual de CSV e exportação de backups e relatórios.
 - A prévia CSV permanece local e sem dependência de banco. O serviço central deverá validar novamente o conteúdo antes de persistir; canal de envio e retenção ainda dependem de decisão.
 - O fluxo do cliente continua sem terminal, Docker, Node.js ou configuração manual do PostgreSQL.
-- Provedor, orçamento e região ainda não foram escolhidos. A rotina diária foi aprovada para 09:30 em `America/Sao_Paulo`: processa fontes disponíveis de forma independente; se um arquivo não estiver na pasta, ele permanece pendente até às 09:30 do dia seguinte; a coleta Bling relê todas as contas. A rotina ainda não foi implementada. A compatibilidade desta rotina diária com o padrão anterior de sincronização a cada 15 minutos está pendente de esclarecimento. O acesso persistente do serviço às pastas do Drive também continua pendente.
+- Provedor, orçamento e região ainda não foram escolhidos. A rotina diária foi aprovada para 09:30 em `America/Sao_Paulo`: processa fontes disponíveis de forma independente; se um arquivo não estiver na pasta, ele permanece pendente até às 09:30 do dia seguinte; a coleta Bling relê diariamente todas as Contas a Receber e Contas a Pagar. Essa agenda substitui a proposta anterior de sincronização automática a cada 15 minutos. A rotina ainda não foi implementada. O prazo para classificar dados diários como desatualizados (`STALE`) precisa ser compatibilizado com a agenda diária. O acesso persistente do serviço às pastas do Drive também continua pendente.
 
 Estado verificável em 2026-10-03:
 
@@ -62,7 +62,7 @@ Construir contrato e painel. A tabela aprovada em 2026-09-20 define cartão 1x/2
 - BRL; timezone de negócio `America/Sao_Paulo`; instantes técnicos UTC;
 - dinheiro `numeric(19,4)`, sem `float`; `ROUND_HALF_UP` na fronteira;
 - intervalos de negócio inclusivos; técnicos `[início,fim)`;
-- sync 15 minutos; `STALE` após duas perdas ou 30 minutos;
+- sync automático diário às 09:30 conforme decisão posterior; a proposta de 15 minutos foi substituída. O limite `STALE` de duas perdas/30 minutos ainda precisa ser compatibilizado antes da implementação;
 - aging exclusivo: vencido, hoje, 1–7, 8–15, 16–30, 31–45, 46–60;
 - parcial usa saldo aberto; cancelamento/estorno/chargeback geram compensação;
 - folha CSV UTF-8 separada por `;`;

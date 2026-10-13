@@ -407,8 +407,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 12/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 15 em andamento e 105 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-031 (85%), BK-041 (69%), BK-056 (5%), BK-067 (20%) e BK-102 (1%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 90% + 35% + 70% + 55% + 85% + 69% + 5% + 20% + 1%) ÷ 127 = 10,0%`; restam 90,0%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- O backlog mantém 127 tarefas: 7 concluídas, 16 em andamento e 104 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (55%), BK-027 (20%), BK-031 (85%), BK-041 (69%), BK-056 (5%), BK-067 (20%) e BK-102 (1%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 90% + 35% + 70% + 55% + 20% + 85% + 69% + 5% + 20% + 1%) ÷ 127 = 10,1%`; restam 89,9%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 
 ## 00 Descoberta e decisões

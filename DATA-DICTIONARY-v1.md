@@ -96,7 +96,7 @@ PARTIALLY_AVAILABLE
 UNAVAILABLE
 ```
 
-O estado da conexão e o estado de frescor serão armazenados separadamente. Padrão operacional proposto: sincronização a cada 15 minutos; `STALE` após duas execuções perdidas ou 30 minutos sem sucesso; `PARTIALLY_AVAILABLE` quando ao menos um recurso obrigatório falhar ou uma fonte não fornecer todos os campos; `UNAVAILABLE` quando a fonte não estiver configurada, não possuir contrato oficial ou tiver falha permanente. Os limiares serão configuráveis e aparecerão no tooltip/status.
+O estado da conexão e o estado de frescor serão armazenados separadamente. A rotina automática aprovada ocorre diariamente às 09:30 em `America/Sao_Paulo`; ela substitui a proposta anterior de sincronização a cada 15 minutos. O limite `STALE` de duas execuções perdidas/30 minutos não é compatível por si só com a agenda diária e requer definição antes da implementação. `PARTIALLY_AVAILABLE` indica que ao menos um recurso obrigatório falhou ou uma fonte não forneceu todos os campos; `UNAVAILABLE` indica fonte sem configuração, contrato oficial ou com falha permanente. Os limiares serão configuráveis e aparecerão no tooltip/status.
 
 ### 4.2 `integration_sync_batches`
 

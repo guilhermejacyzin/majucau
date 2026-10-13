@@ -109,3 +109,11 @@ Não foram alterados código, telas, regras financeiras, credenciais ou dados. N
 - O código atual do Majucau aceita HTTPS ao salvar a configuração, mas o início do OAuth exige `http://127.0.0.1:<porta>/<caminho>` e abre um listener local nessa porta. Portanto, o HTTPS informado não é compatível com o callback implementado e a conexão não concluirá com essa configuração.
 - Não encontrei neste repositório um serviço que receba o callback HTTPS e o encaminhe com segurança ao worker local. A existência e o funcionamento desse encaminhamento ainda precisam ser confirmados. Não alterei OAuth, credenciais ou tela; nenhuma regra financeira foi afetada.
 - Próximo passo: confirmar se o endereço HTTPS é uma ponte funcional para o Majucau instalado. Se não for, escolher entre cadastrar um callback local aceito pelo Bling ou aprovar e desenhar uma ponte HTTPS segura antes de alterar o fluxo.
+
+## Verificação do Site de retorno — 12/10/2026
+
+- A responsável confirmou o endereço HTTPS cadastrado no campo “Link de redirecionamento”. O host não é repetido nesta evidência pública.
+- A consulta somente de leitura ao inventário de Sites encontrou um Site ativo e público destinado à ponte Bling. A versão mais recente publicada é a 9; não há repositório de código conectado para inspecionar sua implementação.
+- A consulta aos registros recentes do Site não encontrou chamadas no período consultado. Isso não prova que a ponte esteja quebrada, mas também não comprova que ela encaminhe `code` e `state` ao Majucau local.
+- O worker do Majucau continua aceitando somente um callback local `http://127.0.0.1:<porta>/<caminho>`. Ainda falta confirmar o comportamento da ponte ou obter seu código para revisão antes de alterar o OAuth.
+- Nenhuma chamada de autorização foi iniciada, nenhum segredo foi consultado e nenhuma configuração ou tela foi modificada. Nenhuma regra financeira foi afetada.

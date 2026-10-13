@@ -3810,3 +3810,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-027 passa a 20%: a composição atual do worker já limita a abertura do PostgreSQL a cinco segundos; agora a inicialização diferencia `DATABASE_NOT_CONFIGURED`, `DATABASE_CONFIG_INVALID` e `DATABASE_UNAVAILABLE` e grava apenas esse código estável, sem incluir DSN ou erro bruto.
 - A interface, o banco, as regras financeiras e as operações de prévia local não mudaram. A verificação de prontidão em ambiente instalado ainda não foi feita.
 - A recontagem é: 127 tarefas, 7 concluídas, 16 em andamento e 104 não iniciadas; a média simples passa de 10,0% para 10,1% concluída (89,9% restante). Esta métrica não significa prontidão do protótipo. Não há prazo global confiável.
+
+### Verificação da ponte de retorno OAuth do Bling — 12/10/2026
+
+- Gisele confirmou o endereço HTTPS cadastrado no Bling. A consulta somente de leitura encontrou um Site ativo e público para a ponte, mas sem repositório de código conectado; portanto, não foi possível verificar como o retorno chega ao Majucau instalado. A busca nos registros recentes não encontrou chamadas e não comprova funcionamento nem falha.
+- O OAuth local do Majucau ainda aceita somente `http://127.0.0.1:<porta>/<caminho>`. Não alterei esse fluxo nem telas enquanto a ponte não puder ser revisada; nenhuma regra financeira foi afetada.
+- BK-041 continua em 69% (31% restante), pendente de validar a ponte, autorizar e conectar a conta, confirmar paginação e homologar uma sincronização real. A estimativa global continua em 10,2% concluída (89,8% restante), sem prazo total confiável.
+- Próximo passo: confirmar se a ponte entrega a autorização ao aplicativo Majucau aberto no computador, ou disponibilizar o código da ponte para revisão. Evidência: `docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md`.

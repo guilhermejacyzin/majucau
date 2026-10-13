@@ -48,7 +48,7 @@ type blingRawSyncer interface {
 }
 
 type workerHandler struct {
-	health            application.StaticHealth
+	health            application.HealthChecker
 	databaseErrorCode string
 	resources         resourceCloser
 	receiptImporter   receiptImporter
@@ -88,7 +88,7 @@ func newWorkerHandler() workerHandler {
 			rawSync = oauthService.(blingRawSyncer)
 		}
 	}
-	return workerHandler{health: application.StaticHealth{Service: "majucau-worker", Version: "dev"}, databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader, dashboardReader: dashboardReader}
+	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader, dashboardReader: dashboardReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {

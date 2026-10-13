@@ -3894,3 +3894,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-041 mantém a proteção: se o adapter não consegue provar que percorreu a lista toda, não confirma a sincronização nem avança o cursor. A resposta real da conta depende de OAuth; o protótipo ainda solicita o Client Secret diretamente na tela local.
 - BK-041 permanece em 75% (25% restante). O backlog permanece em 11% concluído e 89% restante, pela média simples registrada. Não há prazo confiável enquanto faltarem autorização e homologação dos dados reais.
 - Nenhuma tela ou regra financeira foi alterada. Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
+
+### Retomada da conexão Bling no protótipo — 13/10/2026
+
+- Gisele informou que não sabe dizer se o endereço de retorno encaminha a autorização ao Majucau local. A verificação do código e da evidência de publicação confirmou esse fluxo: o callback HTTPS cadastrado é reconhecido; a ponte repassa somente o código temporário e o `state` ao endereço local fixo; o worker confere o `state`, troca o código usando o endereço HTTPS registrado e guarda os tokens no cofre do Windows. Essa confirmação técnica não equivale a uma autorização real.
+- Na tela local de Integrações, o estado do Bling continua “Não conectado”. Os dados públicos Client ID e Redirect URI enviados pela responsável foram colocados no formulário aberto, mas ainda não foram salvos. O Client Secret não foi lido nem preenchido; não houve tentativa OAuth, teste de API ou sincronização.
+- Próxima ação para homologar: Gisele deve digitar o Client Secret diretamente no campo do Majucau e salvar. O segredo não deve ser enviado pelo chat. Depois, ainda será necessário conectar, testar e comparar os registros importados com o Bling.
+- BK-041 permanece em 75% (25% restante). A média do backlog permanece em 11% concluído (89% restante). Não há prazo confiável para a sincronização real enquanto faltar a autorização e a confirmação do término da paginação.
+- Nenhuma tela aprovada, regra financeira ou regra de negócio foi alterada. Evidência: `docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md`.

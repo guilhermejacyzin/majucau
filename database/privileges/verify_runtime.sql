@@ -1,9 +1,14 @@
 -- Run as the disposable PostgreSQL schema owner after runtime.sql.
--- This script validates only privileges; it does not read or change business data.
+-- This script validates privileges only and cannot change business data.
 DO $verify_runtime_privileges$
 DECLARE
   runtime_oid oid;
-  table_row record;
+  relation_row record;
+  function_row record;
+  sequence_row record;
+  expected_select boolean;
+  expected_insert boolean;
+  expected_update boolean;
 BEGIN
   SELECT oid INTO runtime_oid
     FROM pg_roles
@@ -27,49 +32,106 @@ BEGIN
   END IF;
 
   IF NOT has_schema_privilege(runtime_oid, 'public', 'USAGE') OR
-     has_schema_privilege(runtime_oid, 'public', 'CREATE') THEN
+     has_schema_privilege(runtime_oid, 'public', 'CREATE') OR
+     (SELECT nspowner = runtime_oid FROM pg_namespace WHERE nspname = 'public') THEN
     RAISE EXCEPTION 'runtime schema privileges are incorrect';
   END IF;
 
-  FOR table_row IN
-    SELECT format('%I.%I', namespace.nspname, relation.relname) AS qualified_name
+  FOR relation_row IN
+    SELECT format('%I.%I', namespace.nspname, relation.relname) AS qualified_name,
+           relation.relname,
+           relation.relowner
       FROM pg_class AS relation
       JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
      WHERE namespace.nspname = 'public'
        AND relation.relkind IN ('r', 'p', 'v', 'm', 'f')
   LOOP
-    IF NOT has_table_privilege(runtime_oid, table_row.qualified_name, 'SELECT') THEN
-      RAISE EXCEPTION 'runtime role cannot read required relation %', table_row.qualified_name;
+    expected_select := relation_row.qualified_name = ANY (ARRAY[
+      'public.integration_connections',
+      'public.integration_status',
+      'public.integration_sync_batches',
+      'public.sync_cursors',
+      'public.raw_records',
+      'public.receipts',
+      'public.receivables',
+      'public.payables',
+      'public.payments',
+      'public.contacts'
+    ]::text[]);
+    expected_insert := relation_row.qualified_name = ANY (ARRAY[
+      'public.integration_connections',
+      'public.integration_sync_batches',
+      'public.sync_cursors',
+      'public.raw_records',
+      'public.receipts',
+      'public.receivables'
+    ]::text[]);
+    expected_update := relation_row.qualified_name = ANY (ARRAY[
+      'public.integration_connections',
+      'public.integration_sync_batches',
+      'public.sync_cursors',
+      'public.receipts',
+      'public.receivables'
+    ]::text[]);
+
+    IF relation_row.relowner = runtime_oid OR
+       has_table_privilege(runtime_oid, relation_row.qualified_name, 'SELECT') IS DISTINCT FROM expected_select OR
+       has_table_privilege(runtime_oid, relation_row.qualified_name, 'INSERT') IS DISTINCT FROM expected_insert OR
+       has_table_privilege(runtime_oid, relation_row.qualified_name, 'UPDATE') IS DISTINCT FROM expected_update OR
+       has_table_privilege(runtime_oid, relation_row.qualified_name, 'DELETE') OR
+       has_table_privilege(runtime_oid, relation_row.qualified_name, 'TRUNCATE') OR
+       has_table_privilege(runtime_oid, relation_row.qualified_name, 'REFERENCES') OR
+       has_table_privilege(runtime_oid, relation_row.qualified_name, 'TRIGGER') OR
+       has_table_privilege(runtime_oid, relation_row.qualified_name, 'MAINTAIN') OR
+       has_any_column_privilege(runtime_oid, relation_row.qualified_name, 'SELECT') IS DISTINCT FROM expected_select OR
+       has_any_column_privilege(runtime_oid, relation_row.qualified_name, 'INSERT') IS DISTINCT FROM expected_insert OR
+       has_any_column_privilege(runtime_oid, relation_row.qualified_name, 'UPDATE') IS DISTINCT FROM expected_update OR
+       has_any_column_privilege(runtime_oid, relation_row.qualified_name, 'REFERENCES') THEN
+      RAISE EXCEPTION 'runtime role has unexpected relation privileges on %', relation_row.qualified_name;
     END IF;
   END LOOP;
 
-  IF NOT has_table_privilege(runtime_oid, 'public.raw_records', 'INSERT') OR
-     has_table_privilege(runtime_oid, 'public.raw_records', 'UPDATE') OR
-     has_table_privilege(runtime_oid, 'public.raw_records', 'DELETE') OR
-     NOT has_table_privilege(runtime_oid, 'public.audit_events', 'INSERT') OR
-     has_table_privilege(runtime_oid, 'public.audit_events', 'UPDATE') OR
-     has_table_privilege(runtime_oid, 'public.audit_events', 'DELETE') THEN
-    RAISE EXCEPTION 'runtime RAW or audit append-only privileges are incorrect';
-  END IF;
-
-  IF NOT has_function_privilege(runtime_oid, 'public.retire_current_raw_record(uuid)', 'EXECUTE') OR
-     NOT has_function_privilege(runtime_oid, 'public.redact_raw_record(uuid,jsonb,uuid,text)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'runtime role cannot execute approved RAW transition functions';
-  END IF;
+  FOR function_row IN
+    SELECT function_entry.oid, function_entry.proowner
+      FROM pg_proc AS function_entry
+      JOIN pg_namespace AS namespace ON namespace.oid = function_entry.pronamespace
+     WHERE namespace.nspname = 'public'
+       AND function_entry.prokind IN ('f', 'p', 'a', 'w')
+  LOOP
+    IF function_row.proowner = runtime_oid OR
+       has_function_privilege(runtime_oid, function_row.oid, 'EXECUTE') IS DISTINCT FROM (
+         function_row.oid = 'public.retire_current_raw_record(uuid)'::regprocedure
+       ) THEN
+      RAISE EXCEPTION 'runtime role has unexpected function privileges on %', function_row.oid::regprocedure;
+    END IF;
+  END LOOP;
 
   IF EXISTS (
     SELECT 1
       FROM pg_proc AS function_entry
+      JOIN pg_namespace AS namespace ON namespace.oid = function_entry.pronamespace
       CROSS JOIN LATERAL aclexplode(coalesce(function_entry.proacl, acldefault('f', function_entry.proowner))) AS acl
-     WHERE function_entry.oid IN (
-       'public.retire_current_raw_record(uuid)'::regprocedure,
-       'public.redact_raw_record(uuid,jsonb,uuid,text)'::regprocedure
-     )
+     WHERE namespace.nspname = 'public'
+       AND function_entry.prokind IN ('f', 'p', 'a', 'w')
        AND acl.grantee = 0
        AND acl.privilege_type = 'EXECUTE'
   ) THEN
-    RAISE EXCEPTION 'approved RAW transition functions are executable by PUBLIC';
+    RAISE EXCEPTION 'a public-schema routine is executable by PUBLIC';
   END IF;
+
+  FOR sequence_row IN
+    SELECT relation.oid, format('%I.%I', namespace.nspname, relation.relname) AS qualified_name
+      FROM pg_class AS relation
+      JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+     WHERE namespace.nspname = 'public'
+       AND relation.relkind = 'S'
+  LOOP
+    IF has_sequence_privilege(runtime_oid, sequence_row.oid, 'USAGE') OR
+       has_sequence_privilege(runtime_oid, sequence_row.oid, 'SELECT') OR
+       has_sequence_privilege(runtime_oid, sequence_row.oid, 'UPDATE') THEN
+      RAISE EXCEPTION 'runtime role has unexpected sequence privileges on %', sequence_row.qualified_name;
+    END IF;
+  END LOOP;
 END
 $verify_runtime_privileges$;
 
@@ -89,6 +151,15 @@ BEGIN
   BEGIN
     DELETE FROM public.audit_events WHERE false;
     RAISE EXCEPTION 'runtime role unexpectedly deleted audit records';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+
+  BEGIN
+    INSERT INTO public.audit_events (action_code, entity_type, entity_id, reason)
+    SELECT 'VERIFY_NOOP', 'verification', gen_random_uuid(), 'permission check only'
+     WHERE false;
+    RAISE EXCEPTION 'runtime role unexpectedly inserted audit records directly';
   EXCEPTION WHEN insufficient_privilege THEN
     NULL;
   END;

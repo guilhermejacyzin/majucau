@@ -82,6 +82,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Worker protege secrets com DPAPI e ACL/SDDL da conta `NT SERVICE\MajucauWorker`.
 - IPC via Named Pipe autenticado pelo SID, DACL mínima, protocolo versionado e autorização no worker.
 - Toda ação material verifica permissão no worker e gera `audit_events` sanitizado.
+- `majucau_runtime` usa uma allowlist explícita de leitura, escrita e execução; nunca conceder acesso amplo `ALL TABLES/FUNCTIONS` ao runtime. RAW e auditoria continuam sem mutação direta, e cada nova relação/função requer uma permissão deliberada coberta por `database/privileges/verify_runtime.sql`.
 - Não logar documento, folha, token ou payload completo sem necessidade legal e proteção explícita.
 - Rodar scan de secrets, dependências, vulnerabilidades, SBOM e licenças no pipeline.
 

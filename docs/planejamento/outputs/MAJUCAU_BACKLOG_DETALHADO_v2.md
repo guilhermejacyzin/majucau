@@ -407,8 +407,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 13/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (90%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (25%), BK-031 (85%), BK-041 (75%), BK-042 (40%), BK-043 (40%), BK-056 (5%), BK-067 (20%) e BK-102 (1%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 90% + 35% + 70% + 60% + 25% + 85% + 75% + 40% + 40% + 5% + 20% + 1%) ÷ 127 = 10,9%`; restam 89,1%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- O backlog mantém 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (25%), BK-031 (85%), BK-041 (75%), BK-042 (40%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 95% + 35% + 70% + 60% + 25% + 85% + 75% + 40% + 40% + 5% + 25% + 1%) ÷ 127 = 11,0%`; restam 89,0%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-024 permanece em 35%: a revisão de streaming corrigiu no Site o formulário protegido do Client Secret, limitando a leitura a 8 KiB, e publicou a versão 16. Os 28 testes do Site passaram. Isso fecha esse ponto específico; ACLs em VM limpa, carga/memória e outros riscos continuam pendentes, então a estimativa da tarefa de segurança geral não muda. Evidências: `docs/evidence/DATA-STREAMING-STATIC-AUDIT-2026-10-11.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
 
@@ -852,7 +852,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-017 — Definir a estrutura hexagonal do monólito Go
 
-**Situação:** Em andamento. **Evolução:** 90%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Arquitetura.
+**Situação:** Em andamento. **Evolução:** 95% (estrutura, portas, composição, fronteiras transacionais e regras de dependência estão documentadas; o grafo de imports agora é verificado automaticamente no fluxo local e na CI. Falta concluir BK-016 e validar contratos de módulos quando a propriedade final dos fatos estiver definida). **Tipo:** Desenvolvimento. **Responsável sugerido:** Arquitetura.
 
 **Objetivo:** Manter regras testáveis e independentes das integrações.
 
@@ -872,7 +872,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Fonte:** Stack definida pelo usuário
 
-**Evidência atual:** `docs/architecture/GO-MODULAR-BOUNDARIES.md` registra os módulos Go, as portas existentes, dependências permitidas, composição, fronteiras transacionais e o mapa de imports conferido. `cmd/worker` agora fecha o pool PostgreSQL compartilhado no ponto que o criou. O mapa inicial de contextos está em `docs/architecture/DOMAIN-CONTEXT-MAP-v1.md`; BK-017 permanece em 90% enquanto BK-016 termina a definição de propriedade dos fatos e vocabulário.
+**Evidência atual:** `docs/architecture/GO-MODULAR-BOUNDARIES.md` registra os módulos Go, as portas existentes, dependências permitidas, composição, fronteiras transacionais e `scripts/verify-go-boundaries.ps1`. `cmd/worker` fecha o pool PostgreSQL compartilhado no ponto que o criou. O mapa inicial de contextos está em `docs/architecture/DOMAIN-CONTEXT-MAP-v1.md`; os 5% restantes dependem da conclusão de BK-016 e da validação dos contratos funcionais então definidos.
 
 ### BK-018 — Definir persistência, migrações e precisão dos dados
 
@@ -3876,3 +3876,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Foi acrescentado `TestProductionHTTPCallsUseReviewedPaths` para conferir os pontos de chamada HTTP nos arquivos Go de produção. Se uma integração nova fizer uma chamada direta sem revisão, o comando de verificação falha e aponta arquivo e função. Chamadas GET repetíveis devem usar o retry comum; o POST OAuth continua sem repetição automática por ser de uso único.
 - `go test -count=1 ./internal/integrations/httpretry` passou. O código do aplicativo, telas, regras financeiras e conexão real não mudaram. Evidência: `docs/evidence/HTTP-RETRY-SOURCE-GUARD-2026-10-13.md`.
 - BK-041 permanece em 75% (25% restante), pois o guard protege futuras alterações, mas não substitui autorização, paginação confirmada nem sincronização homologada. A média simples segue em 10,9% concluída (89,1% restante); ainda não existe prazo total confiável.
+
+### Verificação automática das fronteiras Go — 13/10/2026
+
+- `scripts/verify-go-boundaries.ps1` verifica o grafo de importações de todos os pacotes Go do módulo. O domínio só aceita biblioteca padrão; aplicação e cálculos financeiros aceitam biblioteca padrão e domínio. Chamadas de rede, banco, sistema operacional, caminhos de arquivo, chamadas de sistema, plugins e `unsafe` são rejeitados nessas camadas; nenhum pacote pode importar `cmd/`.
+- A mesma regra agora roda na verificação local `scripts/verify.ps1` e no job Windows da CI. A primeira execução local passou. A validação completa do commit será confirmada pela CI após o push.
+- BK-017 avança de 90% para 95% (5% restante): fronteiras e composição estão documentadas e agora protegidas automaticamente. Os 5% restantes dependem de concluir BK-016 e validar contratos funcionais finais; por isso BK-017 continua em andamento.
+- A conferência também encontrou que BK-067 já havia avançado para 25%, mas o resumo ainda mostrava 20%. Corrigido esse resumo, a média recalculada das 127 tarefas é 11,0% concluído e 89,0% restante. Não há previsão confiável de conclusão do projeto.
+- O endereço de retorno OAuth enviado pela responsável já corresponde ao callback fixo implementado e publicado. Isso confirma o endereço, mas a conexão real do Bling, a autorização e a sincronização continuam pendentes; nenhuma credencial foi solicitada ou registrada.
+- Nenhuma tela aprovada, regra financeira ou regra de negócio foi alterada. Evidência técnica: `docs/evidence/GO-BOUNDARIES-CI-GUARD-2026-10-13.md`.

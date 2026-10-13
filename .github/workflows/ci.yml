@@ -135,6 +135,10 @@ jobs:
       - name: Go tests
         run: go test . ./cmd/... ./database/... ./internal/...
 
+      - name: Verify Go architecture boundaries
+        shell: pwsh
+        run: ./scripts/verify-go-boundaries.ps1
+
       - name: Go vet
         run: go vet . ./cmd/... ./database/... ./internal/...
 

@@ -113,6 +113,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Separar domínio, casos de uso, adapters, infraestrutura e apresentação.
 - `internal/domain` não importa UI, banco ou clientes HTTP.
 - `internal/integrations` traduz payload externo para contratos do domínio, sem espalhar schemas de provedor.
+- `scripts/verify-go-boundaries.ps1` confere automaticamente as camadas Go na verificação local e na CI; desvios exigem revisão de arquitetura.
 - `internal/financial` e `internal/accounting` usam regras versionadas e funções determinísticas.
 - SQL é explícito, versionado e revisável; migrations são forward-only, checksumadas e executadas sob advisory lock.
 - Erros públicos usam códigos estáveis e mensagem simples; detalhes técnicos são sanitizados.

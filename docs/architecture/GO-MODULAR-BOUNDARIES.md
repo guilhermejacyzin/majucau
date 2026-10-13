@@ -1,6 +1,6 @@
 # Limites da arquitetura Go
 
-Revisado em 12/10/2026 durante o fechamento de BK-017.
+Revisado em 13/10/2026 durante o avanço de BK-017.
 
 Mapa técnico inicial dos sete contextos de negócio: [`DOMAIN-CONTEXT-MAP-v1.md`](DOMAIN-CONTEXT-MAP-v1.md). O mapa registra lacunas sem aprovar novos cálculos, regras ou mudanças de interface.
 
@@ -18,7 +18,8 @@ Este registro não aprova mudanças nas telas nem nas regras financeiras. Ele de
 | Cálculos financeiros | `internal/financial` | Cálculos puros que recebem dados e devolvem resultados | `internal/domain` e biblioteca padrão |
 | Contratos da aplicação | `internal/application` | Formatos de entrada/saída e contratos usados entre worker, painel e adaptadores | `internal/domain` e biblioteca padrão |
 | Adaptadores | `internal/integrations/*`, `internal/dashboard`, `internal/security`, `internal/backup` | Bling, arquivos, PostgreSQL, cofre de segredos, exportação e leitura do painel | Contratos internos, domínio e bibliotecas/serviços externos necessários ao adaptador |
-| Entrada IPC e composição | `cmd/worker` | Receber pedidos locais, validar o envelope, ligar adaptadores aos contratos e administrar o ciclo de vida | Pode conhecer os adaptadores para montá-los; o restante do projeto não deve depender de `cmd/worker` |
+| Aplicativo desktop e limite Wails | `main.go`, `app.go` | Abrir a janela, publicar os métodos da interface e encaminhar pedidos locais ao worker por IPC | Pode usar Wails, contratos de `application`/`domain` e cliente IPC; não guarda credenciais de provedor nem compõe adaptadores de dados |
+| Entrada IPC e composição do worker | `cmd/worker` | Receber pedidos locais, validar o envelope, ligar adaptadores aos contratos e administrar o ciclo de vida | Pode conhecer os adaptadores para montá-los; nenhum pacote depende dos pontos de entrada em `cmd/` |
 | Outros pontos de entrada | `cmd/installer-helper` | Compor os serviços da instalação | Adaptadores de instalação e biblioteca padrão |
 
 O `frontend` é uma camada de apresentação separada. Ele fala com o worker pelo IPC; não importa pacotes Go nem acessa o banco diretamente.
@@ -26,9 +27,11 @@ O `frontend` é uma camada de apresentação separada. Ele fala com o worker pel
 ## Caminho permitido das dependências
 
 ```text
-frontend → IPC → cmd/worker (composição) → contratos → adaptadores → PostgreSQL/Bling/arquivos/cofre
-                                  ↓
-                         aplicação e domínio
+main.go/app.go (Wails) → frontend → IPC → cmd/worker (composição)
+                                             ↓
+                   contratos → adaptadores → PostgreSQL/Bling/arquivos/cofre
+                       ↓
+                aplicação → domínio ← cálculos financeiros
 ```
 
 Regras para mudanças futuras:
@@ -37,7 +40,7 @@ Regras para mudanças futuras:
 2. `internal/financial` pode usar o domínio; não pode chamar rede, interface visual ou banco.
 3. A aplicação não importa adaptadores concretos. As interfaces são definidas pelo consumidor do serviço sempre que isso preserva a dependência para dentro.
 4. Adaptadores podem implementar contratos da aplicação e usar drivers externos. Um adaptador não deve chamar a interface visual.
-5. Só os pontos de composição (`cmd/*`) ligam implementações concretas aos consumidores.
+5. Só os pontos de composição — aplicativo Wails na raiz, `cmd/worker` e `cmd/installer-helper` — ligam seus serviços locais. Nenhum pacote importa um pacote de `cmd/`.
 6. Payloads de arquivos, rede e IPC devem continuar em fluxo e com limites definidos nos próprios adaptadores; os contratos de controle permanecem pequenos.
 
 ## Portas e adaptadores já existentes
@@ -74,8 +77,10 @@ O worker agora também é dono explícito do pool compartilhado e o fecha ao enc
 
 As transações pertencem aos serviços que persistem os dados. A raiz de composição cria e fecha conexões/pools; ela não decide o que é um registro válido nem altera os resultados financeiros.
 
-## Verificação e limite conhecido
+## Verificação automática e limite conhecido
 
-Em 12/10/2026, a lista de imports de Go foi conferida com `go list`: domínio e cálculos financeiros não dependem de integrações/HTTP/React/ORM, e não há ciclo entre os módulos listados. Os testes existentes de `cmd/worker` usam implementações falsas das interfaces consumidoras.
+Em 12/10/2026, a lista de imports de Go foi conferida com `go list`: domínio e cálculos financeiros não dependiam de integrações/HTTP/React/ORM, e não havia ciclo entre os módulos listados. Os testes existentes de `cmd/worker` usam implementações falsas das interfaces consumidoras.
 
-O repositório ainda não tem uma regra automática de CI que fiscalize toda a direção dos imports. Mudanças futuras devem respeitar este mapa e registrar desvios antes de introduzir acoplamento. A existência desse limite não muda as interfaces ou os dados atuais.
+Em 13/10/2026, `scripts/verify-go-boundaries.ps1` passou a conferir todos os pacotes do módulo pelo grafo real obtido por `go list`, usando a lista oficial de pacotes padrão da versão ativa do Go. A verificação exige biblioteca padrão em `internal/domain`, permite apenas biblioteca padrão e `internal/domain` em `internal/financial`/`internal/application`, rejeita pacotes de rede, banco, sistema operacional, caminhos de arquivo, chamadas de sistema, plugins e `unsafe` nessas três camadas e impede dependências de qualquer pacote `cmd/`. O script roda na verificação local e no job Windows da CI.
+
+A verificação confirma direção de imports, não propriedade final de todos os fatos do negócio. A definição dos contextos, agregados, eventos e contratos funcionais segue em BK-016, e a implementação de casos de uso ainda depende do restante do backlog. A regra não altera interfaces, dados, telas ou regras financeiras.

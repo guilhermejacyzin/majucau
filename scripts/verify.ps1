@@ -53,6 +53,8 @@ try {
     Write-Host 'go test . ./cmd/... ./database/... ./internal/...'
     Invoke-NativeChecked -Command $goCommand -Arguments (@('test') + $goPackages)
 
+    & (Join-Path $PSScriptRoot 'verify-go-boundaries.ps1')
+
     Write-Host 'go vet . ./cmd/... ./database/... ./internal/...'
     Invoke-NativeChecked -Command $goCommand -Arguments (@('vet') + $goPackages)
 

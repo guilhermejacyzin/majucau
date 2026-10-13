@@ -78,3 +78,16 @@ O endpoint também depende de autorização OAuth da API. A senha de login ao si
 - Gisele aprovou reler diariamente todas as Contas a Receber e Contas a Pagar do Bling. A coleta automática não deve depender de um filtro genérico de “alterado desde ontem” nem se limitar aos próximos 60 dias.
 - Essa escolha substitui o escopo anterior de busca incremental para a atualização automática. Não altera os filtros da sincronização manual, nem as regras financeiras ou o período de projeção dos relatórios.
 - Uma releitura completa depende de percorrer todas as páginas de cada lista. A documentação pública consultada ainda não define um marcador explícito de última página; por isso, não declarar sucesso nem avançar o estado de atualização até homologar uma forma segura de detectar o término.
+
+## Rechecagem oficial das duas listas financeiras — 13/10/2026
+
+- A OpenAPI pública atual descreve `GET /contas/receber` e `GET /contas/pagar` como listas paginadas. Ambas usam `pagina` (padrão 1) e `limite` (padrão 100; mínimo 1).
+- Para as duas rotas, a resposta HTTP 200 publicada descreve somente `data` como uma lista. O schema não informa `hasNext`, `total`, página atual nem total de páginas. A referência também não documenta o que acontece ao consultar uma página além da última.
+- A documentação confirma como pedir páginas, mas não confirma como provar que a leitura terminou. Mantive a proteção do adapter: sem marcador comprovável, a sincronização falha sem fechar o lote nem avançar o cursor.
+- A conta Majucau ainda não está autorizada no protótipo: a tela local mostra `BLING_SECRET_REQUIRED`. Portanto, ainda não existe resposta autenticada da empresa para inspecionar. Depois de cadastrar o Client Secret diretamente no Majucau, poderemos observar a resposta real sem expor a credencial; qualquer mudança de comportamento continuará condicionada a essa evidência.
+- Nenhuma regra financeira, tela ou filtro foi alterado. Esta revisão cobre a OpenAPI pública, não dados da empresa.
+
+Fontes oficiais consultadas em 13/10/2026:
+
+- [OpenAPI da API Bling v3 — `GET /contas/receber` e `GET /contas/pagar`](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json)
+- [Referência da API Bling](https://developer.bling.com.br/referencia)

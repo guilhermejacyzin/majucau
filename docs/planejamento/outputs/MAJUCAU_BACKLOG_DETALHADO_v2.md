@@ -3885,5 +3885,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A mesma regra agora roda na verificação local `scripts/verify.ps1` e no job Windows da CI. A execução local e o job da CI passaram. A CI completa do commit `67a689a` passou no run [38357428565](https://github.com/guilhermejacyzin/majucau/actions/runs/38357428565), incluindo Windows, PostgreSQL, testes Go e o build do protótipo.
 - BK-017 avança de 90% para 95% (5% restante): fronteiras e composição estão documentadas e agora protegidas automaticamente. Os 5% restantes dependem de concluir BK-016 e validar contratos funcionais finais; por isso BK-017 continua em andamento.
 - A conferência também encontrou que BK-067 já havia avançado para 25%, mas o resumo ainda mostrava 20%. Corrigido esse resumo, a média recalculada das 127 tarefas é 11,0% concluído e 89,0% restante. Não há previsão confiável de conclusão do projeto.
-- O endereço de retorno OAuth enviado pela responsável já corresponde ao callback fixo implementado e publicado. Isso confirma o endereço, mas a conexão real do Bling, a autorização e a sincronização continuam pendentes; nenhuma credencial foi solicitada ou registrada.
+- O endereço de retorno OAuth enviado pela responsável já corresponde ao callback fixo implementado e publicado. Isso confirma o endereço, mas a conexão real do Bling, a autorização e a sincronização continuam pendentes; nenhuma credencial foi compartilhada no chat ou registrada no repositório.
 - Nenhuma tela aprovada, regra financeira ou regra de negócio foi alterada. Evidência técnica: `docs/evidence/GO-BOUNDARIES-CI-GUARD-2026-10-13.md`.
+
+### Rechecagem oficial da paginação das contas Bling — 13/10/2026
+
+- A OpenAPI oficial atual confirma `pagina` e `limite` (padrão de 100 registros) para `GET /contas/receber` e `GET /contas/pagar`, mas descreve somente a lista `data` na resposta. Não documenta marcador de última página nem o resultado de consultar uma página além da última.
+- BK-041 mantém a proteção: se o adapter não consegue provar que percorreu a lista toda, não confirma a sincronização nem avança o cursor. A resposta real da conta depende de OAuth; o protótipo ainda solicita o Client Secret diretamente na tela local.
+- BK-041 permanece em 75% (25% restante). O backlog permanece em 11% concluído e 89% restante, pela média simples registrada. Não há prazo confiável enquanto faltarem autorização e homologação dos dados reais.
+- Nenhuma tela ou regra financeira foi alterada. Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.

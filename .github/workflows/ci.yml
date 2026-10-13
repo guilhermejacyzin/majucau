@@ -545,6 +545,12 @@ jobs:
             psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
 
+      - name: Verify runtime database privileges
+        run: |
+          psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "CREATE ROLE majucau_runtime LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS"
+          psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f database/privileges/runtime.sql
+          psql "$MAJUCAU_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f database/privileges/verify_runtime.sql
+
       - name: Verify worker health against migrated PostgreSQL
         run: go test ./cmd/worker -run '^TestPostgresWorkerHealthProbeReportsMigratedSchema$' -count=1
 

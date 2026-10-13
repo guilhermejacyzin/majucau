@@ -57,5 +57,6 @@ The repository root owns the Go module, so this task does not change `go.mod`. T
 7. Verify a statement contribution cannot have both source FKs or neither source FK.
 8. Verify `sqlc generate` produces no uncommitted diff after generation.
 9. `SET ROLE majucau_runtime` and verify direct RAW/audit mutation fails while approved rollover/redaction functions work.
+10. Run `privileges/verify_runtime.sql` after `privileges/runtime.sql` to check the runtime role's effective grants, role attributes and append-only protections. CI performs this check against its disposable PostgreSQL service.
 
 No real credentials or personal payloads belong in this directory or its fixtures.

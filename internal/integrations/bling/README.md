@@ -12,6 +12,8 @@ modo somente leitura. O pacote contém um cliente técnico para:
 - consulta de detalhe `GET /contas/pagar/{idContaPagar}`,
   `GET /borderos/{idBordero}`, `GET /caixas/{idCaixa}` e
   `GET /categorias/receitas-despesas/{id}`;
+- leitura limitada da hierarquia de categorias financeiras por ID, da
+  categoria usada até a raiz, sem carregar a lista inteira;
 - leitura de uma página limitada de `GET /caixas`, com página e período; o
   cliente aplica até 100 registros somente como limite local. A OpenAPI
   pública atual não documenta o parâmetro `limite` nessa rota nem informa o
@@ -47,7 +49,12 @@ execução.
 As consultas de detalhe e categorias aplicam o mesmo limite de resposta,
 cancelamento, JWT e retry seguro. Elas retornam apenas o objeto `data` como JSON
 bruto; ainda não persistem esses detalhes nem os transformam em fatos do
-Majucau. A leitura de categorias retorna uma página por chamada.
+Majucau. A listagem de categorias retorna uma página por chamada. Quando um
+lançamento fornece um ID de categoria, `WalkFinancialCategoryHierarchy` pode
+ler seus pais em sequência e entregar cada objeto ao chamador. Ele valida os
+IDs, a categoria raiz, ciclos e uma profundidade máxima de 32. Quem gravar os
+itens recebidos pelo callback deve fazer isso dentro de uma transação e
+reverter em caso de erro.
 
 O filtro `idsCategorias` é serializado como valores de query repetidos,
 seguindo o padrão `form` para arrays de query do OpenAPI. Cada ID é validado

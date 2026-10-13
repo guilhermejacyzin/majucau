@@ -47,6 +47,74 @@ func (c *BlingAPIClient) GetFinancialCategory(ctx context.Context, id int64) (js
 	return c.getDataRecord(ctx, "categorias/receitas-despesas/"+strconv.FormatInt(id, 10))
 }
 
+const maxFinancialCategoryHierarchyDepth = 32
+
+// FinancialCategoryNode is one bounded, read-only category record. Payload
+// remains the original JSON so callers can preserve its lineage as RAW.
+type FinancialCategoryNode struct {
+	ID       int64
+	ParentID int64
+	Type     int64
+	Payload  json.RawMessage
+}
+
+// WalkFinancialCategoryHierarchy visits the requested category and each parent
+// up to the root, in leaf-to-root order. It never loads the complete category
+// list or hierarchy into memory. A missing or invalid parent ID, cycle, or
+// hierarchy deeper than the safety limit fails closed. Callers that persist
+// visitor results must use a transaction and roll it back if this method fails.
+func (c *BlingAPIClient) WalkFinancialCategoryHierarchy(ctx context.Context, id int64, visit func(FinancialCategoryNode) error) error {
+	if c == nil || c.baseURL == nil || c.httpClient == nil {
+		return ErrBlingAPIConfiguration
+	}
+	if id <= 0 || visit == nil {
+		return fmt.Errorf("%w: category ID and visitor are required", ErrBlingAPIConfiguration)
+	}
+	seen := make(map[int64]struct{}, maxFinancialCategoryHierarchyDepth)
+	currentID := id
+	for depth := 0; depth < maxFinancialCategoryHierarchyDepth; depth++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if _, exists := seen[currentID]; exists {
+			return fmt.Errorf("%w: category hierarchy contains a cycle", ErrBlingAPISchemaMismatch)
+		}
+		seen[currentID] = struct{}{}
+		payload, err := c.GetFinancialCategory(ctx, currentID)
+		if err != nil {
+			return err
+		}
+		var category struct {
+			ID          int64   `json:"id"`
+			ParentID    *int64  `json:"idCategoriaPai"`
+			Type        int64   `json:"tipo"`
+			Description *string `json:"descricao"`
+		}
+		if err := json.Unmarshal(payload, &category); err != nil {
+			return fmt.Errorf("%w: category response is invalid", ErrBlingAPISchemaMismatch)
+		}
+		if category.ID != currentID || category.ParentID == nil || *category.ParentID < 0 || category.Type < 1 || category.Type > 3 || category.Description == nil {
+			return fmt.Errorf("%w: category identity or hierarchy fields are missing or invalid", ErrBlingAPISchemaMismatch)
+		}
+		if *category.ParentID == currentID {
+			return fmt.Errorf("%w: category is its own parent", ErrBlingAPISchemaMismatch)
+		}
+		if *category.ParentID > 0 {
+			if _, exists := seen[*category.ParentID]; exists {
+				return fmt.Errorf("%w: category hierarchy contains a cycle", ErrBlingAPISchemaMismatch)
+			}
+		}
+		if err := visit(FinancialCategoryNode{ID: category.ID, ParentID: *category.ParentID, Type: category.Type, Payload: payload}); err != nil {
+			return err
+		}
+		if *category.ParentID == 0 {
+			return nil
+		}
+		currentID = *category.ParentID
+	}
+	return fmt.Errorf("%w: category hierarchy exceeds the safety limit", ErrBlingAPISchemaMismatch)
+}
+
 // ListFinancialCategories reads one bounded page of Bling income/expense
 // categories. Callers must use HasNextKnown; an omitted pagination marker is
 // never treated as the end of the list.

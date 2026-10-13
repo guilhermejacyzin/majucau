@@ -156,6 +156,109 @@ func TestListFinancialCategoriesRequiresExplicitPaginationMetadata(t *testing.T)
 	}
 }
 
+func TestWalkFinancialCategoryHierarchyReadsLeafToRootInBoundedCalls(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if r.Method != http.MethodGet || r.Header.Get("Authorization") != "Bearer access-token" || r.Header.Get("enable-jwt") != "1" {
+			t.Errorf("unexpected request: method=%q authorization-present=%t enable-jwt=%q", r.Method, r.Header.Get("Authorization") != "", r.Header.Get("enable-jwt"))
+		}
+		switch r.URL.Path {
+		case "/Api/v3/categorias/receitas-despesas/22":
+			_, _ = w.Write([]byte(`{"data":{"id":22,"idCategoriaPai":11,"descricao":"Maquinário produtivo","tipo":1}}`))
+		case "/Api/v3/categorias/receitas-despesas/11":
+			_, _ = w.Write([]byte(`{"data":{"id":11,"idCategoriaPai":0,"descricao":"CAPEX","tipo":1}}`))
+		default:
+			t.Errorf("unexpected path %q", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var got []FinancialCategoryNode
+	err = client.WalkFinancialCategoryHierarchy(context.Background(), 22, func(category FinancialCategoryNode) error {
+		got = append(got, category)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 2 || len(got) != 2 {
+		t.Fatalf("calls=%d categories=%d, want 2", calls, len(got))
+	}
+	if got[0].ID != 22 || got[0].ParentID != 11 || got[0].Type != 1 || !strings.Contains(string(got[0].Payload), "Maquinário produtivo") {
+		t.Fatalf("leaf = %+v", got[0])
+	}
+	if got[1].ID != 11 || got[1].ParentID != 0 || got[1].Type != 1 {
+		t.Fatalf("root = %+v", got[1])
+	}
+}
+
+func TestWalkFinancialCategoryHierarchyRejectsCyclesAndMissingParent(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		body map[string]string
+	}{
+		{
+			name: "cycle",
+			body: map[string]string{
+				"1": `{"data":{"id":1,"idCategoriaPai":2,"descricao":"A","tipo":1}}`,
+				"2": `{"data":{"id":2,"idCategoriaPai":1,"descricao":"B","tipo":1}}`,
+			},
+		},
+		{
+			name: "missing parent",
+			body: map[string]string{
+				"1": `{"data":{"id":1,"descricao":"CAPEX","tipo":1}}`,
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				id := strings.TrimPrefix(r.URL.Path, "/categorias/receitas-despesas/")
+				body, ok := test.body[id]
+				if !ok {
+					t.Errorf("unexpected path %q", r.URL.Path)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+				_, _ = w.Write([]byte(body))
+			}))
+			defer server.Close()
+			client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = client.WalkFinancialCategoryHierarchy(context.Background(), 1, func(FinancialCategoryNode) error { return nil })
+			if !errors.Is(err, ErrBlingAPISchemaMismatch) {
+				t.Fatalf("error = %v, want schema mismatch", err)
+			}
+		})
+	}
+}
+
+func TestWalkFinancialCategoryHierarchyStopsWhenVisitorFails(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls++
+		_, _ = w.Write([]byte(`{"data":{"id":1,"idCategoriaPai":0,"descricao":"CAPEX","tipo":1}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantErr := errors.New("stop visitor")
+	err = client.WalkFinancialCategoryHierarchy(context.Background(), 1, func(FinancialCategoryNode) error { return wantErr })
+	if !errors.Is(err, wantErr) || calls != 1 {
+		t.Fatalf("error=%v calls=%d, want visitor error and one request", err, calls)
+	}
+}
+
 func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || r.URL.Path != "/Api/v3/caixas" {

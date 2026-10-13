@@ -48,6 +48,22 @@ Para `.XLS` (BIFF dentro de OLE/CFB), a busca por intervalo também é necessár
 
 **Ponto para Gisele:** aprovar ou recusar que a leitura das planilhas passe pelo processador Go do Majucau, mantendo a interface e as regras financeiras atuais. Depois disso ainda será necessário decidir, com uma amostra sem dados pessoais, se devem ser percorridas todas as abas ou apenas uma; cada contrato continua pendente até aprovação.
 
+## Revisão de leitores Go — 13/10/2026
+
+- Excelize 2.11.0 documenta leitura de planilhas Excel 2007 ou mais recentes e oferece percurso de linhas. O exemplo `GetRows` devolve uma matriz com todas as linhas; uma integração em fluxo teria de usar o iterador de linhas, nunca `GetRows`. A versão 2.11.0 inclui correções para alocação baseada em índice de linha, mas o projeto também publicou um aviso de alta severidade para certos métodos que alteram colunas, com correção indicada em 2.11.1. A versão disponível no índice Go consultado continua 2.11.0; portanto, essa dependência não está aprovada para uso até confirmar uma versão corrigida e limitar as chamadas permitidas.
+- Excelize não cobre o formato binário antigo `.XLS`; seu escopo publicado é Excel 2007+ (`.XLSX` e formatos relacionados).
+- O leitor `extrame/xls` abre `.XLS` por `io.ReadSeeker`, mas seu modelo mantém em memória as abas e uma tabela de textos cujo tamanho vem do arquivo. A leitura atual também cria essa tabela usando a contagem declarada no próprio arquivo. Assim, chamar `OpenReader` não prova uso de memória limitado e o pacote não pode ser usado diretamente em arquivos não confiáveis.
+- Resultado: nenhum dos dois leitores foi incorporado. Para aprovar um parser ainda precisamos de limites verificáveis para arquivo compactado e expandido, abas, linhas, colunas, células e strings; tratamento seguro de estruturas malformadas; medição de memória; e ensaios com arquivos adversos. Os formatos continuam identificados, mas pendentes e sem produzir fatos financeiros.
+
+Fontes primárias desta revisão:
+
+- [Excelize v2.11.0 e notas da versão](https://github.com/qax-os/excelize/releases/tag/v2.11.0)
+- [Excelize: aviso de alocação na leitura em fluxo](https://github.com/qax-os/excelize/security/advisories/GHSA-q5j5-6p94-4gwc)
+- [Excelize: aviso de expansão de colunas](https://github.com/qax-os/excelize/security/advisories/GHSA-fq3v-74gv-27gm)
+- [Excelize: versões publicadas no Go](https://pkg.go.dev/github.com/xuri/excelize/v2)
+- [Leitor XLS: abertura por ReadSeeker](https://github.com/extrame/xls/blob/master/xls.go)
+- [Leitor XLS: tabela de textos e abas em memória](https://github.com/extrame/xls/blob/master/workbook.go)
+
 Fontes técnicas consultadas em 13/10/2026:
 
 - [Google Drive: download de arquivos e cabeçalho Range](https://developers.google.com/workspace/drive/api/guides/manage-downloads)

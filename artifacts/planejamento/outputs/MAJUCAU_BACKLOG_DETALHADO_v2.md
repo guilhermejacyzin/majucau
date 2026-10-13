@@ -3973,3 +3973,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O teste usa os dados gravados no banco local. Sem uma configuração salva, retorna `BLING_OAUTH_CONFIG_INVALID`; a mensagem anterior exigia loopback, apesar de o callback HTTPS aprovado estar implementado. A mensagem foi ajustada para explicar que Client ID, Client Secret e Redirect URI precisam ser salvos antes do teste.
 - BK-041 permanece em 75%; essa correção melhora o diagnóstico, mas não autoriza a conta, percorre páginas reais nem normaliza dados para o painel. A média do backlog permanece em 11,1% concluída e 88,9% restante. Nenhuma tela aprovada ou regra financeira foi alterada.
 - Evidência: `docs/evidence/BLING-CONNECTION-JWT-READINESS-2026-10-13.md`.
+
+### Revisão de leitores para os arquivos Excel do Drive — 13/10/2026
+
+- Uma revisão das fontes dos leitores Go confirmou que não há parser aprovado para os dois formatos: Excelize percorre `.XLSX`, mas `GetRows` acumula todas as linhas e a versão disponível tem um aviso de segurança ligado a operações de colunas; `extrame/xls` mantém abas e textos na memória a partir de contagens do arquivo. Nenhum deles foi instalado ou incorporado.
+- BK-042 e BK-043 continuam em 40% cada. A confirmação de XLS/XLSX define os formatos recebidos, mas o suporte permanece pendente de parser com limites verificáveis, auditoria de segurança e homologação dos layouts. Nenhuma aba foi interpretada e nenhum fato financeiro foi criado.
+- O projeto permanece com 11,1% concluído e 88,9% restante pela média simples do backlog. A arquitetura recomendada — o serviço Go do Majucau lendo o Drive somente em modo leitura — aguarda confirmação; a pergunta foi apresentada à responsável.
+- Evidência: `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.

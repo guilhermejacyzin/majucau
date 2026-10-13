@@ -216,7 +216,9 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (integration.key !== 'bling' && integration.key !== 'nuvemshop') return
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
+    const secretFieldName = integration.key === 'bling' ? 'bling-secret' : 'nuvem-secret'
     setSaving(true)
     try {
       if (integration.key === 'bling') {
@@ -224,7 +226,11 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
       } else {
         setSaveResult(await nuvemshopConfig.save({ app_id: String(form.get('nuvem-app-id') ?? ''), redirect_uri: String(form.get('nuvem-redirect') ?? ''), client_secret: String(form.get('nuvem-secret') ?? '') }))
       }
-    } finally { setSaving(false) }
+    } finally {
+      const secretField = formElement.elements.namedItem(secretFieldName)
+      if (secretField instanceof HTMLInputElement) secretField.value = ''
+      setSaving(false)
+    }
   }
   useEffect(() => {
     if (integration.key !== 'bling' || !oauthSessionId) return undefined

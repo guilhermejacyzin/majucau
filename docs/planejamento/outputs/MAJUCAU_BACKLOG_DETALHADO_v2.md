@@ -1047,6 +1047,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Validação do prefixo de workspace temporário (11/10/2026):** `securetemp.NewWorkspace` rejeita barras no prefixo antes de criar arquivos, impedindo que o nome saia da pasta pai prevista. Testes de prefixos relativos/absolutos e prefixo válido passaram no Windows; `go vet` também passou. A evidência está em `docs/evidence/SECURETEMP-WORKSPACE-PREFIX-2026-10-11.md`. A mudança fecha apenas essa validação local; ACL sob a conta real do serviço, junctions, falha de disco e VM limpa continuam pendentes. BK-024 permanece em 35%.
 
+**Limpeza de segredo no formulário (13/10/2026):** depois de gravar o Client Secret, o campo agora é apagado assim que a tentativa termina, inclusive em falha; Client ID e Redirect URI continuam preenchidos. Testes da tela cobrem sucesso e rejeição; typecheck e lint passaram. Isso reduz o tempo em que o segredo fica na tela, mas não fecha a validação de ACL/instalador, revisão de riscos nem ensaio em VM limpa. BK-024 permanece em 35%. Ver `docs/evidence/INTEGRATION-SECRET-FIELD-CLEANUP-2026-10-13.md`.
+
 **Dependências:** BK-013, BK-014, BK-019
 
 **Fonte:** M-058; Y_CEI_Tela_17; Consolidação 13/09/2026, §2

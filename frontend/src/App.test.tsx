@@ -169,6 +169,22 @@ describe('shell financeiro', () => {
     expect(receivedSecret).toBe('secret-only-in-request')
     expect(await screen.findByText('Configuração salva')).toBeInTheDocument()
     expect(screen.queryByText('secret-only-in-request')).not.toBeInTheDocument()
+    expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveValue('')
+    expect(screen.getByLabelText(/Client ID/)).toHaveValue('client-123')
+    expect(screen.getAllByLabelText(/Redirect URI/)[0]).toHaveValue('https://app.example.test/callback')
+  })
+
+  it('limpa o Client Secret do formulário quando a gravação é rejeitada', async () => {
+    const user = userEvent.setup()
+    const blingConfigAdapter: BlingConfigAdapter = { save: async () => ({ secret_configured: false, error_code: 'BLING_CONFIG_REJECTED', message: 'A configuração não foi aceita.' }) }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingConfigAdapter={blingConfigAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    const secret = screen.getAllByLabelText(/Client Secret/)[0]
+    await user.type(secret, 'secret-only-in-request')
+    await user.click(screen.getByRole('button', { name: 'Salvar configuração' }))
+    expect(await screen.findByText('BLING_CONFIG_REJECTED')).toBeInTheDocument()
+    expect(secret).toHaveValue('')
   })
 
   it('inicia OAuth no navegador externo e acompanha o retorno sanitizado', async () => {

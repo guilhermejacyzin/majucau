@@ -105,7 +105,7 @@ Gisele aprovou manter estes escopos na consulta manual, sem alterar a tela: venc
 
 Esses filtros identificam a data de vencimento, recebimento ou pagamento. A OpenAPI atual não declara um filtro geral `dataAlteracaoInicial`/`dataAlteracaoFinal` para essas duas rotas. Por isso, eles não bastam para garantir que toda edição feita desde a execução anterior seja encontrada. O schema divulgado também não define, nessas respostas, um marcador explícito de última página (`hasNext`, `total` ou número total de páginas). O cliente deve falhar com segurança se não puder provar que percorreu a lista completa; não assumir que uma página curta encerra a consulta.
 
-A estratégia da coleta diária precisa resolver essa lacuna antes de ser ativada. Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
+A coleta diária já foi aprovada como uma releitura completa de todas as Contas a Receber e Contas a Pagar, sem recorte de datas; portanto, ela não depende de um filtro genérico de alterações. Ainda é obrigatório homologar como detectar a última página antes de marcar a carga completa. A conexão OAuth real e o acesso persistente ao Drive também continuam pendentes. Essa decisão não muda os filtros manuais ou as regras financeiras. Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
 
 Nota de contrato: a OpenAPI descreve `pagina`/`limite` para categorias, mas o
 schema público da resposta não declara `hasNext` nem `total`. O client não deve

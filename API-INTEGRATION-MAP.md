@@ -99,11 +99,13 @@ O botão de sincronização permanece separado e não é acionado por esse fluxo
 
 O conector não utilizará endpoints de baixa ou escrita. O Majucau é consumidor analítico, não sistema de lançamento no MVP.
 
-#### Divergência de filtros de data — 11/10/2026
+#### Filtros de data confirmados e limite da coleta incremental — 12/10/2026
 
-A referência OpenAPI oficial dos dois endpoints usa contratos distintos: `contas/receber` recebe `tipoFiltroData` mais um único par `dataInicial`/`dataFinal`; `contas/pagar` recebe filtros próprios de vencimento e pagamento. O adapter atual ainda envia os pares `dataVencimento`, `dataRecebimento` e `dataPagamento` para ambas as rotas. Assim, a data escolhida na tela aprovada não está mapeada corretamente para o contrato publicado em todos os casos.
+Gisele aprovou manter estes escopos na consulta manual, sem alterar a tela: vencimento consulta Contas a Receber e Contas a Pagar; recebimento consulta somente Contas a Receber; pagamento consulta somente Contas a Pagar. O adapter implementa esse mapeamento conforme a OpenAPI: Contas a Receber usa `tipoFiltroData=V` ou `R` com `dataInicial`/`dataFinal`; Contas a Pagar usa os pares específicos de vencimento ou pagamento. A resposta real da conta ainda precisa ser homologada.
 
-A tela aprovada consulta as duas listas juntas. Quando o tipo selecionado não corresponde a uma das rotas, não está decidido se essa outra lista deve ser consultada sem filtro de data ou se deve ficar de fora daquela execução. Essa escolha afeta quais registros entram no sistema e aguarda a responsável. Até a resposta, não alterar a tela nem os filtros de data do adapter. Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
+Esses filtros identificam a data de vencimento, recebimento ou pagamento. A OpenAPI atual não declara um filtro geral `dataAlteracaoInicial`/`dataAlteracaoFinal` para essas duas rotas. Por isso, eles não bastam para garantir que toda edição feita desde a execução anterior seja encontrada. O schema divulgado também não define, nessas respostas, um marcador explícito de última página (`hasNext`, `total` ou número total de páginas). O cliente deve falhar com segurança se não puder provar que percorreu a lista completa; não assumir que uma página curta encerra a consulta.
+
+A estratégia da coleta diária precisa resolver essa lacuna antes de ser ativada. Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
 
 Nota de contrato: a OpenAPI descreve `pagina`/`limite` para categorias, mas o
 schema público da resposta não declara `hasNext` nem `total`. O client não deve
@@ -119,7 +121,7 @@ referenciada no detalhe de uma conta, pode consultá-la pelo ID.
 - limite adicional de token informado: 20 requisições em 60 segundos;
 - HTTP 429: respeitar headers disponíveis, aplicar backoff e não avançar checkpoint.
 
-Janelas temporais pequenas e sobrepostas são uma estratégia candidata, ainda não homologada para esses endpoints. Aplicá-las somente após confirmar na referência específica de cada endpoint que os filtros são aceitos e compreender a estabilidade da paginação durante alterações concorrentes. Idempotência evita duplicação de fatos em replays, mas não prova que uma paginação instável não possa deixar registros de fora. Até essa confirmação, não tratar `dataAlteracaoInicial`/`dataAlteracaoFinal` como filtros disponíveis em `contas/receber` ou `contas/pagar`, nem avançar um cursor incremental presumido.
+Os filtros de vencimento, recebimento e pagamento usados pelo adapter foram confirmados na referência específica de cada endpoint. Ainda é necessário escolher como cobrir alterações que não mudem essas datas e homologar o término da paginação com a resposta real. Idempotência evita duplicação de fatos em replays, mas não prova que uma paginação instável não possa deixar registros de fora. Não tratar `dataAlteracaoInicial`/`dataAlteracaoFinal` como filtros disponíveis em `contas/receber` ou `contas/pagar`, nem avançar um cursor incremental presumido.
 
 O cliente inicial valida `pagina >= 1`, `1 <= limite <= 100`, envia somente
 `GET`, respeita cancelamento do contexto e reconhece `Retry-After` em 429. A

@@ -187,3 +187,9 @@ Fonte primária: [OpenAPI oficial do Bling](https://developer.bling.com.br/build
 Para CAPEX, a fonte técnica está identificada: movimentos de caixa/banco ligados à árvore real de categorias CAPEX. Ainda faltam confirmar os IDs/hierarquia na conta, percorrer todas as páginas, persistir os movimentos e conciliar com o relatório fornecido. Portanto os cards continuam sem valores disponíveis; não estimar nem preencher zero. Os indicadores aprovados permanecem somente para consulta e CAPEX continua fora das linhas e do lucro da DRE.
 
 Referências detalhadas: `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md` e `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`. Requisitos associados: INT-01, INT-04 e DATA-02; backlog BK-041 (paginação/sincronização) e BK-067 (cards CAPEX). Nenhuma tela aprovada, regra financeira ou dado real foi alterado nesta revisão.
+
+## Ingestão em fluxo do Google Drive — 2026-10-13
+
+`DATA-04` permanece `PARTIAL`. O Site v15 implementa leitura paginada e download em fluxo para CSV/TSV/JSON, SHA-256 durante a leitura, limites por campo/registro, retry seguro de GET, gravação em blocos e recuperação de staging parcial. Metadados de versão, tamanho, hash, nome e pasta são comparados antes e depois do download; divergência impede o fechamento do lote. As migrations 0004/0005 foram verificadas no D1 publicado. As 27 verificações do Site, a compilação e a validação do pacote passaram. Evidência: `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
+
+Ainda faltam acesso configurado à pasta real, importação controlada, aprovação dos contratos de arquivo, medição de memória/carga e validação de ACL/limpeza em VM Windows limpa. Nenhum fato financeiro é criado e nenhuma regra de negócio ou tela foi alterada nesta entrega.

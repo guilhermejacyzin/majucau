@@ -1491,7 +1491,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-042 — Implementar leitura das três estruturas autorizadas do Google Drive
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 40%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Importar arquivos preservando integralmente a pasta compartilhada.
 
@@ -1516,7 +1516,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-043 — Implementar validação e interpretação dos arquivos
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 40%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Converter entradas heterogêneas em registros confiáveis.
 
@@ -3842,3 +3842,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-041 avança de 69% para 75% (25% restante). Continuam pendentes: preencher credenciais no Majucau e conectar, homologar a conta, confirmar o fim da paginação e conciliar a sincronização real. BK-039 também não implementa a atualização diária das 09:30.
 - A estimativa geral permanece em 10,2% concluída (89,8% restante), sem prazo global confiável. Nenhuma tela aprovada ou regra financeira foi alterada.
 - Evidência: `docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md`. A CI completa passou no run [38343452090](https://github.com/guilhermejacyzin/majucau/actions/runs/38343452090), incluindo Windows, PostgreSQL, scanner de segredos e compilação do pacote do protótipo.
+
+### Ingestão do Drive em fluxo e proteção contra arquivo alterado — 13/10/2026
+
+- A ponte do Majucau agora percorre as páginas do Drive sem montar a lista completa em memória, baixa CSV/TSV/JSON como fluxo e calcula SHA-256 durante a leitura. As chamadas GET têm até três tentativas com backoff/jitter e `Retry-After` limitado a 30 segundos. O importador limita campos, registros, profundidade e lotes gravados no D1.
+- Antes e depois da leitura, compara versão, tamanho, hash informado pelo Drive, nome e pasta. Se o arquivo mudou, foi removido ou saiu da estrutura aprovada, descarta o staging parcial. As tabelas temporárias e o índice chegaram ao D1 na implantação do Site v15.
+- Site publicado em `https://majucau-bling-bridge.giselegalha.chatgpt.site`, versão 15, origem `8edf1b4a57772ea0c1ba3cd1e452ba95806210d3`. As 27 verificações automatizadas, compilação e validação passaram. A evidência da migration foi conferida no banco publicado.
+- BK-042 avança de 0% para 40% e BK-043 de 0% para 40%. Seguem pendentes a configuração das credenciais e da pasta real, a importação controlada dos arquivos, a aprovação de cada layout, a agenda de 09:30, a medição de memória sob carga e o ensaio em VM limpa. Nenhum fato financeiro é criado nesta etapa; as linhas ficam pendentes de decisão.
+- Recontagem: 127 tarefas, 7 concluídas, 18 em andamento e 102 não iniciadas. Pela mesma média simples do backlog, o projeto passa de 10,2% para aproximadamente 10,8% concluído (89,2% restante). O prazo total continua sem base confiável; a conexão ao Drive e a homologação ainda não foram feitas.
+- Nenhuma tela aprovada, regra financeira ou regra de negócio foi alterada. `DATA-04` permanece `PARTIAL`. Evidência: `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.

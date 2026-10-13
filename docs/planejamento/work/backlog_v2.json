@@ -494,12 +494,12 @@
     "owner": "Arquitetura",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "BK-017: limites, contratos, transações e dependências em docs/architecture/GO-MODULAR-BOUNDARIES.md; o worker fecha o pool que cria. O fechamento aguarda BK-016.",
+    "evidence": "95%: limites, contratos, composição, transações e dependências estão documentados; a CI verifica as fronteiras de imports. Faltam BK-016 e fechar contratos de módulos quando a propriedade dos fatos estiver definida.",
     "weight": 1,
     "dependencies": [
       "BK-016"
     ],
-    "progress": 0.9
+    "progress": 0.95
   },
   {
     "key": "storage",
@@ -788,14 +788,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md; scripts/start-prototype.ps1 iniciou o protótipo com PostgreSQL isolado; validação visual/funcional e em máquina limpa pendente",
+    "evidence": "60%: o protótipo foi iniciado com PostgreSQL isolado por scripts/start-prototype.ps1. Faltam validação visual/funcional e ensaio em máquina limpa. Evidência: docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md.",
     "weight": 1,
     "dependencies": [
       "BK-025",
       "BK-018",
       "BK-014"
     ],
-    "progress": 0.55
+    "progress": 0.6
   },
   {
     "key": "gofoundation",
@@ -819,14 +819,14 @@
     "questions": "",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "30%: o worker compõe serviços, limita conexão ao PostgreSQL e encerra de forma controlada; a saúde verifica conexão e quatro tabelas essenciais com códigos sanitizados. CI 38373291264 passou. Faltam permissões completas do worker, configuração de produção e VM limpa. Evidência: docs/evidence/WORKER-DATABASE-SCHEMA-READINESS-2026-10-13.md.",
     "weight": 1,
     "dependencies": [
       "BK-026",
       "BK-017"
     ],
-    "progress": 0
+    "progress": 0.3
   },
   {
     "key": "reactfoundation",
@@ -1286,14 +1286,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "69%: JWT/retry limitado com classificação de transporte transitório e leitura de receber, pagar e caixa; /caixas usa somente parâmetros documentados e mantém limite local. Homologação real, fim/cursor e integração CAPEX pendentes.",
+    "evidence": "75%: leitura de receber, pagar e movimentações de caixa com GET limitado; OAuth local via callback HTTPS, state e DPAPI. /caixas usa parâmetros documentados e limite local. Faltam integração/persistência de caixa, homologação da conta, término da paginação e cursor incremental. Evidência: docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md.",
     "weight": 1,
     "dependencies": [
       "BK-040",
       "BK-039",
       "BK-038"
     ],
-    "progress": 0.69
+    "progress": 0.75
   },
   {
     "key": "fileingestion",
@@ -1320,8 +1320,8 @@
     "questions": "R-01,R-02",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "40%: a ponte do Site lista arquivos em páginas e baixa em fluxo, calcula hash, confere a versão e grava staging em blocos. Faltam credencial e pasta reais do Drive, importação controlada, confirmar leitura somente, agenda diária, medição de carga e VM limpa. Evidência: docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md.",
     "weight": 1,
     "dependencies": [
       "BK-010",
@@ -1329,7 +1329,7 @@
       "BK-038",
       "BK-024"
     ],
-    "progress": 0
+    "progress": 0.4
   },
   {
     "key": "parsers",
@@ -1353,13 +1353,13 @@
     "questions": "",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "40%: estruturas CSV/TSV/JSON são lidas em fluxo com limites e staging; arquivos XLS/XLSX são recusados e nenhuma linha vira fato financeiro antes de aprovação do layout. Faltam contratos aprovados e amostras reais autorizadas, carga e ensaio em VM limpa. Evidência: docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md.",
     "weight": 1,
     "dependencies": [
       "BK-042"
     ],
-    "progress": 0
+    "progress": 0.4
   },
   {
     "key": "idempotency",
@@ -2156,14 +2156,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "20%: cards de consulta presentes; fonte técnica oficial identificada, ainda não integrada. Falta homologar a hierarquia real de categorias CAPEX e conciliar movimentações com os relatórios antes de preencher CAPEX pago no mês e acumulado.",
+    "evidence": "25%: cards informativos EBIT, EBITDA e CAPEX permanecem no espaço aprovado, somente para consulta; CAPEX fica fora da tabela e do lucro. O backend ainda não traz valores reais para os cards; faltam homologar categorias/paginação, persistir e conciliar movimentações e fechar a DRE própria. Evidência: docs/evidence/CAPEX-REPORT-DATA-SOURCE-AUDIT-2026-10-11.md.",
     "weight": 1,
     "dependencies": [
       "BK-066",
       "BK-028",
       "BK-021"
     ],
-    "progress": 0.2
+    "progress": 0.25
   },
   {
     "key": "trialbalanceengine",

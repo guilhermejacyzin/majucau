@@ -1,6 +1,7 @@
 ﻿[CmdletBinding()]
 param(
-    [string]$Path
+    [string]$Path,
+    [string]$StructuredPath
 )
 
 Set-StrictMode -Version Latest
@@ -9,6 +10,9 @@ $ErrorActionPreference = 'Stop'
 if ([string]::IsNullOrWhiteSpace($Path)) {
     $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
     $Path = Join-Path $scriptDirectory '..\docs\planejamento\outputs\MAJUCAU_BACKLOG_DETALHADO_v2.md'
+    if ([string]::IsNullOrWhiteSpace($StructuredPath)) {
+        $StructuredPath = Join-Path $scriptDirectory '..\docs\planejamento\work\backlog_v2.json'
+    }
 }
 
 $maxFileBytes = 8MB
@@ -171,6 +175,60 @@ if ($declaredCounts.Total -ne $tasks.Count -or
 if ([Math]::Abs($declaredProgress.Complete - $calculatedPercent) -gt 0.0001 -or
     [Math]::Abs($declaredProgress.Remaining - $calculatedRemaining) -gt 0.0001) {
     throw "Percentual divergente: calculado=$calculatedPercent% concluído e $calculatedRemaining% restante; resumo=$($declaredProgress.Complete)% concluído e $($declaredProgress.Remaining)% restante."
+}
+
+if (-not [string]::IsNullOrWhiteSpace($StructuredPath)) {
+    $structuredFullPath = [System.IO.Path]::GetFullPath($StructuredPath)
+    if (-not [System.IO.File]::Exists($structuredFullPath)) {
+        throw "Arquivo estruturado do backlog não encontrado: $structuredFullPath"
+    }
+    $structuredFile = Get-Item -LiteralPath $structuredFullPath
+    if ($structuredFile.Length -gt $maxFileBytes) {
+        throw "Arquivo estruturado do backlog excede o limite de 8 MiB: $($structuredFile.Length) bytes."
+    }
+
+    try {
+        $structuredTasks = @(
+            ConvertFrom-Json -InputObject ([System.IO.File]::ReadAllText(
+                $structuredFullPath,
+                [System.Text.UTF8Encoding]::new($false, $true)
+            )) -ErrorAction Stop
+        )
+    }
+    catch {
+        throw "Arquivo estruturado do backlog não contém JSON válido: $($_.Exception.Message)"
+    }
+
+    if ($structuredTasks.Count -ne $tasks.Count) {
+        throw "Quantidade divergente entre backlog detalhado ($($tasks.Count)) e estruturado ($($structuredTasks.Count))."
+    }
+
+    for ($index = 0; $index -lt $tasks.Count; $index++) {
+        $structuredTask = $structuredTasks[$index]
+        foreach ($propertyName in @('id', 'status', 'progress')) {
+            if ($null -eq $structuredTask.PSObject.Properties[$propertyName]) {
+                throw "Tarefa estruturada na posição $($index + 1) não contém o campo obrigatório '$propertyName'."
+            }
+        }
+
+        $expectedId = "BK-$($tasks[$index].Id)"
+        $expectedProgress = [double]$tasks[$index].Progress / 100
+        $structuredProgress = 0.0
+        if (-not [double]::TryParse(
+            [string]$structuredTask.progress,
+            [System.Globalization.NumberStyles]::Float,
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [ref]$structuredProgress
+        )) {
+            throw "A tarefa estruturada $($structuredTask.id) tem evolução inválida."
+        }
+
+        if ([string]$structuredTask.id -cne $expectedId -or
+            [string]$structuredTask.status -cne [string]$tasks[$index].Status -or
+            [Math]::Abs($structuredProgress - $expectedProgress) -gt 0.000001) {
+            throw "Registro estruturado divergente na tarefa ${expectedId}: Markdown=($($tasks[$index].Status), $($tasks[$index].Progress)%); JSON=($($structuredTask.status), $($structuredProgress * 100)%)."
+        }
+    }
 }
 
 Write-Output "Backlog conferido: $($tasks.Count) tarefas; $completed concluídas, $inProgress em andamento e $notStarted não iniciadas; $calculatedPercent% concluído, $calculatedRemaining% restante."

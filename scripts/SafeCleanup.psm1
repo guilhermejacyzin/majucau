@@ -145,4 +145,38 @@ function Remove-MajucauProjectFile {
     Remove-Item -LiteralPath $pathFull -Force -ErrorAction Stop
 }
 
-Export-ModuleMember -Function Assert-MajucauProjectPath, Assert-MajucauNoReparseDescendants, Remove-MajucauProjectDirectory, Remove-MajucauProjectFile
+function Remove-MajucauProjectSymbolicLink {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string]$ProjectRoot,
+        [Parameter(Mandatory)] [string]$Path,
+        [Parameter(Mandatory)] [string]$ExpectedRelativePath,
+        [Parameter(Mandatory)] [string]$ExpectedTarget
+    )
+
+    $rootFull = ConvertTo-MajucauFullPath -Path $ProjectRoot
+    $pathFull = ConvertTo-MajucauFullPath -Path $Path
+    $expectedFull = ConvertTo-MajucauFullPath -Path (Join-Path $rootFull $ExpectedRelativePath)
+    if (-not [string]::Equals($pathFull, $expectedFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "A limpeza recusou um link diferente do caminho previsto: $Path"
+    }
+
+    $expectedTargetFull = ConvertTo-MajucauFullPath -Path $ExpectedTarget
+    Assert-MajucauProjectPath -ProjectRoot $rootFull -Path $expectedTargetFull -ExpectedType File
+    $parentPath = Split-Path -Parent $pathFull
+    Assert-MajucauProjectPath -ProjectRoot $rootFull -Path $parentPath -ExpectedType Directory
+    $item = Get-MajucauPathItem -Path $pathFull
+    if ($null -eq $item) { return }
+    if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -eq 0 -or $item.LinkType -ne 'SymbolicLink' -or $item.PSIsContainer) {
+        throw "A limpeza recusou um item que não é um link simbólico de arquivo: $Path"
+    }
+
+    $targetFull = [System.IO.Path]::GetFullPath([string]$item.Target, $parentPath)
+    if (-not [string]::Equals($targetFull, $expectedTargetFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "A limpeza recusou um link que aponta para outro destino: $Path"
+    }
+
+    [System.IO.File]::Delete($pathFull)
+}
+
+Export-ModuleMember -Function Assert-MajucauProjectPath, Assert-MajucauNoReparseDescendants, Remove-MajucauProjectDirectory, Remove-MajucauProjectFile, Remove-MajucauProjectSymbolicLink

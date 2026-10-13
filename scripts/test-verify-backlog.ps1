@@ -23,10 +23,16 @@ Assert-MajucauProjectPath -ProjectRoot $repoRoot -Path $tempRoot -ExpectedType D
 
 $fixturePath = [System.IO.Path]::GetFullPath((Join-Path $tempRoot ('backlog-check-' + [guid]::NewGuid().ToString('N') + '.md')))
 $fixtureRelativePath = Join-Path 'artifacts\tmp' ([System.IO.Path]::GetFileName($fixturePath))
+$structuredFixturePath = [System.IO.Path]::GetFullPath((Join-Path $tempRoot ('backlog-check-' + [guid]::NewGuid().ToString('N') + '.json')))
+$structuredFixtureRelativePath = Join-Path 'artifacts\tmp' ([System.IO.Path]::GetFileName($structuredFixturePath))
 if (-not $fixturePath.StartsWith($tempPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw 'O arquivo temporário do teste saiu de artifacts/tmp.'
 }
+if (-not $structuredFixturePath.StartsWith($tempPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw 'O arquivo estruturado temporário do teste saiu de artifacts/tmp.'
+}
 Assert-MajucauProjectPath -ProjectRoot $repoRoot -Path $fixturePath -ExpectedType File
+Assert-MajucauProjectPath -ProjectRoot $repoRoot -Path $structuredFixturePath -ExpectedType File
 
 $validatorPath = Join-Path $PSScriptRoot 'verify-backlog.ps1'
 $utf8 = [System.Text.UTF8Encoding]::new($false)
@@ -41,7 +47,8 @@ $validFixture = @(
 
 try {
     [System.IO.File]::WriteAllText($fixturePath, $validFixture, $utf8)
-    $validOutput = @(& $validatorPath -Path $fixturePath) -join "`n"
+    [System.IO.File]::WriteAllText($structuredFixturePath, '[{"id":"BK-000","status":"Concluída","progress":1}]', $utf8)
+    $validOutput = @(& $validatorPath -Path $fixturePath -StructuredPath $structuredFixturePath) -join "`n"
     if ($validOutput -notmatch '1 tarefas; 1 concluídas, 0 em andamento e 0 não iniciadas; 100% concluído, 0% restante') {
         throw "O verificador não reconheceu o fixture válido: $validOutput"
     }
@@ -54,7 +61,7 @@ try {
 
     $rejected = $false
     try {
-        [void](& $validatorPath -Path $fixturePath)
+        [void](& $validatorPath -Path $fixturePath -StructuredPath $structuredFixturePath)
     }
     catch {
         if ($_.Exception.Message -like '*Percentual divergente*') {
@@ -68,8 +75,27 @@ try {
         throw 'O verificador aceitou um resumo com percentual incorreto.'
     }
 
-    Write-Output 'Teste do verificador aprovado: aceita contagens corretas e rejeita percentual divergente.'
+    [System.IO.File]::WriteAllText($fixturePath, $validFixture, $utf8)
+    [System.IO.File]::WriteAllText($structuredFixturePath, '[{"id":"BK-000","status":"Concluída","progress":0.9}]', $utf8)
+    $rejected = $false
+    try {
+        [void](& $validatorPath -Path $fixturePath -StructuredPath $structuredFixturePath)
+    }
+    catch {
+        if ($_.Exception.Message -like '*Registro estruturado divergente*') {
+            $rejected = $true
+        }
+        else {
+            throw
+        }
+    }
+    if (-not $rejected) {
+        throw 'O verificador aceitou progresso estruturado diferente do Markdown.'
+    }
+
+    Write-Output 'Teste do verificador aprovado: aceita resumo e JSON coerentes e rejeita percentuais e registros divergentes.'
 }
 finally {
     Remove-MajucauProjectFile -ProjectRoot $repoRoot -Path $fixturePath -ExpectedRelativePath $fixtureRelativePath
+    Remove-MajucauProjectFile -ProjectRoot $repoRoot -Path $structuredFixturePath -ExpectedRelativePath $structuredFixtureRelativePath
 }

@@ -14,23 +14,23 @@
     },
     {
       "path": "docs/architecture/GO-MODULAR-BOUNDARIES.md",
-      "bytes": 7058,
-      "sha256": "a7b821a25fce5d0f8b62e4c2123f045af4d132795c3b569280db7f20ecd4bd08"
+      "bytes": 8229,
+      "sha256": "7ec5245f194a922785b7641bccf35f9b4cb2b9008693664f0030a72d70d6716f"
     },
     {
       "path": "docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md",
-      "bytes": 15905,
-      "sha256": "95d6c4ad258f915554284980a2b730acd8cacb445d5cb196c8fd8577311ad6f8"
+      "bytes": 20905,
+      "sha256": "2e68113a3a18447113687e3114a18bf64ac4c513b9f1e3ced86fa8d11a4dab97"
     },
     {
       "path": "docs/evidence/DASHBOARD-REFRESH-AFTER-INTEGRATION-2026-10-12.md",
-      "bytes": 1573,
-      "sha256": "2a66970e016201724135bcab28db34499aec3000870a10bc144069f3aff978be"
+      "bytes": 1748,
+      "sha256": "89dd76c94aac91ad9739f5e218f6383ceb85d500a649a18b9ef1cb97aca2c8c5"
     },
     {
       "path": "docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md",
-      "bytes": 4882,
-      "sha256": "7b3e6792cb06060181f8015d1ae499ae52a303130c0b6f7b6421ae0a541001cb"
+      "bytes": 5899,
+      "sha256": "2252f974bc49b180931af21fdd6a98f451d6ed8db0b4683e2c5f956ffed387e5"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -64,8 +64,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 289511,
-      "sha256": "5a22b75af6c1020517b0ea33d220455ae4749ac10b46ea4464d8c32ee116391f"
+      "bytes": 317288,
+      "sha256": "09bcdc42e853d304943a6751b8debbc6ca8f586df3510370aa6b7c6fe7a51442"
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
@@ -79,8 +79,8 @@
     },
     {
       "path": "docs/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 49693,
-      "sha256": "30bf7d018e173ac4faa3f190187b92fb25131b0129b6e7314a5ac17629ca91d1"
+      "bytes": 50271,
+      "sha256": "28e5d98a1c8281ff8b84bb58d67081a367fbf7c5092fc98fee55d4929a09212a"
     },
     {
       "path": "docs/planejamento/README.md",
@@ -94,8 +94,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 3994,
-      "sha256": "20bbd109cd1aaa4eee8422b3eadbc5727b5ac098bc40f3f6c6f5044e0e479fe3"
+      "bytes": 4214,
+      "sha256": "62266c21495530ec28bb4bb8c3f7c4d0cdc98d43199cb6cd1c54fab94f5d7ce7"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -114,8 +114,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 193307,
-      "sha256": "12c92dd713b96648dc8055c5a4ebca97ee01e98b60542b051503b915361bdf15"
+      "bytes": 190435,
+      "sha256": "42e269399dfd951cc58f080e1af8a3e6b59d193bb571bba1e2e6f45891d60566"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -124,8 +124,8 @@
     },
     {
       "path": "docs/planejamento/work/build_tracker.mjs",
-      "bytes": 13460,
-      "sha256": "d09cca3a26f0a55b49bdfec07df8ee5fce787a01a2944b27b6fc251917c9cb7e"
+      "bytes": 13975,
+      "sha256": "b95afe92facfe7713661dc4f882724b5839b6e73194880cfc17f77577616b980"
     },
     {
       "path": "docs/planejamento/work/build_tracker_v1.mjs",
@@ -144,8 +144,8 @@
     },
     {
       "path": "docs/planejamento/work/decisions_v2.json",
-      "bytes": 101166,
-      "sha256": "b793b46c7d7f30aa4dcc7ebfeaeff142ce0dc4a077de310846c64e531a6779be"
+      "bytes": 99712,
+      "sha256": "c91944175b2adf63dae3224d4b54cd12dec3cef9d55779c94b0ebf6d0de458bd"
     },
     {
       "path": "docs/planejamento/work/financeiro.md",
@@ -419,8 +419,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 14993,
-      "sha256": "88e1f199e7b63256ed4da4e453b8cc2a96d8eea16c4271a110f8e92013fd259e"
+      "bytes": 15212,
+      "sha256": "5e626222a3367cd0eb1f627993aa3aacdf36b9f0cbd484c395e93275d3065522"
     },
     {
       "path": "tools/exportar_planejamento.py",
@@ -431,6 +431,11 @@
       "path": "docs/architecture/DOMAIN-CONTEXT-MAP-v1.md",
       "bytes": 6219,
       "sha256": "37d089a1e5516222c4aa3b243bcb771bb68979f3378036024db529c2314d3341"
+    },
+    {
+      "path": "docs/evidence/BACKLOG-TRACKER-RECONCILIATION-2026-10-13.md",
+      "bytes": 2504,
+      "sha256": "4a20c2706e4278ebefc82feb68d24df7a51ff774438833ab11039ad405cd5a25"
     }
   ]
 }

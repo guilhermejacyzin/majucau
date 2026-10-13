@@ -153,4 +153,12 @@ for(const [name,range] of [['Evolucao','A1:G35'],['Tarefas','A1:N12'],['Decisoes
 }
 const file=await SpreadsheetFile.exportXlsx(wb);
 await file.save(path.join(base,'outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx'));
+// O artifact-tool grava a última inspeção ao lado da planilha. Mova-a para
+// artifacts/ para manter as saídas temporárias centralizadas fora de outputs/.
+const inspectOutput=path.join(base,'outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx.inspect.ndjson');
+const inspectArchive=path.join(previewDir,'MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx.inspect.ndjson');
+if(await fs.access(inspectOutput).then(()=>true).catch(()=>false)){
+ await fs.rm(inspectArchive,{force:true});
+ await fs.rename(inspectOutput,inspectArchive);
+}
 console.log(JSON.stringify({tasks:n,decisions:decisions.length,summary:summary.getRange('B6:B10').values,output:'MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx'}));

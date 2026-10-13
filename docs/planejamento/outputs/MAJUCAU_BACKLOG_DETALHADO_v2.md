@@ -3932,3 +3932,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-027 avança de 25% para 30% (70% restante). Ainda faltam validar permissões completas do papel runtime, migrations, configuração de produção e instalação/VM limpa. Nenhuma tela ou regra financeira foi alterada.
 - O backlog permanece em 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas; 11% concluído e 89% restante. Não há prazo global confiável enquanto permanecem 102 tarefas não iniciadas, integrações reais e validações de produção.
 - Evidência: `docs/evidence/WORKER-DATABASE-SCHEMA-READINESS-2026-10-13.md`.
+
+### Reconciliação dos registros de progresso — 13/10/2026
+
+- O detalhamento, a lista estruturada e a planilha oficial agora usam os mesmos status e percentuais nas 127 tarefas. Foram reconciliadas sete tarefas com evidência já existente: BK-017 (95%), BK-026 (60%), BK-027 (30%), BK-041 (75%), BK-042 (40%), BK-043 (40%) e BK-067 (25%).
+- O verificador local agora compara quantidade e ordem das tarefas, status e progresso entre o Markdown e o JSON. Seu teste confirma que divergências nesses campos são rejeitadas.
+- A contagem geral é 7 concluídas, 18 em andamento e 102 não iniciadas. A média estimada, arredondada para uma casa decimal, é 11,0% concluída e 89,0% restante. É uma estimativa de andamento, não uma confirmação de prontidão para produção nem prazo de conclusão.
+- Nenhuma funcionalidade, tela aprovada, regra de negócio ou regra financeira foi alterada. Evidência: `docs/evidence/BACKLOG-TRACKER-RECONCILIATION-2026-10-13.md`.

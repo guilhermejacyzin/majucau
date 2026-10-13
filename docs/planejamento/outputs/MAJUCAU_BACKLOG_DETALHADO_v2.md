@@ -3841,4 +3841,4 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Testes do pacote Go Bling passaram. As 20 verificações do Site, sua compilação e validação do pacote passaram. O Site v13 está publicado. A autorização real da conta ainda não foi feita; não há conexão nem dados importados confirmados.
 - BK-041 avança de 69% para 75% (25% restante). Continuam pendentes: preencher credenciais no Majucau e conectar, homologar a conta, confirmar o fim da paginação e conciliar a sincronização real. BK-039 também não implementa a atualização diária das 09:30.
 - A estimativa geral permanece em 10,2% concluída (89,8% restante), sem prazo global confiável. Nenhuma tela aprovada ou regra financeira foi alterada.
-- Evidência: `docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md`. CI do código Go permanece pendente após push.
+- Evidência: `docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md`. A CI completa passou no run [38343452090](https://github.com/guilhermejacyzin/majucau/actions/runs/38343452090), incluindo Windows, PostgreSQL, scanner de segredos e compilação do pacote do protótipo.

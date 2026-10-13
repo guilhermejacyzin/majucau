@@ -73,9 +73,13 @@ de categorias só pode ser continuada ou encerrada quando a API fornece um
 marcador de paginação explícito.
 
 O início do OAuth desktop está em `internal/integrations/bling/oauth_service.go`:
-o worker cria sessão efêmera, valida `state`, escuta somente loopback registrado,
-troca o código, executa o teste mínimo de leitura e guarda os tokens no DPAPI.
-O botão de sincronização permanece separado e não é acionado por esse fluxo.
+o worker cria sessão efêmera, valida `state` e escuta somente `127.0.0.1`.
+Quando o cadastro usa o callback HTTPS exato da ponte Bling Majucau, o Site
+repassa somente `code/state` para `127.0.0.1:43821`; o worker troca o código
+usando a URL HTTPS registrada, executa o teste mínimo de leitura e guarda os
+tokens no DPAPI. O callback limpa os parâmetros da barra do navegador. O botão
+de sincronização permanece separado e não é acionado por esse fluxo. Evidência:
+`docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md`.
 
 ### 3.2 Recursos de leitura
 
@@ -362,6 +366,7 @@ O resultado deverá distinguir:
 - callback em `127.0.0.1`, nunca `localhost`, somente para provedor que o aceite e com redirect registrado;
 - validar correspondência exata de provider, state, sessão e redirect URI;
 - callback listener temporário e restrito ao loopback;
+- para o Bling local, o callback HTTPS cadastrado repassa somente `code/state` a um endereço loopback fixo; o estado aleatório é validado no worker local, que faz a troca e guarda o token em DPAPI;
 - para Nuvemshop, usar relay HTTPS mínimo: sessão efêmera, `state`, segredo de pareamento, leitura única e TTL de cinco minutos; o relay transporta somente `code/state`, nunca client secret ou access token;
 - exigir confirmação do provedor, redirect exato, teste de replay/cancelamento e PKCE quando o endpoint oficial o suportar; se não suportar, o fluxo permanece bloqueado até threat model e aceite explícito `D-002-RISK`, sem alegar equivalência com PKCE;
 - nenhum secret compilado no executável;

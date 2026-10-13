@@ -96,6 +96,100 @@ func TestValidateBlingLoopbackRedirect(t *testing.T) {
 	}
 }
 
+func TestResolveBlingOAuthCallbackSupportsRegisteredBridge(t *testing.T) {
+	callback, err := resolveBlingOAuthCallback(blingBridgeRedirectURI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := callback.String(); got != blingBridgeLocalCallback {
+		t.Fatalf("unexpected local callback: %s", got)
+	}
+	if _, err := resolveBlingOAuthCallback("https://untrusted.example.test/oauth/callback"); err == nil {
+		t.Fatal("untrusted HTTPS callback should be rejected")
+	}
+}
+
+func TestBlingOAuthBridgeReturnsCodeToLocalSessionAndExchangesRegisteredRedirect(t *testing.T) {
+	var tokenRedirect string
+	httpDoer := fakeOAuthHTTPDoer(func(req *http.Request) (*http.Response, error) {
+		body := `{"data":[],"pagination":{"page":1,"limit":1,"total":0}}`
+		if strings.Contains(req.URL.Path, "/oauth/token") {
+			if err := req.ParseForm(); err != nil {
+				return nil, err
+			}
+			tokenRedirect = req.Form.Get("redirect_uri")
+			body = `{"access_token":"access-token-private","refresh_token":"refresh-token-private","token_type":"Bearer","scope":"read_finance","expires_in":21600}`
+		}
+		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
+	})
+	secretStore := &memorySecretStore{values: map[string][]byte{}}
+	initial, _ := json.Marshal(blingSecretBundle{ClientSecret: "client-secret-private"})
+	if err := secretStore.Put(context.Background(), BlingCredentialSecretRef, initial); err != nil {
+		t.Fatal(err)
+	}
+	clientID, redirectURI := "client-id", blingBridgeRedirectURI
+	repo := &fakeBlingOAuthRepository{connection: database.IntegrationConnection{ClientID: &clientID, RedirectUri: &redirectURI}}
+	service := newBlingOAuthService(repo, secretStore, httpDoer)
+	var localListener net.Listener
+	service.listen = func(network, address string) (net.Listener, error) {
+		if network != "tcp" || address != "127.0.0.1:43821" {
+			t.Fatalf("unexpected listener address: %s %s", network, address)
+		}
+		var err error
+		localListener, err = net.Listen("tcp", "127.0.0.1:0")
+		return localListener, err
+	}
+	result, err := service.Start(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	authorizeURL, err := url.Parse(result.AuthorizationURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state := authorizeURL.Query().Get("state")
+	if authorizeURL.Query().Get("redirect_uri") != blingBridgeRedirectURI || len(state) != 64 {
+		t.Fatalf("authorization URL did not preserve the registered bridge: %s", result.AuthorizationURL)
+	}
+	oversizedURL := fmt.Sprintf("http://%s/callback?code=%s&state=%s", localListener.Addr().String(), strings.Repeat("x", blingOAuthCodeMaxBytes+1), url.QueryEscape(state))
+	oversizedResponse, err := http.Get(oversizedURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = oversizedResponse.Body.Close()
+	if oversizedResponse.StatusCode != http.StatusBadRequest {
+		t.Fatalf("oversized local OAuth code was not rejected: status=%d", oversizedResponse.StatusCode)
+	}
+	callbackURL := fmt.Sprintf("http://%s/callback?code=short-lived-code&state=%s", localListener.Addr().String(), url.QueryEscape(state))
+	response, err := http.Get(callbackURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	callbackPage, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != http.StatusOK || response.Header.Get("Cache-Control") != "no-store" || response.Header.Get("Referrer-Policy") != "no-referrer" || !strings.Contains(response.Header.Get("Content-Security-Policy"), "script-src 'nonce-") || !strings.Contains(string(callbackPage), "history.replaceState") || strings.Contains(string(callbackPage), "short-lived-code") {
+		t.Fatalf("local callback did not clear the short-lived code from the browser URL safely: status=%d headers=%v", response.StatusCode, response.Header)
+	}
+	_ = response.Body.Close()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		status, _ := service.Status(context.Background(), result.SessionID)
+		if status.Status == blingOAuthStatusConnected {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	status, _ := service.Status(context.Background(), result.SessionID)
+	if status.Status != blingOAuthStatusConnected || !repo.completed {
+		t.Fatalf("bridge OAuth session did not complete: %+v", status)
+	}
+	if tokenRedirect != blingBridgeRedirectURI {
+		t.Fatalf("token exchange used redirect %q, want the registered bridge", tokenRedirect)
+	}
+}
+
 func TestBlingOAuthLoopbackSessionExchangesAndTestsWithoutLeakingToken(t *testing.T) {
 	probePayload := `{"data":[],"pagination":{"page":1,"limit":1,"total":0}}`
 	tokenRequestStarted := make(chan struct{})
@@ -138,6 +232,13 @@ func TestBlingOAuthLoopbackSessionExchangesAndTestsWithoutLeakingToken(t *testin
 	callbackResponse, err := http.Get(callbackURL)
 	if err != nil {
 		t.Fatal(err)
+	}
+	callbackPage, err := io.ReadAll(callbackResponse.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if callbackResponse.StatusCode != http.StatusOK || callbackResponse.Header.Get("Cache-Control") != "no-store" || callbackResponse.Header.Get("Referrer-Policy") != "no-referrer" || !strings.Contains(callbackResponse.Header.Get("Content-Security-Policy"), "script-src 'nonce-") || !strings.Contains(string(callbackPage), "history.replaceState") || strings.Contains(string(callbackPage), "code-value") {
+		t.Fatalf("callback response did not clear the short-lived code from the browser URL safely: status=%d headers=%v", callbackResponse.StatusCode, callbackResponse.Header)
 	}
 	_ = callbackResponse.Body.Close()
 	select {

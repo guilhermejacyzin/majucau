@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"io/fs"
 	"net"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 
 const (
 	blingOAuthSessionTTL        = 5 * time.Minute
+	blingOAuthCodeMaxBytes      = 4 * 1024
 	blingRefreshTokenLifetime   = 30 * 24 * time.Hour
 	blingOAuthStatusAuthorizing = "AUTHORIZING"
 	blingOAuthStatusConnected   = "CONNECTED"
@@ -39,6 +41,11 @@ var (
 	ErrBlingOAuthNotConnected  = errors.New("bling oauth connection is not authorized")
 	ErrBlingOAuthStorage       = errors.New("bling oauth token storage failed")
 	ErrBlingOAuthDisconnect    = errors.New("bling oauth disconnect failed")
+)
+
+const (
+	blingBridgeRedirectURI   = "https://majucau-bling-bridge.giselegalha.chatgpt.site/oauth/bling/callback"
+	blingBridgeLocalCallback = "http://127.0.0.1:43821/callback"
 )
 
 type BlingOAuthStartResult struct {
@@ -199,7 +206,7 @@ func (s *BlingOAuthService) Start(ctx context.Context) (BlingOAuthStartResult, e
 	if _, err := loadBlingSecret(ctx, s.credentials.store); err != nil {
 		return BlingOAuthStartResult{}, err
 	}
-	redirect, err := validateBlingLoopbackRedirect(redirectURI)
+	callback, err := resolveBlingOAuthCallback(redirectURI)
 	if err != nil {
 		return BlingOAuthStartResult{}, err
 	}
@@ -211,7 +218,7 @@ func (s *BlingOAuthService) Start(ctx context.Context) (BlingOAuthStartResult, e
 	if err != nil {
 		return BlingOAuthStartResult{}, fmt.Errorf("%w: session", ErrBlingOAuthConfiguration)
 	}
-	listener, err := s.listen("tcp", net.JoinHostPort("127.0.0.1", redirect.Port()))
+	listener, err := s.listen("tcp", net.JoinHostPort("127.0.0.1", callback.Port()))
 	if err != nil {
 		return BlingOAuthStartResult{}, fmt.Errorf("%w: callback port unavailable", ErrBlingOAuthConfiguration)
 	}
@@ -225,7 +232,7 @@ func (s *BlingOAuthService) Start(ctx context.Context) (BlingOAuthStartResult, e
 		return BlingOAuthStartResult{}, err
 	}
 	session := &blingOAuthSession{
-		id: sessionID, state: state, path: redirect.Path, listener: listener,
+		id: sessionID, state: state, path: callback.Path, listener: listener,
 		expiresAt: s.now().Add(blingOAuthSessionTTL), status: blingOAuthStatusAuthorizing,
 	}
 	s.mu.Lock()
@@ -517,21 +524,26 @@ func (s *BlingOAuthService) awaitCallback(ctx context.Context, session *blingOAu
 			http.Error(w, "estado inválido", http.StatusBadRequest)
 			return
 		}
-		if query.Get("error") != "" || strings.TrimSpace(query.Get("code")) == "" {
+		code := query.Get("code")
+		if len(code) > blingOAuthCodeMaxBytes {
+			http.Error(w, "código OAuth inválido", http.StatusBadRequest)
+			return
+		}
+		if query.Get("error") != "" || strings.TrimSpace(code) == "" {
 			sendCallback(struct {
 				code string
 				err  error
 			}{err: ErrBlingOAuthRejected})
-			_, _ = w.Write([]byte("A autorização foi recusada. Você pode voltar ao Majucau."))
+			writeBlingOAuthCallbackPage(w, "A autorização foi recusada. Você pode voltar ao Majucau.")
 			return
 		}
 		sendCallback(struct {
 			code string
 			err  error
-		}{code: query.Get("code")})
-		_, _ = w.Write([]byte("Autorização recebida. Você pode voltar ao Majucau."))
+		}{code: code})
+		writeBlingOAuthCallbackPage(w, "Autorização recebida. Você pode voltar ao Majucau.")
 	})
-	server := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	server := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second, MaxHeaderBytes: 16 * 1024}
 	go func() { _ = server.Serve(session.listener) }()
 	defer func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -545,6 +557,21 @@ func (s *BlingOAuthService) awaitCallback(ctx context.Context, session *blingOAu
 	case <-ctx.Done():
 		return "", ctx.Err()
 	}
+}
+
+func writeBlingOAuthCallbackPage(w http.ResponseWriter, message string) {
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; base-uri 'none'; frame-ancestors 'none'")
+	nonce, err := randomHex(16)
+	if err != nil {
+		http.Error(w, "Não foi possível concluir a autorização. Volte ao Majucau.", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'nonce-"+nonce+"'; base-uri 'none'; frame-ancestors 'none'")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = fmt.Fprintf(w, "<!doctype html><html lang=\"pt-BR\"><meta charset=\"utf-8\"><meta name=\"referrer\" content=\"no-referrer\"><title>Majucau</title><body><main><p>%s</p></main><script nonce=\"%s\">history.replaceState(null,\"\",location.pathname)</script></body></html>", html.EscapeString(message), nonce)
 }
 
 func (s *BlingOAuthService) failSession(session *blingOAuthSession, code, message string) {
@@ -590,6 +617,19 @@ func validateBlingLoopbackRedirect(raw string) (*url.URL, error) {
 		return nil, fmt.Errorf("%w: callback port", ErrBlingOAuthConfiguration)
 	}
 	return parsed, nil
+}
+
+func resolveBlingOAuthCallback(registeredRedirectURI string) (*url.URL, error) {
+	if callback, err := validateBlingLoopbackRedirect(registeredRedirectURI); err == nil {
+		return callback, nil
+	}
+	if registeredRedirectURI == blingBridgeRedirectURI {
+		callback, err := url.Parse(blingBridgeLocalCallback)
+		if err == nil {
+			return callback, nil
+		}
+	}
+	return nil, fmt.Errorf("%w: unsupported registered redirect", ErrBlingOAuthConfiguration)
 }
 
 func buildBlingAuthorizeURL(clientID, redirectURI, state string) (string, error) {

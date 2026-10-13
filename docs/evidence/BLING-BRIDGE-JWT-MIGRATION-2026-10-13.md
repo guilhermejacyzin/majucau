@@ -1,5 +1,7 @@
 # Revisão e correção da ponte Bling — 13/10/2026
 
+> Atualização posterior: o fluxo para o Majucau local foi corrigido e publicado no Site v13. Este documento preserva os achados e a versão v10 da revisão inicial; a implementação atual e as pendências estão em `BLING-OAUTH-LOCAL-RELAY-2026-10-13.md`.
+
 ## Resultado em linguagem simples
 
 O Bling conseguiu concluir a autorização no Site público “Majucau Bling Bridge”. Isso confirma que o Site recebe o retorno de autorização. Não confirma que o Majucau aberto no computador recebeu dados: o Site guarda o token protegido e, no código revisado, não existe uma rota que consulte as contas do Bling e entregue os resultados ao Majucau local.

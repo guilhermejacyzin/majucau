@@ -1455,7 +1455,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-041 — Implementar o adaptador de leitura do Bling
 
-**Situação:** Em andamento. **Evolução:** 69% (estimativa; além das consultas já existentes, o adaptador lê páginas limitadas de movimentações de caixa por período e detalhes por ID, preservando JSON bruto; a consulta `/caixas` usa somente parâmetros documentados e mantém o limite de registros local. Ainda não persiste nem integra essa fonte, não homologou a paginação real/categoria da conta e não retoma cursor incremental). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 75% (estimativa; além das consultas já existentes, o adaptador lê páginas limitadas de movimentações de caixa por período e detalhes por ID, preservando JSON bruto; a consulta `/caixas` usa somente parâmetros documentados e mantém o limite de registros local. O callback HTTPS cadastrado no Bling agora repassa apenas código/estado para o worker local, que valida `state` e guarda tokens no DPAPI. Ainda não persiste nem integra `/caixas`, não homologou a paginação real/categoria da conta nem retoma cursor incremental). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Ingerir dados oficiais sem alterar o ERP.
 
@@ -3834,3 +3834,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A CI `38337400706` passou em todos os quatro grupos. O Windows compilou o NSIS e passou pelo smoke de instalação/remoção; as verificações do backlog e PostgreSQL também passaram. Não executei testes nem build localmente. A instalação numa máquina limpa com PostgreSQL dedicado ainda está pendente. Nenhuma tela, banco ou regra financeira foi alterada.
 - BK-026 permanece em 55% (45% restante) até a validação em ambiente limpo; BK-027 permanece em 25%. A estimativa global permanece em 10,2% concluída (89,8% restante), sem prazo global confiável.
 - Evidência: `docs/evidence/INSTALLER-MIGRATION-MANIFEST-COVERAGE-2026-10-12.md`.
+
+### Retorno OAuth do Bling ao Majucau local — 13/10/2026
+
+- O Site v13 e o worker local agora completam o caminho entre o callback HTTPS registrado no Bling e o callback `127.0.0.1:43821` do Majucau. O Site só repassa `code/state` para destino fixo, limita o código temporário a 4 KiB, não o armazena e não depende do banco do Site nesse caminho. O worker local valida `state`, aplica o mesmo limite, troca o código usando o redirect HTTPS cadastrado e grava tokens no cofre Windows; a página do callback remove os parâmetros OAuth do histórico.
+- Testes do pacote Go Bling passaram. As 20 verificações do Site, sua compilação e validação do pacote passaram. O Site v13 está publicado. A autorização real da conta ainda não foi feita; não há conexão nem dados importados confirmados.
+- BK-041 avança de 69% para 75% (25% restante). Continuam pendentes: preencher credenciais no Majucau e conectar, homologar a conta, confirmar o fim da paginação e conciliar a sincronização real. BK-039 também não implementa a atualização diária das 09:30.
+- A estimativa geral permanece em 10,2% concluída (89,8% restante), sem prazo global confiável. Nenhuma tela aprovada ou regra financeira foi alterada.
+- Evidência: `docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md`. CI do código Go permanece pendente após push.

@@ -22,7 +22,7 @@ Agora o worker busca e processa esses identificadores em blocos de até 256. Cad
 - Testes cobrem 529 IDs em três blocos limitados, erro durante a substituição, cancelamento, rollback/idempotência em PostgreSQL e duas sincronizações concorrentes do mesmo recurso: a segunda só consulta o Bling depois que a primeira confirma a transação.
 - `go vet ./internal/integrations/bling` — passou.
 - O banco foi iniciado somente em `127.0.0.1:55440`, com credencial temporária protegida. A instância que já usava a porta 5432 não foi acessada. O banco temporário e os caches recriáveis foram removidos ao terminar; `artifacts/cache/go-mod/` foi preservado.
-- A CI do commit `6cddbcd` passou em `verify-backlog`, mas parou no verificador do formato da mensagem do commit; Windows e PostgreSQL foram ignorados. Um novo commit com os campos em linhas separadas deve disparar a validação completa.
+- A CI inicial de `6cddbcd` validou o backlog, mas interrompeu antes dos jobs de produto por causa do formato da mensagem do commit. A validação completa do commit seguinte, `f1cc8e2`, terminou com sucesso no run [39168729070](https://github.com/guilhermejacyzin/majucau/actions/runs/39168729070): `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres` passaram. O PostgreSQL integrou novamente a serialização concorrente; Windows também passou pelos testes, `go vet`, frontend, verificações de segurança e empacotamento definidos no workflow.
 - Nenhuma conta Bling foi conectada e nenhuma sincronização real ocorreu.
 
 ## Limites e próximo passo

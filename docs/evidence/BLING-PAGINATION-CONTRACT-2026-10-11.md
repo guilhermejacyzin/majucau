@@ -13,7 +13,7 @@ Data da consulta: 11/10/2026.
 
 ## O que isso significa para o Majucau
 
-A paginação por número de página está documentada, mas a documentação pública consultada não permite decidir, sem suposição, quando a última página foi alcançada nem estabelecer um cursor incremental de alterações para contas a receber. A regra atual do adapter, que interrompe a sincronização com erro e rollback quando não reconhece um marcador de término, deve continuar ativa. Não substituir por “página com menos de 100 registros” nem assumir metadados ausentes.
+A paginação por número de página está documentada, mas a documentação pública consultada não especifica o que a API retorna após a última página nem estabelece um cursor incremental de alterações para contas a receber. O adapter não encerra em uma página curta: quando a resposta não traz um marcador, ele continua até receber uma resposta HTTP válida com `data: []`. Esse é um sinal conservador implementado para evitar parar cedo; ainda é uma hipótese operacional que precisa ser confirmada com a conta autorizada antes da homologação.
 
 O adapter agora envia o nome documentado do filtro de situação por rota: `situacoes[]` em contas a receber e `situacao` em contas a pagar. O teste focal do pacote Bling passou nos dois casos. Isso corrige a forma da consulta conforme o contrato público; não prova o comportamento da conta real.
 
@@ -91,3 +91,11 @@ Fontes oficiais consultadas em 13/10/2026:
 
 - [OpenAPI da API Bling v3 — `GET /contas/receber` e `GET /contas/pagar`](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json)
 - [Referência da API Bling](https://developer.bling.com.br/referencia)
+
+## Paginação conservadora implementada — 18/10/2026
+
+- A referência pública confirma `pagina`, `limite` e a lista `data[]`, mas não promete que uma página além da última responderá com uma lista vazia. A implementação usa a seguinte regra provisória: toda página não vazia continua para a próxima, mesmo se vier com menos registros; apenas uma resposta HTTP válida com `data: []` encerra a lista quando não há metadados explícitos.
+- Essa escolha reduz o risco de encerrar cedo por página curta, mas a resposta vazia como marcador final é uma inferência técnica, não uma garantia publicada pelo Bling. Se a API devolver outro comportamento após a última página, a sincronização falha dentro da transação e preserva o snapshot e o cursor anteriores. A confirmação da conta Majucau ainda é necessária.
+- O lote grava também a página vazia que confirmou o término. Ao concluir, aposenta páginas antigas que excediam esse término por meio da função aprovada de rollover RAW. Aposentadoria, páginas atuais, cursor e sucesso estão na mesma transação; qualquer erro reverte a troca inteira.
+- A suíte local do adapter e `go vet ./internal/integrations/bling` passaram. O teste PostgreSQL foi ampliado para cobrir falha/rollback, aposentadoria de páginas antigas e replay idempotente, mas foi pulado localmente porque `MAJUCAU_TEST_DATABASE_URL` não está configurado; a execução em banco descartável aguarda a CI deste commit. Nenhum dado real do Bling foi consultado nesta implementação.
+- A decisão do Drive também fica registrada: o serviço Go será o leitor somente de leitura das três pastas autorizadas; o Site continua responsável apenas pelo OAuth do Bling. Provisionamento de identidade, IDs reais e autorização do Google Drive ainda não foram feitos.

@@ -135,7 +135,7 @@ func TestGetPayableRejectsInvalidAndOversizedDetail(t *testing.T) {
 	}
 }
 
-func TestListFinancialCategoriesRequiresExplicitPaginationMetadata(t *testing.T) {
+func TestListFinancialCategoriesRespectsExplicitPaginationMetadata(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/Api/v3/categorias/receitas-despesas" {
 			t.Fatalf("path = %q", r.URL.Path)
@@ -326,7 +326,7 @@ func TestListCashMovementsRejectsInvalidCategoryIDsBeforeNetworkCall(t *testing.
 	}
 }
 
-func TestListCashMovementsDoesNotInferEndFromTotalWithoutPageSize(t *testing.T) {
+func TestListCashMovementsContinuesWhenResponseHasDataButNoPageSize(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"data":[{"id":789}],"pagination":{"total":5}}`))
 	}))
@@ -339,8 +339,8 @@ func TestListCashMovementsDoesNotInferEndFromTotalWithoutPageSize(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if page.HasNextKnown || page.HasNext || page.Limit != 0 {
-		t.Fatalf("page without completion metadata was treated as complete: %+v", page)
+	if !page.HasNextKnown || !page.HasNext || page.Limit != 0 {
+		t.Fatalf("non-empty page without a known page size did not continue conservatively: %+v", page)
 	}
 }
 

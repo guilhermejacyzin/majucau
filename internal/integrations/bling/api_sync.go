@@ -20,6 +20,10 @@ import (
 
 const ReceivablesAPIResource = "contas.receber"
 
+// A full 1,000-page read may need one additional request to observe the
+// empty-page response used as the provisional end-of-list sentinel.
+const maxBlingAPIPageReads = 1001
+
 var (
 	ErrBlingAPISyncDatabaseUnavailable = errors.New("bling api sync database is unavailable")
 	ErrBlingAPISyncClientRequired      = errors.New("bling api sync client is required")
@@ -52,7 +56,7 @@ type apiResourceSyncService struct {
 type ReceivablesAPISyncService struct{ *apiResourceSyncService }
 
 func NewReceivablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *ReceivablesAPISyncService {
-	return &ReceivablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: 1000, resource: ReceivablesAPIResource, sourceEntity: "bling.contas_receber.page", list: client.ListReceivables}}
+	return &ReceivablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: ReceivablesAPIResource, sourceEntity: "bling.contas_receber.page", list: client.ListReceivables}}
 }
 
 // SyncWithCorrelationID runs receivables as part of a stable daily operation.
@@ -69,7 +73,7 @@ const PayablesAPIResource = "contas.pagar"
 type PayablesAPISyncService struct{ *apiResourceSyncService }
 
 func NewPayablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *PayablesAPISyncService {
-	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: 1000, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables}}
+	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables}}
 }
 
 // SyncWithCorrelationID runs payables as part of a stable daily operation.
@@ -141,6 +145,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		current.Page = 1
 	}
 	completed := false
+	finalPage := 0
 	for result.PagesRead < s.maxPages {
 		if err := ctx.Err(); err != nil {
 			return fail("SYNC_CANCELLED", err)
@@ -148,6 +153,9 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		page, err := s.list(ctx, current)
 		if err != nil {
 			return fail("BLING_API_READ_FAILED", err)
+		}
+		if page.Page != current.Page {
+			return fail("BLING_API_SCHEMA_MISMATCH", fmt.Errorf("%w: response page does not match the requested page", ErrBlingAPISchemaMismatch))
 		}
 		if !page.HasNextKnown {
 			return fail("BLING_API_PAGINATION_UNKNOWN", ErrBlingAPIPaginationUnknown)
@@ -170,6 +178,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		}
 		if !page.HasNext {
 			completed = true
+			finalPage = page.Page
 			break
 		}
 		current.Page = page.Page + 1
@@ -178,7 +187,10 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	if !completed {
 		return fail("BLING_API_PAGE_LIMIT", ErrBlingAPISyncPageLimit)
 	}
-	cursorValue := fmt.Sprintf("page:%d", current.Page)
+	if err := retireCurrentResourcePagesAfter(ctx, tx, connection.ID, s.sourceEntity, finalPage); err != nil {
+		return fail("BLING_API_RAW_RETIRE_FAILED", err)
+	}
+	cursorValue := fmt.Sprintf("page:%d", finalPage)
 	watermark := pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}
 	if err := queries.UpsertSyncCursor(ctx, database.UpsertSyncCursorParams{ConnectionID: connection.ID, Resource: s.resource, CursorValue: &cursorValue, WatermarkAt: watermark}); err != nil {
 		return fail("BLING_SYNC_CURSOR_FAILED", err)
@@ -193,6 +205,48 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	}
 	result.Status = "SUCCESS"
 	return result, nil
+}
+
+// retireCurrentResourcePagesAfter removes stale page snapshots only after a
+// complete read. The database procedure keeps RAW history append-only while
+// allowing the current view to reflect a list that became shorter.
+func retireCurrentResourcePagesAfter(ctx context.Context, tx pgx.Tx, connectionID pgtype.UUID, sourceEntity string, finalPage int) error {
+	if !connectionID.Valid || sourceEntity == "" || finalPage < 1 {
+		return errors.New("invalid Bling page snapshot identity")
+	}
+	rows, err := tx.Query(ctx, `
+		SELECT id
+		FROM raw_records
+		WHERE connection_id = $1
+		  AND source_system = 'BLING'
+		  AND source_entity = $2
+		  AND is_current
+		  AND source_id ~ '^pagina:[0-9]+$'
+		  AND substring(source_id FROM 8)::numeric > $3`, connectionID, sourceEntity, finalPage)
+	if err != nil {
+		return fmt.Errorf("find stale Bling RAW pages: %w", err)
+	}
+	var staleIDs []pgtype.UUID
+	for rows.Next() {
+		var id pgtype.UUID
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return fmt.Errorf("read stale Bling RAW page ID: %w", err)
+		}
+		staleIDs = append(staleIDs, id)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return fmt.Errorf("iterate stale Bling RAW pages: %w", err)
+	}
+	rows.Close()
+	queries := database.New(tx)
+	for _, id := range staleIDs {
+		if err := queries.RetireCurrentRawRecord(ctx, id); err != nil {
+			return fmt.Errorf("retire stale Bling RAW page: %w", err)
+		}
+	}
+	return nil
 }
 
 func (s *apiResourceSyncService) finishFailed(ctx context.Context, tx pgx.Tx, queries *database.Queries, batchID pgtype.UUID, result APISyncResult, code string, cause error) error {

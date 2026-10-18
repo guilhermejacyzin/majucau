@@ -1286,14 +1286,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "75%: leitura de receber, pagar e movimentações de caixa com GET limitado; OAuth local via callback HTTPS, state e DPAPI. /caixas usa parâmetros documentados e limite local. Faltam integração/persistência de caixa, homologação da conta, término da paginação e cursor incremental. Evidência: docs/evidence/BLING-OAUTH-LOCAL-RELAY-2026-10-13.md.",
+    "evidence": "78%: leitura de receber, pagar e movimentações de caixa com GET limitado; OAuth local via callback HTTPS, state e DPAPI. /caixas usa parâmetros documentados e limite local. Sem metadados, continua após páginas curtas e trata data: [] como marcador provisório de término. Falta confirmar esse comportamento na conta real, integrar/persistir caixa, homologar categorias/campos, retomar cursor incremental e concluir sincronização real. Evidência: docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md.",
     "weight": 1,
     "dependencies": [
       "BK-040",
       "BK-039",
       "BK-038"
     ],
-    "progress": 0.75
+    "progress": 0.78
   },
   {
     "key": "fileingestion",

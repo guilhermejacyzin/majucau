@@ -213,9 +213,9 @@ type BlingReceivablesPage struct {
 	Limit   int
 	Total   *int
 	HasNext bool
-	// HasNextKnown is true only when the API supplies hasNext or a total that
-	// can be compared with a known page size. A total alone cannot establish the
-	// last page when its size is unknown.
+	// HasNextKnown is true when API metadata establishes continuation or when
+	// the response itself is an empty-page sentinel. Without metadata, a
+	// non-empty page is conservatively followed by another request.
 	HasNextKnown bool
 }
 
@@ -402,6 +402,13 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 			page.HasNext = hasNextFromTotal(page.Page, page.Limit, *page.Total)
 			page.HasNextKnown = true
 		}
+	}
+	if !page.HasNextKnown {
+		// Bling's public list schema does not document a last-page marker.
+		// Continue after every non-empty page, including short pages, and stop
+		// only when a successful response explicitly contains data: [].
+		page.HasNext = len(page.Records) > 0
+		page.HasNextKnown = true
 	}
 	return page, nil
 }

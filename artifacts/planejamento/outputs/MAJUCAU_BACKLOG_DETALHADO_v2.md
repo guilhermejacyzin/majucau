@@ -407,7 +407,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 18/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (35%), BK-041 (75%), BK-042 (45%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
+- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (35%), BK-041 (78%), BK-042 (45%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
 - Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 95% + 35% + 70% + 60% + 40% + 85% + 35% + 75% + 45% + 40% + 5% + 25% + 1%) ÷ 127 = 11,4%`; restam 88,6%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
@@ -1468,7 +1468,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-041 — Implementar o adaptador de leitura do Bling
 
-**Situação:** Em andamento. **Evolução:** 75% (estimativa; além das consultas já existentes, o adaptador lê páginas limitadas de movimentações de caixa por período e detalhes por ID, preservando JSON bruto; a consulta `/caixas` usa somente parâmetros documentados e mantém o limite de registros local. O callback HTTPS cadastrado no Bling agora repassa apenas código/estado para o worker local, que valida `state` e guarda tokens no DPAPI. Ainda não persiste nem integra `/caixas`, não homologou a paginação real/categoria da conta nem retoma cursor incremental). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 78% (estimativa; além das consultas já existentes, o adaptador lê páginas limitadas de movimentações de caixa por período e detalhes por ID, preservando JSON bruto; a consulta `/caixas` usa somente parâmetros documentados e mantém o limite de registros local. O callback HTTPS cadastrado no Bling agora repassa apenas código/estado para o worker local, que valida `state` e guarda tokens no DPAPI. Para listas sem metadados, agora continua após páginas curtas e usa `data: []` como marcador provisório de término; a resposta da conta real ainda precisa confirmar esse comportamento. Ainda não persiste nem integra `/caixas`, não homologou a categoria da conta nem retoma cursor incremental). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Ingerir dados oficiais sem alterar o ERP.
 
@@ -1494,7 +1494,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Auditoria de retry HTTP (12/10/2026):** uma busca estática confirmou que as listagens financeiras e os detalhes de registros Bling chamam a política comum `internal/integrations/httpretry`, com até três tentativas, erros transitórios classificados pelo adapter, espera limitada por `Retry-After`, jitter e cancelamento. A troca de token OAuth via POST permanece sem retry. Não foram encontrados outros clientes HTTP externos em produção Go; as operações de leitura atuais não escapam da política. Não foi necessária correção de código. Os testes existentes e a CI citados na evidência de 11/10 já cobrem o helper e o adapter; nenhum teste foi executado nesta revisão. BK-041 permanece em 69%, pois configuração, autorização, cursor/paginação oficial e sincronização com a conta real seguem pendentes. Ver `docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md`.
 
-**Diagnóstico de configuração no protótipo local — 13/10/2026:** após corrigir a ACL do cofre, o banco e o cofre ficaram acessíveis; o salvamento retornou `BLING_SECRET_REQUIRED`. A conta ainda não está autorizada e não houve chamada de teste ou sincronização. O Client Secret não foi lido nem solicitado pelo chat; falta cadastrá-lo diretamente no Majucau. O estado e os limites estão registrados em `docs/evidence/PROTOTYPE-BLING-VAULT-ACL-2026-10-13.md`. BK-041 permanece em 75%.
+**Diagnóstico de configuração no protótipo local — 13/10/2026:** após corrigir a ACL do cofre, o banco e o cofre ficaram acessíveis; o salvamento retornou `BLING_SECRET_REQUIRED`. A conta ainda não está autorizada e não houve chamada de teste ou sincronização. O Client Secret não foi lido nem solicitado pelo chat; falta cadastrá-lo diretamente no Majucau. O estado e os limites estão registrados em `docs/evidence/PROTOTYPE-BLING-VAULT-ACL-2026-10-13.md`. Na atualização de 18/10, BK-041 passa a 78% após a implementação provisória de término de paginação; a conta real continua sem autorização.
 
 **Impacto:** Mantém integração estável e credenciais protegidas.
 

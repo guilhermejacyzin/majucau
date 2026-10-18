@@ -69,6 +69,13 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		VALUES ($1::uuid, $2, 'BLING', $3, 'pagina:1', $4, $5::jsonb, true)`, priorBatchID, connection.ID, sourceEntity, previousHash, previousPayload); err != nil {
 		t.Fatalf("seed latest valid RAW page: %v", err)
 	}
+	stalePagePayload := []byte(`{"page":"stale-page-four"}`)
+	stalePageDigest := sha256.Sum256(stalePagePayload)
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO raw_records (sync_batch_id, connection_id, source_system, source_entity, source_id, payload_hash, payload, is_current)
+		VALUES ($1::uuid, $2, 'BLING', $3, 'pagina:4', $4, $5::jsonb, true)`, priorBatchID, connection.ID, sourceEntity, hex.EncodeToString(stalePageDigest[:]), stalePagePayload); err != nil {
+		t.Fatalf("seed stale RAW page: %v", err)
+	}
 	const previousCursor = "checkpoint:previous-success"
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO sync_cursors (connection_id, resource, cursor_value)
@@ -78,7 +85,8 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	}
 
 	pageOne := BlingReceivablesPage{Page: 1, Limit: 1, HasNext: true, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-one-new"}`)}}
-	pageTwo := BlingReceivablesPage{Page: 2, Limit: 1, HasNext: false, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-two-new"}`)}}
+	pageTwo := BlingReceivablesPage{Page: 2, Limit: 1, HasNext: true, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-two-new"}`)}}
+	emptyPage := BlingReceivablesPage{Page: 3, Limit: 1, HasNext: false, HasNextKnown: true, Records: []json.RawMessage{}}
 	pageTwoFailure := errors.New("injected page read failure")
 	failSecondPage := true
 	unknownPagination := false
@@ -100,6 +108,8 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 					return BlingReceivablesPage{}, pageTwoFailure
 				}
 				return pageTwo, nil
+			case 3:
+				return emptyPage, nil
 			default:
 				return BlingReceivablesPage{}, errors.New("unexpected page request")
 			}
@@ -157,7 +167,7 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if err != nil {
 		t.Fatalf("successful paginated sync: %v", err)
 	}
-	if succeeded.Status != "SUCCESS" || succeeded.PagesRead != 2 {
+	if succeeded.Status != "SUCCESS" || succeeded.PagesRead != 3 || succeeded.RecordsRead != 2 {
 		t.Fatalf("successful sync result = %+v", succeeded)
 	}
 	var persistedCorrelationID string
@@ -170,8 +180,8 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT cursor_value FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource).Scan(&cursor); err != nil {
 		t.Fatalf("read cursor after successful sync: %v", err)
 	}
-	if cursor != "page:2" {
-		t.Fatalf("successful sync cursor = %q, want page:2", cursor)
+	if cursor != "page:3" {
+		t.Fatalf("successful sync cursor = %q, want page:3", cursor)
 	}
 	var currentPages, allPages int
 	if err := pool.QueryRow(ctx, `
@@ -179,8 +189,17 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		FROM raw_records WHERE connection_id = $1 AND source_entity = $2`, connection.ID, sourceEntity).Scan(&currentPages, &allPages); err != nil {
 		t.Fatalf("count RAW pages after successful sync: %v", err)
 	}
-	if currentPages != 2 || allPages != 3 {
-		t.Fatalf("successful sync RAW current/total counts = %d/%d, want 2/3", currentPages, allPages)
+	if currentPages != 3 || allPages != 5 {
+		t.Fatalf("successful sync RAW current/total counts = %d/%d, want 3/5", currentPages, allPages)
+	}
+	var staleCurrentPages int
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FROM raw_records
+		WHERE connection_id = $1 AND source_entity = $2 AND source_id = 'pagina:4' AND is_current`, connection.ID, sourceEntity).Scan(&staleCurrentPages); err != nil {
+		t.Fatalf("check stale page retirement: %v", err)
+	}
+	if staleCurrentPages != 0 {
+		t.Fatalf("stale page 4 is still current after a complete read: %d rows", staleCurrentPages)
 	}
 
 	unknownPagination = true
@@ -203,16 +222,16 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT cursor_value FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource).Scan(&cursor); err != nil {
 		t.Fatalf("read cursor after unknown pagination: %v", err)
 	}
-	if cursor != "page:2" {
-		t.Fatalf("unknown pagination advanced cursor to %q, want page:2", cursor)
+	if cursor != "page:3" {
+		t.Fatalf("unknown pagination advanced cursor to %q, want page:3", cursor)
 	}
 	if err := pool.QueryRow(ctx, `
 		SELECT count(*) FILTER (WHERE is_current), count(*)
 		FROM raw_records WHERE connection_id = $1 AND source_entity = $2`, connection.ID, sourceEntity).Scan(&currentPages, &allPages); err != nil {
 		t.Fatalf("count RAW pages after unknown pagination: %v", err)
 	}
-	if currentPages != 2 || allPages != 3 {
-		t.Fatalf("unknown pagination changed RAW current/total counts to %d/%d, want 2/3", currentPages, allPages)
+	if currentPages != 3 || allPages != 5 {
+		t.Fatalf("unknown pagination changed RAW current/total counts to %d/%d, want 3/5", currentPages, allPages)
 	}
 
 	unknownPagination = false
@@ -220,7 +239,7 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if err != nil {
 		t.Fatalf("idempotent API sync replay: %v", err)
 	}
-	if replayed.Status != "SUCCESS" || replayed.PagesRead != 2 || replayed.PagesCreated != 0 || replayed.PagesUpdated != 0 {
+	if replayed.Status != "SUCCESS" || replayed.PagesRead != 3 || replayed.PagesCreated != 0 || replayed.PagesUpdated != 0 {
 		t.Fatalf("idempotent replay result = %+v", replayed)
 	}
 	if err := pool.QueryRow(ctx, `
@@ -228,7 +247,7 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		FROM raw_records WHERE connection_id = $1 AND source_entity = $2`, connection.ID, sourceEntity).Scan(&currentPages, &allPages); err != nil {
 		t.Fatalf("count RAW pages after idempotent replay: %v", err)
 	}
-	if currentPages != 2 || allPages != 3 {
-		t.Fatalf("idempotent replay changed RAW current/total counts to %d/%d, want 2/3", currentPages, allPages)
+	if currentPages != 3 || allPages != 5 {
+		t.Fatalf("idempotent replay changed RAW current/total counts to %d/%d, want 3/5", currentPages, allPages)
 	}
 }

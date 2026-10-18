@@ -80,27 +80,33 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 	}
 }
 
-func TestListReceivablesDoesNotAssumeLastPageWithoutCompletionMetadata(t *testing.T) {
-	for _, body := range []string{
-		`{"data":[{"id":321}]}`,
-		`{"data":[{"id":321}],"pagination":{"page":1,"limit":100}}`,
+func TestListReceivablesUsesEmptyDataAsConservativeCompletionSentinel(t *testing.T) {
+	for _, test := range []struct {
+		name        string
+		body        string
+		wantHasNext bool
+	}{
+		{name: "non-empty page continues", body: `{"data":[{"id":321}]}`, wantHasNext: true},
+		{name: "short page continues", body: `{"data":[{"id":321}],"pagination":{"page":1,"limit":100}}`, wantHasNext: true},
+		{name: "empty page ends", body: `{"data":[]}`},
 	} {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			_, _ = w.Write([]byte(body))
-		}))
-		client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
-		if err != nil {
-			server.Close()
-			t.Fatal(err)
-		}
-		page, err := client.ListReceivables(context.Background(), ReceivablesFilter{})
-		server.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if page.HasNextKnown || page.HasNext {
-			t.Fatalf("response without explicit completion metadata was treated as complete: %+v", page)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte(test.body))
+			}))
+			defer server.Close()
+			client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+			if err != nil {
+				t.Fatal(err)
+			}
+			page, err := client.ListReceivables(context.Background(), ReceivablesFilter{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !page.HasNextKnown || page.HasNext != test.wantHasNext {
+				t.Fatalf("pagination = known:%t next:%t, want known:true next:%t", page.HasNextKnown, page.HasNext, test.wantHasNext)
+			}
+		})
 	}
 }
 

@@ -82,6 +82,124 @@ func TestListFilesDoesNotRetryAuthorizationFailure(t *testing.T) {
 	}
 }
 
+func TestWalkFilesStreamsPagesAndReturnsResumeTokenAtLimit(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		calls++
+		writer.Header().Set("Content-Type", "application/json")
+		if request.URL.Query().Get("pageToken") == "" {
+			_, _ = io.WriteString(writer, `{"files":[{"id":"file-1","name":"one.csv","mimeType":"text/csv","parents":["folder-a"]},{"id":"file-2","name":"two.csv","mimeType":"text/csv","parents":["folder-a"]}],"nextPageToken":"page-two"}`)
+			return
+		}
+		if got := request.URL.Query().Get("pageToken"); got != "page-two" {
+			t.Errorf("pageToken = %q, want page-two", got)
+		}
+		_, _ = io.WriteString(writer, `{"files":[{"id":"file-3","name":"three.csv","mimeType":"text/csv","parents":["folder-a"]}]}`)
+	}))
+	defer server.Close()
+	client := testClient(t, server, AccessTokenFunc(func(context.Context) (string, error) { return "test-access-token", nil }))
+	var seen []string
+	visit := func(file File) error {
+		seen = append(seen, file.ID)
+		return nil
+	}
+
+	first, err := client.WalkFiles(context.Background(), "folder-a", "", 1, visit)
+	if !errors.Is(err, ErrFileWalkLimit) {
+		t.Fatalf("first WalkFiles() error = %v, want page-limit signal", err)
+	}
+	if first.Complete || first.PagesRead != 1 || first.FilesVisited != 2 || first.NextPageToken != "page-two" {
+		t.Fatalf("first WalkFiles() result = %#v", first)
+	}
+	second, err := client.WalkFiles(context.Background(), "folder-a", first.NextPageToken, 1, visit)
+	if err != nil {
+		t.Fatalf("resumed WalkFiles() error = %v", err)
+	}
+	if !second.Complete || second.PagesRead != 1 || second.FilesVisited != 1 || second.NextPageToken != "" {
+		t.Fatalf("resumed WalkFiles() result = %#v", second)
+	}
+	if calls != 2 || strings.Join(seen, ",") != "file-1,file-2,file-3" {
+		t.Fatalf("walk calls=%d files=%v", calls, seen)
+	}
+}
+
+func TestWalkFilesStopsOnRepeatedContinuationToken(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		calls++
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(writer, `{"files":[],"nextPageToken":"repeat"}`)
+	}))
+	defer server.Close()
+	client := testClient(t, server, AccessTokenFunc(func(context.Context) (string, error) { return "token", nil }))
+	result, err := client.WalkFiles(context.Background(), "folder-a", "", 5, func(File) error { return nil })
+	if !errors.Is(err, ErrInvalidResponse) {
+		t.Fatalf("WalkFiles() error = %v, want repeated-token response failure", err)
+	}
+	if calls != 2 || result.PagesRead != 2 || result.Complete {
+		t.Fatalf("walk calls=%d result=%#v", calls, result)
+	}
+}
+
+func TestWalkFilesSanitizesVisitorFailureAndReplaysCurrentPage(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		calls++
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(writer, `{"files":[{"id":"file-1","name":"one.csv","mimeType":"text/csv","parents":["folder-a"]},{"id":"file-2","name":"two.csv","mimeType":"text/csv","parents":["folder-a"]}],"nextPageToken":"page-two"}`)
+	}))
+	defer server.Close()
+	client := testClient(t, server, AccessTokenFunc(func(context.Context) (string, error) { return "token", nil }))
+	privateCause := errors.New("private file path must not appear")
+	var visited []string
+	failedOnce := false
+	result, err := client.WalkFiles(context.Background(), "folder-a", "", 1, func(file File) error {
+		if file.ID == "file-2" && !failedOnce {
+			failedOnce = true
+			return privateCause
+		}
+		visited = append(visited, file.ID)
+		return nil
+	})
+	if !errors.Is(err, ErrFileVisitor) || !errors.Is(err, privateCause) {
+		t.Fatalf("WalkFiles() error = %v, want sanitized visitor failure retaining cause", err)
+	}
+	if strings.Contains(err.Error(), privateCause.Error()) || result.Complete || result.PagesRead != 0 || result.FilesVisited != 1 || result.NextPageToken != "" {
+		t.Fatalf("visitor failure leaked or returned unsafe resume point: result=%#v error=%v", result, err)
+	}
+
+	retryResult, retryErr := client.WalkFiles(context.Background(), "folder-a", result.NextPageToken, 1, func(file File) error {
+		visited = append(visited, file.ID)
+		return nil
+	})
+	if !errors.Is(retryErr, ErrFileWalkLimit) || retryResult.NextPageToken != "page-two" || retryResult.FilesVisited != 2 {
+		t.Fatalf("retry result=%#v error=%v, want current page replayed and next page token", retryResult, retryErr)
+	}
+	if calls != 2 || strings.Join(visited, ",") != "file-1,file-1,file-2" {
+		t.Fatalf("retry calls=%d delivered=%v, want first file replayed safely", calls, visited)
+	}
+}
+
+func TestWalkFilesRejectsInvalidLimitsAndCanceledContextWithoutNetwork(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { t.Fatal("unexpected request") }))
+	defer server.Close()
+	client := testClient(t, server, AccessTokenFunc(func(context.Context) (string, error) { return "token", nil }))
+	visit := func(File) error { return nil }
+	for _, limit := range []int{0, maxFileWalkPagesPerCall + 1} {
+		if _, err := client.WalkFiles(context.Background(), "folder-a", "", limit, visit); !errors.Is(err, ErrConfiguration) {
+			t.Fatalf("WalkFiles(maxPages=%d) error = %v, want configuration error", limit, err)
+		}
+	}
+	if _, err := client.WalkFiles(context.Background(), "folder-a", "", 1, nil); !errors.Is(err, ErrConfiguration) {
+		t.Fatalf("WalkFiles(nil visitor) error = %v, want configuration error", err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := client.WalkFiles(ctx, "folder-a", "", 1, visit); !errors.Is(err, context.Canceled) {
+		t.Fatalf("WalkFiles(canceled context) error = %v, want context cancellation", err)
+	}
+}
+
 func TestStreamFileWritesVerifiedContentAndCommits(t *testing.T) {
 	content := []byte("hello drive")
 	md5sum := md5.Sum(content)

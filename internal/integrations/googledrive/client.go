@@ -22,13 +22,14 @@ import (
 )
 
 const (
-	APIBaseURL                = "https://www.googleapis.com/drive/v3"
-	approvedFolderCount       = 3
-	maxPageSize               = 100
-	maxPageTokenBytes         = 4096
-	maxTokenBytes             = 16 << 10
-	maxJSONBytes        int64 = 2 << 20
-	requestTimeout            = 2 * time.Minute
+	APIBaseURL                    = "https://www.googleapis.com/drive/v3"
+	approvedFolderCount           = 3
+	maxPageSize                   = 100
+	maxPageTokenBytes             = 4096
+	maxFileWalkPagesPerCall       = 10000
+	maxTokenBytes                 = 16 << 10
+	maxJSONBytes            int64 = 2 << 20
+	requestTimeout                = 2 * time.Minute
 )
 
 var (
@@ -41,6 +42,8 @@ var (
 	ErrFileNotAllowed  = errors.New("Google Drive file is outside the approved folders")
 	ErrFileChanged     = errors.New("Google Drive file changed while it was being read")
 	ErrFileTooLarge    = errors.New("Google Drive file exceeds the configured size limit")
+	ErrFileWalkLimit   = errors.New("Google Drive file listing reached the per-call page limit")
+	ErrFileVisitor     = errors.New("Google Drive file processing failed")
 	ErrUnsafeFileType  = errors.New("Google Drive file type is not supported for direct download")
 	ErrSink            = errors.New("Google Drive staging operation failed")
 )
@@ -77,6 +80,17 @@ type File struct {
 type FilePage struct {
 	Files         []File
 	NextPageToken string
+}
+
+// FileWalkResult reports progress at a page boundary. NextPageToken is safe to
+// persist as a resume point only after a whole page was visited successfully.
+// If a visitor fails mid-page, it points back to that page, so previously
+// visited files may be delivered again and must be handled idempotently.
+type FileWalkResult struct {
+	PagesRead     int
+	FilesVisited  int64
+	NextPageToken string
+	Complete      bool
 }
 
 // StagingSink must discard uncommitted bytes on Reset and Rollback. Commit is
@@ -189,6 +203,69 @@ func (c *Client) ListFiles(ctx context.Context, folderID, pageToken string) (Fil
 	}
 	return page, nil
 }
+
+// WalkFiles delivers files one at a time and retains at most one bounded API
+// page in memory. The caller supplies a per-call page limit and may resume a
+// later call with result.NextPageToken. The total number of files is not capped
+// across calls. The visitor's writes must be transactional/idempotent because
+// a retry after a mid-page error can deliver earlier files from that page
+// again.
+func (c *Client) WalkFiles(ctx context.Context, folderID, startPageToken string, maxPages int, visit func(File) error) (result FileWalkResult, returnErr error) {
+	if ctx == nil || visit == nil || maxPages <= 0 || maxPages > maxFileWalkPagesPerCall || len(startPageToken) > maxPageTokenBytes {
+		return FileWalkResult{}, ErrConfiguration
+	}
+	if err := c.validateFolder(folderID); err != nil {
+		return FileWalkResult{}, err
+	}
+	pageToken := startPageToken
+	result.NextPageToken = pageToken
+	seenTokens := make(map[[sha256.Size]byte]struct{}, maxPages)
+	if pageToken != "" {
+		seenTokens[sha256.Sum256([]byte(pageToken))] = struct{}{}
+	}
+	for result.PagesRead < maxPages {
+		if err := ctx.Err(); err != nil {
+			return result, err
+		}
+		page, err := c.ListFiles(ctx, folderID, pageToken)
+		if err != nil {
+			return result, err
+		}
+		for _, file := range page.Files {
+			if err := ctx.Err(); err != nil {
+				return result, err
+			}
+			if err := visit(file); err != nil {
+				if ctx.Err() != nil {
+					return result, ctx.Err()
+				}
+				return result, &fileVisitFailure{cause: err}
+			}
+			result.FilesVisited++
+		}
+		result.PagesRead++
+		if page.NextPageToken == "" {
+			result.NextPageToken = ""
+			result.Complete = true
+			return result, nil
+		}
+		nextTokenHash := sha256.Sum256([]byte(page.NextPageToken))
+		if _, exists := seenTokens[nextTokenHash]; exists {
+			result.NextPageToken = pageToken
+			return result, ErrInvalidResponse
+		}
+		seenTokens[nextTokenHash] = struct{}{}
+		pageToken = page.NextPageToken
+		result.NextPageToken = pageToken
+	}
+	return result, ErrFileWalkLimit
+}
+
+type fileVisitFailure struct{ cause error }
+
+func (*fileVisitFailure) Error() string        { return ErrFileVisitor.Error() }
+func (e *fileVisitFailure) Unwrap() error      { return e.cause }
+func (*fileVisitFailure) Is(target error) bool { return target == ErrFileVisitor }
 
 // StreamFile downloads a Drive binary file into an uncommitted staging sink.
 // The file is read in bounded chunks, never retained in memory, and the sink is

@@ -28,6 +28,21 @@ Foi implementado o núcleo Go de leitura somente GET para a API oficial do Drive
 - `git diff --check` — **PASS**.
 - Nenhuma conexão ao Google Drive, credencial real, arquivo financeiro ou banco de produção foi usada.
 
+## Incremento de leitura paginada — 18/10/2026
+
+O cliente agora oferece `WalkFiles`, que entrega os arquivos um por vez ao processamento e mantém somente uma página limitada da API na memória. Cada chamada tem limite explícito de páginas e retorna um marcador para continuar em outra chamada; não existe limite acumulado de arquivos entre chamadas. O cliente detecta marcadores repetidos e interrompe a leitura em vez de entrar em ciclo.
+
+O marcador só avança depois que todos os arquivos da página passam pelo callback. Se o processamento falhar no meio da página, a próxima tentativa relê essa mesma página. Por isso, o consumidor futuro deve salvar os resultados de modo transacional e idempotente, aceitando a repetição sem duplicar dados. A mensagem pública do erro do callback é sanitizada.
+
+Verificações adicionais desta mudança:
+
+- `go test ./internal/integrations/googledrive -count=1` — **PASS**.
+- `go test ./internal/integrations/... -count=1` — **PASS**.
+- `go vet ./internal/integrations/...` — **PASS**.
+- A nova cobertura verifica continuação por marcador, repetição de página em falha, detecção de ciclo, limite e cancelamento. Ainda não há execução de CI para este incremento.
+
+Esta melhoria não configura credenciais nem IDs reais e não conecta o adapter aos jobs ou ao pipeline de importação. O resultado continua local e não conclui BK-042.
+
 ## Dependência de autenticação
 
 Foi adotado `golang.org/x/oauth2 v0.37.0`, biblioteca mantida pelo projeto Go, licença BSD-3-Clause, para interpretar e usar credenciais de service account conforme o fluxo Google documentado. A versão está acima da correção publicada para GO-2025-3488. O scan de vulnerabilidades desta execução não encontrou alertas nos pacotes analisados. Fontes: [documentação do pacote Google OAuth](https://pkg.go.dev/golang.org/x/oauth2/google) e [GO-2025-3488](https://pkg.go.dev/vuln/GO-2025-3488).

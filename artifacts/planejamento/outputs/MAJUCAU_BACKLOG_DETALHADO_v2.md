@@ -1515,7 +1515,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-042 — Implementar leitura das três estruturas autorizadas do Google Drive
 
-**Situação:** Em andamento. **Evolução:** 45% (estimativa: o núcleo de listagem e download GET em fluxo, restrito por IDs de pasta, e o provedor de token de service account via cofre foram implementados e testados localmente; ainda não há credencial/IDs reais, integração ao worker/jobs/armazenamento, contratos de arquivos ou homologação). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 45% (estimativa: o núcleo de listagem paginada e download GET em fluxo, restrito por IDs de pasta, o marcador seguro para continuar a listagem e o provedor de token de service account via cofre foram implementados e testados localmente; ainda não há credencial/IDs reais, integração ao worker/jobs/armazenamento, contratos de arquivos ou homologação). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Importar arquivos preservando integralmente a pasta compartilhada.
 
@@ -1538,6 +1538,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Fonte:** M-009,M-010; L-11,L-12; Consolidação 13/09/2026, §§1–2
 
 **Regras e verificações vinculadas:** R-01,R-02
+
+#### Incremento de retomada da listagem — 18/10/2026
+
+- `WalkFiles` entrega arquivos individualmente, limita a memória a uma página da API, detecta marcadores repetidos e permite continuar em uma chamada posterior sem teto total de arquivos.
+- O marcador avança somente após a página inteira ser processada. Se um callback falhar no meio, a página atual pode ser entregue novamente; o consumidor precisa ser transacional e idempotente.
+- Testes do adapter, testes de todos os adapters e `go vet` passaram localmente. Ainda falta executar CI e integrar a leitura aos jobs persistentes e ao pipeline de importação.
+- Mantido em 45%: esta etapa melhora o núcleo local, mas não comprova acesso real ao Drive nem homologação de BK-042.
 
 ### BK-043 — Implementar validação e interpretação dos arquivos
 

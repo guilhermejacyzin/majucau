@@ -342,3 +342,14 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Este registro confirma a localização e os nomes informados para os arquivos externos. O link/ID exato da pasta, a forma de autenticação do sistema e os detalhes de acesso ainda precisam ser configurados; não presumir credenciais ou conexão ativa.
 - **Formatos diários confirmados por:** Gisele, nesta conversa Codex, em 2026-10-13 (America/Sao_Paulo): os arquivos externos incluem planilhas Excel nos formatos XLS e XLSX. Isso autoriza suporte técnico a esses formatos dentro das três estruturas aprovadas; não define abas, colunas, tratamento de fórmulas/células ou significado financeiro. Cada contrato deve ser homologado antes de produzir fatos; nenhuma macro será executada.
 - Esta decisão registra a estrutura de armazenamento e os formatos de arquivo recebidos, sem alterar regras financeiras ou telas aprovadas.
+
+## Decisão posterior — identidade técnica de leitura do Google Drive
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-18; autorizou escolher e executar a alternativa técnica mais adequada.
+- O serviço privado Go do Majucau lerá os arquivos diretamente pela API oficial do Google Drive com identidade técnica dedicada.
+- A identidade receberá permissão **Leitor** somente nas três pastas aprovadas: `01_perdas_operacionais`, `02_nuvem_pago/recebimentos_futuros` e `03_nuvem_envio`. Não usar delegação de domínio nem conceder acesso à raiz inteira.
+- O Site permanece apenas no fluxo OAuth do Bling. O worker do Majucau baixa e processa os arquivos em fluxo; a pasta de origem nunca é alterada.
+- Credenciais não podem ficar em código, Git, arquivo comum, logs ou conversa. No Windows local, usar cofre protegido por DPAPI/ACL; em hospedagem, preferir identidade de workload/credencial gerenciada depois de definido o provedor.
+- A autorização define a arquitetura, mas não configura a conta Google nem concede acesso real. Ainda faltam habilitar a API Drive, criar a identidade técnica, compartilhar as três pastas como Leitor, registrar os IDs e implementar/homologar o adapter.
+- XLS e XLSX permanecem bloqueados até existir parser seguro e contratos de arquivo aprovados. Esta decisão não muda telas, regras financeiras ou o significado dos arquivos.
+- Detalhes e justificativa: `ADR-003-LEITURA-SEGURA-DO-GOOGLE-DRIVE.md`.

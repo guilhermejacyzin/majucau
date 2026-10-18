@@ -407,8 +407,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 18/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-041 (75%), BK-042 (45%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 95% + 35% + 70% + 60% + 40% + 85% + 75% + 45% + 40% + 5% + 25% + 1%) ÷ 127 = 11,1%`; restam 88,9%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (20%), BK-041 (75%), BK-042 (45%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 95% + 35% + 70% + 60% + 40% + 85% + 20% + 75% + 45% + 40% + 5% + 25% + 1%) ÷ 127 = 11,3%`; restam 88,7%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
 - BK-024 permanece em 35%: a revisão de streaming corrigiu no Site o formulário protegido do Client Secret, limitando a leitura a 8 KiB, e publicou a versão 16. Os 28 testes do Site passaram. Isso fecha esse ponto específico; ACLs em VM limpa, carga/memória e outros riscos continuam pendentes, então a estimativa da tarefa de segurança geral não muda. Evidências: `docs/evidence/DATA-STREAMING-STATIC-AUDIT-2026-10-11.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
@@ -1414,7 +1414,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-039 — Implementar execução controlada de trabalhos em segundo plano
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 20%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Processar integrações sem travar consultas.
 
@@ -1437,6 +1437,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Fonte:** U_CEI_Tela_15; Fechamento vigente 13/09/2026, §8.11; requisito operacional registrado em `G0-DECISION-REGISTER.md` em 2026-10-11
 
 **Regras e verificações vinculadas:** F-19
+
+**Evidência de progresso (18/10/2026):** `internal/scheduler/daily.go` programa a execução às 09:30 de `America/Sao_Paulo` e está ligado ao worker Windows para reler Contas a Receber e Contas a Pagar do Bling sem filtro de data. O diagnóstico preserva o código específico quando o fim da paginação é desconhecido. Os testes locais passaram. Persistência do estado, proteção contra duas instâncias, retomada após reinício, coleta do Drive e homologação real continuam pendentes; portanto, a tarefa permanece parcial. Ver `docs/evidence/DAILY-BLING-SCHEDULER-2026-10-18.md`.
 
 ### BK-040 — Validar acesso e cobertura dos dados do Bling
 
@@ -4003,3 +4005,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Testes em Windows: `go test ./internal/integrations/... -count=1`, `go vet ./internal/integrations/...` e `go mod verify` passaram. `go test -race` não pôde rodar neste computador porque CGO está desativado.
 - Sem identidade real, IDs, wiring de jobs, parser XLS/XLSX e contrato homologado, não houve acesso ao Drive nem importação de dados. BK-042 avança de 40% para 45% estimados; BK-043 permanece em 40%. A média do backlog fica em 11,1% concluído e 88,9% restante, sem previsão global confiável.
 - Nenhuma tela, regra financeira, arquivo original do Drive ou fato financeiro foi alterado. Evidência: `docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md`.
+
+### M3 — Agendamento local diário do Bling — 18/10/2026
+
+- O worker Windows agora calcula o próximo horário de 09:30 no fuso `America/Sao_Paulo` e inicia a releitura sem filtros de data das contas a receber e a pagar. A sincronização existente mantém as transações por recurso e a política de retry GET; uma lista sem fim comprovado continua falhando com rollback, agora com código de diagnóstico específico.
+- `go test ./internal/scheduler ./cmd/worker -count=1`, `go test ./... -count=1`, `go vet ./...` e `git diff --check` passaram no Windows. Não houve conexão real ao Bling.
+- Este é o primeiro trecho do agendamento, não a conclusão de BK-039: estado persistente, retomada após reinício, proteção entre instâncias e execução das fontes do Drive ainda faltam. O worker deve estar em execução no horário; se iniciar depois das 09:30, espera o dia seguinte. Arquivos Drive ainda não são lidos pelo job.
+- BK-039 avança de 0% para 20%; restam 80% desta tarefa. A contagem passa a 7 concluídas, 19 em andamento e 101 não iniciadas. A média recalculada do backlog é 11,3% concluída e 88,7% restante; isso não comprova homologação nem permite prever a data final.
+- Nenhuma tela aprovada, regra financeira ou estrutura persistente foi alterada. Evidência: `docs/evidence/DAILY-BLING-SCHEDULER-2026-10-18.md`.

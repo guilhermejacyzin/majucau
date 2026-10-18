@@ -1215,15 +1215,15 @@
     "questions": "F-19",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "20%: scheduler 09:30 America/Sao_Paulo integrado ao worker Windows e disparo Bling sem filtros de data; testes em internal/scheduler e cmd/worker. Persistência, retomada, concorrência, Drive e homologação real pendentes. docs/evidence/DAILY-BLING-SCHEDULER-2026-10-18.md",
     "weight": 1,
     "dependencies": [
       "BK-027",
       "BK-029",
       "BK-031"
     ],
-    "progress": 0
+    "progress": 0.20
   },
   {
     "key": "blingcontract",

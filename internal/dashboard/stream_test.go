@@ -204,6 +204,38 @@ func TestReadStreamSummaryUsesBusinessDateAtUtcMonthBoundary(t *testing.T) {
 	}
 }
 
+func TestReadStreamSummaryKeepsEmptySourcesUnavailableInsteadOfZero(t *testing.T) {
+	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: emptyDashboardSummaryValues()}}
+	snapshot, err := readStreamSummary(context.Background(), tx, time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("readStreamSummary() error = %v", err)
+	}
+	if snapshot.DataState != "UNAVAILABLE" {
+		t.Fatalf("data_state = %q, want UNAVAILABLE", snapshot.DataState)
+	}
+	if snapshot.LastBlingSyncAt != nil {
+		t.Fatalf("last_bling_sync_at = %v, want nil when no successful sync exists", snapshot.LastBlingSyncAt)
+	}
+	metrics := []struct {
+		name   string
+		metric application.DashboardMetric
+	}{
+		{name: "receivables", metric: snapshot.Receivables},
+		{name: "future B2C", metric: snapshot.FutureB2C},
+		{name: "receipts this month", metric: snapshot.ReceiptsMonth},
+		{name: "receivables overdue", metric: snapshot.ReceivablesOverdue},
+		{name: "payables", metric: snapshot.Payables},
+		{name: "payables due today", metric: snapshot.PayablesDueToday},
+		{name: "payables overdue", metric: snapshot.PayablesOverdue},
+		{name: "payments this month", metric: snapshot.PaymentsMonth},
+	}
+	for _, item := range metrics {
+		if item.metric.State != "UNAVAILABLE" || item.metric.Value != "" || item.metric.Count != 0 {
+			t.Errorf("%s = %+v, want unavailable with no value or count", item.name, item.metric)
+		}
+	}
+}
+
 func TestDashboardDetailStreamsUseExplicitBounds(t *testing.T) {
 	cases := []struct {
 		name       string

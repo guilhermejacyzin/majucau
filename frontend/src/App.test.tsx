@@ -59,6 +59,23 @@ describe('shell financeiro', () => {
     expect(screen.getByText(/Última sincronização:/)).toHaveTextContent('Última sincronização: —')
   })
 
+  it('não apresenta zero como valor confirmado quando não há dados do Bling', async () => {
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => ({
+        ...await snapshotAdapterFor().getSnapshot(),
+        data_state: 'UNAVAILABLE',
+        last_bling_sync_at: undefined,
+        receivables: { value: '0.0000', count: 0, state: 'UNAVAILABLE', source_system: 'BLING + NUVEM_PAGO' },
+      }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    const receivablesCard = screen.getByText('A RECEBER').closest('article')
+    expect(receivablesCard).toHaveTextContent('—')
+    expect(receivablesCard).not.toHaveTextContent('R$ 0,00')
+    expect(screen.getByText(/Última sincronização:/)).toHaveTextContent('Última sincronização: —')
+  })
+
   it('atualiza o painel ao voltar da área de Integrações', async () => {
     const user = userEvent.setup()
     let snapshotReads = 0

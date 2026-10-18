@@ -408,11 +408,17 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Estado atual do backlog — 18/10/2026
 
 - O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (35%), BK-041 (78%), BK-042 (45%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 95% + 35% + 70% + 60% + 40% + 85% + 35% + 75% + 45% + 40% + 5% + 25% + 1%) ÷ 127 = 11,4%`; restam 88,6%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 95% + 35% + 70% + 60% + 40% + 85% + 35% + 78% + 45% + 40% + 5% + 25% + 1%) ÷ 127 = 11,4%`; restam 88,6%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
 - BK-024 permanece em 35%: a revisão de streaming corrigiu no Site o formulário protegido do Client Secret, limitando a leitura a 8 KiB, e publicou a versão 16. Os 28 testes do Site passaram. Isso fecha esse ponto específico; ACLs em VM limpa, carga/memória e outros riscos continuam pendentes, então a estimativa da tarefa de segurança geral não muda. Evidências: `docs/evidence/DATA-STREAMING-STATIC-AUDIT-2026-10-11.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
 - Os arquivos diários do Drive também incluem XLS e XLSX; ainda são recusados até existir parser seguro. A arquitetura ADR-003 de leitura pelo serviço Go com identidade técnica restrita foi aprovada em 18/10/2026. O núcleo GET/streaming do adapter e o provedor de token foram implementados e testados localmente; provisionamento, wiring, importação real, parser e homologação dos formatos continuam pendentes em BK-042/BK-043.
+- A CI [39168729070](https://github.com/guilhermejacyzin/majucau/actions/runs/39168729070), no commit `f1cc8e2`, concluiu com sucesso nos quatro jobs: verificação de mensagens, backlog, Windows e PostgreSQL. Ela valida a serialização concorrente e a aposentadoria em blocos das páginas RAW já descritas nesta seção; não confirma OAuth, fim de paginação ou sincronização com a conta real Bling.
+
+### Proteção de valores indisponíveis na Visão Executiva — 18/10/2026
+
+- Foram acrescentados testes no backend e na interface para confirmar que, sem dados confirmados, o cartão “A RECEBER” mostra `—` e não `R$ 0,00`, e que a hora da consulta não é mostrada como sincronização. `go test` focal, `go vet` e os 20 testes de `App.test.tsx` passaram. Evidência: `docs/evidence/DASHBOARD-UNAVAILABLE-METRICS-2026-10-18.md`.
+- Isso protege o estado vazio já previsto no desenho; nenhuma tela, fórmula ou regra financeira foi alterada. Ainda não comprova o fluxo real do Bling nem explica o painel vazio do protótipo. BK-102 permanece em 1%; contagem e estimativa geral permanecem em 127 tarefas, 7 concluídas, 19 em andamento, 101 não iniciadas, 11,4% concluído e 88,6% restante.
 
 ## 00 Descoberta e decisões
 

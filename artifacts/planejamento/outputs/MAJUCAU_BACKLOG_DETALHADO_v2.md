@@ -407,7 +407,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 18/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (78%), BK-042 (45%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
+- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (78%), BK-042 (47%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
 - Pela média simples do rastreador, soma dos percentuais das tarefas ÷ 127 = 11,5%; restam 88,5%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
@@ -1515,7 +1515,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-042 — Implementar leitura das três estruturas autorizadas do Google Drive
 
-**Situação:** Em andamento. **Evolução:** 45% (estimativa: o núcleo de listagem paginada e download GET em fluxo, restrito por IDs de pasta, o marcador seguro para continuar a listagem e o provedor de token de service account via cofre foram implementados e testados localmente; ainda não há credencial/IDs reais, integração ao worker/jobs/armazenamento, contratos de arquivos ou homologação). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 47% (estimativa: o núcleo de listagem paginada e download GET em fluxo, restrito por IDs de pasta, o marcador seguro para continuar a listagem, o callback transacional por página e o provedor de token de service account via cofre foram implementados e testados localmente; ainda não há credencial/IDs reais, integração ao worker/jobs/armazenamento, contratos de arquivos ou homologação). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Importar arquivos preservando integralmente a pasta compartilhada.
 
@@ -1545,6 +1545,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O marcador avança somente após a página inteira ser processada. Se um callback falhar no meio, a página atual pode ser entregue novamente; o consumidor precisa ser transacional e idempotente.
 - Testes do adapter, testes de todos os adapters e `go vet` passaram localmente; CI #39174646423 passou em Windows, PostgreSQL, backlog e detecção de mudanças. Ainda falta integrar a leitura aos jobs persistentes e ao pipeline de importação.
 - Mantido em 45%: esta etapa melhora o núcleo local, mas não comprova acesso real ao Drive nem homologação de BK-042.
+
+#### Callback transacional por página — 18/10/2026
+
+- `WalkFilePages` recebe uma página limitada (até 100 arquivos) e o marcador seguinte no callback; a integração com banco poderá gravar os resultados e o checkpoint na mesma transação.
+- Se o callback falhar, a retomada permanece no início da página. A página pode ser entregue novamente, então o consumidor precisa ser idempotente. O método anterior `WalkFiles` continua disponível para processamento arquivo a arquivo.
+- Testes focados, testes de todos os adapters, `go vet`, verificação do backlog e diff passaram localmente. A CI para este incremento ainda precisa rodar.
+- Evolução ajustada de 45% para 47% por esta capacidade local; não indica importação real nem conclusão do BK-042.
 
 ### BK-043 — Implementar validação e interpretação dos arquivos
 

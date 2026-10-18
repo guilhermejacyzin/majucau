@@ -44,6 +44,19 @@ Verificações adicionais desta mudança:
 
 Esta melhoria não configura credenciais nem IDs reais e não conecta o adapter aos jobs ou ao pipeline de importação. O resultado continua incompleto e não conclui BK-042.
 
+## Callback transacional por página — 18/10/2026
+
+Foi acrescentado `WalkFilePages` para integrações que precisam persistir cada página e seu marcador de continuação na mesma transação. Cada página tem no máximo 100 arquivos. O callback recebe os arquivos limitados e o próximo marcador; só depois de sucesso o leitor avança o progresso retornado. Se o callback falhar, a chamada preserva o marcador do início da página para repetição. O consumidor ainda precisa ser idempotente caso a gravação tenha sido confirmada, mas a resposta tenha se perdido.
+
+`WalkFiles` permanece disponível para consumidores que preferem um callback por arquivo e mantém o mesmo comportamento de repetição segura. Testes cobrem avanço de marcador após callback bem-sucedido, falha sem avanço, erro sanitizado e proteção contra tokens cíclicos.
+
+- `go test ./internal/integrations/... -count=1` — **PASS** localmente.
+- `go vet ./internal/integrations/...` — **PASS** localmente.
+- Verificação do backlog e `git diff --check` — **PASS** localmente.
+- A CI deste incremento ainda está pendente.
+
+Isso prepara a integração ao banco, mas não cria tabelas, job diário, conexão real ou interpretação de dados financeiros. BK-042 permanece incompleto.
+
 ## Dependência de autenticação
 
 Foi adotado `golang.org/x/oauth2 v0.37.0`, biblioteca mantida pelo projeto Go, licença BSD-3-Clause, para interpretar e usar credenciais de service account conforme o fluxo Google documentado. A versão está acima da correção publicada para GO-2025-3488. O scan de vulnerabilidades desta execução não encontrou alertas nos pacotes analisados. Fontes: [documentação do pacote Google OAuth](https://pkg.go.dev/golang.org/x/oauth2/google) e [GO-2025-3488](https://pkg.go.dev/vuln/GO-2025-3488).

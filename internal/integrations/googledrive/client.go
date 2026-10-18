@@ -83,9 +83,10 @@ type FilePage struct {
 }
 
 // FileWalkResult reports progress at a page boundary. NextPageToken is safe to
-// persist as a resume point only after a whole page was visited successfully.
-// If a visitor fails mid-page, it points back to that page, so previously
-// visited files may be delivered again and must be handled idempotently.
+// persist as a resume point only after a whole page was accepted successfully.
+// If a file visitor fails mid-page, it points back to that page, so earlier
+// files may be delivered again and must be handled idempotently. FilesVisited
+// counts successful file deliveries; retries can count the same file again.
 type FileWalkResult struct {
 	PagesRead     int
 	FilesVisited  int64
@@ -211,7 +212,28 @@ func (c *Client) ListFiles(ctx context.Context, folderID, pageToken string) (Fil
 // a retry after a mid-page error can deliver earlier files from that page
 // again.
 func (c *Client) WalkFiles(ctx context.Context, folderID, startPageToken string, maxPages int, visit func(File) error) (result FileWalkResult, returnErr error) {
-	if ctx == nil || visit == nil || maxPages <= 0 || maxPages > maxFileWalkPagesPerCall || len(startPageToken) > maxPageTokenBytes {
+	if visit == nil {
+		return FileWalkResult{}, ErrConfiguration
+	}
+	return c.walkFiles(ctx, folderID, startPageToken, maxPages, visit, nil)
+}
+
+// WalkFilePages visits one bounded API page at a time. The visitor receives
+// the token for the next page and should persist the page's effects and that
+// token in the same transaction. If it returns an error, the result keeps the
+// token for the current page so the caller can retry it. This supports atomic,
+// idempotent checkpoints without holding an unbounded list in memory. The
+// visitor must be idempotent because an ambiguous commit may cause a page to
+// be delivered again.
+func (c *Client) WalkFilePages(ctx context.Context, folderID, startPageToken string, maxPages int, visit func(FilePage, string) error) (FileWalkResult, error) {
+	if visit == nil {
+		return FileWalkResult{}, ErrConfiguration
+	}
+	return c.walkFiles(ctx, folderID, startPageToken, maxPages, nil, visit)
+}
+
+func (c *Client) walkFiles(ctx context.Context, folderID, startPageToken string, maxPages int, visitFile func(File) error, visitPage func(FilePage, string) error) (result FileWalkResult, returnErr error) {
+	if ctx == nil || (visitFile == nil) == (visitPage == nil) || maxPages <= 0 || maxPages > maxFileWalkPagesPerCall || len(startPageToken) > maxPageTokenBytes {
 		return FileWalkResult{}, ErrConfiguration
 	}
 	if err := c.validateFolder(folderID); err != nil {
@@ -231,28 +253,43 @@ func (c *Client) WalkFiles(ctx context.Context, folderID, startPageToken string,
 		if err != nil {
 			return result, err
 		}
-		for _, file := range page.Files {
+		var nextTokenHash [sha256.Size]byte
+		if page.NextPageToken != "" {
+			nextTokenHash = sha256.Sum256([]byte(page.NextPageToken))
+			if _, exists := seenTokens[nextTokenHash]; exists {
+				return result, ErrInvalidResponse
+			}
+		}
+		if visitPage != nil {
 			if err := ctx.Err(); err != nil {
 				return result, err
 			}
-			if err := visit(file); err != nil {
+			if err := visitPage(page, page.NextPageToken); err != nil {
 				if ctx.Err() != nil {
 					return result, ctx.Err()
 				}
 				return result, &fileVisitFailure{cause: err}
 			}
-			result.FilesVisited++
+			result.FilesVisited += int64(len(page.Files))
+		} else {
+			for _, file := range page.Files {
+				if err := ctx.Err(); err != nil {
+					return result, err
+				}
+				if err := visitFile(file); err != nil {
+					if ctx.Err() != nil {
+						return result, ctx.Err()
+					}
+					return result, &fileVisitFailure{cause: err}
+				}
+				result.FilesVisited++
+			}
 		}
 		result.PagesRead++
 		if page.NextPageToken == "" {
 			result.NextPageToken = ""
 			result.Complete = true
 			return result, nil
-		}
-		nextTokenHash := sha256.Sum256([]byte(page.NextPageToken))
-		if _, exists := seenTokens[nextTokenHash]; exists {
-			result.NextPageToken = pageToken
-			return result, ErrInvalidResponse
 		}
 		seenTokens[nextTokenHash] = struct{}{}
 		pageToken = page.NextPageToken

@@ -136,8 +136,75 @@ func TestWalkFilesStopsOnRepeatedContinuationToken(t *testing.T) {
 	if !errors.Is(err, ErrInvalidResponse) {
 		t.Fatalf("WalkFiles() error = %v, want repeated-token response failure", err)
 	}
-	if calls != 2 || result.PagesRead != 2 || result.Complete {
+	if calls != 2 || result.PagesRead != 1 || result.Complete {
 		t.Fatalf("walk calls=%d result=%#v", calls, result)
+	}
+}
+
+func TestWalkFilePagesDeliversPageAndCheckpointTogether(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		calls++
+		writer.Header().Set("Content-Type", "application/json")
+		if request.URL.Query().Get("pageToken") == "" {
+			_, _ = io.WriteString(writer, `{"files":[{"id":"file-1","name":"one.csv","mimeType":"text/csv","parents":["folder-a"]},{"id":"file-2","name":"two.csv","mimeType":"text/csv","parents":["folder-a"]}],"nextPageToken":"page-two"}`)
+			return
+		}
+		_, _ = io.WriteString(writer, `{"files":[{"id":"file-3","name":"three.csv","mimeType":"text/csv","parents":["folder-a"]}]}`)
+	}))
+	defer server.Close()
+	client := testClient(t, server, AccessTokenFunc(func(context.Context) (string, error) { return "token", nil }))
+	var storedToken string
+	var visited []string
+	first, err := client.WalkFilePages(context.Background(), "folder-a", "", 1, func(page FilePage, nextPageToken string) error {
+		if len(page.Files) != 2 || nextPageToken != "page-two" {
+			t.Fatalf("first page callback got page=%#v token=%q", page, nextPageToken)
+		}
+		for _, file := range page.Files {
+			visited = append(visited, file.ID)
+		}
+		storedToken = nextPageToken // A caller commits these effects and token in one transaction.
+		return nil
+	})
+	if !errors.Is(err, ErrFileWalkLimit) || first.PagesRead != 1 || first.FilesVisited != 2 || first.NextPageToken != "page-two" || storedToken != first.NextPageToken {
+		t.Fatalf("first page result=%#v stored token=%q error=%v", first, storedToken, err)
+	}
+	second, err := client.WalkFilePages(context.Background(), "folder-a", storedToken, 1, func(page FilePage, nextPageToken string) error {
+		if len(page.Files) != 1 || page.Files[0].ID != "file-3" || nextPageToken != "" {
+			t.Fatalf("second page callback got page=%#v token=%q", page, nextPageToken)
+		}
+		visited = append(visited, page.Files[0].ID)
+		storedToken = nextPageToken
+		return nil
+	})
+	if err != nil || !second.Complete || second.PagesRead != 1 || second.FilesVisited != 1 || storedToken != "" {
+		t.Fatalf("second page result=%#v stored token=%q error=%v", second, storedToken, err)
+	}
+	if calls != 2 || strings.Join(visited, ",") != "file-1,file-2,file-3" {
+		t.Fatalf("page calls=%d files=%v", calls, visited)
+	}
+}
+
+func TestWalkFilePagesFailureKeepsResumeTokenAtCurrentPage(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		calls++
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(writer, `{"files":[{"id":"file-1","name":"one.csv","mimeType":"text/csv","parents":["folder-a"]}],"nextPageToken":"page-two"}`)
+	}))
+	defer server.Close()
+	client := testClient(t, server, AccessTokenFunc(func(context.Context) (string, error) { return "token", nil }))
+	privateCause := errors.New("database path must remain private")
+	first, err := client.WalkFilePages(context.Background(), "folder-a", "", 1, func(FilePage, string) error { return privateCause })
+	if !errors.Is(err, ErrFileVisitor) || !errors.Is(err, privateCause) || strings.Contains(err.Error(), privateCause.Error()) {
+		t.Fatalf("first WalkFilePages() error=%v, want sanitized callback error", err)
+	}
+	if first.PagesRead != 0 || first.FilesVisited != 0 || first.NextPageToken != "" || first.Complete {
+		t.Fatalf("failed page advanced progress: %#v", first)
+	}
+	retry, retryErr := client.WalkFilePages(context.Background(), "folder-a", first.NextPageToken, 1, func(FilePage, string) error { return nil })
+	if !errors.Is(retryErr, ErrFileWalkLimit) || retry.PagesRead != 1 || retry.FilesVisited != 1 || retry.NextPageToken != "page-two" || calls != 2 {
+		t.Fatalf("retry result=%#v calls=%d error=%v", retry, calls, retryErr)
 	}
 }
 

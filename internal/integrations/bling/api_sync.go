@@ -1,8 +1,10 @@
 package bling
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -23,6 +25,8 @@ const ReceivablesAPIResource = "contas.receber"
 // A full 1,000-page read may need one additional request to observe the
 // empty-page response used as the provisional end-of-list sentinel.
 const maxBlingAPIPageReads = 1001
+
+const staleRawPageBatchSize = 256
 
 var (
 	ErrBlingAPISyncDatabaseUnavailable = errors.New("bling api sync database is unavailable")
@@ -120,6 +124,12 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	if !connection.ID.Valid {
 		return APISyncResult{}, ErrBlingAPISyncConnectionMissing
 	}
+	// Keep manual and scheduled syncs of the same Bling resource from racing
+	// while their page snapshots and current RAW records are being replaced.
+	// The transaction lock is released automatically on commit or rollback.
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, blingAPIResourceSyncLockKey(connection.ID, s.resource)); err != nil {
+		return APISyncResult{}, fmt.Errorf("lock Bling API resource sync: %w", err)
+	}
 	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: s.resource})
 	if err != nil {
 		return APISyncResult{}, fmt.Errorf("create Bling API sync batch: %w", err)
@@ -207,6 +217,15 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	return result, nil
 }
 
+func blingAPIResourceSyncLockKey(connectionID pgtype.UUID, resource string) int64 {
+	hash := sha256.New()
+	_, _ = hash.Write([]byte("majucau:bling-api-resource-sync\x00"))
+	_, _ = hash.Write(connectionID.Bytes[:])
+	_, _ = hash.Write([]byte{0})
+	_, _ = hash.Write([]byte(resource))
+	return int64(binary.BigEndian.Uint64(hash.Sum(nil)[:8]))
+}
+
 // retireCurrentResourcePagesAfter removes stale page snapshots only after a
 // complete read. The database procedure keeps RAW history append-only while
 // allowing the current view to reflect a list that became shorter.
@@ -214,7 +233,22 @@ func retireCurrentResourcePagesAfter(ctx context.Context, tx pgx.Tx, connectionI
 	if !connectionID.Valid || sourceEntity == "" || finalPage < 1 {
 		return errors.New("invalid Bling page snapshot identity")
 	}
-	rows, err := tx.Query(ctx, `
+	store := staleRawPageStore{tx: tx, queries: database.New(tx)}
+	return retireCurrentResourcePagesInBatches(ctx, store, connectionID, sourceEntity, finalPage)
+}
+
+type staleRawPageBatchStore interface {
+	ListCurrentStalePageIDs(context.Context, pgtype.UUID, string, int, pgtype.UUID, int) ([]pgtype.UUID, error)
+	RetireCurrentRawPage(context.Context, pgtype.UUID) error
+}
+
+type staleRawPageStore struct {
+	tx      pgx.Tx
+	queries *database.Queries
+}
+
+func (s staleRawPageStore) ListCurrentStalePageIDs(ctx context.Context, connectionID pgtype.UUID, sourceEntity string, finalPage int, afterID pgtype.UUID, limit int) ([]pgtype.UUID, error) {
+	rows, err := s.tx.Query(ctx, `
 		SELECT id
 		FROM raw_records
 		WHERE connection_id = $1
@@ -222,31 +256,68 @@ func retireCurrentResourcePagesAfter(ctx context.Context, tx pgx.Tx, connectionI
 		  AND source_entity = $2
 		  AND is_current
 		  AND source_id ~ '^pagina:[0-9]+$'
-		  AND substring(source_id FROM 8)::numeric > $3`, connectionID, sourceEntity, finalPage)
+		  AND substring(source_id FROM 8)::numeric > $3
+		  AND ($4::uuid IS NULL OR id > $4)
+		ORDER BY id
+		LIMIT $5`, connectionID, sourceEntity, finalPage, afterID, limit)
 	if err != nil {
-		return fmt.Errorf("find stale Bling RAW pages: %w", err)
+		return nil, fmt.Errorf("find stale Bling RAW pages: %w", err)
 	}
-	var staleIDs []pgtype.UUID
+	defer rows.Close()
+
+	ids := make([]pgtype.UUID, 0, limit)
 	for rows.Next() {
 		var id pgtype.UUID
 		if err := rows.Scan(&id); err != nil {
-			rows.Close()
-			return fmt.Errorf("read stale Bling RAW page ID: %w", err)
+			return nil, fmt.Errorf("read stale Bling RAW page ID: %w", err)
 		}
-		staleIDs = append(staleIDs, id)
+		ids = append(ids, id)
 	}
 	if err := rows.Err(); err != nil {
-		rows.Close()
-		return fmt.Errorf("iterate stale Bling RAW pages: %w", err)
+		return nil, fmt.Errorf("iterate stale Bling RAW pages: %w", err)
 	}
-	rows.Close()
-	queries := database.New(tx)
-	for _, id := range staleIDs {
-		if err := queries.RetireCurrentRawRecord(ctx, id); err != nil {
-			return fmt.Errorf("retire stale Bling RAW page: %w", err)
+	return ids, nil
+}
+
+func (s staleRawPageStore) RetireCurrentRawPage(ctx context.Context, id pgtype.UUID) error {
+	return s.queries.RetireCurrentRawRecord(ctx, id)
+}
+
+func retireCurrentResourcePagesInBatches(ctx context.Context, store staleRawPageBatchStore, connectionID pgtype.UUID, sourceEntity string, finalPage int) error {
+	if store == nil || !connectionID.Valid || sourceEntity == "" || finalPage < 1 {
+		return errors.New("invalid Bling page retirement request")
+	}
+	cursor := pgtype.UUID{}
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		ids, err := store.ListCurrentStalePageIDs(ctx, connectionID, sourceEntity, finalPage, cursor, staleRawPageBatchSize)
+		if err != nil {
+			return err
+		}
+		if len(ids) == 0 {
+			return nil
+		}
+		if len(ids) > staleRawPageBatchSize {
+			return errors.New("stale Bling page query exceeded its batch limit")
+		}
+		for _, id := range ids {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if !id.Valid || (cursor.Valid && bytes.Compare(id.Bytes[:], cursor.Bytes[:]) <= 0) {
+				return errors.New("stale Bling page query returned an invalid cursor order")
+			}
+			if err := store.RetireCurrentRawPage(ctx, id); err != nil {
+				return fmt.Errorf("retire stale Bling RAW page: %w", err)
+			}
+			cursor = id
+		}
+		if len(ids) < staleRawPageBatchSize {
+			return nil
 		}
 	}
-	return nil
 }
 
 func (s *apiResourceSyncService) finishFailed(ctx context.Context, tx pgx.Tx, queries *database.Queries, batchID pgtype.UUID, result APISyncResult, code string, cause error) error {

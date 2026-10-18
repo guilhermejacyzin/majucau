@@ -17,12 +17,14 @@ Agora o worker busca e processa esses identificadores em blocos de até 256. Cad
 
 ## Verificação executada
 
-- `go test ./internal/integrations/bling -count=1` — passou no Windows.
-- Testes unitários exercitam 529 IDs em três blocos limitados, erro durante a substituição e cancelamento entre IDs.
-- Um teste unitário verifica que a chave da trava é estável e separada por conexão/recurso. O teste de integração PostgreSQL existente também passa pelo novo bloqueio quando executado.
-- `MAJUCAU_TEST_DATABASE_URL` não estava configurada nesta máquina; os testes que dependem de PostgreSQL real não foram executados localmente.
+- `go test ./internal/integrations/bling -count=1` — passou no Windows contra um PostgreSQL 18 descartável com todas as migrações aplicadas.
+- A verificação também aplicou a proteção de migração de papéis e `database/privileges/verify_runtime.sql`.
+- Testes cobrem 529 IDs em três blocos limitados, erro durante a substituição, cancelamento, rollback/idempotência em PostgreSQL e duas sincronizações concorrentes do mesmo recurso: a segunda só consulta o Bling depois que a primeira confirma a transação.
+- `go vet ./internal/integrations/bling` — passou.
+- O banco foi iniciado somente em `127.0.0.1:55440`, com credencial temporária protegida. A instância que já usava a porta 5432 não foi acessada. O banco temporário e os caches recriáveis foram removidos ao terminar; `artifacts/cache/go-mod/` foi preservado.
+- A CI do commit `6cddbcd` passou em `verify-backlog`, mas parou no verificador do formato da mensagem do commit; Windows e PostgreSQL foram ignorados. Um novo commit com os campos em linhas separadas deve disparar a validação completa.
 - Nenhuma conta Bling foi conectada e nenhuma sincronização real ocorreu.
 
 ## Limites e próximo passo
 
-O teste usa um armazenamento simulado; não prova o SQL em um PostgreSQL real. Executar a integração PostgreSQL na CI ou em banco descartável. A confirmação do fim da paginação continua pendente: a [OpenAPI oficial atual do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) documenta `pagina`, `limite` e a resposta `data[]`, mas não descreve um marcador de última página. O código segue uma página não vazia e usa `data: []` como marcador provisório; é necessário confirmar isso na conta autorizada antes da homologação.
+O teste de PostgreSQL local confirma migrações, trava e aposentadoria de páginas em transação num banco descartável; a CI ainda precisa repetir a validação após a correção da mensagem de commit. A confirmação do fim da paginação continua pendente: a [OpenAPI oficial atual do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) documenta `pagina`, `limite` e a resposta `data[]`, mas não descreve um marcador de última página. O código segue uma página não vazia e usa `data: []` como marcador provisório; é necessário confirmar isso na conta autorizada antes da homologação.

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -249,5 +250,132 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	}
 	if currentPages != 3 || allPages != 5 {
 		t.Fatalf("idempotent replay changed RAW current/total counts to %d/%d, want 3/5", currentPages, allPages)
+	}
+}
+
+func TestAPIResourceSyncSerializesConcurrentRunsForSameResource(t *testing.T) {
+	dsn := os.Getenv("MAJUCAU_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("set MAJUCAU_TEST_DATABASE_URL to run the PostgreSQL API sync integration test")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("create PostgreSQL pool: %v", err)
+	}
+	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		t.Fatalf("ping PostgreSQL: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO integration_connections (provider, status, external_account_id)
+		VALUES ('BLING', 'CONNECTED', 'api-sync-concurrency-ci')
+		ON CONFLICT (provider) DO NOTHING`); err != nil {
+		t.Fatalf("prepare Bling connection: %v", err)
+	}
+	connection, err := database.New(pool).GetIntegrationConnectionByProvider(ctx, "BLING")
+	if err != nil || !connection.ID.Valid {
+		t.Fatalf("load Bling connection: %v", err)
+	}
+
+	const resource = "ci.bling.api_sync.concurrent"
+	const sourceEntity = "ci.bling.api_sync.concurrent.page"
+	cleanup := func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cleanupCancel()
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM raw_records WHERE source_entity = $1`, sourceEntity)
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM integration_sync_batches WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
+	}
+	cleanup()
+	defer cleanup()
+
+	firstReadStarted := make(chan struct{})
+	releaseFirstRead := make(chan struct{})
+	var releaseOnce sync.Once
+	allowFirstReadToFinish := func() { releaseOnce.Do(func() { close(releaseFirstRead) }) }
+	defer allowFirstReadToFinish()
+	secondReadStarted := make(chan struct{}, 1)
+	page := BlingReceivablesPage{Page: 1, Limit: 1, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"same-page"}`)}}
+
+	firstService := &apiResourceSyncService{
+		pool: pool, client: &BlingAPIClient{}, maxPages: 1, resource: resource, sourceEntity: sourceEntity,
+		list: func(ctx context.Context, _ ReceivablesFilter) (BlingReceivablesPage, error) {
+			close(firstReadStarted)
+			select {
+			case <-releaseFirstRead:
+				return page, nil
+			case <-ctx.Done():
+				return BlingReceivablesPage{}, ctx.Err()
+			}
+		},
+	}
+	secondService := &apiResourceSyncService{
+		pool: pool, client: &BlingAPIClient{}, maxPages: 1, resource: resource, sourceEntity: sourceEntity,
+		list: func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error) {
+			secondReadStarted <- struct{}{}
+			return page, nil
+		},
+	}
+	type syncOutcome struct{ err error }
+	firstDone := make(chan syncOutcome, 1)
+	secondDone := make(chan syncOutcome, 1)
+	go func() {
+		_, err := firstService.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
+		firstDone <- syncOutcome{err: err}
+	}()
+	select {
+	case <-firstReadStarted:
+	case <-ctx.Done():
+		t.Fatalf("first sync did not reach the Bling read: %v", ctx.Err())
+	}
+	go func() {
+		_, err := secondService.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
+		secondDone <- syncOutcome{err: err}
+	}()
+	select {
+	case <-secondReadStarted:
+		allowFirstReadToFinish()
+		<-firstDone
+		<-secondDone
+		t.Fatal("second sync reached the Bling read before the first same-resource transaction finished")
+	case <-time.After(200 * time.Millisecond):
+	case <-ctx.Done():
+		allowFirstReadToFinish()
+		t.Fatalf("waiting for the resource lock check: %v", ctx.Err())
+	}
+	allowFirstReadToFinish()
+	select {
+	case outcome := <-firstDone:
+		if outcome.err != nil {
+			t.Fatalf("first sync failed: %v", outcome.err)
+		}
+	case <-ctx.Done():
+		t.Fatalf("first sync did not finish: %v", ctx.Err())
+	}
+	select {
+	case <-secondReadStarted:
+	case <-ctx.Done():
+		t.Fatalf("second sync did not continue after first transaction: %v", ctx.Err())
+	}
+	select {
+	case outcome := <-secondDone:
+		if outcome.err != nil {
+			t.Fatalf("second sync failed: %v", outcome.err)
+		}
+	case <-ctx.Done():
+		t.Fatalf("second sync did not finish: %v", ctx.Err())
+	}
+
+	var successfulBatches int
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FROM integration_sync_batches
+		WHERE connection_id = $1 AND resource = $2 AND status = 'SUCCESS'`, connection.ID, resource).Scan(&successfulBatches); err != nil {
+		t.Fatalf("count successful concurrent batches: %v", err)
+	}
+	if successfulBatches != 2 {
+		t.Fatalf("successful batches = %d, want 2 serialized runs", successfulBatches)
 	}
 }

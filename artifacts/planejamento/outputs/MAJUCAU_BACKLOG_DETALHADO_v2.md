@@ -405,14 +405,14 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Pela média simples do rastreador, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 35% + 70% + 55% + 85% + 69% + 5% + 20% + 1%) ÷ 127 = 9,1%`; restam 90,9%. É uma estimativa do backlog, não prontidão nem medição de esforço. Não há prazo global confiável enquanto permanecem tarefas não iniciadas, decisões operacionais e validações externas.
 - Evidência: `docs/evidence/DEV-ENVIRONMENT-SETUP-2026-10-12.md`. Nenhuma tela aprovada ou regra financeira foi alterada. Não foram executados testes do produto.
 
-### Estado atual do backlog — 13/10/2026
+### Estado atual do backlog — 18/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-041 (75%), BK-042 (40%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 95% + 35% + 70% + 60% + 40% + 85% + 75% + 40% + 40% + 5% + 25% + 1%) ÷ 127 = 11,1%`; restam 88,9%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- O backlog mantém 127 tarefas: 7 concluídas, 18 em andamento e 102 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-041 (75%), BK-042 (45%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
+- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 95% + 35% + 70% + 60% + 40% + 85% + 75% + 45% + 40% + 5% + 25% + 1%) ÷ 127 = 11,1%`; restam 88,9%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
 - BK-024 permanece em 35%: a revisão de streaming corrigiu no Site o formulário protegido do Client Secret, limitando a leitura a 8 KiB, e publicou a versão 16. Os 28 testes do Site passaram. Isso fecha esse ponto específico; ACLs em VM limpa, carga/memória e outros riscos continuam pendentes, então a estimativa da tarefa de segurança geral não muda. Evidências: `docs/evidence/DATA-STREAMING-STATIC-AUDIT-2026-10-11.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
-- Os arquivos diários do Drive também incluem XLS e XLSX; o conector ainda os recusa. O parser seguro e a homologação dos formatos continuam pendentes em BK-042/BK-043.
+- Os arquivos diários do Drive também incluem XLS e XLSX; ainda são recusados até existir parser seguro. A arquitetura ADR-003 de leitura pelo serviço Go com identidade técnica restrita foi aprovada em 18/10/2026. O núcleo GET/streaming do adapter e o provedor de token foram implementados e testados localmente; provisionamento, wiring, importação real, parser e homologação dos formatos continuam pendentes em BK-042/BK-043.
 
 ## 00 Descoberta e decisões
 
@@ -1426,9 +1426,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Impedir execução concorrente duplicada da mesma carga
 3. Aplicar cancelamento, timeout e retomada após reinício
 4. Separar agendamento da coleta, data da competência e corte de análise D-1. Movimentos de hoje podem ser ingeridos e armazenados sem compor a conciliação normal; inclusão requer solicitação expressa, capacidade e trilha.
-5. Programar a atualização diária às 09:30 em `America/Sao_Paulo`. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Se um arquivo chegar depois das 09:30, mantê-lo pendente até a atualização das 09:30 do dia seguinte; não iniciar uma coleta fora do horário por esse motivo. Para o Bling, reler diariamente todas as Contas a Receber e Contas a Pagar, sem limitar a coleta automática por data; usar checkpoint apenas para retomar páginas confirmadas após interrupção e só declarar a carga completa quando o término da paginação estiver comprovado. Os filtros manuais permanecem conforme decisão aprovada. Definir e aprovar um meio seguro de leitura persistente das pastas Drive pelo serviço antes de ativar a coleta de arquivos.
+5. Programar a atualização diária às 09:30 em `America/Sao_Paulo`. Processar cada fonte disponível de forma independente; marcar fonte ausente como pendente, preservar o último dado válido e nunca apresentá-lo como atual. Se um arquivo chegar depois das 09:30, mantê-lo pendente até a atualização das 09:30 do dia seguinte; não iniciar uma coleta fora do horário por esse motivo. Para o Bling, reler diariamente todas as Contas a Receber e Contas a Pagar, sem limitar a coleta automática por data; usar checkpoint apenas para retomar páginas confirmadas após interrupção e só declarar a carga completa quando o término da paginação estiver comprovado. Os filtros manuais permanecem conforme decisão aprovada. Configurar a identidade técnica e os IDs das pastas conforme ADR-003, implementar o leitor persistente de somente leitura do Drive e só então ativar a coleta de arquivos.
 
-**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em `America/Sao_Paulo`; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica `PENDING` e o último dado válido nunca é mostrado como atual; um arquivo que chegar após 09:30 só é processado na execução das 09:30 do dia seguinte; o Bling relê diariamente todas as Contas a Receber e Contas a Pagar e só conclui com evidência de que todas as páginas foram percorridas; checkpoint permite retomar a carga interrompida sem reduzir o escopo diário; o acesso às pastas Drive é autorizado, seguro e persistente.
+**Critério de aceite:** Queda do processo não perde o trabalho nem duplica fatos; limites são configuráveis; a atualização diária começa às 09:30 em `America/Sao_Paulo`; cada fonte disponível pode concluir atomicamente mesmo se outra faltar; fonte ausente fica `PENDING` e o último dado válido nunca é mostrado como atual; um arquivo que chegar após 09:30 só é processado na execução das 09:30 do dia seguinte; o Bling relê diariamente todas as Contas a Receber e Contas a Pagar e só conclui com evidência de que todas as páginas foram percorridas; checkpoint permite retomar a carga interrompida sem reduzir o escopo diário; o acesso às pastas Drive é autorizado com as permissões da ADR-003, seguro e persistente.
 
 **Impacto:** Sustenta sincronização e reprocessamento local.
 
@@ -1504,7 +1504,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-042 — Implementar leitura das três estruturas autorizadas do Google Drive
 
-**Situação:** Em andamento. **Evolução:** 40%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 45% (estimativa: o núcleo de listagem e download GET em fluxo, restrito por IDs de pasta, e o provedor de token de service account via cofre foram implementados e testados localmente; ainda não há credencial/IDs reais, integração ao worker/jobs/armazenamento, contratos de arquivos ou homologação). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Importar arquivos preservando integralmente a pasta compartilhada.
 
@@ -3980,3 +3980,26 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-042 e BK-043 continuam em 40% cada. A confirmação de XLS/XLSX define os formatos recebidos, mas o suporte permanece pendente de parser com limites verificáveis, auditoria de segurança e homologação dos layouts. Nenhuma aba foi interpretada e nenhum fato financeiro foi criado.
 - O projeto permanece com 11,1% concluído e 88,9% restante pela média simples do backlog. A arquitetura recomendada — o serviço Go do Majucau lendo o Drive somente em modo leitura — aguarda confirmação; a pergunta foi apresentada à responsável.
 - Evidência: `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
+
+### Decisão da identidade de leitura do Google Drive — 18/10/2026
+
+- Gisele autorizou escolher e executar a alternativa técnica mais adequada. A decisão ADR-003 define que o serviço Go do Majucau leia os arquivos diretamente pela API oficial do Google Drive com uma identidade técnica separada, permissão Leitor somente nas três pastas aprovadas e sem delegação de domínio.
+- O Site continua somente no fluxo OAuth do Bling. Não haverá cópia sincronizada local nem processamento de dados financeiros no navegador/Site.
+- A decisão não muda regras financeiras, contratos de dados, telas ou progresso medido. BK-039 continua sem implementação do agendamento; BK-042/BK-043 continuam em 40% cada.
+- Próximas etapas: habilitar a API, criar a identidade técnica, compartilhar apenas as três pastas como Leitor, cadastrar IDs e credenciais protegidas, implementar o adapter Go e concluir o parser seguro XLS/XLSX. Se a conta bloquear o compartilhamento restrito, interromper a configuração e rever a alternativa; não ampliar permissões por conta própria.
+- Referências: `ADR-003-LEITURA-SEGURA-DO-GOOGLE-DRIVE.md`, `G0-DECISION-REGISTER.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
+
+### M1 — Verificação local do adapter Bling — 18/10/2026
+
+- Os testes existentes do pacote `internal/integrations/bling` passaram no Windows. A revisão confirmou que o fluxo OAuth e as consultas autenticadas enviam `enable-jwt: 1` e usam a URL atual da API.
+- Estado do marco: **IMPLEMENTADO, AGUARDANDO VALIDAÇÃO REAL**. Ainda não houve OAuth, chamada real ou importação nesta sessão; o último diagnóstico local registrado em 13/10 indicava `BLING_SECRET_REQUIRED`, e a paginação real ainda não tem fim de lista comprovado.
+- Nenhuma credencial foi lida ou solicitada no chat. Nenhuma tela, regra financeira ou dado persistido foi alterado.
+- Evidência: `docs/evidence/M1-BLING-LOCAL-VERIFICATION-2026-10-18.md`.
+
+### M2 — Adapter seguro de leitura do Google Drive — 18/10/2026
+
+- Implementados o cliente GET de listagem/download em fluxo e o provedor de tokens de service account no cofre protegido do worker. O escopo é somente leitura, o cliente aceita exatamente os três IDs aprovados, limita páginas/respostas, usa retry GET do projeto, verifica versão/checksum durante a leitura e só confirma o staging após todas as verificações.
+- A autenticação bloqueia redirecionamentos e fixa o POST OAuth ao endpoint do Google. A dependência `golang.org/x/oauth2 v0.37.0` foi revisada; `govulncheck v1.9.0` não encontrou vulnerabilidades conhecidas nos pacotes verificados.
+- Testes em Windows: `go test ./internal/integrations/... -count=1`, `go vet ./internal/integrations/...` e `go mod verify` passaram. `go test -race` não pôde rodar neste computador porque CGO está desativado.
+- Sem identidade real, IDs, wiring de jobs, parser XLS/XLSX e contrato homologado, não houve acesso ao Drive nem importação de dados. BK-042 avança de 40% para 45% estimados; BK-043 permanece em 40%. A média do backlog fica em 11,1% concluído e 88,9% restante, sem previsão global confiável.
+- Nenhuma tela, regra financeira, arquivo original do Drive ou fato financeiro foi alterado. Evidência: `docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md`.

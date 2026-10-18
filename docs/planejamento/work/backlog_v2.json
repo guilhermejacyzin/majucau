@@ -1322,7 +1322,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "40%: a ponte do Site lista arquivos em páginas e baixa em fluxo, calcula hash, confere a versão e grava staging em blocos. Gisele confirmou em 13/10/2026 que os arquivos diários incluem XLS/XLSX, ainda recusados pela ponte. Faltam credencial e pasta reais do Drive, parser de Excel seguro em fluxo, importação controlada, confirmar leitura somente, agenda diária, medição de carga e VM limpa. Evidência: docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md.",
+    "evidence": "45% (estimativa): o núcleo Go de listagem e download GET em fluxo, restrito por IDs das três pastas, e o provedor de token de service account via cofre foram implementados e testados localmente. Ainda faltam credenciais/IDs reais, integração ao worker/jobs/armazenamento, contratos e importação real; XLS/XLSX continuam sem parser seguro. Evidência: docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md.",
     "weight": 1,
     "dependencies": [
       "BK-010",
@@ -1330,7 +1330,7 @@
       "BK-038",
       "BK-024"
     ],
-    "progress": 0.4
+    "progress": 0.45
   },
   {
     "key": "parsers",

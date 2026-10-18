@@ -86,16 +86,19 @@ func TestProductionHTTPCallsUseReviewedPaths(t *testing.T) {
 		t.Fatalf("scan production Go sources: %v", err)
 	}
 
-	// The Bling read attempts are called only through withBlingReadRetry. OAuth
-	// token exchange is a single-use POST and intentionally has no retry. The
-	// rate limiter delegates a request to its wrapped transport, and the shared
-	// helper call is the approved policy itself.
+	// Provider API reads go through their adapter-specific classification and the
+	// shared GET-only policy. OAuth token exchange remains a single-use POST; its
+	// transport wrapper restricts it to the configured Google token endpoint.
+	// The rate limiter delegates to its wrapped transport.
 	approved := map[string][]string{
 		"internal/integrations/bling/api_client.go:doFinancialResourceAttempt": {"c.httpClient.Do"},
 		"internal/integrations/bling/api_resources.go:getDataRecordAttempt":    {"c.httpClient.Do"},
 		"internal/integrations/bling/oauth.go:exchange":                        {"c.httpClient.Do"},
 		"internal/integrations/bling/rate_limit.go:Do":                         {"d.next.Do"},
 		"internal/integrations/bling/retry.go:withBlingReadRetry":              {"httpretry.Do"},
+		"internal/integrations/googledrive/client.go:doGETAttempt":             {"c.httpClient.Do"},
+		"internal/integrations/googledrive/client.go:withGETRetry":             {"httpretry.Do"},
+		"internal/integrations/googledrive/auth.go:RoundTrip":                  {"t.base.RoundTrip"},
 		"internal/ipc/namedpipe_windows.go:close":                              {"p.once.Do"},
 	}
 	for key, calls := range observed {

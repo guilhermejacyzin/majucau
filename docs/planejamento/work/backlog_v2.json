@@ -1322,7 +1322,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "52% (estimativa): o núcleo Go de listagem/download GET em fluxo, os checkpoints persistentes por página, as versões de metadados e a publicação atômica do inventário foram implementados localmente. Testes unitários, go vet e SQLC passaram; a CI PostgreSQL passou, e a primeira CI Windows apontou modelos gerados ainda não versionados, já corrigidos localmente e aguardando nova CI. Ainda faltam credenciais/IDs reais, integração ao worker/jobs/staging, contratos e importação real; XLS/XLSX continuam sem parser seguro. Evidência: docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md.",
+    "evidence": "52% (estimativa): o núcleo Go de listagem/download GET em fluxo, os checkpoints persistentes por página, as versões de metadados e a publicação atômica do inventário foram implementados localmente. Testes unitários, go vet, SQLC e CI passaram; a CI #39177839087 concluiu com sucesso nos quatro jobs Windows, PostgreSQL, backlog e detecção de mudanças após incluir os modelos SQLC. Ainda faltam credenciais/IDs reais, integração ao worker/jobs/staging, contratos e importação real; XLS/XLSX continuam sem parser seguro. Evidência: docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md.",
     "weight": 1,
     "dependencies": [
       "BK-010",

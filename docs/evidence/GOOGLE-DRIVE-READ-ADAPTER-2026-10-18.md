@@ -87,10 +87,10 @@ Verificações desta etapa:
 
 - `go test ./internal/integrations/... -count=1` — **PASS** nos conectores Bling, CSV, Drive, retry, Nuvem Pago e Nuvemshop.
 - `go vet ./internal/integrations/...` — **PASS** localmente.
-- `go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate -f database/sqlc.yaml` — **PASS**; gerou os modelos Go das novas tabelas, que agora precisam ficar versionados junto com a migration.
+- `go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate -f database/sqlc.yaml` — **PASS**; gerou os modelos Go das novas tabelas, versionados no commit `ef83bed`.
 - `scripts/verify-migrations.ps1` e `git diff --check` — **PASS**.
-- A CI PostgreSQL do commit `ee0b2a1` — **PASS**, incluindo migration, permissões runtime e testes de integração para snapshot completo, repetição, falha, retomada, preservação do retrato anterior e arquivo ausente. Os testes de integração não foram executados localmente porque esta máquina não possui uma conexão de banco descartável configurada.
-- A primeira CI Windows do commit `ee0b2a1` falhou na checagem de arquivos SQL gerados porque os modelos criados pelo SQLC ainda não estavam versionados. Os modelos foram gerados localmente com SQLC v1.31.1 e estão sendo adicionados; a CI Windows será repetida no próximo commit.
+- A CI completa `39177839087`, no commit `ef83bed` — **PASS** nos quatro jobs: `verify-windows`, `verify-postgres`, `verify-backlog` e `detect-changes`. PostgreSQL aplicou a migration, verificou permissões e executou testes de snapshot completo, repetição, falha, retomada, preservação do retrato anterior e arquivo ausente.
+- A primeira tentativa identificou que os modelos gerados pelo SQLC ainda não estavam versionados. Eles foram gerados com SQLC v1.31.1, adicionados ao commit seguinte e a geração foi aprovada na CI completa. A integração PostgreSQL não foi executada localmente porque esta máquina não possui uma conexão descartável configurada.
 - Nenhuma conexão ao Google Drive, credencial real, arquivo financeiro, tela aprovada ou regra financeira foi usada/alterada.
 
 BK-042 passa de 47% para 52% estimados. Ainda faltam provisionar e compartilhar a identidade de leitura, informar os IDs reais das pastas por configuração protegida, ligar a sincronização ao worker diário das 09:30 e ao staging/importador, homologar contratos CSV/TSV/JSON e implementar parser XLS/XLSX seguro. A validação real e o aceite também continuam pendentes.

@@ -1322,7 +1322,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "47% (estimativa): o núcleo Go de listagem/download GET em fluxo, o callback por página para persistência atômica do marcador, os IDs restritos às três pastas e o provedor de token via cofre foram implementados e testados localmente. Ainda faltam credenciais/IDs reais, integração ao worker/jobs/armazenamento, contratos e importação real; XLS/XLSX continuam sem parser seguro. Evidência: docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md.",
+    "evidence": "52% (estimativa): o núcleo Go de listagem/download GET em fluxo, os checkpoints persistentes por página, as versões de metadados e a publicação atômica do inventário foram implementados localmente. Testes unitários e go vet passaram; a validação PostgreSQL aguarda CI, pois não há banco descartável configurado nesta máquina. Ainda faltam credenciais/IDs reais, integração ao worker/jobs/staging, contratos e importação real; XLS/XLSX continuam sem parser seguro. Evidência: docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md.",
     "weight": 1,
     "dependencies": [
       "BK-010",
@@ -1330,7 +1330,7 @@
       "BK-038",
       "BK-024"
     ],
-    "progress": 0.47
+    "progress": 0.52
   },
   {
     "key": "parsers",

@@ -52,6 +52,9 @@ BEGIN
       'public.integration_status',
       'public.integration_sync_batches',
       'public.bling_sync_page_checkpoints',
+      'public.google_drive_sync_page_checkpoints',
+      'public.google_drive_file_versions',
+      'public.google_drive_files',
       'public.sync_cursors',
       'public.raw_records',
       'public.receipts',
@@ -64,6 +67,9 @@ BEGIN
       'public.integration_connections',
       'public.integration_sync_batches',
       'public.bling_sync_page_checkpoints',
+      'public.google_drive_sync_page_checkpoints',
+      'public.google_drive_file_versions',
+      'public.google_drive_files',
       'public.sync_cursors',
       'public.raw_records',
       'public.receipts',
@@ -73,10 +79,14 @@ BEGIN
       'public.integration_connections',
       'public.integration_sync_batches',
       'public.sync_cursors',
+      'public.google_drive_files',
       'public.receipts',
       'public.receivables'
     ]::text[]);
-    expected_delete := relation_row.qualified_name = 'public.bling_sync_page_checkpoints';
+    expected_delete := relation_row.qualified_name = ANY (ARRAY[
+      'public.bling_sync_page_checkpoints',
+      'public.google_drive_sync_page_checkpoints'
+    ]::text[]);
 
     IF relation_row.relowner = runtime_oid OR
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'SELECT') IS DISTINCT FROM expected_select OR

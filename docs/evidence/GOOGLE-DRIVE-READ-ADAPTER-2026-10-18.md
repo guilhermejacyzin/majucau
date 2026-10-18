@@ -72,3 +72,23 @@ Foi adotado `golang.org/x/oauth2 v0.37.0`, biblioteca mantida pelo projeto Go, l
 - O teste local `-race` não pôde iniciar porque este ambiente Windows está com CGO desativado; a CI Linux ainda deve executar a cobertura com race.
 
 Este resultado é **implementado localmente, aguardando integração e validação real**. Não é prova de acesso ao Drive nem conclusão de BK-042/BK-043.
+
+## Inventário persistente e retomada após falha — 18/10/2026
+
+Foi criada a migration `database/migrations/000006_google_drive_file_inventory.up.sql` para guardar o progresso da leitura e os metadados do Drive. O runtime pode usar somente as permissões explicitamente listadas em `database/privileges/runtime.sql`; a auditoria correspondente foi ampliada em `database/privileges/verify_runtime.sql`.
+
+- Cada página de até 100 itens é guardada com o marcador da próxima página na mesma transação. A carga percorre no máximo 64 páginas por chamada e continua em outra chamada quando necessário; o total do inventário não tem limite fixo no aplicativo.
+- Cada payload temporário é limitado a 1 MiB e cada marcador a 4 KiB. IDs, escopos e referências de arquivos ficam limitados às três pastas aprovadas. Metadados e marcadores são tratados como sensíveis e o worker tem acesso mínimo necessário.
+- As versões de metadados são imutáveis e deduplicadas por hash. Um ponteiro separado identifica a versão atual e o lote em que o arquivo apareceu. Arquivos ausentes numa nova leitura não são apagados; deixam de pertencer ao retrato atual quando o cursor passa para o lote completo.
+- A leitura interrompida conserva checkpoints e não muda o retrato/cursor anterior. Na publicação final, metadados, ponteiros, cursor, sucesso do lote e limpeza dos checkpoints são confirmados juntos. Repetir um lote concluído com o mesmo identificador não duplica a publicação.
+- O banco guarda somente metadados da listagem; nenhum conteúdo de arquivo é gravado nessa tabela. O streaming dos arquivos para o staging seguro e a integração com o importador permanecem pendentes.
+
+Verificações desta etapa:
+
+- `go test ./internal/integrations/... -count=1` — **PASS** nos conectores Bling, CSV, Drive, retry, Nuvem Pago e Nuvemshop.
+- `go vet ./internal/integrations/...` — **PASS** localmente.
+- `scripts/verify-migrations.ps1` e `git diff --check` — **PASS**.
+- Os testes de integração PostgreSQL cobrem snapshot completo, repetição, falha, retomada, preservação do retrato anterior e arquivo ausente. Eles não foram executados localmente porque esta máquina não possui uma conexão de banco descartável configurada; aguardam a CI PostgreSQL deste commit.
+- Nenhuma conexão ao Google Drive, credencial real, arquivo financeiro, tela aprovada ou regra financeira foi usada/alterada.
+
+BK-042 passa de 47% para 52% estimados. Ainda faltam provisionar e compartilhar a identidade de leitura, informar os IDs reais das pastas por configuração protegida, ligar a sincronização ao worker diário das 09:30 e ao staging/importador, homologar contratos CSV/TSV/JSON e implementar parser XLS/XLSX seguro. A validação real e o aceite também continuam pendentes.

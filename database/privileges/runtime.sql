@@ -15,6 +15,9 @@ GRANT SELECT ON TABLE
   integration_status,
   integration_sync_batches,
   bling_sync_page_checkpoints,
+  google_drive_sync_page_checkpoints,
+  google_drive_file_versions,
+  google_drive_files,
   sync_cursors,
   raw_records,
   receipts,
@@ -25,8 +28,8 @@ GRANT SELECT ON TABLE
 TO majucau_runtime;
 
 -- Writes are restricted to the configuration, sync ledger, RAW ingestion,
--- cursors, and imported receivable/receipt facts used by the current worker.
--- No runtime code needs DELETE or direct writes to the other domain tables.
+-- cursors, imported receivable/receipt facts, and temporary page checkpoints.
+-- The worker cannot delete published Drive inventory or mutate other domain tables.
 GRANT INSERT, UPDATE ON TABLE
   integration_connections,
   integration_sync_batches,
@@ -36,6 +39,9 @@ GRANT INSERT, UPDATE ON TABLE
 TO majucau_runtime;
 GRANT INSERT ON TABLE raw_records, bling_sync_page_checkpoints TO majucau_runtime;
 GRANT DELETE ON TABLE bling_sync_page_checkpoints TO majucau_runtime;
+GRANT INSERT, DELETE ON TABLE google_drive_sync_page_checkpoints TO majucau_runtime;
+GRANT INSERT ON TABLE google_drive_file_versions TO majucau_runtime;
+GRANT INSERT, UPDATE ON TABLE google_drive_files TO majucau_runtime;
 
 -- RAW and audit are append-only for the runtime account. The sync version
 -- rollover is restricted to the SECURITY DEFINER function below.

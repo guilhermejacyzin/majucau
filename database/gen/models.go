@@ -66,6 +66,21 @@ type AuditEvent struct {
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 }
 
+// Temporary, bounded RAW pages for one Bling load. Pages become current RAW only in the final atomic publish transaction; stale runs are removed when a new correlation starts.
+type BlingSyncPageCheckpoint struct {
+	ConnectionID  pgtype.UUID `json:"connection_id"`
+	Resource      string      `json:"resource"`
+	CorrelationID pgtype.UUID `json:"correlation_id"`
+	PageNumber    int32       `json:"page_number"`
+	PageLimit     int32       `json:"page_limit"`
+	HasNext       bool        `json:"has_next"`
+	RecordCount   int32       `json:"record_count"`
+	PayloadHash   string      `json:"payload_hash"`
+	// Sensitive provider response page. Access is restricted to the worker runtime role and deleted after successful atomic publish or when superseded.
+	Payload        []byte             `json:"payload"`
+	CheckpointedAt pgtype.Timestamptz `json:"checkpointed_at"`
+}
+
 type BudgetLine struct {
 	ID                pgtype.UUID    `json:"id"`
 	ChartAccountID    pgtype.UUID    `json:"chart_account_id"`

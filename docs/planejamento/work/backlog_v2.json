@@ -1216,14 +1216,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "20%: scheduler 09:30 America/Sao_Paulo integrado ao worker Windows e disparo Bling sem filtros de data; testes em internal/scheduler e cmd/worker. Persistência, retomada, concorrência, Drive e homologação real pendentes. docs/evidence/DAILY-BLING-SCHEDULER-2026-10-18.md",
+    "evidence": "35%: scheduler 09:30 America/Sao_Paulo integrado ao worker Windows; auditoria diária com correlation_id estável, trava PostgreSQL contra execução concorrente e retomada após reinício com releitura integral. Testes unitários e integração PostgreSQL opcional adicionados. Ainda faltam checkpoint por página, rotina Drive, comprovação da última página real, operação contínua e homologação. docs/evidence/DAILY-BLING-RECOVERY-2026-10-18.md",
     "weight": 1,
     "dependencies": [
       "BK-027",
       "BK-029",
       "BK-031"
     ],
-    "progress": 0.20
+    "progress": 0.35
   },
   {
     "key": "blingcontract",

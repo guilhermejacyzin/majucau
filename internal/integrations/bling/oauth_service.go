@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -387,6 +388,10 @@ func (s *BlingOAuthService) Disconnect(ctx context.Context) error {
 // payables. Status-only requests retain the existing behavior and read both.
 // This method never invents a financial window and never normalizes records.
 func (s *BlingOAuthService) Sync(ctx context.Context, filter ReceivablesFilter) (BlingRawSyncResult, error) {
+	return s.sync(ctx, filter, nil)
+}
+
+func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, correlationID *uuid.UUID) (BlingRawSyncResult, error) {
 	dateMode, err := financialDateFilterMode(filter)
 	if err != nil {
 		return BlingRawSyncResult{}, err
@@ -415,14 +420,24 @@ func (s *BlingOAuthService) Sync(ctx context.Context, filter ReceivablesFilter) 
 	notApplicable := APISyncResult{Status: "NOT_APPLICABLE"}
 	result := BlingRawSyncResult{Receivables: notApplicable, Payables: notApplicable}
 	if dateMode != blingDateFilterPayment {
-		result.Receivables, err = NewReceivablesAPISyncService(s.pool, client).Sync(ctx, filter)
+		receivables := NewReceivablesAPISyncService(s.pool, client)
+		if correlationID == nil {
+			result.Receivables, err = receivables.Sync(ctx, filter)
+		} else {
+			result.Receivables, err = receivables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
+		}
 		if err != nil {
 			result.Status = "FAILED"
 			return result, err
 		}
 	}
 	if dateMode != blingDateFilterReceived {
-		result.Payables, err = NewPayablesAPISyncService(s.pool, client).Sync(ctx, filter)
+		payables := NewPayablesAPISyncService(s.pool, client)
+		if correlationID == nil {
+			result.Payables, err = payables.Sync(ctx, filter)
+		} else {
+			result.Payables, err = payables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
+		}
 		if err != nil {
 			if result.Receivables.Status == "SUCCESS" {
 				result.Status = "PARTIAL"

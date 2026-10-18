@@ -55,6 +55,15 @@ func NewReceivablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *R
 	return &ReceivablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: 1000, resource: ReceivablesAPIResource, sourceEntity: "bling.contas_receber.page", list: client.ListReceivables}}
 }
 
+// SyncWithCorrelationID runs receivables as part of a stable daily operation.
+// The ID lets a restarted worker determine whether that scheduled run finished.
+func (s *ReceivablesAPISyncService) SyncWithCorrelationID(ctx context.Context, filter ReceivablesFilter, correlationID pgtype.UUID) (APISyncResult, error) {
+	if s == nil || s.apiResourceSyncService == nil {
+		return APISyncResult{}, ErrBlingAPISyncClientRequired
+	}
+	return s.apiResourceSyncService.sync(ctx, filter, &correlationID)
+}
+
 const PayablesAPIResource = "contas.pagar"
 
 type PayablesAPISyncService struct{ *apiResourceSyncService }
@@ -63,7 +72,20 @@ func NewPayablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *Paya
 	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: 1000, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables}}
 }
 
+// SyncWithCorrelationID runs payables as part of a stable daily operation.
+// The ID lets a restarted worker determine whether that scheduled run finished.
+func (s *PayablesAPISyncService) SyncWithCorrelationID(ctx context.Context, filter ReceivablesFilter, correlationID pgtype.UUID) (APISyncResult, error) {
+	if s == nil || s.apiResourceSyncService == nil {
+		return APISyncResult{}, ErrBlingAPISyncClientRequired
+	}
+	return s.apiResourceSyncService.sync(ctx, filter, &correlationID)
+}
+
 func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFilter) (out APISyncResult, returnErr error) {
+	return s.sync(ctx, filter, nil)
+}
+
+func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFilter, correlationID *pgtype.UUID) (out APISyncResult, returnErr error) {
 	if s == nil || s.pool == nil {
 		return APISyncResult{}, ErrBlingAPISyncDatabaseUnavailable
 	}
@@ -97,6 +119,14 @@ func (s *apiResourceSyncService) Sync(ctx context.Context, filter ReceivablesFil
 	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: s.resource})
 	if err != nil {
 		return APISyncResult{}, fmt.Errorf("create Bling API sync batch: %w", err)
+	}
+	if correlationID != nil {
+		if !correlationID.Valid || correlationID.Bytes == ([16]byte{}) {
+			return APISyncResult{}, errors.New("invalid Bling API sync correlation ID")
+		}
+		if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET correlation_id = $1 WHERE id = $2`, *correlationID, batch.ID); err != nil {
+			return APISyncResult{}, fmt.Errorf("set Bling API sync correlation ID: %w", err)
+		}
 	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
 	if _, err := tx.Exec(ctx, "SAVEPOINT bling_api_sync_data"); err != nil {

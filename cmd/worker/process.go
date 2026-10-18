@@ -31,7 +31,7 @@ func runWorker(ctx context.Context) (returnErr error) {
 	}
 	workerCtx, cancelWorker := context.WithCancel(ctx)
 	defer cancelWorker()
-	dailyDone := startDailyBlingSchedule(workerCtx, handler.blingSync, logger)
+	dailyDone := startDailyBlingSchedule(workerCtx, handler.dailyBlingSync, logger)
 	pipeErr := runWorkerPipe(workerCtx, diagnosticRequestHandler{next: handler, logger: logger})
 	cancelWorker()
 	<-dailyDone

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"time"
 
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/dashboard"
@@ -47,6 +48,10 @@ type blingRawSyncer interface {
 	Sync(context.Context, bling.ReceivablesFilter) (bling.BlingRawSyncResult, error)
 }
 
+type blingDailySyncer interface {
+	SyncDaily(context.Context, time.Time) (bling.BlingRawSyncResult, bool, error)
+}
+
 type workerHandler struct {
 	health            application.HealthChecker
 	databaseErrorCode string
@@ -57,6 +62,7 @@ type workerHandler struct {
 	nuvemshopConfig   nuvemshopConfigSaver
 	blingOAuth        blingOAuthService
 	blingSync         blingRawSyncer
+	dailyBlingSync    blingDailySyncer
 	statusReader      application.IntegrationStatusReader
 	dashboardReader   application.DashboardSnapshotStreamer
 }
@@ -73,6 +79,7 @@ func newWorkerHandler() workerHandler {
 	var nuvemshopSaver nuvemshopConfigSaver
 	var oauthService blingOAuthService
 	var rawSync blingRawSyncer
+	var dailySync blingDailySyncer
 	var statusReader application.IntegrationStatusReader
 	var dashboardReader application.DashboardSnapshotStreamer
 	if pool != nil {
@@ -86,9 +93,10 @@ func newWorkerHandler() workerHandler {
 			nuvemshopSaver = nuvemshop.NewCredentialService(pool, store)
 			oauthService = bling.NewBlingOAuthServiceWithState(pool, blingCredentials)
 			rawSync = oauthService.(blingRawSyncer)
+			dailySync = oauthService.(blingDailySyncer)
 		}
 	}
-	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, statusReader: statusReader, dashboardReader: dashboardReader}
+	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, statusReader: statusReader, dashboardReader: dashboardReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {

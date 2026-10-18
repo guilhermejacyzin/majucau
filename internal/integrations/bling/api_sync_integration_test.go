@@ -147,12 +147,25 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	}
 
 	failSecondPage = false
-	succeeded, err := service.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
+	scheduledAt := time.Date(2026, 10, 18, 9, 30, 0, 0, time.FixedZone("Brasilia", -3*60*60))
+	dailyCorrelationID, err := dailyBlingCorrelationID(scheduledAt)
+	if err != nil {
+		t.Fatalf("create daily sync correlation ID: %v", err)
+	}
+	persistedCorrelation := pgUUID(dailyCorrelationID)
+	succeeded, err := service.sync(ctx, ReceivablesFilter{Page: 1, Limit: 1}, &persistedCorrelation)
 	if err != nil {
 		t.Fatalf("successful paginated sync: %v", err)
 	}
 	if succeeded.Status != "SUCCESS" || succeeded.PagesRead != 2 {
 		t.Fatalf("successful sync result = %+v", succeeded)
+	}
+	var persistedCorrelationID string
+	if err := pool.QueryRow(ctx, `SELECT correlation_id::text FROM integration_sync_batches WHERE id = $1::uuid`, succeeded.BatchID).Scan(&persistedCorrelationID); err != nil {
+		t.Fatalf("read persisted daily correlation ID: %v", err)
+	}
+	if persistedCorrelationID != dailyCorrelationID.String() {
+		t.Fatalf("persisted correlation ID = %q, want %q", persistedCorrelationID, dailyCorrelationID)
 	}
 	if err := pool.QueryRow(ctx, `SELECT cursor_value FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource).Scan(&cursor); err != nil {
 		t.Fatalf("read cursor after successful sync: %v", err)

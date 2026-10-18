@@ -13,94 +13,9 @@
       "sha256": "5b866449ca4c225206692f18c52b3bb643e0b8a641c4db3d4714c0545ecc1350"
     },
     {
-      "path": "README.md",
-      "bytes": 15212,
-      "sha256": "5e626222a3367cd0eb1f627993aa3aacdf36b9f0cbd484c395e93275d3065522"
-    },
-    {
-      "path": "artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v0.md",
-      "bytes": 71160,
-      "sha256": "0f465f3365092a9036ab36602116100daa5ab98ba55c967877ab08e22de6776b"
-    },
-    {
-      "path": "artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v1.md",
-      "bytes": 60693,
-      "sha256": "336964809e3a8b6edb3b59b09cb77fa83ef2e9a1cb09290a7c9b421ec6ca5eb6"
-    },
-    {
-      "path": "artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md",
-      "bytes": 73542,
-      "sha256": "51e74bc7db7c49bd05ae71036c6b5a9bbe6b8dce6079867e70bcf0488d822041"
-    },
-    {
-      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v0.md",
-      "bytes": 109134,
-      "sha256": "e0eab53799a878940426937bc10af0a6f5700fe6d3c31e380530dd6e322df305"
-    },
-    {
-      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v1.md",
-      "bytes": 128726,
-      "sha256": "2ad72a5192b172329db5b4c2108aff1b03b1279c8d6482da3002d4bce50a75bb"
-    },
-    {
-      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
-      "bytes": 322843,
-      "sha256": "24b4380ac1fe1f9bbc82e1b2a1a6d5a478359ad0dcdd752fa8c85615cc68c614"
-    },
-    {
-      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v0.xlsx",
-      "bytes": 37191,
-      "sha256": "6b44113d7da1607d608cc5f6f875e397b85bed5453ddd05b9728e04f0d1e01b2"
-    },
-    {
-      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v1.xlsx",
-      "bytes": 42665,
-      "sha256": "fd4228f6ee9acf3861badbf643463b51f10a18c80c64e0d7f01c5c67edebf3e5"
-    },
-    {
-      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
-      "bytes": 50510,
-      "sha256": "6b2131a9bc1e57c57fbd4f5ab054f2cabce0cab7cd51daca68e18071881cf0b7"
-    },
-    {
-      "path": "docs/architecture/DOMAIN-CONTEXT-MAP-v1.md",
-      "bytes": 6224,
-      "sha256": "2debd0a3cea0fd8a9a943972348159ea1c61d24ff51e947632e1e88054694ac4"
-    },
-    {
-      "path": "docs/architecture/GO-MODULAR-BOUNDARIES.md",
-      "bytes": 8229,
-      "sha256": "7ec5245f194a922785b7641bccf35f9b4cb2b9008693664f0030a72d70d6716f"
-    },
-    {
-      "path": "docs/evidence/ARTIFACT-LOCATION-INVENTORY-2026-10-11.md",
-      "bytes": 3586,
-      "sha256": "3df32910390e006f3546e67ca14b4dcdd27accd336a8a97657a82f2f7fc837be"
-    },
-    {
-      "path": "docs/evidence/BACKLOG-TRACKER-RECONCILIATION-2026-10-13.md",
-      "bytes": 2504,
-      "sha256": "4a20c2706e4278ebefc82feb68d24df7a51ff774438833ab11039ad405cd5a25"
-    },
-    {
-      "path": "docs/evidence/BLING-DATA-FLOW-DIAGNOSIS-2026-10-12.md",
-      "bytes": 20910,
-      "sha256": "a8e81a5f219ce74bbebb55deb9f79969653cdcd88ab7b67cf2f5ac2f6b1f898c"
-    },
-    {
-      "path": "docs/evidence/DASHBOARD-REFRESH-AFTER-INTEGRATION-2026-10-12.md",
-      "bytes": 1748,
-      "sha256": "89dd76c94aac91ad9739f5e218f6383ceb85d500a649a18b9ef1cb97aca2c8c5"
-    },
-    {
-      "path": "docs/evidence/HTTP-RETRY-SHARED-POLICY-2026-10-11.md",
-      "bytes": 5899,
-      "sha256": "2252f974bc49b180931af21fdd6a98f451d6ed8db0b4683e2c5f956ffed387e5"
-    },
-    {
-      "path": "docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md",
-      "bytes": 4423,
-      "sha256": "9f9b6f749450d8468addfffcf671e5c37546f0d3ff82198dac846ba82e64e2f3"
+      "path": "docs/META-PROJETO.md",
+      "bytes": 2346,
+      "sha256": "dff553a0af87191b7e0b0b7c92e3c2de9c406b95f15e8e5a269e185281eb52be"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -119,8 +34,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 4301,
-      "sha256": "315d18c3e27d9f17abc49da16146376ef045e21ffebcae95c2221e2224e22a1a"
+      "bytes": 6411,
+      "sha256": "abd0d341e667dfc4dcf0e7b97b73fa5aca0d04565ad7ddd19ef710c82922011d"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -139,8 +54,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 192208,
-      "sha256": "0a791ff4402740e0759b30943c2d4f04336fc1d7c3883ffd0188fb0648870003"
+      "bytes": 192968,
+      "sha256": "eaffc10b40f5d1f757eeac5f01196c9355bda959c76708d3c3b6a4d07d41656e"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -353,6 +268,11 @@
       "sha256": "aa1f5f681a3d9690f0281ed3554720d4ee9cd0161200a632ec55724af01dc56a"
     },
     {
+      "path": "docs/planejamento/work/source_extract/manifest.json",
+      "bytes": 2596,
+      "sha256": "86d1bcd91d404925ee6d180c09c7c5c231b835d6e5b99f73d4ee72bf16f71cb6"
+    },
+    {
       "path": "docs/planejamento/work/source_extract/Q_CEI_Tela_11.txt",
       "bytes": 14051,
       "sha256": "82ad1c8bbf2cbcb73fa9fee7e71dc638b8d6499c2b2d359ce825f42ade9941de"
@@ -388,6 +308,11 @@
       "sha256": "787f65253e34b60859598c9ffda8c0fcf637e0679007ad38a79e27ddcfa7d367"
     },
     {
+      "path": "docs/planejamento/work/source_extract/workbook.json",
+      "bytes": 286067,
+      "sha256": "1b8cee72563b88fd359ebc2a984d9f5cbd41c7cbe12f63b521924c043f6abe7c"
+    },
+    {
       "path": "docs/planejamento/work/source_extract/X_Mockup_Tela_17.txt",
       "bytes": 253,
       "sha256": "8c07334d176623f921ee4bef33a723c2db3375a51b93f1d943acc979dbf3fd17"
@@ -396,16 +321,6 @@
       "path": "docs/planejamento/work/source_extract/Y_CEI_Tela_17.txt",
       "bytes": 10105,
       "sha256": "036ca03ad2f6f9caf7d690e42ecad5954d39f539c7719bd1a05b93b6049f9209"
-    },
-    {
-      "path": "docs/planejamento/work/source_extract/manifest.json",
-      "bytes": 2596,
-      "sha256": "86d1bcd91d404925ee6d180c09c7c5c231b835d6e5b99f73d4ee72bf16f71cb6"
-    },
-    {
-      "path": "docs/planejamento/work/source_extract/workbook.json",
-      "bytes": 286067,
-      "sha256": "1b8cee72563b88fd359ebc2a984d9f5cbd41c7cbe12f63b521924c043f6abe7c"
     },
     {
       "path": "docs/planejamento/work/verification.json",
@@ -443,9 +358,14 @@
       "sha256": "7cd9b54f9c56a4e749fb20fce072b284f3856d2f6661ab90cd06a8f67a01e85f"
     },
     {
+      "path": "README.md",
+      "bytes": 15282,
+      "sha256": "2761142631c4e71d3d777a9e7482a030f976e9e816cb229a1c464f130b6395c6"
+    },
+    {
       "path": "tools/exportar_planejamento.py",
-      "bytes": 1926,
-      "sha256": "f89c888f5e05cbdf6ba9fc0b565a839a70330b359c0f362c14ef20a93625ac03"
+      "bytes": 1967,
+      "sha256": "0e54724bb6698ee6b4f79ca106698fac59079066fc3ace4faf7b3d7ddb40a7e4"
     }
   ]
 }

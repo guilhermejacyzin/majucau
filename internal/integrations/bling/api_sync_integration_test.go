@@ -48,6 +48,7 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	cleanup := func() {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cleanupCancel()
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM bling_sync_page_checkpoints WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM raw_records WHERE source_entity = $1`, sourceEntity)
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM integration_sync_batches WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
@@ -91,6 +92,13 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	pageTwoFailure := errors.New("injected page read failure")
 	failSecondPage := true
 	unknownPagination := false
+	pageOneCalls := 0
+	scheduledAt := time.Date(2026, 10, 18, 9, 30, 0, 0, time.FixedZone("Brasilia", -3*60*60))
+	dailyCorrelationID, err := dailyBlingCorrelationID(scheduledAt)
+	if err != nil {
+		t.Fatalf("create daily sync correlation ID: %v", err)
+	}
+	persistedCorrelation := pgUUID(dailyCorrelationID)
 	service := &apiResourceSyncService{
 		pool:         pool,
 		client:       &BlingAPIClient{},
@@ -100,6 +108,7 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		list: func(_ context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
 			switch filter.Page {
 			case 1:
+				pageOneCalls++
 				if unknownPagination {
 					return BlingReceivablesPage{Page: 1, Limit: 1, Records: []json.RawMessage{json.RawMessage(`{"id":"page-one-unverified"}`)}}, nil
 				}
@@ -117,7 +126,7 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		},
 	}
 
-	failed, err := service.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
+	failed, err := service.sync(ctx, ReceivablesFilter{Page: 1, Limit: 1}, &persistedCorrelation)
 	if !errors.Is(err, pageTwoFailure) {
 		t.Fatalf("failed page sync error = %v, want injected read failure", err)
 	}
@@ -156,20 +165,34 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if rawCount != 2 {
 		t.Fatalf("failed sync changed the prior RAW snapshot: got %d rows, want the original 2", rawCount)
 	}
+	var stagedPages int
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FROM bling_sync_page_checkpoints
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`, connection.ID, resource, persistedCorrelation).Scan(&stagedPages); err != nil {
+		t.Fatalf("count checkpoints after interrupted sync: %v", err)
+	}
+	if stagedPages != 1 || pageOneCalls != 1 {
+		t.Fatalf("interrupted sync checkpoint/pages called = %d/%d, want one saved page and one fetched page", stagedPages, pageOneCalls)
+	}
 
 	failSecondPage = false
-	scheduledAt := time.Date(2026, 10, 18, 9, 30, 0, 0, time.FixedZone("Brasilia", -3*60*60))
-	dailyCorrelationID, err := dailyBlingCorrelationID(scheduledAt)
-	if err != nil {
-		t.Fatalf("create daily sync correlation ID: %v", err)
-	}
-	persistedCorrelation := pgUUID(dailyCorrelationID)
 	succeeded, err := service.sync(ctx, ReceivablesFilter{Page: 1, Limit: 1}, &persistedCorrelation)
 	if err != nil {
 		t.Fatalf("successful paginated sync: %v", err)
 	}
 	if succeeded.Status != "SUCCESS" || succeeded.PagesRead != 3 || succeeded.RecordsRead != 2 {
 		t.Fatalf("successful sync result = %+v", succeeded)
+	}
+	if pageOneCalls != 1 {
+		t.Fatalf("resumed sync re-read page 1 %d times; want only the original read", pageOneCalls)
+	}
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FROM bling_sync_page_checkpoints
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`, connection.ID, resource, persistedCorrelation).Scan(&stagedPages); err != nil {
+		t.Fatalf("count checkpoints after successful publish: %v", err)
+	}
+	if stagedPages != 0 {
+		t.Fatalf("successful sync left %d page checkpoints; want none", stagedPages)
 	}
 	var persistedCorrelationID string
 	if err := pool.QueryRow(ctx, `SELECT correlation_id::text FROM integration_sync_batches WHERE id = $1::uuid`, succeeded.BatchID).Scan(&persistedCorrelationID); err != nil {
@@ -285,6 +308,7 @@ func TestAPIResourceSyncSerializesConcurrentRunsForSameResource(t *testing.T) {
 	cleanup := func() {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cleanupCancel()
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM bling_sync_page_checkpoints WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM raw_records WHERE source_entity = $1`, sourceEntity)
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM integration_sync_batches WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)

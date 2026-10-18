@@ -75,7 +75,7 @@ O link/ID da pasta e a conexão do sistema com o Drive ainda não estão configu
 - **D-004-A:** adapter Nuvem Pago preparado, mas B2C financeiro confirmado diferido até fonte oficial.
 - **D-005-A:** BRL, `America/Sao_Paulo`, decimal exato com quatro casas, `ROUND_HALF_UP` e aging exclusivo. A frequência automática inicial de 15 minutos foi substituída pela execução diária às 09:30 em `America/Sao_Paulo`; compatibilizar o prazo de `STALE` antes da implementação. Consulte as decisões posteriores em `G0-DECISION-REGISTER.md`.
 
-Leia [PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) antes de implementar ou revisar qualquer módulo. As regras de engenharia obrigatórias estão em [AGENTS.md](AGENTS.md).
+Meta e andamento do projeto: [META-PROJETO.md](docs/META-PROJETO.md). Leia [PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) antes de implementar ou revisar qualquer módulo. As regras de engenharia obrigatórias estão em [AGENTS.md](AGENTS.md).
 
 Decisões: [ADR-001 — arquitetura local aprovada no G0](ADR-001-ARQUITETURA-E-EMPACOTAMENTO.md) e [ADR-002 — hospedagem privada centralizada](ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md).
 

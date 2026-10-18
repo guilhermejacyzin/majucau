@@ -1216,14 +1216,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "35%: scheduler 09:30 America/Sao_Paulo integrado ao worker Windows; auditoria diária com correlation_id estável, trava PostgreSQL contra execução concorrente e retomada após reinício com releitura integral. Testes unitários e integração PostgreSQL opcional adicionados. Ainda faltam checkpoint por página, rotina Drive, comprovação da última página real, operação contínua e homologação. docs/evidence/DAILY-BLING-RECOVERY-2026-10-18.md",
+    "evidence": "50%: scheduler diário às 09:30 em America/Sao_Paulo, correlation_id estável, trava PostgreSQL entre instâncias e checkpoints duráveis das páginas Bling. Após interrupção, retoma da próxima página confirmada; publica RAW, encerra páginas antigas e atualiza cursor/sucesso em uma transação final. Falha mantém o retrato anterior e auditoria, com páginas confirmadas disponíveis para retry. Testes do pacote passaram em PostgreSQL 18 descartável com permissões runtime verificadas. Ainda faltam provar o fim da paginação na conta real, integrar o Drive, operar continuamente e homologar. docs/evidence/BLING-PAGE-CHECKPOINTS-2026-10-18.md",
     "weight": 1,
     "dependencies": [
       "BK-027",
       "BK-029",
       "BK-031"
     ],
-    "progress": 0.35
+    "progress": 0.5
   },
   {
     "key": "blingcontract",

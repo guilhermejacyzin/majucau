@@ -9,6 +9,7 @@ DECLARE
   expected_select boolean;
   expected_insert boolean;
   expected_update boolean;
+  expected_delete boolean;
 BEGIN
   SELECT oid INTO runtime_oid
     FROM pg_roles
@@ -50,6 +51,7 @@ BEGIN
       'public.integration_connections',
       'public.integration_status',
       'public.integration_sync_batches',
+      'public.bling_sync_page_checkpoints',
       'public.sync_cursors',
       'public.raw_records',
       'public.receipts',
@@ -61,6 +63,7 @@ BEGIN
     expected_insert := relation_row.qualified_name = ANY (ARRAY[
       'public.integration_connections',
       'public.integration_sync_batches',
+      'public.bling_sync_page_checkpoints',
       'public.sync_cursors',
       'public.raw_records',
       'public.receipts',
@@ -73,12 +76,13 @@ BEGIN
       'public.receipts',
       'public.receivables'
     ]::text[]);
+    expected_delete := relation_row.qualified_name = 'public.bling_sync_page_checkpoints';
 
     IF relation_row.relowner = runtime_oid OR
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'SELECT') IS DISTINCT FROM expected_select OR
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'INSERT') IS DISTINCT FROM expected_insert OR
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'UPDATE') IS DISTINCT FROM expected_update OR
-       has_table_privilege(runtime_oid, relation_row.qualified_name, 'DELETE') OR
+       has_table_privilege(runtime_oid, relation_row.qualified_name, 'DELETE') IS DISTINCT FROM expected_delete OR
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'TRUNCATE') OR
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'REFERENCES') OR
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'TRIGGER') OR

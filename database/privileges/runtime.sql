@@ -14,6 +14,7 @@ GRANT SELECT ON TABLE
   integration_connections,
   integration_status,
   integration_sync_batches,
+  bling_sync_page_checkpoints,
   sync_cursors,
   raw_records,
   receipts,
@@ -33,7 +34,8 @@ GRANT INSERT, UPDATE ON TABLE
   receipts,
   receivables
 TO majucau_runtime;
-GRANT INSERT ON TABLE raw_records TO majucau_runtime;
+GRANT INSERT ON TABLE raw_records, bling_sync_page_checkpoints TO majucau_runtime;
+GRANT DELETE ON TABLE bling_sync_page_checkpoints TO majucau_runtime;
 
 -- RAW and audit are append-only for the runtime account. The sync version
 -- rollover is restricted to the SECURITY DEFINER function below.

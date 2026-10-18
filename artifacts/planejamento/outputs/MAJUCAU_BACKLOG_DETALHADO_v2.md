@@ -407,8 +407,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 18/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (35%), BK-041 (78%), BK-042 (45%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
-- Pela média simples, `(7 × 100% + 30% + 20% + 30% + 20% + 15% + 20% + 95% + 35% + 70% + 60% + 40% + 85% + 35% + 78% + 45% + 40% + 5% + 25% + 1%) ÷ 127 = 11,4%`; restam 88,6%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (78%), BK-042 (45%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
+- Pela média simples do rastreador, soma dos percentuais das tarefas ÷ 127 = 11,5%; restam 88,5%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
 - BK-024 permanece em 35%: a revisão de streaming corrigiu no Site o formulário protegido do Client Secret, limitando a leitura a 8 KiB, e publicou a versão 16. Os 28 testes do Site passaram. Isso fecha esse ponto específico; ACLs em VM limpa, carga/memória e outros riscos continuam pendentes, então a estimativa da tarefa de segurança geral não muda. Evidências: `docs/evidence/DATA-STREAMING-STATIC-AUDIT-2026-10-11.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
@@ -1421,7 +1421,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-039 — Implementar execução controlada de trabalhos em segundo plano
 
-**Situação:** Em andamento. **Evolução:** 35%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 50%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Processar integrações sem travar consultas.
 
@@ -1445,7 +1445,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Regras e verificações vinculadas:** F-19
 
-**Evidência de progresso (18/10/2026):** `internal/scheduler/daily.go` agenda às 09:30 de `America/Sao_Paulo`. O worker grava um `correlation_id` estável nos lotes diários, usa trava PostgreSQL para serializar instâncias e, após reiniciar, verifica se a carga do dia terminou; se estiver incompleta, relê a carga toda. Os dados continuam atômicos por recurso e idempotentes pelas versões RAW. Testes unitários passaram; o teste PostgreSQL foi adicionado, mas não executado porque `MAJUCAU_TEST_DATABASE_URL` não está configurada. Ainda faltam checkpoint por página, rotina do Drive, homologação real do Bling e execução contínua. Ver `docs/evidence/DAILY-BLING-RECOVERY-2026-10-18.md`.
+**Evidência de progresso (18/10/2026):** `internal/scheduler/daily.go` agenda às 09:30 de `America/Sao_Paulo`. O worker grava um `correlation_id` estável nos lotes diários, usa trava PostgreSQL para serializar instâncias e salva cada página confirmada numa tabela temporária privada. Após reiniciar, continua pela próxima página, sem refazer as páginas já confirmadas. A publicação das páginas RAW, aposentadoria do retrato antigo, cursor e sucesso é uma transação final única; se a leitura falhar, o retrato publicado não muda e a auditoria de falha é mantida. A suíte `go test ./internal/integrations/bling -count=1` passou em PostgreSQL 18 descartável, com as cinco migrações e a verificação das permissões do worker. Ainda faltam provar o marcador de última página na conta real, integrar as três pastas do Drive, operar continuamente e homologar. Ver `docs/evidence/BLING-PAGE-CHECKPOINTS-2026-10-18.md`.
 
 ### BK-040 — Validar acesso e cobertura dos dados do Bling
 

@@ -34,6 +34,8 @@ var (
 	ErrBlingAPISyncConnectionMissing   = errors.New("bling api sync connection is missing")
 	ErrBlingAPISyncPageLimit           = errors.New("bling api sync reached the page safety limit")
 	ErrBlingAPIPaginationUnknown       = errors.New("bling API response does not identify whether another page exists")
+	ErrBlingAPICheckpointInvalid       = errors.New("bling API page checkpoint is invalid")
+	ErrBlingAPICheckpointConflict      = errors.New("bling API page checkpoint conflicts with a previously stored page")
 )
 
 type APISyncResult struct {
@@ -142,6 +144,16 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 			return APISyncResult{}, fmt.Errorf("set Bling API sync correlation ID: %w", err)
 		}
 	}
+	checkpointCorrelationID := batch.CorrelationID
+	if correlationID != nil {
+		checkpointCorrelationID = *correlationID
+	}
+	if _, err := tx.Exec(ctx, `
+		DELETE FROM bling_sync_page_checkpoints
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id <> $3`,
+		connection.ID, s.resource, checkpointCorrelationID); err != nil {
+		return APISyncResult{}, fmt.Errorf("remove superseded Bling page checkpoints: %w", err)
+	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
 	if _, err := tx.Exec(ctx, "SAVEPOINT bling_api_sync_data"); err != nil {
 		return result, fmt.Errorf("create Bling API sync savepoint: %w", err)
@@ -154,9 +166,26 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	if current.Page == 0 {
 		current.Page = 1
 	}
-	completed := false
-	finalPage := 0
+	startingPage := current.Page
+	checkpoint, err := loadAPIPageCheckpointSummary(ctx, tx, connection.ID, s.resource, checkpointCorrelationID, startingPage, s.maxPages)
+	if err != nil {
+		return fail("BLING_API_CHECKPOINT_INVALID", err)
+	}
+	result.PagesRead = checkpoint.PageCount
+	if checkpoint.RecordCount > int64(^uint(0)>>1) {
+		return fail("BLING_API_CHECKPOINT_INVALID", ErrBlingAPICheckpointInvalid)
+	}
+	result.RecordsRead = int(checkpoint.RecordCount)
+	completed := checkpoint.PageCount > 0 && !checkpoint.LastHasNext
+	finalPage := checkpoint.LastPage
+	if checkpoint.PageCount > 0 {
+		current.Page = checkpoint.LastPage + 1
+		current.Limit = checkpoint.LastLimit
+	}
 	for result.PagesRead < s.maxPages {
+		if completed {
+			break
+		}
 		if err := ctx.Err(); err != nil {
 			return fail("SYNC_CANCELLED", err)
 		}
@@ -174,18 +203,11 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		if err != nil {
 			return fail("BLING_API_PAYLOAD_INVALID", err)
 		}
-		created, updated, err := persistResourcePage(ctx, queries, connection.ID, batch.ID, page.Page, s.sourceEntity, payload)
-		if err != nil {
-			return fail("BLING_API_RAW_FAILED", err)
+		if err := persistAPIPageCheckpoint(ctx, s.pool, connection.ID, s.resource, checkpointCorrelationID, page, payload); err != nil {
+			return fail("BLING_API_CHECKPOINT_FAILED", err)
 		}
 		result.PagesRead++
 		result.RecordsRead += len(page.Records)
-		if created {
-			result.PagesCreated++
-		}
-		if updated {
-			result.PagesUpdated++
-		}
 		if !page.HasNext {
 			completed = true
 			finalPage = page.Page
@@ -197,8 +219,40 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	if !completed {
 		return fail("BLING_API_PAGE_LIMIT", ErrBlingAPISyncPageLimit)
 	}
+	for pageNumber := startingPage; pageNumber <= finalPage; pageNumber++ {
+		var payload []byte
+		var payloadHash string
+		var hasNext bool
+		if err := tx.QueryRow(ctx, `
+			SELECT payload, payload_hash, has_next
+			FROM bling_sync_page_checkpoints
+			WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND page_number = $4`,
+			connection.ID, s.resource, checkpointCorrelationID, pageNumber,
+		).Scan(&payload, &payloadHash, &hasNext); err != nil {
+			return fail("BLING_API_CHECKPOINT_INVALID", fmt.Errorf("%w: missing staged page", ErrBlingAPICheckpointInvalid))
+		}
+		if (pageNumber < finalPage && !hasNext) || (pageNumber == finalPage && hasNext) {
+			return fail("BLING_API_CHECKPOINT_INVALID", ErrBlingAPICheckpointInvalid)
+		}
+		created, updated, err := persistResourcePageWithHash(ctx, queries, connection.ID, batch.ID, pageNumber, s.sourceEntity, payload, payloadHash)
+		if err != nil {
+			return fail("BLING_API_RAW_FAILED", err)
+		}
+		if created {
+			result.PagesCreated++
+		}
+		if updated {
+			result.PagesUpdated++
+		}
+	}
 	if err := retireCurrentResourcePagesAfter(ctx, tx, connection.ID, s.sourceEntity, finalPage); err != nil {
 		return fail("BLING_API_RAW_RETIRE_FAILED", err)
+	}
+	if _, err := tx.Exec(ctx, `
+		DELETE FROM bling_sync_page_checkpoints
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`,
+		connection.ID, s.resource, checkpointCorrelationID); err != nil {
+		return fail("BLING_API_CHECKPOINT_CLEANUP_FAILED", err)
 	}
 	cursorValue := fmt.Sprintf("page:%d", finalPage)
 	watermark := pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}
@@ -215,6 +269,91 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	}
 	result.Status = "SUCCESS"
 	return result, nil
+}
+
+type apiPageCheckpointSummary struct {
+	PageCount   int
+	FirstPage   int
+	LastPage    int
+	RecordCount int64
+	LastLimit   int
+	LastHasNext bool
+}
+
+func loadAPIPageCheckpointSummary(ctx context.Context, tx pgx.Tx, connectionID pgtype.UUID, resource string, correlationID pgtype.UUID, startingPage, maxPages int) (apiPageCheckpointSummary, error) {
+	if !connectionID.Valid || !correlationID.Valid || resource == "" || startingPage < 1 || maxPages < 1 {
+		return apiPageCheckpointSummary{}, ErrBlingAPICheckpointInvalid
+	}
+	var summary apiPageCheckpointSummary
+	if err := tx.QueryRow(ctx, `
+		SELECT COUNT(*)::integer, COALESCE(MIN(page_number), 0), COALESCE(MAX(page_number), 0),
+		       COALESCE(SUM(record_count), 0)::bigint
+		FROM bling_sync_page_checkpoints
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`,
+		connectionID, resource, correlationID,
+	).Scan(&summary.PageCount, &summary.FirstPage, &summary.LastPage, &summary.RecordCount); err != nil {
+		return apiPageCheckpointSummary{}, fmt.Errorf("read Bling page checkpoint summary: %w", err)
+	}
+	if summary.PageCount == 0 {
+		return summary, nil
+	}
+	if summary.FirstPage != startingPage || summary.LastPage-summary.FirstPage+1 != summary.PageCount || summary.PageCount > maxPages || summary.RecordCount < 0 {
+		return apiPageCheckpointSummary{}, ErrBlingAPICheckpointInvalid
+	}
+	if err := tx.QueryRow(ctx, `
+		SELECT page_limit, has_next
+		FROM bling_sync_page_checkpoints
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND page_number = $4`,
+		connectionID, resource, correlationID, summary.LastPage,
+	).Scan(&summary.LastLimit, &summary.LastHasNext); err != nil {
+		return apiPageCheckpointSummary{}, fmt.Errorf("read last Bling page checkpoint: %w", err)
+	}
+	return summary, nil
+}
+
+func persistAPIPageCheckpoint(ctx context.Context, pool *pgxpool.Pool, connectionID pgtype.UUID, resource string, correlationID pgtype.UUID, page BlingReceivablesPage, payload []byte) error {
+	if pool == nil || !connectionID.Valid || !correlationID.Valid || resource == "" || page.Page < 1 || page.Limit < 0 || !page.HasNextKnown || len(payload) == 0 {
+		return ErrBlingAPICheckpointInvalid
+	}
+	digest := sha256.Sum256(payload)
+	payloadHash := hex.EncodeToString(digest[:])
+	tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin Bling page checkpoint: %w", err)
+	}
+	defer func() { _ = dbtx.Rollback(ctx, tx) }()
+	tag, err := tx.Exec(ctx, `
+		INSERT INTO bling_sync_page_checkpoints (
+			connection_id, resource, correlation_id, page_number, page_limit,
+			has_next, record_count, payload_hash, payload
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+		ON CONFLICT (connection_id, resource, correlation_id, page_number) DO NOTHING`,
+		connectionID, resource, correlationID, page.Page, page.Limit, page.HasNext, len(page.Records), payloadHash, payload,
+	)
+	if err != nil {
+		return fmt.Errorf("store Bling page checkpoint: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		var existingHash string
+		var existingLimit int
+		var existingHasNext bool
+		var existingRecordCount int
+		if err := tx.QueryRow(ctx, `
+			SELECT payload_hash, page_limit, has_next, record_count
+			FROM bling_sync_page_checkpoints
+			WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND page_number = $4`,
+			connectionID, resource, correlationID, page.Page,
+		).Scan(&existingHash, &existingLimit, &existingHasNext, &existingRecordCount); err != nil {
+			return fmt.Errorf("verify existing Bling page checkpoint: %w", err)
+		}
+		if existingHash != payloadHash || existingLimit != page.Limit || existingHasNext != page.HasNext || existingRecordCount != len(page.Records) {
+			return ErrBlingAPICheckpointConflict
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit Bling page checkpoint: %w", err)
+	}
+	return nil
 }
 
 func blingAPIResourceSyncLockKey(connectionID pgtype.UUID, resource string) int64 {
@@ -362,11 +501,20 @@ func persistReceivablesPage(ctx context.Context, q *database.Queries, connection
 }
 
 func persistResourcePage(ctx context.Context, q *database.Queries, connectionID, batchID pgtype.UUID, page int, sourceEntity string, payload []byte) (created, updated bool, err error) {
+	digest := sha256.Sum256(payload)
+	return persistResourcePageWithHash(ctx, q, connectionID, batchID, page, sourceEntity, payload, hex.EncodeToString(digest[:]))
+}
+
+func persistResourcePageWithHash(ctx context.Context, q *database.Queries, connectionID, batchID pgtype.UUID, page int, sourceEntity string, payload []byte, hash string) (created, updated bool, err error) {
 	if !connectionID.Valid || !batchID.Valid || page < 1 || len(payload) == 0 {
 		return false, false, errors.New("invalid Bling API RAW page identity")
 	}
-	digest := sha256.Sum256(payload)
-	hash := hex.EncodeToString(digest[:])
+	if len(hash) != sha256.Size*2 {
+		return false, false, errors.New("invalid Bling API RAW page hash")
+	}
+	if _, err := hex.DecodeString(hash); err != nil {
+		return false, false, errors.New("invalid Bling API RAW page hash")
+	}
 	sourceID := receivablesPageSourceID(page)
 	current, currentErr := q.GetCurrentRawRecord(ctx, database.GetCurrentRawRecordParams{ConnectionID: connectionID, SourceSystem: string(domain.OriginBling), SourceEntity: sourceEntity, SourceID: sourceID})
 	if currentErr == nil && current.PayloadHash == hash {

@@ -15,6 +15,7 @@ if dest.is_relative_to(root):
     parser.error('O ZIP deve ficar fora do repositório para não incluir a si próprio.')
 manifest = plan / 'MANIFESTO.json'
 paths = [root / name for name in ['README.md', '.gitignore', '.gitattributes']]
+paths += [root / 'docs/META-PROJETO.md']
 paths += [Path(__file__).resolve()]
 paths += [p for p in plan.rglob('*') if p.is_file() and not p.is_symlink()
     and not set(p.parts) & {'private','node_modules','__pycache__','.git'}

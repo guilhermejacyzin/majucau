@@ -303,6 +303,46 @@ type ForecastVersion struct {
 	Status      string             `json:"status"`
 }
 
+// Current inventory pointer for a Drive file. Consumers use the completed batch in sync_cursors to expose a whole folder snapshot; files absent from a new snapshot are not deleted.
+type GoogleDriveFile struct {
+	ConnectionID     pgtype.UUID        `json:"connection_id"`
+	FolderScope      string             `json:"folder_scope"`
+	FileID           string             `json:"file_id"`
+	CurrentVersionID pgtype.UUID        `json:"current_version_id"`
+	LastSeenBatchID  pgtype.UUID        `json:"last_seen_batch_id"`
+	LastSeenAt       pgtype.Timestamptz `json:"last_seen_at"`
+}
+
+// Append-only, deduplicated metadata versions for approved Drive files. File bytes remain in secure temporary staging and are not stored in PostgreSQL.
+type GoogleDriveFileVersion struct {
+	ID           pgtype.UUID        `json:"id"`
+	ConnectionID pgtype.UUID        `json:"connection_id"`
+	FolderScope  string             `json:"folder_scope"`
+	FileID       string             `json:"file_id"`
+	PayloadHash  string             `json:"payload_hash"`
+	Metadata     []byte             `json:"metadata"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+// Bounded file metadata pages for one Drive scan. The page token and payload are checkpointed together and removed only after atomic snapshot publication; file contents are never stored here.
+type GoogleDriveSyncPageCheckpoint struct {
+	ConnectionID  pgtype.UUID `json:"connection_id"`
+	Resource      string      `json:"resource"`
+	CorrelationID pgtype.UUID `json:"correlation_id"`
+	PageNumber    int32       `json:"page_number"`
+	// Sensitive Google Drive pagination token. Read and write access is restricted to the worker runtime role.
+	StartPageToken     string `json:"start_page_token"`
+	StartPageTokenHash string `json:"start_page_token_hash"`
+	// Sensitive Google Drive pagination token. Read and write access is restricted to the worker runtime role.
+	NextPageToken string `json:"next_page_token"`
+	HasNext       bool   `json:"has_next"`
+	FileCount     int32  `json:"file_count"`
+	PayloadHash   string `json:"payload_hash"`
+	// Potentially sensitive file metadata, bounded to 1 MiB per page. Access is restricted to the worker runtime role and rows are deleted after publication or when superseded.
+	Payload        []byte             `json:"payload"`
+	CheckpointedAt pgtype.Timestamptz `json:"checkpointed_at"`
+}
+
 type IntegrationConnection struct {
 	ID                  pgtype.UUID `json:"id"`
 	Provider            string      `json:"provider"`

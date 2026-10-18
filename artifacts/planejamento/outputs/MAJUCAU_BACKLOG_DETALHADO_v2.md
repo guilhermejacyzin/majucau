@@ -1543,7 +1543,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 - `WalkFiles` entrega arquivos individualmente, limita a memória a uma página da API, detecta marcadores repetidos e permite continuar em uma chamada posterior sem teto total de arquivos.
 - O marcador avança somente após a página inteira ser processada. Se um callback falhar no meio, a página atual pode ser entregue novamente; o consumidor precisa ser transacional e idempotente.
-- Testes do adapter, testes de todos os adapters e `go vet` passaram localmente. Ainda falta executar CI e integrar a leitura aos jobs persistentes e ao pipeline de importação.
+- Testes do adapter, testes de todos os adapters e `go vet` passaram localmente; CI #39174646423 passou em Windows, PostgreSQL, backlog e detecção de mudanças. Ainda falta integrar a leitura aos jobs persistentes e ao pipeline de importação.
 - Mantido em 45%: esta etapa melhora o núcleo local, mas não comprova acesso real ao Drive nem homologação de BK-042.
 
 ### BK-043 — Implementar validação e interpretação dos arquivos

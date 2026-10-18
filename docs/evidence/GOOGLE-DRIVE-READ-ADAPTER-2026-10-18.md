@@ -40,8 +40,9 @@ Verificações adicionais desta mudança:
 - `go test ./internal/integrations/... -count=1` — **PASS**.
 - `go vet ./internal/integrations/...` — **PASS**.
 - A nova cobertura verifica continuação por marcador, repetição de página em falha, detecção de ciclo, limite e cancelamento. Ainda não há execução de CI para este incremento.
+- CI do GitHub #39174646423 — **PASS** nos jobs `verify-windows`, `verify-postgres`, `verify-backlog` e `detect-changes`: https://github.com/guilhermejacyzin/majucau/actions/runs/39174646423.
 
-Esta melhoria não configura credenciais nem IDs reais e não conecta o adapter aos jobs ou ao pipeline de importação. O resultado continua local e não conclui BK-042.
+Esta melhoria não configura credenciais nem IDs reais e não conecta o adapter aos jobs ou ao pipeline de importação. O resultado continua incompleto e não conclui BK-042.
 
 ## Dependência de autenticação
 

@@ -213,9 +213,10 @@ type BlingReceivablesPage struct {
 	Limit   int
 	Total   *int
 	HasNext bool
-	// HasNextKnown is true when API metadata establishes continuation or when
-	// the response itself is an empty-page sentinel. Without metadata, a
-	// non-empty page is conservatively followed by another request.
+	// HasNextKnown is true when API metadata establishes continuation or
+	// completion, or when a non-empty page is conservatively followed by
+	// another request. An empty page without explicit metadata is not proof of
+	// completion and remains unknown.
 	HasNextKnown bool
 }
 
@@ -405,10 +406,13 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 	}
 	if !page.HasNextKnown {
 		// Bling's public list schema does not document a last-page marker.
-		// Continue after every non-empty page, including short pages, and stop
-		// only when a successful response explicitly contains data: [].
-		page.HasNext = len(page.Records) > 0
-		page.HasNextKnown = true
+		// Continue after every non-empty page, including short pages. An empty
+		// page without explicit pagination metadata is ambiguous; the sync layer
+		// must fail closed instead of publishing a possibly incomplete snapshot.
+		if len(page.Records) > 0 {
+			page.HasNext = true
+			page.HasNextKnown = true
+		}
 	}
 	return page, nil
 }

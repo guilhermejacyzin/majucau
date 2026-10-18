@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/database/gen"
@@ -87,8 +88,8 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	}
 
 	pageOne := BlingReceivablesPage{Page: 1, Limit: 1, HasNext: true, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-one-new"}`)}}
-	pageTwo := BlingReceivablesPage{Page: 2, Limit: 1, HasNext: true, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-two-new"}`)}}
-	emptyPage := BlingReceivablesPage{Page: 3, Limit: 1, HasNext: false, HasNextKnown: true, Records: []json.RawMessage{}}
+	pageTwo := BlingReceivablesPage{Page: 2, Limit: 1, HasNext: false, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-two-new"}`)}}
+	unknownEmptyPage := BlingReceivablesPage{Page: 2, Limit: 1, HasNext: false, HasNextKnown: false, Records: []json.RawMessage{}}
 	pageTwoFailure := errors.New("injected page read failure")
 	failSecondPage := true
 	unknownPagination := false
@@ -109,17 +110,15 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 			switch filter.Page {
 			case 1:
 				pageOneCalls++
-				if unknownPagination {
-					return BlingReceivablesPage{Page: 1, Limit: 1, Records: []json.RawMessage{json.RawMessage(`{"id":"page-one-unverified"}`)}}, nil
-				}
 				return pageOne, nil
 			case 2:
 				if failSecondPage {
 					return BlingReceivablesPage{}, pageTwoFailure
 				}
+				if unknownPagination {
+					return unknownEmptyPage, nil
+				}
 				return pageTwo, nil
-			case 3:
-				return emptyPage, nil
 			default:
 				return BlingReceivablesPage{}, errors.New("unexpected page request")
 			}
@@ -180,7 +179,7 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if err != nil {
 		t.Fatalf("successful paginated sync: %v", err)
 	}
-	if succeeded.Status != "SUCCESS" || succeeded.PagesRead != 3 || succeeded.RecordsRead != 2 {
+	if succeeded.Status != "SUCCESS" || succeeded.PagesRead != 2 || succeeded.RecordsRead != 2 {
 		t.Fatalf("successful sync result = %+v", succeeded)
 	}
 	if pageOneCalls != 1 {
@@ -204,8 +203,8 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT cursor_value FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource).Scan(&cursor); err != nil {
 		t.Fatalf("read cursor after successful sync: %v", err)
 	}
-	if cursor != "page:3" {
-		t.Fatalf("successful sync cursor = %q, want page:3", cursor)
+	if cursor != "page:2" {
+		t.Fatalf("successful sync cursor = %q, want page:2", cursor)
 	}
 	var currentPages, allPages int
 	if err := pool.QueryRow(ctx, `
@@ -213,8 +212,8 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		FROM raw_records WHERE connection_id = $1 AND source_entity = $2`, connection.ID, sourceEntity).Scan(&currentPages, &allPages); err != nil {
 		t.Fatalf("count RAW pages after successful sync: %v", err)
 	}
-	if currentPages != 3 || allPages != 5 {
-		t.Fatalf("successful sync RAW current/total counts = %d/%d, want 3/5", currentPages, allPages)
+	if currentPages != 2 || allPages != 4 {
+		t.Fatalf("successful sync RAW current/total counts = %d/%d, want 2/4", currentPages, allPages)
 	}
 	var staleCurrentPages int
 	if err := pool.QueryRow(ctx, `
@@ -243,19 +242,31 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if unknownStatus != "FAILED" || unknownCode != "BLING_API_PAGINATION_UNKNOWN" {
 		t.Fatalf("unknown-pagination audit = %q/%q", unknownStatus, unknownCode)
 	}
+	var unknownCorrelation pgtype.UUID
+	if err := pool.QueryRow(ctx, `SELECT correlation_id FROM integration_sync_batches WHERE id = $1::uuid`, unknown.BatchID).Scan(&unknownCorrelation); err != nil {
+		t.Fatalf("read unknown-pagination correlation ID: %v", err)
+	}
 	if err := pool.QueryRow(ctx, `SELECT cursor_value FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource).Scan(&cursor); err != nil {
 		t.Fatalf("read cursor after unknown pagination: %v", err)
 	}
-	if cursor != "page:3" {
-		t.Fatalf("unknown pagination advanced cursor to %q, want page:3", cursor)
+	if cursor != "page:2" {
+		t.Fatalf("unknown pagination advanced cursor to %q, want page:2", cursor)
 	}
 	if err := pool.QueryRow(ctx, `
 		SELECT count(*) FILTER (WHERE is_current), count(*)
 		FROM raw_records WHERE connection_id = $1 AND source_entity = $2`, connection.ID, sourceEntity).Scan(&currentPages, &allPages); err != nil {
 		t.Fatalf("count RAW pages after unknown pagination: %v", err)
 	}
-	if currentPages != 3 || allPages != 5 {
-		t.Fatalf("unknown pagination changed RAW current/total counts to %d/%d, want 3/5", currentPages, allPages)
+	if currentPages != 2 || allPages != 4 {
+		t.Fatalf("unknown pagination changed RAW current/total counts to %d/%d, want 2/4", currentPages, allPages)
+	}
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FROM bling_sync_page_checkpoints
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`, connection.ID, resource, unknownCorrelation).Scan(&stagedPages); err != nil {
+		t.Fatalf("count staged pages after unknown pagination: %v", err)
+	}
+	if stagedPages != 1 {
+		t.Fatalf("unknown pagination checkpoint count = %d, want only the confirmed first page", stagedPages)
 	}
 
 	unknownPagination = false
@@ -263,7 +274,7 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if err != nil {
 		t.Fatalf("idempotent API sync replay: %v", err)
 	}
-	if replayed.Status != "SUCCESS" || replayed.PagesRead != 3 || replayed.PagesCreated != 0 || replayed.PagesUpdated != 0 {
+	if replayed.Status != "SUCCESS" || replayed.PagesRead != 2 || replayed.PagesCreated != 0 || replayed.PagesUpdated != 0 {
 		t.Fatalf("idempotent replay result = %+v", replayed)
 	}
 	if err := pool.QueryRow(ctx, `
@@ -271,8 +282,8 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		FROM raw_records WHERE connection_id = $1 AND source_entity = $2`, connection.ID, sourceEntity).Scan(&currentPages, &allPages); err != nil {
 		t.Fatalf("count RAW pages after idempotent replay: %v", err)
 	}
-	if currentPages != 3 || allPages != 5 {
-		t.Fatalf("idempotent replay changed RAW current/total counts to %d/%d, want 3/5", currentPages, allPages)
+	if currentPages != 2 || allPages != 4 {
+		t.Fatalf("idempotent replay changed RAW current/total counts to %d/%d, want 2/4", currentPages, allPages)
 	}
 }
 

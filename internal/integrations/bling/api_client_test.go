@@ -80,15 +80,17 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 	}
 }
 
-func TestListReceivablesUsesEmptyDataAsConservativeCompletionSentinel(t *testing.T) {
+func TestListReceivablesDoesNotAssumeEmptyDataMeansCompletion(t *testing.T) {
 	for _, test := range []struct {
 		name        string
 		body        string
+		wantKnown   bool
 		wantHasNext bool
 	}{
-		{name: "non-empty page continues", body: `{"data":[{"id":321}]}`, wantHasNext: true},
-		{name: "short page continues", body: `{"data":[{"id":321}],"pagination":{"page":1,"limit":100}}`, wantHasNext: true},
-		{name: "empty page ends", body: `{"data":[]}`},
+		{name: "non-empty page continues conservatively", body: `{"data":[{"id":321}]}`, wantKnown: true, wantHasNext: true},
+		{name: "short page continues conservatively", body: `{"data":[{"id":321}],"pagination":{"page":1,"limit":100}}`, wantKnown: true, wantHasNext: true},
+		{name: "empty page without metadata is ambiguous", body: `{"data":[]}`},
+		{name: "explicit terminal marker confirms completion", body: `{"data":[],"pagination":{"hasNext":false}}`, wantKnown: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -103,8 +105,8 @@ func TestListReceivablesUsesEmptyDataAsConservativeCompletionSentinel(t *testing
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !page.HasNextKnown || page.HasNext != test.wantHasNext {
-				t.Fatalf("pagination = known:%t next:%t, want known:true next:%t", page.HasNextKnown, page.HasNext, test.wantHasNext)
+			if page.HasNextKnown != test.wantKnown || page.HasNext != test.wantHasNext {
+				t.Fatalf("pagination = known:%t next:%t, want known:%t next:%t", page.HasNextKnown, page.HasNext, test.wantKnown, test.wantHasNext)
 			}
 		})
 	}

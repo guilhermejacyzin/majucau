@@ -17,8 +17,17 @@
 - As cinco migrations passaram em PostgreSQL 18 temporário. `runtime.sql` e `verify_runtime.sql` confirmaram o acesso mínimo necessário para os checkpoints.
 - `go test ./internal/integrations/bling -count=1` passou no Windows com PostgreSQL temporário; o pacote completo comprovou retry da página interrompida, publicação completa, preservação do retrato anterior e concorrência serializada.
 - A instância de teste foi encerrada e removida depois de confirmar que a porta dedicada ficou livre.
-- A CI desta alteração ainda precisa rodar após o push.
+- A CI do GitHub passou para o commit `951d4a6`, incluindo `verify-backlog`, `verify-postgres` e `verify-windows`: [execução 39172042551](https://github.com/guilhermejacyzin/majucau/actions/runs/39172042551).
 - Nenhuma chamada real ao Bling ou Google Drive foi realizada. Nenhuma credencial, informação financeira real ou tela foi acessada.
+
+## Proteção adicional de término de paginação — 18/10/2026
+
+A revisão de segurança identificou que uma resposta vazia sem metadados não é
+um marcador de término garantido pela documentação pública. Agora, se isso
+ocorrer, o lote recebe `BLING_API_PAGINATION_UNKNOWN`, sem publicar dados nem
+avançar o cursor. A página confirmada anterior pode ser retomada após corrigir
+ou homologar o marcador. Esta mudança mantém a atomicidade do snapshot. Os
+testes e a CI desta correção ainda estão pendentes.
 
 ## O que ainda falta nesta parte
 

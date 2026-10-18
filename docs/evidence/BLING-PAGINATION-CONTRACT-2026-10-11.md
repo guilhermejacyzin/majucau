@@ -52,6 +52,18 @@ Referências oficiais consultadas em 12/10/2026:
 - [Boas práticas — paginação e limite padrão](https://developer.bling.com.br/boas-praticas)
 - [Perguntas frequentes — registros por página](https://developer.bling.com.br/perguntas-frequentes)
 
+## Estado atual do adapter — correção defensiva em 18/10/2026
+
+As notas históricas acima registravam a hipótese de que uma resposta vazia
+marcaria o fim da lista. Essa hipótese foi removida do comportamento atual: uma
+resposta vazia sem metadados explícitos deixa o término desconhecido e a
+sincronização falha com `BLING_API_PAGINATION_UNKNOWN`. O Majucau preserva o
+retrato RAW e o cursor anteriores. Páginas não vazias continuam sendo lidas,
+inclusive quando têm menos itens que o limite. Só metadados explícitos válidos
+podem confirmar conclusão sem uma homologação específica do comportamento da
+conta. Essa correção evita declarar uma carga incompleta como completa; ela não
+resolve ainda como concluir a paginação na conta real.
+
 O endpoint também depende de autorização OAuth da API. A senha de login ao site não substitui essa autorização. Para confirmar o formato real, ainda é necessária uma consulta de leitura pela integração Majucau autorizada ou uma resposta sanitizada da consulta.
 
 ## Correção da consulta por data aprovada — 12/10/2026

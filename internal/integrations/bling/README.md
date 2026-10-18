@@ -68,11 +68,12 @@ endpoint, campo, significado, ausência, limites e uma amostra sanitizada da
 conta autorizada antes da normalização contábil.
 
 A integração não encerra em uma página curta. Sem metadados de paginação, ela
-continua após toda página não vazia e usa uma resposta válida com `data: []`
-como marcador provisório de fim. O contrato público não garante o comportamento
-além da última página; confirmar esse marcador na conta real continua sendo
-obrigatório antes da homologação. Em uma falha, a transação preserva o snapshot
-e o cursor anteriores. A evidência e os limites desta inferência estão em
+continua após toda página não vazia. Uma resposta vazia sem metadados explícitos
+não confirma o fim: a sincronização falha com `BLING_API_PAGINATION_UNKNOWN`,
+mantendo o retrato publicado e o cursor anteriores. O contrato público não
+garante o comportamento além da última página; homologar esse marcador na conta
+real ou obter documentação oficial continua obrigatório antes de publicar uma
+carga como completa. A evidência e os limites desta proteção estão em
 `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
 
 Os schemas públicos de categorias e de caixa descrevem `data[]`, sem informar

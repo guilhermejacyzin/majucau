@@ -22,8 +22,7 @@ import (
 
 const ReceivablesAPIResource = "contas.receber"
 
-// A full 1,000-page read may need one additional request to observe the
-// empty-page response used as the provisional end-of-list sentinel.
+// Bound a full read even if the provider never returns a verifiable end marker.
 const maxBlingAPIPageReads = 1001
 
 const staleRawPageBatchSize = 256

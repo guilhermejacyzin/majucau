@@ -27,4 +27,13 @@ Agora o worker busca e processa esses identificadores em blocos de até 256. Cad
 
 ## Limites e próximo passo
 
-O teste de PostgreSQL local confirma migrações, trava e aposentadoria de páginas em transação num banco descartável; a CI ainda precisa repetir a validação após a correção da mensagem de commit. A confirmação do fim da paginação continua pendente: a [OpenAPI oficial atual do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) documenta `pagina`, `limite` e a resposta `data[]`, mas não descreve um marcador de última página. O código segue uma página não vazia e usa `data: []` como marcador provisório; é necessário confirmar isso na conta autorizada antes da homologação.
+O teste de PostgreSQL local confirma migrações, trava e aposentadoria de páginas em transação num banco descartável; a CI ainda precisa repetir a validação após a correção da mensagem de commit. A confirmação do fim da paginação continua pendente: a [OpenAPI oficial atual do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) documenta `pagina`, `limite` e a resposta `data[]`, mas não descreve um marcador de última página. Na implementação daquela etapa, o código usava `data: []` como marcador provisório; essa hipótese foi removida pela correção defensiva registrada no fim deste documento.
+
+## Correção defensiva — 18/10/2026
+
+Uma resposta vazia sem metadados explícitos agora deixa o término desconhecido.
+A sincronização falha com `BLING_API_PAGINATION_UNKNOWN`, mantém o retrato e o
+cursor anteriores e preserva os checkpoints confirmados para retry. Testes
+unitários e `go vet` passaram localmente; teste PostgreSQL e CI desta correção
+aguardam execução após o push. A conta real segue necessária para homologar a
+conclusão da lista.

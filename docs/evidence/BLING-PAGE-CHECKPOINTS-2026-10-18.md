@@ -16,6 +16,7 @@ Nenhuma tela, regra financeira ou regra de negócio foi alterada.
 - `database/privileges/runtime.sql` e `database/privileges/verify_runtime.sql` passaram; o resultado foi `runtime database privileges: PASS`.
 - `go test ./internal/integrations/bling -count=1` passou com PostgreSQL temporário configurado por `MAJUCAU_TEST_DATABASE_URL`. Isso executou o pacote completo, incluindo retomada de páginas após falha, preservação do RAW anterior, limpeza dos checkpoints após sucesso e serialização de duas sincronizações do mesmo recurso.
 - A instância temporária e seus dados foram encerrados e removidos após confirmar que o processo PostgreSQL e a porta dedicada estavam livres.
+- A CI do GitHub passou para o commit `951d4a6`, incluindo geração SQL, testes Windows, testes PostgreSQL, migrations, verificações de segurança e builds do desktop, worker e instalador: [execução 39172042551](https://github.com/guilhermejacyzin/majucau/actions/runs/39172042551).
 
 ## Limites que permanecem
 
@@ -25,4 +26,19 @@ Nenhuma tela, regra financeira ou regra de negócio foi alterada.
 
 ## Próximo passo
 
-Executar a CI do GitHub para validar a migration, as permissões do worker e os testes no ambiente automatizado. Em seguida, homologar o fim da paginação com a conta Bling autorizada.
+Homologar o fim da paginação com a conta Bling autorizada; a CI desta implementação já passou.
+
+## Correção defensiva de paginação — 18/10/2026
+
+A revisão encontrou uma suposição ainda não comprovada no adapter: uma resposta
+vazia sem metadados era tratada como confirmação de que a lista terminou. A
+documentação pública não garante isso. O adapter agora continua após páginas
+não vazias e, se receber uma página vazia sem marcador explícito, encerra a
+tentativa com `BLING_API_PAGINATION_UNKNOWN`. A transação mantém a versão RAW
+publicada e o cursor anteriores; o checkpoint confirmado da página anterior
+fica disponível para retry. Isso prioriza não publicar um retrato incompleto.
+
+O teste de integração PostgreSQL também cobre esse caso: falha auditada, cursor
+inalterado, retrato anterior preservado e apenas páginas confirmadas mantidas
+em checkpoint. A validação local e a CI desta correção ainda precisam ser
+executadas; a conta real continua sem homologação.

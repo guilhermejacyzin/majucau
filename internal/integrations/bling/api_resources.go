@@ -117,8 +117,8 @@ func (c *BlingAPIClient) WalkFinancialCategoryHierarchy(ctx context.Context, id 
 
 // ListFinancialCategories reads one bounded page of Bling income/expense
 // categories. Without explicit pagination metadata, every non-empty page is
-// followed and an empty data array is used as the provisional end sentinel.
-// Callers must still check HasNextKnown before treating the list as complete.
+// followed. An empty page without metadata leaves completion unknown; callers
+// must check HasNextKnown before treating the list as complete.
 func (c *BlingAPIClient) ListFinancialCategories(ctx context.Context, page, limit int) (BlingReceivablesPage, error) {
 	return c.listFinancialResource(ctx, "categorias/receitas-despesas", ReceivablesFilter{Page: page, Limit: limit})
 }

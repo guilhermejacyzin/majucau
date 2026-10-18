@@ -13,12 +13,13 @@
 
 - `go test ./internal/integrations/bling ./cmd/worker ./internal/scheduler -count=1` — passou no Windows.
 - Os testes unitários cobrem a identidade diária estável em horário de Brasília, rejeição de horário incorreto, catch-up após 09:30 e comportamento de execução já concluída.
-- Um teste de integração PostgreSQL foi acrescentado para comprovar que reiniciar não cria nova auditoria diária após sucesso. Ele não foi executado nesta máquina porque `MAJUCAU_TEST_DATABASE_URL` não está configurada. Portanto, o comportamento de lock e SQL ainda aguarda execução contra a instância de teste/CI.
+- O teste de integração PostgreSQL para comprovar que reiniciar não cria nova auditoria diária após sucesso passou na CI #640, em uma instância descartável PostgreSQL 18.6. O job de Windows também passou, incluindo testes, análise estática, verificações de segurança e montagem do pacote de protótipo.
+- O commit verificado pela CI é `f85b3579498c8b9aae3a0039e4067c1cb38f6539`; a execução completa está registrada em [GitHub Actions #640](https://github.com/guilhermejacyzin/majucau/actions/runs/39159670619).
 - Nenhuma chamada real ao Bling ou Google Drive foi realizada. Nenhuma credencial, informação financeira real ou tela foi acessada.
 
 ## O que ainda falta nesta parte
 
-- Executar os testes PostgreSQL em banco descartável e confirmar o lock com duas instâncias concorrentes.
+- Comprovar o bloqueio de concorrência com duas instâncias reais contra banco descartável.
 - Persistir checkpoint de páginas confirmadas. Atualmente a transação é atômica por recurso e, após interrupção, o job relê todas as páginas desde o começo.
 - Provar na conta real como o Bling indica o fim da lista. Até lá, a carga falha com `BLING_API_PAGINATION_UNKNOWN` e não avança como sucesso.
 - Integrar as três pastas do Drive e seus estados de pendência, após provisionar a identidade de serviço somente leitura, os IDs das pastas e a credencial protegida.

@@ -208,6 +208,8 @@ func blingSyncErrorCode(err error) string {
 		return "BLING_API_UNAVAILABLE"
 	case errors.Is(err, bling.ErrBlingAPISchemaMismatch):
 		return "BLING_SCHEMA_MISMATCH"
+	case errors.Is(err, bling.ErrBlingAPIPaginationUnknown):
+		return "BLING_API_PAGINATION_UNKNOWN"
 	case errors.Is(err, bling.ErrBlingAPIInvalidResponse):
 		return "BLING_INVALID_RESPONSE"
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):

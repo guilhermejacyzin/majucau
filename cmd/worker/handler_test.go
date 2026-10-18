@@ -214,6 +214,7 @@ func TestBlingSyncErrorClassificationIsSanitized(t *testing.T) {
 		{err: bling.ErrBlingAPIRateLimited, code: "BLING_API_RATE_LIMITED"},
 		{err: bling.ErrBlingAPIUnavailable, code: "BLING_API_UNAVAILABLE"},
 		{err: bling.ErrBlingAPISchemaMismatch, code: "BLING_SCHEMA_MISMATCH"},
+		{err: bling.ErrBlingAPIPaginationUnknown, code: "BLING_API_PAGINATION_UNKNOWN"},
 		{err: bling.ErrBlingAPIInvalidResponse, code: "BLING_INVALID_RESPONSE"},
 	}
 	for _, test := range tests {

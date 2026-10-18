@@ -29,7 +29,13 @@ func runWorker(ctx context.Context) (returnErr error) {
 	if payload, err := json.Marshal(health); err == nil {
 		fmt.Println(string(payload))
 	}
-	return runWorkerPipe(ctx, diagnosticRequestHandler{next: handler, logger: logger})
+	workerCtx, cancelWorker := context.WithCancel(ctx)
+	defer cancelWorker()
+	dailyDone := startDailyBlingSchedule(workerCtx, handler.blingSync, logger)
+	pipeErr := runWorkerPipe(workerCtx, diagnosticRequestHandler{next: handler, logger: logger})
+	cancelWorker()
+	<-dailyDone
+	return pipeErr
 }
 
 func (h workerHandler) Close() {

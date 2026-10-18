@@ -21,6 +21,15 @@ func (fakeBlingConfigSaver) Save(_ context.Context, input bling.BlingConfigInput
 	return bling.BlingConfigResult{ClientID: input.ClientID, RedirectURI: input.RedirectURI, SecretConfigured: input.ClientSecret != "", Status: "NOT_CONFIGURED"}, nil
 }
 
+type fakeBlingConfigReader struct {
+	result bling.BlingConfigResult
+	err    error
+}
+
+func (r fakeBlingConfigReader) Load(context.Context) (bling.BlingConfigResult, error) {
+	return r.result, r.err
+}
+
 type fakeNuvemshopConfigSaver struct{}
 
 func (fakeNuvemshopConfigSaver) Save(_ context.Context, input nuvemshop.ConfigInput) (nuvemshop.ConfigResult, error) {
@@ -147,6 +156,26 @@ func TestWorkerBlingConfigNeverEchoesSecret(t *testing.T) {
 	}
 }
 
+func TestWorkerBlingConfigReadReturnsOnlyPublicMetadata(t *testing.T) {
+	handler := workerHandler{blingConfigReader: fakeBlingConfigReader{result: bling.BlingConfigResult{
+		ClientID: "public-client-id", RedirectURI: "https://app.example.test/callback", SecretConfigured: true, Status: "NOT_CONFIGURED",
+	}}}
+	response, err := handler.Handle(context.Background(), ipc.Request{RequestID: "config-read", Method: ipc.MethodBlingConfigRead, Payload: []byte(`{}`)})
+	if err != nil || !response.OK {
+		t.Fatalf("read config response = %+v, err=%v", response, err)
+	}
+	var result application.BlingConfigResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.ClientID != "public-client-id" || result.RedirectURI != "https://app.example.test/callback" || !result.SecretConfigured {
+		t.Fatalf("public config fields were not returned: %+v", result)
+	}
+	if strings.Contains(string(response.Payload), "client_secret") || strings.Contains(string(response.Payload), "access_token") {
+		t.Fatalf("credential material crossed worker boundary: %s", response.Payload)
+	}
+}
+
 func TestWorkerNuvemshopConfigNeverEchoesSecret(t *testing.T) {
 	payload, err := json.Marshal(application.NuvemshopConfigRequest{AppID: "app-id", RedirectURI: "https://relay.example.test/nuvemshop/callback", ClientSecret: "secret-do-not-echo"})
 	if err != nil {
@@ -235,4 +264,3 @@ func TestBlingOAuthConfigErrorDoesNotRequireUnsupportedLoopbackOnly(t *testing.T
 		t.Fatalf("configuration message is inaccurate for the approved HTTPS callback: %q", message)
 	}
 }
-

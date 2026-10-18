@@ -102,7 +102,8 @@ export type NuvemPagoFutureImportAdapter = { import: (folder: string) => Promise
 export type BlingConfigInput = { client_id: string; redirect_uri: string; client_secret: string }
 export type BlingConfigResult = { client_id?: string; redirect_uri?: string; secret_configured: boolean; status?: string; error_code?: string; message?: string }
 export type BlingConfigSource = (input: BlingConfigInput) => Promise<unknown>
-export type BlingConfigAdapter = { save: (input: BlingConfigInput) => Promise<BlingConfigResult> }
+export type BlingConfigLoadSource = () => Promise<unknown>
+export type BlingConfigAdapter = { load: () => Promise<BlingConfigResult>; save: (input: BlingConfigInput) => Promise<BlingConfigResult> }
 export type NuvemshopConfigInput = { app_id: string; redirect_uri: string; client_secret: string }
 export type NuvemshopConfigResult = { app_id?: string; redirect_uri?: string; secret_configured: boolean; status?: string; error_code?: string; message?: string }
 export type NuvemshopConfigSource = (input: NuvemshopConfigInput) => Promise<unknown>
@@ -310,7 +311,13 @@ export function createNuvemPagoFutureImportAdapter(source: NuvemPagoFutureImport
 
 const unavailableBlingConfig = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): BlingConfigResult => ({ secret_configured: false, error_code: errorCode, message })
 
-async function readWailsBlingConfig(input: BlingConfigInput): Promise<unknown> {
+async function readWailsBlingConfig(): Promise<unknown> {
+  const method = window.go?.main?.App?.GetBlingConfig
+  if (typeof method !== 'function') return unavailableBlingConfig()
+  return method()
+}
+
+async function saveWailsBlingConfig(input: BlingConfigInput): Promise<unknown> {
   const method = window.go?.main?.App?.SaveBlingConfig
   if (typeof method !== 'function') return unavailableBlingConfig()
   return method(input)
@@ -319,11 +326,25 @@ async function readWailsBlingConfig(input: BlingConfigInput): Promise<unknown> {
 function isBlingConfigResult(value: unknown): value is BlingConfigResult {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<BlingConfigResult>
-  return typeof candidate.secret_configured === 'boolean'
+  const allowedKeys = new Set(['client_id', 'redirect_uri', 'secret_configured', 'status', 'error_code', 'message'])
+  return typeof candidate.secret_configured === 'boolean' && Object.keys(candidate).every((key) => allowedKeys.has(key)) &&
+    (candidate.client_id === undefined || typeof candidate.client_id === 'string') &&
+    (candidate.redirect_uri === undefined || typeof candidate.redirect_uri === 'string') &&
+    (candidate.status === undefined || typeof candidate.status === 'string') &&
+    (candidate.error_code === undefined || typeof candidate.error_code === 'string') &&
+    (candidate.message === undefined || typeof candidate.message === 'string')
 }
 
-export function createBlingConfigAdapter(source: BlingConfigSource = readWailsBlingConfig): BlingConfigAdapter {
+export function createBlingConfigAdapter(source: BlingConfigSource = saveWailsBlingConfig, loadSource: BlingConfigLoadSource = readWailsBlingConfig): BlingConfigAdapter {
   return {
+    load: async () => {
+      try {
+        const result = await loadSource()
+        return isBlingConfigResult(result) ? result : unavailableBlingConfig('WORKER_INVALID_RESPONSE', 'O serviço local respondeu em formato inválido.')
+      } catch {
+        return unavailableBlingConfig()
+      }
+    },
     save: async (input) => {
       try {
         const result = await source(input)
@@ -482,7 +503,7 @@ export function createBootstrapAdapter(source: BootstrapSource = readWailsBootst
 
 declare global {
     interface Window {
-    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; GetDashboardSnapshot?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; DisconnectBlingOAuth?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown>; PreviewNuvemPagoFuture?: (folder: string) => Promise<unknown>; ImportNuvemPagoFuture?: (folder: string) => Promise<unknown> } } }
+    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; GetDashboardSnapshot?: () => Promise<unknown>; GetBlingConfig?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; DisconnectBlingOAuth?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown>; PreviewNuvemPagoFuture?: (folder: string) => Promise<unknown>; ImportNuvemPagoFuture?: (folder: string) => Promise<unknown> } } }
 }
 }
 

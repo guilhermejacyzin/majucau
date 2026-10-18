@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createBlingImportAdapter, createBlingPreviewAdapter, createBootstrapAdapter, createDashboardSnapshotAdapter, unavailableBootstrap } from './bootstrap'
+import { createBlingConfigAdapter, createBlingImportAdapter, createBlingPreviewAdapter, createBootstrapAdapter, createDashboardSnapshotAdapter, unavailableBootstrap } from './bootstrap'
 
 describe('bootstrap adapter', () => {
   it('consome contrato tipado sem acoplar ao runtime Wails', async () => {
@@ -13,6 +13,13 @@ describe('bootstrap adapter', () => {
     const state = await adapter.getState()
     expect(state.error_code).toBe('WORKER_UNAVAILABLE')
     expect(state.message).not.toContain('secret transport detail')
+  })
+
+  it('carrega metadados Bling sem aceitar resposta que inclua campo secreto', async () => {
+    const adapter = createBlingConfigAdapter(async () => ({ secret_configured: true }), async () => ({ client_id: 'client', redirect_uri: 'https://app.example.test/callback', secret_configured: true }))
+    await expect(adapter.load()).resolves.toMatchObject({ client_id: 'client', secret_configured: true })
+    const invalid = createBlingConfigAdapter(async () => ({ secret_configured: true }), async () => ({ client_secret: 'test-only-value', secret_configured: true }))
+    await expect(invalid.load()).resolves.toMatchObject({ error_code: 'WORKER_INVALID_RESPONSE', secret_configured: false })
   })
 
   it('rejeita resposta inválida fail-closed', async () => {

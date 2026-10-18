@@ -117,6 +117,23 @@ func TestSaveBlingConfigForwardsSecretOnlyToWorker(t *testing.T) {
 	}
 }
 
+func TestGetBlingConfigReadsOnlySanitizedMetadataFromWorker(t *testing.T) {
+	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+		if req.Method != ipc.MethodBlingConfigRead || string(req.Payload) != `{}` {
+			return ipc.Response{}, ipc.ErrUnsupportedMethod
+		}
+		return ipc.NewResponse(req.RequestID, application.BlingConfigResponse{
+			ClientID: "public-client-id", RedirectURI: "https://app.example.test/callback", SecretConfigured: true, Status: "NOT_CONFIGURED",
+		})
+	})
+	app := NewApp()
+	app.clientFactory = func() (ipc.Client, error) { return ipc.NewFakeClient(handler), nil }
+	result := app.GetBlingConfig()
+	if result.ErrorCode != "" || result.ClientID != "public-client-id" || result.RedirectURI == "" || !result.SecretConfigured {
+		t.Fatalf("unexpected config read result: %+v", result)
+	}
+}
+
 func TestSaveNuvemshopConfigForwardsSecretOnlyToWorker(t *testing.T) {
 	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 		if req.Method != ipc.MethodNuvemshopConfigSave {

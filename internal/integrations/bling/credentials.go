@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/database/gen"
@@ -22,6 +23,7 @@ var (
 	ErrBlingCredentialValidation = errors.New("bling credential configuration is invalid")
 	ErrBlingCredentialMissing    = errors.New("bling client secret is not configured")
 	ErrBlingCredentialVault      = errors.New("bling credential vault is unavailable")
+	ErrBlingCredentialRead       = errors.New("bling public configuration is unavailable")
 )
 
 type BlingConfigInput struct {
@@ -73,6 +75,46 @@ func NewBlingCredentialService(pool *pgxpool.Pool, store security.SecretStore) *
 
 func NewBlingCredentialServiceWithState(pool *pgxpool.Pool, credentials *BlingCredentialState) *BlingCredentialService {
 	return &BlingCredentialService{pool: pool, credentials: credentials}
+}
+
+// Load returns only the public Bling application metadata and whether a valid
+// client secret exists in the worker vault. Secret bytes never cross this
+// method's boundary.
+func (s *BlingCredentialService) Load(ctx context.Context) (BlingConfigResult, error) {
+	if s == nil || s.pool == nil || s.credentials == nil || s.credentials.store == nil {
+		return BlingConfigResult{}, ErrBlingCredentialVault
+	}
+	s.credentials.mu.Lock()
+	defer s.credentials.mu.Unlock()
+
+	connection, err := database.New(s.pool).GetIntegrationConnectionByProvider(ctx, "BLING")
+	if errors.Is(err, pgx.ErrNoRows) {
+		return BlingConfigResult{Status: "NOT_CONFIGURED"}, nil
+	}
+	if err != nil {
+		return BlingConfigResult{}, ErrBlingCredentialRead
+	}
+
+	result := BlingConfigResult{Status: connection.Status}
+	if connection.ClientID != nil {
+		result.ClientID = *connection.ClientID
+	}
+	if connection.RedirectUri != nil {
+		result.RedirectURI = *connection.RedirectUri
+	}
+	secret, err := s.credentials.store.Get(ctx, BlingCredentialSecretRef)
+	if errors.Is(err, fs.ErrNotExist) {
+		return result, nil
+	}
+	if err != nil {
+		return BlingConfigResult{}, ErrBlingCredentialVault
+	}
+	_, secretErr := clientSecretFromBundle(secret)
+	for i := range secret {
+		secret[i] = 0
+	}
+	result.SecretConfigured = secretErr == nil
+	return result, nil
 }
 
 // Save stores the secret only in the worker vault and public metadata in the

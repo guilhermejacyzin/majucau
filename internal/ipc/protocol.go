@@ -10,6 +10,7 @@ import (
 
 const ProtocolVersion = "2"
 const MaxMessageSize = 1 << 20
+
 // StreamChunkSize leaves room for the JSON envelope and base64 encoding while
 // keeping every stream frame comfortably below MaxMessageSize.
 const StreamChunkSize = 512 << 10
@@ -25,6 +26,7 @@ type Method string
 const (
 	MethodHealth                 Method = "health.get"
 	MethodIntegrationStatus      Method = "integration.status"
+	MethodBlingConfigRead        Method = "bling.config.read"
 	MethodBlingConfigSave        Method = "bling.config.save"
 	MethodNuvemshopConfigSave    Method = "nuvemshop.config.save"
 	MethodBlingOAuthStart        Method = "bling.oauth.start"
@@ -70,7 +72,7 @@ func (r Request) Validate() error {
 	if strings.TrimSpace(r.RequestID) == "" || len(r.RequestID) > 128 {
 		return ErrInvalidRequest
 	}
-	if r.Method != MethodHealth && r.Method != MethodIntegrationStatus && r.Method != MethodBlingConfigSave && r.Method != MethodNuvemshopConfigSave && r.Method != MethodBlingOAuthStart && r.Method != MethodBlingOAuthStatus && r.Method != MethodBlingOAuthTest && r.Method != MethodBlingOAuthDisconnect && r.Method != MethodBlingSync && r.Method != MethodBlingReceiptsPreview && r.Method != MethodBlingReceiptsImport && r.Method != MethodNuvemPagoFuturePreview && r.Method != MethodNuvemPagoFutureImport && r.Method != MethodDashboardSnapshot {
+	if r.Method != MethodHealth && r.Method != MethodIntegrationStatus && r.Method != MethodBlingConfigRead && r.Method != MethodBlingConfigSave && r.Method != MethodNuvemshopConfigSave && r.Method != MethodBlingOAuthStart && r.Method != MethodBlingOAuthStatus && r.Method != MethodBlingOAuthTest && r.Method != MethodBlingOAuthDisconnect && r.Method != MethodBlingSync && r.Method != MethodBlingReceiptsPreview && r.Method != MethodBlingReceiptsImport && r.Method != MethodNuvemPagoFuturePreview && r.Method != MethodNuvemPagoFutureImport && r.Method != MethodDashboardSnapshot {
 		return fmt.Errorf("%w: %s", ErrUnsupportedMethod, r.Method)
 	}
 	if len(r.Payload) > MaxMessageSize {
@@ -118,4 +120,3 @@ func NewResponse(id string, payload any) (Response, error) {
 func NewErrorResponse(id, code, message string) Response {
 	return Response{Version: ProtocolVersion, RequestID: id, OK: false, Error: &ErrorBody{Code: code, Message: message}}
 }
-

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Tooltip } from './components/Tooltip'
 import { type TooltipId } from './tooltips'
 import { createBlingConfigAdapter, createBlingImportAdapter, createBlingOAuthAdapter, createBlingPreviewAdapter, createBootstrapAdapter, createDashboardSnapshotAdapter, createNuvemPagoFutureImportAdapter, createNuvemPagoFuturePreviewAdapter, createNuvemshopConfigAdapter, type BlingConfigAdapter, type BlingConfigResult, type BlingImportAdapter, type BlingOAuthAdapter, type BlingPreviewAdapter, type BlingSyncInput, type BootstrapAdapter, type BootstrapIntegration, type BootstrapState, type DashboardSnapshot, type DashboardSnapshotAdapter, type NuvemPagoFutureImportAdapter, type NuvemPagoFuturePreviewAdapter, type NuvemshopConfigAdapter, type NuvemshopConfigResult } from './bootstrap'
@@ -206,6 +206,9 @@ function BlingSyncPanel({ adapter, open, connected }: { adapter: BlingOAuthAdapt
 function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig, blingOAuth, futurePreview, futureImporter }: { integration: Integration; bootstrap: BootstrapState; blingConfig: BlingConfigAdapter; nuvemshopConfig: NuvemshopConfigAdapter; blingOAuth: BlingOAuthAdapter; futurePreview: NuvemPagoFuturePreviewAdapter; futureImporter: NuvemPagoFutureImportAdapter }) {
   const [saving, setSaving] = useState(false)
   const [saveResult, setSaveResult] = useState<(BlingConfigResult | NuvemshopConfigResult) | null>(null)
+  const [blingClientID, setBlingClientID] = useState('')
+  const [blingRedirectURI, setBlingRedirectURI] = useState('')
+  const [blingConfigTouched, setBlingConfigTouched] = useState(false)
   const [oauthBusy, setOauthBusy] = useState(false)
   const [oauthSessionId, setOauthSessionId] = useState('')
   const [oauthResult, setOauthResult] = useState<Awaited<ReturnType<BlingOAuthAdapter['status']>> | null>(null)
@@ -222,7 +225,12 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
     setSaving(true)
     try {
       if (integration.key === 'bling') {
-        setSaveResult(await blingConfig.save({ client_id: String(form.get('bling-client-id') ?? ''), redirect_uri: String(form.get('bling-redirect') ?? ''), client_secret: String(form.get('bling-secret') ?? '') }))
+        const result = await blingConfig.save({ client_id: String(form.get('bling-client-id') ?? ''), redirect_uri: String(form.get('bling-redirect') ?? ''), client_secret: String(form.get('bling-secret') ?? '') })
+        setSaveResult(result)
+        if (!result.error_code) {
+          setBlingClientID(result.client_id ?? '')
+          setBlingRedirectURI(result.redirect_uri ?? '')
+        }
       } else {
         setSaveResult(await nuvemshopConfig.save({ app_id: String(form.get('nuvem-app-id') ?? ''), redirect_uri: String(form.get('nuvem-redirect') ?? ''), client_secret: String(form.get('nuvem-secret') ?? '') }))
       }
@@ -232,6 +240,16 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
       setSaving(false)
     }
   }
+  useEffect(() => {
+    if (integration.key !== 'bling') return undefined
+    let active = true
+    void blingConfig.load().then((result) => {
+      if (!active || blingConfigTouched || result.error_code) return
+      setBlingClientID(result.client_id ?? '')
+      setBlingRedirectURI(result.redirect_uri ?? '')
+    })
+    return () => { active = false }
+  }, [blingConfig, blingConfigTouched, integration.key])
   useEffect(() => {
     if (integration.key !== 'bling' || !oauthSessionId) return undefined
     let active = true
@@ -273,7 +291,7 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
   return <article className={`integration-card integration-${integration.key}`}>
     <div className="integration-header"><div className="integration-mark">{integration.key === 'bling' ? 'B' : integration.key === 'nuvemshop' ? 'N' : 'P'}</div><div><h2>{integration.name}</h2><p>{integration.description}</p></div><Tooltip id={integration.key === 'nuvempago' ? 'nuvempago.availability' : 'integration.connectionStatus'}><span className={`connection-status status-${displayKind}`}><span className="status-dot" />{displayLabel}</span></Tooltip></div>
     {integration.fields.length > 0 ? <form onSubmit={(event) => void submit(event)} autoComplete="off" className="integration-form">
-      <div className="field-grid">{integration.fields.map((field) => <div className="field" key={field.id}><label htmlFor={field.id}>{field.label} <Tooltip id={field.tooltip}><span className="help-dot">?</span></Tooltip></label><Tooltip id="field.value"><input id={field.id} name={field.id} type={field.type ?? 'text'} autoComplete={field.type === 'password' ? 'new-password' : 'off'} placeholder={field.placeholder} /></Tooltip></div>)}</div>
+      <div className="field-grid">{integration.fields.map((field) => <div className="field" key={field.id}><label htmlFor={field.id}>{field.label} <Tooltip id={field.tooltip}><span className="help-dot">?</span></Tooltip></label><Tooltip id="field.value"><input id={field.id} name={field.id} type={field.type ?? 'text'} autoComplete={field.type === 'password' ? 'new-password' : 'off'} placeholder={field.placeholder} {...(field.id === 'bling-client-id' ? { value: blingClientID, onChange: (event: ChangeEvent<HTMLInputElement>) => { setBlingConfigTouched(true); setBlingClientID(event.target.value) } } : field.id === 'bling-redirect' ? { value: blingRedirectURI, onChange: (event: ChangeEvent<HTMLInputElement>) => { setBlingConfigTouched(true); setBlingRedirectURI(event.target.value) } } : {})} /></Tooltip></div>)}</div>
       <div className="integration-meta"><span>Permissões: <strong>{displayStatus === 'CONNECTED' ? 'leitura autorizada' : 'aguardando autorização'}</strong></span><span>Última tentativa: <strong>{formatBootstrapTime(liveStatus?.last_attempt_at)}</strong></span><span>Último sucesso: <strong>{formatBootstrapTime(liveStatus?.last_success_at)}</strong></span></div>
       <p className="integration-disabled-note">Salvar configuração grava o secret no cofre Windows; autorização e sincronização continuam separadas e não são iniciadas automaticamente.</p>
       {saveResult && <div className={saveResult.error_code ? 'folder-import-error' : 'folder-import-result'} role="status"><strong>{saveResult.error_code ?? 'Configuração salva'}</strong><span>{saveResult.message ?? 'Os dados públicos foram registrados e o segredo foi protegido no worker.'}</span></div>}

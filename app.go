@@ -322,6 +322,36 @@ func decodeDashboardSnapshot(reader io.Reader, maxBytes int64) (application.Dash
 	return snapshot, limited.N == 0, nil
 }
 
+// GetBlingConfig returns only public Bling metadata and a secret-presence flag.
+// Secret bytes remain in the worker vault and never cross into the Wails UI.
+func (a *App) GetBlingConfig() application.BlingConfigResponse {
+	fallback := application.BlingConfigResponse{ErrorCode: "WORKER_UNAVAILABLE", Message: "O serviço local ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
+	defer cancel()
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-config-read"), Method: ipc.MethodBlingConfigRead, Payload: json.RawMessage(`{}`)})
+	if err != nil {
+		return fallback
+	}
+	if !response.OK {
+		return application.BlingConfigResponse{ErrorCode: workerErrorCode(response), Message: workerErrorMessage(response)}
+	}
+	var result application.BlingConfigResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		return application.BlingConfigResponse{ErrorCode: "WORKER_INVALID_RESPONSE", Message: diagnosticMessage("WORKER_INVALID_RESPONSE", "O serviço local respondeu em formato inválido.", response.RequestID)}
+	}
+	result.Message = diagnosticMessage(result.ErrorCode, result.Message, response.RequestID)
+	return result
+}
+
 // SaveBlingConfig forwards the editable Bling configuration to the worker.
 // The Wails boundary does not persist or echo the secret; the worker owns the
 // DPAPI write and returns only sanitized metadata.

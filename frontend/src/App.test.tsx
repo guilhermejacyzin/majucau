@@ -158,7 +158,7 @@ describe('shell financeiro', () => {
   it('salva a configuração Bling sem exibir o segredo na resposta', async () => {
     const user = userEvent.setup()
     let receivedSecret = ''
-    const blingConfigAdapter: BlingConfigAdapter = { save: async (input) => { receivedSecret = input.client_secret; return { client_id: input.client_id, redirect_uri: input.redirect_uri, secret_configured: true, status: 'NOT_CONFIGURED' } } }
+    const blingConfigAdapter: BlingConfigAdapter = { load: async () => ({ secret_configured: false }), save: async (input) => { receivedSecret = input.client_secret; return { client_id: input.client_id, redirect_uri: input.redirect_uri, secret_configured: true, status: 'NOT_CONFIGURED' } } }
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingConfigAdapter={blingConfigAdapter} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await user.click(screen.getByRole('button', { name: 'Integrações' }))
@@ -176,7 +176,7 @@ describe('shell financeiro', () => {
 
   it('limpa o Client Secret do formulário quando a gravação é rejeitada', async () => {
     const user = userEvent.setup()
-    const blingConfigAdapter: BlingConfigAdapter = { save: async () => ({ secret_configured: false, error_code: 'BLING_CONFIG_REJECTED', message: 'A configuração não foi aceita.' }) }
+    const blingConfigAdapter: BlingConfigAdapter = { load: async () => ({ secret_configured: false }), save: async () => ({ secret_configured: false, error_code: 'BLING_CONFIG_REJECTED', message: 'A configuração não foi aceita.' }) }
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingConfigAdapter={blingConfigAdapter} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await user.click(screen.getByRole('button', { name: 'Integrações' }))
@@ -185,6 +185,19 @@ describe('shell financeiro', () => {
     await user.click(screen.getByRole('button', { name: 'Salvar configuração' }))
     expect(await screen.findByText('BLING_CONFIG_REJECTED')).toBeInTheDocument()
     expect(secret).toHaveValue('')
+  })
+
+  it('recarrega a configuração pública do Bling sem preencher nem revelar o segredo', async () => {
+    const blingConfigAdapter: BlingConfigAdapter = {
+      load: async () => ({ client_id: 'saved-client-id', redirect_uri: 'https://app.example.test/callback', secret_configured: true, status: 'NOT_CONFIGURED' }),
+      save: async () => ({ secret_configured: true }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingConfigAdapter={blingConfigAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await userEvent.click(screen.getByRole('button', { name: 'Integrações' }))
+    expect(await screen.findByLabelText(/Client ID/)).toHaveValue('saved-client-id')
+    expect(screen.getAllByLabelText(/Redirect URI/)[0]).toHaveValue('https://app.example.test/callback')
+    expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveValue('')
   })
 
   it('limpa o Client Secret da Nuvemshop e mantém os campos públicos', async () => {

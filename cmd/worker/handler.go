@@ -33,6 +33,10 @@ type blingConfigSaver interface {
 	Save(context.Context, bling.BlingConfigInput) (bling.BlingConfigResult, error)
 }
 
+type blingConfigReader interface {
+	Load(context.Context) (bling.BlingConfigResult, error)
+}
+
 type nuvemshopConfigSaver interface {
 	Save(context.Context, nuvemshop.ConfigInput) (nuvemshop.ConfigResult, error)
 }
@@ -59,6 +63,7 @@ type workerHandler struct {
 	receiptImporter   receiptImporter
 	futureImporter    futureImporter
 	blingConfig       blingConfigSaver
+	blingConfigReader blingConfigReader
 	nuvemshopConfig   nuvemshopConfigSaver
 	blingOAuth        blingOAuthService
 	blingSync         blingRawSyncer
@@ -76,6 +81,7 @@ func newWorkerHandler() workerHandler {
 	var importer receiptImporter
 	var future futureImporter
 	var configSaver blingConfigSaver
+	var configReader blingConfigReader
 	var nuvemshopSaver nuvemshopConfigSaver
 	var oauthService blingOAuthService
 	var rawSync blingRawSyncer
@@ -89,14 +95,16 @@ func newWorkerHandler() workerHandler {
 		dashboardReader = dashboard.NewReader(pool)
 		if store := newWorkerSecretStore(); store != nil {
 			blingCredentials := bling.NewBlingCredentialState(store)
-			configSaver = bling.NewBlingCredentialServiceWithState(pool, blingCredentials)
+			blingCredentialService := bling.NewBlingCredentialServiceWithState(pool, blingCredentials)
+			configSaver = blingCredentialService
+			configReader = blingCredentialService
 			nuvemshopSaver = nuvemshop.NewCredentialService(pool, store)
 			oauthService = bling.NewBlingOAuthServiceWithState(pool, blingCredentials)
 			rawSync = oauthService.(blingRawSyncer)
 			dailySync = oauthService.(blingDailySyncer)
 		}
 	}
-	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, statusReader: statusReader, dashboardReader: dashboardReader}
+	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, blingConfigReader: configReader, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, statusReader: statusReader, dashboardReader: dashboardReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -104,6 +112,8 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		return ipc.NewResponse(req.RequestID, h.health.CheckHealth(ctx))
 	case ipc.MethodIntegrationStatus:
 		return h.integrationStatus(ctx, req)
+	case ipc.MethodBlingConfigRead:
+		return h.readBlingConfig(ctx, req)
 	case ipc.MethodBlingConfigSave:
 		return h.saveBlingConfig(ctx, req)
 	case ipc.MethodNuvemshopConfigSave:
@@ -261,6 +271,24 @@ func (h workerHandler) integrationStatus(ctx context.Context, req ipc.Request) (
 		return ipc.NewErrorResponse(req.RequestID, "INTEGRATION_STATUS_UNAVAILABLE", "O status das integrações não pôde ser consultado."), nil
 	}
 	return ipc.NewResponse(req.RequestID, statuses)
+}
+
+func (h workerHandler) readBlingConfig(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	if len(req.Payload) != 0 && string(req.Payload) != "null" && string(req.Payload) != "{}" {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_CONFIG_INVALID", "A consulta da configuração do Bling recebeu dados inválidos."), nil
+	}
+	if h.blingConfigReader == nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_CONFIG_UNAVAILABLE", "A configuração do Bling ainda não está disponível no serviço local."), nil
+	}
+	result, err := h.blingConfigReader.Load(ctx)
+	if err != nil {
+		code, message := "BLING_CONFIG_UNAVAILABLE", "A configuração do Bling não pôde ser consultada."
+		if errors.Is(err, bling.ErrBlingCredentialVault) {
+			code, message = "BLING_VAULT_UNAVAILABLE", "O cofre seguro do Windows não está disponível."
+		}
+		return ipc.NewErrorResponse(req.RequestID, code, message), nil
+	}
+	return ipc.NewResponse(req.RequestID, application.BlingConfigResponse{ClientID: result.ClientID, RedirectURI: result.RedirectURI, SecretConfigured: result.SecretConfigured, Status: result.Status})
 }
 
 func defaultIntegrationStatuses() []application.IntegrationStatus {

@@ -36,7 +36,7 @@ Foi adotado `golang.org/x/oauth2 v0.37.0`, biblioteca mantida pelo projeto Go, l
 
 - Configurar o projeto Google Cloud e criar a identidade técnica dedicada.
 - Compartilhar somente as três pastas com essa identidade como Leitor e registrar os IDs reais.
-- Implementar o provedor de token com a biblioteca oficial e armazenar a credencial do protótipo no DPAPI/ACL do worker; o adaptador atual recebe tokens por interface e não pode autenticar sozinho.
+- Ligar o provedor de token já implementado ao worker e ao cofre de segredos DPAPI/ACL em execução; provisionar com segurança a credencial da conta de serviço sem incluí-la no Git ou no chat.
 - Integrar o cliente ao worker, aos jobs persistentes, ao staging seguro existente e ao pipeline de importação/idempotência.
 - Aprovar contratos reais para CSV, TSV e JSON; XLS/XLSX continuam bloqueados até existir parser seguro avaliado e homologado.
 - Homologar com dados sanitizados, medir memória/limpeza e testar em VM Windows limpa.

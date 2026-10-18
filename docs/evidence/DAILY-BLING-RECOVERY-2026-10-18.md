@@ -27,7 +27,8 @@ um marcador de término garantido pela documentação pública. Agora, se isso
 ocorrer, o lote recebe `BLING_API_PAGINATION_UNKNOWN`, sem publicar dados nem
 avançar o cursor. A página confirmada anterior pode ser retomada após corrigir
 ou homologar o marcador. Esta mudança mantém a atomicidade do snapshot. Os
-testes e a CI desta correção ainda estão pendentes.
+Testes unitários, integração PostgreSQL e CI Windows/PostgreSQL passaram no
+commit `aff28d3`: [execução 39173420786](https://github.com/guilhermejacyzin/majucau/actions/runs/39173420786).
 
 ## O que ainda falta nesta parte
 

@@ -18,7 +18,7 @@ Concluir o backlog aprovado do Majucau e entregar primeiro um protótipo que pos
 - Progresso estimado: **11,5% concluído; 88,5% restante**. Essa média serve para acompanhamento do backlog e não prova que o sistema esteja pronto para homologação ou produção.
 - Próxima entrega técnica em andamento: retomada segura da sincronização diária do Bling, sem publicar dados parciais.
 - Nesta atualização, o Majucau passou a guardar páginas confirmadas do Bling e retomá-las depois de uma interrupção. A publicação do novo retrato acontece inteira ou não acontece. A CI do GitHub passou para o commit `951d4a6`.
-- Nesta execução, corrigi uma suposição insegura: página vazia sem explicação do Bling não comprova que a lista terminou. O sistema agora falha com segurança, preserva os dados válidos anteriores e não avança o cursor. Os testes locais do adapter e a revisão `go vet` passaram; o teste de banco e a CI dessa correção ainda precisam passar depois do push.
+- Nesta execução, corrigi uma suposição insegura: página vazia sem explicação do Bling não comprova que a lista terminou. O sistema agora falha com segurança, preserva os dados válidos anteriores e não avança o cursor. Os testes locais, `go vet`, teste PostgreSQL, verificação do backlog e CI Windows passaram no commit `aff28d3` ([CI #39173420786](https://github.com/guilhermejacyzin/majucau/actions/runs/39173420786)).
 - A conferência da regra JWT do Bling confirmou que o código envia `enable-jwt: 1` ao trocar e renovar tokens e em todas as consultas autenticadas. Isso confirma compatibilidade do código, mas não a autorização da conta real.
 - As telas aprovadas e as regras financeiras permaneceram inalteradas.
 
@@ -32,4 +32,4 @@ Além desses pontos, há outras tarefas do backlog para concluir a operação, s
 
 ## Próximo passo
 
-Confirmar no Bling como identificar a última página. Enquanto isso não for comprovado, o sistema mantém a carga como incompleta em vez de publicar dados parciais. A correção local precisa primeiro passar pelo teste PostgreSQL e pela CI.
+Confirmar no Bling como identificar a última página. Enquanto isso não for comprovado, o sistema mantém a carga como incompleta em vez de publicar dados parciais. Depois, ligar o Drive e rodar a homologação com dados reais.

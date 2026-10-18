@@ -34,6 +34,5 @@ O teste de PostgreSQL local confirma migrações, trava e aposentadoria de pági
 Uma resposta vazia sem metadados explícitos agora deixa o término desconhecido.
 A sincronização falha com `BLING_API_PAGINATION_UNKNOWN`, mantém o retrato e o
 cursor anteriores e preserva os checkpoints confirmados para retry. Testes
-unitários e `go vet` passaram localmente; teste PostgreSQL e CI desta correção
-aguardam execução após o push. A conta real segue necessária para homologar a
-conclusão da lista.
+unitários e `go vet` passaram localmente; o teste de integração PostgreSQL e a
+CI Windows/PostgreSQL passaram no commit `aff28d3`: [execução 39173420786](https://github.com/guilhermejacyzin/majucau/actions/runs/39173420786). A conta real segue necessária para homologar a conclusão da lista.

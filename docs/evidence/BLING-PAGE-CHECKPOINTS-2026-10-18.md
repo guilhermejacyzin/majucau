@@ -40,5 +40,5 @@ fica disponível para retry. Isso prioriza não publicar um retrato incompleto.
 
 O teste de integração PostgreSQL também cobre esse caso: falha auditada, cursor
 inalterado, retrato anterior preservado e apenas páginas confirmadas mantidas
-em checkpoint. A validação local e a CI desta correção ainda precisam ser
-executadas; a conta real continua sem homologação.
+em checkpoint. Os testes unitários, `go vet`, integração PostgreSQL e CI
+Windows/PostgreSQL passaram no commit `aff28d3`: [execução 39173420786](https://github.com/guilhermejacyzin/majucau/actions/runs/39173420786). A conta real continua sem homologação.

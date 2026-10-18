@@ -152,8 +152,8 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM raw_records WHERE connection_id = $1 AND source_entity = $2`, connection.ID, sourceEntity).Scan(&rawCount); err != nil {
 		t.Fatalf("count RAW pages after failed sync: %v", err)
 	}
-	if rawCount != 1 {
-		t.Fatalf("failed sync retained partial RAW pages: got %d rows, want 1", rawCount)
+	if rawCount != 2 {
+		t.Fatalf("failed sync changed the prior RAW snapshot: got %d rows, want the original 2", rawCount)
 	}
 
 	failSecondPage = false

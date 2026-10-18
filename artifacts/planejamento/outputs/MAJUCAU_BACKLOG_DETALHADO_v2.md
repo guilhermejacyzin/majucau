@@ -418,6 +418,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Proteção de valores indisponíveis na Visão Executiva — 18/10/2026
 
 - Foram acrescentados testes no backend e na interface para confirmar que, sem dados confirmados, o cartão “A RECEBER” mostra `—` e não `R$ 0,00`, e que a hora da consulta não é mostrada como sincronização. `go test` focal, `go vet` e os 20 testes de `App.test.tsx` passaram. Evidência: `docs/evidence/DASHBOARD-UNAVAILABLE-METRICS-2026-10-18.md`.
+- A CI [39169340120](https://github.com/guilhermejacyzin/majucau/actions/runs/39169340120), no commit `d9a9f1a`, passou nos quatro jobs, incluindo a suíte completa do Windows e os testes PostgreSQL. Isso continua sendo validação automatizada com dados artificiais, sem sincronização real do Bling.
 - Isso protege o estado vazio já previsto no desenho; nenhuma tela, fórmula ou regra financeira foi alterada. Ainda não comprova o fluxo real do Bling nem explica o painel vazio do protótipo. BK-102 permanece em 1%; contagem e estimativa geral permanecem em 127 tarefas, 7 concluídas, 19 em andamento, 101 não iniciadas, 11,4% concluído e 88,6% restante.
 
 ## 00 Descoberta e decisões

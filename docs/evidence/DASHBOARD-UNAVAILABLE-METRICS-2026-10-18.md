@@ -12,6 +12,7 @@ indisponível.
 - `go test ./internal/dashboard -run TestReadStreamSummaryKeepsEmptySourcesUnavailableInsteadOfZero -count=1` — PASS. Com todas as fontes vazias, o resumo mantém as métricas como `UNAVAILABLE`, sem valor/contagem e sem data de sincronização Bling.
 - `go vet ./internal/dashboard` — PASS.
 - `npm test -- src/App.test.tsx` — PASS; 1 arquivo e 20 testes. Um cenário injeta `0.0000` acompanhado de estado `UNAVAILABLE` e confirma que o cartão “A RECEBER” exibe `—`, não `R$ 0,00`; também confirma que não aparece horário de consulta como sincronização.
+- A CI do GitHub [39169340120](https://github.com/guilhermejacyzin/majucau/actions/runs/39169340120), no commit `d9a9f1a`, passou nos quatro jobs: mensagens, backlog, Windows e PostgreSQL.
 
 ## Limites
 

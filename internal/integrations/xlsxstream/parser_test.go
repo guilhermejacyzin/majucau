@@ -159,6 +159,55 @@ func TestStreamEnforcesCellAndColumnLimits(t *testing.T) {
 	}
 }
 
+func TestStreamRejectsOversizedXMLTokensBeforePublishingRows(t *testing.T) {
+	large := strings.Repeat("x", maxXMLTokenBytes)
+	tests := []struct {
+		name      string
+		worksheet string
+	}{
+		{
+			name:      "attribute",
+			worksheet: `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" custom="` + large + `"><sheetData></sheetData></worksheet>`,
+		},
+		{
+			name:      "character data",
+			worksheet: `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>` + large + `</t></is></c></row></sheetData></worksheet>`,
+		},
+		{
+			name:      "comment",
+			worksheet: `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><!--` + large + `--><sheetData></sheetData></worksheet>`,
+		},
+		{
+			name:      "CDATA",
+			worksheet: `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t><![CDATA[` + large + `]]></t></is></c></row></sheetData></worksheet>`,
+		},
+		{
+			name:      "declaration",
+			worksheet: `<!DOCTYPE worksheet [<!ENTITY test "` + large + `">]><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData></sheetData></worksheet>`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			files := baseWorkbookFiles()
+			files["xl/worksheets/sheet1.xml"] = test.worksheet
+			data := buildWorkbook(t, files)
+			tempParent := t.TempDir()
+			rows := 0
+			_, err := Stream(context.Background(), bytes.NewReader(data), int64(len(data)), tempParent, func(context.Context, Row) error {
+				rows++
+				return nil
+			})
+			if !errors.Is(err, ErrLimitExceeded) {
+				t.Fatalf("Stream() error = %v, want %v", err, ErrLimitExceeded)
+			}
+			if rows != 0 {
+				t.Fatalf("Stream() published %d rows from rejected workbook", rows)
+			}
+			assertDirectoryEmpty(t, tempParent)
+		})
+	}
+}
+
 func TestStreamHonorsCancellationAndRejectsNonZipInput(t *testing.T) {
 	tempParent := t.TempDir()
 	ctx, cancel := context.WithCancel(context.Background())

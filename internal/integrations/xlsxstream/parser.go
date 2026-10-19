@@ -41,6 +41,7 @@ const (
 	maxColumns                   = 256
 	maxCellsPerRow               = 256
 	maxCellBytes          int    = 256 << 10
+	maxXMLTokenBytes      int    = 1 << 20
 	maxRowBytes           int    = 4 << 20
 	maxSharedStrings             = 1_000_000
 	maxSharedStringBytes  int64  = 256 << 20
@@ -798,15 +799,22 @@ func parseXMLFile(ctx context.Context, file *zip.File, maxBytes int64, parse fun
 		return ErrInvalidWorkbook
 	}
 	bounded := &countingLimitReader{reader: reader, limit: maxBytes}
-	decoder := xml.NewDecoder(bounded)
+	limited := newXMLTokenLimitReader(ctx, bounded, maxXMLTokenBytes)
+	decoder := xml.NewDecoder(limited)
 	decoder.Strict = true
 	err = parse(decoder)
 	if err == nil {
-		_, err = io.Copy(io.Discard, bounded)
+		_, err = io.Copy(io.Discard, limited)
 	}
 	closeErr := reader.Close()
 	if err == nil {
 		err = closeErr
+	}
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return ctxErr
+	}
+	if limited.exceeded || errors.Is(err, errXMLTokenLimit) {
+		return ErrLimitExceeded
 	}
 	if errors.Is(err, errReadLimit) {
 		return ErrLimitExceeded

@@ -517,3 +517,7 @@ Esses itens não impedem o desenvolvimento da fundação e dos módulos independ
 - validar falhas de rede, replay, processamento concorrente, permissões, restore e indisponibilidade do host sem mudar as telas ou regras financeiras.
 
 O código de produção do G8 aguarda fechamento das decisões de provedor, identidade, canal de acesso e ingestão. A hospedagem aprovada é uma direção de arquitetura e não significa que o serviço central já exista ou esteja pronto para receber dados.
+
+## Revisão de segurança do leitor XLSX — 2026-10-19
+
+O parser de `.xlsx` limita cada token XML a 1 MiB durante a leitura, antes do `encoding/xml` formar atributos, textos, comentários, CDATA ou declarações grandes em memória. Casos adversariais rejeitam o arquivo inteiro e não publicam linhas. Essa proteção é estrutural: contratos, amostras reais, integração financeira e homologação continuam pendentes, e BK-043 permanece em 40%. Evidência e verificações em `docs/evidence/DRIVE-XLSX-XML-TOKEN-LIMIT-2026-10-19.md`.

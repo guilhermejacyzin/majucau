@@ -28,18 +28,18 @@ Garantir que o worker possa iniciar com o Windows, continuar executando as rotin
 - A quarta execução, [CI #39235534818](https://github.com/guilhermejacyzin/majucau/actions/runs/39235534818), passou pela validação de caminho, mas falhou em `WORKER_SERVICE_VALIDATE_EXISTING_SERVICE`. O evento 7045 mostrou aspas duplicadas: a biblioteca `mgr.CreateService` já escapa/coloca aspas no caminho por conta própria. Esta correção passa o caminho bruto apenas a `CreateService` e mantém a citação explícita para `UpdateConfig`, onde a biblioteca não o faz.
 - A quinta execução, [CI #39236674784](https://github.com/guilhermejacyzin/majucau/actions/runs/39236674784), confirmou que o serviço registrou e iniciou, mas o smoke esperava uma subpasta `Vault` que o worker só cria quando há conexão de banco configurada. O CI de ciclo de serviço não configura um banco, como esperado. A instalação agora prepara também a pasta vazia do cofre com a mesma ACL restrita, sem criar nem gravar credenciais; o smoke verifica a ACL dessa pasta separadamente.
 - A sexta execução, [CI #39237629665](https://github.com/guilhermejacyzin/majucau/actions/runs/39237629665), avançou até a conferência da DACL do Registro e o serviço permaneceu registrado/iniciado. O script falhou porque o PowerShell do runner não disponibiliza o tipo `Microsoft.Win32.RegistryRights`. Esta atualização compara as máscaras `KEY_READ` e `KEY_ALL_ACCESS` diretamente, com os mesmos valores verificados pelo código Go.
+- A sétima execução, [CI #39238763587](https://github.com/guilhermejacyzin/majucau/actions/runs/39238763587), passou nos quatro trabalhos: detecção de mudanças, backlog, PostgreSQL e Windows. O smoke Windows concluiu com sucesso o registro e início do serviço, conta virtual e SID restrito, inicialização automática atrasada, ACLs de cofre/logs e registro, remoção do serviço e preservação dos dados. O instalador não foi executado neste computador.
 
 ## O que ainda não foi comprovado
 
-- O smoke privilegiado de registro/início/remoção do serviço ainda precisa passar no CI Windows após corrigir a leitura das máscaras de permissão no PowerShell. A nova execução deve confirmar as ACLs, iniciar o worker, remover o serviço e preservar os dados. O smoke não foi executado nesta máquina para não registrar serviço nem criar dados em `ProgramData\Majucau` do computador da usuária.
-- A instalação e reinicialização devem ser verificadas em uma VM limpa Windows 10/11 antes da homologação do protótipo.
+- O smoke privilegiado de registro/início/remoção passou no CI Windows. A instalação após reinicialização ainda precisa ser verificada em uma VM limpa Windows 10/11 antes da homologação do protótipo.
 - O serviço ainda não recebeu configuração segura do PostgreSQL, a identidade/credencial técnica do Google Drive ainda não foi provisionada, e as conexões reais do Drive e do Bling continuam pendentes. A paginação do Bling precisa de homologação real.
 - Portanto, o agendamento de 09:30 já está preparado no worker, mas ainda não pode ser considerado operacional de ponta a ponta. A execução real e os dados financeiros não foram confirmados.
 
 ## Progresso
 
-BK-039 permanece em 50% (50% restante) até o smoke Windows, VM limpa, configuração segura das fontes e homologação. A média simples registrada do backlog permanece em 11,8% concluída e 88,2% restante (127 tarefas; 7 concluídas, 20 em andamento, 100 não iniciadas). Esta alteração não muda os percentuais. Nenhuma tela aprovada ou regra financeira foi alterada.
+BK-039 permanece em 50% (50% restante); o smoke Windows passou, mas ainda faltam VM limpa, configuração segura das fontes e homologação. A média simples registrada do backlog permanece em 11,8% concluída e 88,2% restante (127 tarefas; 7 concluídas, 20 em andamento, 100 não iniciadas). Esta alteração não muda os percentuais. Nenhuma tela aprovada ou regra financeira foi alterada.
 
 ## Próxima etapa
 
-Enviar a comparação de máscaras numéricas e aguardar uma nova execução do smoke Windows. Se apontar outra falha, corrigir e repetir até ACLs, registro, início e remoção passarem. Depois, validar o pacote em uma VM limpa Windows 10/11. Isso ainda não conclui BK-039.
+Validar o pacote instalado em uma VM limpa Windows 10/11, incluindo uma reinicialização. Depois, seguir na mesma BK-039 com a configuração segura do PostgreSQL e a homologação real das fontes. Isso ainda não conclui BK-039.

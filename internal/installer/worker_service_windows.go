@@ -158,6 +158,14 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 		}
 		return ErrWorkerServiceConfig
 	}
+	vaultRoot := filepath.Join(secretRoot, "Vault")
+	failureStage = "PREPARE_SECRET_VAULT"
+	if err := ensureServicePrivateDirectory(vaultRoot, serviceSIDText); err != nil {
+		if created {
+			_ = service.Delete()
+		}
+		return ErrWorkerServiceConfig
+	}
 	failureStage = "PREPARE_LOG_DIRECTORY"
 	if err := ensureServicePrivateDirectory(logRoot, serviceSIDText); err != nil {
 		if created {

@@ -101,7 +101,7 @@ try {
         throw 'A conta, inicialização ou SID restrito do serviço diverge da configuração aprovada.'
     }
     $serviceSid = ([System.Security.Principal.NTAccount]'NT SERVICE\MajucauWorker').Translate([System.Security.Principal.SecurityIdentifier]).Value
-    foreach ($path in @((Join-Path $dataRoot 'WorkerSecrets'), (Join-Path $dataRoot 'WorkerLogs'))) {
+    foreach ($path in @((Join-Path $dataRoot 'WorkerSecrets'), (Join-Path $dataRoot 'WorkerSecrets\Vault'), (Join-Path $dataRoot 'WorkerLogs'))) {
         if (-not (Test-Path -LiteralPath $path -PathType Container)) { throw "Diretório protegido ausente: $path" }
         $sids = Get-AclSidSet -Path $path
         $expected = @($serviceSid, 'S-1-5-18', 'S-1-5-32-544')
@@ -110,9 +110,8 @@ try {
             throw 'A ACL do diretório do worker não contém exatamente o SID do serviço, SYSTEM e Administradores.'
         }
     }
-    if (-not (Test-Path -LiteralPath (Join-Path $dataRoot 'WorkerSecrets\Vault') -PathType Container) -or -not (Test-Path -LiteralPath (Join-Path $dataRoot 'WorkerLogs\Logs') -PathType Container)) {
-        throw 'O worker não criou o cofre DPAPI e o diretório privado de logs.'
-    }
+    if (-not (Test-Path -LiteralPath (Join-Path $dataRoot 'WorkerSecrets\Vault') -PathType Container)) { throw 'A pasta do cofre DPAPI preparado pelo instalador está ausente.' }
+    if (-not (Test-Path -LiteralPath (Join-Path $dataRoot 'WorkerLogs\Logs') -PathType Container)) { throw 'O worker não criou o diretório privado de logs.' }
 
     $parametersPath = 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\MajucauWorker\Parameters'
     $uiSid = (Get-ItemProperty -LiteralPath $parametersPath -Name UIUserSID -ErrorAction Stop).UIUserSID

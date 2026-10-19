@@ -10,6 +10,7 @@
 ## Verificação executada
 
 - `scripts/verify.ps1`: aprovado em 2026-10-19.
+- CI #682: aprovada nos quatro jobs de detecção de mudanças, backlog, PostgreSQL e Windows: [execução no GitHub Actions](https://github.com/guilhermejacyzin/majucau/actions/runs/39199970231).
 - Testes Go e `go vet`: aprovados.
 - `govulncheck`: nenhuma chamada vulnerável; permanece um aviso de vulnerabilidade em módulo declarado, sem chamada identificada no código, já registrado em `docs/evidence/DEPENDENCY-SECURITY-REMEDIATION-2026-10-10.md`.
 - Checksums de migrations, geração SQLC sem diferenças, scan de secrets e smoke/checks do instalador: aprovados.

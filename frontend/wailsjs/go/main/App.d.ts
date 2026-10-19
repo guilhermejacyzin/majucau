@@ -5,6 +5,8 @@ import {main} from '../models';
 
 export function DisconnectBlingOAuth():Promise<application.BlingOAuthDisconnectResponse>;
 
+export function GetBlingConfig():Promise<application.BlingConfigResponse>;
+
 export function GetBlingOAuthStatus(arg1:string):Promise<application.BlingOAuthStatusResponse>;
 
 export function GetBootstrapState():Promise<main.BootstrapState>;

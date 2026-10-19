@@ -6,6 +6,10 @@ export function DisconnectBlingOAuth() {
   return window['go']['main']['App']['DisconnectBlingOAuth']();
 }
 
+export function GetBlingConfig() {
+  return window['go']['main']['App']['GetBlingConfig']();
+}
+
 export function GetBlingOAuthStatus(arg1) {
   return window['go']['main']['App']['GetBlingOAuthStatus'](arg1);
 }

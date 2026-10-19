@@ -18,6 +18,7 @@ O diagnóstico local registrado em 13/10/2026 retornou `BLING_SECRET_REQUIRED`. 
 
 - Testes do frontend: 32 aprovados em 3 arquivos, incluindo os estados de segredo ausente, salvo e salvo durante a sessão atual.
 - A primeira execução apontou apenas uma seleção ambígua no teste novo, porque existem dois campos chamados Client Secret; o seletor foi corrigido e toda a suíte passou na execução seguinte.
+- A compilação completa do Windows foi concluída; testes Go, `go vet`, verificação de vulnerabilidades, lint, checagem de tipos e 32 testes do frontend passaram. O pacote portátil atualizado foi gerado em `artifacts/windows/`.
 - `git diff --check` passou.
 
 ## O que ainda falta

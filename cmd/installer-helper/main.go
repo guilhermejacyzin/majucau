@@ -4,7 +4,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
 	"io"
 	"os"
@@ -91,16 +90,7 @@ func runInstallWorkerService(args []string, output io.Writer) int {
 }
 
 func workerServiceInstallErrorCode(err error) string {
-	switch {
-	case errors.Is(err, installer.ErrInstallerLockFailed):
-		return "INSTALL_LOCK_FAILED"
-	case errors.Is(err, installer.ErrWorkerServiceState):
-		return "WORKER_SERVICE_STATE_FAILED"
-	case errors.Is(err, installer.ErrWorkerServiceConfig):
-		return "WORKER_SERVICE_CONFIG_INVALID"
-	default:
-		return "WORKER_SERVICE_INSTALL_FAILED"
-	}
+	return installer.WorkerServiceFailureCode(err)
 }
 
 func runRemoveWorkerService(args []string, output io.Writer) int {

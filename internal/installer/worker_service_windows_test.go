@@ -3,9 +3,17 @@
 package installer
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
 )
+
+func TestWorkerServiceFailureCodeContainsOnlyKnownStage(t *testing.T) {
+	err := workerServiceFailure{stage: "PREPARE_PARAMETERS_ACL", cause: errors.New(`failure at C:\private\path`)}
+	if got := WorkerServiceFailureCode(err); got != "WORKER_SERVICE_PREPARE_PARAMETERS_ACL" {
+		t.Fatalf("unexpected stage code: %q", got)
+	}
+}
 
 func TestServiceImageWithinRequiresQuotedImageBelowInstallRoot(t *testing.T) {
 	root := filepath.Join(`C:\Program Files`, "Majucau Suite")

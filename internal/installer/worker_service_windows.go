@@ -31,6 +31,33 @@ var (
 	ErrWorkerServiceState  = errors.New("worker service state transition failed")
 )
 
+type workerServiceFailure struct {
+	stage string
+	cause error
+}
+
+func (failure workerServiceFailure) Error() string { return failure.cause.Error() }
+func (failure workerServiceFailure) Unwrap() error { return failure.cause }
+
+// WorkerServiceFailureCode returns a stable stage code without exposing local
+// paths, account names, or native Windows error strings to callers.
+func WorkerServiceFailureCode(err error) string {
+	var failure workerServiceFailure
+	if errors.As(err, &failure) {
+		return "WORKER_SERVICE_" + failure.stage
+	}
+	switch {
+	case errors.Is(err, ErrInstallerLockFailed):
+		return "INSTALL_LOCK_FAILED"
+	case errors.Is(err, ErrWorkerServiceState):
+		return "WORKER_SERVICE_STATE_FAILED"
+	case errors.Is(err, ErrWorkerServiceConfig):
+		return "WORKER_SERVICE_CONFIG_INVALID"
+	default:
+		return "WORKER_SERVICE_INSTALL_FAILED"
+	}
+}
+
 // WorkerServiceOptions contains local paths only. It never accepts secrets.
 type WorkerServiceOptions struct {
 	InstallDir string
@@ -42,26 +69,36 @@ type WorkerServiceOptions struct {
 // account, prepares protected directories before startup, and rolls a failed
 // update back to the last registered binary and service configuration.
 func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error) {
+	failureStage := "PATH_VALIDATION"
+	defer func() {
+		if returnErr != nil {
+			returnErr = workerServiceFailure{stage: failureStage, cause: returnErr}
+		}
+	}()
 	installDir, workerPath, dataDir, err := validateWorkerServicePaths(options)
 	if err != nil {
 		return err
 	}
+	failureStage = "INSTALL_LOCK"
 	installLock, err := AcquireInstallLock(DefaultInstallLockName)
 	if err != nil {
 		return ErrInstallerLockFailed
 	}
 	defer func() { returnErr = errors.Join(returnErr, installLock.Release()) }()
 
+	failureStage = "READ_INTERFACE_IDENTITY"
 	uiSID, err := currentProcessSID()
 	if err != nil {
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "CONNECT_SCM"
 	manager, err := mgr.Connect()
 	if err != nil {
 		return ErrWorkerServiceConfig
 	}
 	defer manager.Disconnect()
 
+	failureStage = "OPEN_OR_CREATE_SERVICE"
 	service, err := manager.OpenService(WorkerServiceName)
 	created := false
 	if err != nil {
@@ -84,6 +121,7 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 	}
 	defer func() { returnErr = errors.Join(returnErr, service.Close()) }()
 
+	failureStage = "VALIDATE_EXISTING_SERVICE"
 	previousConfig, err := service.Config()
 	if err != nil || !validExistingWorkerService(previousConfig, installDir) {
 		if created {
@@ -91,6 +129,7 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 		}
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "QUERY_SERVICE_STATE"
 	previousStatus, err := service.Query()
 	if err != nil {
 		if created {
@@ -100,6 +139,7 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 	}
 	wasRunning := previousStatus.State != svc.Stopped
 
+	failureStage = "RESOLVE_SERVICE_SID"
 	serviceSID, _, _, err := windows.LookupSID("", workerServiceAccount)
 	if err != nil || serviceSID == nil {
 		if created {
@@ -110,18 +150,21 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 	serviceSIDText := serviceSID.String()
 	secretRoot := filepath.Join(dataDir, workerSecretsDirName)
 	logRoot := filepath.Join(dataDir, workerLogsDirName)
+	failureStage = "PREPARE_SECRET_DIRECTORY"
 	if err := ensureServicePrivateDirectory(secretRoot, serviceSIDText); err != nil {
 		if created {
 			_ = service.Delete()
 		}
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "PREPARE_LOG_DIRECTORY"
 	if err := ensureServicePrivateDirectory(logRoot, serviceSIDText); err != nil {
 		if created {
 			_ = service.Delete()
 		}
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "PREPARE_PARAMETERS_ACL"
 	if err := ensureWorkerServiceParametersACL(serviceSIDText); err != nil {
 		if created {
 			_ = service.Delete()
@@ -129,6 +172,7 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 		return ErrWorkerServiceConfig
 	}
 
+	failureStage = "READ_PREVIOUS_UI_SID"
 	previousUISID, hadPreviousUISID, err := readWorkerServiceUISID()
 	if err != nil {
 		if created {
@@ -137,6 +181,7 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 		return ErrWorkerServiceConfig
 	}
 	previousConfigCopy := previousConfig
+	failureStage = "READ_RECOVERY_CONFIG"
 	previousRecoveryActions, err := service.RecoveryActions()
 	if err != nil {
 		return ErrWorkerServiceConfig
@@ -177,6 +222,7 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 	}
 
 	if wasRunning {
+		failureStage = "STOP_EXISTING_SERVICE"
 		if err := stopWorkerService(service); err != nil {
 			if created {
 				_ = service.Delete()
@@ -196,14 +242,17 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 		SidType:          windows.SERVICE_SID_TYPE_RESTRICTED,
 		DelayedAutoStart: true,
 	}
+	failureStage = "WRITE_UI_SID"
 	if err := writeWorkerServiceUISID(uiSID, true); err != nil {
 		rollback()
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "UPDATE_SERVICE_CONFIG"
 	if err := service.UpdateConfig(newConfig); err != nil {
 		rollback()
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "SET_RECOVERY_ACTIONS"
 	if err := service.SetRecoveryActions([]mgr.RecoveryAction{
 		{Type: mgr.ServiceRestart, Delay: time.Minute},
 		{Type: mgr.ServiceRestart, Delay: 5 * time.Minute},
@@ -212,18 +261,22 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 		rollback()
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "SET_NONCRASH_RECOVERY"
 	if err := service.SetRecoveryActionsOnNonCrashFailures(true); err != nil {
 		rollback()
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "CLEAR_RECOVERY_COMMAND"
 	if err := service.SetRecoveryCommand(""); err != nil {
 		rollback()
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "START_SERVICE"
 	if err := service.Start(); err != nil && !errors.Is(err, windows.ERROR_SERVICE_ALREADY_RUNNING) {
 		rollback()
 		return ErrWorkerServiceState
 	}
+	failureStage = "WAIT_FOR_RUNNING"
 	if err := waitForWorkerServiceState(service, svc.Running); err != nil {
 		rollback()
 		return ErrWorkerServiceState

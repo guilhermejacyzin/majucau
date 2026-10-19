@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -22,14 +23,15 @@ import (
 )
 
 const (
-	APIBaseURL                    = "https://www.googleapis.com/drive/v3"
-	approvedFolderCount           = 3
-	maxPageSize                   = 100
-	maxPageTokenBytes             = 4096
-	maxFileWalkPagesPerCall       = 10000
-	maxTokenBytes                 = 16 << 10
-	maxJSONBytes            int64 = 2 << 20
-	requestTimeout                = 2 * time.Minute
+	APIBaseURL                      = "https://www.googleapis.com/drive/v3"
+	approvedFolderCount             = 3
+	maxPageSize                     = 100
+	maxPageTokenBytes               = 4096
+	maxFileWalkPagesPerCall         = 10000
+	maxTokenBytes                   = 16 << 10
+	maxJSONBytes              int64 = 2 << 20
+	requestTimeout                  = 2 * time.Minute
+	googleDriveFolderMIMEType       = "application/vnd.google-apps.folder"
 )
 
 var (
@@ -75,6 +77,7 @@ type File struct {
 	Version      string
 	Trashed      bool
 	Parents      []string
+	ScopeRootID  string
 }
 
 type FilePage struct {
@@ -112,12 +115,13 @@ type StreamResult struct {
 }
 
 type Client struct {
-	apiBase          *url.URL
-	httpClient       *http.Client
-	tokens           AccessTokenProvider
-	allowedFolderIDs map[string]struct{}
-	wait             func(context.Context, time.Duration) error
-	random           func() float64
+	apiBase       *url.URL
+	httpClient    *http.Client
+	tokens        AccessTokenProvider
+	folderRoots   map[string]string
+	folderRootsMu sync.RWMutex
+	wait          func(context.Context, time.Duration) error
+	random        func() float64
 }
 
 // NewClient creates a production client restricted to exactly three approved
@@ -134,7 +138,7 @@ func newClient(baseURL string, tokens AccessTokenProvider, folderIDs []string, h
 	if tokens == nil || len(folderIDs) != approvedFolderCount {
 		return nil, ErrConfiguration
 	}
-	allowed := make(map[string]struct{}, len(folderIDs))
+	allowed := make(map[string]string, len(folderIDs))
 	for _, folderID := range folderIDs {
 		if !validDriveID(folderID) {
 			return nil, ErrConfiguration
@@ -142,7 +146,7 @@ func newClient(baseURL string, tokens AccessTokenProvider, folderIDs []string, h
 		if _, exists := allowed[folderID]; exists {
 			return nil, ErrConfiguration
 		}
-		allowed[folderID] = struct{}{}
+		allowed[folderID] = folderID
 	}
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: requestTimeout}
@@ -153,12 +157,12 @@ func newClient(baseURL string, tokens AccessTokenProvider, folderIDs []string, h
 	clientCopy.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	base.Path = strings.TrimRight(base.Path, "/")
 	return &Client{
-		apiBase:          base,
-		httpClient:       &clientCopy,
-		tokens:           tokens,
-		allowedFolderIDs: allowed,
-		wait:             httpretry.Wait,
-		random:           nil,
+		apiBase:     base,
+		httpClient:  &clientCopy,
+		tokens:      tokens,
+		folderRoots: allowed,
+		wait:        httpretry.Wait,
+		random:      nil,
 	}, nil
 }
 
@@ -503,21 +507,77 @@ func (c *Client) endpoint(parts ...string) *url.URL {
 }
 
 func (c *Client) validateFolder(folderID string) error {
-	if c == nil || c.allowedFolderIDs == nil {
+	if c == nil || c.folderRoots == nil {
 		return ErrConfiguration
 	}
-	if _, ok := c.allowedFolderIDs[folderID]; !ok {
+	c.folderRootsMu.RLock()
+	_, ok := c.folderRoots[folderID]
+	c.folderRootsMu.RUnlock()
+	if !ok {
 		return ErrFileNotAllowed
 	}
 	return nil
+}
+
+// authorizeDescendant records a folder only after it was returned by a
+// listing from an already authorized parent. The root association is kept so
+// one approved tree can never authorize a sibling tree.
+func (c *Client) authorizeDescendant(parentID, rootID, folderID string) error {
+	if c == nil || !validDriveID(parentID) || !validDriveID(rootID) || !validDriveID(folderID) || folderID == rootID {
+		return ErrFileNotAllowed
+	}
+	c.folderRootsMu.Lock()
+	defer c.folderRootsMu.Unlock()
+	if c.folderRoots == nil || c.folderRoots[parentID] != rootID {
+		return ErrFileNotAllowed
+	}
+	if existingRoot, exists := c.folderRoots[folderID]; exists && existingRoot != rootID {
+		return ErrFileNotAllowed
+	}
+	c.folderRoots[folderID] = rootID
+	return nil
+}
+
+func (c *Client) resetDescendants(rootID string) error {
+	if c == nil || !validDriveID(rootID) {
+		return ErrFileNotAllowed
+	}
+	c.folderRootsMu.Lock()
+	defer c.folderRootsMu.Unlock()
+	if c.folderRoots == nil || c.folderRoots[rootID] != rootID {
+		return ErrFileNotAllowed
+	}
+	for folderID, associatedRoot := range c.folderRoots {
+		if folderID != rootID && associatedRoot == rootID {
+			delete(c.folderRoots, folderID)
+		}
+	}
+	return nil
+}
+
+func (c *Client) rootForFolder(folderID string) (string, bool) {
+	if c == nil {
+		return "", false
+	}
+	c.folderRootsMu.RLock()
+	rootID, ok := c.folderRoots[folderID]
+	c.folderRootsMu.RUnlock()
+	return rootID, ok
+}
+
+func (c *Client) folderBelongsToRoot(folderID, rootID string) bool {
+	actualRoot, ok := c.rootForFolder(folderID)
+	return ok && actualRoot == rootID
 }
 
 func (c *Client) fileAllowed(file File) bool {
 	if c == nil || file.Trashed || !validDriveID(file.ID) {
 		return false
 	}
+	c.folderRootsMu.RLock()
+	defer c.folderRootsMu.RUnlock()
 	for _, parent := range file.Parents {
-		if _, ok := c.allowedFolderIDs[parent]; ok {
+		if _, ok := c.folderRoots[parent]; ok {
 			return true
 		}
 	}

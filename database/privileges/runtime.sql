@@ -16,6 +16,7 @@ GRANT SELECT ON TABLE
   integration_sync_batches,
   bling_sync_page_checkpoints,
   google_drive_sync_page_checkpoints,
+  google_drive_sync_folders,
   google_drive_file_versions,
   google_drive_files,
   sync_cursors,
@@ -40,6 +41,7 @@ TO majucau_runtime;
 GRANT INSERT ON TABLE raw_records, bling_sync_page_checkpoints TO majucau_runtime;
 GRANT DELETE ON TABLE bling_sync_page_checkpoints TO majucau_runtime;
 GRANT INSERT, DELETE ON TABLE google_drive_sync_page_checkpoints TO majucau_runtime;
+GRANT INSERT, UPDATE, DELETE ON TABLE google_drive_sync_folders TO majucau_runtime;
 GRANT INSERT ON TABLE google_drive_file_versions TO majucau_runtime;
 GRANT INSERT, UPDATE ON TABLE google_drive_files TO majucau_runtime;
 

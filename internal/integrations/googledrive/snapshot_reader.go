@@ -131,12 +131,17 @@ func decodeSnapshotFile(fileID string, metadataJSON []byte) (File, error) {
 		return File{}, ErrSnapshotInvalid
 	}
 	var metadata driveFileMetadata
-	if err := json.Unmarshal(metadataJSON, &metadata); err != nil || metadata.ID != fileID || metadata.Name == "" || len(metadata.Name) > 4096 || metadata.MIMEType == "" || len(metadata.MIMEType) > 256 || metadata.Size < 0 || !metadata.SizeKnown && metadata.Size != 0 || len(metadata.ModifiedTime) == 0 || len(metadata.ModifiedTime) > 128 || len(metadata.MD5Checksum) > 64 || len(metadata.Version) == 0 || len(metadata.Version) > 128 {
+	if err := json.Unmarshal(metadataJSON, &metadata); err != nil || metadata.ID != fileID || metadata.Name == "" || len(metadata.Name) > 4096 || metadata.MIMEType == "" || len(metadata.MIMEType) > 256 || metadata.Size < 0 || !metadata.SizeKnown && metadata.Size != 0 || len(metadata.ModifiedTime) == 0 || len(metadata.ModifiedTime) > 128 || len(metadata.MD5Checksum) > 64 || metadata.MIMEType != googleDriveFolderMIMEType && (len(metadata.Version) == 0 || len(metadata.Version) > 128) || metadata.MIMEType == googleDriveFolderMIMEType && len(metadata.Version) > 128 || !validDriveID(metadata.ScopeRootID) || len(metadata.Parents) == 0 || len(metadata.Parents) > approvedFolderCount {
 		return File{}, ErrSnapshotInvalid
+	}
+	for _, parentID := range metadata.Parents {
+		if !validDriveID(parentID) {
+			return File{}, ErrSnapshotInvalid
+		}
 	}
 	return File{
 		ID: fileID, Name: metadata.Name, MIMEType: metadata.MIMEType, Size: metadata.Size,
 		SizeKnown: metadata.SizeKnown, ModifiedTime: metadata.ModifiedTime,
-		MD5Checksum: metadata.MD5Checksum, Version: metadata.Version,
+		MD5Checksum: metadata.MD5Checksum, Version: metadata.Version, Parents: append([]string(nil), metadata.Parents...), ScopeRootID: metadata.ScopeRootID,
 	}, nil
 }

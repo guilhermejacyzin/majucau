@@ -53,6 +53,7 @@ BEGIN
       'public.integration_sync_batches',
       'public.bling_sync_page_checkpoints',
       'public.google_drive_sync_page_checkpoints',
+      'public.google_drive_sync_folders',
       'public.google_drive_file_versions',
       'public.google_drive_files',
       'public.sync_cursors',
@@ -68,6 +69,7 @@ BEGIN
       'public.integration_sync_batches',
       'public.bling_sync_page_checkpoints',
       'public.google_drive_sync_page_checkpoints',
+      'public.google_drive_sync_folders',
       'public.google_drive_file_versions',
       'public.google_drive_files',
       'public.sync_cursors',
@@ -79,13 +81,15 @@ BEGIN
       'public.integration_connections',
       'public.integration_sync_batches',
       'public.sync_cursors',
+      'public.google_drive_sync_folders',
       'public.google_drive_files',
       'public.receipts',
       'public.receivables'
     ]::text[]);
     expected_delete := relation_row.qualified_name = ANY (ARRAY[
       'public.bling_sync_page_checkpoints',
-      'public.google_drive_sync_page_checkpoints'
+      'public.google_drive_sync_page_checkpoints',
+      'public.google_drive_sync_folders'
     ]::text[]);
 
     IF relation_row.relowner = runtime_oid OR

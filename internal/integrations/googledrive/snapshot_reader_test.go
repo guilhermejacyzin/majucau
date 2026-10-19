@@ -12,6 +12,7 @@ func TestDecodeSnapshotFileValidatesAndMapsMetadata(t *testing.T) {
 		ID: "file_123", Name: "pagamentos.csv", MIMEType: "text/csv",
 		Size: 42, SizeKnown: true, ModifiedTime: "2026-10-18T12:00:00Z",
 		MD5Checksum: "0123456789abcdef0123456789abcdef", Version: "7",
+		Parents: []string{"folder_abc"}, ScopeRootID: "root_abc",
 	}
 	encoded, err := json.Marshal(metadata)
 	if err != nil {
@@ -31,6 +32,7 @@ func TestDecodeSnapshotFileRejectsInvalidMetadata(t *testing.T) {
 	base := driveFileMetadata{
 		ID: "file_123", Name: "pagamentos.csv", MIMEType: "text/csv",
 		Size: 42, SizeKnown: true, ModifiedTime: "2026-10-18T12:00:00Z", Version: "7",
+		Parents: []string{"folder_abc"}, ScopeRootID: "root_abc",
 	}
 	tests := []struct {
 		name     string

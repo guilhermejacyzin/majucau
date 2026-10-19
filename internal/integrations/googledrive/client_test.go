@@ -185,6 +185,53 @@ func TestWalkFilePagesDeliversPageAndCheckpointTogether(t *testing.T) {
 	}
 }
 
+func TestListFilesAllowsOnlyDiscoveredDescendantsOfApprovedRoot(t *testing.T) {
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		requests++
+		if request.Method != http.MethodGet || request.URL.Path != "/drive/v3/files" {
+			t.Errorf("request = %s %s", request.Method, request.URL.Path)
+			writer.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		switch request.URL.Query().Get("q") {
+		case "'folder-a' in parents and trashed = false":
+			_, _ = io.WriteString(writer, `{"files":[{"id":"child-a","name":"Frete","mimeType":"application/vnd.google-apps.folder","parents":["folder-a"]}]}`)
+		case "'child-a' in parents and trashed = false":
+			_, _ = io.WriteString(writer, `{"files":[{"id":"shipping_csv","name":"shipping.csv","mimeType":"text/csv","size":"2","modifiedTime":"2026-10-18T09:00:00Z","md5Checksum":"abc","version":7,"parents":["child-a"]}]}`)
+		default:
+			writer.WriteHeader(http.StatusBadRequest)
+		}
+	}))
+	defer server.Close()
+	client := testClient(t, server, AccessTokenFunc(func(context.Context) (string, error) { return "test-token", nil }))
+
+	rootPage, err := client.ListFiles(context.Background(), "folder-a", "")
+	if err != nil || len(rootPage.Files) != 1 || rootPage.Files[0].ID != "child-a" {
+		t.Fatalf("root listing = %#v, error=%v", rootPage, err)
+	}
+	if err := client.authorizeDescendant("folder-a", "folder-a", "child-a"); err != nil {
+		t.Fatalf("authorize discovered child: %v", err)
+	}
+	childPage, err := client.ListFiles(context.Background(), "child-a", "")
+	if err != nil || len(childPage.Files) != 1 || childPage.Files[0].ID != "shipping_csv" || childPage.Files[0].Parents[0] != "child-a" {
+		t.Fatalf("descendant listing = %#v, error=%v", childPage, err)
+	}
+	if err := client.resetDescendants("folder-a"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.ListFiles(context.Background(), "child-a", ""); !errors.Is(err, ErrFileNotAllowed) {
+		t.Fatalf("stale descendant listing error=%v, want ErrFileNotAllowed", err)
+	}
+	if err := client.authorizeDescendant("folder-b", "folder-a", "child-b"); !errors.Is(err, ErrFileNotAllowed) {
+		t.Fatalf("cross-root descendant authorization error=%v, want ErrFileNotAllowed", err)
+	}
+	if requests != 2 {
+		t.Fatalf("unexpected API requests after rejected calls: %d", requests)
+	}
+}
+
 func TestWalkFilePagesFailureKeepsResumeTokenAtCurrentPage(t *testing.T) {
 	calls := 0
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {

@@ -25,6 +25,14 @@ type DailyFileInventorySyncResult struct {
 	FoldersFailed  int
 	FoldersSkipped int
 	FilesRead      int64
+	FolderResults  []FileInventorySyncResult
+	FutureStatus   string
+	FutureRead     int64
+	FutureCreated  int64
+	FutureUpdated  int64
+	FutureFailed   int64
+	FuturePending  int64
+	FutureStale    int64
 }
 
 type DailyFileInventorySyncService struct {
@@ -75,6 +83,13 @@ func (s *DailyFileInventorySyncService) SyncDaily(ctx context.Context, scheduled
 			return DailyFileInventorySyncResult{Status: "FAILED"}, err
 		}
 		result, err := s.syncer.SyncFolder(ctx, scope, s.folderIDs[scope], pgUUID(correlationID))
+		if result.Scope == "" {
+			result.Scope = scope
+		}
+		if result.Status == "" && err != nil {
+			result.Status = "FAILED"
+		}
+		out.FolderResults = append(out.FolderResults, result)
 		if err != nil || result.Status != "SUCCESS" {
 			out.FoldersFailed++
 			if err == nil {

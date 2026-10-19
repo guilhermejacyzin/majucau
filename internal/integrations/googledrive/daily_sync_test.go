@@ -70,6 +70,17 @@ func TestDailyDriveSyncContinuesOtherFoldersWhenOneFails(t *testing.T) {
 	if result.Status != "PARTIAL" || result.FoldersRead != 2 || result.FoldersFailed != 1 || result.FoldersSkipped != 1 || result.FilesRead != 5 {
 		t.Fatalf("unexpected partial result: %+v", result)
 	}
+	if len(result.FolderResults) != len(approvedDriveFolderScopes) {
+		t.Fatalf("folder results = %d, want %d", len(result.FolderResults), len(approvedDriveFolderScopes))
+	}
+	for index, scope := range approvedDriveFolderScopes {
+		if result.FolderResults[index].Scope != scope {
+			t.Fatalf("folder result %d scope = %q, want %q", index, result.FolderResults[index].Scope, scope)
+		}
+	}
+	if result.FolderResults[1].Status != "FAILED" {
+		t.Fatalf("failed folder status = %q, want FAILED", result.FolderResults[1].Status)
+	}
 	if len(syncer.calls) != len(approvedDriveFolderScopes) {
 		t.Fatalf("processed %d folders, want all %d", len(syncer.calls), len(approvedDriveFolderScopes))
 	}

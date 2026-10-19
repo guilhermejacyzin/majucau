@@ -9,7 +9,7 @@
 
 Os arquivos da Majucau ficam no Google Drive e são acessados atualmente pelo Site. O worker local não tem uma pasta sincronizada nem uma autorização persistente. A atualização automática precisa funcionar às 09:30 (`America/Sao_Paulo`) sem depender de uma pessoa manter o navegador aberto. Os arquivos confirmados incluem CSV, TSV, JSON, XLS e XLSX.
 
-As pastas aprovadas são `01_perdas_operacionais`, `02_nuvem_pago/recebimentos_futuros` e `03_nuvem_envio`, dentro da pasta compartilhada `Majucau`. Cada contrato de arquivo ainda precisa de homologação. XLS e XLSX continuam recusados até existir um leitor seguro aprovado.
+As pastas aprovadas são `01_perdas_operacionais`, `02_nuvem_pago/recebimentos_futuros` e `03_nuvem_envio`, dentro de `Meu Drive/MAJUCAU_INTELLIGENCE_INPUT`. A estrutura real inclui subpastas autorizadas, como `03_nuvem_envio/Frete`; a leitura percorre somente descendentes encontrados dentro de uma das três raízes. Os IDs reais foram identificados na conta, mas não são registrados no Git. Cada contrato de arquivo ainda precisa de homologação. XLS e XLSX continuam pendentes até existir leitor seguro integrado e os contratos estarem aprovados.
 
 ## Decisão
 
@@ -21,7 +21,7 @@ Na hospedagem privada futura, preferir uma identidade de workload/credencial ger
 
 ## Controles obrigatórios
 
-1. Configurar IDs explícitos das três pastas e limitar a busca a esses IDs, com paginação e filtro de arquivos na lixeira.
+1. Configurar os IDs explícitos das três raízes identificadas e limitar a busca a essas raízes; seguir subpastas apenas quando listadas diretamente dentro delas, com paginação e filtro de arquivos na lixeira.
 2. Usar apenas operações de listagem, leitura de metadados e download; implementar chamadas externas por caminhos GET revisados e retry idempotente padrão.
 3. Conferir metadados antes e depois do download; cancelar o arquivo se sua versão mudar durante a leitura.
 4. Calcular SHA-256 durante o fluxo, aplicar limites de tamanho/registro e gravar staging em blocos limitados.
@@ -39,9 +39,9 @@ Na hospedagem privada futura, preferir uma identidade de workload/credencial ger
 
 - Criar/configurar projeto Google Cloud e habilitar a API Drive para o serviço Majucau.
 - Criar a identidade técnica e compartilhar **somente** as três pastas aprovadas com papel Leitor; não habilitar delegação de domínio.
-- Obter os IDs das pastas e guardar a credencial pelo mecanismo seguro do ambiente.
+- Guardar os IDs das pastas na configuração local protegida e guardar a credencial pelo mecanismo seguro do ambiente.
 - Confirmar que a política atual da conta permite compartilhar as pastas com essa identidade.
-- Integrar o núcleo do adapter Go já implementado ao worker, ao cofre DPAPI e à recuperação de jobs; autenticar com a identidade técnica real e validar a leitura nas três pastas.
+- Provisionar a credencial técnica, integrá-la ao worker e ao cofre DPAPI, autenticar e validar a leitura real nas três árvores e a retomada do inventário.
 - Implementar e homologar o parser seguro XLS/XLSX.
 - Homologar amostras sanitizadas e os contratos de cada pasta antes de promover linhas a fatos financeiros.
 - Validar permissões, memória, limites, retomada e limpeza em VM limpa.

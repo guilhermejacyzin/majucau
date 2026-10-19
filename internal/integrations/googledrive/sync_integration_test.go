@@ -48,6 +48,8 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 	fileID := fmt.Sprintf("file-ci-%x", time.Now().UnixNano())
 	missingFileID := fileID + "-old"
 	newFileID := fileID + "-new"
+	nestedFileID := fileID + "-nested"
+	childFolderID := fileID + "-freight"
 	correlationOne := randomTestUUID(t)
 	correlationTwo := randomTestUUID(t)
 	previousCursor, previousWatermark, previousCursorExists := readTestCursor(t, ctx, pool, connectionID, resource)
@@ -56,8 +58,9 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cleanupCancel()
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM google_drive_sync_page_checkpoints WHERE connection_id = $1 AND resource = $2 AND correlation_id = ANY($3::uuid[])`, connectionID, resource, []pgtype.UUID{correlationOne, correlationTwo})
-		_, _ = pool.Exec(cleanupCtx, `DELETE FROM google_drive_files WHERE connection_id = $1 AND folder_scope = $2 AND file_id = ANY($3::text[])`, connectionID, string(scope), []string{fileID, missingFileID, newFileID})
-		_, _ = pool.Exec(cleanupCtx, `DELETE FROM google_drive_file_versions WHERE connection_id = $1 AND folder_scope = $2 AND file_id = ANY($3::text[])`, connectionID, string(scope), []string{fileID, missingFileID, newFileID})
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM google_drive_sync_folders WHERE connection_id = $1 AND resource = $2 AND correlation_id = ANY($3::uuid[])`, connectionID, resource, []pgtype.UUID{correlationOne, correlationTwo})
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM google_drive_files WHERE connection_id = $1 AND folder_scope = $2 AND file_id = ANY($3::text[])`, connectionID, string(scope), []string{fileID, missingFileID, newFileID, nestedFileID, childFolderID})
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM google_drive_file_versions WHERE connection_id = $1 AND folder_scope = $2 AND file_id = ANY($3::text[])`, connectionID, string(scope), []string{fileID, missingFileID, newFileID, nestedFileID, childFolderID})
 		if previousCursorExists {
 			_, _ = pool.Exec(cleanupCtx, `UPDATE sync_cursors SET cursor_value = $3, watermark_at = $4 WHERE connection_id = $1 AND resource = $2`, connectionID, resource, previousCursor, previousWatermark)
 		} else {
@@ -84,38 +87,48 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 			writer.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-		if request.URL.Query().Get("q") != "'folder-a' in parents and trashed = false" {
-			t.Errorf("folder query = %q", request.URL.Query().Get("q"))
-		}
+		folderQuery := request.URL.Query().Get("q")
 		mu.Lock()
 		currentPhase := phase
 		token := request.URL.Query().Get("pageToken")
-		pageCalls[fmt.Sprintf("%d:%s", currentPhase, token)]++
+		pageCalls[fmt.Sprintf("%d:%s:%s", currentPhase, folderQuery, token)]++
 		mu.Unlock()
 
 		writer.Header().Set("Content-Type", "application/json")
-		switch currentPhase {
-		case 1:
-			if token == "" {
-				writeDriveFilePage(writer, "next-one", testDriveFile(fileID, "version-one", "1"))
-				return
-			}
-			writeDriveFilePage(writer, "", testDriveFile(missingFileID, "missing-old", "1"))
-		case 2:
-			if token == "" {
-				writeDriveFilePage(writer, "next-two", testDriveFile(fileID, "version-two-staged", "2"))
-				return
-			}
-			writer.WriteHeader(http.StatusBadRequest)
-		case 3:
-			if token != "next-two" {
-				t.Errorf("resumed page token = %q, want next-two", token)
+		switch folderQuery {
+		case "'folder-a' in parents and trashed = false":
+			switch currentPhase {
+			case 1:
+				if token == "" {
+					writeDriveFilePageMany(writer, "next-one", testDriveFile(fileID, "version-one", "1"), testDriveFolder(childFolderID, "folder-a"))
+					return
+				}
+				writeDriveFilePage(writer, "", testDriveFile(missingFileID, "missing-old", "1"))
+			case 2:
+				if token == "" {
+					writeDriveFilePageMany(writer, "next-two", testDriveFile(fileID, "version-two-staged", "2"), testDriveFolder(childFolderID, "folder-a"))
+					return
+				}
 				writer.WriteHeader(http.StatusBadRequest)
+			case 3:
+				if token != "next-two" {
+					t.Errorf("resumed page token = %q, want next-two", token)
+					writer.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				writeDriveFilePage(writer, "", testDriveFile(newFileID, "new-file", "1"))
+			default:
+				writer.WriteHeader(http.StatusInternalServerError)
+			}
+		case "'" + childFolderID + "' in parents and trashed = false":
+			if currentPhase == 1 || currentPhase == 3 {
+				writeDriveFilePage(writer, "", testDriveFileWithParent(nestedFileID, "nested-shipping", "1", childFolderID))
 				return
 			}
-			writeDriveFilePage(writer, "", testDriveFile(newFileID, "new-file", "1"))
-		default:
 			writer.WriteHeader(http.StatusInternalServerError)
+		default:
+			t.Errorf("unexpected folder query = %q", folderQuery)
+			writer.WriteHeader(http.StatusBadRequest)
 		}
 	}))
 	defer server.Close()
@@ -129,7 +142,7 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 	}
 
 	first, err := service.SyncFolder(ctx, scope, testFolderIDs[0], correlationOne)
-	if err != nil || first.Status != "SUCCESS" || first.PagesRead != 2 || first.FilesRead != 2 || first.FilesCreated != 2 || first.FilesUpdated != 0 {
+	if err != nil || first.Status != "SUCCESS" || first.PagesRead != 3 || first.FilesRead != 4 || first.FilesCreated != 4 || first.FilesUpdated != 0 {
 		t.Fatalf("initial snapshot = %#v, error=%v", first, err)
 	}
 	firstBatch := loadTestBatchID(t, ctx, pool, first.BatchID)
@@ -139,7 +152,7 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 	}
 
 	replayed, err := service.SyncFolder(ctx, scope, testFolderIDs[0], correlationOne)
-	if err != nil || !replayed.Skipped || replayed.BatchID != first.BatchID || callsFor("1:") != 1 || callsFor("1:next-one") != 1 {
+	if err != nil || !replayed.Skipped || replayed.BatchID != first.BatchID || callsFor("1:'folder-a' in parents and trashed = false:") != 1 || callsFor("1:'folder-a' in parents and trashed = false:next-one") != 1 {
 		t.Fatalf("completed retry = %#v, error=%v, calls=%v", replayed, err, pageCalls)
 	}
 
@@ -166,10 +179,10 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 	phase = 3
 	mu.Unlock()
 	resumed, err := service.SyncFolder(ctx, scope, testFolderIDs[0], correlationTwo)
-	if err != nil || resumed.Status != "SUCCESS" || resumed.PagesRead != 2 || resumed.FilesRead != 2 || resumed.FilesCreated != 1 || resumed.FilesUpdated != 1 {
+	if err != nil || resumed.Status != "SUCCESS" || resumed.PagesRead != 3 || resumed.FilesRead != 4 || resumed.FilesCreated != 2 || resumed.FilesUpdated != 1 {
 		t.Fatalf("resumed snapshot = %#v, error=%v", resumed, err)
 	}
-	if callsFor("3:") != 0 || callsFor("3:next-two") != 1 {
+	if callsFor("3:'folder-a' in parents and trashed = false:") != 0 || callsFor("3:'folder-a' in parents and trashed = false:next-two") != 1 || callsFor("3:'folder-freight-ci' in parents and trashed = false:") != 1 {
 		t.Fatalf("resumed run did not continue from its checkpoint: calls=%v", pageCalls)
 	}
 	finalCursor, _, cursorExists := readTestCursor(t, ctx, pool, connectionID, resource)
@@ -178,8 +191,8 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 	}
 	var finalSnapshotFiles, staleFileVisible, checkpointCount, fileVersionCount int
 	resumedBatch := loadTestBatchID(t, ctx, pool, resumed.BatchID)
-	if err := pool.QueryRow(ctx, `SELECT count(*) FROM google_drive_files WHERE connection_id = $1 AND folder_scope = $2 AND last_seen_batch_id = $3`, connectionID, string(scope), resumedBatch).Scan(&finalSnapshotFiles); err != nil || finalSnapshotFiles != 2 {
-		t.Fatalf("final snapshot file count=%d error=%v; want 2", finalSnapshotFiles, err)
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM google_drive_files WHERE connection_id = $1 AND folder_scope = $2 AND last_seen_batch_id = $3`, connectionID, string(scope), resumedBatch).Scan(&finalSnapshotFiles); err != nil || finalSnapshotFiles != 4 {
+		t.Fatalf("final snapshot file count=%d error=%v; want 4", finalSnapshotFiles, err)
 	}
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM google_drive_files WHERE connection_id = $1 AND folder_scope = $2 AND file_id = $3 AND last_seen_batch_id = $4`, connectionID, string(scope), missingFileID, resumedBatch).Scan(&staleFileVisible); err != nil || staleFileVisible != 0 {
 		t.Fatalf("file absent from latest Drive listing is visible: count=%d error=%v", staleFileVisible, err)
@@ -244,15 +257,34 @@ func loadTestBatchID(t *testing.T, ctx context.Context, pool *pgxpool.Pool, valu
 }
 
 func testDriveFile(id, name, version string) map[string]any {
+	return testDriveFileWithParent(id, name, version, "folder-a")
+}
+
+func testDriveFileWithParent(id, name, version, parentID string) map[string]any {
 	return map[string]any{
 		"id": id, "name": name + ".csv", "mimeType": "text/csv", "size": "12",
 		"modifiedTime": "2026-10-18T09:00:00Z", "md5Checksum": "0123456789abcdef0123456789abcdef",
-		"version": version, "parents": []string{"folder-a"},
+		"version": version, "parents": []string{parentID},
+	}
+}
+
+func testDriveFolder(id, parentID string) map[string]any {
+	return map[string]any{
+		"id": id, "name": "Frete", "mimeType": googleDriveFolderMIMEType,
+		"modifiedTime": "2026-10-18T09:00:00Z", "version": 1, "parents": []string{parentID},
 	}
 }
 
 func writeDriveFilePage(writer http.ResponseWriter, nextToken string, file map[string]any) {
+	writeDriveFilePageMany(writer, nextToken, file)
+}
+
+func writeDriveFilePageMany(writer http.ResponseWriter, nextToken string, files ...map[string]any) {
 	writer.Header().Set("Content-Type", "application/json")
-	payload, _ := json.Marshal(map[string]any{"files": []any{file}, "nextPageToken": nextToken})
+	items := make([]any, 0, len(files))
+	for _, file := range files {
+		items = append(items, file)
+	}
+	payload, _ := json.Marshal(map[string]any{"files": items, "nextPageToken": nextToken})
 	_, _ = io.WriteString(writer, string(payload))
 }

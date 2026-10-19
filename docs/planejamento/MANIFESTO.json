@@ -14,8 +14,8 @@
     },
     {
       "path": "docs/META-PROJETO.md",
-      "bytes": 11254,
-      "sha256": "b60794de5db0cceb75939aaff1ab8adaddc29a6135b442d25217f08b5c8fed30"
+      "bytes": 12055,
+      "sha256": "3b1214db6359155808249f4c9487717db8bcc0231ded2ecff626c790d6bffcaa"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -34,8 +34,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 9936,
-      "sha256": "c554bdcb3224f952269bbadd5df070a8a8a07b79705c80a95c51fc0fc7f21842"
+      "bytes": 10615,
+      "sha256": "ff0cd28341ae632873bddf9e1d61b17f5b7d36c7f37d66361d375f7b2251bbb9"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",

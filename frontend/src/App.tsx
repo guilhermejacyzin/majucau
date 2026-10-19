@@ -11,6 +11,11 @@ type CardGroup = 'Tesouraria' | 'Recebíveis' | 'Obrigações' | 'Resultado' | '
 type MetricIcon = 'wallet' | 'trend' | 'calendar' | 'clock' | 'cart' | 'document' | 'database' | 'warning' | 'chart' | 'building' | 'settings' | 'home' | 'flow' | 'receivable' | 'payable' | 'reconcile' | 'result' | 'balance' | 'investment' | 'calculator' | 'inventory' | 'production' | 'shopping' | 'control' | 'import' | 'user' | 'export' | 'pie' | 'refresh' | 'help' | 'bank' | 'money' | 'target'
 type Metric = { title: string; tooltip: TooltipId; group: CardGroup; icon: MetricIcon; status?: 'UNAVAILABLE' | 'PROVISIONAL' }
 
+// These are public OAuth application values supplied for Majucau. The client
+// secret remains user-provided and is stored only in the Windows credential vault.
+const defaultBlingClientID = 'b30aa019864b8ca8b974331d6a07d07bc4eaa1ae'
+const defaultBlingRedirectURI = 'https://majucau-bling-bridge.giselegalha.chatgpt.site/oauth/bling/callback'
+
 const metrics: Metric[] = [
   { title: 'Saldo Inicial do Dia', tooltip: 'treasury.openingBalance', group: 'Tesouraria', icon: 'wallet', status: 'UNAVAILABLE' },
   { title: 'Saldo Final Projetado Hoje', tooltip: 'treasury.todayClosing', group: 'Tesouraria', icon: 'trend', status: 'PROVISIONAL' },
@@ -206,8 +211,8 @@ function BlingSyncPanel({ adapter, open, connected }: { adapter: BlingOAuthAdapt
 function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig, blingOAuth, futurePreview, futureImporter }: { integration: Integration; bootstrap: BootstrapState; blingConfig: BlingConfigAdapter; nuvemshopConfig: NuvemshopConfigAdapter; blingOAuth: BlingOAuthAdapter; futurePreview: NuvemPagoFuturePreviewAdapter; futureImporter: NuvemPagoFutureImportAdapter }) {
   const [saving, setSaving] = useState(false)
   const [saveResult, setSaveResult] = useState<(BlingConfigResult | NuvemshopConfigResult) | null>(null)
-  const [blingClientID, setBlingClientID] = useState('')
-  const [blingRedirectURI, setBlingRedirectURI] = useState('')
+  const [blingClientID, setBlingClientID] = useState(defaultBlingClientID)
+  const [blingRedirectURI, setBlingRedirectURI] = useState(defaultBlingRedirectURI)
   const [blingSecretConfigured, setBlingSecretConfigured] = useState(false)
   const [blingConfigTouched, setBlingConfigTouched] = useState(false)
   const [oauthBusy, setOauthBusy] = useState(false)
@@ -249,8 +254,8 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
       if (!active || result.error_code) return
       setBlingSecretConfigured(result.secret_configured)
       if (!blingConfigTouched) {
-        setBlingClientID(result.client_id ?? '')
-        setBlingRedirectURI(result.redirect_uri ?? '')
+        setBlingClientID(result.client_id?.trim() || defaultBlingClientID)
+        setBlingRedirectURI(result.redirect_uri?.trim() || defaultBlingRedirectURI)
       }
     })
     return () => { active = false }

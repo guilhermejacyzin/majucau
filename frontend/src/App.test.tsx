@@ -179,7 +179,9 @@ describe('shell financeiro', () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingConfigAdapter={blingConfigAdapter} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    await user.clear(screen.getByLabelText(/Client ID/))
     await user.type(screen.getByLabelText(/Client ID/), 'client-123')
+    await user.clear(screen.getAllByLabelText(/Redirect URI/)[0])
     await user.type(screen.getAllByLabelText(/Redirect URI/)[0], 'https://app.example.test/callback')
     await user.type(screen.getAllByLabelText(/Client Secret/)[0], 'secret-only-in-request')
     await user.click(screen.getByRole('button', { name: 'Salvar configuração' }))
@@ -228,6 +230,8 @@ describe('shell financeiro', () => {
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await userEvent.click(screen.getByRole('button', { name: 'Integrações' }))
     expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveAttribute('placeholder', 'Informe o segredo do app')
+    expect(screen.getByLabelText(/Client ID/)).toHaveValue('b30aa019864b8ca8b974331d6a07d07bc4eaa1ae')
+    expect(screen.getAllByLabelText(/Redirect URI/)[0]).toHaveValue('https://majucau-bling-bridge.giselegalha.chatgpt.site/oauth/bling/callback')
   })
 
   it('salva Client ID e Redirect URI do Bling quando o Client Secret ainda está pendente', async () => {
@@ -239,12 +243,10 @@ describe('shell financeiro', () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingConfigAdapter={blingConfigAdapter} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await user.click(screen.getByRole('button', { name: 'Integrações' }))
-    await user.type(screen.getByLabelText(/Client ID/), 'public-client-id')
-    await user.type(screen.getAllByLabelText(/Redirect URI/)[0], 'https://app.example.test/callback')
     await user.click(screen.getByRole('button', { name: 'Salvar configuração' }))
     expect(await screen.findByText('Dados públicos salvos. Informe o Client Secret do aplicativo antes de conectar.')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Client ID/)).toHaveValue('public-client-id')
-    expect(screen.getAllByLabelText(/Redirect URI/)[0]).toHaveValue('https://app.example.test/callback')
+    expect(screen.getByLabelText(/Client ID/)).toHaveValue('b30aa019864b8ca8b974331d6a07d07bc4eaa1ae')
+    expect(screen.getAllByLabelText(/Redirect URI/)[0]).toHaveValue('https://majucau-bling-bridge.giselegalha.chatgpt.site/oauth/bling/callback')
     expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveValue('')
   })
 

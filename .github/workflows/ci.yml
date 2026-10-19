@@ -271,17 +271,18 @@ jobs:
           $expectedSha256 = 'ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8'
           $artifactRoot = Join-Path $env:GITHUB_WORKSPACE 'artifacts'
           $cacheToolsRoot = Join-Path $artifactRoot 'cache/tools'
-          $nsisRoot = Join-Path $artifactRoot "tools/nsis-$nsisVersion"
+          $toolsRoot = Join-Path $artifactRoot 'tools'
+          $nsisRoot = Join-Path $toolsRoot "nsis-$nsisVersion"
           $archive = Join-Path $cacheToolsRoot "nsis-$nsisVersion.zip"
-          New-Item -ItemType Directory -Force -Path $cacheToolsRoot, (Split-Path -Parent $nsisRoot) | Out-Null
+          New-Item -ItemType Directory -Force -Path $cacheToolsRoot, $toolsRoot | Out-Null
 
           if (-not (Test-Path -LiteralPath (Join-Path $nsisRoot 'Bin/makensis.exe') -PathType Leaf)) {
-            Invoke-WebRequest -Uri "https://downloads.sourceforge.net/project/nsis/NSIS%203/$nsisVersion/nsis-$nsisVersion.zip" -OutFile $archive -TimeoutSec 120
+            Invoke-WebRequest -Uri "https://github.com/tauri-apps/binary-releases/releases/download/nsis-$nsisVersion/nsis-$nsisVersion.zip" -OutFile $archive -TimeoutSec 120
             $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
             if ($actualSha256 -ne $expectedSha256) {
               throw "SHA-256 do pacote NSIS $nsisVersion divergiu da versão fixada; download recusado."
             }
-            Expand-Archive -LiteralPath $archive -DestinationPath $nsisRoot -Force
+            Expand-Archive -LiteralPath $archive -DestinationPath $toolsRoot -Force
           }
 
           $compiler = Join-Path $nsisRoot 'Bin'

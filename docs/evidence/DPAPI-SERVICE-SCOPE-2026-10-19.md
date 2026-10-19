@@ -14,7 +14,8 @@
 - `govulncheck` não encontrou vulnerabilidade alcançável; encontrou uma vulnerabilidade em módulo requerido sem chamada aparente, acompanhada em `docs/evidence/DEPENDENCY-SECURITY-REMEDIATION-2026-10-10.md`.
 - `scripts/verify-backlog.ps1` e `git diff --check`: passaram.
 - A execução remota inicial chegou a falhar apenas na instalação do NSIS: a consulta ao repositório Chocolatey retornou HTTP 503. A repetição confirmou o mesmo erro externo.
-- A CI foi ajustada para baixar o NSIS 3.13 em versão fixa e conferir o SHA-256 antes de extrair e executar o compilador. A versão e o hash estão publicados no conjunto canônico de releases do projeto NSIS; o download é o arquivo ZIP oficial do NSIS no SourceForge.
+- A primeira alternativa, baixar diretamente do SourceForge, foi recusada porque o conteúdo recebido não correspondeu ao hash esperado.
+- A CI agora baixa o arquivo do espelho de releases do Tauri, verifica o SHA-256 canônico publicado pelo projeto NSIS antes de extrair e executar o compilador. O download foi conferido localmente: tamanho 2.363.925 bytes e hash esperado.
 - A execução remota que valida esse novo caminho ainda precisa concluir antes de declarar a CI verde.
 
 ## Limites restantes
@@ -31,5 +32,6 @@ Nenhuma tela aprovada ou regra financeira foi alterada.
 
 - Arquivo oficial NSIS 3.13: https://sourceforge.net/projects/nsis/files/NSIS%203/3.13/
 - Catálogo canônico de releases e hashes do projeto NSIS: https://github.com/nsis-dev/release-data
+- Espelho binário usado pela CI: https://github.com/tauri-apps/binary-releases/releases/tag/nsis-3.13
 - SHA-256 fixado na CI: `ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8`
-- O instalador continua sendo produzido por NSIS; esta correção altera apenas como a ferramenta de build é obtida e verificada na CI.
+- O hash do espelho conferiu com o hash do arquivo NSIS publicado no catálogo canônico. O instalador continua sendo produzido por NSIS; esta correção altera apenas como a ferramenta de build é obtida e verificada na CI.

@@ -14,9 +14,9 @@
 
 - Não foram alteradas telas aprovadas nem regras financeiras.
 - A conta humana confirmada no Chrome é `financeiro@majucau.com.br`. Ela é usada apenas para consultar o Drive; não é a identidade técnica que o worker usa.
-- Nenhuma chave de conta de serviço foi recebida ou gravada nesta execução. Nenhum segredo, token, cookie, senha, ID real de pasta ou arquivo real foi colocado no Git.
+- Nenhuma chave de conta de serviço foi recebida ou gravada nesta execução. Nenhum segredo, token, cookie, senha, ID real de pasta ou arquivo real foi colocado no Git. A tentativa de consultar o Drive no Chrome foi interrompida pelo controle de navegação, que não conseguiu identificar a URL com segurança; nenhum arquivo foi aberto ou modificado.
 - A conta de serviço ainda precisa ser criada no Google Cloud, receber permissão somente de leitura nas três raízes autorizadas e ser configurada localmente. O primeiro inventário real ainda não foi executado.
-- A migração `000011_google_drive_credential_audit.up.sql` adiciona a função de auditoria mínima. Ela foi aplicada e suas permissões foram verificadas no PostgreSQL da CI #679; a validação da alteração atual ainda depende da próxima execução Windows.
+- A migração `000011_google_drive_credential_audit.up.sql` adiciona a função de auditoria mínima. Ela foi aplicada e suas permissões foram verificadas no PostgreSQL da CI #680.
 
 ## Verificação desta alteração
 
@@ -25,8 +25,8 @@
 - A execução GitHub Actions #678 aplicou a migration e aprovou `database/privileges/verify_runtime.sql`, mas revelou que a comparação textual do caminho retornado pelo Windows não era portátil entre ambientes.
 - A primeira normalização ainda falhou na execução #679. A correção final valida que o caminho resolvido continua na unidade local esperada e confere por identidade do arquivo que a leitura abre o mesmo arquivo regular observado inicialmente; UNC, dispositivos e links no próprio arquivo continuam recusados.
 - `scripts/build-windows.ps1` passou localmente após a correção final, incluindo todos os testes Go, `go vet`, `govulncheck`, integridade das migrations, SQLC, scan de segredos, verificações do instalador, lint, TypeScript, 33 testes da interface, build e `npm audit` sem vulnerabilidades. O pacote portátil foi recompilado e conferido: manifesto e hashes correspondem, e o bundle inclui o worker e a migration 000011.
-- O smoke test do worker sem argumentos retornou `GOOGLE_DRIVE_CREDENTIAL_ARGUMENTS_INVALID` e código 2, conforme esperado; nenhuma credencial ou sincronização foi usada. A CI PostgreSQL e a verificação do backlog da execução #679 passaram; a execução #680 precisa confirmar a correção Windows antes da alteração ser considerada concluída.
+- O smoke test do worker sem argumentos retornou `GOOGLE_DRIVE_CREDENTIAL_ARGUMENTS_INVALID` e código 2, conforme esperado; nenhuma credencial ou sincronização foi usada. A execução #680 passou nos quatro jobs: backlog, detecção de mudanças, PostgreSQL e Windows; incluiu a migration e as permissões, testes da correção Windows e geração do pacote.
 
 ## Próximo passo
 
-Concluir a CI da correção Windows. Depois, provisionar a identidade técnica somente leitura e executar a primeira leitura real sem baixar ou importar dados financeiros não homologados.
+A CI está concluída. Próximo passo: provisionar a identidade técnica somente leitura e executar a primeira leitura real, mantendo arquivos sem contrato financeiro em estado pendente.

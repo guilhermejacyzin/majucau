@@ -20,6 +20,7 @@ Foi adicionado um leitor intermediário que reconhece limites de tokens XML dura
 - `scripts/verify.ps1` — aprovado: testes Go, limites de arquitetura, `go vet`, `govulncheck`, migrations, SQLC determinístico, scan de secrets, contrato do instalador, ESLint, TypeScript, 33 testes frontend, build e `npm audit`.
 - `scripts/verify-backlog.ps1` — aprovado: 127 tarefas, 7 concluídas, 19 em andamento, 101 não iniciadas, 11,7% concluído e 88,3% restante.
 - `govulncheck` encontrou zero vulnerabilidades alcançáveis e uma vulnerabilidade em módulo requerido sem chamada alcançável; o alerta existente continua documentado em `docs/evidence/DEPENDENCY-SECURITY-REMEDIATION-2026-10-10.md`.
+- A CI [#39204918731](https://github.com/guilhermejacyzin/majucau/actions/runs/39204918731), no commit `d777be5`, passou nos quatro trabalhos: `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres`.
 
 ## O que continua pendente
 

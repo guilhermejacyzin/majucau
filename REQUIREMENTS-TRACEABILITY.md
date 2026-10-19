@@ -203,3 +203,7 @@ Essa conferência é estática e não prova o pico de memória durante importaç
 ## Salvamento da configuração pública do Bling antes do Client Secret — 2026-10-18
 
 O salvamento de Client ID e Redirect URI não depende mais do segredo: se ele ainda não estiver no cofre, os metadados públicos são gravados sem escrever segredo vazio ou referência inválida. A resposta da tela explica que a conexão continua pendente. OAuth continua exigindo o segredo verdadeiro e falha com segurança até ele existir. Testes focalizados Go e frontend passaram. Nenhuma regra financeira ou estrutura de tela foi alterada. A conexão real, autorização, leitura e homologação da paginação continuam pendentes. Evidência: `docs/evidence/BLING-PUBLIC-CONFIG-PENDING-SECRET-FIX-2026-10-18.md`.
+
+## Registro Nuvem Pago necessário para importar projeções — 2026-10-18
+
+O serviço de importação de recebimentos futuros depende de um `integration_connections` do Nuvem Pago. A migration `000008` cria esse registro em estado `UNAVAILABLE`: arquivos aprovados podem ser processados sem declarar a API do provedor conectada. O teste PostgreSQL exige esse estado após as migrations e executa a importação/idempotência já existente. A conexão OAuth não foi criada e nenhuma regra financeira mudou. A CI/PostgreSQL é necessária para provar o caminho ponta a ponta; não foi usado banco local de dados financeiros. Evidência: `docs/evidence/NUVEM-PAGO-IMPORT-CONNECTION-SEED-2026-10-18.md`.

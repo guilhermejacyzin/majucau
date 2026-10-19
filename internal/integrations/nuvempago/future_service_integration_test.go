@@ -29,15 +29,15 @@ func TestFutureImportServicePostgresE2E(t *testing.T) {
 	if err := pool.Ping(ctx); err != nil {
 		t.Fatalf("ping PostgreSQL: %v", err)
 	}
-	if _, err := pool.Exec(ctx, `
-		INSERT INTO integration_connections (provider, status, external_account_id)
-		VALUES ('NUVEM_PAGO', 'CONNECTED', 'e2e-nuvem-pago')
-		ON CONFLICT (provider) DO UPDATE
-		SET status = EXCLUDED.status, external_account_id = EXCLUDED.external_account_id,
-		    updated_at = clock_timestamp()`); err != nil {
-		t.Fatalf("prepare Nuvem Pago connection: %v", err)
+	var initialStatus string
+	if err := pool.QueryRow(ctx, `SELECT status FROM integration_connections WHERE provider = 'NUVEM_PAGO'`).Scan(&initialStatus); err != nil {
+		t.Fatalf("load migrated Nuvem Pago import connection: %v", err)
 	}
-
+	if initialStatus != "UNAVAILABLE" {
+		t.Fatalf("initial Nuvem Pago status = %q, want UNAVAILABLE", initialStatus)
+	}
+	// Importing the approved Drive report must work while the live Nuvem Pago
+	// integration remains unavailable for API confirmation.
 	service := NewFutureImportService(pool)
 	first, err := service.Import(ctx, folder)
 	if err != nil {
@@ -85,4 +85,3 @@ func assertFuturePersistence(t *testing.T, ctx context.Context, pool *pgxpool.Po
 		t.Fatalf("expected %d future rows in receipts, got %d", receipts, got)
 	}
 }
-

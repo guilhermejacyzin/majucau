@@ -4057,6 +4057,14 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-039 avança de 0% para 20%; restam 80% desta tarefa. A contagem passa a 7 concluídas, 19 em andamento e 101 não iniciadas. A média recalculada do backlog é 11,3% concluída e 88,7% restante; isso não comprova homologação nem permite prever a data final.
 - Nenhuma tela aprovada, regra financeira ou estrutura persistente foi alterada. Evidência: `docs/evidence/DAILY-BLING-SCHEDULER-2026-10-18.md`.
 
+### M4 — Habilitar identidade local do importador de projeções Nuvem Pago — 18/10/2026
+
+- Foi encontrado um bloqueio de instalação nova: o serviço de importação precisava de uma conexão Nuvem Pago, mas as migrations só semeavam Google Drive. A migration `000008` agora cria `NUVEM_PAGO` em estado `UNAVAILABLE`, permitindo o uso do relatório aprovado sem afirmar que a API está conectada. Conflitos preservam estado já existente.
+- O teste PostgreSQL do importador valida o estado migrado e segue sem marcar o provedor como conectado; depois executa a importação e a repetição idempotente já existentes.
+- Verificação local: checksum da migration e testes Go focais. A execução PostgreSQL ponta a ponta depende do job descartável da CI; nenhum banco local financeiro foi usado.
+- BK-042 e BK-043 mantêm progresso medido; esta correção fecha apenas um pré-requisito técnico do importador, não liga o Drive nem comprova uma importação real. Próximo passo: conectar staging privado ao parser homologado de CSV do Nuvem Pago e validar com fixtures/teste PostgreSQL.
+- Evidência: `docs/evidence/NUVEM-PAGO-IMPORT-CONNECTION-SEED-2026-10-18.md`.
+
 ### M3 — Retomada idempotente do Bling — 18/10/2026
 
 - A automação diária agora registra uma identidade determinística por data, impede que dois workers processem a carga simultaneamente e, se o worker iniciar depois das 09:30, verifica se a carga do dia terminou. Cargas completas são puladas; cargas incompletas são refeitas integralmente. Não foi alterado o schema; foi usado o `correlation_id` já existente nas auditorias de lote.

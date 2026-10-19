@@ -267,14 +267,29 @@ jobs:
       - name: Install NSIS
         shell: pwsh
         run: |
-          choco install nsis --yes --no-progress
-          $nsisRoots = @(
-            (Join-Path ${env:ProgramFiles(x86)} 'NSIS'),
-            (Join-Path $env:ProgramFiles 'NSIS')
-          )
-          $nsisRoot = $nsisRoots | Where-Object { Test-Path -LiteralPath (Join-Path $_ 'makensis.exe') } | Select-Object -First 1
-          if (-not $nsisRoot) { throw 'makensis.exe não foi localizado após a instalação do NSIS.' }
-          $nsisRoot | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $nsisVersion = '3.13'
+          $expectedSha256 = 'ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8'
+          $artifactRoot = Join-Path $env:GITHUB_WORKSPACE 'artifacts'
+          $cacheToolsRoot = Join-Path $artifactRoot 'cache/tools'
+          $nsisRoot = Join-Path $artifactRoot "tools/nsis-$nsisVersion"
+          $archive = Join-Path $cacheToolsRoot "nsis-$nsisVersion.zip"
+          New-Item -ItemType Directory -Force -Path $cacheToolsRoot, (Split-Path -Parent $nsisRoot) | Out-Null
+
+          if (-not (Test-Path -LiteralPath (Join-Path $nsisRoot 'Bin/makensis.exe') -PathType Leaf)) {
+            Invoke-WebRequest -Uri "https://downloads.sourceforge.net/project/nsis/NSIS%203/$nsisVersion/nsis-$nsisVersion.zip" -OutFile $archive -TimeoutSec 120
+            $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actualSha256 -ne $expectedSha256) {
+              throw "SHA-256 do pacote NSIS $nsisVersion divergiu da versão fixada; download recusado."
+            }
+            Expand-Archive -LiteralPath $archive -DestinationPath $nsisRoot -Force
+          }
+
+          $compiler = Join-Path $nsisRoot 'Bin'
+          if (-not (Test-Path -LiteralPath (Join-Path $compiler 'makensis.exe') -PathType Leaf)) {
+            throw 'makensis.exe não foi localizado no pacote NSIS verificado.'
+          }
+          $compiler | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "NSISDIR=$nsisRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Output "NSIS: $nsisRoot"
 
       - name: Verify installer source contract

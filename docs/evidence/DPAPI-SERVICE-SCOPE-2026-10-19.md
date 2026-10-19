@@ -13,7 +13,9 @@
 - `scripts/verify.ps1`: passou por completo no Windows local, incluindo todos os testes Go, `go vet`, limites arquiteturais, `govulncheck`, checksum de migrations, geração SQLC determinística, scan de secrets, verificação do contrato do instalador, ESLint, TypeScript, 33 testes de interface, build e `npm audit` sem vulnerabilidades.
 - `govulncheck` não encontrou vulnerabilidade alcançável; encontrou uma vulnerabilidade em módulo requerido sem chamada aparente, acompanhada em `docs/evidence/DEPENDENCY-SECURITY-REMEDIATION-2026-10-10.md`.
 - `scripts/verify-backlog.ps1` e `git diff --check`: passaram.
-- A CI completa do commit publicado ainda precisa concluir antes de declarar o avanço remoto validado.
+- A execução remota inicial chegou a falhar apenas na instalação do NSIS: a consulta ao repositório Chocolatey retornou HTTP 503. A repetição confirmou o mesmo erro externo.
+- A CI foi ajustada para baixar o NSIS 3.13 em versão fixa e conferir o SHA-256 antes de extrair e executar o compilador. A versão e o hash estão publicados no conjunto canônico de releases do projeto NSIS; o download é o arquivo ZIP oficial do NSIS no SourceForge.
+- A execução remota que valida esse novo caminho ainda precisa concluir antes de declarar a CI verde.
 
 ## Limites restantes
 
@@ -24,3 +26,10 @@
 - A confirmação somente leitura no Drive encontrou `Meu Drive/MAJUCAU_INTELLIGENCE_INPUT`, com `01_perdas_operacionais`, `02_nuvem_pago` e `03_nuvem_envio`. Nenhum conteúdo de arquivo foi incluído nesta evidência.
 
 Nenhuma tela aprovada ou regra financeira foi alterada.
+
+## Proveniência da ferramenta de empacotamento
+
+- Arquivo oficial NSIS 3.13: https://sourceforge.net/projects/nsis/files/NSIS%203/3.13/
+- Catálogo canônico de releases e hashes do projeto NSIS: https://github.com/nsis-dev/release-data
+- SHA-256 fixado na CI: `ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8`
+- O instalador continua sendo produzido por NSIS; esta correção altera apenas como a ferramenta de build é obtida e verificada na CI.

@@ -20,7 +20,7 @@ func runWorker(ctx context.Context) (returnErr error) {
 	if logErr != nil {
 		logger.Error("worker diagnostic file unavailable", slog.String("error_code", "DIAGNOSTICS_LOG_UNAVAILABLE"))
 	}
-	handler := newWorkerHandler()
+	handler := newWorkerHandlerWithContext(ctx)
 	defer handler.Close()
 	if handler.databaseErrorCode != "" {
 		logger.Warn("worker database-backed operations are unavailable", slog.String("error_code", handler.databaseErrorCode))

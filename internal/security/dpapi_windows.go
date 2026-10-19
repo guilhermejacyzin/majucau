@@ -22,18 +22,37 @@ const (
 	// IPC frames are capped at 1 MiB; secret bundles are control data, not a bulk-data channel.
 	maxDPAPISecretValueBytes = 1 << 20
 	// Leave bounded room for the DPAPI ciphertext wrapper while rejecting corrupt oversized files.
-	maxDPAPISecretBlobBytes = maxDPAPISecretValueBytes + (64 << 10)
-	dpapiEntropyBytes       = 32
+	maxDPAPISecretBlobBytes  = maxDPAPISecretValueBytes + (64 << 10)
+	dpapiEntropyBytes        = 32
+	cryptProtectLocalMachine = 0x4
+)
+
+const (
+	dpapiScopeCurrentUser = "CURRENT_USER"
+	dpapiScopeMachine     = "MACHINE"
 )
 
 type DPAPIStore struct {
-	dir     string
-	entropy []byte
-	userSID string
-	mu      sync.Mutex
+	dir             string
+	entropy         []byte
+	userSID         string
+	protectionFlags uintptr
+	scope           string
+	mu              sync.Mutex
 }
 
 func NewDPAPIStore(dir string) (*DPAPIStore, error) {
+	return newDPAPIStore(dir, dpapiScopeCurrentUser, 0)
+}
+
+// NewMachineDPAPIStore protects blobs with the Windows machine DPAPI scope.
+// Files still have a strict ACL for the current service identity, SYSTEM, and
+// Administrators; machine scope must never be used as a substitute for ACLs.
+func NewMachineDPAPIStore(dir string) (*DPAPIStore, error) {
+	return newDPAPIStore(dir, dpapiScopeMachine, cryptProtectLocalMachine)
+}
+
+func newDPAPIStore(dir, scope string, protectionFlags uintptr) (*DPAPIStore, error) {
 	if strings.TrimSpace(dir) == "" {
 		return nil, errors.New("secret directory is required")
 	}
@@ -46,6 +65,9 @@ func NewDPAPIStore(dir string) (*DPAPIStore, error) {
 		return nil, errors.New("current Windows identity is unavailable for the secret vault")
 	}
 	if err := preparePrivateSecretDirectory(dir, userSID); err != nil {
+		return nil, err
+	}
+	if err := ensureDPAPIScope(dir, scope, userSID); err != nil {
 		return nil, err
 	}
 	entropyPath := filepath.Join(dir, ".entropy")
@@ -100,7 +122,72 @@ func NewDPAPIStore(dir string) (*DPAPIStore, error) {
 	if len(e) != dpapiEntropyBytes {
 		return nil, errors.New("invalid DPAPI entropy")
 	}
-	return &DPAPIStore{dir: dir, entropy: e, userSID: userSID}, nil
+	return &DPAPIStore{dir: dir, entropy: e, userSID: userSID, protectionFlags: protectionFlags, scope: scope}, nil
+}
+
+func ensureDPAPIScope(dir, expectedScope, userSID string) error {
+	if expectedScope != dpapiScopeCurrentUser && expectedScope != dpapiScopeMachine {
+		return errors.New("invalid DPAPI scope")
+	}
+	path := filepath.Join(dir, ".scope")
+	if _, err := os.Lstat(path); err == nil {
+		if err := preparePrivateSecretFile(path, userSID); err != nil {
+			return err
+		}
+		value, err := readBoundedSecretFile(path, len(expectedScope))
+		if err != nil {
+			return errors.New("DPAPI scope marker is unavailable")
+		}
+		if string(value) != expectedScope {
+			return errors.New("secret vault DPAPI scope does not match the requested scope")
+		}
+		return nil
+	} else if !os.IsNotExist(err) {
+		return errors.New("DPAPI scope marker is unavailable")
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return errors.New("secret vault contents are unavailable")
+	}
+	if expectedScope == dpapiScopeMachine && len(entries) != 0 {
+		return errors.New("unmarked secret vault cannot be initialized for machine DPAPI scope")
+	}
+	if expectedScope == dpapiScopeCurrentUser {
+		for _, entry := range entries {
+			name := entry.Name()
+			if name != ".entropy" && !strings.HasSuffix(name, ".dpapi") {
+				return errors.New("unmarked secret vault contains an unexpected file")
+			}
+		}
+	}
+
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if err == nil {
+		_, writeErr := file.Write([]byte(expectedScope))
+		if writeErr == nil {
+			writeErr = file.Sync()
+		}
+		writeErr = errors.Join(writeErr, file.Close())
+		if writeErr != nil {
+			return errors.Join(writeErr, securetemp.RemoveFile(path))
+		}
+		if aclErr := preparePrivateSecretFile(path, userSID); aclErr != nil {
+			return errors.Join(aclErr, securetemp.RemoveFile(path))
+		}
+		return nil
+	}
+	if !os.IsExist(err) {
+		return errors.New("could not initialize DPAPI scope marker")
+	}
+	if err := preparePrivateSecretFile(path, userSID); err != nil {
+		return err
+	}
+	value, err := readBoundedSecretFile(path, len(expectedScope))
+	if err != nil || string(value) != expectedScope {
+		return errors.New("concurrent secret vault initialization selected another DPAPI scope")
+	}
+	return nil
 }
 func (s *DPAPIStore) path(ref string) string { return filepath.Join(s.dir, ref+".dpapi") }
 func (s *DPAPIStore) Put(_ context.Context, ref string, value []byte) error {
@@ -112,7 +199,7 @@ func (s *DPAPIStore) Put(_ context.Context, ref string, value []byte) error {
 	if len(value) > maxDPAPISecretValueBytes {
 		return errors.New("secret value exceeds size limit")
 	}
-	blob, err := protect(value, s.entropy)
+	blob, err := protect(value, s.entropy, s.protectionFlags)
 	if err != nil {
 		return err
 	}
@@ -268,11 +355,13 @@ func atomicWrite(path string, value []byte, mode os.FileMode, userSID string) (r
 	return nil
 }
 
-func protect(value, entropy []byte) ([]byte, error) { return cryptCall(cryptProtect, value, entropy) }
-func unprotect(value, entropy []byte) ([]byte, error) {
-	return cryptCall(cryptUnprotect, value, entropy)
+func protect(value, entropy []byte, flags uintptr) ([]byte, error) {
+	return cryptCall(cryptProtect, value, entropy, flags)
 }
-func cryptCall(proc *syscall.LazyProc, value, entropy []byte) (result []byte, returnErr error) {
+func unprotect(value, entropy []byte) ([]byte, error) {
+	return cryptCall(cryptUnprotect, value, entropy, 0)
+}
+func cryptCall(proc *syscall.LazyProc, value, entropy []byte, flags uintptr) (result []byte, returnErr error) {
 	if len(value) == 0 {
 		value = []byte{0}
 	}
@@ -282,7 +371,7 @@ func cryptCall(proc *syscall.LazyProc, value, entropy []byte) (result []byte, re
 		ent = dataBlob{uint32(len(entropy)), &entropy[0]}
 	}
 	out := dataBlob{}
-	r, _, err := proc.Call(uintptr(unsafe.Pointer(&in)), 0, uintptr(unsafe.Pointer(&ent)), 0, 0, 0, uintptr(unsafe.Pointer(&out)))
+	r, _, err := proc.Call(uintptr(unsafe.Pointer(&in)), 0, uintptr(unsafe.Pointer(&ent)), 0, 0, flags, uintptr(unsafe.Pointer(&out)))
 	if r == 0 {
 		if err == nil || errors.Is(err, syscall.Errno(0)) {
 			err = errors.New("DPAPI returned failure without an error code")

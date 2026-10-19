@@ -299,9 +299,9 @@ Consequências:
 
 ## 7. Segurança de credenciais
 
-O worker criptografará tokens e client secrets com Windows DPAPI no contexto da conta dedicada do serviço. O blob protegido ficará em arquivo com ACL restrita.
+No protótipo em console, tokens e client secrets usam Windows DPAPI no escopo do usuário atual. Quando iniciado como serviço, o worker usa DPAPI no escopo da máquina; como esse escopo não restringe sozinho quais usuários podem ler o blob, todos os arquivos e diretórios do cofre exigem DACL protegida e validada para o SID do serviço, SYSTEM e Administradores. O blob protegido fica em arquivo local com ACL restrita.
 
-A identidade será uma conta virtual de serviço `NT SERVICE\MajucauWorker`, com SID de serviço estável e perfil carregado. O instalador será idempotente: cria/atualiza o serviço sem trocar sua identidade, aplica SDDL explícita aos diretórios, ao Named Pipe e aos secrets, e usa DPAPI no escopo da máquina com entropy aleatória por instalação protegida pela mesma ACL. O banco guarda apenas `secret_ref` e a versão do envelope. Reinstalação/upgrade preserva a identidade e o diretório de secrets; mudança de conta exige fluxo administrativo de reproteção ou reconexão.
+A identidade será uma conta virtual de serviço `NT SERVICE\MajucauWorker`, com SID de serviço estável e perfil carregado. O instalador será idempotente: cria/atualiza o serviço sem trocar sua identidade, aplica SDDL explícita aos diretórios, ao Named Pipe e aos secrets, e usa DPAPI no escopo da máquina com entropia aleatória por instalação protegida pela mesma ACL. O banco guarda apenas `secret_ref` e a versão do envelope. Reinstalação/upgrade preserva a identidade e o diretório de secrets; mudança de conta exige fluxo administrativo de reproteção ou reconexão.
 
 - secrets nunca serão persistidos no PostgreSQL em texto aberto;
 - campos não retornarão o valor completo à UI após salvamento;

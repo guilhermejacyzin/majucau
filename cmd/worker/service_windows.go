@@ -60,7 +60,7 @@ func serviceMain(_ uint32, _ **uint16) uintptr {
 		return 0
 	}
 	_ = publishServiceStatus(serviceStartPending, 0, 1, 5000)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(withWindowsServiceExecution(context.Background()))
 	serviceCancel = cancel
 	_ = publishServiceStatus(serviceRunning, serviceAcceptStop|serviceAcceptShutdown, 0, 0)
 	err := serviceRun(ctx)

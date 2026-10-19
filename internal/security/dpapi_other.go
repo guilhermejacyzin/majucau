@@ -11,6 +11,7 @@ import (
 type DPAPIStore struct{}
 
 func NewDPAPIStore(_ string) (*DPAPIStore, error)               { return nil, ErrUnsupportedPlatform }
+func NewMachineDPAPIStore(_ string) (*DPAPIStore, error)        { return nil, ErrUnsupportedPlatform }
 func (*DPAPIStore) Put(context.Context, string, []byte) error   { return ErrUnsupportedPlatform }
 func (*DPAPIStore) Get(context.Context, string) ([]byte, error) { return nil, ErrUnsupportedPlatform }
 func (*DPAPIStore) Delete(context.Context, string) error        { return ErrUnsupportedPlatform }

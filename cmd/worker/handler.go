@@ -86,6 +86,10 @@ type workerHandler struct {
 }
 
 func newWorkerHandler() workerHandler {
+	return newWorkerHandlerWithContext(context.Background())
+}
+
+func newWorkerHandlerWithContext(ctx context.Context) workerHandler {
 	pool, databaseErrorCode := newDatabasePoolFromEnvironment()
 	var resources resourceCloser
 	if pool != nil {
@@ -109,7 +113,7 @@ func newWorkerHandler() workerHandler {
 		future = nuvempago.NewFutureImportService(pool)
 		statusReader = newIntegrationStatusReader(pool)
 		dashboardReader = dashboard.NewReader(pool)
-		store := newWorkerSecretStore()
+		store := newWorkerSecretStore(ctx)
 		dailyDriveSync, driveSetupError = newDailyGoogleDriveSyncer(context.Background(), pool, store)
 		if store != nil {
 			driveCredential = googledrive.NewServiceAccountCredentialService(store, &postgresGoogleDriveCredentialAuditor{pool: pool})

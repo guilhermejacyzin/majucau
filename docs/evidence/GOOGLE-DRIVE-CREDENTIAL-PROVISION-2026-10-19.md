@@ -14,8 +14,9 @@
 
 - Não foram alteradas telas aprovadas nem regras financeiras.
 - A conta humana confirmada no Chrome é `financeiro@majucau.com.br`. Ela é usada apenas para consultar o Drive; não é a identidade técnica que o worker usa.
-- Nenhuma chave de conta de serviço foi recebida ou gravada nesta execução. Nenhum segredo, token, cookie, senha, ID real de pasta ou arquivo real foi colocado no Git. A tentativa de consultar o Drive no Chrome foi interrompida pelo controle de navegação, que não conseguiu identificar a URL com segurança; nenhum arquivo foi aberto ou modificado.
-- A conta de serviço ainda precisa ser criada no Google Cloud, receber permissão somente de leitura nas três raízes autorizadas e ser configurada localmente. O primeiro inventário real ainda não foi executado.
+- Em 19/10, a consulta do Drive pelo Chrome foi concluída em modo somente leitura. A pasta `MAJUCAU_INTELLIGENCE_INPUT` contém `01_perdas_operacionais`, `02_nuvem_pago/Recebimentos_futuros` e `03_nuvem_envio/Frete`, conforme a estrutura aprovada. A listagem mostrou arquivos Excel (`.xlsx`) e CSV; o arquivo mais recente visível nessas pastas tinha data de modificação 11/09/2026. Foram conferidos nomes de pastas, tipos e metadados; nenhum arquivo de dados foi aberto, baixado ou modificado. IDs reais de pasta não foram gravados no Git.
+- Nenhuma chave de conta de serviço foi recebida ou gravada. Nenhum segredo, token, cookie, senha ou ID real de pasta foi colocado no Git. A tentativa de abrir o Google Cloud Console solicitou uma nova confirmação de identidade da conta financeira; ela não foi concluída, então a existência de um projeto técnico ainda é desconhecida.
+- A identidade técnica ainda precisa ser criada ou localizada no Google Cloud, receber permissão somente de leitura nas três raízes autorizadas e ser configurada localmente. O inventário real feito pelo serviço ainda não foi executado.
 - A migração `000011_google_drive_credential_audit.up.sql` adiciona a função de auditoria mínima. Ela foi aplicada e suas permissões foram verificadas no PostgreSQL da CI #680.
 
 ## Verificação desta alteração
@@ -29,4 +30,4 @@
 
 ## Próximo passo
 
-A CI está concluída. Próximo passo: provisionar a identidade técnica somente leitura e executar a primeira leitura real, mantendo arquivos sem contrato financeiro em estado pendente.
+A CI está concluída. Próximo passo: confirmar a identidade no Google Cloud Console, verificar se já existe um projeto/conta técnica do Majucau e, somente depois, provisionar a leitura somente leitura e executar o primeiro inventário real, mantendo arquivos sem contrato financeiro em estado pendente. A listagem visível no Drive está modificada pela última vez em 11/09/2026; confirmar atualidade dos arquivos faz parte da homologação.

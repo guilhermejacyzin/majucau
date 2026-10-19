@@ -49,6 +49,12 @@ const (
 	DriveFolderNuvemShipping     DriveFolderScope = "03_nuvem_envio"
 )
 
+var approvedDriveFolderScopes = []DriveFolderScope{
+	DriveFolderOperationalLosses,
+	DriveFolderNuvemPagoReceipts,
+	DriveFolderNuvemShipping,
+}
+
 func (s DriveFolderScope) valid() bool {
 	switch s {
 	case DriveFolderOperationalLosses, DriveFolderNuvemPagoReceipts, DriveFolderNuvemShipping:

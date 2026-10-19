@@ -12,6 +12,7 @@ import (
 	"majucau.local/financial-intelligence/internal/dashboard"
 	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/integrations/bling"
+	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
 	"majucau.local/financial-intelligence/internal/integrations/nuvemshop"
 	"majucau.local/financial-intelligence/internal/ipc"
@@ -56,6 +57,10 @@ type blingDailySyncer interface {
 	SyncDaily(context.Context, time.Time) (bling.BlingRawSyncResult, bool, error)
 }
 
+type googleDriveDailySyncer interface {
+	SyncDaily(context.Context, time.Time) (googledrive.DailyFileInventorySyncResult, error)
+}
+
 type workerHandler struct {
 	health            application.HealthChecker
 	databaseErrorCode string
@@ -68,6 +73,8 @@ type workerHandler struct {
 	blingOAuth        blingOAuthService
 	blingSync         blingRawSyncer
 	dailyBlingSync    blingDailySyncer
+	dailyDriveSync    googleDriveDailySyncer
+	driveSetupError   string
 	statusReader      application.IntegrationStatusReader
 	dashboardReader   application.DashboardSnapshotStreamer
 }
@@ -86,6 +93,8 @@ func newWorkerHandler() workerHandler {
 	var oauthService blingOAuthService
 	var rawSync blingRawSyncer
 	var dailySync blingDailySyncer
+	var dailyDriveSync googleDriveDailySyncer
+	driveSetupError := "DATABASE_NOT_CONFIGURED"
 	var statusReader application.IntegrationStatusReader
 	var dashboardReader application.DashboardSnapshotStreamer
 	if pool != nil {
@@ -93,7 +102,9 @@ func newWorkerHandler() workerHandler {
 		future = nuvempago.NewFutureImportService(pool)
 		statusReader = newIntegrationStatusReader(pool)
 		dashboardReader = dashboard.NewReader(pool)
-		if store := newWorkerSecretStore(); store != nil {
+		store := newWorkerSecretStore()
+		dailyDriveSync, driveSetupError = newDailyGoogleDriveSyncer(context.Background(), pool, store)
+		if store != nil {
 			blingCredentials := bling.NewBlingCredentialState(store)
 			blingCredentialService := bling.NewBlingCredentialServiceWithState(pool, blingCredentials)
 			configSaver = blingCredentialService
@@ -104,7 +115,7 @@ func newWorkerHandler() workerHandler {
 			dailySync = oauthService.(blingDailySyncer)
 		}
 	}
-	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, blingConfigReader: configReader, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, statusReader: statusReader, dashboardReader: dashboardReader}
+	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, blingConfigReader: configReader, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, dailyDriveSync: dailyDriveSync, driveSetupError: driveSetupError, statusReader: statusReader, dashboardReader: dashboardReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {

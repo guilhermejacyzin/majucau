@@ -407,7 +407,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 18/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (78%), BK-042 (52%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
+- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (78%), BK-042 (56%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
 - Pela média simples do rastreador, soma dos percentuais das tarefas ÷ 127 = 11,6%; restam 88,4%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
@@ -1515,7 +1515,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-042 — Implementar leitura das três estruturas autorizadas do Google Drive
 
-**Situação:** Em andamento. **Evolução:** 52% (estimativa: o núcleo de listagem paginada e download GET em fluxo, restrito por IDs de pasta, os checkpoints persistentes por página, as versões de metadados, a publicação atômica do inventário e o provedor de token de service account via cofre foram implementados localmente; testes unitários e SQLC passaram. Após incluir os modelos SQLC, a CI completa `39177839087` passou nos jobs Windows, PostgreSQL, backlog e detecção de mudanças. Ainda não há credencial/IDs reais, integração ao worker/jobs/staging, contratos de arquivos ou homologação). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 56% (estimativa: o núcleo de listagem paginada e download GET em fluxo, restrito por IDs de pasta, os checkpoints persistentes por página, as versões de metadados, a publicação atômica do inventário e o provedor de token de service account via cofre foram implementados localmente; nesta execução, o inventário também foi ligado ao worker diário às 09:30, com correlação idempotente por pasta/data e falhas independentes. Testes locais do worker e do adapter passaram. Ainda não há credencial/IDs reais, download para staging, contratos de arquivos, importação ou homologação; XLS/XLSX continuam pendentes). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Importar arquivos preservando integralmente a pasta compartilhada.
 

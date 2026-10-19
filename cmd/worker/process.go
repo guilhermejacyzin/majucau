@@ -32,9 +32,11 @@ func runWorker(ctx context.Context) (returnErr error) {
 	workerCtx, cancelWorker := context.WithCancel(ctx)
 	defer cancelWorker()
 	dailyDone := startDailyBlingSchedule(workerCtx, handler.dailyBlingSync, logger)
+	driveDailyDone := startDailyGoogleDriveSchedule(workerCtx, handler.dailyDriveSync, handler.driveSetupError, logger)
 	pipeErr := runWorkerPipe(workerCtx, diagnosticRequestHandler{next: handler, logger: logger})
 	cancelWorker()
 	<-dailyDone
+	<-driveDailyDone
 	return pipeErr
 }
 

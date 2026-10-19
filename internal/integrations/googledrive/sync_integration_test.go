@@ -34,6 +34,13 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 	if err := pool.Ping(ctx); err != nil {
 		t.Fatalf("ping PostgreSQL: %v", err)
 	}
+	var seededStatus string
+	if err := pool.QueryRow(ctx, `SELECT status FROM integration_connections WHERE provider = $1`, GoogleDriveProvider).Scan(&seededStatus); err != nil {
+		t.Fatalf("load migrated Google Drive connection: %v", err)
+	}
+	if seededStatus != "NOT_CONFIGURED" {
+		t.Fatalf("initial Google Drive status = %q, want NOT_CONFIGURED", seededStatus)
+	}
 
 	connectionID, connectionCreated := ensureGoogleDriveTestConnection(t, ctx, pool)
 	scope := DriveFolderOperationalLosses

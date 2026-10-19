@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -111,6 +112,93 @@ func NewFileInventorySyncService(pool *pgxpool.Pool, client *Client) (*FileInven
 		return nil, ErrSyncClientRequired
 	}
 	return &FileInventorySyncService{pool: pool, client: client}, nil
+}
+
+// RecordSourceValidation upserts one scheduled source summary. It stores no
+// file identifiers, names, or contents. The deterministic schedule key makes
+// retries idempotent, and the optional inventory batch must belong to the same
+// approved source and Google Drive connection.
+func (s *FileInventorySyncService) RecordSourceValidation(ctx context.Context, record DriveSourceValidationRecord) error {
+	if s == nil || s.pool == nil {
+		return ErrSyncDatabaseUnavailable
+	}
+	if ctx == nil || (record.Scope != DriveFolderOperationalLosses && record.Scope != DriveFolderNuvemShipping) {
+		return ErrSyncConfiguration
+	}
+	if _, err := dailyDriveCorrelationID(record.ScheduledAt, record.Scope); err != nil {
+		return err
+	}
+	switch record.Status {
+	case "PENDING", "PARTIAL", "FAILED":
+	default:
+		return ErrSyncConfiguration
+	}
+	switch record.ErrorCode {
+	case "GOOGLE_DRIVE_SOURCE_CONTRACT_PENDING", "GOOGLE_DRIVE_SOURCE_VALIDATION_FAILED", "GOOGLE_DRIVE_SOURCE_INVENTORY_UNAVAILABLE":
+	default:
+		return ErrSyncConfiguration
+	}
+	if record.Result.FilesRead < 0 || record.Result.FilesValidated < 0 || record.Result.FilesPending < 0 || record.Result.FilesInvalid < 0 || record.Result.FilesFailed < 0 || record.Result.FilesStale < 0 || record.Result.FilesDeferred < 0 || record.Result.FilesUnsupported < 0 {
+		return ErrSyncConfiguration
+	}
+
+	var inventoryBatchID pgtype.UUID
+	if strings.TrimSpace(record.InventoryBatchID) != "" {
+		parsed, err := uuid.Parse(record.InventoryBatchID)
+		if err != nil {
+			return ErrSyncConfiguration
+		}
+		copy(inventoryBatchID.Bytes[:], parsed[:])
+		inventoryBatchID.Valid = true
+	}
+	var runID pgtype.UUID
+	err := s.pool.QueryRow(ctx, `
+		INSERT INTO google_drive_source_validation_runs (
+			connection_id, folder_scope, scheduled_at, inventory_batch_id, status,
+			files_read, files_validated, files_pending, files_invalid, files_failed,
+			files_stale, files_deferred, files_unsupported, source_missing, error_code
+		)
+		SELECT connection.id, $1, $2, $3, $4,
+			$5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+		FROM integration_connections AS connection
+		WHERE connection.provider = $15
+		  AND (
+			$3::uuid IS NULL OR EXISTS (
+				SELECT 1 FROM integration_sync_batches AS batch
+				WHERE batch.id = $3
+				  AND batch.connection_id = connection.id
+				  AND batch.resource = $16
+				  AND batch.status = 'SUCCESS'
+			)
+		  )
+		ON CONFLICT (connection_id, folder_scope, scheduled_at)
+		DO UPDATE SET inventory_batch_id = EXCLUDED.inventory_batch_id,
+			status = EXCLUDED.status,
+			files_read = EXCLUDED.files_read,
+			files_validated = EXCLUDED.files_validated,
+			files_pending = EXCLUDED.files_pending,
+			files_invalid = EXCLUDED.files_invalid,
+			files_failed = EXCLUDED.files_failed,
+			files_stale = EXCLUDED.files_stale,
+			files_deferred = EXCLUDED.files_deferred,
+			files_unsupported = EXCLUDED.files_unsupported,
+			source_missing = EXCLUDED.source_missing,
+			error_code = EXCLUDED.error_code,
+			updated_at = clock_timestamp()
+		RETURNING id`,
+		string(record.Scope), record.ScheduledAt, inventoryBatchID, record.Status,
+		record.Result.FilesRead, record.Result.FilesValidated, record.Result.FilesPending,
+		record.Result.FilesInvalid, record.Result.FilesFailed, record.Result.FilesStale,
+		record.Result.FilesDeferred, record.Result.FilesUnsupported, record.Result.SourceMissing,
+		record.ErrorCode, GoogleDriveProvider, googleDriveCheckpointResource+string(record.Scope),
+	).Scan(&runID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrSnapshotUnavailable
+	}
+	if err != nil {
+		return fmt.Errorf("record Google Drive source validation: %w", err)
+	}
+	return nil
 }
 
 // SyncFolder scans one approved folder. The caller must pass the stable

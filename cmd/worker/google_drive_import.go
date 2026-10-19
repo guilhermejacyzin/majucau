@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -37,6 +38,9 @@ var (
 	errDriveFutureInvalidTSV       = errors.New("Nuvem Pago TSV structure is invalid or exceeds safety limits")
 	errDriveFutureInvalidJSON      = errors.New("Nuvem Pago JSON structure is invalid or exceeds safety limits")
 	errDriveFutureInvalidXLS       = errors.New("Nuvem Pago XLS structure is invalid or exceeds safety limits")
+	errDriveSourceSnapshotRead     = errors.New("Google Drive source inventory could not be read")
+	errDriveSourceValidation       = errors.New("Google Drive source could not be structurally validated")
+	errDriveSourceInvalidFile      = errors.New("Google Drive source file is invalid or exceeds safety limits")
 )
 
 type dailyDriveInventoryService interface {
@@ -45,6 +49,7 @@ type dailyDriveInventoryService interface {
 
 type driveSnapshotPageReader interface {
 	ReadSuccessfulSnapshotPage(context.Context, googledrive.DriveFolderScope, string, string, int) (googledrive.FileInventorySnapshotPage, error)
+	RecordSourceValidation(context.Context, googledrive.DriveSourceValidationRecord) error
 }
 
 type drivePrivateFileStager interface {
@@ -62,7 +67,7 @@ type dailyGoogleDriveImportSyncer struct {
 	stager    drivePrivateFileStager
 	importer  stagedFutureImporter
 	tempRoot  string
-	folderID  string
+	folderIDs googledrive.DriveFolderIDs
 }
 
 func newDailyGoogleDriveImportSyncer(
@@ -71,12 +76,16 @@ func newDailyGoogleDriveImportSyncer(
 	stager drivePrivateFileStager,
 	importer stagedFutureImporter,
 	tempRoot string,
-	folderID string,
+	folderIDs googledrive.DriveFolderIDs,
 ) (*dailyGoogleDriveImportSyncer, error) {
-	if inventory == nil || snapshots == nil || stager == nil || importer == nil || strings.TrimSpace(tempRoot) == "" || strings.TrimSpace(folderID) == "" {
+	if inventory == nil || snapshots == nil || stager == nil || importer == nil || strings.TrimSpace(tempRoot) == "" || googledrive.ValidateDriveFolderIDs(folderIDs) != nil {
 		return nil, googledrive.ErrSyncConfiguration
 	}
-	return &dailyGoogleDriveImportSyncer{inventory: inventory, snapshots: snapshots, stager: stager, importer: importer, tempRoot: tempRoot, folderID: folderID}, nil
+	copyFolderIDs := make(googledrive.DriveFolderIDs, len(folderIDs))
+	for scope, folderID := range folderIDs {
+		copyFolderIDs[scope] = folderID
+	}
+	return &dailyGoogleDriveImportSyncer{inventory: inventory, snapshots: snapshots, stager: stager, importer: importer, tempRoot: tempRoot, folderIDs: copyFolderIDs}, nil
 }
 
 func (s *dailyGoogleDriveImportSyncer) SyncDaily(ctx context.Context, scheduledAt time.Time) (out googledrive.DailyFileInventorySyncResult, returnErr error) {
@@ -84,40 +93,105 @@ func (s *dailyGoogleDriveImportSyncer) SyncDaily(ctx context.Context, scheduledA
 		return googledrive.DailyFileInventorySyncResult{Status: "FAILED"}, googledrive.ErrSyncConfiguration
 	}
 	out, inventoryErr := s.inventory.SyncDaily(ctx, scheduledAt)
-	folder, found := successfulNuvemPagoFolder(out.FolderResults)
-	if !found {
-		out.Status = "FAILED"
-		return out, errors.Join(googledrive.ErrDailySyncIncomplete, errDriveFutureInventoryMissing, inventoryErr)
+	var failures []error
+	if inventoryErr != nil {
+		failures = append(failures, inventoryErr)
 	}
 	if err := ctx.Err(); err != nil {
-		out.Status = "PARTIAL"
-		return out, errors.Join(googledrive.ErrDailySyncIncomplete, err)
+		out.Status = "FAILED"
+		return out, errors.Join(googledrive.ErrDailySyncIncomplete, inventoryErr, err)
 	}
 
-	importResult, importErr := s.importFutureSnapshot(ctx, scheduledAt, folder.BatchID)
-	out.FutureStatus = importResult.Status
-	if importErr != nil && out.FutureStatus == "" {
+	folder, found := successfulDriveFolder(out.FolderResults, googledrive.DriveFolderNuvemPagoReceipts)
+	if !found {
 		out.FutureStatus = "FAILED"
+		failures = append(failures, errDriveFutureInventoryMissing)
+	} else {
+		importResult, importErr := s.importFutureSnapshot(ctx, scheduledAt, folder.BatchID)
+		out.FutureStatus = importResult.Status
+		if importErr != nil && out.FutureStatus == "" {
+			out.FutureStatus = "FAILED"
+		}
+		out.FutureRead = int64(importResult.RecordsRead)
+		out.FutureCreated = int64(importResult.RecordsCreated)
+		out.FutureUpdated = int64(importResult.RecordsUpdated)
+		out.FutureFailed = int64(importResult.RecordsFailed)
+		out.FuturePending = importResult.PendingFiles
+		out.FutureStale = importResult.StaleFiles
+		if importErr != nil {
+			failures = append(failures, importErr)
+		} else if importResult.Status != "SUCCESS" {
+			failures = append(failures, googledrive.ErrDailySyncIncomplete)
+		}
 	}
-	out.FutureRead = int64(importResult.RecordsRead)
-	out.FutureCreated = int64(importResult.RecordsCreated)
-	out.FutureUpdated = int64(importResult.RecordsUpdated)
-	out.FutureFailed = int64(importResult.RecordsFailed)
-	out.FuturePending = importResult.PendingFiles
-	out.FutureStale = importResult.StaleFiles
-	if inventoryErr != nil || out.Status != "SUCCESS" || importErr != nil || importResult.Status != "SUCCESS" {
+
+	for _, scope := range []googledrive.DriveFolderScope{googledrive.DriveFolderOperationalLosses, googledrive.DriveFolderNuvemShipping} {
+		folder, found := successfulDriveFolder(out.FolderResults, scope)
+		validation := googledrive.DriveSourceValidationResult{}
+		validationStatus := "FAILED"
+		errorCode := "GOOGLE_DRIVE_SOURCE_INVENTORY_UNAVAILABLE"
+		inventoryBatchID := ""
+		var validationErr error
+		if !found {
+			if scope == googledrive.DriveFolderOperationalLosses {
+				out.OperationalValidation.Status = "FAILED"
+			} else {
+				out.ShippingValidation.Status = "FAILED"
+			}
+			validation.Status = "FAILED"
+			validationErr = errDriveSourceSnapshotRead
+		} else {
+			inventoryBatchID = folder.BatchID
+			validation, validationErr = s.validateDriveSourceSnapshot(ctx, scheduledAt, scope, folder.BatchID)
+			if validationErr == nil {
+				// Structure can be checked safely, but these sources have no approved
+				// financial contract yet, so their contents must remain pending.
+				validationStatus = "PENDING"
+				errorCode = "GOOGLE_DRIVE_SOURCE_CONTRACT_PENDING"
+			} else {
+				validationStatus = validation.Status
+				if validationStatus != "PARTIAL" {
+					validationStatus = "FAILED"
+				}
+				errorCode = "GOOGLE_DRIVE_SOURCE_VALIDATION_FAILED"
+			}
+		}
+		if scope == googledrive.DriveFolderOperationalLosses {
+			out.OperationalValidation = validation
+		} else {
+			out.ShippingValidation = validation
+		}
+		if persistErr := s.snapshots.RecordSourceValidation(ctx, googledrive.DriveSourceValidationRecord{
+			ScheduledAt: scheduledAt, Scope: scope, InventoryBatchID: inventoryBatchID,
+			Status: validationStatus, ErrorCode: errorCode, Result: validation,
+		}); persistErr != nil {
+			if scope == googledrive.DriveFolderOperationalLosses {
+				out.OperationalValidation.Status = "FAILED"
+			} else {
+				out.ShippingValidation.Status = "FAILED"
+			}
+			failures = append(failures, persistErr)
+		}
+		if validationErr != nil {
+			failures = append(failures, validationErr)
+		} else if validationStatus == "PENDING" {
+			failures = append(failures, googledrive.ErrDailySyncIncomplete)
+		}
+	}
+
+	if len(failures) > 0 {
 		out.Status = "PARTIAL"
-		if out.FoldersRead == 0 && importErr != nil {
+		if out.FoldersRead == 0 {
 			out.Status = "FAILED"
 		}
-		return out, errors.Join(googledrive.ErrDailySyncIncomplete, inventoryErr, importErr)
+		return out, errors.Join(append([]error{googledrive.ErrDailySyncIncomplete}, failures...)...)
 	}
 	return out, nil
 }
 
-func successfulNuvemPagoFolder(results []googledrive.FileInventorySyncResult) (googledrive.FileInventorySyncResult, bool) {
+func successfulDriveFolder(results []googledrive.FileInventorySyncResult, scope googledrive.DriveFolderScope) (googledrive.FileInventorySyncResult, bool) {
 	for _, result := range results {
-		if result.Scope == googledrive.DriveFolderNuvemPagoReceipts && result.Status == "SUCCESS" && strings.TrimSpace(result.BatchID) != "" {
+		if result.Scope == scope && result.Status == "SUCCESS" && strings.TrimSpace(result.BatchID) != "" {
 			return result, true
 		}
 	}
@@ -235,7 +309,7 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 					if err := stageCtx.Err(); err != nil {
 						return err
 					}
-					if err := copyVerifiedDriveFile(stagedPath, file, actual, s.folderID, reader, size, sha256Hex); err != nil {
+					if err := copyVerifiedDriveFile(stagedPath, file, actual, s.folderIDs[googledrive.DriveFolderNuvemPagoReceipts], reader, size, sha256Hex); err != nil {
 						return err
 					}
 					if isTSV {
@@ -319,6 +393,344 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 		return s.importer.RecordPending(ctx, pending)
 	}
 	return s.importer.ImportStaged(ctx, workspace.Path(), pending, removeWorkspace)
+}
+
+// validateDriveSourceSnapshot streams files from an approved non-receipts root
+// for safety checks only. Since no financial contract is approved for these
+// sources, every discovered file remains pending and no row becomes a fact.
+func (s *dailyGoogleDriveImportSyncer) validateDriveSourceSnapshot(
+	ctx context.Context,
+	scheduledAt time.Time,
+	scope googledrive.DriveFolderScope,
+	batchID string,
+) (out googledrive.DriveSourceValidationResult, returnErr error) {
+	out.Status = "PENDING"
+	if ctx == nil || ctx.Err() != nil || (scope != googledrive.DriveFolderOperationalLosses && scope != googledrive.DriveFolderNuvemShipping) || strings.TrimSpace(batchID) == "" {
+		out.Status = "FAILED"
+		return out, errors.Join(errDriveSourceSnapshotRead, ctxErr(ctx))
+	}
+	previousSchedule, err := previousGoogleDriveSchedule(scheduledAt)
+	if err != nil {
+		out.Status = "FAILED"
+		return out, err
+	}
+	workspace, err := securetemp.NewWorkspace(s.tempRoot, "majucau-drive-validate-")
+	if err != nil {
+		out.Status = "FAILED"
+		return out, errDriveSourceValidation
+	}
+	workspaceRemoved := false
+	removeWorkspace := func() error {
+		if workspaceRemoved {
+			return nil
+		}
+		if err := workspace.RemoveAll(); err != nil {
+			return err
+		}
+		workspaceRemoved = true
+		return nil
+	}
+	defer func() {
+		if cleanupErr := removeWorkspace(); cleanupErr != nil {
+			out = googledrive.DriveSourceValidationResult{Status: "FAILED"}
+			returnErr = errors.Join(returnErr, cleanupErr)
+		}
+	}()
+
+	var afterFileID string
+	var sequence int64
+	var currentScheduleFileFound bool
+	for {
+		if err := ctx.Err(); err != nil {
+			out.Status = "FAILED"
+			return out, err
+		}
+		page, err := s.snapshots.ReadSuccessfulSnapshotPage(ctx, scope, batchID, afterFileID, driveImportSnapshotPageSize)
+		if err != nil {
+			out.Status = "FAILED"
+			return out, errors.Join(errDriveSourceSnapshotRead, err)
+		}
+		for _, file := range page.Files {
+			if err := ctx.Err(); err != nil {
+				out.Status = "FAILED"
+				return out, err
+			}
+			if file.MIMEType == "application/vnd.google-apps.folder" {
+				continue
+			}
+			if !addPendingCount(&out.FilesRead, 1) || !addPendingCount(&out.FilesPending, 1) {
+				out.Status = "FAILED"
+				return out, errDriveSourceValidation
+			}
+			modifiedAt, err := time.Parse(time.RFC3339Nano, file.ModifiedTime)
+			if err != nil {
+				if !addPendingCount(&out.FilesInvalid, 1) {
+					out.Status = "FAILED"
+					return out, errDriveSourceValidation
+				}
+				continue
+			}
+			if modifiedAt.After(scheduledAt) {
+				if !addPendingCount(&out.FilesDeferred, 1) {
+					out.Status = "FAILED"
+					return out, errDriveSourceValidation
+				}
+				continue
+			}
+			if !modifiedAt.After(previousSchedule) {
+				if !addPendingCount(&out.FilesStale, 1) {
+					out.Status = "FAILED"
+					return out, errDriveSourceValidation
+				}
+				continue
+			}
+			currentScheduleFileFound = true
+
+			extension := strings.ToLower(filepath.Ext(file.Name))
+			if !supportedDriveStructureExtension(extension) {
+				if !addPendingCount(&out.FilesUnsupported, 1) {
+					out.Status = "FAILED"
+					return out, errDriveSourceValidation
+				}
+				continue
+			}
+			if !file.SizeKnown || file.Size <= 0 || (extension == ".json" && file.Size > jsonstream.MaxFileBytes) || (extension == ".xls" && file.Size > xlsstream.MaxFileBytes) || (extension == ".xlsx" && file.Size > xlsxstream.MaxFileBytes) {
+				if !addPendingCount(&out.FilesUnsupported, 1) {
+					out.Status = "FAILED"
+					return out, errDriveSourceValidation
+				}
+				continue
+			}
+			if sequence == int64(^uint64(0)>>1) {
+				out.Status = "FAILED"
+				return out, errDriveSourceValidation
+			}
+			sequence++
+			stagedPath := filepath.Join(workspace.Path(), fmt.Sprintf("%020d%s", sequence, extension))
+			_, stageErr := s.stager.WithPrivateStage(ctx, s.tempRoot, file.ID, file.Size,
+				func(stageCtx context.Context, actual googledrive.File, reader io.Reader, size int64, sha256Hex string) error {
+					if err := stageCtx.Err(); err != nil {
+						return err
+					}
+					if err := copyVerifiedDriveFile(stagedPath, file, actual, s.folderIDs[scope], reader, size, sha256Hex); err != nil {
+						return err
+					}
+					return validateDriveStructure(stageCtx, extension, stagedPath, workspace.Path(), size)
+				},
+			)
+			if cleanupErr := securetemp.RemoveFile(stagedPath); cleanupErr != nil {
+				out.Status = "FAILED"
+				return out, cleanupErr
+			}
+			if stageErr != nil {
+				if ctx.Err() != nil {
+					out.Status = "FAILED"
+					return out, ctx.Err()
+				}
+				var cleanupErr *securetemp.CleanupError
+				if errors.As(stageErr, &cleanupErr) {
+					out.Status = "FAILED"
+					return out, stageErr
+				}
+				if errors.Is(stageErr, errDriveSourceInvalidFile) || errors.Is(stageErr, csvlimit.ErrLimitExceeded) || errors.Is(stageErr, xlsxstream.ErrInvalidWorkbook) || errors.Is(stageErr, xlsxstream.ErrLimitExceeded) || errors.Is(stageErr, xlsstream.ErrInvalidWorkbook) || errors.Is(stageErr, xlsstream.ErrLimitExceeded) || errors.Is(stageErr, jsonstream.ErrInvalidJSON) || errors.Is(stageErr, jsonstream.ErrLimitExceeded) {
+					if !addPendingCount(&out.FilesInvalid, 1) {
+						out.Status = "FAILED"
+						return out, errDriveSourceValidation
+					}
+					continue
+				}
+				if !addPendingCount(&out.FilesFailed, 1) {
+					out.Status = "FAILED"
+					return out, errDriveSourceValidation
+				}
+				out.Status = "PARTIAL"
+				return out, errDriveSourceValidation
+			}
+			if !addPendingCount(&out.FilesValidated, 1) {
+				out.Status = "FAILED"
+				return out, errDriveSourceValidation
+			}
+		}
+		if page.HasMore {
+			if len(page.Files) == 0 || page.NextFileID == "" || page.NextFileID <= afterFileID {
+				out.Status = "FAILED"
+				return out, errDriveSourceSnapshotRead
+			}
+			afterFileID = page.NextFileID
+			continue
+		}
+		break
+	}
+	out.SourceMissing = !currentScheduleFileFound
+	if out.SourceMissing || out.FilesPending > 0 || out.FilesInvalid > 0 || out.FilesUnsupported > 0 {
+		out.Status = "PENDING"
+	}
+	if err := removeWorkspace(); err != nil {
+		out.Status = "FAILED"
+		return out, err
+	}
+	return out, nil
+}
+
+func ctxErr(ctx context.Context) error {
+	if ctx == nil {
+		return nil
+	}
+	return ctx.Err()
+}
+
+func supportedDriveStructureExtension(extension string) bool {
+	switch extension {
+	case ".csv", ".tsv", ".json", ".xls", ".xlsx":
+		return true
+	default:
+		return false
+	}
+}
+
+func validateDriveStructure(ctx context.Context, extension, path, tempParent string, size int64) error {
+	switch extension {
+	case ".csv":
+		return validateDriveCSV(ctx, path)
+	case ".tsv":
+		return validateDriveTSV(ctx, path)
+	case ".json":
+		return validateDriveJSON(ctx, path, size)
+	case ".xls":
+		return validateDriveXLS(ctx, path, size)
+	case ".xlsx":
+		return validateDriveXLSX(ctx, path, tempParent, size)
+	default:
+		return errDriveSourceInvalidFile
+	}
+}
+
+// validateDriveCSV verifies bounded CSV record structure only. It does not
+// interpret columns or retain cell values for these unapproved source types.
+func validateDriveCSV(ctx context.Context, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return errDriveSourceValidation
+	}
+	buffered := bufio.NewReaderSize(driveContextReader{ctx: ctx, source: file}, 32<<10)
+	firstRecord, delimiter, sniffErr := readDriveCSVFirstRecord(ctx, buffered)
+	if sniffErr != nil {
+		return errors.Join(sniffErr, file.Close())
+	}
+	bounded, err := csvlimit.NewDelimitedReader(io.MultiReader(bytes.NewReader(firstRecord), buffered), delimiter)
+	if err != nil {
+		return errors.Join(errDriveSourceInvalidFile, err, file.Close())
+	}
+	reader := csv.NewReader(bounded)
+	reader.Comma = rune(delimiter)
+	reader.FieldsPerRecord = -1
+	seenRecord := false
+	var parseErr error
+	for {
+		if err := ctx.Err(); err != nil {
+			parseErr = err
+			break
+		}
+		_, err := reader.Read()
+		if err := ctx.Err(); err != nil {
+			parseErr = err
+			break
+		}
+		if errors.Is(err, io.EOF) {
+			if !seenRecord {
+				parseErr = errDriveSourceInvalidFile
+			}
+			break
+		}
+		if errors.Is(err, csvlimit.ErrLimitExceeded) {
+			parseErr = err
+			break
+		}
+		if err != nil {
+			parseErr = errors.Join(errDriveSourceInvalidFile, err)
+			break
+		}
+		seenRecord = true
+	}
+	return errors.Join(parseErr, file.Close())
+}
+
+func readDriveCSVFirstRecord(ctx context.Context, reader *bufio.Reader) ([]byte, byte, error) {
+	if ctx == nil || reader == nil {
+		return nil, 0, errDriveSourceInvalidFile
+	}
+	record := make([]byte, 0, 4096)
+	var commas, semicolons int
+	inQuotes := false
+	quotePending := false
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, 0, err
+		}
+		chunk, readErr := reader.ReadSlice('\n')
+		if len(chunk) > csvlimit.MaxRecordBytes-len(record) {
+			return nil, 0, csvlimit.ErrLimitExceeded
+		}
+		record = append(record, chunk...)
+		complete := false
+		for _, value := range chunk {
+			if inQuotes {
+				if quotePending {
+					if value == '"' {
+						quotePending = false
+						continue
+					}
+					inQuotes = false
+					quotePending = false
+				} else if value == '"' {
+					quotePending = true
+					continue
+				} else {
+					continue
+				}
+			}
+			switch value {
+			case '"':
+				inQuotes = true
+			case '\n':
+				complete = true
+			case ',':
+				commas++
+			case ';':
+				semicolons++
+			}
+			if complete {
+				break
+			}
+		}
+		if complete || errors.Is(readErr, io.EOF) {
+			if len(record) == 0 {
+				return nil, 0, errDriveSourceInvalidFile
+			}
+			delimiter := byte(';')
+			if commas > semicolons {
+				delimiter = ','
+			}
+			return record, delimiter, nil
+		}
+		if !errors.Is(readErr, bufio.ErrBufferFull) {
+			if readErr != nil {
+				return nil, 0, readErr
+			}
+		}
+	}
+}
+
+type driveContextReader struct {
+	ctx    context.Context
+	source io.Reader
+}
+
+func (reader driveContextReader) Read(buffer []byte) (int, error) {
+	if err := reader.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return reader.source.Read(buffer)
 }
 
 // validateDriveXLSX confirms that a downloaded workbook is structurally safe

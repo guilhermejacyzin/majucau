@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/jsonstream"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
@@ -23,6 +24,16 @@ import (
 )
 
 const testNuvemPagoFolderID = "folder-nuvem"
+const testOperationalFolderID = "folder-losses"
+const testShippingFolderID = "folder-shipping"
+
+func testDriveFolderIDs() googledrive.DriveFolderIDs {
+	return googledrive.DriveFolderIDs{
+		googledrive.DriveFolderOperationalLosses: testOperationalFolderID,
+		googledrive.DriveFolderNuvemPagoReceipts: testNuvemPagoFolderID,
+		googledrive.DriveFolderNuvemShipping:     testShippingFolderID,
+	}
+}
 
 type fakeDailyDriveInventory struct {
 	result googledrive.DailyFileInventorySyncResult
@@ -34,20 +45,43 @@ func (f fakeDailyDriveInventory) SyncDaily(context.Context, time.Time) (googledr
 }
 
 type fakeDriveSnapshotReader struct {
-	pages map[string]googledrive.FileInventorySnapshotPage
-	err   error
-	calls []string
+	pages       map[string]googledrive.FileInventorySnapshotPage
+	scopedPages map[googledrive.DriveFolderScope]map[string]map[string]googledrive.FileInventorySnapshotPage
+	err         error
+	calls       []string
+	scopedCalls []string
+	records     []googledrive.DriveSourceValidationRecord
+	recordErr   error
 }
 
 func (f *fakeDriveSnapshotReader) ReadSuccessfulSnapshotPage(_ context.Context, scope googledrive.DriveFolderScope, batchID, after string, pageSize int) (googledrive.FileInventorySnapshotPage, error) {
-	f.calls = append(f.calls, after)
-	if scope != googledrive.DriveFolderNuvemPagoReceipts || batchID != "batch-current" || pageSize != driveImportSnapshotPageSize {
+	f.scopedCalls = append(f.scopedCalls, string(scope)+":"+batchID+":"+after)
+	if pageSize != driveImportSnapshotPageSize {
 		return googledrive.FileInventorySnapshotPage{}, errDriveFutureSnapshotRead
+	}
+	if scope == googledrive.DriveFolderNuvemPagoReceipts {
+		f.calls = append(f.calls, after)
 	}
 	if f.err != nil {
 		return googledrive.FileInventorySnapshotPage{}, f.err
 	}
-	return f.pages[after], nil
+	if scope == googledrive.DriveFolderNuvemPagoReceipts && batchID == "batch-current" {
+		return f.pages[after], nil
+	}
+	if scoped := f.scopedPages[scope]; scoped != nil {
+		if pages := scoped[batchID]; pages != nil {
+			return pages[after], nil
+		}
+	}
+	if (scope == googledrive.DriveFolderOperationalLosses && batchID == "batch-losses") || (scope == googledrive.DriveFolderNuvemShipping && batchID == "batch-shipping") {
+		return googledrive.FileInventorySnapshotPage{}, nil
+	}
+	return googledrive.FileInventorySnapshotPage{}, errDriveFutureSnapshotRead
+}
+
+func (f *fakeDriveSnapshotReader) RecordSourceValidation(_ context.Context, record googledrive.DriveSourceValidationRecord) error {
+	f.records = append(f.records, record)
+	return f.recordErr
 }
 
 type fakeDrivePrivateStager struct {
@@ -141,6 +175,10 @@ func successfulDriveInventory(status string, failed int) googledrive.DailyFileIn
 }
 
 func driveSnapshotFile(id, name, modifiedAt string, content []byte) (googledrive.File, driveStageFixture) {
+	return driveSnapshotFileUnderRoot(id, name, modifiedAt, content, testNuvemPagoFolderID)
+}
+
+func driveSnapshotFileUnderRoot(id, name, modifiedAt string, content []byte, rootID string) (googledrive.File, driveStageFixture) {
 	md5sum := md5.Sum(content)
 	mimeType := "text/csv"
 	if strings.EqualFold(filepath.Ext(name), ".xlsx") {
@@ -153,7 +191,7 @@ func driveSnapshotFile(id, name, modifiedAt string, content []byte) (googledrive
 	file := googledrive.File{
 		ID: id, Name: name, MIMEType: mimeType, Size: int64(len(content)), SizeKnown: true,
 		ModifiedTime: modifiedAt, MD5Checksum: hex.EncodeToString(md5sum[:]), Version: "7",
-		Parents: []string{testNuvemPagoFolderID}, ScopeRootID: testNuvemPagoFolderID,
+		Parents: []string{rootID}, ScopeRootID: rootID,
 	}
 	actual := file
 	return file, driveStageFixture{file: actual, content: content}
@@ -172,7 +210,7 @@ func TestDailyDrivePipelineValidatesJSONInStreamingAndKeepsItPending(t *testing.
 	}}
 	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true, PendingFiles: 3}}
 	tempRoot := t.TempDir()
-	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testNuvemPagoFolderID)
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testDriveFolderIDs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,6 +230,125 @@ func TestDailyDrivePipelineValidatesJSONInStreamingAndKeepsItPending(t *testing.
 	}
 }
 
+func TestDailyDrivePipelineStreamsOperationalXLSXAndShippingCSVWithoutFinancialImport(t *testing.T) {
+	scheduledAt := time.Date(2026, 10, 19, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
+	losses, lossesFixture := driveSnapshotFileUnderRoot("file-losses", "operations.xlsx", "2026-10-19T09:10:00-03:00", validDriveXLSX(t), testOperationalFolderID)
+	freight, freightFixture := driveSnapshotFileUnderRoot("file-freight", "freight.csv", "2026-10-19T09:12:00-03:00", []byte("pedido;frete\nfixture;0,00\n"), testShippingFolderID)
+	reader := &fakeDriveSnapshotReader{
+		pages: map[string]googledrive.FileInventorySnapshotPage{},
+		scopedPages: map[googledrive.DriveFolderScope]map[string]map[string]googledrive.FileInventorySnapshotPage{
+			googledrive.DriveFolderOperationalLosses: {"batch-losses": {"": {Files: []googledrive.File{losses}}}},
+			googledrive.DriveFolderNuvemShipping:     {"batch-shipping": {"": {Files: []googledrive.File{freight}}}},
+		},
+	}
+	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{
+		losses.ID:  lossesFixture,
+		freight.ID: freightFixture,
+	}}
+	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true}}
+	tempRoot := t.TempDir()
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testDriveFolderIDs())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := syncer.SyncDaily(context.Background(), scheduledAt)
+	if !errors.Is(err, googledrive.ErrDailySyncIncomplete) || result.Status != "PARTIAL" {
+		t.Fatalf("daily source validation result=%+v error=%v", result, err)
+	}
+	if result.OperationalValidation.Status != "PENDING" || result.OperationalValidation.FilesRead != 1 || result.OperationalValidation.FilesValidated != 1 || result.OperationalValidation.FilesPending != 1 {
+		t.Fatalf("operational XLSX must be structurally streamed and stay pending: %+v", result.OperationalValidation)
+	}
+	if result.ShippingValidation.Status != "PENDING" || result.ShippingValidation.FilesRead != 1 || result.ShippingValidation.FilesValidated != 1 || result.ShippingValidation.FilesPending != 1 {
+		t.Fatalf("shipping CSV must be structurally streamed and stay pending: %+v", result.ShippingValidation)
+	}
+	if importer.importCalls != 0 || importer.pendingCalls != 1 || len(stager.calls) != 2 {
+		t.Fatalf("sources must not create financial records: importer=(%d,%d) staged=%#v", importer.importCalls, importer.pendingCalls, stager.calls)
+	}
+	if len(reader.records) != 2 {
+		t.Fatalf("persisted source validation records = %d, want one per source", len(reader.records))
+	}
+	for _, record := range reader.records {
+		if record.Status != "PENDING" || record.ErrorCode != "GOOGLE_DRIVE_SOURCE_CONTRACT_PENDING" || record.Result.FilesRead != 1 || record.Result.FilesValidated != 1 || record.Result.FilesPending != 1 {
+			t.Fatalf("unexpected persisted source validation record: %+v", record)
+		}
+	}
+	if entries, readErr := os.ReadDir(tempRoot); readErr != nil || len(entries) != 0 {
+		t.Fatalf("Drive validation staging artifacts remain: entries=%v error=%v", entries, readErr)
+	}
+}
+
+func TestDailyDrivePipelineKeepsMalformedOperationalAndShippingFilesPending(t *testing.T) {
+	scheduledAt := time.Date(2026, 10, 19, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
+	losses, lossesFixture := driveSnapshotFileUnderRoot("file-losses-invalid", "operations.xlsx", "2026-10-19T09:10:00-03:00", []byte("not an XLSX workbook"), testOperationalFolderID)
+	freight, freightFixture := driveSnapshotFileUnderRoot("file-freight-invalid", "freight.csv", "2026-10-19T09:12:00-03:00", []byte("\"unterminated;field\n"), testShippingFolderID)
+	reader := &fakeDriveSnapshotReader{
+		pages: map[string]googledrive.FileInventorySnapshotPage{},
+		scopedPages: map[googledrive.DriveFolderScope]map[string]map[string]googledrive.FileInventorySnapshotPage{
+			googledrive.DriveFolderOperationalLosses: {"batch-losses": {"": {Files: []googledrive.File{losses}}}},
+			googledrive.DriveFolderNuvemShipping:     {"batch-shipping": {"": {Files: []googledrive.File{freight}}}},
+		},
+	}
+	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{
+		losses.ID:  lossesFixture,
+		freight.ID: freightFixture,
+	}}
+	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true}}
+	tempRoot := t.TempDir()
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testDriveFolderIDs())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := syncer.SyncDaily(context.Background(), scheduledAt)
+	if !errors.Is(err, googledrive.ErrDailySyncIncomplete) || result.Status != "PARTIAL" {
+		t.Fatalf("daily invalid source result=%+v error=%v", result, err)
+	}
+	if result.OperationalValidation.FilesInvalid != 1 || result.OperationalValidation.FilesValidated != 0 || result.OperationalValidation.FilesPending != 1 {
+		t.Fatalf("invalid operational workbook must remain pending: %+v", result.OperationalValidation)
+	}
+	if result.ShippingValidation.FilesInvalid != 1 || result.ShippingValidation.FilesValidated != 0 || result.ShippingValidation.FilesPending != 1 {
+		t.Fatalf("invalid freight CSV must remain pending: %+v", result.ShippingValidation)
+	}
+	if len(reader.records) != 2 {
+		t.Fatalf("persisted source validation records = %d, want both sources", len(reader.records))
+	}
+	for _, record := range reader.records {
+		if record.Status != "PENDING" || record.Result.FilesInvalid != 1 || record.Result.FilesPending != 1 {
+			t.Fatalf("invalid file must be durably pending without financial import: %+v", record)
+		}
+	}
+	if importer.importCalls != 0 || importer.pendingCalls != 1 {
+		t.Fatalf("invalid sources must not become financial imports: importer=%+v", importer)
+	}
+	if entries, readErr := os.ReadDir(tempRoot); readErr != nil || len(entries) != 0 {
+		t.Fatalf("invalid input left temporary files: entries=%v error=%v", entries, readErr)
+	}
+}
+
+func TestDriveCSVValidationDetectsCommaAndAppliesColumnLimit(t *testing.T) {
+	directory := t.TempDir()
+	commaPath := filepath.Join(directory, "comma.csv")
+	if err := os.WriteFile(commaPath, []byte("\"left,inside\",right\nvalue,second\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateDriveCSV(context.Background(), commaPath); err != nil {
+		t.Fatalf("comma-delimited CSV with a quoted comma should be structurally valid: %v", err)
+	}
+
+	fields := make([]string, csvlimit.MaxFields+1)
+	for index := range fields {
+		fields[index] = "x"
+	}
+	tooWidePath := filepath.Join(directory, "too-wide.csv")
+	if err := os.WriteFile(tooWidePath, []byte(strings.Join(fields, ",")), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateDriveCSV(context.Background(), tooWidePath); !errors.Is(err, csvlimit.ErrLimitExceeded) {
+		t.Fatalf("comma field limit error = %v, want %v", err, csvlimit.ErrLimitExceeded)
+	}
+}
+
 func TestDailyDrivePipelineValidatesXLSInStreamingAndKeepsItPending(t *testing.T) {
 	scheduledAt := time.Date(2026, 10, 19, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
 	validBytes, err := os.ReadFile(filepath.Join("..", "..", "internal", "integrations", "xlsstream", "testdata", "simple.xls"))
@@ -208,7 +365,7 @@ func TestDailyDrivePipelineValidatesXLSInStreamingAndKeepsItPending(t *testing.T
 	}}
 	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true, PendingFiles: 3}}
 	tempRoot := t.TempDir()
-	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testNuvemPagoFolderID)
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testDriveFolderIDs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +390,7 @@ func TestDailyDrivePipelineMarksEmptyReceiptsFolderPending(t *testing.T) {
 	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{"": {}}}
 	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{}}
 	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true}}
-	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testNuvemPagoFolderID)
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testDriveFolderIDs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,7 +421,7 @@ func TestDailyDrivePipelineImportsAvailableCSVAndKeepsOtherScopesIndependent(t *
 		"file-a": onTimeData, "file-c": validXLSXData, "file-d": invalidXLSXData,
 	}}
 	importer := &fakeStagedFutureImporter{importResult: nuvempago.FutureImportResult{Status: "PARTIAL", RecordsRead: 2, RecordsCreated: 2, PendingFiles: 3}}
-	syncer, err := newDailyGoogleDriveImportSyncer(inventory, reader, stager, importer, t.TempDir(), testNuvemPagoFolderID)
+	syncer, err := newDailyGoogleDriveImportSyncer(inventory, reader, stager, importer, t.TempDir(), testDriveFolderIDs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -323,7 +480,7 @@ func TestDailyDrivePipelineDoesNotDownloadXLSXAboveParserLimit(t *testing.T) {
 	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{"": {Files: []googledrive.File{oversized}}}}
 	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{}}
 	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true, PendingFiles: 1}}
-	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testNuvemPagoFolderID)
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testDriveFolderIDs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -351,7 +508,7 @@ func TestDailyDrivePipelineStreamsAndKeepsTSVFilesPending(t *testing.T) {
 	}}
 	tempRoot := t.TempDir()
 	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true, PendingFiles: 2}}
-	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testNuvemPagoFolderID)
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testDriveFolderIDs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,7 +536,7 @@ func TestDailyDrivePipelineReportsInvalidMetadataAlongsideImportedCSV(t *testing
 	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{"": {Files: []googledrive.File{valid, invalid}}}}
 	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{"file-valid": fixture}}
 	importer := &fakeStagedFutureImporter{importResult: nuvempago.FutureImportResult{Status: "PARTIAL", RecordsRead: 1, RecordsCreated: 1, PendingFiles: 1}}
-	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testNuvemPagoFolderID)
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testDriveFolderIDs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +558,7 @@ func TestDailyDrivePipelineDefersLateCSVUntilFollowingSchedule(t *testing.T) {
 	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{"": {Files: []googledrive.File{file}}}}
 	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{"file-late": fixture}}
 	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true, PendingFiles: 1}}
-	syncer, err := newDailyGoogleDriveImportSyncer(inventory, reader, stager, importer, t.TempDir(), testNuvemPagoFolderID)
+	syncer, err := newDailyGoogleDriveImportSyncer(inventory, reader, stager, importer, t.TempDir(), testDriveFolderIDs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -412,13 +569,19 @@ func TestDailyDrivePipelineDefersLateCSVUntilFollowingSchedule(t *testing.T) {
 	if !importer.recorded.NoCompatibleCSV || importer.recorded.DeferredFiles != 1 {
 		t.Fatalf("first schedule pending = %+v", importer.recorded)
 	}
+	if len(reader.records) != 2 {
+		t.Fatalf("source validation records after first run = %d, want both independent sources", len(reader.records))
+	}
 
 	importer.pendingCalls = 0
 	importer.importResult = nuvempago.FutureImportResult{Status: "SUCCESS", RecordsRead: 1, RecordsCreated: 1}
 	nextSchedule := firstSchedule.Add(24 * time.Hour)
 	secondResult, secondErr := syncer.SyncDaily(context.Background(), nextSchedule)
-	if secondErr != nil || secondResult.Status != "SUCCESS" || importer.importCalls != 1 || len(stager.calls) != 1 {
+	if !errors.Is(secondErr, googledrive.ErrDailySyncIncomplete) || secondResult.Status != "PARTIAL" || secondResult.FutureStatus != "SUCCESS" || importer.importCalls != 1 || len(stager.calls) != 1 {
 		t.Fatalf("following schedule result=%+v error=%v importer=%+v staged=%#v", secondResult, secondErr, importer, stager.calls)
+	}
+	if !secondResult.OperationalValidation.SourceMissing || !secondResult.ShippingValidation.SourceMissing {
+		t.Fatalf("empty independent sources should remain pending after receipts import: operational=%+v shipping=%+v", secondResult.OperationalValidation, secondResult.ShippingValidation)
 	}
 }
 
@@ -429,7 +592,7 @@ func TestDailyDrivePipelineDoesNotReuseFileOlderThanPreviousSchedule(t *testing.
 	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{"": {Files: []googledrive.File{stale}}}}
 	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{}}
 	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true, PendingFiles: 1, StaleFiles: 1}}
-	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testNuvemPagoFolderID)
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testDriveFolderIDs())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -521,3 +521,7 @@ O código de produção do G8 aguarda fechamento das decisões de provedor, iden
 ## Revisão de segurança do leitor XLSX — 2026-10-19
 
 O parser de `.xlsx` limita cada token XML a 1 MiB durante a leitura, antes do `encoding/xml` formar atributos, textos, comentários, CDATA ou declarações grandes em memória. Casos adversariais rejeitam o arquivo inteiro e não publicam linhas. Essa proteção é estrutural: contratos, amostras reais, integração financeira e homologação continuam pendentes, e BK-043 permanece em 40%. Evidência e verificações em `docs/evidence/DRIVE-XLSX-XML-TOKEN-LIMIT-2026-10-19.md`.
+
+## Validação em fluxo das três fontes do Drive — 2026-10-19
+
+O worker passou a conferir estruturalmente os arquivos de perdas operacionais e frete, além dos recebimentos futuros. Os formatos CSV, TSV, JSON, XLS e XLSX são lidos um por vez, com limites e staging privado. Estado e contagens por fonte/dia ficam persistidos no PostgreSQL de modo idempotente, sem nomes ou conteúdo dos arquivos. Perdas e frete continuam pendentes até aprovação dos contratos; nenhum valor é calculado ou enviado à DRE. A checagem completa local passou; o teste PostgreSQL precisa ser confirmado na CI porque não havia banco de teste local configurado. Evidência: `docs/evidence/DRIVE-ALL-SOURCE-STRUCTURAL-STREAMING-2026-10-19.md`.

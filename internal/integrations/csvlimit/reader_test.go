@@ -34,6 +34,35 @@ func TestNewReaderKeepsSemicolonDelimiterAndEscapedFields(t *testing.T) {
 	}
 }
 
+func TestNewDelimitedReaderEnforcesCommaColumnsAndRespectsQuotedSeparators(t *testing.T) {
+	valid := `"left,inside";"right;inside"` + "\n"
+	reader, err := NewDelimitedReader(strings.NewReader(valid), ';')
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.Copy(io.Discard, reader); err != nil {
+		t.Fatalf("quoted separators were counted as columns: %v", err)
+	}
+
+	fields := make([]string, MaxFields+1)
+	for index := range fields {
+		fields[index] = "x"
+	}
+	reader, err = NewDelimitedReader(strings.NewReader(strings.Join(fields, ",")), ',')
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.Copy(io.Discard, reader); !errors.Is(err, ErrLimitExceeded) {
+		t.Fatalf("comma CSV field limit error = %v, want %v", err, ErrLimitExceeded)
+	}
+}
+
+func TestNewDelimitedReaderRejectsUnsupportedDelimiter(t *testing.T) {
+	if _, err := NewDelimitedReader(strings.NewReader("data"), '\t'); !errors.Is(err, ErrInvalidDelimiter) {
+		t.Fatalf("tab delimiter error = %v, want %v", err, ErrInvalidDelimiter)
+	}
+}
+
 func TestNewTSVReaderEnforcesRecordLimitAcrossQuotedLines(t *testing.T) {
 	content := "\"" + strings.Repeat("x\n", MaxRecordBytes/2+1) + "\""
 	_, err := io.Copy(io.Discard, NewTSVReader(strings.NewReader(content)))

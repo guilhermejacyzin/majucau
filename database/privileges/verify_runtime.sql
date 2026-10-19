@@ -56,6 +56,7 @@ BEGIN
       'public.google_drive_sync_folders',
       'public.google_drive_file_versions',
       'public.google_drive_files',
+      'public.google_drive_source_validation_runs',
       'public.sync_cursors',
       'public.raw_records',
       'public.receipts',
@@ -67,6 +68,7 @@ BEGIN
     expected_insert := relation_row.qualified_name = ANY (ARRAY[
       'public.integration_connections',
       'public.integration_sync_batches',
+      'public.google_drive_source_validation_runs',
       'public.bling_sync_page_checkpoints',
       'public.google_drive_sync_page_checkpoints',
       'public.google_drive_sync_folders',
@@ -83,6 +85,7 @@ BEGIN
       'public.sync_cursors',
       'public.google_drive_sync_folders',
       'public.google_drive_files',
+      'public.google_drive_source_validation_runs',
       'public.receipts',
       'public.receivables'
     ]::text[]);

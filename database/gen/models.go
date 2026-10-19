@@ -324,6 +324,28 @@ type GoogleDriveFileVersion struct {
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
+// Daily, idempotent structural-validation summary for the two approved Drive folders that remain pending financial contract approval. Stores counts only, never file names or contents.
+type GoogleDriveSourceValidationRun struct {
+	ID               pgtype.UUID        `json:"id"`
+	ConnectionID     pgtype.UUID        `json:"connection_id"`
+	FolderScope      string             `json:"folder_scope"`
+	ScheduledAt      pgtype.Timestamptz `json:"scheduled_at"`
+	InventoryBatchID pgtype.UUID        `json:"inventory_batch_id"`
+	Status           string             `json:"status"`
+	FilesRead        int64              `json:"files_read"`
+	FilesValidated   int64              `json:"files_validated"`
+	FilesPending     int64              `json:"files_pending"`
+	FilesInvalid     int64              `json:"files_invalid"`
+	FilesFailed      int64              `json:"files_failed"`
+	FilesStale       int64              `json:"files_stale"`
+	FilesDeferred    int64              `json:"files_deferred"`
+	FilesUnsupported int64              `json:"files_unsupported"`
+	SourceMissing    bool               `json:"source_missing"`
+	ErrorCode        *string            `json:"error_code"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
 // Bounded per-folder traversal state for an approved Drive tree. Only descendants discovered directly from an already approved folder are added; page tokens are private worker state.
 type GoogleDriveSyncFolder struct {
 	ConnectionID   pgtype.UUID `json:"connection_id"`

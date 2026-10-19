@@ -19,6 +19,7 @@ GRANT SELECT ON TABLE
   google_drive_sync_folders,
   google_drive_file_versions,
   google_drive_files,
+  google_drive_source_validation_runs,
   sync_cursors,
   raw_records,
   receipts,
@@ -34,6 +35,7 @@ TO majucau_runtime;
 GRANT INSERT, UPDATE ON TABLE
   integration_connections,
   integration_sync_batches,
+  google_drive_source_validation_runs,
   sync_cursors,
   receipts,
   receivables

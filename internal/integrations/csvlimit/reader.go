@@ -12,7 +12,10 @@ const (
 	MaxFields      = 256
 )
 
-var ErrLimitExceeded = errors.New("csv safety limit exceeded")
+var (
+	ErrLimitExceeded    = errors.New("csv safety limit exceeded")
+	ErrInvalidDelimiter = errors.New("csv delimiter is unsupported")
+)
 
 // Reader tracks CSV quoting before encoding/csv buffers a record. The limits
 // apply to bytes, so multibyte text remains bounded in memory as well.
@@ -30,6 +33,16 @@ type Reader struct {
 
 func NewReader(source io.Reader) *Reader {
 	return newReader(source, ';')
+}
+
+// NewDelimitedReader applies the same bounded field, record and column checks
+// to comma- or semicolon-delimited CSV. Callers that do not know the source
+// contract may inspect a bounded header first, then choose the delimiter.
+func NewDelimitedReader(source io.Reader, delimiter byte) (*Reader, error) {
+	if source == nil || (delimiter != ',' && delimiter != ';') {
+		return nil, ErrInvalidDelimiter
+	}
+	return newReader(source, delimiter), nil
 }
 
 // NewTSVReader applies the same bounded field and record checks to tab-delimited

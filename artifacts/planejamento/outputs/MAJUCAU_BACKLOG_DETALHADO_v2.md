@@ -1,6 +1,8 @@
 # Majucau — backlog de ponta a ponta, versão 2
 
-Revisão de 13/09/2026: fechamento funcional enviado pelo usuário incorporado. Escopo desta rodada confirmado: somente atualizar o backlog. Nenhum código do produto, integração, serviço ou teste real foi executado.
+Base funcional de 13/09/2026: fechamento funcional enviado pelo usuário incorporado. Naquela revisão, o escopo era atualizar o backlog sem executar código do produto, integrações, serviços ou testes reais.
+
+Atualização de 19/10/2026: implementação e testes locais agora cobrem validação estrutural em fluxo de arquivos nas três pastas aprovadas do Drive, sem interpretar perdas/frete como valores financeiros. A planilha oficial foi regenerada. Nenhuma regra financeira ou tela foi alterada e nenhum arquivo real do Drive foi importado. A confirmação do teste PostgreSQL depende da CI após o envio.
 
 Adendo aprovado em 04/10/2026, registrado no `G0-DECISION-REGISTER.md`: o Majucau calculará sua própria DRE com regras contábeis aprovadas; a DRE pronta do Bling deixa de ser tratada como resultado final. Este adendo substitui os trechos conflitantes abaixo. Princípios para estoque, produção e CPV/CMV foram recebidos e organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`; o mapeamento por conta/operação, os critérios específicos da empresa e os dados de origem continuam pendentes de validação contábil.
 
@@ -412,7 +414,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
 - BK-024 permanece em 35%: a revisão de streaming corrigiu no Site o formulário protegido do Client Secret, limitando a leitura a 8 KiB, e publicou a versão 16. Os 28 testes do Site passaram. Isso fecha esse ponto específico; ACLs em VM limpa, carga/memória e outros riscos continuam pendentes, então a estimativa da tarefa de segurança geral não muda. Evidências: `docs/evidence/DATA-STREAMING-STATIC-AUDIT-2026-10-11.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
-- Os arquivos diários do Drive também incluem XLS e XLSX; ainda são recusados até existir parser seguro. A arquitetura ADR-003 de leitura pelo serviço Go com identidade técnica restrita foi aprovada em 18/10/2026. O núcleo GET/streaming, o provedor de token, o inventário diário e o estágio temporário privado com callback em fluxo foram implementados e testados localmente. O staging privado já está ligado ao worker no caminho de recebimentos futuros: CSV pode ser importado; XLSX passa por validação segura em fluxo, mas permanece pendente sem interpretação financeira aprovada. Ainda faltam provisionamento, importação real, contratos e homologação em BK-042/BK-043.
+- Os arquivos diários do Drive incluem CSV, TSV, JSON, XLS e XLSX. A validação estrutural em fluxo está ligada às três pastas aprovadas: CSV pode ser importado somente no contrato aprovado de recebimentos futuros; as demais estruturas/formatações permanecem pendentes sem interpretação financeira aprovada. Estado e contagens por execução são persistidos no PostgreSQL sem nomes/conteúdo de arquivos. Ainda faltam provisionamento da identidade técnica, importação real, contratos e homologação em BK-042/BK-043.
 - A CI [39168729070](https://github.com/guilhermejacyzin/majucau/actions/runs/39168729070), no commit `f1cc8e2`, concluiu com sucesso nos quatro jobs: verificação de mensagens, backlog, Windows e PostgreSQL. Ela valida a serialização concorrente e a aposentadoria em blocos das páginas RAW já descritas nesta seção; não confirma OAuth, fim de paginação ou sincronização com a conta real Bling.
 
 ### Proteção de valores indisponíveis na Visão Executiva — 18/10/2026
@@ -1528,7 +1530,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
 ### BK-042 — Implementar leitura das três estruturas autorizadas do Google Drive
 
-**Situação:** Em andamento. **Evolução:** 70% (estimativa: o worker percorre as três raízes e subpastas com checkpoints e publica o inventário completo. O staging privado verificado está ligado ao worker/importador de CSV de recebimentos futuros; XLSX é verificado em fluxo, limitado, descartado e permanece pendente sem contrato aprovado. Credenciais reais, IDs locais, contratos dos outros caminhos e homologação ainda faltam). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 70% (estimativa: o worker percorre as três raízes e subpastas com checkpoints e publica o inventário completo. CSV/TSV/JSON/XLS/XLSX passam por verificação estrutural em fluxo nas três fontes; somente o CSV de recebimentos futuros tem contrato de importação aprovado. Perdas e frete ficam pendentes, com resumo idempotente de contagens no PostgreSQL, até aprovar seus contratos. Credencial técnica, IDs locais, sincronização real e homologação ainda faltam). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Importar arquivos preservando integralmente a pasta compartilhada.
 
@@ -1612,6 +1614,14 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Dependências:** BK-042
 
 **Fonte:** H_Contrato_Dados; T-FILE-*; Consolidação 13/09/2026, §§1–2,4
+
+#### Validação estrutural em fluxo das três fontes — 19/10/2026
+
+- O worker valida CSV, TSV, JSON, XLS e XLSX uma fonte/arquivo por vez, com limites e staging privado, nas pastas aprovadas de perdas, recebimentos futuros e frete. O CSV reconhece vírgula e ponto e vírgula e aplica limite de colunas em ambos.
+- O resultado da verificação fica no PostgreSQL por pasta e horário, de forma idempotente, com estado e contagens apenas. Nenhum nome, ID ou conteúdo de arquivo vai para esse resumo.
+- As fontes de perdas e frete ainda não têm contrato financeiro aprovado: mesmo arquivo estruturalmente válido fica pendente e não gera fatos. Não houve leitura real nesta etapa. Nenhuma tela ou regra financeira mudou.
+- `scripts/verify.ps1` passou localmente. O teste PostgreSQL da persistência idempotente foi adicionado, mas depende da CI, pois não há DSN de teste local.
+- A estimativa de BK-043 permanece em 40% (60% restante): estruturar e limitar a leitura não substitui homologar formatos, interpretar campos e produzir registros esperados pelo contrato. Evidência: `docs/evidence/DRIVE-ALL-SOURCE-STRUCTURAL-STREAMING-2026-10-19.md`.
 
 ### BK-044 — Deduplicar arquivos e fatos de negócio
 

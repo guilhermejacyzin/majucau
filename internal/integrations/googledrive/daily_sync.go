@@ -20,19 +20,47 @@ type FolderInventorySyncer interface {
 }
 
 type DailyFileInventorySyncResult struct {
-	Status         string
-	FoldersRead    int
-	FoldersFailed  int
-	FoldersSkipped int
-	FilesRead      int64
-	FolderResults  []FileInventorySyncResult
-	FutureStatus   string
-	FutureRead     int64
-	FutureCreated  int64
-	FutureUpdated  int64
-	FutureFailed   int64
-	FuturePending  int64
-	FutureStale    int64
+	Status                string
+	FoldersRead           int
+	FoldersFailed         int
+	FoldersSkipped        int
+	FilesRead             int64
+	FolderResults         []FileInventorySyncResult
+	FutureStatus          string
+	FutureRead            int64
+	FutureCreated         int64
+	FutureUpdated         int64
+	FutureFailed          int64
+	FuturePending         int64
+	FutureStale           int64
+	OperationalValidation DriveSourceValidationResult
+	ShippingValidation    DriveSourceValidationResult
+}
+
+// DriveSourceValidationResult contains only bounded, non-sensitive counts.
+// It describes structural inspection, not an approved financial import.
+type DriveSourceValidationResult struct {
+	Status           string
+	FilesRead        int64
+	FilesValidated   int64
+	FilesPending     int64
+	FilesInvalid     int64
+	FilesFailed      int64
+	FilesStale       int64
+	FilesDeferred    int64
+	FilesUnsupported int64
+	SourceMissing    bool
+}
+
+// DriveSourceValidationRecord stores only status and bounded counters for a
+// source whose financial interpretation is not approved yet.
+type DriveSourceValidationRecord struct {
+	ScheduledAt      time.Time
+	Scope            DriveFolderScope
+	InventoryBatchID string
+	Status           string
+	ErrorCode        string
+	Result           DriveSourceValidationResult
 }
 
 type DailyFileInventorySyncService struct {

@@ -96,7 +96,7 @@ func buildDailyGoogleDriveSyncer(ctx context.Context, pool *pgxpool.Pool, store 
 		return nil, errGoogleDriveConfigurationInvalid
 	}
 	futureImporter := nuvempago.NewFutureImportService(pool)
-	pipeline, err := newDailyGoogleDriveImportSyncer(dailySync, folderSync, client, futureImporter, os.TempDir(), folderIDs[googledrive.DriveFolderNuvemPagoReceipts])
+	pipeline, err := newDailyGoogleDriveImportSyncer(dailySync, folderSync, client, futureImporter, os.TempDir(), folderIDs)
 	if err != nil {
 		return nil, errGoogleDriveConfigurationInvalid
 	}

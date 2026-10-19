@@ -205,6 +205,84 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 	}
 }
 
+func TestRecordSourceValidationIsIdempotentAndBounded(t *testing.T) {
+	dsn := os.Getenv("MAJUCAU_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("set MAJUCAU_TEST_DATABASE_URL to run the PostgreSQL Google Drive validation integration test")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("create PostgreSQL pool: %v", err)
+	}
+	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		t.Fatalf("ping PostgreSQL: %v", err)
+	}
+	connectionID, connectionCreated := ensureGoogleDriveTestConnection(t, ctx, pool)
+	scope := DriveFolderOperationalLosses
+	resource := googleDriveCheckpointResource + string(scope)
+	correlationID := randomTestUUID(t)
+	var inventoryBatchID pgtype.UUID
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO integration_sync_batches (connection_id, resource, status, finished_at, correlation_id)
+		VALUES ($1, $2, 'SUCCESS', clock_timestamp(), $3)
+		RETURNING id`, connectionID, resource, correlationID).Scan(&inventoryBatchID); err != nil {
+		t.Fatalf("create successful source inventory batch: %v", err)
+	}
+	scheduledAt := time.Date(2026, 10, 19, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
+	cleanup := func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cleanupCancel()
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM google_drive_source_validation_runs WHERE connection_id = $1 AND folder_scope = $2 AND scheduled_at = $3`, connectionID, string(scope), scheduledAt)
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM integration_sync_batches WHERE id = $1`, inventoryBatchID)
+		if connectionCreated {
+			_, _ = pool.Exec(cleanupCtx, `DELETE FROM integration_connections WHERE id = $1 AND provider = $2`, connectionID, GoogleDriveProvider)
+		}
+	}
+	defer cleanup()
+
+	service := &FileInventorySyncService{pool: pool}
+	record := DriveSourceValidationRecord{
+		ScheduledAt: scheduledAt, Scope: scope, InventoryBatchID: inventoryBatchID.String(),
+		Status: "PENDING", ErrorCode: "GOOGLE_DRIVE_SOURCE_CONTRACT_PENDING",
+		Result: DriveSourceValidationResult{Status: "PENDING", FilesRead: 3, FilesValidated: 2, FilesPending: 3, FilesInvalid: 1},
+	}
+	if err := service.RecordSourceValidation(ctx, record); err != nil {
+		t.Fatalf("record first source validation: %v", err)
+	}
+	record.Result.FilesRead = 4
+	record.Result.FilesValidated = 3
+	record.Result.FilesPending = 4
+	if err := service.RecordSourceValidation(ctx, record); err != nil {
+		t.Fatalf("idempotent source validation retry: %v", err)
+	}
+	var rowCount, filesRead, filesValidated, filesPending int64
+	var storedStatus, storedErrorCode string
+	var storedBatchID pgtype.UUID
+	err = pool.QueryRow(ctx, `
+		SELECT files_read, files_validated, files_pending, status, error_code, inventory_batch_id
+		FROM google_drive_source_validation_runs
+		WHERE connection_id = $1 AND folder_scope = $2 AND scheduled_at = $3`, connectionID, string(scope), scheduledAt).
+		Scan(&filesRead, &filesValidated, &filesPending, &storedStatus, &storedErrorCode, &storedBatchID)
+	if err != nil {
+		t.Fatalf("read persisted source validation: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM google_drive_source_validation_runs WHERE connection_id = $1 AND folder_scope = $2 AND scheduled_at = $3`, connectionID, string(scope), scheduledAt).Scan(&rowCount); err != nil || rowCount != 1 {
+		t.Fatalf("idempotent validation row count = %d; error=%v", rowCount, err)
+	}
+	if filesRead != 4 || filesValidated != 3 || filesPending != 4 || storedStatus != "PENDING" || storedErrorCode != record.ErrorCode || storedBatchID != inventoryBatchID {
+		t.Fatalf("persisted validation run = read:%d validated:%d pending:%d status:%q error:%q batch:%v", filesRead, filesValidated, filesPending, storedStatus, storedErrorCode, storedBatchID)
+	}
+
+	wrongScope := record
+	wrongScope.Scope = DriveFolderNuvemShipping
+	if err := service.RecordSourceValidation(ctx, wrongScope); !errors.Is(err, ErrSnapshotUnavailable) {
+		t.Fatalf("record with inventory batch from another source error = %v; want unavailable snapshot", err)
+	}
+}
+
 func ensureGoogleDriveTestConnection(t *testing.T, ctx context.Context, pool *pgxpool.Pool) (pgtype.UUID, bool) {
 	t.Helper()
 	var id pgtype.UUID

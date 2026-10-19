@@ -61,3 +61,6 @@ encontrou vulnerabilidades alcançáveis; registrou um alerta numa parte OpenPGP
 não utilizada da dependência `x/crypto`. A conta real ainda não foi autorizada:
 a senha de entrada do Bling não substitui o Client Secret do aplicativo, que
 deve ser cadastrado diretamente no Majucau.
+
+Depois do envio do commit `0c243e9`, a CI do GitHub passou nos jobs Windows,
+PostgreSQL e de conferência do backlog: [execução 39184476923](https://github.com/guilhermejacyzin/majucau/actions/runs/39184476923).

@@ -1523,6 +1523,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A conferência da OpenAPI oficial encontrou o motivo técnico do erro após uma resposta normal: Contas a Receber e a Pagar retornam `data[]` e documentam `pagina`/`limite`, sem exigir `hasNext` ou `total`; o adapter anterior dependia desses campos.
 - O cliente agora segue para outra página quando recebe uma página cheia, encerra em página menor que o limite efetivo e falha se a API devolver mais linhas do que o limite. Em rotas sem limite efetivo nem metadados, permanece o bloqueio seguro.
 - Testes do pacote Bling cobrem páginas cheias, curtas, vazias, metadados e excesso do limite. A autorização e a confirmação autenticada da conta Majucau ainda faltam; esta correção não declara o fluxo real homologado.
+- A CI do commit `0c243e9` passou nos jobs Windows e PostgreSQL, incluindo testes completos, segurança, migrations, pacote portátil e conferência do backlog: [execução 39184476923](https://github.com/guilhermejacyzin/majucau/actions/runs/39184476923).
 - BK-041 avança de 78% para 80% (20% restante). O backlog permanece em 11,6% concluído e 88,4% restante pela média simples arredondada. Nenhuma tela ou regra financeira mudou.
 - Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
 ### BK-042 — Implementar leitura das três estruturas autorizadas do Google Drive

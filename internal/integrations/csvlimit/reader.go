@@ -17,18 +17,30 @@ var ErrLimitExceeded = errors.New("csv safety limit exceeded")
 // Reader tracks CSV quoting before encoding/csv buffers a record. The limits
 // apply to bytes, so multibyte text remains bounded in memory as well.
 type Reader struct {
-	source io.Reader
+	source    io.Reader
+	delimiter byte
 
-	fieldBytes  int
-	recordBytes int
-	fields      int
-	inQuotes    bool
+	fieldBytes   int
+	recordBytes  int
+	fields       int
+	inQuotes     bool
 	quotePending bool
-	fieldStart  bool
+	fieldStart   bool
 }
 
 func NewReader(source io.Reader) *Reader {
-	return &Reader{source: source, fields: 1, fieldStart: true}
+	return newReader(source, ';')
+}
+
+// NewTSVReader applies the same bounded field and record checks to tab-delimited
+// input. Keeping the delimiter in this reader ensures the field-count limit is
+// enforced before encoding/csv allocates a row.
+func NewTSVReader(source io.Reader) *Reader {
+	return newReader(source, '\t')
+}
+
+func newReader(source io.Reader, delimiter byte) *Reader {
+	return &Reader{source: source, delimiter: delimiter, fields: 1, fieldStart: true}
 }
 
 func (r *Reader) Read(buffer []byte) (int, error) {
@@ -76,7 +88,7 @@ func (r *Reader) track(value byte) error {
 	}
 
 	switch value {
-	case ';':
+	case r.delimiter:
 		r.fields++
 		if r.fields > MaxFields {
 			return ErrLimitExceeded

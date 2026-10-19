@@ -243,6 +243,41 @@ func TestDailyDrivePipelineDoesNotDownloadXLSXAboveParserLimit(t *testing.T) {
 	}
 }
 
+func TestDailyDrivePipelineStreamsAndKeepsTSVFilesPending(t *testing.T) {
+	scheduledAt := time.Date(2026, 10, 18, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
+	valid, validFixture := driveSnapshotFile("file-tsv-valid", "receipts.tsv", "2026-10-18T09:00:00-03:00", []byte("id\tdata\n1\t2026-10-18\n"))
+	invalid, invalidFixture := driveSnapshotFile("file-tsv-invalid", "broken.tsv", "2026-10-18T09:01:00-03:00", []byte("id\tdata\n\"unterminated\tvalue"))
+	valid.MIMEType, validFixture.file.MIMEType = "text/tab-separated-values", "text/tab-separated-values"
+	invalid.MIMEType, invalidFixture.file.MIMEType = "text/tab-separated-values", "text/tab-separated-values"
+	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{
+		"": {Files: []googledrive.File{valid, invalid}},
+	}}
+	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{
+		valid.ID: validFixture, invalid.ID: invalidFixture,
+	}}
+	tempRoot := t.TempDir()
+	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true, PendingFiles: 2}}
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testNuvemPagoFolderID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := syncer.SyncDaily(context.Background(), scheduledAt)
+	if !errors.Is(err, googledrive.ErrDailySyncIncomplete) || result.Status != "PARTIAL" || result.FuturePending != 2 {
+		t.Fatalf("daily import result=%+v error=%v", result, err)
+	}
+	if importer.pendingCalls != 1 || importer.importCalls != 0 || importer.recorded.UnsupportedFiles != 2 || !importer.recorded.NoCompatibleCSV {
+		t.Fatalf("pending=%+v importer calls=(%d,%d)", importer.recorded, importer.pendingCalls, importer.importCalls)
+	}
+	if len(stager.calls) != 2 {
+		t.Fatalf("TSV stage calls=%#v, want both files to be safely streamed", stager.calls)
+	}
+	entries, err := os.ReadDir(tempRoot)
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("private TSV staging remained after processing: entries=%d error=%v", len(entries), err)
+	}
+}
+
 func TestDailyDrivePipelineReportsInvalidMetadataAlongsideImportedCSV(t *testing.T) {
 	scheduledAt := time.Date(2026, 10, 18, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
 	valid, fixture := driveSnapshotFile("file-valid", "receipts.csv", "2026-10-18T09:00:00-03:00", []byte("csv"))

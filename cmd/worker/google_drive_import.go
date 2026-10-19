@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/csv"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
 	"majucau.local/financial-intelligence/internal/integrations/xlsxstream"
@@ -30,6 +32,7 @@ var (
 	errDriveFutureSnapshotRead     = errors.New("Nuvem Pago Drive inventory could not be read")
 	errDriveFutureStaging          = errors.New("Nuvem Pago Drive source could not be staged")
 	errDriveFutureFileMismatch     = errors.New("staged Drive source does not match its approved inventory metadata")
+	errDriveFutureInvalidTSV       = errors.New("Nuvem Pago TSV structure is invalid or exceeds safety limits")
 )
 
 type dailyDriveInventoryService interface {
@@ -184,8 +187,9 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 			}
 			extension := filepath.Ext(file.Name)
 			isCSV := strings.EqualFold(extension, ".csv")
+			isTSV := strings.EqualFold(extension, ".tsv")
 			isXLSX := strings.EqualFold(extension, ".xlsx")
-			if !isCSV && !isXLSX {
+			if !isCSV && !isTSV && !isXLSX {
 				if !addPendingCount(&pending.UnsupportedFiles, 1) {
 					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 				}
@@ -209,7 +213,9 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 			}
 			stagedSequence++
 			stagedExtension := ".csv"
-			if isXLSX {
+			if isTSV {
+				stagedExtension = ".tsv"
+			} else if isXLSX {
 				stagedExtension = ".xlsx"
 			}
 			stagedName := fmt.Sprintf("%020d%s", stagedSequence, stagedExtension)
@@ -222,13 +228,16 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 					if err := copyVerifiedDriveFile(stagedPath, file, actual, s.folderID, reader, size, sha256Hex); err != nil {
 						return err
 					}
+					if isTSV {
+						return validateDriveTSV(stageCtx, stagedPath)
+					}
 					if !isXLSX {
 						return nil
 					}
 					return validateDriveXLSX(stageCtx, stagedPath, workspace.Path(), size)
 				},
 			)
-			if isXLSX {
+			if isXLSX || isTSV {
 				if cleanupErr := securetemp.RemoveFile(stagedPath); cleanupErr != nil {
 					return nuvempago.FutureImportResult{}, cleanupErr
 				}
@@ -242,6 +251,12 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 					return nuvempago.FutureImportResult{}, stageErr
 				}
 				if isXLSX && (errors.Is(stageErr, xlsxstream.ErrInvalidWorkbook) || errors.Is(stageErr, xlsxstream.ErrLimitExceeded)) {
+					if !addPendingCount(&pending.UnsupportedFiles, 1) {
+						return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
+					}
+					continue
+				}
+				if isTSV && (errors.Is(stageErr, errDriveFutureInvalidTSV) || errors.Is(stageErr, csvlimit.ErrLimitExceeded)) {
 					if !addPendingCount(&pending.UnsupportedFiles, 1) {
 						return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 					}
@@ -289,6 +304,48 @@ func validateDriveXLSX(ctx context.Context, path, tempParent string, size int64)
 	_, parseErr := xlsxstream.Stream(ctx, file, size, tempParent, func(context.Context, xlsxstream.Row) error { return nil })
 	closeErr := file.Close()
 	return errors.Join(parseErr, closeErr)
+}
+
+// validateDriveTSV checks quoting, record boundaries, and bounded dimensions
+// one row at a time. It deliberately does not map values to financial facts;
+// TSV remains pending until its source contract is approved.
+func validateDriveTSV(ctx context.Context, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return errDriveFutureStaging
+	}
+	reader := csv.NewReader(csvlimit.NewTSVReader(file))
+	reader.Comma = '\t'
+	reader.FieldsPerRecord = -1
+	seenRecord := false
+	var parseErr error
+	for {
+		if err := ctx.Err(); err != nil {
+			parseErr = err
+			break
+		}
+		_, err := reader.Read()
+		if ctx.Err() != nil {
+			parseErr = ctx.Err()
+			break
+		}
+		if errors.Is(err, io.EOF) {
+			if !seenRecord {
+				parseErr = errDriveFutureInvalidTSV
+			}
+			break
+		}
+		if errors.Is(err, csvlimit.ErrLimitExceeded) {
+			parseErr = err
+			break
+		}
+		if err != nil {
+			parseErr = errors.Join(errDriveFutureInvalidTSV, err)
+			break
+		}
+		seenRecord = true
+	}
+	return errors.Join(parseErr, file.Close())
 }
 
 func previousGoogleDriveSchedule(scheduledAt time.Time) (time.Time, error) {

@@ -407,8 +407,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 19/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (80%), BK-042 (70%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
-- Pela média simples do rastreador, soma dos percentuais das tarefas ÷ 127 = 11,7%; restam 88,3%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- O backlog mantém 127 tarefas: 7 concluídas, 20 em andamento e 100 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (80%), BK-042 (70%), BK-043 (40%), BK-056 (5%), BK-066 (5%), BK-067 (25%) e BK-102 (1%).
+- Pela média simples do rastreador, soma dos percentuais das tarefas ÷ 127 = 11,8%; restam 88,2%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
 - BK-024 permanece em 35%: a revisão de streaming corrigiu no Site o formulário protegido do Client Secret, limitando a leitura a 8 KiB, e publicou a versão 16. Os 28 testes do Site passaram. Isso fecha esse ponto específico; ACLs em VM limpa, carga/memória e outros riscos continuam pendentes, então a estimativa da tarefa de segurança geral não muda. Evidências: `docs/evidence/DATA-STREAMING-STATIC-AUDIT-2026-10-11.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
@@ -2152,7 +2152,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-066 — Calcular e conferir a DRE própria por competência
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 5% (fundação aritmética implementada em `internal/financial/dre.go`: calcula as linhas aprovadas a partir de valores assinados já classificados, mantém indisponíveis os totais que dependem de entradas ausentes e usa moeda decimal exata. Há casos automatizados para resultado, ausência de CMV e overflow. Sem integração a dados reais, mapeamento de contas ou conciliação; nenhum valor é confirmado). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Apresentar no Majucau o resultado calculado conforme regras contábeis aprovadas.
 

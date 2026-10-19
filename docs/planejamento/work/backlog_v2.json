@@ -2121,8 +2121,8 @@
     "questions": "HT-06,F-02",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "5%: cálculo puro das linhas aprovadas implementado em internal/financial/dre.go com valores previamente classificados, período explícito, moeda decimal exata e propagação de indisponibilidade; casos de referência, ausência e overflow em dre_test.go. Sem leitura real, mapeamento de contas, publicação de snapshot ou confirmação contábil.",
     "weight": 1,
     "dependencies": [
       "BK-041",
@@ -2130,7 +2130,7 @@
       "BK-038",
       "BK-020"
     ],
-    "progress": 0
+    "progress": 0.05
   },
   {
     "key": "drescreen",

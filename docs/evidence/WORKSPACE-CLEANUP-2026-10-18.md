@@ -14,8 +14,8 @@
 
 Os caches globais abaixo são compartilhados pelo perfil Windows e podem ser usados por outros projetos. Foram preservados para evitar removê-los sem saber quem depende deles:
 
-- `C:\Users\Gisele\go\pkg\mod` — dependências e toolchain Go compartilhados.
-- `C:\Users\Gisele\AppData\Local\go-build` — cache de compilação Go compartilhado.
+- `%USERPROFILE%\go\pkg\mod` — dependências e toolchain Go compartilhados.
+- `%LOCALAPPDATA%\go-build` — cache de compilação Go compartilhado.
 
 A lista também foi guardada em `artifacts/retained/manual-cleanup/go-global-caches-2026-10-18.txt` e no registro local de limpeza. Os arquivos oficiais do projeto e a pasta original do Drive não foram alterados.
 
@@ -49,3 +49,9 @@ A lista também foi guardada em `artifacts/retained/manual-cleanup/go-global-cac
 - Removidos com `scripts/SafeCleanup.psm1` os caches regeneráveis `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/` e `artifacts/cache/vite/`, além do preview temporário `artifacts/verification/frontend-dist-7c61564c800a482f9252d56fa9eb9a41/`.
 - O consolidador removeu os executáveis de origem em `build/bin/`, a saída `frontend/dist/` e `tmp/` depois de copiar os arquivos necessários. O pacote e os binários aprovados para conferência continuam em `artifacts/windows/`.
 - Mantido `artifacts/cache/go-mod/`; nenhum cache global, dado real do Drive ou item que precise de exclusão manual foi encontrado.
+
+## Limpeza após a fundação aritmética da DRE — 19/10/2026
+
+- Removidos com `scripts/SafeCleanup.psm1` os caches regeneráveis `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/` e `artifacts/cache/vite/`; a pasta temporária e o hard link do gerador em `artifacts/cache/backlog-builder/`; as prévias `artifacts/verification/backlog-v2/`; e os bundles temporários `artifacts/verification/frontend-dist-9383f951b43f49c394bac808fe3cbd6f/` e `artifacts/verification/frontend-dist-d528a4447ea9410bbab8934771539e44/`. A junction de runtime foi conferida contra seu destino e removida sem percorrer ou apagar os módulos do runtime.
+- Mantidos `artifacts/cache/go-mod/` para evitar baixar novamente dependências, os relatórios oficiais do backlog em `artifacts/planejamento/outputs/`, e os binários/ferramentas locais necessários ao protótipo.
+- O registro antigo de limpeza passou a usar `%USERPROFILE%` e `%LOCALAPPDATA%` em vez de caminhos pessoais completos; `docs/planejamento/work/verify_package.py` passou depois dessa correção. Nenhum segredo, arquivo real do Drive ou item para limpeza manual foi gerado.

@@ -20,10 +20,10 @@ O painel lia os registros financeiros já gravados e mostrava valores e detalhes
 - `scripts/verify-backlog.ps1` e `python docs/planejamento/work/verify_package.py`: passaram; conferiram as 127 tarefas, os percentuais, os links locais e a integridade dos arquivos listados. A lista de integridade tinha hashes antigos para dois documentos de governança e foi atualizada junto com o backlog.
 - `git diff --check`: passou.
 - O log completo foi guardado temporariamente em `artifacts/verification/verify-2026-10-19-dashboard-daily-freshness.log` e removido após a validação; a limpeza está registrada em `docs/evidence/WORKSPACE-CLEANUP-2026-10-18.md`.
-- Teste PostgreSQL real desta nova consulta: pendente da CI após o push.
+- A CI [#39243647443](https://github.com/guilhermejacyzin/majucau/actions/runs/39243647443) passou nos quatro trabalhos: backlog, Windows, PostgreSQL e detecção de mudanças. O trabalho PostgreSQL executou esta consulta real com `MAJUCAU_TEST_DATABASE_URL`.
 
 ## Governança e próximos passos
 
 BK-039 continua em 50% (50% restante); a média do backlog permanece em 11,8% concluída (88,2% restante), com 127 tarefas: 7 concluídas, 20 em andamento e 100 não iniciadas. Não aumentei o percentual porque ainda faltam comprovar a última página da API na conta real, integrar e operar a leitura do Drive de forma persistente, validar serviço e PostgreSQL numa VM limpa e homologar a sincronização real.
 
-Próximo passo: enviar esta correção e aguardar a CI Windows/PostgreSQL. Depois, continuar na própria BK-039 até resolver a paginação real do Bling e a leitura programada do Drive. Nenhuma tela aprovada, regra de negócio ou regra financeira foi alterada.
+Próximo passo: continuar na própria BK-039 até comprovar a paginação real do Bling, configurar a leitura diária do Drive e validar o serviço numa VM limpa. A sincronização real do Bling também exige que o Client Secret do aplicativo seja salvo dentro do Majucau e que o OAuth seja autorizado; a senha usada para entrar no site do Bling não substitui esse segredo. Nenhuma tela aprovada, regra de negócio ou regra financeira foi alterada.

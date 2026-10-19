@@ -54,8 +54,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 200843,
-      "sha256": "fa2106780dd576084d99f8aa104cfbeaff5f97c0a060ab8febc9d2eabeba6660"
+      "bytes": 200865,
+      "sha256": "b4c652854ab0e494037f44d6cfb92a3cf493b8b45e9eb8e65e1a45a5d40a2ad6"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",

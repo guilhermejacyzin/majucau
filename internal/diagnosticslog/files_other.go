@@ -8,7 +8,9 @@ import (
 	"os"
 )
 
-func prepareLogDirectory(dir string) error {
+func currentIdentitySID() (string, error) { return "", nil }
+
+func prepareLogDirectory(dir string, _ ...string) error {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("prepare private diagnostic log directory: %w", err)
 	}
@@ -25,7 +27,7 @@ func prepareLogDirectory(dir string) error {
 	return nil
 }
 
-func openSafeLogFile(path string) (*os.File, error) {
+func openSafeLogFile(path string, _ ...string) (*os.File, error) {
 	info, err := os.Lstat(path)
 	if err == nil && (!info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0) {
 		return nil, fmt.Errorf("diagnostic log target is not a regular file")

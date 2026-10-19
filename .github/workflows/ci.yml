@@ -403,6 +403,10 @@ jobs:
           $runSuffix = "$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
           ./scripts/smoke-installer.ps1 -InstallerPath $installer.FullName -OutputRoot (Join-Path $env:GITHUB_WORKSPACE "artifacts/verification/install-smoke-$runSuffix")
 
+      - name: Smoke Windows worker service lifecycle
+        shell: pwsh
+        run: ./scripts/smoke-worker-service.ps1 -OutputRoot (Join-Path $env:GITHUB_WORKSPACE 'artifacts/verification/worker-service-smoke')
+
       - name: Consolidate generated outputs
         if: always()
         shell: pwsh

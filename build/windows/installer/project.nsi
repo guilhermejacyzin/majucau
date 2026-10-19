@@ -87,6 +87,8 @@ ManifestDPIAware true
   !define MAJUCAU_WORKER_SOURCE "..\..\bin\majucau-worker.exe"
 !endif
 
+Var WorkerServiceDir
+
 !insertmacro MUI_PAGE_WELCOME # Welcome to the installer page.
 # !insertmacro MUI_PAGE_LICENSE "resources\eula.txt" # Adds a EULA page to the installer
 !insertmacro MUI_PAGE_DIRECTORY # In which folder install page.
@@ -174,6 +176,16 @@ Section
     File "/oname=majucau-worker.exe" "${MAJUCAU_WORKER_SOURCE}"
     File "/oname=installer-helper.exe" "${MAJUCAU_HELPER_SOURCE}"
 
+    ; Keep the service binary in a fresh, protected version directory. This
+    ; lets the helper stop/switch/restart an existing service without replacing
+    ; an executable that Windows may still have open.
+    CreateDirectory "$INSTDIR\worker"
+    GetTempFileName $WorkerServiceDir "$INSTDIR\worker"
+    Delete "$WorkerServiceDir"
+    CreateDirectory "$WorkerServiceDir"
+    SetOutPath "$WorkerServiceDir"
+    File "/oname=majucau-worker.exe" "${MAJUCAU_WORKER_SOURCE}"
+
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
@@ -181,10 +193,26 @@ Section
     !insertmacro wails.associateCustomProtocols
 
     !insertmacro wails.writeUninstaller
+
+    ; Register and start only after every app file and the uninstaller are in
+    ; place. The helper protects the service vault before the worker starts.
+    ExecWait '"$INSTDIR\installer-helper.exe" install-service --install-dir "$INSTDIR" --worker-path "$WorkerServiceDir\majucau-worker.exe" --data-dir "${MAJUCAU_DATA_DIR}"' $4
+    ${If} $4 != 0
+        MessageBox MB_ICONSTOP|MB_OK "O Majucau foi copiado, mas o serviço diário não pôde ser instalado com segurança (código $4). Nenhuma sincronização automática será iniciada. Corrija o problema e execute o instalador novamente."
+        Abort
+    ${EndIf}
 SectionEnd
 
 Section "uninstall"
     !insertmacro wails.setShellContext
+
+    ; Remove only the service registered from this install directory. The
+    ; helper deliberately preserves PostgreSQL data, backups, logs and secrets.
+    ExecWait '"$INSTDIR\installer-helper.exe" remove-service --install-dir "$INSTDIR"' $5
+    ${If} $5 != 0
+        MessageBox MB_ICONSTOP|MB_OK "O serviço do Majucau não pôde ser removido com segurança (código $5). Os arquivos do programa e os dados foram mantidos para recuperação."
+        Abort
+    ${EndIf}
 
     RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath
 

@@ -39,6 +39,7 @@ Concluir o backlog aprovado do Majucau e entregar primeiro um protótipo que pos
 - Regra aprovada para a rotina das 09:30: processar cada fonte disponível e marcar como pendentes os dados da fonte que não chegou. Uma pasta vazia não substitui os dados anteriores nem é tratada como atualização confirmada; o sistema registra a fonte como ausente/parcial.
 - Em 19/10, conectei `01_perdas_operacionais` e `03_nuvem_envio` à validação estrutural em fluxo, além do caminho já existente de recebimentos futuros. CSV, TSV, JSON, XLS e XLSX passam um arquivo por vez por staging privado e limites; os registros de status são guardados no PostgreSQL com contagens apenas, sem nomes nem conteúdo dos arquivos. As fontes de perdas e frete continuam pendentes e não alimentam a DRE, pois ainda não há contrato aprovado. `scripts/verify.ps1` passou localmente. O teste que grava e repete o estado no PostgreSQL foi adicionado, mas não pôde ser executado localmente porque esta máquina não tem `MAJUCAU_TEST_DATABASE_URL`; sua confirmação depende da CI após o push. Evidência: `docs/evidence/DRIVE-ALL-SOURCE-STRUCTURAL-STREAMING-2026-10-19.md`.
 - As telas aprovadas e as regras financeiras permaneceram inalteradas.
+- Nesta etapa, liguei o instalador NSIS ao ciclo do serviço Windows do worker: uma cópia versionada é registrada como `NT SERVICE\MajucauWorker`, com SID restrito, início automático atrasado, cofre/logs protegidos e remoção segura que preserva dados. Corrigi também a configuração de identidade do Named Pipe para usar uma chave de registro com permissões mínimas, em vez de uma variável de ambiente não documentada. A verificação completa local passou, incluindo os 33 testes de interface; o teste privilegiado do serviço está no CI e ainda aguarda execução. Não instalei serviço nem alterei dados deste computador. BK-039 continua em 50%; o projeto permanece em 11,8% estimado (88,2% restante). Evidência: `docs/evidence/WINDOWS-WORKER-SERVICE-LIFECYCLE-2026-10-19.md`.
 
 ## O que ainda falta para homologar o protótipo
 
@@ -50,7 +51,7 @@ Além desses pontos, há outras tarefas do backlog para concluir a operação, s
 
 ## Próximo passo
 
-Próximo passo: instalar e validar o worker como serviço persistente antes de confiar na execução diária após fechar o aplicativo ou reiniciar o Windows. Em paralelo, a confirmação de identidade do Google Cloud Console permite verificar o projeto/conta técnica e provisionar a credencial e o acesso somente de leitura às três pastas. Depois, executar e homologar a primeira sincronização real. Também falta concluir a autorização/homologação da paginação do Bling. A recuperação do Drive foi implementada, verificada localmente e passou pelas verificações de CI aplicáveis. Isso não conclui BK-039. O backlog segue em 11,8% estimado; a homologação ainda não ocorreu.
+Próximo passo: aguardar a CI do GitHub executar o smoke de instalar/iniciar/remover o serviço Windows. Se passar, validar o pacote em uma VM limpa Windows 10/11. Depois, dentro da mesma BK-039, provisionar com segurança o PostgreSQL e a identidade técnica do Drive e homologar as leituras reais; a autorização, o fim da paginação e a sincronização do Bling também seguem pendentes. Isso ainda não conclui BK-039. O backlog segue em 11,8% estimado; a homologação ainda não ocorreu.
 
 ## Estado da meta e interrupções — 19/10/2026
 

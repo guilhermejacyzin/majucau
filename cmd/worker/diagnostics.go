@@ -28,10 +28,17 @@ type diagnosticRequestHandler struct {
 	logger *slog.Logger
 }
 
-func newWorkerDiagnosticLogger() (*slog.Logger, func() error, error) {
+func newWorkerDiagnosticLogger(ctx context.Context) (*slog.Logger, func() error, error) {
 	programData := strings.TrimSpace(os.Getenv("ProgramData"))
 	if programData == "" {
 		return slog.New(slog.NewJSONHandler(os.Stderr, nil)), func() error { return nil }, os.ErrNotExist
+	}
+	if usesWindowsServiceExecution(ctx) {
+		fileLogger, err := diagnosticslog.NewForCurrentIdentity(filepath.Join(programData, "Majucau", "WorkerLogs", "Logs"))
+		if err != nil {
+			return slog.New(slog.NewJSONHandler(os.Stderr, nil)), func() error { return nil }, err
+		}
+		return fileLogger.Slog(), fileLogger.Close, nil
 	}
 	fileLogger, err := diagnosticslog.New(filepath.Join(programData, "Majucau", "Logs"))
 	if err != nil {

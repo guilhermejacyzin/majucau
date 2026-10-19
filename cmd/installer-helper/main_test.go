@@ -141,6 +141,28 @@ func TestRunVerifyPackageBlocksSchemaMismatchWithoutAbsolutePath(t *testing.T) {
 	}
 }
 
+func TestWorkerServiceCommandsRejectMissingArgumentsWithStableContract(t *testing.T) {
+	for _, command := range []string{"install-service", "remove-service"} {
+		t.Run(command, func(t *testing.T) {
+			var output bytes.Buffer
+			code := run([]string{command}, &output)
+			if code != installer.ExitInternal {
+				t.Fatalf("expected %d, got %d", installer.ExitInternal, code)
+			}
+			var response workerServiceResponse
+			if err := json.Unmarshal(output.Bytes(), &response); err != nil {
+				t.Fatalf("invalid JSON: %v; output=%q", err, output.String())
+			}
+			if response.SchemaVersion != "1.0" || response.ExitCode != installer.ExitInternal || response.ErrorCode != "INVALID_ARGUMENT" {
+				t.Fatalf("unexpected service response: %#v", response)
+			}
+			if bytes.Contains(output.Bytes(), []byte(os.TempDir())) {
+				t.Fatalf("service response leaked a local path: %s", output.String())
+			}
+		})
+	}
+}
+
 func sha256Hex(payload []byte) string {
 	digest := sha256.Sum256(payload)
 	return hex.EncodeToString(digest[:])

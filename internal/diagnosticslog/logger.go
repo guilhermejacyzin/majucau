@@ -32,13 +32,28 @@ type Logger struct {
 }
 
 func New(dir string) (*Logger, error) {
+	return newLogger(dir, "")
+}
+
+// NewForCurrentIdentity creates a private rotating logger whose access list is
+// bound to the identity running the process. The Windows service uses this so
+// its logs are writable only by the service SID, SYSTEM, and Administrators.
+func NewForCurrentIdentity(dir string) (*Logger, error) {
+	identitySID, err := currentIdentitySID()
+	if err != nil {
+		return nil, fmt.Errorf("diagnostic process identity is unavailable")
+	}
+	return newLogger(dir, identitySID)
+}
+
+func newLogger(dir, identitySID string) (*Logger, error) {
 	if !filepath.IsAbs(dir) {
 		return nil, fmt.Errorf("diagnostic log directory must be absolute")
 	}
-	if err := prepareLogDirectory(filepath.Clean(dir)); err != nil {
+	if err := prepareLogDirectory(filepath.Clean(dir), identitySID); err != nil {
 		return nil, err
 	}
-	writer, err := newRotatingWriter(filepath.Clean(dir), MaxLogFileBytes, MaxLogFiles)
+	writer, err := newRotatingWriter(filepath.Clean(dir), MaxLogFileBytes, MaxLogFiles, identitySID)
 	if err != nil {
 		return nil, err
 	}
@@ -60,19 +75,24 @@ func (l *Logger) Close() error {
 }
 
 type rotatingWriter struct {
-	mu       sync.Mutex
-	dir      string
-	file     *os.File
-	size     int64
-	maxBytes int64
-	maxFiles int
+	mu          sync.Mutex
+	dir         string
+	file        *os.File
+	size        int64
+	maxBytes    int64
+	maxFiles    int
+	identitySID string
 }
 
-func newRotatingWriter(dir string, maxBytes int64, maxFiles int) (*rotatingWriter, error) {
+func newRotatingWriter(dir string, maxBytes int64, maxFiles int, identitySIDs ...string) (*rotatingWriter, error) {
 	if maxBytes <= 0 || maxFiles < 2 {
 		return nil, ErrInvalidRotationCaps
 	}
-	w := &rotatingWriter{dir: dir, maxBytes: maxBytes, maxFiles: maxFiles}
+	identitySID := ""
+	if len(identitySIDs) > 0 {
+		identitySID = identitySIDs[0]
+	}
+	w := &rotatingWriter{dir: dir, maxBytes: maxBytes, maxFiles: maxFiles, identitySID: identitySID}
 	if err := w.validateExistingFiles(); err != nil {
 		return nil, err
 	}
@@ -155,7 +175,7 @@ func (w *rotatingWriter) rotate() error {
 
 func (w *rotatingWriter) openCurrent() error {
 	path := w.path(0)
-	file, err := openSafeLogFile(path)
+	file, err := openSafeLogFile(path, w.identitySID)
 	if err != nil {
 		return err
 	}

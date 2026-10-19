@@ -1,5 +1,5 @@
-// Command installer-helper exposes read-only checks used by the Windows
-// installer. It is intentionally independent from the installer engine.
+// Command installer-helper exposes bounded preflight, package validation, and
+// service lifecycle operations used by the Windows installer.
 package main
 
 import (
@@ -27,6 +27,12 @@ func run(args []string, output io.Writer) int {
 	}
 	if args[0] == "verify-package" {
 		return runVerifyPackage(args[1:], output)
+	}
+	if args[0] == "install-service" {
+		return runInstallWorkerService(args[1:], output)
+	}
+	if args[0] == "remove-service" {
+		return runRemoveWorkerService(args[1:], output)
 	}
 	if args[0] != "preflight" {
 		return writeResult(output, invalidArgumentResult())
@@ -61,13 +67,55 @@ func run(args []string, output io.Writer) int {
 	return writeResult(output, installer.Evaluate(config, installer.DefaultProbes()))
 }
 
+type workerServiceResponse struct {
+	SchemaVersion string `json:"schema_version"`
+	Status        string `json:"status"`
+	ExitCode      int    `json:"exit_code"`
+	ErrorCode     string `json:"error_code,omitempty"`
+}
+
+func runInstallWorkerService(args []string, output io.Writer) int {
+	flags := flag.NewFlagSet("install-service", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	installDir := flags.String("install-dir", "", "protected application install directory")
+	workerPath := flags.String("worker-path", "", "worker binary inside install directory")
+	dataDir := flags.String("data-dir", "", "application data directory under ProgramData")
+	if err := flags.Parse(args); err != nil || flags.NArg() != 0 || strings.TrimSpace(*installDir) == "" || strings.TrimSpace(*workerPath) == "" || strings.TrimSpace(*dataDir) == "" {
+		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_INSTALL_FAILED", ExitCode: installer.ExitInternal, ErrorCode: "INVALID_ARGUMENT"})
+	}
+	if err := installer.InstallOrUpdateWorkerService(installer.WorkerServiceOptions{InstallDir: *installDir, WorkerPath: *workerPath, DataDir: *dataDir}); err != nil {
+		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_INSTALL_FAILED", ExitCode: installer.ExitBlocked, ErrorCode: "WORKER_SERVICE_INSTALL_FAILED"})
+	}
+	return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_REGISTERED_AND_RUNNING", ExitCode: installer.ExitReady})
+}
+
+func runRemoveWorkerService(args []string, output io.Writer) int {
+	flags := flag.NewFlagSet("remove-service", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	installDir := flags.String("install-dir", "", "application install directory")
+	if err := flags.Parse(args); err != nil || flags.NArg() != 0 || strings.TrimSpace(*installDir) == "" {
+		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_REMOVE_FAILED", ExitCode: installer.ExitInternal, ErrorCode: "INVALID_ARGUMENT"})
+	}
+	if err := installer.RemoveWorkerService(*installDir); err != nil {
+		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_REMOVE_FAILED", ExitCode: installer.ExitBlocked, ErrorCode: "WORKER_SERVICE_REMOVE_FAILED"})
+	}
+	return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_REMOVED", ExitCode: installer.ExitReady})
+}
+
+func writeWorkerServiceResult(output io.Writer, response workerServiceResponse) int {
+	if err := json.NewEncoder(output).Encode(response); err != nil {
+		return installer.ExitInternal
+	}
+	return response.ExitCode
+}
+
 type manifestResponse struct {
-	SchemaVersion string                     `json:"schema_version"`
-	Status        string                     `json:"status"`
-	ExitCode      int                        `json:"exit_code"`
-	Valid         bool                       `json:"valid"`
-	Issues        []installer.ManifestIssue  `json:"issues,omitempty"`
-	Manifest      installer.ReleaseManifest  `json:"manifest"`
+	SchemaVersion string                    `json:"schema_version"`
+	Status        string                    `json:"status"`
+	ExitCode      int                       `json:"exit_code"`
+	Valid         bool                      `json:"valid"`
+	Issues        []installer.ManifestIssue `json:"issues,omitempty"`
+	Manifest      installer.ReleaseManifest `json:"manifest"`
 }
 
 func runVerifyPackage(args []string, output io.Writer) int {

@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'BoundedText.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'SafeCleanup.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'WorkerServiceSmokeCleanup.psm1') -Force
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
     $OutputRoot = Join-Path $projectRoot 'artifacts\cache\installer-smoke'
@@ -158,8 +159,18 @@ try {
 
 Remove-MajucauProjectDirectory -ProjectRoot $projectRoot -Path $OutputRoot -ExpectedRelativePath $relativeOutputRoot
 New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
-$installDir = Join-Path $OutputRoot 'app'
+$programFilesRoot = [System.IO.Path]::GetFullPath($env:ProgramFiles)
+$installDir = Join-Path $programFilesRoot "Majucau-Installer-Smoke-$verificationSuffix"
 $dataDir = Join-Path $OutputRoot 'data'
+$machineDataDir = [System.IO.Path]::GetFullPath((Join-Path $env:ProgramData 'Majucau'))
+$machineDataDirWasPresent = Test-Path -LiteralPath $machineDataDir
+$workerServiceWasPresent = $null -ne (Get-Service -Name 'MajucauWorker' -ErrorAction SilentlyContinue)
+if ($machineDataDirWasPresent -or $workerServiceWasPresent) {
+    throw 'O smoke foi interrompido para preservar uma instalação ou dados existentes do Majucau.'
+}
+if (Test-Path -LiteralPath $installDir) {
+    throw 'O diretório temporário de instalação do smoke já existe.'
+}
 $helper = Join-Path $installDir 'installer-helper.exe'
 $sourceHelper = Join-Path $projectRoot 'build\bin\installer-helper.exe'
 $preflightBeforePath = Join-Path $OutputRoot 'preflight-before-install.json'
@@ -182,6 +193,15 @@ if ($installExit -ne 0) {
 foreach ($name in @('Majucau Financial Intelligence.exe', 'majucau-worker.exe', 'installer-helper.exe', 'uninstall.exe')) {
     Assert-Condition (Test-Path -LiteralPath (Join-Path $installDir $name) -PathType Leaf) "Arquivo ausente após instalação: $name"
 }
+$workerServiceDir = Join-Path $installDir 'worker'
+Assert-Condition (Test-Path -LiteralPath $workerServiceDir -PathType Container) 'Diretório versionado do serviço não foi instalado.'
+$service = Get-Service -Name 'MajucauWorker' -ErrorAction Stop
+Assert-Condition ($service.Status -eq 'Running') "Serviço do worker não está em execução: $($service.Status)."
+$serviceKey = Get-ItemProperty -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Services\MajucauWorker'
+Assert-Condition ($serviceKey.ObjectName -eq 'NT SERVICE\MajucauWorker') 'O worker não usa sua conta virtual dedicada.'
+Assert-Condition ([int]$serviceKey.ServiceSidType -eq 3 -and [int]$serviceKey.Start -eq 2 -and [int]$serviceKey.DelayedAutoStart -eq 1) 'O worker não está configurado com SID restrito e início automático atrasado.'
+Assert-Condition (Test-Path -LiteralPath (Join-Path $machineDataDir 'WorkerSecrets\Vault') -PathType Container) 'O cofre DPAPI do serviço não foi criado.'
+Assert-Condition (Test-Path -LiteralPath (Join-Path $machineDataDir 'WorkerLogs\Logs') -PathType Container) 'A pasta privada de logs do serviço não foi criada.'
 
 & $helper preflight --install-dir $installDir --data-dir $dataDir --free-space-path $OutputRoot --min-free-bytes 1 --port 55439 |
     Set-Content -LiteralPath $preflightPath -Encoding utf8
@@ -194,6 +214,16 @@ $uninstaller = Join-Path $installDir 'uninstall.exe'
 $uninstallExit = Invoke-ElevatedExecutable -FilePath $uninstaller -Arguments @('/S') -TaskRoot $OutputRoot
 Assert-Condition ($uninstallExit -eq 0) "Desinstalação elevada retornou código $uninstallExit."
 Assert-Condition (-not (Test-Path -LiteralPath $installDir)) 'Diretório da aplicação permaneceu após desinstalação.'
+Assert-Condition ($null -eq (Get-Service -Name 'MajucauWorker' -ErrorAction SilentlyContinue)) 'O serviço permaneceu registrado após desinstalação.'
+Assert-Condition (Test-Path -LiteralPath (Join-Path $machineDataDir 'WorkerSecrets') -PathType Container) 'A desinstalação removeu o cofre protegido, que deve ser preservado.'
+Assert-Condition (Test-Path -LiteralPath (Join-Path $machineDataDir 'WorkerLogs') -PathType Container) 'A desinstalação removeu os logs técnicos, que devem ser preservados.'
+
+try {
+    Remove-MajucauWorkerServiceSmokeData -DataRoot $machineDataDir
+} catch {
+    Register-MajucauWorkerServiceSmokeRetention -OutputRoot $OutputRoot -Paths @($machineDataDir) -Reason 'A limpeza validada recusou remover saída inesperada do instalador smoke.'
+    throw 'O smoke concluiu a desinstalação, mas a limpeza dos dados falhou; veja RETAINED-CLEANUP.json.'
+}
 
 $result = [ordered]@{
     schema_version = '1.0'

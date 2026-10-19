@@ -14,15 +14,46 @@ import (
 
 const privateLogDirectorySDDL = "D:P(A;OICI;FA;;;OW)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)"
 
-func prepareLogDirectory(dir string) error {
+func currentIdentitySID() (string, error) {
+	token, err := windows.OpenCurrentProcessToken()
+	if err != nil {
+		return "", err
+	}
+	defer token.Close()
+	user, err := token.GetTokenUser()
+	if err != nil || user == nil || user.User.Sid == nil {
+		return "", errors.New("current process token has no user SID")
+	}
+	return user.User.Sid.String(), nil
+}
+
+func identityLogSDDL(identitySID string) (string, error) {
+	if identitySID == "" {
+		return privateLogDirectorySDDL, nil
+	}
+	if _, err := windows.StringToSid(identitySID); err != nil {
+		return "", errors.New("diagnostic identity SID is invalid")
+	}
+	return fmt.Sprintf("D:P(A;OICI;FA;;;%s)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)", identitySID), nil
+}
+
+func prepareLogDirectory(dir string, identitySIDs ...string) error {
+	identitySID := ""
+	if len(identitySIDs) > 0 {
+		identitySID = identitySIDs[0]
+	}
 	parent := filepath.Dir(dir)
 	if err := requirePlainDirectory(parent); err != nil {
 		return fmt.Errorf("Majucau data directory is unavailable or unsafe")
 	}
-	if err := validatePrivateACL(parent, true); err != nil {
+	if err := validatePrivateACL(parent, true, identitySID); err != nil {
 		return fmt.Errorf("Majucau data directory permissions are unsafe")
 	}
-	security, err := windows.SecurityDescriptorFromString(privateLogDirectorySDDL)
+	sddl, err := identityLogSDDL(identitySID)
+	if err != nil {
+		return err
+	}
+	security, err := windows.SecurityDescriptorFromString(sddl)
 	if err != nil {
 		return fmt.Errorf("prepare private diagnostic log permissions: %w", err)
 	}
@@ -40,18 +71,22 @@ func prepareLogDirectory(dir string) error {
 	if err := requirePlainDirectory(dir); err != nil {
 		return fmt.Errorf("diagnostic log directory is unavailable or unsafe")
 	}
-	if err := validatePrivateACL(dir, true); err != nil {
+	if err := validatePrivateACL(dir, true, identitySID); err != nil {
 		return fmt.Errorf("diagnostic log directory permissions are unsafe")
 	}
 	return nil
 }
 
-func openSafeLogFile(path string) (*os.File, error) {
+func openSafeLogFile(path string, identitySIDs ...string) (*os.File, error) {
+	identitySID := ""
+	if len(identitySIDs) > 0 {
+		identitySID = identitySIDs[0]
+	}
 	if err := requirePlainFileOrMissing(path); err != nil {
 		return nil, fmt.Errorf("diagnostic log target is unsafe")
 	}
 	if _, err := os.Lstat(path); err == nil {
-		if err := validatePrivateACL(path, false); err != nil {
+		if err := validatePrivateACL(path, false, identitySID); err != nil {
 			return nil, fmt.Errorf("diagnostic log file permissions are unsafe")
 		}
 	}
@@ -62,7 +97,7 @@ func openSafeLogFile(path string) (*os.File, error) {
 	if err := requirePlainFileOrMissing(path); err != nil {
 		return nil, errors.Join(fmt.Errorf("diagnostic log target changed while opening"), file.Close())
 	}
-	if err := validatePrivateACL(path, false); err != nil {
+	if err := validatePrivateACL(path, false, identitySID); err != nil {
 		return nil, errors.Join(fmt.Errorf("diagnostic log file permissions are unsafe"), file.Close())
 	}
 	return file, nil
@@ -129,7 +164,11 @@ func requirePlainFileOrMissing(path string) error {
 	return nil
 }
 
-func validatePrivateACL(path string, directory bool) error {
+func validatePrivateACL(path string, directory bool, identitySIDs ...string) error {
+	identitySID := "S-1-3-4" // Owner Rights is the legacy console logger identity.
+	if len(identitySIDs) > 0 && identitySIDs[0] != "" {
+		identitySID = identitySIDs[0]
+	}
 	security, err := windows.GetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
 	if err != nil {
 		return err
@@ -146,7 +185,7 @@ func validatePrivateACL(path string, directory bool) error {
 		return fmt.Errorf("diagnostic path must have exactly three private access entries")
 	}
 	allowed := map[string]bool{
-		"S-1-3-4":      false, // Owner Rights
+		identitySID:    false,
 		"S-1-5-18":     false, // LocalSystem
 		"S-1-5-32-544": false, // Built-in Administrators
 	}

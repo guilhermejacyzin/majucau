@@ -11,7 +11,7 @@ import (
 )
 
 func runWorker(ctx context.Context) (returnErr error) {
-	logger, closeLogger, logErr := newWorkerDiagnosticLogger()
+	logger, closeLogger, logErr := newWorkerDiagnosticLogger(ctx)
 	defer func() {
 		if closeErr := closeLogger(); closeErr != nil {
 			returnErr = errors.Join(returnErr, fmt.Errorf("close worker diagnostic log: %w", closeErr))

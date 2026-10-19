@@ -105,7 +105,8 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 		if !errors.Is(err, windows.ERROR_SERVICE_DOES_NOT_EXIST) {
 			return ErrWorkerServiceConfig
 		}
-		service, err = manager.CreateService(WorkerServiceName, quoteWorkerServiceImage(workerPath), mgr.Config{
+		// mgr.CreateService quotes exepath internally; pass the raw filesystem path.
+		service, err = manager.CreateService(WorkerServiceName, workerPath, mgr.Config{
 			ServiceType:      windows.SERVICE_WIN32_OWN_PROCESS,
 			StartType:        mgr.StartManual,
 			ErrorControl:     mgr.ErrorNormal,

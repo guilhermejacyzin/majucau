@@ -4144,7 +4144,15 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Cofre DPAPI com escopo explícito para serviço — 19/10/2026
 
 - O worker em modo console mantém DPAPI no escopo do usuário atual. Quando iniciado pelo Service Control Manager, passa a usar DPAPI no escopo da máquina, com DACL protegida e validada para a identidade atual, SYSTEM e Administradores. Um marcador impede abrir o mesmo cofre com escopo diferente; cofres antigos são preservados como escopo de usuário, sem migração automática para escopo de máquina.
-- Os testes Windows verificam a gravação/leitura com o escopo de máquina, ACLs, marcador, preservação de segredo no cofre legado e seleção explícita do contexto de serviço. `scripts/verify.ps1`, `scripts/verify-backlog.ps1` e `git diff --check` passaram localmente; a CI deste commit ainda precisa terminar.
-- BK-039 permanece em 50%: o código ainda não instala o serviço, cria a ACL de ProgramData, provisiona a credencial do PostgreSQL ou executa a sincronização real do Drive. A média do projeto permanece em 11,8% concluída e 88,2% restante; não há prazo confiável para homologação.
+- Os testes Windows verificam a gravação/leitura com o escopo de máquina, ACLs, marcador, preservação de segredo no cofre legado e seleção explícita do contexto de serviço. `scripts/verify.ps1`, `scripts/verify-backlog.ps1` e `git diff --check` passaram localmente. A CI #39238763587 passou nos quatro trabalhos e o smoke do serviço confirmou registro, início, ACLs, remoção e preservação de dados.
+- BK-039 permanece em 50%: a instalação e o ciclo do serviço passaram no CI, mas a validação em VM limpa com reinicialização, configuração segura do PostgreSQL, identidade técnica do Drive e sincronização real continuam pendentes. A média do projeto permanece em 11,8% concluída e 88,2% restante; não há prazo confiável para homologação.
 - A tela, regras financeiras e conteúdo dos arquivos do Drive não foram alterados.
 - Evidência: `docs/evidence/DPAPI-SERVICE-SCOPE-2026-10-19.md`.
+
+### Reconstrução e abertura do protótipo atual — 19/10/2026
+
+- `scripts/build-windows.ps1 -Installer` passou nas verificações Go, `go vet`, `govulncheck`, migrations/SQLC, scan de segredos, contrato do instalador, lint, TypeScript, 33 testes de interface, build Wails e `npm audit`; o instalador NSIS e o bundle portátil foram gerados em `artifacts/windows/`.
+- O app Wails abriu e respondeu em modo de usuário. O instalador não foi executado nem o serviço instalado neste computador; o ciclo do instalador/serviço está comprovado pela CI Windows #39238763587. O instalador não tem assinatura Authenticode de produção.
+- Os testes confirmam que os valores públicos do Bling aparecem como padrão quando ausentes; Client Secret continua vazio e protegido. A integração permanece sem OAuth ou chamadas à API até que o Client Secret seja salvo no próprio Majucau e a conta seja autorizada. Callback HTTPS e relay local estão implementados/publicados, mas ainda não foram homologados com a conta real.
+- A tentativa somente de leitura do Google Cloud Console pediu confirmação de identidade da conta `financeiro@majucau.com.br`; a janela foi deixada para confirmação manual. Nenhuma senha foi digitada nem conta técnica ou permissão criada.
+- Pacote, hashes, assinatura e próximo passo: `docs/evidence/BLING-INSTALLER-UPDATED-2026-10-18.md`. BK-039 continua em 50%; o projeto permanece em 11,8% concluído (88,2% restante). Nenhuma tela aprovada ou regra financeira foi alterada.

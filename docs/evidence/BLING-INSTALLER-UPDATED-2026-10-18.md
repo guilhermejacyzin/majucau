@@ -46,3 +46,12 @@ Na conferência seguinte, o executável do instalador ainda tinha data de 18/10,
 - A documentação oficial do Bling foi conferida novamente: o header `enable-jwt: 1` deve ser enviado na obtenção e renovação de tokens e nas chamadas autenticadas. O código atual faz isso em `oauth.go` e `api_client.go`. Isso confirma compatibilidade com a regra JWT documentada, mas não comprova autorização nem leitura de dados da conta.
 
 A conexão real permanece pendente. O Client Secret precisa ser configurado no próprio Majucau; depois é necessário conectar, autorizar, testar e sincronizar. Nenhum segredo foi lido ou copiado, e nenhum dado financeiro real foi consultado. O backlog e seu percentual não avançam por reconstruir o pacote: BK-041 continua dependente da homologação real.
+
+## Protótipo atualizado e aberto — 19/10/2026
+
+- Reconstruí o pacote a partir do código atual com `scripts/build-windows.ps1 -Installer`. A verificação completa passou: testes Go, `go vet`, `govulncheck` (nenhuma vulnerabilidade alcançável; permaneceu um aviso de módulo sem chamada vulnerável), migrations e SQLC determinísticos, scan de segredos, contrato do instalador, lint, TypeScript, 33 testes de interface, build Wails e `npm audit` sem vulnerabilidades.
+- O app Wails foi aberto em modo de usuário e respondeu com a janela “Majucau Financial Intelligence”. Não instalei o serviço Windows nem executei o instalador.
+- Instalador: 20.566.862 bytes; SHA-256 `7DAD1D5ADC19B91F44DE579A5B48FB2E7712871CB64DB8FE74BF742DD05B1B77`. Bundle portátil: 18.985.371 bytes; SHA-256 `E5A5BA67E3A3EC243B01D3F11B163B0642F9BC6B108F7E7C7224F68062D5F791`. Os arquivos estão em `artifacts/windows/` e o instalador continua sem assinatura Authenticode de produção.
+- Os testes da tela confirmam que, sem configuração pública salva, Client ID e Redirect URI aprovados aparecem nos campos existentes; Client Secret continua vazio e protegido. Não houve chamada à API, OAuth ou sincronização nesta execução.
+- Causa operacional confirmada: o protótipo só conecta depois que Client ID, Redirect URI e o Client Secret do aplicativo são salvos. A senha para entrar no site Bling não substitui esse segredo. A responsável deve digitá-lo diretamente no Majucau; não enviar pelo chat. Depois, conectar, autorizar, testar e sincronizar para confirmar a paginação real.
+- Nenhuma tela aprovada, regra financeira ou de negócio foi alterada.

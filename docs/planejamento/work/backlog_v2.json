@@ -1356,7 +1356,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "40%: estruturas CSV/TSV/JSON são lidas em fluxo com limites e staging; arquivos XLS/XLSX ainda são recusados. Gisele confirmou em 13/10/2026 que Excel XLS/XLSX faz parte dos arquivos diários do Drive. Nenhuma linha vira fato financeiro antes de aprovação do layout. Faltam parser seguro de Excel, contratos aprovados e amostras reais autorizadas, carga e ensaio em VM limpa. Evidência: docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md.",
+    "evidence": "40% mantido. Leitor XLSX isolado, testado com dados sintéticos, ainda não integrado ao Drive; XLS não suportado. Faltam integração, contrato das planilhas e homologação real. Nenhuma regra financeira foi alterada. Evidências: docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md e docs/evidence/EXCEL-STREAMING-PARSER-PROTOTYPE-2026-10-18.md.",
     "weight": 1,
     "dependencies": [
       "BK-042"

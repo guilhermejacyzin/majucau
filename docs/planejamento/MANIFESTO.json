@@ -34,8 +34,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 6791,
-      "sha256": "21e97a8913a5273ec6ea163433b6192622f5fd28f5f780ade392d11ae96ef400"
+      "bytes": 6966,
+      "sha256": "11420ad7b33082486c20ca3ea331e43354ba9fb1e6790d3e8ec04f819fe8d5a5"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -54,8 +54,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 193402,
-      "sha256": "65505261eda35ccd4f4701e815fe2ae60366642d52a0c430155fcb0d1a8b84f5"
+      "bytes": 193307,
+      "sha256": "03c0ea53e14d87186fef8f49a9d1b1632464c3015f641d7c9f94d82a4fe121aa"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",

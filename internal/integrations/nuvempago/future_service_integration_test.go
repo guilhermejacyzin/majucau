@@ -2,7 +2,9 @@ package nuvempago
 
 import (
 	"context"
+	"errors"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,12 +41,37 @@ func TestFutureImportServicePostgresE2E(t *testing.T) {
 	// Importing the approved Drive report must work while the live Nuvem Pago
 	// integration remains unavailable for API confirmation.
 	service := NewFutureImportService(pool)
-	first, err := service.Import(ctx, folder)
+	cleanupFailure := errors.New("staging cleanup failed")
+	if _, err := service.ImportStaged(ctx, folder, FutureImportPending{}, func() error { return cleanupFailure }); !errors.Is(err, cleanupFailure) {
+		t.Fatalf("staged import cleanup error = %v, want rollback", err)
+	}
+	assertFuturePersistence(t, ctx, pool, 0, 0, 0)
+
+	first, err := service.ImportWithPending(ctx, folder, FutureImportPending{UnsupportedFiles: 1})
 	if err != nil {
 		t.Fatalf("first future import: %v", err)
 	}
-	if first.Status != "PARTIAL" || first.RecordsRead != 3 || first.RecordsFailed != 1 || first.RecordsCreated != 2 || first.RecordsUpdated != 0 {
+	if first.Status != "PARTIAL" || first.RecordsRead != 3 || first.RecordsFailed != 1 || first.RecordsCreated != 2 || first.RecordsUpdated != 0 || first.PendingFiles != 1 {
 		t.Fatalf("unexpected first import result: %+v", first)
+	}
+	assertFuturePersistence(t, ctx, pool, 2, 2, 0)
+	var batchStatus, errorCode, errorMessage string
+	var recordsFailed int64
+	if err := pool.QueryRow(ctx, `
+		SELECT status, error_code, error_message_sanitized, records_failed
+		FROM integration_sync_batches WHERE id::text = $1`, first.BatchID).Scan(&batchStatus, &errorCode, &errorMessage, &recordsFailed); err != nil {
+		t.Fatalf("read partial future batch audit: %v", err)
+	}
+	if batchStatus != "PARTIAL" || errorCode != "NUVEM_PAGO_FUTURE_SOURCE_PENDING" || !strings.Contains(errorMessage, "1 arquivo(s)") || recordsFailed != 1 {
+		t.Fatalf("unexpected pending audit status=%q code=%q failed=%d message=%q", batchStatus, errorCode, recordsFailed, errorMessage)
+	}
+
+	pending, err := service.RecordPending(ctx, FutureImportPending{NoCompatibleCSV: true, UnsupportedFiles: 2})
+	if err != nil {
+		t.Fatalf("record missing compatible source: %v", err)
+	}
+	if pending.Status != "PARTIAL" || pending.RecordsRead != 0 || pending.RecordsCreated != 0 || pending.RecordsUpdated != 0 || pending.RecordsFailed != 0 || pending.PendingFiles != 2 || !pending.SourceMissing {
+		t.Fatalf("unexpected pending-only result: %+v", pending)
 	}
 	assertFuturePersistence(t, ctx, pool, 2, 2, 0)
 

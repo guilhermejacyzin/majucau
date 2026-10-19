@@ -31,7 +31,7 @@ func startDailyGoogleDriveSchedule(ctx context.Context, syncer dailyGoogleDriveS
 		if scheduledAt, due := dailyGoogleDriveCatchUpAt(time.Now()); due {
 			result, syncErr := runDailyGoogleDriveSync(ctx, syncer, scheduledAt)
 			if syncErr != nil {
-				logger.Warn("daily Google Drive recovery did not complete", slog.String("scheduled_at", scheduledAt.Format(time.RFC3339)), slog.String("error_code", dailyGoogleDriveSyncErrorCode(syncErr)), slog.Int("folders_read", result.FoldersRead), slog.Int("folders_failed", result.FoldersFailed))
+				logger.Warn("daily Google Drive recovery did not complete", dailyGoogleDriveResultLogFields(scheduledAt, result, syncErr)...)
 			} else {
 				logDailyGoogleDriveSuccess(logger, scheduledAt, result)
 			}
@@ -39,6 +39,7 @@ func startDailyGoogleDriveSchedule(ctx context.Context, syncer dailyGoogleDriveS
 		err = schedule.Run(ctx, func(runCtx context.Context, scheduledAt time.Time) error {
 			result, syncErr := runDailyGoogleDriveSync(runCtx, syncer, scheduledAt)
 			if syncErr != nil {
+				logger.Warn("daily Google Drive processing did not complete", dailyGoogleDriveResultLogFields(scheduledAt, result, syncErr)...)
 				return syncErr
 			}
 			logDailyGoogleDriveSuccess(logger, scheduledAt, result)
@@ -79,7 +80,29 @@ func dailyGoogleDriveCatchUpAt(now time.Time) (time.Time, bool) {
 }
 
 func logDailyGoogleDriveSuccess(logger *slog.Logger, scheduledAt time.Time, result googledrive.DailyFileInventorySyncResult) {
-	logger.Info("daily Google Drive inventory completed", slog.String("scheduled_at", scheduledAt.Format(time.RFC3339)), slog.Int("folders_read", result.FoldersRead), slog.Int("folders_skipped", result.FoldersSkipped), slog.Int64("files_read", result.FilesRead))
+	logger.Info("daily Google Drive processing completed", dailyGoogleDriveResultLogFields(scheduledAt, result, nil)...)
+}
+
+func dailyGoogleDriveResultLogFields(scheduledAt time.Time, result googledrive.DailyFileInventorySyncResult, syncErr error) []any {
+	fields := []any{
+		slog.String("scheduled_at", scheduledAt.Format(time.RFC3339)),
+		slog.String("status", result.Status),
+		slog.Int("folders_read", result.FoldersRead),
+		slog.Int("folders_failed", result.FoldersFailed),
+		slog.Int("folders_skipped", result.FoldersSkipped),
+		slog.Int64("files_read", result.FilesRead),
+		slog.String("future_import_status", result.FutureStatus),
+		slog.Int64("future_records_read", result.FutureRead),
+		slog.Int64("future_records_created", result.FutureCreated),
+		slog.Int64("future_records_updated", result.FutureUpdated),
+		slog.Int64("future_records_failed", result.FutureFailed),
+		slog.Int64("future_files_pending", result.FuturePending),
+		slog.Int64("future_files_stale", result.FutureStale),
+	}
+	if syncErr != nil {
+		fields = append(fields, slog.String("error_code", dailyGoogleDriveSyncErrorCode(syncErr)))
+	}
+	return fields
 }
 
 func dailyGoogleDriveSyncErrorCode(err error) string {

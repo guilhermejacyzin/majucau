@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
+	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
 	"majucau.local/financial-intelligence/internal/security"
 )
 
@@ -55,7 +56,12 @@ func newDailyGoogleDriveSyncer(ctx context.Context, pool *pgxpool.Pool, store se
 	if err != nil {
 		return nil, "GOOGLE_DRIVE_CONFIGURATION_INVALID"
 	}
-	return dailySync, ""
+	futureImporter := nuvempago.NewFutureImportService(pool)
+	pipeline, err := newDailyGoogleDriveImportSyncer(dailySync, folderSync, client, futureImporter, os.TempDir(), folderIDs[googledrive.DriveFolderNuvemPagoReceipts])
+	if err != nil {
+		return nil, "GOOGLE_DRIVE_CONFIGURATION_INVALID"
+	}
+	return pipeline, ""
 }
 
 func googleDriveFolderIDsFromEnvironment() (map[googledrive.DriveFolderScope]string, bool, error) {

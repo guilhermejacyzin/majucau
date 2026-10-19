@@ -1322,7 +1322,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "58% (estimativa): o núcleo GET do Drive lista e baixa em fluxo, mantém checkpoints/páginas e versões de metadados e publica o inventário de forma atômica. O worker agenda a listagem diária das três pastas às 09:30 quando IDs e credencial DPAPI estão configurados, com correlação estável por dia/pasta e falha independente por origem. Nesta atualização, `WithPrivateStage` grava o download verificado numa pasta temporária privada, expõe o conteúdo como `io.Reader` ao callback e limpa o temporário ao terminar; retry substitui bytes incompletos e erros de limpeza preservam caminho tipado sem expô-lo na mensagem comum. `go test ./... -count=1`, `go vet ./...`, `go mod verify`, verificação do backlog, limites Go e `git diff --check` passaram no Windows. O novo estágio ainda não foi ligado ao worker ou a importadores homologados. Ainda faltam contratos e amostras, credenciais/IDs reais, importação e homologação; XLS/XLSX continuam sem parser seguro. Evidências: docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md, docs/evidence/GOOGLE-DRIVE-DAILY-WORKER-2026-10-18.md e docs/evidence/GOOGLE-DRIVE-PRIVATE-STAGING-2026-10-18.md.",
+    "evidence": "68% (estimativa): o worker lê as três raízes às 09:30, percorre subpastas internas com estado por pasta e página, retoma após falha e só publica o inventário completo. Há limites de 10 mil pastas, 10 mil páginas e profundidade 32 por árvore; excedê-los falha sem publicar dados parciais. O download é protegido por staging privado, conferência de tamanho/checksum/versão e origem; o caminho CSV de recebimentos futuros está ligado à importação parcial idempotente, com arquivos antigos e fontes incompatíveis marcados como pendentes. A prévia autorizada mostrou a raiz real `Meu Drive/MAJUCAU_INTELLIGENCE_INPUT` e a subpasta `03_nuvem_envio/Frete`; os IDs ficam fora do Git. `go test . ./cmd/... ./database/... ./internal/...`, `go vet`, `go mod verify`, verificações de backlog, migrations, limites Go e `git diff --check` passaram localmente. O teste PostgreSQL de árvore aninhada/retomada foi incluído na CI, ainda aguardando execução. Nenhum arquivo real foi baixado ou valor financeiro importado; o CSV disponível estava desatualizado. Faltam provisionar identidade técnica e credencial DPAPI, configurar os IDs localmente, validar a primeira sincronização real, homologar contratos e formatos; XLS/XLSX, TSV/JSON e medição em VM permanecem pendentes. Evidência: docs/evidence/GOOGLE-DRIVE-NESTED-IMPORT-2026-10-18.md.",
     "weight": 1,
     "dependencies": [
       "BK-010",
@@ -1330,7 +1330,7 @@
       "BK-038",
       "BK-024"
     ],
-    "progress": 0.58
+    "progress": 0.68
   },
   {
     "key": "parsers",

@@ -17,7 +17,7 @@
 - Testes focados passaram: `go test -count=1 ./internal/integrations/xlsstream/... ./cmd/worker`.
 - `scripts/verify.ps1` passou integralmente em Windows em 2026-10-19: testes Go, limites de arquitetura, `go vet`, `govulncheck`, migrations, geração SQLC determinística, scan de secrets, contrato do instalador, ESLint, TypeScript, 33 testes frontend, build e `npm audit`.
 - `govulncheck` não encontrou chamadas vulneráveis. Um alerta em módulo requerido sem chamada alcançável continua registrado na evidência `docs/evidence/DEPENDENCY-SECURITY-REMEDIATION-2026-10-10.md`.
-- A CI remota do commit desta entrega ainda precisa ser consultada após o push; esta evidência não afirma que a CI passou.
+- O commit `deba395ccb787e028bce7bef99c7af8b7469575e` foi enviado à branch `codex/majucau-artifact-consolidation`. Após o push, a conexão GitHub disponível retornou `statuses: []` e `workflow_runs: []`; portanto, o estado da CI remota não foi confirmado e não é declarado como aprovado.
 
 ## O que continua pendente
 

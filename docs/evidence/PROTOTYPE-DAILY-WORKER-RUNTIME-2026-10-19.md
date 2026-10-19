@@ -17,3 +17,10 @@ O protótipo atual inicia com um banco Majucau separado e o worker saudável. Is
 O protótipo foi deixado em execução para conferência local. Os logs e o cluster permanecem em `artifacts/retained/postgresql-dev/`, registrados no inventário local de limpeza; não apagar enquanto a execução estiver ativa. Ao encerrar o protótipo, `scripts/start-prototype.ps1` encerra o worker e o banco que iniciou.
 
 Não foram alteradas telas aprovadas, regras financeiras, configuração do serviço PostgreSQL existente, arquivos do Drive ou credenciais. Nenhum segredo ou ID de pasta foi incluído nesta evidência.
+
+## Conferência da interface e das janelas — 19/10/2026
+
+- Às 08:43, confirmei duas janelas com o mesmo título. `artifacts/windows/majucau.exe` era o aplicativo antigo, iniciado às 07:53; `build/bin/majucau-dev.exe` era o protótipo atual, iniciado às 08:35. Fechei normalmente somente a janela antiga e deixei o protótipo atual em execução.
+- Executei o teste focal existente `informa que o segredo do aplicativo Bling ainda precisa ser configurado`: 1 teste passou. Ele confirma que, sem segredo salvo, a interface atual preenche Client ID e Redirect URI já aprovados e mostra “Informe o segredo do app”. O teste não realiza conexão real com o Bling.
+- A captura anterior com campos vazios e pontos mascarados não comprova que o segredo estava salvo; ela foi feita antes da sessão atual do protótipo. Nenhuma tela ou regra financeira foi alterada nesta conferência.
+- O status real permanece `NOT_CONFIGURED` até que o Client Secret do aplicativo seja salvo no Majucau e o OAuth seja autorizado.

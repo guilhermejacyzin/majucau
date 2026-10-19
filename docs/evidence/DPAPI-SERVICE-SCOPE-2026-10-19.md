@@ -16,7 +16,7 @@
 - A execução remota inicial chegou a falhar apenas na instalação do NSIS: a consulta ao repositório Chocolatey retornou HTTP 503. A repetição confirmou o mesmo erro externo.
 - A primeira alternativa, baixar diretamente do SourceForge, foi recusada porque o conteúdo recebido não correspondeu ao hash esperado.
 - A CI agora baixa o arquivo do espelho de releases do Tauri, verifica o SHA-256 canônico publicado pelo projeto NSIS antes de extrair e executar o compilador. O download foi conferido localmente: tamanho 2.363.925 bytes e hash esperado.
-- A execução remota que valida esse novo caminho ainda precisa concluir antes de declarar a CI verde.
+- A execução completa da CI no commit `1dffc4c` passou: [CI #708](https://github.com/guilhermejacyzin/majucau/actions/runs/39227446413). A instalação verificada do NSIS, o build do instalador, o pacote portátil, os testes de instalação/desinstalação e a consolidação dos artefatos passaram, assim como os jobs de PostgreSQL e backlog.
 
 ## Limites restantes
 

@@ -34,3 +34,11 @@ Continuar BK-042 após definir a regra de pasta vazia; provisionar a identidade 
 - Com `scripts/SafeCleanup.psm1`, removidos os caches recriáveis `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/`, `artifacts/cache/vite/` e a prévia `artifacts/verification/frontend-dist-882f77c361984a4aa8b9810347e409f7/` gerada pela verificação.
 - Após o teste regressivo, também removidos com `SafeCleanup` `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/`, `artifacts/cache/vite/` e `artifacts/verification/frontend-dist-ccab21ea3fea4bc6aadba4369318c382/`.
 - Preservados `artifacts/cache/go-mod/` para evitar downloads e o pacote oficial em `artifacts/windows/`. Não foi encontrado item novo que precise de exclusão manual.
+
+## Retificação posterior — escopo e horário dos arquivos atrasados
+
+O registro original descreve o primeiro caminho TSV validado em recebimentos futuros. Em seguida, `DRIVE-ALL-SOURCE-STRUCTURAL-STREAMING-2026-10-19.md` ampliou a verificação estrutural em fluxo para CSV, TSV, JSON, XLS e XLSX nas três pastas aprovadas. A interpretação financeira continua pendente de contrato.
+
+Também foi definida a regra da pasta vazia: a origem ausente fica pendente/parcial, sem reutilizar dados anteriores como atuais. O teste `TestDailyDrivePipelineMarksEmptyReceiptsFolderPending` cobre esse comportamento; a pergunta anotada mais acima já foi respondida depois.
+
+Em 19/10/2026, a rotina do Drive também foi corrigida para não iniciar uma coleta imediata quando o serviço começa depois das 09:30. Arquivos ausentes ou recebidos após esse horário só serão processados na execução programada das 09:30 do dia seguinte, conforme a decisão registrada no BK-039.

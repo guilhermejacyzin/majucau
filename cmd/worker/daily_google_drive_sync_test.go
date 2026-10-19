@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
+	"majucau.local/financial-intelligence/internal/scheduler"
 )
 
 type fakeDailyGoogleDriveSyncer struct {
@@ -41,16 +42,18 @@ func TestRunDailyGoogleDriveSyncRejectsMissingAndPartialSources(t *testing.T) {
 	}
 }
 
-func TestDailyGoogleDriveCatchUpUsesBrasiliaSchedule(t *testing.T) {
-	location := time.FixedZone("UTC-3", -3*60*60)
-	before := time.Date(2026, 10, 18, 9, 29, 59, 0, location)
-	if _, due := dailyGoogleDriveCatchUpAt(before); due {
-		t.Fatal("run before 09:30 should wait for regular schedule")
+func TestDailyGoogleDriveMissedRunWaitsUntilNextBrasiliaSchedule(t *testing.T) {
+	schedule, err := scheduler.NewSaoPaulo0930()
+	if err != nil {
+		t.Fatal(err)
 	}
-	after := time.Date(2026, 10, 18, 14, 15, 0, 0, time.UTC)
-	scheduledAt, due := dailyGoogleDriveCatchUpAt(after)
-	if !due || scheduledAt.Hour() != 9 || scheduledAt.Minute() != 30 || scheduledAt.Day() != 18 || scheduledAt.Month() != time.October {
-		t.Fatalf("catch-up schedule = %s due=%v", scheduledAt, due)
+	startedAfterRun := time.Date(2026, 10, 18, 14, 15, 0, 0, time.UTC)
+	nextRun, err := schedule.NextRun(startedAfterRun)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := nextRun.Format(time.RFC3339), "2026-10-19T09:30:00-03:00"; got != want {
+		t.Fatalf("next Drive run after missed schedule = %s, want %s", got, want)
 	}
 }
 

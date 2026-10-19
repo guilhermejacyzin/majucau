@@ -29,3 +29,7 @@
 - `artifacts/verification/` ficou vazio. Nenhum cache compartilhado fora do projeto foi apagado.
 - Nenhum dado real do Drive, segredo ou arquivo externo foi usado; não há novo item para exclusão manual.
 
+## Retificação posterior — escopo das três pastas
+
+O registro original descreve o primeiro caminho implementado: recebimentos futuros. Em seguida, `DRIVE-ALL-SOURCE-STRUCTURAL-STREAMING-2026-10-19.md` ampliou e validou a verificação estrutural em fluxo para as três pastas aprovadas (`01_perdas_operacionais`, `02_nuvem_pago/recebimentos_futuros` e `03_nuvem_envio`), incluindo CSV, TSV, JSON, XLS e XLSX. Portanto, as pendências originais de parser desses formatos foram superadas para validação estrutural. Esse suporte não aprova contratos nem interpretação financeira: arquivos sem contrato continuam pendentes e não viram lançamentos.
+

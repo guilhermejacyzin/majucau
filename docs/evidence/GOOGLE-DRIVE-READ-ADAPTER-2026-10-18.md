@@ -73,6 +73,10 @@ Foi adotado `golang.org/x/oauth2 v0.37.0`, biblioteca mantida pelo projeto Go, l
 
 Este resultado é **implementado localmente, aguardando integração e validação real**. Não é prova de acesso ao Drive nem conclusão de BK-042/BK-043.
 
+## Atualização de escopo — 19/10/2026
+
+O adapter descrito acima não estava ligado ao importador naquela data. A integração posterior agora aplica leitores estruturais em fluxo nas três pastas para CSV, TSV, JSON, XLS e XLSX, sem interpretação financeira. A identidade técnica, os contratos pendentes e a homologação real continuam necessários. Ver `DRIVE-ALL-SOURCE-STRUCTURAL-STREAMING-2026-10-19.md`.
+
 ## Inventário persistente e retomada após falha — 18/10/2026
 
 Foi criada a migration `database/migrations/000006_google_drive_file_inventory.up.sql` para guardar o progresso da leitura e os metadados do Drive. O runtime pode usar somente as permissões explicitamente listadas em `database/privileges/runtime.sql`; a auditoria correspondente foi ampliada em `database/privileges/verify_runtime.sql`.

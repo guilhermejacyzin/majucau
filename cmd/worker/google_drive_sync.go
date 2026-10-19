@@ -4,19 +4,12 @@ import (
 	"context"
 	"errors"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
 	"majucau.local/financial-intelligence/internal/security"
-)
-
-const (
-	googleDriveLossesFolderEnv   = "MAJUCAU_GOOGLE_DRIVE_FOLDER_01_PERDAS_OPERACIONAIS_ID"
-	googleDriveReceiptsFolderEnv = "MAJUCAU_GOOGLE_DRIVE_FOLDER_02_NUVEM_PAGO_RECEBIMENTOS_FUTUROS_ID"
-	googleDriveShippingFolderEnv = "MAJUCAU_GOOGLE_DRIVE_FOLDER_03_NUVEM_ENVIO_ID"
 )
 
 var (
@@ -65,7 +58,7 @@ func buildDailyGoogleDriveSyncer(ctx context.Context, pool *pgxpool.Pool, store 
 	if ctx == nil || pool == nil || store == nil {
 		return nil, errGoogleDriveConfigurationInvalid
 	}
-	folderIDs, configured, err := googleDriveFolderIDsFromStoreOrEnvironment(ctx, store)
+	folderIDs, configured, err := googleDriveFolderIDsFromProtectedStore(ctx, store)
 	if err != nil {
 		if errors.Is(err, googledrive.ErrServiceAccountCredentialStore) {
 			return nil, errGoogleDriveCredentialUnavailable
@@ -103,31 +96,6 @@ func buildDailyGoogleDriveSyncer(ctx context.Context, pool *pgxpool.Pool, store 
 	return pipeline, nil
 }
 
-func googleDriveFolderIDsFromStoreOrEnvironment(ctx context.Context, store security.SecretStore) (googledrive.DriveFolderIDs, bool, error) {
-	protected, configured, err := googledrive.ReadDriveFolderIDs(ctx, store)
-	if err != nil || configured {
-		return protected, configured, err
-	}
-	return googleDriveFolderIDsFromEnvironment()
-}
-
-func googleDriveFolderIDsFromEnvironment() (googledrive.DriveFolderIDs, bool, error) {
-	values := googledrive.DriveFolderIDs{
-		googledrive.DriveFolderOperationalLosses: strings.TrimSpace(os.Getenv(googleDriveLossesFolderEnv)),
-		googledrive.DriveFolderNuvemPagoReceipts: strings.TrimSpace(os.Getenv(googleDriveReceiptsFolderEnv)),
-		googledrive.DriveFolderNuvemShipping:     strings.TrimSpace(os.Getenv(googleDriveShippingFolderEnv)),
-	}
-	configured := 0
-	for _, value := range values {
-		if value != "" {
-			configured++
-		}
-	}
-	if configured == 0 {
-		return nil, false, nil
-	}
-	if googledrive.ValidateDriveFolderIDs(values) != nil {
-		return nil, false, googledrive.ErrSyncConfiguration
-	}
-	return values, true, nil
+func googleDriveFolderIDsFromProtectedStore(ctx context.Context, store security.SecretStore) (googledrive.DriveFolderIDs, bool, error) {
+	return googledrive.ReadDriveFolderIDs(ctx, store)
 }

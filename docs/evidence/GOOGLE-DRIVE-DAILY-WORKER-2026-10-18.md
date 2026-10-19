@@ -5,14 +5,16 @@
 - O worker ganhou uma rotina diária às 09:30, no fuso `America/Sao_Paulo`, para atualizar o inventário das três pastas autorizadas.
 - Cada pasta usa um identificador estável por data e é sincronizada de forma independente. Uma falha em uma pasta não interrompe as outras; repetir a tentativa não duplica o lote já concluído.
 - A migration `000007_google_drive_connection.up.sql` cria a conexão `GOOGLE_DRIVE` como `NOT_CONFIGURED`. Isso fornece uma identidade estável no banco sem declarar que a conta já foi conectada.
-- Os IDs das pastas são lidos de variáveis de ambiente dedicadas. A chave da service account continua sendo lida somente do cofre DPAPI do worker. O worker não registra IDs, tokens, nomes de arquivos ou conteúdo.
-- O agendamento só inicia quando os três IDs e a credencial protegida estão disponíveis. Configuração incompleta fica registrada por código técnico sanitizado.
+- Na implementação inicial, os IDs das pastas eram lidos de variáveis de ambiente dedicadas, enquanto a chave da service account ficava no cofre DPAPI. Esse caminho alternativo foi removido em 19/10/2026; a correção está registrada em `docs/evidence/GOOGLE-DRIVE-PROTECTED-FOLDER-CONFIG-2026-10-19.md`.
+- O agendamento diário permanece ativo antes do provisionamento. Cada execução relê a configuração protegida e não chama a API do Drive até encontrar os três IDs e a credencial no mesmo pacote DPAPI. Configuração ausente fica pendente; erros usam códigos sanitizados.
 
-Variáveis esperadas para configurar o worker:
+Variáveis usadas pela implementação inicial e agora desativadas:
 
 - `MAJUCAU_GOOGLE_DRIVE_FOLDER_01_PERDAS_OPERACIONAIS_ID`
 - `MAJUCAU_GOOGLE_DRIVE_FOLDER_02_NUVEM_PAGO_RECEBIMENTOS_FUTUROS_ID`
 - `MAJUCAU_GOOGLE_DRIVE_FOLDER_03_NUVEM_ENVIO_ID`
+
+Definir essas variáveis não configura nem habilita a leitura do Drive na versão atual.
 
 ## Limites desta etapa
 

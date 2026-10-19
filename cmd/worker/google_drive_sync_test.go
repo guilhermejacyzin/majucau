@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 )
 
 type emptyGoogleDriveCredentialStore struct{}
@@ -19,39 +18,20 @@ func (emptyGoogleDriveCredentialStore) Get(context.Context, string) ([]byte, err
 }
 func (emptyGoogleDriveCredentialStore) Delete(context.Context, string) error { return nil }
 
-func TestGoogleDriveFolderIDsFromEnvironmentRequiresAllThreeIDs(t *testing.T) {
-	t.Setenv(googleDriveLossesFolderEnv, "folder-a")
-	t.Setenv(googleDriveReceiptsFolderEnv, "")
-	t.Setenv(googleDriveShippingFolderEnv, "folder-c")
-	if _, configured, err := googleDriveFolderIDsFromEnvironment(); configured || !errors.Is(err, googledrive.ErrSyncConfiguration) {
-		t.Fatalf("partial folder configuration = configured:%v error:%v", configured, err)
-	}
-}
-
-func TestGoogleDriveFolderIDsFromEnvironmentAcceptsThreeConfiguredIDs(t *testing.T) {
-	t.Setenv(googleDriveLossesFolderEnv, " folder-a ")
-	t.Setenv(googleDriveReceiptsFolderEnv, "folder-b")
-	t.Setenv(googleDriveShippingFolderEnv, "folder-c")
-	folders, configured, err := googleDriveFolderIDsFromEnvironment()
-	if err != nil || !configured || len(folders) != 3 || folders[googledrive.DriveFolderOperationalLosses] != "folder-a" {
-		t.Fatalf("folder configuration = %#v configured:%v error:%v", folders, configured, err)
-	}
-}
-
-func TestGoogleDriveFolderIDsFromEnvironmentAllowsAllIDsToBeAbsent(t *testing.T) {
-	t.Setenv(googleDriveLossesFolderEnv, "")
-	t.Setenv(googleDriveReceiptsFolderEnv, "")
-	t.Setenv(googleDriveShippingFolderEnv, "")
-	folders, configured, err := googleDriveFolderIDsFromEnvironment()
+func TestGoogleDriveFolderIDsRequireProtectedBundle(t *testing.T) {
+	t.Setenv("MAJUCAU_GOOGLE_DRIVE_FOLDER_01_PERDAS_OPERACIONAIS_ID", "folder-a")
+	t.Setenv("MAJUCAU_GOOGLE_DRIVE_FOLDER_02_NUVEM_PAGO_RECEBIMENTOS_FUTUROS_ID", "folder-b")
+	t.Setenv("MAJUCAU_GOOGLE_DRIVE_FOLDER_03_NUVEM_ENVIO_ID", "folder-c")
+	folders, configured, err := googleDriveFolderIDsFromProtectedStore(context.Background(), emptyGoogleDriveCredentialStore{})
 	if err != nil || configured || folders != nil {
-		t.Fatalf("empty folder configuration = %#v configured:%v error:%v", folders, configured, err)
+		t.Fatalf("folder configuration = %#v configured:%v error:%v; environment variables must not configure Drive access", folders, configured, err)
 	}
 }
 
 func TestGoogleDriveDailyScheduleCanLoadConfigurationAddedAfterWorkerStarts(t *testing.T) {
-	t.Setenv(googleDriveLossesFolderEnv, "")
-	t.Setenv(googleDriveReceiptsFolderEnv, "")
-	t.Setenv(googleDriveShippingFolderEnv, "")
+	t.Setenv("MAJUCAU_GOOGLE_DRIVE_FOLDER_01_PERDAS_OPERACIONAIS_ID", "")
+	t.Setenv("MAJUCAU_GOOGLE_DRIVE_FOLDER_02_NUVEM_PAGO_RECEBIMENTOS_FUTUROS_ID", "")
+	t.Setenv("MAJUCAU_GOOGLE_DRIVE_FOLDER_03_NUVEM_ENVIO_ID", "")
 	syncer, setupCode := newDailyGoogleDriveSyncer(context.Background(), &pgxpool.Pool{}, emptyGoogleDriveCredentialStore{})
 	if syncer == nil || setupCode != "" {
 		t.Fatalf("daily syncer=%v setupCode=%q; schedule should remain available before Drive setup", syncer, setupCode)
@@ -61,11 +41,11 @@ func TestGoogleDriveDailyScheduleCanLoadConfigurationAddedAfterWorkerStarts(t *t
 	if !errors.Is(err, errGoogleDriveFoldersNotConfigured) {
 		t.Fatalf("first sync error=%v; want missing folder configuration", err)
 	}
-	t.Setenv(googleDriveLossesFolderEnv, "folder-a")
-	t.Setenv(googleDriveReceiptsFolderEnv, "folder-b")
-	t.Setenv(googleDriveShippingFolderEnv, "folder-c")
+	t.Setenv("MAJUCAU_GOOGLE_DRIVE_FOLDER_01_PERDAS_OPERACIONAIS_ID", "folder-a")
+	t.Setenv("MAJUCAU_GOOGLE_DRIVE_FOLDER_02_NUVEM_PAGO_RECEBIMENTOS_FUTUROS_ID", "folder-b")
+	t.Setenv("MAJUCAU_GOOGLE_DRIVE_FOLDER_03_NUVEM_ENVIO_ID", "folder-c")
 	_, err = syncer.SyncDaily(context.Background(), scheduledAt)
-	if !errors.Is(err, errGoogleDriveCredentialUnavailable) {
-		t.Fatalf("sync after adding folder IDs error=%v; want missing service credential", err)
+	if !errors.Is(err, errGoogleDriveFoldersNotConfigured) {
+		t.Fatalf("sync after adding environment folder IDs error=%v; want protected folder bundle missing", err)
 	}
 }

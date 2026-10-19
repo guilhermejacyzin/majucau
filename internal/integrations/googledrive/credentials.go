@@ -114,8 +114,8 @@ func (s *ServiceAccountCredentialService) Save(ctx context.Context, keyJSON []by
 }
 
 // ReadDriveFolderIDs loads the folder IDs from the same protected bundle as
-// the service-account key. Older raw-key entries return configured=false so
-// the worker can continue using its approved private environment configuration.
+// the service-account key. Older raw-key entries return configured=false; the
+// worker stays pending until the combined protected bundle is provisioned.
 func ReadDriveFolderIDs(ctx context.Context, store security.SecretStore) (DriveFolderIDs, bool, error) {
 	if ctx == nil || store == nil {
 		return nil, false, ErrServiceAccountCredentialStore

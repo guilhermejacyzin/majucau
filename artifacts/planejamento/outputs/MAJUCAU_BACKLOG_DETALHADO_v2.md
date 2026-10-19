@@ -4120,3 +4120,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Nenhuma aplicação foi instalada/atualizada nesta execução e nenhuma chamada à conta real foi feita. A integração continua aguardando configuração local do Client Secret, OAuth, teste de conexão, sincronização e validação real da paginação.
 - Pelo arquivo oficial de evolução atualizado em 19/10, BK-041 está em 80% (20% restante) e a média ponderada do backlog está em 11,8% concluída (88,2% restante). A reconstrução do pacote não prova conexão nem altera a estimativa; não há prazo confiável para a homologação real antes dos passos restantes.
 - Evidência: `docs/evidence/BLING-INSTALLER-UPDATED-2026-10-18.md`.
+
+### Configuração das pastas do Drive apenas no pacote protegido — 19/10/2026
+
+- A revisão do worker encontrou um caminho alternativo que aceitava os IDs de pastas por variáveis de ambiente. Removi esse caminho: a sincronização do Drive agora exige que a chave de serviço e os três IDs autorizados estejam juntos no pacote protegido por DPAPI. Chaves antigas sem os IDs deixam a fonte pendente.
+- Um teste regressivo cobre os nomes antigos das variáveis e verifica que eles não habilitam a leitura. A verificação completa local passou: Go, `go vet`, `govulncheck`, migrations, SQLC determinístico, scan de secrets, instalador, interface, build e `npm audit`. A integração que exige PostgreSQL não foi executada localmente porque a DSN de teste não está configurada; aguarda a CI após o push.
+- BK-039 permanece em 50%: esta correção fecha uma proteção da configuração, mas ainda faltam autenticação e configuração reais do Drive, execução contínua e homologação. O projeto segue com 127 tarefas, 7 concluídas, 20 em andamento e 100 não iniciadas; progresso estimado de 11,8%, com 88,2% restante.
+- A confirmação de identidade do Google Cloud Console continua pendente. Nenhuma conta técnica foi criada, nenhuma permissão de pasta foi concedida e nenhum arquivo foi importado nesta etapa.
+- Evidência: `docs/evidence/GOOGLE-DRIVE-PROTECTED-FOLDER-CONFIG-2026-10-19.md`.

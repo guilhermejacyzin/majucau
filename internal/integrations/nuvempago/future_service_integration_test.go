@@ -62,7 +62,7 @@ func TestFutureImportServicePostgresE2E(t *testing.T) {
 		FROM integration_sync_batches WHERE id::text = $1`, first.BatchID).Scan(&batchStatus, &errorCode, &errorMessage, &recordsFailed); err != nil {
 		t.Fatalf("read partial future batch audit: %v", err)
 	}
-	if batchStatus != "PARTIAL" || errorCode != "NUVEM_PAGO_FUTURE_SOURCE_PENDING" || !strings.Contains(errorMessage, "1 arquivo(s)") || recordsFailed != 1 {
+	if batchStatus != "PARTIAL" || errorCode != "NUVEM_PAGO_FUTURE_PARTIAL" || !strings.Contains(errorMessage, "linhas rejeitadas") || !strings.Contains(errorMessage, "arquivos pendentes") || recordsFailed != 1 {
 		t.Fatalf("unexpected pending audit status=%q code=%q failed=%d message=%q", batchStatus, errorCode, recordsFailed, errorMessage)
 	}
 

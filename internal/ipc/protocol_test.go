@@ -55,3 +55,15 @@ func TestProtocolRoundTripAndValidation(t *testing.T) {
 		t.Fatalf("bling OAuth disconnect method must be accepted: %v", err)
 	}
 }
+
+func TestGoogleDriveCredentialProvisioningMethodAcceptsBoundedJSON(t *testing.T) {
+	request := Request{Version: ProtocolVersion, RequestID: "drive-key", Method: MethodGoogleDriveCredentialSave, Payload: []byte(`{"type":"service_account"}`)}
+	encoded, err := EncodeRequest(request)
+	if err != nil {
+		t.Fatalf("EncodeRequest() error = %v", err)
+	}
+	decoded, err := DecodeRequest(encoded)
+	if err != nil || decoded.Method != MethodGoogleDriveCredentialSave || string(decoded.Payload) != string(request.Payload) {
+		t.Fatalf("decoded request=%+v error=%v", decoded, err)
+	}
+}

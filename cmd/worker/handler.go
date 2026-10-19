@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/dashboard"
 	"majucau.local/financial-intelligence/internal/domain"
@@ -61,6 +62,10 @@ type googleDriveDailySyncer interface {
 	SyncDaily(context.Context, time.Time) (googledrive.DailyFileInventorySyncResult, error)
 }
 
+type googleDriveCredentialSaver interface {
+	Save(context.Context, []byte, googledrive.DriveFolderIDs, string, string) error
+}
+
 type workerHandler struct {
 	health            application.HealthChecker
 	databaseErrorCode string
@@ -74,6 +79,7 @@ type workerHandler struct {
 	blingSync         blingRawSyncer
 	dailyBlingSync    blingDailySyncer
 	dailyDriveSync    googleDriveDailySyncer
+	driveCredential   googleDriveCredentialSaver
 	driveSetupError   string
 	statusReader      application.IntegrationStatusReader
 	dashboardReader   application.DashboardSnapshotStreamer
@@ -94,6 +100,7 @@ func newWorkerHandler() workerHandler {
 	var rawSync blingRawSyncer
 	var dailySync blingDailySyncer
 	var dailyDriveSync googleDriveDailySyncer
+	var driveCredential googleDriveCredentialSaver
 	driveSetupError := "DATABASE_NOT_CONFIGURED"
 	var statusReader application.IntegrationStatusReader
 	var dashboardReader application.DashboardSnapshotStreamer
@@ -105,6 +112,7 @@ func newWorkerHandler() workerHandler {
 		store := newWorkerSecretStore()
 		dailyDriveSync, driveSetupError = newDailyGoogleDriveSyncer(context.Background(), pool, store)
 		if store != nil {
+			driveCredential = googledrive.NewServiceAccountCredentialService(store, &postgresGoogleDriveCredentialAuditor{pool: pool})
 			blingCredentials := bling.NewBlingCredentialState(store)
 			blingCredentialService := bling.NewBlingCredentialServiceWithState(pool, blingCredentials)
 			configSaver = blingCredentialService
@@ -115,7 +123,7 @@ func newWorkerHandler() workerHandler {
 			dailySync = oauthService.(blingDailySyncer)
 		}
 	}
-	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, blingConfigReader: configReader, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, dailyDriveSync: dailyDriveSync, driveSetupError: driveSetupError, statusReader: statusReader, dashboardReader: dashboardReader}
+	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, blingConfigReader: configReader, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, dailyDriveSync: dailyDriveSync, driveCredential: driveCredential, driveSetupError: driveSetupError, statusReader: statusReader, dashboardReader: dashboardReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -147,6 +155,8 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		return h.previewNuvemPagoFuture(ctx, req)
 	case ipc.MethodNuvemPagoFutureImport:
 		return h.importNuvemPagoFuture(ctx, req)
+	case ipc.MethodGoogleDriveCredentialSave:
+		return h.saveGoogleDriveCredential(ctx, req)
 	case ipc.MethodDashboardSnapshot:
 		return ipc.Response{}, errors.New("dashboard snapshot requires the streaming IPC transport")
 	default:
@@ -308,6 +318,50 @@ func defaultIntegrationStatuses() []application.IntegrationStatus {
 		{Provider: domain.OriginNuvemshop, Status: domain.IntegrationNotConfigured},
 		{Provider: domain.OriginNuvemPago, Status: domain.IntegrationUnavailable},
 	}
+}
+
+func (h workerHandler) saveGoogleDriveCredential(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	if h.driveCredential == nil {
+		return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_VAULT_UNAVAILABLE", "O cofre seguro do Windows ainda não está disponível."), nil
+	}
+	actorSID, ok := ipc.CallerWindowsSID(ctx)
+	if !ok {
+		return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_CALLER_UNAVAILABLE", "Não foi possível confirmar a identidade do computador que pediu a configuração."), nil
+	}
+	if _, err := uuid.Parse(req.RequestID); err != nil {
+		return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_CREDENTIAL_INVALID", "A solicitação de configuração não é válida."), nil
+	}
+	var input struct {
+		ServiceAccountKey json.RawMessage            `json:"service_account_key"`
+		FolderIDs         googledrive.DriveFolderIDs `json:"folder_ids"`
+	}
+	defer func() { wipeDriveCredentialBytes(input.ServiceAccountKey) }()
+	if len(req.Payload) == 0 || len(req.Payload) > googledrive.MaxServiceAccountJSONBytes {
+		return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_CREDENTIAL_INVALID", "O arquivo de acesso do Drive está vazio ou excede o limite permitido."), nil
+	}
+	if json.Unmarshal(req.Payload, &input) != nil {
+		return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_CREDENTIAL_INVALID", "O arquivo de acesso do Drive está vazio ou excede o limite permitido."), nil
+	}
+	if len(input.ServiceAccountKey) == 0 || len(input.ServiceAccountKey) > googledrive.MaxServiceAccountJSONBytes {
+		return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_CREDENTIAL_INVALID", "O arquivo de acesso do Drive está vazio ou excede o limite permitido."), nil
+	}
+	if err := h.driveCredential.Save(ctx, input.ServiceAccountKey, input.FolderIDs, actorSID, req.RequestID); err != nil {
+		switch {
+		case errors.Is(err, googledrive.ErrServiceAccountCredentialInvalid):
+			return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_CREDENTIAL_INVALID", "O arquivo não é uma credencial válida de conta técnica do Google Drive."), nil
+		case errors.Is(err, googledrive.ErrServiceAccountCredentialStore):
+			return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_VAULT_UNAVAILABLE", "A credencial não pôde ser protegida no cofre do Windows."), nil
+		case errors.Is(err, googledrive.ErrServiceAccountCredentialAudit):
+			return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_AUDIT_UNAVAILABLE", "A alteração não foi salva porque o registro de segurança não pôde ser confirmado."), nil
+		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+			return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_CREDENTIAL_CANCELLED", "A configuração foi cancelada antes de terminar."), nil
+		default:
+			return ipc.NewErrorResponse(req.RequestID, "GOOGLE_DRIVE_CREDENTIAL_SAVE_FAILED", "Não foi possível proteger a credencial do Drive."), nil
+		}
+	}
+	return ipc.NewResponse(req.RequestID, struct {
+		Status string `json:"status"`
+	}{Status: "CONFIGURED"})
 }
 
 func (h workerHandler) startBlingOAuth(ctx context.Context, req ipc.Request) (ipc.Response, error) {

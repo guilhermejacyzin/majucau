@@ -86,6 +86,42 @@ func TestNamedPipeHealthRoundTripAndCancellation(t *testing.T) {
 	}
 }
 
+func TestNamedPipePassesAuthenticatedCallerSIDToHandler(t *testing.T) {
+	name := fmt.Sprintf(`\\.\pipe\Majucau-caller-sid-%d`, time.Now().UnixNano())
+	server, err := NewNamedPipeServer(NamedPipeConfig{Name: name, IOTimeout: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeNamedPipeServerForTest(t, server)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	serveErr := make(chan error, 1)
+	go func() {
+		serveErr <- server.Serve(ctx, HandlerFunc(func(requestCtx context.Context, req Request) (Response, error) {
+			sid, ok := CallerWindowsSID(requestCtx)
+			if !ok {
+				return NewErrorResponse(req.RequestID, "CALLER_MISSING", "caller missing"), nil
+			}
+			return NewResponse(req.RequestID, map[string]string{"caller_sid": sid})
+		}))
+	}()
+	client, err := NewNamedPipeClient(NamedPipeConfig{Name: name, IOTimeout: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeNamedPipeClientForTest(t, client)
+	callCtx, callCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer callCancel()
+	response, err := client.Call(callCtx, Request{Version: ProtocolVersion, RequestID: "caller-sid-test", Method: MethodHealth})
+	if err != nil || !response.OK || !strings.Contains(string(response.Payload), `"caller_sid":"S-`) {
+		t.Fatalf("authenticated caller identity response=%+v error=%v", response, err)
+	}
+	cancel()
+	if err := server.Close(); err != nil {
+		t.Fatalf("close named pipe server: %v", err)
+	}
+}
+
 func TestNamedPipeConcurrentClientHealthRequests(t *testing.T) {
 	name := fmt.Sprintf(`\\.\pipe\Majucau-concurrent-%d`, time.Now().UnixNano())
 	server, err := NewNamedPipeServer(NamedPipeConfig{Name: name, IOTimeout: 3 * time.Second})

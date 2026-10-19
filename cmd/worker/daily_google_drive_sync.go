@@ -107,6 +107,12 @@ func dailyGoogleDriveResultLogFields(scheduledAt time.Time, result googledrive.D
 
 func dailyGoogleDriveSyncErrorCode(err error) string {
 	switch {
+	case errors.Is(err, errGoogleDriveFoldersNotConfigured):
+		return "GOOGLE_DRIVE_FOLDERS_NOT_CONFIGURED"
+	case errors.Is(err, errGoogleDriveConfigurationInvalid):
+		return "GOOGLE_DRIVE_CONFIGURATION_INVALID"
+	case errors.Is(err, errGoogleDriveCredentialUnavailable):
+		return "GOOGLE_DRIVE_CREDENTIAL_UNAVAILABLE"
 	case errors.Is(err, googledrive.ErrDailySyncIncomplete):
 		return "GOOGLE_DRIVE_SYNC_INCOMPLETE"
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):

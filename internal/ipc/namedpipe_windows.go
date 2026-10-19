@@ -141,9 +141,10 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) (returnErr
 			}
 		} else {
 			var authorized bool
-			authorized, authErr = authorizePipeClient(h, s.config)
+			var callerSID string
+			authorized, callerSID, authErr = authorizePipeClient(h, s.config)
 			if authorized && authErr == nil {
-				_ = s.handleConnection(ctx, pipe, handler)
+				_ = s.handleConnection(ctx, pipe, handler, callerSID)
 			}
 		}
 		// Finish closing this instance before creating the next one so a client
@@ -158,7 +159,7 @@ func (s *NamedPipeServer) Serve(ctx context.Context, handler Handler) (returnErr
 		}
 	}
 }
-func (s *NamedPipeServer) handleConnection(ctx context.Context, pipe *serverPipeHandle, handler Handler) error {
+func (s *NamedPipeServer) handleConnection(ctx context.Context, pipe *serverPipeHandle, handler Handler, callerSID string) error {
 	f := pipe.file
 	if f == nil {
 		return ErrTransportUnavailable
@@ -190,8 +191,13 @@ func (s *NamedPipeServer) handleConnection(ctx context.Context, pipe *serverPipe
 	if err != nil {
 		return err
 	}
+	if request.Method == MethodGoogleDriveCredentialSave {
+		defer wipeSensitiveBytes(frame.payload)
+		defer wipeSensitiveBytes(request.Payload)
+	}
 	requestCtx, cancel := context.WithTimeout(ctx, s.config.IOTimeout)
 	defer cancel()
+	requestCtx = WithCallerWindowsSID(requestCtx, callerSID)
 	// The pipe is opened for overlapped I/O so this disconnect watcher can read
 	// concurrently with response writes without blocking the same handle.
 	go func() {
@@ -593,21 +599,15 @@ func makePipeSecurity(c NamedPipeConfig) (uintptr, func() error, error) {
 	return descriptor, func() error { return freeLocalMemory("free named pipe security descriptor", descriptor) }, nil
 }
 func validSID(s string) bool { return strings.HasPrefix(s, "S-") && len(s) < 184 }
-func authorizePipeClient(h syscall.Handle, c NamedPipeConfig) (authorized bool, returnErr error) {
+func authorizePipeClient(h syscall.Handle, c NamedPipeConfig) (authorized bool, sid string, returnErr error) {
 	var pid uint32
 	r, _, err := getNamedPipeClientProcessID.Call(uintptr(h), uintptr(unsafe.Pointer(&pid)))
 	if r == 0 {
-		return false, nil
-	}
-	// Development fallback: an empty allow-list uses the DACL's current-process
-	// SID and skips the second SID lookup. Production UI/service pairs must
-	// configure the UI SID explicitly for cross-process authorization.
-	if len(c.AllowedClientSIDs) == 0 {
-		return true, nil
+		return false, "", nil
 	}
 	p, _, err := openProcess.Call(processQueryLimitedInformation, 0, uintptr(pid))
 	if p == 0 {
-		return false, nil
+		return false, "", nil
 	}
 	defer func() {
 		returnErr = errors.Join(returnErr, cleanupFailure("close named pipe client process handle", syscall.CloseHandle(syscall.Handle(p))))
@@ -615,31 +615,33 @@ func authorizePipeClient(h syscall.Handle, c NamedPipeConfig) (authorized bool, 
 	var token syscall.Handle
 	r, _, _ = openProcessToken.Call(p, tokenQuery, uintptr(unsafe.Pointer(&token)))
 	if r == 0 {
-		return false, nil
+		return false, "", nil
 	}
 	defer func() {
 		returnErr = errors.Join(returnErr, cleanupFailure("close named pipe client token", syscall.CloseHandle(token)))
 	}()
-	sid, err := tokenSID(token)
+	sid, err = tokenSID(token)
 	if err != nil {
 		var cleanupErr *pipeResourceCleanupError
 		if errors.As(err, &cleanupErr) {
-			return false, err
+			return false, "", err
 		}
-		return false, nil
+		return false, "", nil
 	}
 	allowedSIDs := c.AllowedClientSIDs
 	if len(allowedSIDs) == 0 {
-		if own, ownErr := currentProcessSID(); ownErr == nil {
-			allowedSIDs = []string{own}
+		own, ownErr := currentProcessSID()
+		if ownErr != nil {
+			return false, "", nil
 		}
+		allowedSIDs = []string{own}
 	}
 	for _, allowed := range allowedSIDs {
 		if sid == allowed {
-			return true, nil
+			return true, sid, nil
 		}
 	}
-	return false, nil
+	return false, "", nil
 }
 
 type sidAndAttributes struct {
@@ -655,6 +657,7 @@ func tokenSID(token syscall.Handle) (sid string, returnErr error) {
 		return "", errors.New("token information unavailable")
 	}
 	buf := make([]byte, size)
+	defer wipeSensitiveBytes(buf)
 	r, _, err := getTokenInformation.Call(uintptr(token), tokenUser, uintptr(unsafe.Pointer(&buf[0])), uintptr(size), uintptr(unsafe.Pointer(&size)))
 	if r == 0 {
 		return "", win32CallFailure("read client token information", err)

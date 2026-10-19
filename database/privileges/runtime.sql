@@ -51,9 +51,10 @@ REVOKE ALL ON TABLE audit_events FROM PUBLIC, majucau_runtime;
 
 -- User-defined routines default to PUBLIC EXECUTE in PostgreSQL. Close that
 -- path for functions and procedures, then grant only the RAW version-retirement
--- function to the worker.
+-- function and the sanitized Drive-credential audit writer to the worker.
 REVOKE ALL ON ALL ROUTINES IN SCHEMA public FROM PUBLIC, majucau_runtime;
 GRANT EXECUTE ON FUNCTION retire_current_raw_record(uuid) TO majucau_runtime;
+GRANT EXECUTE ON FUNCTION audit_google_drive_credential_configured(text, uuid, boolean) TO majucau_runtime;
 
 -- The schema uses UUID defaults and does not need runtime sequence access.
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC;

@@ -20,6 +20,7 @@ const frameHeaderSize = 4
 type Handler interface {
 	Handle(context.Context, Request) (Response, error)
 }
+
 // StreamingHandler is used for the dashboard read path. It writes one JSON
 // document to dst; the Named Pipe transport splits those bytes into bounded,
 // ordered frames.
@@ -94,6 +95,9 @@ func callOverStream(ctx context.Context, rw io.ReadWriter, req Request) (Respons
 	if err != nil {
 		return Response{}, err
 	}
+	if req.Method == MethodGoogleDriveCredentialSave {
+		defer wipeSensitiveBytes(encoded)
+	}
 	if err := writeFrame(rw, encoded); err != nil {
 		return Response{}, err
 	}
@@ -115,6 +119,9 @@ func callOverStreamChunks(ctx context.Context, rw io.ReadWriter, req Request, ds
 	encoded, err := EncodeRequest(req)
 	if err != nil {
 		return Response{}, err
+	}
+	if req.Method == MethodGoogleDriveCredentialSave {
+		defer wipeSensitiveBytes(encoded)
 	}
 	if err := writeFrame(rw, encoded); err != nil {
 		return Response{}, err
@@ -151,6 +158,12 @@ func callOverStreamChunks(ctx context.Context, rw io.ReadWriter, req Request, ds
 			}
 			return response, nil
 		}
+	}
+}
+
+func wipeSensitiveBytes(value []byte) {
+	for index := range value {
+		value[index] = 0
 	}
 }
 

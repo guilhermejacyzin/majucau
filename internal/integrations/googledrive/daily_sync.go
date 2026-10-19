@@ -41,21 +41,12 @@ type DailyFileInventorySyncService struct {
 }
 
 func NewDailyFileInventorySyncService(syncer FolderInventorySyncer, folderIDs map[DriveFolderScope]string) (*DailyFileInventorySyncService, error) {
-	if syncer == nil || len(folderIDs) != approvedFolderCount {
+	if syncer == nil || ValidateDriveFolderIDs(folderIDs) != nil {
 		return nil, ErrSyncConfiguration
 	}
-	seen := make(map[string]struct{}, approvedFolderCount)
 	copyIDs := make(map[DriveFolderScope]string, approvedFolderCount)
 	for _, scope := range approvedDriveFolderScopes {
-		folderID, exists := folderIDs[scope]
-		if !exists || !validDriveID(folderID) {
-			return nil, ErrSyncConfiguration
-		}
-		if _, exists := seen[folderID]; exists {
-			return nil, ErrSyncConfiguration
-		}
-		seen[folderID] = struct{}{}
-		copyIDs[scope] = folderID
+		copyIDs[scope] = folderIDs[scope]
 	}
 	return &DailyFileInventorySyncService{syncer: syncer, folderIDs: copyIDs}, nil
 }

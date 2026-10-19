@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -174,7 +175,7 @@ func (s *memorySecretStore) Get(_ context.Context, ref string) ([]byte, error) {
 	defer s.mu.Unlock()
 	value, ok := s.values[ref]
 	if !ok {
-		return nil, errors.New("missing secret")
+		return nil, fs.ErrNotExist
 	}
 	return append([]byte(nil), value...), nil
 }

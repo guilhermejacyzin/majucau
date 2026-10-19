@@ -192,6 +192,8 @@ func diagnosticSource(method ipc.Method) string {
 		return "NUVEMSHOP"
 	case ipc.MethodNuvemPagoFuturePreview, ipc.MethodNuvemPagoFutureImport:
 		return "NUVEM_PAGO"
+	case ipc.MethodGoogleDriveCredentialSave:
+		return "GOOGLE_DRIVE"
 	default:
 		return "LOCAL"
 	}

@@ -118,7 +118,10 @@ BEGIN
   LOOP
     IF function_row.proowner = runtime_oid OR
        has_function_privilege(runtime_oid, function_row.oid, 'EXECUTE') IS DISTINCT FROM (
-         function_row.oid = 'public.retire_current_raw_record(uuid)'::regprocedure
+         function_row.oid = ANY (ARRAY[
+           'public.retire_current_raw_record(uuid)'::regprocedure,
+           'public.audit_google_drive_credential_configured(text,uuid,boolean)'::regprocedure
+         ])
        ) THEN
       RAISE EXCEPTION 'runtime role has unexpected function privileges on %', function_row.oid::regprocedure;
     END IF;
@@ -183,6 +186,35 @@ BEGIN
   END;
 END
 $verify_runtime_write_guards$;
+ROLLBACK;
+
+-- The runtime cannot write audit_events directly, but can call this one narrow
+-- writer. The event must contain only the approved sanitized summary.
+BEGIN;
+SET LOCAL ROLE majucau_runtime;
+SELECT public.audit_google_drive_credential_configured(
+  'S-1-5-21-1-2-3-1001',
+  'b36dd2ab-2954-4fe9-95cc-f2d55595b8de'::uuid,
+  false
+);
+RESET ROLE;
+DO $verify_drive_credential_audit$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+      FROM public.audit_events
+     WHERE correlation_id = 'b36dd2ab-2954-4fe9-95cc-f2d55595b8de'::uuid
+       AND actor_windows_sid = 'S-1-5-21-1-2-3-1001'
+       AND action_code = 'GOOGLE_DRIVE_CREDENTIAL_CONFIGURED'
+       AND entity_type = 'google_drive_credentials'
+       AND before_sanitized = '{"configured": false}'::jsonb
+       AND after_sanitized = '{"configured": true, "scope": "drive.readonly", "folder_count": 3}'::jsonb
+       AND reason = 'Configured the read-only Google Drive identity in the protected Windows vault.'
+  ) THEN
+    RAISE EXCEPTION 'Google Drive credential audit event is missing or not sanitized';
+  END IF;
+END
+$verify_drive_credential_audit$;
 ROLLBACK;
 
 SELECT 'runtime database privileges: PASS' AS verification_result;

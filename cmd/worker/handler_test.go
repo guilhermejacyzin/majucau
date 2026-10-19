@@ -11,6 +11,7 @@ import (
 
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/integrations/bling"
+	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/nuvemshop"
 	"majucau.local/financial-intelligence/internal/ipc"
 )
@@ -34,6 +35,22 @@ type fakeNuvemshopConfigSaver struct{}
 
 func (fakeNuvemshopConfigSaver) Save(_ context.Context, input nuvemshop.ConfigInput) (nuvemshop.ConfigResult, error) {
 	return nuvemshop.ConfigResult{AppID: input.AppID, RedirectURI: input.RedirectURI, SecretConfigured: input.ClientSecret != "", Status: "NOT_CONFIGURED"}, nil
+}
+
+type fakeGoogleDriveCredentialSaver struct {
+	key             []byte
+	err             error
+	called          bool
+	actorWindowsSID string
+	correlationID   string
+}
+
+func (f *fakeGoogleDriveCredentialSaver) Save(_ context.Context, key []byte, _ googledrive.DriveFolderIDs, actorWindowsSID, correlationID string) error {
+	f.called = true
+	f.key = key
+	f.actorWindowsSID = actorWindowsSID
+	f.correlationID = correlationID
+	return f.err
 }
 
 type fakeBlingOAuthService struct{}
@@ -173,6 +190,80 @@ func TestWorkerBlingConfigReadReturnsOnlyPublicMetadata(t *testing.T) {
 	}
 	if strings.Contains(string(response.Payload), "client_secret") || strings.Contains(string(response.Payload), "access_token") {
 		t.Fatalf("credential material crossed worker boundary: %s", response.Payload)
+	}
+}
+
+func TestWorkerGoogleDriveCredentialSaveNeverEchoesCredential(t *testing.T) {
+	secretMarker := []byte(`{"type":"service_account","private_key":"do-not-echo-this-key"}`)
+	payload, err := json.Marshal(struct {
+		ServiceAccountKey json.RawMessage            `json:"service_account_key"`
+		FolderIDs         googledrive.DriveFolderIDs `json:"folder_ids"`
+	}{ServiceAccountKey: secretMarker, FolderIDs: googledrive.DriveFolderIDs{
+		googledrive.DriveFolderOperationalLosses: "folder-a",
+		googledrive.DriveFolderNuvemPagoReceipts: "folder-b",
+		googledrive.DriveFolderNuvemShipping:     "folder-c",
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	saver := &fakeGoogleDriveCredentialSaver{}
+	requestID := "b36dd2ab-2954-4fe9-95cc-f2d55595b8de"
+	callerContext := ipc.WithCallerWindowsSID(context.Background(), "S-1-5-21-1-2-3-1001")
+	response, err := (workerHandler{driveCredential: saver}).Handle(callerContext, ipc.Request{
+		RequestID: requestID, Method: ipc.MethodGoogleDriveCredentialSave, Payload: payload,
+	})
+	if err != nil || !response.OK || !saver.called {
+		t.Fatalf("credential save response=%+v called=%v error=%v", response, saver.called, err)
+	}
+	if saver.actorWindowsSID != "S-1-5-21-1-2-3-1001" || saver.correlationID != requestID {
+		t.Fatalf("credential audit context SID=%q correlation=%q", saver.actorWindowsSID, saver.correlationID)
+	}
+	if strings.Contains(string(response.Payload), "do-not-echo-this-key") || strings.Contains(string(response.Payload), "private_key") {
+		t.Fatalf("credential appeared in the worker response: %s", response.Payload)
+	}
+	var result struct {
+		Status string `json:"status"`
+	}
+	if err := json.Unmarshal(response.Payload, &result); err != nil || result.Status != "CONFIGURED" {
+		t.Fatalf("credential status=%+v unmarshal error=%v", result, err)
+	}
+	for _, value := range saver.key {
+		if value != 0 {
+			t.Fatal("worker handler retained credential bytes after the save operation")
+		}
+	}
+}
+
+func TestWorkerGoogleDriveCredentialSaveRequiresAuthenticatedWindowsIdentity(t *testing.T) {
+	saver := &fakeGoogleDriveCredentialSaver{}
+	response, err := (workerHandler{driveCredential: saver}).Handle(context.Background(), ipc.Request{
+		RequestID: "b36dd2ab-2954-4fe9-95cc-f2d55595b8de", Method: ipc.MethodGoogleDriveCredentialSave, Payload: []byte(`{}`),
+	})
+	if err != nil || response.OK || response.Error == nil || response.Error.Code != "GOOGLE_DRIVE_CALLER_UNAVAILABLE" || saver.called {
+		t.Fatalf("unauthenticated configuration response=%+v saver_called=%v error=%v", response, saver.called, err)
+	}
+}
+
+func TestWorkerGoogleDriveCredentialSaveReturnsSanitizedErrors(t *testing.T) {
+	tests := []struct {
+		name     string
+		handler  workerHandler
+		payload  []byte
+		wantCode string
+	}{
+		{name: "vault missing", handler: workerHandler{}, payload: []byte(`{}`), wantCode: "GOOGLE_DRIVE_VAULT_UNAVAILABLE"},
+		{name: "invalid key", handler: workerHandler{driveCredential: &fakeGoogleDriveCredentialSaver{err: googledrive.ErrServiceAccountCredentialInvalid}}, payload: []byte(`{"service_account_key":{"private_key":"secret"},"folder_ids":{"01_perdas_operacionais":"folder-a","02_nuvem_pago/recebimentos_futuros":"folder-b","03_nuvem_envio":"folder-c"}}`), wantCode: "GOOGLE_DRIVE_CREDENTIAL_INVALID"},
+		{name: "audit unavailable", handler: workerHandler{driveCredential: &fakeGoogleDriveCredentialSaver{err: googledrive.ErrServiceAccountCredentialAudit}}, payload: []byte(`{"service_account_key":{"private_key":"secret"},"folder_ids":{"01_perdas_operacionais":"folder-a","02_nuvem_pago/recebimentos_futuros":"folder-b","03_nuvem_envio":"folder-c"}}`), wantCode: "GOOGLE_DRIVE_AUDIT_UNAVAILABLE"},
+		{name: "oversized key", handler: workerHandler{driveCredential: &fakeGoogleDriveCredentialSaver{}}, payload: make([]byte, googledrive.MaxServiceAccountJSONBytes+1), wantCode: "GOOGLE_DRIVE_CREDENTIAL_INVALID"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := ipc.WithCallerWindowsSID(context.Background(), "S-1-5-21-1-2-3-1001")
+			response, err := test.handler.Handle(ctx, ipc.Request{RequestID: "b36dd2ab-2954-4fe9-95cc-f2d55595b8de", Method: ipc.MethodGoogleDriveCredentialSave, Payload: test.payload})
+			if err != nil || response.OK || response.Error == nil || response.Error.Code != test.wantCode || strings.Contains(response.Error.Message, "secret") {
+				t.Fatalf("response=%+v error=%v", response, err)
+			}
+		})
 	}
 }
 

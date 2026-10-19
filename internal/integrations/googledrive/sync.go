@@ -52,6 +52,26 @@ const (
 	DriveFolderNuvemShipping     DriveFolderScope = "03_nuvem_envio"
 )
 
+type DriveFolderIDs map[DriveFolderScope]string
+
+func ValidateDriveFolderIDs(folderIDs DriveFolderIDs) error {
+	if len(folderIDs) != len(approvedDriveFolderScopes) {
+		return ErrSyncConfiguration
+	}
+	seen := make(map[string]struct{}, len(folderIDs))
+	for _, scope := range approvedDriveFolderScopes {
+		id, exists := folderIDs[scope]
+		if !exists || !validDriveID(id) {
+			return ErrSyncConfiguration
+		}
+		if _, exists := seen[id]; exists {
+			return ErrSyncConfiguration
+		}
+		seen[id] = struct{}{}
+	}
+	return nil
+}
+
 var approvedDriveFolderScopes = []DriveFolderScope{
 	DriveFolderOperationalLosses,
 	DriveFolderNuvemPagoReceipts,

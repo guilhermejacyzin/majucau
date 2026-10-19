@@ -59,3 +59,22 @@ func TestSafeBlingIntegrationStatusRejectsUnknownProviderStatusOrRequest(t *test
 		})
 	}
 }
+
+func TestDiagnosticLogDoesNotRecordGoogleDriveCredentialPayload(t *testing.T) {
+	var output bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&output, nil))
+	secret := []byte(`{"type":"service_account","private_key":"credential-must-not-appear"}`)
+	handler := diagnosticRequestHandler{logger: logger}
+	handler.logCompletion(
+		ipc.Request{RequestID: "drive-credential-1", Method: ipc.MethodGoogleDriveCredentialSave, Payload: secret},
+		ipc.Response{OK: true, Payload: []byte(`{"status":"CONFIGURED"}`)},
+		nil,
+		time.Now(),
+	)
+	if strings.Contains(output.String(), string(secret)) || strings.Contains(output.String(), "credential-must-not-appear") || strings.Contains(output.String(), "private_key") {
+		t.Fatalf("diagnostic log contains credential material: %s", output.String())
+	}
+	if !strings.Contains(output.String(), `"source_system":"GOOGLE_DRIVE"`) {
+		t.Fatalf("diagnostic log omitted the integration source: %s", output.String())
+	}
+}

@@ -12,6 +12,9 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "provision-google-drive" {
+		os.Exit(runDriveCredentialProvision(os.Args[2:], os.Stdout))
+	}
 	console := flag.Bool("console", false, "run in foreground for local smoke tests; do not use as the installed service")
 	flag.Parse()
 	if !*console {

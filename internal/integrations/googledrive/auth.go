@@ -16,11 +16,12 @@ import (
 )
 
 const (
-	ServiceAccountSecretRef = "google-drive-service-account"
-	driveReadOnlyScope      = "https://www.googleapis.com/auth/drive.readonly"
-	googleTokenURL          = "https://oauth2.googleapis.com/token"
-	maxServiceAccountJSON   = 1 << 20
-	refreshTokenEarlyBy     = time.Minute
+	ServiceAccountSecretRef    = "google-drive-service-account"
+	driveReadOnlyScope         = "https://www.googleapis.com/auth/drive.readonly"
+	googleTokenURL             = "https://oauth2.googleapis.com/token"
+	MaxServiceAccountJSONBytes = 1 << 20
+	maxServiceAccountJSON      = MaxServiceAccountJSONBytes
+	refreshTokenEarlyBy        = time.Minute
 )
 
 // ServiceAccountTokenProvider reads its service-account key from the protected
@@ -53,14 +54,7 @@ func newServiceAccountTokenProvider(ctx context.Context, store security.SecretSt
 		return nil, ErrAuthorization
 	}
 	defer wipeBytes(keyJSON)
-	if len(keyJSON) == 0 || len(keyJSON) > maxServiceAccountJSON {
-		return nil, ErrAuthorization
-	}
-	var identity serviceAccountIdentity
-	if err := json.Unmarshal(keyJSON, &identity); err != nil || identity.Type != "service_account" || len(identity.ClientEmail) == 0 || len(identity.ClientEmail) > 320 || !strings.HasSuffix(strings.ToLower(identity.ClientEmail), ".iam.gserviceaccount.com") || identity.TokenURI != googleTokenURL {
-		return nil, ErrAuthorization
-	}
-	config, err := google.JWTConfigFromJSON(keyJSON, driveReadOnlyScope)
+	config, err := serviceAccountJWTConfig(keyJSON)
 	if err != nil {
 		return nil, ErrAuthorization
 	}
@@ -109,6 +103,33 @@ type serviceAccountIdentity struct {
 	Type        string `json:"type"`
 	ClientEmail string `json:"client_email"`
 	TokenURI    string `json:"token_uri"`
+}
+
+func serviceAccountJWTConfig(keyJSON []byte) (*jwt.Config, error) {
+	var credentialBundle serviceAccountCredentialBundle
+	bundleErr := json.Unmarshal(keyJSON, &credentialBundle)
+	defer wipeBytes(credentialBundle.ServiceAccountKey)
+	if bundleErr == nil && credentialBundle.Format != "" {
+		if credentialBundle.Format != serviceAccountCredentialBundleFormat || ValidateDriveFolderIDs(credentialBundle.FolderIDs) != nil || len(credentialBundle.ServiceAccountKey) == 0 {
+			return nil, ErrAuthorization
+		}
+		keyJSON = credentialBundle.ServiceAccountKey
+	}
+	if len(keyJSON) == 0 || len(keyJSON) > maxServiceAccountJSON {
+		return nil, ErrAuthorization
+	}
+	var identity serviceAccountIdentity
+	if err := json.Unmarshal(keyJSON, &identity); err != nil || identity.Type != "service_account" || len(identity.ClientEmail) == 0 || len(identity.ClientEmail) > 320 || !strings.HasSuffix(strings.ToLower(identity.ClientEmail), ".iam.gserviceaccount.com") || identity.TokenURI != googleTokenURL {
+		return nil, ErrAuthorization
+	}
+	config, err := google.JWTConfigFromJSON(keyJSON, driveReadOnlyScope)
+	if err != nil || config == nil || config.Email != identity.ClientEmail || config.TokenURL != googleTokenURL || len(config.PrivateKey) == 0 {
+		if config != nil {
+			wipeBytes(config.PrivateKey)
+		}
+		return nil, ErrAuthorization
+	}
+	return config, nil
 }
 
 func validTokenURL(value string) bool {

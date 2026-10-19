@@ -18,9 +18,9 @@ Nenhuma tela aprovada, regra financeira, dado do Drive ou permissão da conta fo
 
 - `scripts/verify.ps1` passou: testes Go, `go vet`, `govulncheck`, checksum das migrations, geração SQLC sem diferenças, scan de secrets, validação do instalador, lint, TypeScript, 33 testes de interface, build e `npm audit` sem vulnerabilidades.
 - `govulncheck` encontrou zero vulnerabilidades alcançáveis no código e um alerta em módulo requerido sem chamada alcançável, já acompanhado em `docs/evidence/DEPENDENCY-SECURITY-REMEDIATION-2026-10-10.md`.
-- Os testes que dependem de PostgreSQL real não foram executados localmente porque `MAJUCAU_TEST_DATABASE_URL` não está configurado; a cobertura PostgreSQL será confirmada pela CI depois do push.
+- Os testes que dependem de PostgreSQL real não foram executados localmente porque `MAJUCAU_TEST_DATABASE_URL` não está configurado; a CI do GitHub confirmou essa cobertura em `verify-postgres`.
 - O teste regressivo `TestGoogleDriveFolderIDsRequireProtectedBundle` passou junto com a suíte do worker: variáveis antigas não configuram os IDs das pastas.
-- Pendente: CI do GitHub para o commit desta correção.
+- A CI do GitHub terminou com sucesso no commit `ae12ca5` ([execução #39217650908](https://github.com/guilhermejacyzin/majucau/actions/runs/39217650908)); `verify-windows`, `verify-postgres` e a verificação do backlog passaram.
 - A homologação real ainda depende da conta técnica Google, da permissão somente de leitura nas três pastas e do provisionamento pelo worker.
 
 ## Próximo passo

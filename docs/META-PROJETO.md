@@ -47,7 +47,7 @@ Além desses pontos, há outras tarefas do backlog para concluir a operação, s
 
 ## Próximo passo
 
-Próximo passo: concluir a confirmação de identidade solicitada pelo Google Cloud Console e verificar se já existe projeto/conta técnica para o Majucau. O mapa local das três pastas está preparado, fora do Git, para provisionamento posterior; a chave técnica ainda precisa ser criada ou localizada, autorizada apenas para leitura e gravada pelo fluxo DPAPI. Depois será necessário executar a primeira sincronização real e homologar as fontes. Também falta concluir a autorização/homologação da paginação do Bling. A última alteração precisa passar pela CI; isso não conclui BK-039. O backlog segue em 11,8% estimado; a homologação ainda não ocorreu.
+Próximo passo: concluir a confirmação de identidade solicitada pelo Google Cloud Console e verificar se já existe projeto/conta técnica para o Majucau. O mapa local das três pastas está preparado, fora do Git, para provisionamento posterior; a chave técnica ainda precisa ser criada ou localizada, autorizada apenas para leitura e gravada pelo fluxo DPAPI. Depois será necessário executar a primeira sincronização real e homologar as fontes. Também falta concluir a autorização/homologação da paginação do Bling. A correção enviada nesta execução passou pela CI; isso não conclui BK-039. O backlog segue em 11,8% estimado; a homologação ainda não ocorreu.
 
 ## Estado da meta e interrupções — 19/10/2026
 

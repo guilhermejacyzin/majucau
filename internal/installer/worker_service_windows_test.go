@@ -54,6 +54,24 @@ func TestWorkerServiceImageMustBeVersionedWorkerExecutable(t *testing.T) {
 	}
 }
 
+func TestWorkerExecutablePathAllowsProgramFilesSpaces(t *testing.T) {
+	root := filepath.Join(`C:\Program Files`, "Majucau Suite")
+	worker := filepath.Join(root, "worker", "test", "majucau-worker.exe")
+	if !workerExecutableWithin(worker, root) {
+		t.Fatalf("expected an unquoted worker filesystem path with spaces in its parent to be accepted: %q", worker)
+	}
+	for _, invalid := range []string{
+		filepath.Join(root, "majucau-worker.exe"),
+		filepath.Join(root+"Evil", "worker", "majucau-worker.exe"),
+		filepath.Join(`C:\Program Files\Other Product`, "worker", "majucau-worker.exe"),
+		filepath.Join(root, "worker", "installer-helper.exe"),
+	} {
+		if workerExecutableWithin(invalid, root) {
+			t.Fatalf("expected invalid worker filesystem path to be rejected: %q", invalid)
+		}
+	}
+}
+
 func TestServicePrivateDirectoryUsesProtectedMinimalACL(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "WorkerSecrets")
 	serviceSID := "S-1-5-80-0"

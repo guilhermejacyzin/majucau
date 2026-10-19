@@ -24,10 +24,11 @@ Garantir que o worker possa iniciar com o Windows, continuar executando as rotin
 - Para a próxima execução, o auxiliar agora diferencia erros de configuração, transição do serviço e trava. O smoke registra, em caso de falha, o estado e os códigos do serviço e eventos recentes do Service Control Manager, sem incluir credenciais. O novo teste de contrato e o verificador completo local passaram.
 - A segunda execução, [CI #39233455017](https://github.com/guilhermejacyzin/majucau/actions/runs/39233455017), ainda falhou antes de criar um serviço persistente, agora identificada como `WORKER_SERVICE_CONFIG_INVALID`; a limpeza automática removeu a tentativa incompleta e os outros três trabalhos passaram. O Windows não produziu eventos úteis para restringir a causa. Esta atualização acrescenta códigos estáveis por etapa da instalação, sem expor caminhos ou erros nativos.
 - Depois de acrescentar os códigos por etapa, `scripts/verify.ps1`, `scripts/verify-backlog.ps1`, os testes focados do auxiliar/instalador e `git diff --check` passaram nesta máquina. O próximo CI ainda precisa confirmar qual etapa falha.
+- A terceira execução, [CI #39234596899](https://github.com/guilhermejacyzin/majucau/actions/runs/39234596899), apontou `WORKER_SERVICE_PATH_VALIDATION`. A causa era a validação reaproveitar o analisador de linha de comando do Service Control Manager para um caminho de arquivo vindo do instalador; como o teste usa `C:\Program Files`, o espaço era incorretamente recusado. Esta atualização valida caminhos de arquivo separadamente e grava o executável entre aspas tanto na criação quanto na atualização do serviço.
 
 ## O que ainda não foi comprovado
 
-- O smoke privilegiado de registro/início/remoção do serviço ainda precisa passar no CI Windows. Duas tentativas falharam antes de confirmar o registro; a nova instrumentação agora identificará qual fase rejeita a configuração. O smoke não foi executado nesta máquina para não registrar serviço nem criar dados em `ProgramData\Majucau` do computador da usuária.
+- O smoke privilegiado de registro/início/remoção do serviço ainda precisa passar no CI Windows após a correção do caminho. A nova execução deve confirmar se a instalação passa pelas etapas de ACL e registro, inicia o worker, remove o serviço e preserva os dados. O smoke não foi executado nesta máquina para não registrar serviço nem criar dados em `ProgramData\Majucau` do computador da usuária.
 - A instalação e reinicialização devem ser verificadas em uma VM limpa Windows 10/11 antes da homologação do protótipo.
 - O serviço ainda não recebeu configuração segura do PostgreSQL, a identidade/credencial técnica do Google Drive ainda não foi provisionada, e as conexões reais do Drive e do Bling continuam pendentes. A paginação do Bling precisa de homologação real.
 - Portanto, o agendamento de 09:30 já está preparado no worker, mas ainda não pode ser considerado operacional de ponta a ponta. A execução real e os dados financeiros não foram confirmados.
@@ -38,4 +39,4 @@ BK-039 permanece em 50% (50% restante) até o smoke Windows, VM limpa, configura
 
 ## Próxima etapa
 
-Enviar os códigos de etapa e aguardar uma nova execução do smoke Windows. Corrigir a causa concreta indicada e repetir até registro, início e remoção passarem. Depois, validar o pacote em uma VM limpa Windows 10/11. Isso ainda não conclui BK-039.
+Enviar a correção do caminho e aguardar uma nova execução do smoke Windows. Se apontar outra falha, corrigir e repetir até registro, início e remoção passarem. Depois, validar o pacote em uma VM limpa Windows 10/11. Isso ainda não conclui BK-039.

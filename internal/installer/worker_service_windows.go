@@ -105,7 +105,7 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 		if !errors.Is(err, windows.ERROR_SERVICE_DOES_NOT_EXIST) {
 			return ErrWorkerServiceConfig
 		}
-		service, err = manager.CreateService(WorkerServiceName, workerPath, mgr.Config{
+		service, err = manager.CreateService(WorkerServiceName, quoteWorkerServiceImage(workerPath), mgr.Config{
 			ServiceType:      windows.SERVICE_WIN32_OWN_PROCESS,
 			StartType:        mgr.StartManual,
 			ErrorControl:     mgr.ErrorNormal,
@@ -348,7 +348,7 @@ func validateWorkerServicePaths(options WorkerServiceOptions) (string, string, s
 		return "", "", "", ErrWorkerServiceConfig
 	}
 	workerPath, err := filepath.Abs(filepath.Clean(strings.TrimSpace(options.WorkerPath)))
-	if err != nil || !workerServiceImageWithin(workerPath, installDir) {
+	if err != nil || !workerExecutableWithin(workerPath, installDir) {
 		return "", "", "", ErrWorkerServiceConfig
 	}
 	programFiles := strings.TrimSpace(os.Getenv("ProgramFiles"))
@@ -418,6 +418,21 @@ func workerServiceImageWithin(binaryPath, installDir string) bool {
 		return false
 	}
 	return pathWithin(filepath.Dir(absolute), filepath.Join(installDir, "worker"))
+}
+
+// workerExecutableWithin validates a filesystem path supplied to the helper.
+// Unlike a Service Control Manager image command line, this path is not quoted;
+// spaces in Program Files are valid and are quoted only when writing SCM config.
+func workerExecutableWithin(workerPath, installDir string) bool {
+	workerAbsolute, err := filepath.Abs(filepath.Clean(strings.TrimSpace(workerPath)))
+	if err != nil {
+		return false
+	}
+	installAbsolute, err := filepath.Abs(filepath.Clean(strings.TrimSpace(installDir)))
+	if err != nil || !pathWithin(workerAbsolute, filepath.Join(installAbsolute, "worker")) {
+		return false
+	}
+	return strings.EqualFold(filepath.Base(workerAbsolute), "majucau-worker.exe")
 }
 
 func quoteWorkerServiceImage(workerPath string) string {

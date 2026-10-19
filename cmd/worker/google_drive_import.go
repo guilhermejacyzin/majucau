@@ -17,6 +17,7 @@ import (
 
 	"majucau.local/financial-intelligence/internal/integrations/csvlimit"
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
+	"majucau.local/financial-intelligence/internal/integrations/jsonstream"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
 	"majucau.local/financial-intelligence/internal/integrations/xlsxstream"
 	"majucau.local/financial-intelligence/internal/scheduler"
@@ -33,6 +34,7 @@ var (
 	errDriveFutureStaging          = errors.New("Nuvem Pago Drive source could not be staged")
 	errDriveFutureFileMismatch     = errors.New("staged Drive source does not match its approved inventory metadata")
 	errDriveFutureInvalidTSV       = errors.New("Nuvem Pago TSV structure is invalid or exceeds safety limits")
+	errDriveFutureInvalidJSON      = errors.New("Nuvem Pago JSON structure is invalid or exceeds safety limits")
 )
 
 type dailyDriveInventoryService interface {
@@ -188,8 +190,9 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 			extension := filepath.Ext(file.Name)
 			isCSV := strings.EqualFold(extension, ".csv")
 			isTSV := strings.EqualFold(extension, ".tsv")
+			isJSON := strings.EqualFold(extension, ".json")
 			isXLSX := strings.EqualFold(extension, ".xlsx")
-			if !isCSV && !isTSV && !isXLSX {
+			if !isCSV && !isTSV && !isJSON && !isXLSX {
 				if !addPendingCount(&pending.UnsupportedFiles, 1) {
 					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 				}
@@ -201,7 +204,7 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 				}
 				continue
 			}
-			if isXLSX && file.Size > xlsxstream.MaxFileBytes {
+			if isXLSX && file.Size > xlsxstream.MaxFileBytes || isJSON && file.Size > jsonstream.MaxFileBytes {
 				if !addPendingCount(&pending.UnsupportedFiles, 1) {
 					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 				}
@@ -215,6 +218,8 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 			stagedExtension := ".csv"
 			if isTSV {
 				stagedExtension = ".tsv"
+			} else if isJSON {
+				stagedExtension = ".json"
 			} else if isXLSX {
 				stagedExtension = ".xlsx"
 			}
@@ -231,13 +236,16 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 					if isTSV {
 						return validateDriveTSV(stageCtx, stagedPath)
 					}
+					if isJSON {
+						return validateDriveJSON(stageCtx, stagedPath, size)
+					}
 					if !isXLSX {
 						return nil
 					}
 					return validateDriveXLSX(stageCtx, stagedPath, workspace.Path(), size)
 				},
 			)
-			if isXLSX || isTSV {
+			if isXLSX || isTSV || isJSON {
 				if cleanupErr := securetemp.RemoveFile(stagedPath); cleanupErr != nil {
 					return nuvempago.FutureImportResult{}, cleanupErr
 				}
@@ -257,6 +265,12 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 					continue
 				}
 				if isTSV && (errors.Is(stageErr, errDriveFutureInvalidTSV) || errors.Is(stageErr, csvlimit.ErrLimitExceeded)) {
+					if !addPendingCount(&pending.UnsupportedFiles, 1) {
+						return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
+					}
+					continue
+				}
+				if isJSON && (errors.Is(stageErr, errDriveFutureInvalidJSON) || errors.Is(stageErr, jsonstream.ErrLimitExceeded)) {
 					if !addPendingCount(&pending.UnsupportedFiles, 1) {
 						return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 					}
@@ -303,6 +317,22 @@ func validateDriveXLSX(ctx context.Context, path, tempParent string, size int64)
 	}
 	_, parseErr := xlsxstream.Stream(ctx, file, size, tempParent, func(context.Context, xlsxstream.Row) error { return nil })
 	closeErr := file.Close()
+	return errors.Join(parseErr, closeErr)
+}
+
+// validateDriveJSON checks JSON syntax and bounded dimensions without keeping
+// fields in memory or mapping values to financial facts. JSON remains pending
+// until its structure-specific data contract is approved.
+func validateDriveJSON(ctx context.Context, path string, size int64) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return errDriveFutureStaging
+	}
+	_, parseErr := jsonstream.Validate(ctx, file, size)
+	closeErr := file.Close()
+	if errors.Is(parseErr, jsonstream.ErrInvalidJSON) {
+		parseErr = errors.Join(errDriveFutureInvalidJSON, parseErr)
+	}
 	return errors.Join(parseErr, closeErr)
 }
 

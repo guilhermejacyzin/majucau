@@ -63,7 +63,22 @@ func NewBlingCredentialState(store security.SecretStore) *BlingCredentialState {
 
 type BlingCredentialService struct {
 	pool        *pgxpool.Pool
+	repository  blingConfigRepository
 	credentials *BlingCredentialState
+}
+
+type blingConfigRepository interface {
+	UpsertBlingConnectionConfig(context.Context, string, string, *string) error
+}
+
+type postgresBlingConfigRepository struct {
+	pool *pgxpool.Pool
+}
+
+func (r postgresBlingConfigRepository) UpsertBlingConnectionConfig(ctx context.Context, clientID, redirectURI string, secretRef *string) error {
+	return database.New(r.pool).UpsertBlingConnectionConfig(ctx, database.UpsertBlingConnectionConfigParams{
+		ClientID: &clientID, RedirectUri: &redirectURI, SecretRef: secretRef,
+	})
 }
 
 // NewBlingCredentialService creates a standalone service. If it shares a
@@ -74,7 +89,11 @@ func NewBlingCredentialService(pool *pgxpool.Pool, store security.SecretStore) *
 }
 
 func NewBlingCredentialServiceWithState(pool *pgxpool.Pool, credentials *BlingCredentialState) *BlingCredentialService {
-	return &BlingCredentialService{pool: pool, credentials: credentials}
+	var repository blingConfigRepository
+	if pool != nil {
+		repository = postgresBlingConfigRepository{pool: pool}
+	}
+	return &BlingCredentialService{pool: pool, repository: repository, credentials: credentials}
 }
 
 // Load returns only the public Bling application metadata and whether a valid
@@ -117,11 +136,12 @@ func (s *BlingCredentialService) Load(ctx context.Context) (BlingConfigResult, e
 	return result, nil
 }
 
-// Save stores the secret only in the worker vault and public metadata in the
-// integration table. An empty secret means “keep the existing secret”; it is
-// never interpreted as a request to erase credentials.
+// Save stores public application metadata in PostgreSQL and secrets only in
+// the worker vault. If no secret exists yet, public metadata can be saved on
+// its own; OAuth remains unavailable until a real secret is provided. An
+// empty secret preserves an existing valid secret and is never a delete.
 func (s *BlingCredentialService) Save(ctx context.Context, input BlingConfigInput) (BlingConfigResult, error) {
-	if s == nil || s.pool == nil {
+	if s == nil || s.repository == nil {
 		return BlingConfigResult{}, ErrBlingCredentialVault
 	}
 	if s.credentials == nil || s.credentials.store == nil {
@@ -141,7 +161,11 @@ func (s *BlingCredentialService) Save(ctx context.Context, input BlingConfigInpu
 	if secret == "" {
 		secret, err = clientSecretFromBundle(previous)
 		if err != nil {
-			return BlingConfigResult{}, ErrBlingCredentialMissing
+			clientID, redirectURI := input.ClientID, input.RedirectURI
+			if saveErr := s.repository.UpsertBlingConnectionConfig(ctx, clientID, redirectURI, nil); saveErr != nil {
+				return BlingConfigResult{}, fmt.Errorf("save Bling public configuration: %w", saveErr)
+			}
+			return BlingConfigResult{ClientID: input.ClientID, RedirectURI: input.RedirectURI, Status: "NOT_CONFIGURED"}, nil
 		}
 	}
 	bundleValue := blingSecretBundle{ClientSecret: secret}
@@ -163,9 +187,8 @@ func (s *BlingCredentialService) Save(ctx context.Context, input BlingConfigInpu
 	if err := s.credentials.store.Put(ctx, BlingCredentialSecretRef, bundle); err != nil {
 		return BlingConfigResult{}, fmt.Errorf("%w: write secret", ErrBlingCredentialVault)
 	}
-	queries := database.New(s.pool)
 	clientID, redirectURI, secretRef := input.ClientID, input.RedirectURI, BlingCredentialSecretRef
-	if err := queries.UpsertBlingConnectionConfig(ctx, database.UpsertBlingConnectionConfigParams{ClientID: &clientID, RedirectUri: &redirectURI, SecretRef: &secretRef}); err != nil {
+	if err := s.repository.UpsertBlingConnectionConfig(ctx, clientID, redirectURI, &secretRef); err != nil {
 		restoreSecret(ctx, s.credentials.store, previous, previousErr)
 		return BlingConfigResult{}, fmt.Errorf("save Bling public configuration: %w", err)
 	}

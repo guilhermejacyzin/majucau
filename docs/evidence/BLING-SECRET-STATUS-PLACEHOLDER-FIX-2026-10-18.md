@@ -26,3 +26,7 @@ O diagnóstico local registrado em 13/10/2026 retornou `BLING_SECRET_REQUIRED`. 
 Esta correção impede que o exemplo visual esconda a configuração ausente; ela não cadastra credenciais e não conecta a conta. O próximo passo é digitar o Client Secret do aplicativo diretamente no campo do Majucau e salvar. Depois, executar **Conectar**, **Testar conexão** e, após confirmar o fim da paginação, sincronizar. Não enviar o segredo pelo chat.
 
 BK-041 permanece em 78%: o adaptador ainda depende da configuração e homologação com a conta real, e os dados RAW ainda precisam alimentar os relatórios. A estimativa global segue em 11,6% concluído e 88,4% restante (127 tarefas); esta correção não altera o progresso medido.
+
+## Correção adicional do salvamento — 18/10/2026
+
+Depois de remover o marcador enganoso, foi confirmado por que Client ID e Redirect URI voltavam vazios: o worker recusava gravar os metadados públicos quando o Client Secret ainda não existia. Agora os dados públicos podem ser salvos sozinhos, sem criar segredo nem habilitar OAuth. A correção está detalhada em `BLING-PUBLIC-CONFIG-PENDING-SECRET-FIX-2026-10-18.md`. A conexão real ainda exige o Client Secret do aplicativo, digitado diretamente no Majucau.

@@ -63,7 +63,7 @@ export const tooltipCatalog = {
   'bling.reconnect': 'Faz uma nova autorização quando a anterior expirou ou foi revogada.',
   'bling.disconnect': 'Remove os tokens salvos e interrompe novas sincronizações. Os dados já importados são preservados.',
   'bling.syncNow': 'Solicita uma nova leitura. Registros repetidos não devem ser duplicados.',
-  'bling.save': 'Salva Client ID e Redirect URI no banco local e protege o Client Secret no cofre do Windows. Não inicia a sincronização.',
+  'bling.save': 'Salva Client ID e Redirect URI. Se informado, protege o Client Secret no cofre do Windows. Não inicia a autorização nem a sincronização.',
   'bling.oauth.status': 'Mostra se o retorno do navegador foi recebido e se a autorização passou no teste mínimo de leitura.',
   'bling.sync.info': 'Lê recebíveis e obrigações do Bling usando somente o período ou a situação informada.',
   'bling.sync.mode': 'Escolha qual tipo de data limitará a consulta enviada ao Bling.',

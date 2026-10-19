@@ -230,6 +230,24 @@ describe('shell financeiro', () => {
     expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveAttribute('placeholder', 'Informe o segredo do app')
   })
 
+  it('salva Client ID e Redirect URI do Bling quando o Client Secret ainda está pendente', async () => {
+    const user = userEvent.setup()
+    const blingConfigAdapter: BlingConfigAdapter = {
+      load: async () => ({ secret_configured: false }),
+      save: async (input) => ({ client_id: input.client_id, redirect_uri: input.redirect_uri, secret_configured: false, status: 'NOT_CONFIGURED' }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingConfigAdapter={blingConfigAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    await user.type(screen.getByLabelText(/Client ID/), 'public-client-id')
+    await user.type(screen.getAllByLabelText(/Redirect URI/)[0], 'https://app.example.test/callback')
+    await user.click(screen.getByRole('button', { name: 'Salvar configuração' }))
+    expect(await screen.findByText('Dados públicos salvos. Informe o Client Secret do aplicativo antes de conectar.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Client ID/)).toHaveValue('public-client-id')
+    expect(screen.getAllByLabelText(/Redirect URI/)[0]).toHaveValue('https://app.example.test/callback')
+    expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveValue('')
+  })
+
   it('limpa o Client Secret da Nuvemshop e mantém os campos públicos', async () => {
     const user = userEvent.setup()
     let receivedSecret = ''

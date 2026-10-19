@@ -1528,7 +1528,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
 ### BK-042 — Implementar leitura das três estruturas autorizadas do Google Drive
 
-**Situação:** Em andamento. **Evolução:** 68% (estimativa: o worker percorre as três raízes às 09:30 e agora enumera também as subpastas internas, com checkpoints por pasta/página, retomada e publicação apenas da árvore completa. O staging privado verificado está ligado ao importador CSV de recebimentos futuros; arquivo antigo ou fora do contrato permanece pendente. Testes Go locais, vet, verificação de módulos, backlog, migrations e limites passaram; CI PostgreSQL aninhada aguarda execução. Os IDs foram identificados e ficam fora do Git. Ainda faltam credencial técnica/DPAPI, configuração local, sincronização real, contratos dos demais formatos, Excel, medições em VM e homologação). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 68% (estimativa: o worker percorre as três raízes às 09:30 e enumera subpastas com checkpoints por pasta/página, retomada e publicação apenas da árvore completa. O staging privado verificado está ligado ao importador CSV de recebimentos futuros; arquivo antigo ou fora do contrato permanece pendente. A suíte completa passou em Windows com PostgreSQL 18 descartável, migrations 000001–000010 e privilégios runtime verificados. A CI #39189971597 revelou falhas na validação SQL e no teste de retomada; elas foram corrigidas localmente, e a nova CI ainda aguarda envio desta correção. Os IDs foram identificados e ficam fora do Git. Ainda faltam credencial técnica/DPAPI, configuração local, sincronização real, contratos dos demais formatos, Excel, medições em VM e homologação). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Importar arquivos preservando integralmente a pasta compartilhada.
 
@@ -1581,6 +1581,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - `go test ./internal/integrations/googledrive -count=1` passou em Windows. Cobertura nova inclui sucesso, erro do consumidor, limite e limpeza do temporário. O callback precisa persistir de forma atômica/idempotente; este componente não define contratos nem publica fatos.
 - BK-042 avança de 56% para 58% estimados (42% restantes). O estágio ainda não está conectado ao worker/importadores; faltam contratos homologados, IDs/credencial reais, parsers, importação e homologação. Projeto: 11,6% estimado concluído e 88,4% restante. Não há prazo global confiável.
 - Nenhuma tela aprovada, regra financeira, arquivo real ou fato foi alterado. Evidência: `docs/evidence/GOOGLE-DRIVE-PRIVATE-STAGING-2026-10-18.md`.
+
+#### Compatibilidade PostgreSQL 18 e retomada por subpasta — 18/10/2026
+
+- A leitura da árvore no PostgreSQL descartável identificou e corrigiu uma expressão de validação incompatível com PostgreSQL 18, uma coluna ambígua numa consulta de validação e uma comparação incorreta de marcadores entre pastas diferentes.
+- O teste percorre a raiz e uma subpasta, falha depois de gravar uma página, retoma da página salva e publica o retrato completo. As contagens do teste foram alinhadas ao resultado: um arquivo criado e um atualizado; a subpasta existente não é contabilizada como arquivo novo.
+- A suíte completa `go test . ./cmd/... ./database/... ./internal/... -count=1`, migrations e privilégios passou em Windows com PostgreSQL 18 descartável. `go vet`, módulos, verificações do backlog, limites, checksums e segredos também passaram. A nova CI após o push ainda precisa confirmar o mesmo resultado.
+- Mantido em 68%: falta configurar identidade e credencial protegida, executar a primeira sincronização real com a pasta autorizada, tratar os outros formatos/contratos, medir em VM e homologar. Nenhum dado real foi baixado ou importado. Evidência: `docs/evidence/GOOGLE-DRIVE-NESTED-IMPORT-2026-10-18.md`.
 
 ### BK-043 — Implementar validação e interpretação dos arquivos
 

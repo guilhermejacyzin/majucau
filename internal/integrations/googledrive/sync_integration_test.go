@@ -132,7 +132,7 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	client, err := newClient(server.URL, AccessTokenFunc(func(context.Context) (string, error) { return "test-token", nil }), testFolderIDs, server.Client())
+	client, err := newClient(server.URL+"/drive/v3", AccessTokenFunc(func(context.Context) (string, error) { return "test-token", nil }), testFolderIDs, server.Client())
 	if err != nil {
 		t.Fatalf("create test Drive client: %v", err)
 	}
@@ -179,10 +179,10 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 	phase = 3
 	mu.Unlock()
 	resumed, err := service.SyncFolder(ctx, scope, testFolderIDs[0], correlationTwo)
-	if err != nil || resumed.Status != "SUCCESS" || resumed.PagesRead != 3 || resumed.FilesRead != 4 || resumed.FilesCreated != 2 || resumed.FilesUpdated != 1 {
+	if err != nil || resumed.Status != "SUCCESS" || resumed.PagesRead != 3 || resumed.FilesRead != 4 || resumed.FilesCreated != 1 || resumed.FilesUpdated != 1 {
 		t.Fatalf("resumed snapshot = %#v, error=%v", resumed, err)
 	}
-	if callsFor("3:'folder-a' in parents and trashed = false:") != 0 || callsFor("3:'folder-a' in parents and trashed = false:next-two") != 1 || callsFor("3:'folder-freight-ci' in parents and trashed = false:") != 1 {
+	if callsFor("3:'folder-a' in parents and trashed = false:") != 0 || callsFor("3:'folder-a' in parents and trashed = false:next-two") != 1 || callsFor("3:'"+childFolderID+"' in parents and trashed = false:") != 1 {
 		t.Fatalf("resumed run did not continue from its checkpoint: calls=%v", pageCalls)
 	}
 	finalCursor, _, cursorExists := readTestCursor(t, ctx, pool, connectionID, resource)

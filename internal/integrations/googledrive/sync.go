@@ -344,7 +344,7 @@ func seedDriveRootFolder(ctx context.Context, pool *pgxpool.Pool, connectionID p
 	}
 	tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return ErrSyncCheckpointStore
+		return driveCheckpointStoreError("begin folder-state transaction", err)
 	}
 	defer func() { _ = dbtx.Rollback(ctx, tx) }()
 	if _, err := tx.Exec(ctx, `
@@ -462,9 +462,9 @@ func loadDriveTreeCheckpointSummary(ctx context.Context, tx pgx.Tx, connectionID
 	if err := tx.QueryRow(ctx, `
 		SELECT EXISTS (
 			SELECT 1 FROM (
-				SELECT page_number, listing_folder_id, root_folder_id, start_page_token, next_page_token,
-				       row_number() OVER (PARTITION BY listing_folder_id ORDER BY page_number) AS folder_page,
-				       lag(next_page_token) OVER (PARTITION BY listing_folder_id ORDER BY page_number) AS previous_token,
+				SELECT page.page_number, page.listing_folder_id, page.root_folder_id, page.start_page_token, page.next_page_token,
+				       row_number() OVER (PARTITION BY page.listing_folder_id ORDER BY page.page_number) AS folder_page,
+				       lag(page.next_page_token) OVER (PARTITION BY page.listing_folder_id ORDER BY page.page_number) AS previous_token,
 			       folder.folder_id AS known_folder, folder.root_folder_id AS known_root
 				FROM google_drive_sync_page_checkpoints page
 				LEFT JOIN google_drive_sync_folders folder
@@ -525,7 +525,7 @@ func persistDriveTreePage(ctx context.Context, pool *pgxpool.Pool, connectionID 
 	startTokenHash := hex.EncodeToString(startHash[:])
 	tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return ErrSyncCheckpointStore
+		return driveCheckpointStoreError("begin page transaction", err)
 	}
 	defer func() { _ = dbtx.Rollback(ctx, tx) }()
 	var inserted int
@@ -546,21 +546,24 @@ func persistDriveTreePage(ctx context.Context, pool *pgxpool.Pool, connectionID 
 			SELECT start_page_token_hash, next_page_token, has_next, file_count, payload_hash, payload, listing_folder_id, root_folder_id
 			FROM google_drive_sync_page_checkpoints
 			WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND page_number = $4`, connectionID, resource, correlationID, pageNumber).Scan(&oldStartHash, &oldNext, &oldHasNext, &oldCount, &oldHash, &oldPayload, &oldFolder, &oldRoot); err != nil {
-			return ErrSyncCheckpointStore
+			return driveCheckpointStoreError("read existing page", err)
 		}
 		oldCanonical, _, canonicalErr := canonicalDriveCheckpointPayload(oldPayload)
 		if canonicalErr != nil || oldStartHash != startTokenHash || oldNext != page.NextPageToken || oldHasNext != (page.NextPageToken != "") || oldCount != len(page.Files) || oldHash != payloadHash || oldFolder != folder.FolderID || oldRoot != folder.RootFolderID || !jsonBytesEqual(oldCanonical, canonical) {
 			return ErrSyncCheckpointConflict
 		}
 	} else if err != nil {
-		return ErrSyncCheckpointStore
+		return driveCheckpointStoreError("insert page", err)
 	}
 	var storedRoot string
 	var storedParent pgtype.Text
 	var storedDepth int
 	if err := tx.QueryRow(ctx, `
 		SELECT root_folder_id, parent_folder_id, depth FROM google_drive_sync_folders
-		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND folder_id = $4 FOR UPDATE`, connectionID, resource, correlationID, folder.FolderID).Scan(&storedRoot, &storedParent, &storedDepth); err != nil || storedRoot != folder.RootFolderID || storedDepth != folder.Depth || storedDepth == 0 && storedParent.Valid || storedDepth > 0 && (!storedParent.Valid || storedParent.String != folder.ParentFolderID) {
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND folder_id = $4 FOR UPDATE`, connectionID, resource, correlationID, folder.FolderID).Scan(&storedRoot, &storedParent, &storedDepth); err != nil {
+		return driveCheckpointStoreError("lock listing folder", err)
+	}
+	if storedRoot != folder.RootFolderID || storedDepth != folder.Depth || storedDepth == 0 && storedParent.Valid || storedDepth > 0 && (!storedParent.Valid || storedParent.String != folder.ParentFolderID) {
 		return ErrSyncCheckpointInvalid
 	}
 	newStatus := "DONE"
@@ -572,7 +575,10 @@ func persistDriveTreePage(ctx context.Context, pool *pgxpool.Pool, connectionID 
 		SET status = $7, next_page_token = $8
 		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND folder_id = $4
 		  AND root_folder_id = $5 AND next_page_token = $6 AND status IN ('PENDING', 'ACTIVE')`, connectionID, resource, correlationID, folder.FolderID, folder.RootFolderID, folder.NextPageToken, newStatus, page.NextPageToken)
-	if err != nil || command.RowsAffected() != 1 {
+	if err != nil {
+		return driveCheckpointStoreError("advance listing folder", err)
+	}
+	if command.RowsAffected() != 1 {
 		return ErrSyncCheckpointConflict
 	}
 	for _, item := range files {
@@ -588,24 +594,40 @@ func persistDriveTreePage(ctx context.Context, pool *pgxpool.Pool, connectionID 
 				parent_folder_id, depth, status, next_page_token
 			) VALUES ($1, $2, $3, $4, $5, $6, $7, 'PENDING', '')
 			ON CONFLICT (connection_id, resource, correlation_id, folder_id) DO NOTHING`, connectionID, resource, correlationID, folder.RootFolderID, item.ID, folder.FolderID, folder.Depth+1); err != nil {
-			return ErrSyncCheckpointStore
+			return driveCheckpointStoreError("add discovered folder", err)
 		}
 		var childRoot, childParent string
 		var childDepth int
 		if err := tx.QueryRow(ctx, `
 			SELECT root_folder_id, parent_folder_id, depth FROM google_drive_sync_folders
-			WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND folder_id = $4`, connectionID, resource, correlationID, item.ID).Scan(&childRoot, &childParent, &childDepth); err != nil || childRoot != folder.RootFolderID || childParent != folder.FolderID || childDepth != folder.Depth+1 {
+			WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND folder_id = $4`, connectionID, resource, correlationID, item.ID).Scan(&childRoot, &childParent, &childDepth); err != nil {
+			return driveCheckpointStoreError("verify discovered folder", err)
+		}
+		if childRoot != folder.RootFolderID || childParent != folder.FolderID || childDepth != folder.Depth+1 {
 			return ErrSyncCheckpointInvalid
 		}
 	}
 	var folderCount int
-	if err := tx.QueryRow(ctx, `SELECT count(*) FROM google_drive_sync_folders WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID).Scan(&folderCount); err != nil || folderCount > maxSyncFoldersPerTree {
+	if err := tx.QueryRow(ctx, `SELECT count(*) FROM google_drive_sync_folders WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID).Scan(&folderCount); err != nil {
+		return driveCheckpointStoreError("count discovered folders", err)
+	}
+	if folderCount > maxSyncFoldersPerTree {
 		return ErrSyncCheckpointInvalid
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return ErrSyncCheckpointStore
+		return driveCheckpointStoreError("commit page transaction", err)
 	}
 	return nil
+}
+
+// driveCheckpointStoreError keeps database diagnostics useful without exposing
+// constraint values, tokens, file metadata, or other potentially sensitive SQL details.
+func driveCheckpointStoreError(stage string, err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return fmt.Errorf("%w: %s (database code %s)", ErrSyncCheckpointStore, stage, pgErr.Code)
+	}
+	return fmt.Errorf("%w: %s", ErrSyncCheckpointStore, stage)
 }
 
 func marshalDriveCheckpointFiles(files []File) ([]byte, error) {
@@ -746,6 +768,7 @@ func (s *FileInventorySyncService) publishSnapshot(ctx context.Context, tx pgx.T
 	if !connectionID.Valid || !batchID.Valid || !correlationID.Valid || !scope.valid() || !driveResourceValid(resource) || pageCount < 1 {
 		return 0, 0, ErrSyncCheckpointInvalid
 	}
+	lastTokenByFolder := make(map[string]string)
 	for pageNumber := 1; pageNumber <= pageCount; pageNumber++ {
 		if err := ctx.Err(); err != nil {
 			return 0, 0, err
@@ -766,12 +789,17 @@ func (s *FileInventorySyncService) publishSnapshot(ctx context.Context, tx pgx.T
 		}
 		digest := sha256.Sum256(canonical)
 		startDigest := sha256.Sum256([]byte(storedStartToken))
-		if storedHash != hex.EncodeToString(digest[:]) || startTokenHash != hex.EncodeToString(startDigest[:]) || !storedHasNext && nextToken != "" || storedHasNext != (nextToken != "") || pageNumber == 1 && storedStartToken != "" || pageNumber > 1 && len(storedStartToken) == 0 {
+		if storedHash != hex.EncodeToString(digest[:]) || startTokenHash != hex.EncodeToString(startDigest[:]) || !storedHasNext && nextToken != "" || storedHasNext != (nextToken != "") {
 			return 0, 0, ErrSyncCheckpointInvalid
 		}
 		if rootFolderID != folderID || !s.client.folderBelongsToRoot(listingFolderID, rootFolderID) {
 			return 0, 0, ErrSyncCheckpointInvalid
 		}
+		previousToken, hasPreviousPage := lastTokenByFolder[listingFolderID]
+		if !hasPreviousPage && storedStartToken != "" || hasPreviousPage && storedStartToken != previousToken {
+			return 0, 0, ErrSyncCheckpointInvalid
+		}
+		lastTokenByFolder[listingFolderID] = nextToken
 		if err := s.validateCheckpointFiles(files, listingFolderID, rootFolderID); err != nil {
 			return 0, 0, err
 		}

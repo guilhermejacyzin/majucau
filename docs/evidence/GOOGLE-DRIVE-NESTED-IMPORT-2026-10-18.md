@@ -8,16 +8,16 @@
 - A varredura tem limites explícitos por árvore: até 10.000 pastas, 10.000 páginas e profundidade 32. Se ultrapassar, falha com segurança e não publica uma lista incompleta.
 - Páginas, estados de pasta e inventário permanecem separados até a leitura completa; somente então o retrato, cursor e sucesso são publicados juntos. O retrato anterior permanece disponível durante falhas.
 - A migration `000009_google_drive_tree_checkpoints.up.sql` acrescenta o estado privado de percurso. A conta `majucau_runtime` recebeu somente as permissões necessárias para ler, criar, atualizar e limpar esses checkpoints temporários.
+- A migration `000010_google_drive_folder_id_checks.up.sql` mantém os limites e caracteres aceitos para IDs de pasta em uma expressão compatível com PostgreSQL 18. A CI reproduziu e confirmou que a validação anterior recusava o primeiro checkpoint.
 - O job diário já liga o staging privado verificado ao importador CSV de recebimentos futuros. Pastas e arquivos de outras naturezas são inventariados, mas continuam pendentes quando não há parser/contrato homologado; diretórios não são tratados como lançamentos.
 - A data do arquivo é validada contra o horário diário aprovado. Arquivo antigo ou que chegou depois das 09:30 não é publicado como dado atual.
 
-## Verificações
+## Verificações — atualização de 18/10/2026
 
-- `go test . ./cmd/... ./database/... ./internal/...` — passou localmente em Windows.
-- `go vet . ./cmd/... ./database/... ./internal/...` — passou em Windows.
-- O teste unitário confirma que somente descendentes encontrados por listagem do pai autorizado podem ser consultados e que a autorização antiga é removida antes de uma nova varredura.
-- O teste PostgreSQL cobre leitura aninhada, falha após página confirmada, retomada, preservação do retrato anterior e publicação completa. Ele foi acrescentado à etapa `verify-postgres` da CI e ainda precisa passar no GitHub.
-- O serviço Docker não estava disponível nesta sessão; não foi usado o PostgreSQL já instalado no computador. A aplicação da migration e a execução PostgreSQL ficam para o ambiente descartável da CI.
+- `go test . ./cmd/... ./database/... ./internal/... -count=1` passou em Windows com PostgreSQL 18 descartável, migrations 000001–000010 aplicadas e permissões runtime verificadas. Inclui leitura aninhada, falha após página confirmada, retomada, preservação do retrato anterior e publicação completa.
+- `go vet`, `go mod verify`, `go mod tidy -diff`, verificações de backlog, limites Go, checksums e varredura local de segredos passaram.
+- A CI #39189971597 encontrou defeitos reais antes desta correção: expressão regular incompatível com PostgreSQL 18, uma consulta com nome de coluna ambíguo e validação dos marcadores que tratava páginas de subpastas como se fossem da raiz. Também foram corrigidas expectativas antigas do teste de retomada.
+- A migration 000010 preserva as migrations já registradas e valida IDs com comprimento de 1 a 256 e caracteres permitidos. O resultado da nova CI após enviar essa correção ainda precisa ser conferido.
 
 ## Limites reais observados
 

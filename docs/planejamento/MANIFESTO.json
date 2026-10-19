@@ -14,8 +14,8 @@
     },
     {
       "path": "docs/META-PROJETO.md",
-      "bytes": 25131,
-      "sha256": "ac66dc52d2bbaf6f26cac1a913ecdd1a379f29f1711efc3088ef1f4722f65186"
+      "bytes": 25437,
+      "sha256": "2fdbf301095d24971409b70f4d7c30fab728327dab3cca3ed060d302c7f43092"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -54,8 +54,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 197176,
-      "sha256": "1d9745d85e73661cd459c14beae07043c4e70974c99a290c955dab5fcad77276"
+      "bytes": 197386,
+      "sha256": "9303d15fd72b6178a56b3027be05f51533ec4ef4abfa8885ad3726a1a1059d21"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",

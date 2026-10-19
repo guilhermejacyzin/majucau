@@ -153,6 +153,25 @@ func driveSnapshotFile(id, name, modifiedAt string, content []byte) (googledrive
 	return file, driveStageFixture{file: actual, content: content}
 }
 
+func TestDailyDrivePipelineMarksEmptyReceiptsFolderPending(t *testing.T) {
+	scheduledAt := time.Date(2026, 10, 18, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
+	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{"": {}}}
+	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{}}
+	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true}}
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testNuvemPagoFolderID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := syncer.SyncDaily(context.Background(), scheduledAt)
+	if !errors.Is(err, googledrive.ErrDailySyncIncomplete) || result.Status != "PARTIAL" || result.FutureStatus != "PARTIAL" || result.FuturePending != 0 {
+		t.Fatalf("empty receipts folder result=%+v error=%v", result, err)
+	}
+	if importer.pendingCalls != 1 || importer.importCalls != 0 || !importer.recorded.NoCompatibleCSV || len(stager.calls) != 0 || len(reader.calls) != 1 {
+		t.Fatalf("empty receipts folder should be recorded as missing input: pending=%+v importer calls=(%d,%d) stage=%#v snapshot cursors=%#v", importer.recorded, importer.pendingCalls, importer.importCalls, stager.calls, reader.calls)
+	}
+}
+
 func TestDailyDrivePipelineImportsAvailableCSVAndKeepsOtherScopesIndependent(t *testing.T) {
 	scheduledAt := time.Date(2026, 10, 18, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
 	csvBytes := []byte("sanitized streaming fixture")

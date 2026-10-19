@@ -12,6 +12,7 @@
 - `scripts/verify.ps1`: aprovado em 2026-10-19.
 - CI #682: aprovada nos quatro jobs de detecção de mudanças, backlog, PostgreSQL e Windows: [execução no GitHub Actions](https://github.com/guilhermejacyzin/majucau/actions/runs/39199970231).
 - Testes Go e `go vet`: aprovados.
+- `TestDailyDrivePipelineMarksEmptyReceiptsFolderPending` confirma que a pasta de recebimentos futuros sem arquivos registra fonte ausente e lote parcial, sem baixar nem importar arquivos.
 - `govulncheck`: nenhuma chamada vulnerável; permanece um aviso de vulnerabilidade em módulo declarado, sem chamada identificada no código, já registrado em `docs/evidence/DEPENDENCY-SECURITY-REMEDIATION-2026-10-10.md`.
 - Checksums de migrations, geração SQLC sem diferenças, scan de secrets e smoke/checks do instalador: aprovados.
 - ESLint, TypeScript, 33 testes frontend, build frontend e `npm audit` com zero vulnerabilidades: aprovados.
@@ -31,4 +32,5 @@ Continuar BK-042 após definir a regra de pasta vazia; provisionar a identidade 
 ## Limpeza desta execução
 
 - Com `scripts/SafeCleanup.psm1`, removidos os caches recriáveis `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/`, `artifacts/cache/vite/` e a prévia `artifacts/verification/frontend-dist-882f77c361984a4aa8b9810347e409f7/` gerada pela verificação.
+- Após o teste regressivo, também removidos com `SafeCleanup` `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/`, `artifacts/cache/vite/` e `artifacts/verification/frontend-dist-ccab21ea3fea4bc6aadba4369318c382/`.
 - Preservados `artifacts/cache/go-mod/` para evitar downloads e o pacote oficial em `artifacts/windows/`. Não foi encontrado item novo que precise de exclusão manual.

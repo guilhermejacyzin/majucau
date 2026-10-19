@@ -43,3 +43,9 @@ A lista também foi guardada em `artifacts/retained/manual-cleanup/go-global-cac
 - Removidos com `scripts/SafeCleanup.psm1` os caches regeneráveis `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/` e `artifacts/cache/vite/`, além do preview temporário `artifacts/verification/frontend-dist-ec10e5410c0c4490a770086c0c066d42/`.
 - O script de consolidação já removeu `build/bin/`, `frontend/dist/` e `tmp/` após copiar os arquivos necessários. O pacote atualizado e seus executáveis permanecem centralizados em `artifacts/windows/`.
 - Mantido `artifacts/cache/go-mod/` para preservar as dependências Go. Nenhum cache global, dado real do Drive ou item que precise de exclusão manual foi encontrado.
+
+## Limpeza após correção final de caminho Windows — 2026-10-19
+
+- Removidos com `scripts/SafeCleanup.psm1` os caches regeneráveis `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/` e `artifacts/cache/vite/`, além do preview temporário `artifacts/verification/frontend-dist-7c61564c800a482f9252d56fa9eb9a41/`.
+- O consolidador removeu os executáveis de origem em `build/bin/`, a saída `frontend/dist/` e `tmp/` depois de copiar os arquivos necessários. O pacote e os binários aprovados para conferência continuam em `artifacts/windows/`.
+- Mantido `artifacts/cache/go-mod/`; nenhum cache global, dado real do Drive ou item que precise de exclusão manual foi encontrado.

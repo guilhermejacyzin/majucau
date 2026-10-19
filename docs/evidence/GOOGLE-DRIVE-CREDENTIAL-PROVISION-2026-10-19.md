@@ -16,16 +16,16 @@
 - A conta humana confirmada no Chrome é `financeiro@majucau.com.br`. Ela é usada apenas para consultar o Drive; não é a identidade técnica que o worker usa.
 - Nenhuma chave de conta de serviço foi recebida ou gravada nesta execução. Nenhum segredo, token, cookie, senha, ID real de pasta ou arquivo real foi colocado no Git.
 - A conta de serviço ainda precisa ser criada no Google Cloud, receber permissão somente de leitura nas três raízes autorizadas e ser configurada localmente. O primeiro inventário real ainda não foi executado.
-- A migração `000011_google_drive_credential_audit.up.sql` adiciona a função de auditoria mínima. Ela precisa passar na verificação PostgreSQL local e na CI antes de ser considerada validada.
+- A migração `000011_google_drive_credential_audit.up.sql` adiciona a função de auditoria mínima. Ela foi aplicada e suas permissões foram verificadas no PostgreSQL da CI #679; a validação da alteração atual ainda depende da próxima execução Windows.
 
 ## Verificação desta alteração
 
 - Suítes focadas de Google Drive, worker e IPC passaram em Windows em 19/10/2026.
 - `scripts/verify.ps1` passou localmente em 19/10/2026: testes Go, `go vet`, `govulncheck` sem chamadas vulneráveis (permanece 1 aviso de módulo não chamado, já registrado), checksums das migrations, geração SQLC sem diferenças, scan de secrets, teste do instalador, lint, TypeScript, 33 testes de interface, build e `npm audit` com zero vulnerabilidades.
-- A execução GitHub Actions #678 aplicou a migration e aprovou `database/privileges/verify_runtime.sql`, mas apontou incompatibilidade dos testes de leitura de arquivos no Windows: `filepath.EvalSymlinks` pode devolver um caminho local no formato estendido `\\?\C:\...`.
-- A correção normaliza esse formato somente para caminhos de unidade local e continua recusando UNC e caminhos de dispositivo. Foi adicionado um teste de regressão para esses formatos.
-- Após a correção, `scripts/build-windows.ps1` passou localmente, incluindo todos os testes Go, `go vet`, `govulncheck`, integridade das migrations, SQLC, scan de segredos, verificações do instalador, lint, TypeScript, 33 testes da interface, build e `npm audit` sem vulnerabilidades. O pacote portátil foi recompilado e conferido: manifesto e hashes correspondem, e o bundle inclui o worker e a migration 000011.
-- O smoke test do worker sem argumentos retornou `GOOGLE_DRIVE_CREDENTIAL_ARGUMENTS_INVALID` e código 2, conforme esperado; nenhuma credencial ou sincronização foi usada. A CI do GitHub precisa confirmar a correção Windows antes de a alteração ser considerada concluída.
+- A execução GitHub Actions #678 aplicou a migration e aprovou `database/privileges/verify_runtime.sql`, mas revelou que a comparação textual do caminho retornado pelo Windows não era portátil entre ambientes.
+- A primeira normalização ainda falhou na execução #679. A correção final valida que o caminho resolvido continua na unidade local esperada e confere por identidade do arquivo que a leitura abre o mesmo arquivo regular observado inicialmente; UNC, dispositivos e links no próprio arquivo continuam recusados.
+- `scripts/build-windows.ps1` passou localmente após a correção final, incluindo todos os testes Go, `go vet`, `govulncheck`, integridade das migrations, SQLC, scan de segredos, verificações do instalador, lint, TypeScript, 33 testes da interface, build e `npm audit` sem vulnerabilidades. O pacote portátil foi recompilado e conferido: manifesto e hashes correspondem, e o bundle inclui o worker e a migration 000011.
+- O smoke test do worker sem argumentos retornou `GOOGLE_DRIVE_CREDENTIAL_ARGUMENTS_INVALID` e código 2, conforme esperado; nenhuma credencial ou sincronização foi usada. A CI PostgreSQL e a verificação do backlog da execução #679 passaram; a execução #680 precisa confirmar a correção Windows antes da alteração ser considerada concluída.
 
 ## Próximo passo
 

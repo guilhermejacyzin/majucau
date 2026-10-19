@@ -109,14 +109,18 @@ func readDriveCredentialFile(path string) ([]byte, error) {
 	path = filepath.Clean(path)
 	resolved, err := filepath.EvalSymlinks(path)
 	resolvedPath, ok := normalizeResolvedDrivePath(resolved)
-	if err != nil || !ok || !strings.EqualFold(resolvedPath, path) {
+	if err != nil || !ok || !strings.EqualFold(filepath.VolumeName(resolvedPath), filepath.VolumeName(path)) {
 		return nil, os.ErrInvalid
 	}
 	before, err := os.Lstat(path)
 	if err != nil || !before.Mode().IsRegular() || before.Mode()&os.ModeSymlink != 0 || before.Size() < 1 || before.Size() > googledrive.MaxServiceAccountJSONBytes {
 		return nil, os.ErrInvalid
 	}
-	file, err := os.Open(path)
+	resolvedInfo, err := os.Stat(resolvedPath)
+	if err != nil || !resolvedInfo.Mode().IsRegular() || !os.SameFile(before, resolvedInfo) {
+		return nil, os.ErrInvalid
+	}
+	file, err := os.Open(resolvedPath)
 	if err != nil {
 		return nil, err
 	}
@@ -141,14 +145,18 @@ func readDriveFolderIDsFile(path string) (googledrive.DriveFolderIDs, error) {
 	path = filepath.Clean(path)
 	resolved, err := filepath.EvalSymlinks(path)
 	resolvedPath, ok := normalizeResolvedDrivePath(resolved)
-	if err != nil || !ok || !strings.EqualFold(resolvedPath, path) {
+	if err != nil || !ok || !strings.EqualFold(filepath.VolumeName(resolvedPath), filepath.VolumeName(path)) {
 		return nil, os.ErrInvalid
 	}
 	before, err := os.Lstat(path)
 	if err != nil || !before.Mode().IsRegular() || before.Mode()&os.ModeSymlink != 0 || before.Size() < 1 || before.Size() > maxFolderConfigBytes {
 		return nil, os.ErrInvalid
 	}
-	file, err := os.Open(path)
+	resolvedInfo, err := os.Stat(resolvedPath)
+	if err != nil || !resolvedInfo.Mode().IsRegular() || !os.SameFile(before, resolvedInfo) {
+		return nil, os.ErrInvalid
+	}
+	file, err := os.Open(resolvedPath)
 	if err != nil {
 		return nil, err
 	}

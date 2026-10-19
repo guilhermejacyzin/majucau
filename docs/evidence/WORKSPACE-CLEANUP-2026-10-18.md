@@ -55,3 +55,9 @@ A lista também foi guardada em `artifacts/retained/manual-cleanup/go-global-cac
 - Removidos com `scripts/SafeCleanup.psm1` os caches regeneráveis `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/` e `artifacts/cache/vite/`; a pasta temporária e o hard link do gerador em `artifacts/cache/backlog-builder/`; as prévias `artifacts/verification/backlog-v2/`; e os bundles temporários `artifacts/verification/frontend-dist-9383f951b43f49c394bac808fe3cbd6f/` e `artifacts/verification/frontend-dist-d528a4447ea9410bbab8934771539e44/`. A junction de runtime foi conferida contra seu destino e removida sem percorrer ou apagar os módulos do runtime.
 - Mantidos `artifacts/cache/go-mod/` para evitar baixar novamente dependências, os relatórios oficiais do backlog em `artifacts/planejamento/outputs/`, e os binários/ferramentas locais necessários ao protótipo.
 - O registro antigo de limpeza passou a usar `%USERPROFILE%` e `%LOCALAPPDATA%` em vez de caminhos pessoais completos; `docs/planejamento/work/verify_package.py` passou depois dessa correção. Nenhum segredo, arquivo real do Drive ou item para limpeza manual foi gerado.
+
+## Limpeza após correção de atualidade do painel — 19/10/2026
+
+- Removidos com `scripts/SafeCleanup.psm1` os caches regeneráveis `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/` e `artifacts/cache/vite/`, além de todas as prévias temporárias `frontend-dist-*` e do log em `artifacts/verification/`.
+- Mantidos `artifacts/cache/go-mod/` para dependências Go, `artifacts/cache/webview2/` para reconstruir o instalador Windows sem novo download, `frontend/node_modules/` para verificações futuras e as ferramentas e pacotes oficiais em `artifacts/tools/` e `artifacts/windows/`.
+- A saída `frontend/dist/` já havia sido removida pelo fluxo de verificação. Nenhum cache global, dado real do Drive ou arquivo que precise de limpeza manual foi gerado ou removido.

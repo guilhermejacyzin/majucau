@@ -14,6 +14,7 @@ import (
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/dbtx"
 	"majucau.local/financial-intelligence/internal/domain"
+	"majucau.local/financial-intelligence/internal/scheduler"
 )
 
 const (
@@ -91,14 +92,18 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (ret
 	if err := flushDashboardOutput(dst); err != nil {
 		return err
 	}
-	if err := streamReceivableRows(ctx, tx, dst); err != nil {
-		return err
+	if snapshot.Receivables.State != "UNAVAILABLE" {
+		if err := streamReceivableRows(ctx, tx, dst); err != nil {
+			return err
+		}
 	}
 	if err := writeAll(dst, []byte(`],"payable_rows":[`)); err != nil {
 		return err
 	}
-	if err := streamPayableRows(ctx, tx, dst); err != nil {
-		return err
+	if snapshot.Payables.State != "UNAVAILABLE" {
+		if err := streamPayableRows(ctx, tx, dst); err != nil {
+			return err
+		}
 	}
 	if err := writeAll(dst, []byte(`]}`)); err != nil {
 		return err
@@ -116,12 +121,22 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		receivablesCount, futureCount, receiptsTotalCount, receiptsMonthCount            int64
 		receivablesOverdueCount, payablesCount, payablesTodayCount, payablesOverdueCount int64
 		paymentsTotalCount, paymentsMonthCount                                           int64
-		lastBlingSyncAt                                                                  pgtype.Timestamptz
+		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt                     pgtype.Timestamptz
 	)
-	err := tx.QueryRow(ctx, dashboardStreamSummarySQL,
+	schedule, err := scheduler.NewSaoPaulo0930()
+	if err != nil {
+		return application.DashboardSnapshot{}, err
+	}
+	latestScheduledRun, err := schedule.LatestRunAtOrBefore(asOf)
+	if err != nil {
+		return application.DashboardSnapshot{}, err
+	}
+	dailyCorrelationID := scheduler.DailyRunCorrelationID(scheduler.BlingDailyRunScope, latestScheduledRun)
+	err = tx.QueryRow(ctx, dashboardStreamSummarySQL,
 		businessDate.Format("2006-01-02"),
 		monthStart.Format("2006-01-02"),
 		monthEnd.Format("2006-01-02"),
+		dailyCorrelationID,
 	).Scan(
 		&receivablesValue, &receivablesCount,
 		&futureValue, &futureCount,
@@ -132,12 +147,16 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&payablesOverdueValue, &payablesOverdueCount,
 		&paymentsMonthValue, &paymentsMonthCount, &paymentsTotalCount,
 		&lastBlingSyncAt,
+		&dailyReceivablesSyncAt,
+		&dailyPayablesSyncAt,
 	)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
 	}
+	receivablesFresh := completedBy(dailyReceivablesSyncAt, asOf)
+	payablesFresh := completedBy(dailyPayablesSyncAt, asOf)
 	state := "UNAVAILABLE"
-	if receivablesCount > 0 || futureCount > 0 || receiptsTotalCount > 0 || payablesCount > 0 || paymentsTotalCount > 0 {
+	if futureCount > 0 || receivablesFresh || payablesFresh {
 		state = "PARTIAL"
 	}
 	var lastBlingSyncTime *time.Time
@@ -149,19 +168,36 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		AsOf:               asOf,
 		LastBlingSyncAt:    lastBlingSyncTime,
 		DataState:          state,
-		Receivables:        metric(receivablesValue, receivablesCount, stateForCount(receivablesCount), "BLING + NUVEM_PAGO"),
+		Receivables:        metricForSourceRun(receivablesValue, receivablesCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
 		FutureB2C:          metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
-		ReceiptsMonth:      metric(receiptsMonthValue, receiptsMonthCount, stateForCount(receiptsTotalCount), "BLING"),
-		ReceivablesOverdue: metric(receivablesOverdueValue, receivablesOverdueCount, stateForCount(receivablesCount), "BLING + NUVEM_PAGO"),
-		Payables:           metric(payablesValue, payablesCount, stateForCount(payablesCount), "BLING"),
-		PayablesDueToday:   metric(payablesTodayValue, payablesTodayCount, stateForCount(payablesCount), "BLING"),
-		PayablesOverdue:    metric(payablesOverdueValue, payablesOverdueCount, stateForCount(payablesCount), "BLING"),
-		PaymentsMonth:      metric(paymentsMonthValue, paymentsMonthCount, stateForCount(paymentsTotalCount), "BLING"),
+		ReceiptsMonth:      metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, receivablesFresh, "BLING"),
+		ReceivablesOverdue: metricForSourceRun(receivablesOverdueValue, receivablesOverdueCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
+		Payables:           metricForSourceRun(payablesValue, payablesCount, payablesCount, payablesFresh, "BLING"),
+		PayablesDueToday:   metricForSourceRun(payablesTodayValue, payablesTodayCount, payablesCount, payablesFresh, "BLING"),
+		PayablesOverdue:    metricForSourceRun(payablesOverdueValue, payablesOverdueCount, payablesCount, payablesFresh, "BLING"),
+		PaymentsMonth:      metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, payablesFresh, "BLING"),
 	}, nil
 }
 
+func completedBy(syncAt pgtype.Timestamptz, asOf time.Time) bool {
+	return syncAt.Valid && !syncAt.Time.After(asOf)
+}
+
+func metricForSourceRun(value string, count, sourceCount int64, fresh bool, source string) application.DashboardMetric {
+	if !fresh {
+		return application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: source}
+	}
+	state := stateForCount(sourceCount)
+	if state == "UNAVAILABLE" {
+		// A successful daily load with no matching records confirms a zero; it
+		// is different from a source that has not completed its current load.
+		state = "CONFIRMED"
+	}
+	return metric(value, count, state, source)
+}
+
 func metric(value string, count int64, state, source string) application.DashboardMetric {
-	if count == 0 && state == "UNAVAILABLE" {
+	if state == "UNAVAILABLE" {
 		return application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: source}
 	}
 	return application.DashboardMetric{Value: value, Count: count, State: state, SourceSystem: source}
@@ -342,6 +378,14 @@ WITH eligible_receivables AS (
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
      AND b.status IN ('SUCCESS', 'PARTIAL')
+), current_daily_bling_sync AS (
+  SELECT
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.receber' AND b.status = 'SUCCESS') AS receivables_finished_at,
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar' AND b.status = 'SUCCESS') AS payables_finished_at
+    FROM integration_sync_batches b
+    JOIN integration_connections c ON c.id = b.connection_id
+   WHERE c.provider = 'BLING'
+     AND b.correlation_id = $4
 )
 SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        rc.month_value, rc.month_count, rc.total_count,
@@ -349,8 +393,10 @@ SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        p.total_value, p.total_count, p.today_value, p.today_count,
        p.overdue_value, p.overdue_count,
        pm.month_value, pm.month_count, pm.total_count,
-       last_bling_sync.finished_at
-FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync
+       last_bling_sync.finished_at,
+       current_daily_bling_sync.receivables_finished_at,
+       current_daily_bling_sync.payables_finished_at
+FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync CROSS JOIN current_daily_bling_sync
 `
 
 const dashboardReceivableRowsSQL = `

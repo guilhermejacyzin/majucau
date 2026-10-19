@@ -5,12 +5,15 @@ import (
 	"errors"
 	"time"
 	_ "time/tzdata"
+
+	"github.com/google/uuid"
 )
 
 const (
-	SaoPauloTimeZone = "America/Sao_Paulo"
-	DailySyncHour    = 9
-	DailySyncMinute  = 30
+	SaoPauloTimeZone   = "America/Sao_Paulo"
+	DailySyncHour      = 9
+	DailySyncMinute    = 30
+	BlingDailyRunScope = "majucau/bling/daily-sync/v1"
 )
 
 var (
@@ -57,6 +60,31 @@ func (d Daily) NextRun(after time.Time) (time.Time, error) {
 		next = time.Date(year, month, day, d.hour, d.minute, 0, 0, d.location)
 	}
 	return next, nil
+}
+
+// LatestRunAtOrBefore returns the most recent scheduled instant at or before
+// at. It lets readers distinguish today's completed load from yesterday's
+// snapshot after the daily update time has passed.
+func (d Daily) LatestRunAtOrBefore(at time.Time) (time.Time, error) {
+	if d.location == nil || d.hour < 0 || d.hour > 23 || d.minute < 0 || d.minute > 59 {
+		return time.Time{}, ErrInvalidDailySchedule
+	}
+	local := at.In(d.location)
+	year, month, day := local.Date()
+	latest := time.Date(year, month, day, d.hour, d.minute, 0, 0, d.location)
+	if latest.After(local) {
+		previous := local.AddDate(0, 0, -1)
+		year, month, day = previous.Date()
+		latest = time.Date(year, month, day, d.hour, d.minute, 0, 0, d.location)
+	}
+	return latest, nil
+}
+
+// DailyRunCorrelationID creates a stable identifier for one source's
+// scheduled run. The identity format is versioned because persisted batches
+// use this value to prove that the full scheduled load completed.
+func DailyRunCorrelationID(scope string, scheduledAt time.Time) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceOID, []byte(scope+":"+scheduledAt.Format("2006-01-02")))
 }
 
 // Run waits for the next scheduled instant, executes action, reports an action

@@ -581,4 +581,4 @@ jobs:
         run: go test -race ./internal/integrations/bling -run '^(TestBlingOAuthLoopbackSessionExchangesAndTestsWithoutLeakingToken|TestBlingOAuthDisconnectWaitsForInFlightAuthorization)$' -count=1
 
       - name: Run PostgreSQL integration tests
-        run: go test ./internal/integrations/bling ./internal/integrations/googledrive ./internal/integrations/nuvempago
+        run: go test ./internal/dashboard ./internal/integrations/bling ./internal/integrations/googledrive ./internal/integrations/nuvempago

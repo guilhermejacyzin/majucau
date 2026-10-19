@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"majucau.local/financial-intelligence/internal/application"
+	"majucau.local/financial-intelligence/internal/scheduler"
 )
 
 type scriptedDashboardDB struct {
@@ -166,7 +167,7 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 	if db.options != wantOptions || !tx.committed {
 		t.Fatalf("transaction options/commit = %#v/%t, want %#v/true", db.options, tx.committed, wantOptions)
 	}
-	wantDates := []any{"2026-09-21", "2026-09-01", "2026-10-01"}
+	wantDates := []any{"2026-09-21", "2026-09-01", "2026-10-01", expectedDailyCorrelation(t, asOf)}
 	if !reflect.DeepEqual(tx.summaryArgs, wantDates) {
 		t.Fatalf("summary date arguments = %#v, want %#v", tx.summaryArgs, wantDates)
 	}
@@ -193,7 +194,7 @@ func TestReadStreamSummaryUsesBusinessDateAtUtcMonthBoundary(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			wantDates := []any{tc.date, tc.monthFrom, tc.monthTo}
+			wantDates := []any{tc.date, tc.monthFrom, tc.monthTo, expectedDailyCorrelation(t, tc.instant)}
 			if !reflect.DeepEqual(tx.summaryArgs, wantDates) {
 				t.Fatalf("date arguments = %#v, want %#v", tx.summaryArgs, wantDates)
 			}
@@ -201,6 +202,31 @@ func TestReadStreamSummaryUsesBusinessDateAtUtcMonthBoundary(t *testing.T) {
 				t.Fatalf("as_of = %s (%s), want %s UTC", snapshot.AsOf, snapshot.AsOf.Location(), tc.instant)
 			}
 		})
+	}
+}
+
+func TestWriteDashboardSnapshotHidesBlingDataUntilTodaysScheduledLoadCompletes(t *testing.T) {
+	asOf := time.Date(2026, 9, 21, 13, 0, 0, 0, time.UTC)
+	values := dashboardSummaryValues()
+	values[19], values[20] = nil, nil
+	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
+	reader := &Reader{db: &scriptedDashboardDB{tx: tx}, now: func() time.Time { return asOf }}
+	var output bytes.Buffer
+	if err := reader.WriteDashboardSnapshot(context.Background(), &output); err != nil {
+		t.Fatalf("WriteDashboardSnapshot() error = %v", err)
+	}
+	var snapshot application.DashboardSnapshot
+	if err := json.Unmarshal(output.Bytes(), &snapshot); err != nil {
+		t.Fatalf("stream output is not valid snapshot JSON: %v", err)
+	}
+	if snapshot.Receivables.State != "UNAVAILABLE" || snapshot.Receivables.Value != "" || snapshot.Payables.State != "UNAVAILABLE" || snapshot.Payables.Value != "" {
+		t.Fatalf("stale Bling metrics were exposed: receivables=%+v payables=%+v", snapshot.Receivables, snapshot.Payables)
+	}
+	if snapshot.LastBlingSyncAt == nil || snapshot.LastBlingSyncAt.Equal(asOf) {
+		t.Fatalf("last successful synchronization should remain visible as its actual old time: %v", snapshot.LastBlingSyncAt)
+	}
+	if len(snapshot.ReceivableRows) != 0 || len(snapshot.PayableRows) != 0 || len(tx.queryArgs) != 0 {
+		t.Fatalf("stale detail rows were streamed: receivables=%d payables=%d queries=%d", len(snapshot.ReceivableRows), len(snapshot.PayableRows), len(tx.queryArgs))
 	}
 }
 
@@ -233,6 +259,39 @@ func TestReadStreamSummaryKeepsEmptySourcesUnavailableInsteadOfZero(t *testing.T
 		if item.metric.State != "UNAVAILABLE" || item.metric.Value != "" || item.metric.Count != 0 {
 			t.Errorf("%s = %+v, want unavailable with no value or count", item.name, item.metric)
 		}
+	}
+}
+
+func TestReadStreamSummaryConfirmsZeroAfterSuccessfulDailyBlingLoad(t *testing.T) {
+	finishedAt := time.Date(2026, 10, 19, 13, 15, 0, 0, time.UTC)
+	asOf := time.Date(2026, 10, 19, 16, 0, 0, 0, time.UTC)
+	values := emptyDashboardSummaryValues()
+	values[18], values[19], values[20] = finishedAt, finishedAt, finishedAt
+	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
+	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
+	if err != nil {
+		t.Fatalf("readStreamSummary() error = %v", err)
+	}
+	if snapshot.DataState != "PARTIAL" {
+		t.Fatalf("data_state = %q, want PARTIAL after a successful empty source load", snapshot.DataState)
+	}
+	for _, item := range []struct {
+		name   string
+		metric application.DashboardMetric
+	}{
+		{name: "receivables", metric: snapshot.Receivables},
+		{name: "receipts this month", metric: snapshot.ReceiptsMonth},
+		{name: "payables", metric: snapshot.Payables},
+		{name: "payables due today", metric: snapshot.PayablesDueToday},
+		{name: "payables overdue", metric: snapshot.PayablesOverdue},
+		{name: "payments this month", metric: snapshot.PaymentsMonth},
+	} {
+		if item.metric.State != "CONFIRMED" || item.metric.Value != "0.0000" || item.metric.Count != 0 {
+			t.Errorf("%s = %+v, want confirmed zero after successful daily load", item.name, item.metric)
+		}
+	}
+	if snapshot.FutureB2C.State != "UNAVAILABLE" || snapshot.FutureB2C.Value != "" {
+		t.Fatalf("Nuvem Pago future source should retain its independent availability: %+v", snapshot.FutureB2C)
 	}
 }
 
@@ -305,6 +364,7 @@ func dashboardSummaryValues() []any {
 		"25.0000", int64(1), int64(3), "5.0000", int64(1),
 		"80.0000", int64(2), "10.0000", int64(1), "4.0000", int64(1),
 		"30.0000", int64(1), int64(2), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
+		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
 	}
 }
 
@@ -313,6 +373,19 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
-		"0.0000", int64(0), int64(0), nil,
+		"0.0000", int64(0), int64(0), nil, nil, nil,
 	}
+}
+
+func expectedDailyCorrelation(t *testing.T, asOf time.Time) any {
+	t.Helper()
+	schedule, err := scheduler.NewSaoPaulo0930()
+	if err != nil {
+		t.Fatal(err)
+	}
+	scheduledAt, err := schedule.LatestRunAtOrBefore(asOf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return scheduler.DailyRunCorrelationID(scheduler.BlingDailyRunScope, scheduledAt)
 }

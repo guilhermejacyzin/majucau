@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"majucau.local/financial-intelligence/internal/scheduler"
 )
 
 const (
@@ -83,7 +85,7 @@ func dailyBlingCorrelationID(scheduledAt time.Time) (uuid.UUID, error) {
 	if local.Hour() != 9 || local.Minute() != 30 || local.Second() != 0 || local.Nanosecond() != 0 {
 		return uuid.Nil, ErrBlingDailyScheduleInvalid
 	}
-	return uuid.NewSHA1(uuid.NameSpaceOID, []byte("majucau/bling/daily-sync/v1:"+local.Format("2006-01-02"))), nil
+	return scheduler.DailyRunCorrelationID(scheduler.BlingDailyRunScope, local), nil
 }
 
 func pgUUID(value uuid.UUID) pgtype.UUID {

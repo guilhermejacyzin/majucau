@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestNextRunUsesSaoPauloTimeAndWaitsForTomorrowAtBoundary(t *testing.T) {
@@ -81,5 +83,40 @@ func TestNewDailyRejectsInvalidTimeZoneAndClock(t *testing.T) {
 	}
 	if _, err := NewDaily(SaoPauloTimeZone, 24, 0); !errors.Is(err, ErrInvalidDailySchedule) {
 		t.Fatalf("invalid hour error = %v", err)
+	}
+}
+
+func TestLatestRunAtOrBeforeUsesTheMostRecentBrasiliaSlot(t *testing.T) {
+	schedule, err := NewSaoPaulo0930()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name string
+		at   time.Time
+		want string
+	}{
+		{name: "before today's slot", at: time.Date(2026, 10, 19, 12, 29, 0, 0, time.UTC), want: "2026-10-18T09:30:00-03:00"},
+		{name: "at today's slot", at: time.Date(2026, 10, 19, 12, 30, 0, 0, time.UTC), want: "2026-10-19T09:30:00-03:00"},
+		{name: "after today's slot", at: time.Date(2026, 10, 19, 15, 0, 0, 0, time.UTC), want: "2026-10-19T09:30:00-03:00"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := schedule.LatestRunAtOrBefore(tc.at)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if formatted := got.Format(time.RFC3339); formatted != tc.want {
+				t.Fatalf("latest slot = %s, want %s", formatted, tc.want)
+			}
+		})
+	}
+}
+
+func TestDailyRunCorrelationIDPreservesExistingBlingIdentity(t *testing.T) {
+	slot := time.Date(2026, 10, 19, 9, 30, 0, 0, time.FixedZone("Brasilia", -3*60*60))
+	want := uuid.NewSHA1(uuid.NameSpaceOID, []byte("majucau/bling/daily-sync/v1:2026-10-19"))
+	if got := DailyRunCorrelationID(BlingDailyRunScope, slot); got != want {
+		t.Fatalf("daily run ID = %s, want existing ID %s", got, want)
 	}
 }

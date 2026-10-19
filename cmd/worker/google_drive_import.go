@@ -16,6 +16,7 @@ import (
 
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
+	"majucau.local/financial-intelligence/internal/integrations/xlsxstream"
 	"majucau.local/financial-intelligence/internal/scheduler"
 	"majucau.local/financial-intelligence/internal/securetemp"
 )
@@ -145,6 +146,7 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 
 	var afterFileID string
 	var stagedFiles int64
+	var stagedSequence int64
 	var pending nuvempago.FutureImportPending
 	for {
 		if err := ctx.Err(); err != nil {
@@ -180,14 +182,23 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 				}
 				continue
 			}
-			if !strings.EqualFold(filepath.Ext(file.Name), ".csv") {
+			extension := filepath.Ext(file.Name)
+			isCSV := strings.EqualFold(extension, ".csv")
+			isXLSX := strings.EqualFold(extension, ".xlsx")
+			if !isCSV && !isXLSX {
 				if !addPendingCount(&pending.UnsupportedFiles, 1) {
 					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 				}
 				continue
 			}
-			if !file.SizeKnown || file.Size < 0 || stagedFiles == int64(^uint64(0)>>1) {
+			if !file.SizeKnown || file.Size < 0 || isXLSX && file.Size == 0 || stagedSequence == int64(^uint64(0)>>1) {
 				if !addPendingCount(&pending.InvalidMetadataFiles, 1) {
+					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
+				}
+				continue
+			}
+			if isXLSX && file.Size > xlsxstream.MaxFileBytes {
+				if !addPendingCount(&pending.UnsupportedFiles, 1) {
 					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 				}
 				continue
@@ -196,16 +207,32 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 			if limit == 0 {
 				limit = 1
 			}
-			stagedName := fmt.Sprintf("%020d.csv", stagedFiles+1)
+			stagedSequence++
+			stagedExtension := ".csv"
+			if isXLSX {
+				stagedExtension = ".xlsx"
+			}
+			stagedName := fmt.Sprintf("%020d%s", stagedSequence, stagedExtension)
 			stagedPath := filepath.Join(workspace.Path(), stagedName)
 			_, stageErr := s.stager.WithPrivateStage(ctx, s.tempRoot, file.ID, limit,
 				func(stageCtx context.Context, actual googledrive.File, reader io.Reader, size int64, sha256Hex string) error {
 					if err := stageCtx.Err(); err != nil {
 						return err
 					}
-					return copyVerifiedDriveFile(stagedPath, file, actual, s.folderID, reader, size, sha256Hex)
+					if err := copyVerifiedDriveFile(stagedPath, file, actual, s.folderID, reader, size, sha256Hex); err != nil {
+						return err
+					}
+					if !isXLSX {
+						return nil
+					}
+					return validateDriveXLSX(stageCtx, stagedPath, workspace.Path(), size)
 				},
 			)
+			if isXLSX {
+				if cleanupErr := securetemp.RemoveFile(stagedPath); cleanupErr != nil {
+					return nuvempago.FutureImportResult{}, cleanupErr
+				}
+			}
 			if stageErr != nil {
 				if ctx.Err() != nil {
 					return nuvempago.FutureImportResult{}, ctx.Err()
@@ -214,12 +241,22 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 				if errors.As(stageErr, &cleanupErr) {
 					return nuvempago.FutureImportResult{}, stageErr
 				}
+				if isXLSX && (errors.Is(stageErr, xlsxstream.ErrInvalidWorkbook) || errors.Is(stageErr, xlsxstream.ErrLimitExceeded)) {
+					if !addPendingCount(&pending.UnsupportedFiles, 1) {
+						return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
+					}
+					continue
+				}
 				if !addPendingCount(&pending.DownloadFailedFiles, 1) {
 					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 				}
 				continue
 			}
-			stagedFiles++
+			if isCSV {
+				stagedFiles++
+			} else if !addPendingCount(&pending.UnsupportedFiles, 1) {
+				return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
+			}
 		}
 		if page.HasMore {
 			if len(page.Files) == 0 || page.NextFileID == "" || page.NextFileID <= afterFileID {
@@ -239,6 +276,19 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 		return s.importer.RecordPending(ctx, pending)
 	}
 	return s.importer.ImportStaged(ctx, workspace.Path(), pending, removeWorkspace)
+}
+
+// validateDriveXLSX confirms that a downloaded workbook is structurally safe
+// to read. Rows are discarded one at a time; without an approved financial
+// contract, the workbook remains pending and contributes no financial facts.
+func validateDriveXLSX(ctx context.Context, path, tempParent string, size int64) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return errDriveFutureStaging
+	}
+	_, parseErr := xlsxstream.Stream(ctx, file, size, tempParent, func(context.Context, xlsxstream.Row) error { return nil })
+	closeErr := file.Close()
+	return errors.Join(parseErr, closeErr)
 }
 
 func previousGoogleDriveSchedule(scheduledAt time.Time) (time.Time, error) {

@@ -30,7 +30,8 @@ var (
 )
 
 const (
-	maxFileBytes          int64  = 256 << 20
+	// MaxFileBytes is the maximum compressed workbook size accepted by Stream.
+	MaxFileBytes          int64  = 256 << 20
 	maxCentralDirectory   uint32 = 2 << 20
 	maxArchiveEntries            = 1024
 	maxUncompressedBytes  uint64 = 1 << 30
@@ -113,7 +114,7 @@ func Stream(ctx context.Context, source io.ReaderAt, size int64, tempParent stri
 	if ctx == nil || source == nil || accept == nil || strings.TrimSpace(tempParent) == "" || size <= 0 {
 		return Summary{}, ErrInvalidWorkbook
 	}
-	if size > maxFileBytes {
+	if size > MaxFileBytes {
 		return Summary{}, ErrLimitExceeded
 	}
 	if err := ctx.Err(); err != nil {
@@ -264,7 +265,7 @@ func indexArchive(archive *zip.Reader, limits zipLimits) (map[string]*zip.File, 
 		if _, exists := files[name]; exists {
 			return nil, 0, ErrInvalidWorkbook
 		}
-		if file.UncompressedSize64 > uint64(maxEntryBytes) || file.CompressedSize64 > uint64(maxFileBytes) {
+		if file.UncompressedSize64 > uint64(maxEntryBytes) || file.CompressedSize64 > uint64(MaxFileBytes) {
 			return nil, 0, ErrLimitExceeded
 		}
 		if math.MaxUint64-total < file.UncompressedSize64 {

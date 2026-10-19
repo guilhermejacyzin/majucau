@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"crypto/md5"
@@ -10,11 +11,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
+	"majucau.local/financial-intelligence/internal/integrations/xlsxstream"
 )
 
 const testNuvemPagoFolderID = "folder-nuvem"
@@ -137,8 +140,12 @@ func successfulDriveInventory(status string, failed int) googledrive.DailyFileIn
 
 func driveSnapshotFile(id, name, modifiedAt string, content []byte) (googledrive.File, driveStageFixture) {
 	md5sum := md5.Sum(content)
+	mimeType := "text/csv"
+	if strings.EqualFold(filepath.Ext(name), ".xlsx") {
+		mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	}
 	file := googledrive.File{
-		ID: id, Name: name, MIMEType: "text/csv", Size: int64(len(content)), SizeKnown: true,
+		ID: id, Name: name, MIMEType: mimeType, Size: int64(len(content)), SizeKnown: true,
 		ModifiedTime: modifiedAt, MD5Checksum: hex.EncodeToString(md5sum[:]), Version: "7",
 		Parents: []string{testNuvemPagoFolderID}, ScopeRootID: testNuvemPagoFolderID,
 	}
@@ -151,15 +158,18 @@ func TestDailyDrivePipelineImportsAvailableCSVAndKeepsOtherScopesIndependent(t *
 	csvBytes := []byte("sanitized streaming fixture")
 	onTime, onTimeData := driveSnapshotFile("file-a", "report.csv", "2026-10-18T09:20:00-03:00", csvBytes)
 	late, _ := driveSnapshotFile("file-b", "late.csv", "2026-10-18T09:31:00-03:00", []byte("late"))
-	unsupported, _ := driveSnapshotFile("file-c", "sheet.xlsx", "2026-10-18T09:10:00-03:00", []byte("unsupported"))
+	validXLSX, validXLSXData := driveSnapshotFile("file-c", "sheet.xlsx", "2026-10-18T09:10:00-03:00", validDriveXLSX(t))
+	invalidXLSX, invalidXLSXData := driveSnapshotFile("file-d", "broken.xlsx", "2026-10-18T09:11:00-03:00", []byte("not a workbook"))
 	inventoryErr := errors.New("one independent folder failed")
 	inventory := fakeDailyDriveInventory{result: successfulDriveInventory("PARTIAL", 1), err: inventoryErr}
 	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{
 		"":       {Files: []googledrive.File{onTime, late}, NextFileID: "file-b", HasMore: true},
-		"file-b": {Files: []googledrive.File{unsupported}, HasMore: false},
+		"file-b": {Files: []googledrive.File{validXLSX, invalidXLSX}, HasMore: false},
 	}}
-	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{"file-a": onTimeData}}
-	importer := &fakeStagedFutureImporter{importResult: nuvempago.FutureImportResult{Status: "PARTIAL", RecordsRead: 2, RecordsCreated: 2, PendingFiles: 2}}
+	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{
+		"file-a": onTimeData, "file-c": validXLSXData, "file-d": invalidXLSXData,
+	}}
+	importer := &fakeStagedFutureImporter{importResult: nuvempago.FutureImportResult{Status: "PARTIAL", RecordsRead: 2, RecordsCreated: 2, PendingFiles: 3}}
 	syncer, err := newDailyGoogleDriveImportSyncer(inventory, reader, stager, importer, t.TempDir(), testNuvemPagoFolderID)
 	if err != nil {
 		t.Fatal(err)
@@ -169,20 +179,67 @@ func TestDailyDrivePipelineImportsAvailableCSVAndKeepsOtherScopesIndependent(t *
 	if !errors.Is(err, googledrive.ErrDailySyncIncomplete) || !errors.Is(err, inventoryErr) {
 		t.Fatalf("daily import error = %v, want partial independent source failure", err)
 	}
-	if result.Status != "PARTIAL" || result.FutureStatus != "PARTIAL" || result.FuturePending != 2 || result.FutureRead != 2 || importer.importCalls != 1 || importer.pendingCalls != 0 {
+	if result.Status != "PARTIAL" || result.FutureStatus != "PARTIAL" || result.FuturePending != 3 || result.FutureRead != 2 || importer.importCalls != 1 || importer.pendingCalls != 0 {
 		t.Fatalf("daily import result=%+v importer=%+v", result, importer)
 	}
-	if len(stager.calls) != 1 || stager.calls[0] != "file-a" {
-		t.Fatalf("staged IDs = %#v, want only the on-time CSV", stager.calls)
+	if len(stager.calls) != 3 || stager.calls[0] != "file-a" || stager.calls[1] != "file-c" || stager.calls[2] != "file-d" {
+		t.Fatalf("staged IDs = %#v, want CSV and both on-time XLSX workbooks", stager.calls)
 	}
 	if len(reader.calls) != 2 || reader.calls[0] != "" || reader.calls[1] != "file-b" {
 		t.Fatalf("snapshot page cursors = %#v", reader.calls)
 	}
-	if importer.pending.DeferredFiles != 1 || importer.pending.UnsupportedFiles != 1 || importer.pending.NoCompatibleCSV {
+	if importer.pending.DeferredFiles != 1 || importer.pending.UnsupportedFiles != 2 || importer.pending.NoCompatibleCSV {
 		t.Fatalf("pending source summary = %+v", importer.pending)
 	}
 	if len(importer.stagedFiles) != 1 || importer.stagedFiles[0] != "00000000000000000001.csv" {
 		t.Fatalf("private staged names = %#v", importer.stagedFiles)
+	}
+}
+
+func validDriveXLSX(t *testing.T) []byte {
+	t.Helper()
+	var buffer bytes.Buffer
+	archive := zip.NewWriter(&buffer)
+	files := map[string]string{
+		"[Content_Types].xml":        `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`,
+		"_rels/.rels":                `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+		"xl/workbook.xml":            `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Dados" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+		"xl/_rels/workbook.xml.rels": `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+		"xl/worksheets/sheet1.xml":   `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>coluna</t></is></c></row></sheetData></worksheet>`,
+	}
+	for name, content := range files {
+		entry, err := archive.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := entry.Write([]byte(content)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := archive.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buffer.Bytes()
+}
+
+func TestDailyDrivePipelineDoesNotDownloadXLSXAboveParserLimit(t *testing.T) {
+	scheduledAt := time.Date(2026, 10, 18, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
+	oversized, _ := driveSnapshotFile("file-large", "too-large.xlsx", "2026-10-18T09:00:00-03:00", nil)
+	oversized.Size = xlsxstream.MaxFileBytes + 1
+	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{"": {Files: []googledrive.File{oversized}}}}
+	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{}}
+	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true, PendingFiles: 1}}
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, t.TempDir(), testNuvemPagoFolderID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := syncer.SyncDaily(context.Background(), scheduledAt)
+	if !errors.Is(err, googledrive.ErrDailySyncIncomplete) || result.Status != "PARTIAL" || result.FuturePending != 1 {
+		t.Fatalf("daily import result=%+v error=%v", result, err)
+	}
+	if importer.pendingCalls != 1 || importer.recorded.UnsupportedFiles != 1 || len(stager.calls) != 0 {
+		t.Fatalf("pending=%+v stage calls=%#v; oversized workbook must stay pending without download", importer.recorded, stager.calls)
 	}
 }
 

@@ -324,6 +324,21 @@ type GoogleDriveFileVersion struct {
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
+// Bounded per-folder traversal state for an approved Drive tree. Only descendants discovered directly from an already approved folder are added; page tokens are private worker state.
+type GoogleDriveSyncFolder struct {
+	ConnectionID   pgtype.UUID `json:"connection_id"`
+	Resource       string      `json:"resource"`
+	CorrelationID  pgtype.UUID `json:"correlation_id"`
+	RootFolderID   string      `json:"root_folder_id"`
+	FolderID       string      `json:"folder_id"`
+	ParentFolderID *string     `json:"parent_folder_id"`
+	Depth          int16       `json:"depth"`
+	Status         string      `json:"status"`
+	// Sensitive Google Drive pagination token for this folder. Read and write access is restricted to the worker runtime role.
+	NextPageToken string             `json:"next_page_token"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
 // Bounded file metadata pages for one Drive scan. The page token and payload are checkpointed together and removed only after atomic snapshot publication; file contents are never stored here.
 type GoogleDriveSyncPageCheckpoint struct {
 	ConnectionID  pgtype.UUID `json:"connection_id"`
@@ -341,6 +356,9 @@ type GoogleDriveSyncPageCheckpoint struct {
 	// Potentially sensitive file metadata, bounded to 1 MiB per page. Access is restricted to the worker runtime role and rows are deleted after publication or when superseded.
 	Payload        []byte             `json:"payload"`
 	CheckpointedAt pgtype.Timestamptz `json:"checkpointed_at"`
+	// The authorized folder whose direct children produced this metadata page; null is reserved for legacy checkpoints that are discarded before a new tree scan.
+	ListingFolderID *string `json:"listing_folder_id"`
+	RootFolderID    *string `json:"root_folder_id"`
 }
 
 type IntegrationConnection struct {

@@ -4128,3 +4128,13 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - BK-039 permanece em 50%: esta correção fecha uma proteção da configuração, mas ainda faltam autenticação e configuração reais do Drive, execução contínua e homologação. O projeto segue com 127 tarefas, 7 concluídas, 20 em andamento e 100 não iniciadas; progresso estimado de 11,8%, com 88,2% restante.
 - A confirmação de identidade do Google Cloud Console continua pendente. Nenhuma conta técnica foi criada, nenhuma permissão de pasta foi concedida e nenhum arquivo foi importado nesta etapa.
 - Evidência: `docs/evidence/GOOGLE-DRIVE-PROTECTED-FOLDER-CONFIG-2026-10-19.md`.
+
+### Recuperação do agendamento diário do Drive após reinício — 19/10/2026
+
+- A revisão de BK-039 encontrou uma diferença: o worker recuperava uma execução diária do Bling depois de iniciar após as 09:30, mas o Drive esperava até o dia seguinte. Isso contrariava o catch-up após suspensão/desligamento previsto na ADR-001.
+- O worker agora recupera, na inicialização após as 09:30, a execução agendada daquele dia, usando o mesmo horário e a identidade idempotente da data. A rotina normal continua agendada para 09:30. O importador mantém arquivos modificados depois do corte como pendentes até a execução seguinte, conforme decisão aprovada.
+- Os testes finais `go test -count=1 ./cmd/worker ./internal/scheduler` passaram. `scripts/verify.ps1` passou nesta execução, incluindo testes Go, vet, govulncheck, migrações, SQLC, scan de segredos, verificações do instalador, lint, typecheck, 33 testes de interface, build e `npm audit`. A CI do commit desta correção aguarda o push.
+- A inspeção também confirmou que o instalador atual inclui o binário do worker, mas não registra nem inicia o serviço Windows; portanto, a execução diária ainda não está garantida após fechar o protótipo ou reiniciar a máquina. A evidência anterior desse bloqueio está em `docs/evidence/THREAT-MODEL-INITIAL-2026-10-11.md`.
+- BK-039 permanece em 50% até existir serviço persistente validado, identidade/credencial Google provisionada, leitura real das três pastas e homologação; a paginação real do Bling também segue pendente. A contagem continua em 127 tarefas, 7 concluídas, 20 em andamento e 100 não iniciadas; média estimada do projeto de 11,8% concluído e 88,2% restante.
+- Nenhuma tela aprovada, regra financeira ou dado de origem foi alterado.
+- Evidência: `docs/evidence/DAILY-GOOGLE-DRIVE-CATCH-UP-2026-10-19.md`.

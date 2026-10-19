@@ -42,18 +42,32 @@ func TestRunDailyGoogleDriveSyncRejectsMissingAndPartialSources(t *testing.T) {
 	}
 }
 
-func TestDailyGoogleDriveMissedRunWaitsUntilNextBrasiliaSchedule(t *testing.T) {
+func TestDailyGoogleDriveCatchUpUsesConfiguredBrasiliaSchedule(t *testing.T) {
 	schedule, err := scheduler.NewSaoPaulo0930()
 	if err != nil {
 		t.Fatal(err)
 	}
-	startedAfterRun := time.Date(2026, 10, 18, 14, 15, 0, 0, time.UTC)
-	nextRun, err := schedule.NextRun(startedAfterRun)
-	if err != nil {
-		t.Fatal(err)
+	location := time.FixedZone("UTC-3", -3*60*60)
+	beforeRun := time.Date(2026, 10, 18, 9, 29, 59, 0, location)
+	syncer := &fakeDailyGoogleDriveSyncer{result: googledrive.DailyFileInventorySyncResult{Status: "SUCCESS", FoldersRead: 3}}
+	if _, _, due, err := runDailyGoogleDriveCatchUp(context.Background(), syncer, beforeRun); due || err != nil || syncer.calls != 0 {
+		t.Fatalf("Drive catch-up before schedule due=%v error=%v calls=%d; want no run", due, err, syncer.calls)
 	}
-	if got, want := nextRun.Format(time.RFC3339), "2026-10-19T09:30:00-03:00"; got != want {
-		t.Fatalf("next Drive run after missed schedule = %s, want %s", got, want)
+	if _, _, due, err := runDailyGoogleDriveCatchUp(context.Background(), syncer, time.Time{}); due || err != nil || syncer.calls != 0 {
+		t.Fatalf("Drive catch-up with zero time due=%v error=%v calls=%d; want no run", due, err, syncer.calls)
+	}
+	startedAfterRun := time.Date(2026, 10, 18, 14, 15, 0, 0, time.UTC)
+	_, scheduledAt, due, err := runDailyGoogleDriveCatchUp(context.Background(), syncer, startedAfterRun)
+	if err != nil || !due || syncer.calls != 1 || !syncer.scheduledAt.Equal(scheduledAt) || scheduledAt.Format(time.RFC3339) != "2026-10-18T09:30:00-03:00" {
+		t.Fatalf("Drive catch-up = %s due=%v error=%v calls=%d; want one run at 2026-10-18T09:30:00-03:00", scheduledAt.Format(time.RFC3339), due, err, syncer.calls)
+	}
+	previousSchedule, err := previousGoogleDriveSchedule(scheduledAt)
+	if err != nil || previousSchedule.Format(time.RFC3339) != "2026-10-17T09:30:00-03:00" {
+		t.Fatalf("catch-up file cutoff = %s error=%v; want previous day at 09:30", previousSchedule.Format(time.RFC3339), err)
+	}
+	nextRun, err := schedule.NextRun(startedAfterRun)
+	if err != nil || nextRun.Format(time.RFC3339) != "2026-10-19T09:30:00-03:00" {
+		t.Fatalf("next regular Drive run = %s error=%v; want 2026-10-19T09:30:00-03:00", nextRun.Format(time.RFC3339), err)
 	}
 }
 

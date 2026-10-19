@@ -28,6 +28,13 @@ func startDailyGoogleDriveSchedule(ctx context.Context, syncer dailyGoogleDriveS
 			return
 		}
 		logger.Info("daily Google Drive inventory schedule started", slog.String("time_zone", scheduler.SaoPauloTimeZone), slog.Int("hour", scheduler.DailySyncHour), slog.Int("minute", scheduler.DailySyncMinute))
+		if result, scheduledAt, due, syncErr := runDailyGoogleDriveCatchUp(ctx, syncer, time.Now()); due {
+			if syncErr != nil {
+				logger.Warn("daily Google Drive recovery did not complete", dailyGoogleDriveResultLogFields(scheduledAt, result, syncErr)...)
+			} else {
+				logDailyGoogleDriveSuccess(logger, scheduledAt, result)
+			}
+		}
 		err = schedule.Run(ctx, func(runCtx context.Context, scheduledAt time.Time) error {
 			result, syncErr := runDailyGoogleDriveSync(runCtx, syncer, scheduledAt)
 			if syncErr != nil {
@@ -44,6 +51,29 @@ func startDailyGoogleDriveSchedule(ctx context.Context, syncer dailyGoogleDriveS
 		}
 	}()
 	return done
+}
+
+func runDailyGoogleDriveCatchUp(ctx context.Context, syncer dailyGoogleDriveSyncer, now time.Time) (googledrive.DailyFileInventorySyncResult, time.Time, bool, error) {
+	scheduledAt, due := dailyGoogleDriveCatchUpAt(now)
+	if !due {
+		return googledrive.DailyFileInventorySyncResult{}, scheduledAt, false, nil
+	}
+	result, err := runDailyGoogleDriveSync(ctx, syncer, scheduledAt)
+	return result, scheduledAt, true, err
+}
+
+func dailyGoogleDriveCatchUpAt(now time.Time) (time.Time, bool) {
+	if now.IsZero() {
+		return time.Time{}, false
+	}
+	location, err := time.LoadLocation(scheduler.SaoPauloTimeZone)
+	if err != nil {
+		return time.Time{}, false
+	}
+	local := now.In(location)
+	year, month, day := local.Date()
+	scheduledAt := time.Date(year, month, day, scheduler.DailySyncHour, scheduler.DailySyncMinute, 0, 0, location)
+	return scheduledAt, !local.Before(scheduledAt)
 }
 
 func runDailyGoogleDriveSync(ctx context.Context, syncer dailyGoogleDriveSyncer, scheduledAt time.Time) (googledrive.DailyFileInventorySyncResult, error) {

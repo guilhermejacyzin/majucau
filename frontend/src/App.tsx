@@ -208,6 +208,7 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
   const [saveResult, setSaveResult] = useState<(BlingConfigResult | NuvemshopConfigResult) | null>(null)
   const [blingClientID, setBlingClientID] = useState('')
   const [blingRedirectURI, setBlingRedirectURI] = useState('')
+  const [blingSecretConfigured, setBlingSecretConfigured] = useState(false)
   const [blingConfigTouched, setBlingConfigTouched] = useState(false)
   const [oauthBusy, setOauthBusy] = useState(false)
   const [oauthSessionId, setOauthSessionId] = useState('')
@@ -230,6 +231,7 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
         if (!result.error_code) {
           setBlingClientID(result.client_id ?? '')
           setBlingRedirectURI(result.redirect_uri ?? '')
+          setBlingSecretConfigured(result.secret_configured)
         }
       } else {
         setSaveResult(await nuvemshopConfig.save({ app_id: String(form.get('nuvem-app-id') ?? ''), redirect_uri: String(form.get('nuvem-redirect') ?? ''), client_secret: String(form.get('nuvem-secret') ?? '') }))
@@ -244,9 +246,12 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
     if (integration.key !== 'bling') return undefined
     let active = true
     void blingConfig.load().then((result) => {
-      if (!active || blingConfigTouched || result.error_code) return
-      setBlingClientID(result.client_id ?? '')
-      setBlingRedirectURI(result.redirect_uri ?? '')
+      if (!active || result.error_code) return
+      setBlingSecretConfigured(result.secret_configured)
+      if (!blingConfigTouched) {
+        setBlingClientID(result.client_id ?? '')
+        setBlingRedirectURI(result.redirect_uri ?? '')
+      }
     })
     return () => { active = false }
   }, [blingConfig, blingConfigTouched, integration.key])
@@ -291,7 +296,7 @@ function IntegrationCard({ integration, bootstrap, blingConfig, nuvemshopConfig,
   return <article className={`integration-card integration-${integration.key}`}>
     <div className="integration-header"><div className="integration-mark">{integration.key === 'bling' ? 'B' : integration.key === 'nuvemshop' ? 'N' : 'P'}</div><div><h2>{integration.name}</h2><p>{integration.description}</p></div><Tooltip id={integration.key === 'nuvempago' ? 'nuvempago.availability' : 'integration.connectionStatus'}><span className={`connection-status status-${displayKind}`}><span className="status-dot" />{displayLabel}</span></Tooltip></div>
     {integration.fields.length > 0 ? <form onSubmit={(event) => void submit(event)} autoComplete="off" className="integration-form">
-      <div className="field-grid">{integration.fields.map((field) => <div className="field" key={field.id}><label htmlFor={field.id}>{field.label} <Tooltip id={field.tooltip}><span className="help-dot">?</span></Tooltip></label><Tooltip id="field.value"><input id={field.id} name={field.id} type={field.type ?? 'text'} autoComplete={field.type === 'password' ? 'new-password' : 'off'} placeholder={field.placeholder} {...(field.id === 'bling-client-id' ? { value: blingClientID, onChange: (event: ChangeEvent<HTMLInputElement>) => { setBlingConfigTouched(true); setBlingClientID(event.target.value) } } : field.id === 'bling-redirect' ? { value: blingRedirectURI, onChange: (event: ChangeEvent<HTMLInputElement>) => { setBlingConfigTouched(true); setBlingRedirectURI(event.target.value) } } : {})} /></Tooltip></div>)}</div>
+      <div className="field-grid">{integration.fields.map((field) => <div className="field" key={field.id}><label htmlFor={field.id}>{field.label} <Tooltip id={field.tooltip}><span className="help-dot">?</span></Tooltip></label><Tooltip id="field.value"><input id={field.id} name={field.id} type={field.type ?? 'text'} autoComplete={field.type === 'password' ? 'new-password' : 'off'} placeholder={field.id === 'bling-secret' ? (blingSecretConfigured ? field.placeholder : 'Informe o segredo do app') : field.placeholder} {...(field.id === 'bling-client-id' ? { value: blingClientID, onChange: (event: ChangeEvent<HTMLInputElement>) => { setBlingConfigTouched(true); setBlingClientID(event.target.value) } } : field.id === 'bling-redirect' ? { value: blingRedirectURI, onChange: (event: ChangeEvent<HTMLInputElement>) => { setBlingConfigTouched(true); setBlingRedirectURI(event.target.value) } } : {})} /></Tooltip></div>)}</div>
       <div className="integration-meta"><span>Permissões: <strong>{displayStatus === 'CONNECTED' ? 'leitura autorizada' : 'aguardando autorização'}</strong></span><span>Última tentativa: <strong>{formatBootstrapTime(liveStatus?.last_attempt_at)}</strong></span><span>Último sucesso: <strong>{formatBootstrapTime(liveStatus?.last_success_at)}</strong></span></div>
       <p className="integration-disabled-note">Salvar configuração grava o secret no cofre Windows; autorização e sincronização continuam separadas e não são iniciadas automaticamente.</p>
       {saveResult && <div className={saveResult.error_code ? 'folder-import-error' : 'folder-import-result'} role="status"><strong>{saveResult.error_code ?? 'Configuração salva'}</strong><span>{saveResult.message ?? 'Os dados públicos foram registrados e o segredo foi protegido no worker.'}</span></div>}

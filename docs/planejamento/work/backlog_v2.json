@@ -1286,7 +1286,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "78%: leitura de receber, pagar e movimentações de caixa com GET limitado; OAuth local via callback HTTPS, state e DPAPI. /caixas usa parâmetros documentados e limite local. Sem metadados, continua após páginas curtas e trata data: [] como marcador provisório de término. Falta confirmar esse comportamento na conta real, integrar/persistir caixa, homologar categorias/campos, retomar cursor incremental e concluir sincronização real. Evidência: docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md.",
+    "evidence": "78%: GET/OAuth/DPAPI implementados. Fim desconhecido falha com segurança e preserva snapshot/cursor. Ainda faltam Client Secret real, autorização e integração dos dados aos relatórios.",
     "weight": 1,
     "dependencies": [
       "BK-040",

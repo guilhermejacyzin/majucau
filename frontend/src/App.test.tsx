@@ -187,6 +187,7 @@ describe('shell financeiro', () => {
     expect(await screen.findByText('Configuração salva')).toBeInTheDocument()
     expect(screen.queryByText('secret-only-in-request')).not.toBeInTheDocument()
     expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveValue('')
+    expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveAttribute('placeholder', '••••••••••••')
     expect(screen.getByLabelText(/Client ID/)).toHaveValue('client-123')
     expect(screen.getAllByLabelText(/Redirect URI/)[0]).toHaveValue('https://app.example.test/callback')
   })
@@ -215,6 +216,18 @@ describe('shell financeiro', () => {
     expect(await screen.findByLabelText(/Client ID/)).toHaveValue('saved-client-id')
     expect(screen.getAllByLabelText(/Redirect URI/)[0]).toHaveValue('https://app.example.test/callback')
     expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveValue('')
+    expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveAttribute('placeholder', '••••••••••••')
+  })
+
+  it('informa que o segredo do aplicativo Bling ainda precisa ser configurado', async () => {
+    const blingConfigAdapter: BlingConfigAdapter = {
+      load: async () => ({ client_id: '', redirect_uri: '', secret_configured: false, status: 'NOT_CONFIGURED' }),
+      save: async () => ({ secret_configured: false }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingConfigAdapter={blingConfigAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await userEvent.click(screen.getByRole('button', { name: 'Integrações' }))
+    expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveAttribute('placeholder', 'Informe o segredo do app')
   })
 
   it('limpa o Client Secret da Nuvemshop e mantém os campos públicos', async () => {

@@ -56,7 +56,7 @@ export const tooltipCatalog = {
   'dialog.cancel': 'Fecha esta janela sem executar uma ação.',
   'dialog.continue': 'A ação está indisponível enquanto a conexão com o worker não existir.',
   'bling.clientId': 'Identificador público do aplicativo cadastrado no Bling.',
-  'bling.clientSecret': 'Chave secreta do aplicativo Bling. Ela é protegida no Windows e não volta a ser exibida depois de salva.',
+  'bling.clientSecret': 'Chave secreta do aplicativo cadastrado no Bling. Não é a senha usada para entrar no site. Ela é protegida no Windows e não volta a ser exibida depois de salva.',
   'bling.redirectUri': 'Endereço registrado no Bling para concluir a autorização.',
   'bling.connect': 'Abre o Bling no navegador para autorizar a leitura dos dados.',
   'bling.test': 'Verifica a autorização com uma leitura pequena, sem alterar dados no Bling.',

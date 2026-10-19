@@ -4,7 +4,11 @@ package installer
 
 import "errors"
 
-var ErrWorkerServiceUnsupported = errors.New("Windows worker service management is unsupported on this platform")
+var (
+	ErrWorkerServiceUnsupported = errors.New("Windows worker service management is unsupported on this platform")
+	ErrWorkerServiceConfig      = errors.New("worker service configuration is invalid")
+	ErrWorkerServiceState       = errors.New("worker service state transition failed")
+)
 
 type WorkerServiceOptions struct {
 	InstallDir string

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -158,6 +159,26 @@ func TestWorkerServiceCommandsRejectMissingArgumentsWithStableContract(t *testin
 			}
 			if bytes.Contains(output.Bytes(), []byte(os.TempDir())) {
 				t.Fatalf("service response leaked a local path: %s", output.String())
+			}
+		})
+	}
+}
+
+func TestWorkerServiceInstallErrorCodeIsStableAndSanitized(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want string
+	}{
+		{name: "lock", err: installer.ErrInstallerLockFailed, want: "INSTALL_LOCK_FAILED"},
+		{name: "state", err: installer.ErrWorkerServiceState, want: "WORKER_SERVICE_STATE_FAILED"},
+		{name: "configuration", err: installer.ErrWorkerServiceConfig, want: "WORKER_SERVICE_CONFIG_INVALID"},
+		{name: "unknown", err: errors.New(`failure at C:\private\path`), want: "WORKER_SERVICE_INSTALL_FAILED"},
+	}
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			if got := workerServiceInstallErrorCode(test.err); got != test.want {
+				t.Fatalf("workerServiceInstallErrorCode() = %q, want %q", got, test.want)
 			}
 		})
 	}

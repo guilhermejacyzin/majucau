@@ -72,7 +72,27 @@ try {
         '--worker-path', $testWorker, '--data-dir', $dataRoot
     )
     if ($install.status -ne 'SERVICE_REGISTERED_AND_RUNNING' -or $install.exit_code -ne 0) {
-        throw 'O serviço não foi registrado e iniciado.'
+        $diagnostics = [ordered]@{
+            installer = $install
+            service = $null
+            recent_service_events = @()
+        }
+        $serviceInfo = Get-CimInstance -ClassName Win32_Service -Filter "Name='MajucauWorker'" -ErrorAction SilentlyContinue
+        if ($null -ne $serviceInfo) {
+            $diagnostics.service = $serviceInfo | Select-Object State, Status, StartName, ExitCode, ServiceSpecificExitCode
+        }
+        try {
+            $diagnostics.recent_service_events = @(
+                Get-WinEvent -FilterHashtable @{
+                    LogName = 'System'
+                    ProviderName = 'Service Control Manager'
+                    StartTime = (Get-Date).AddMinutes(-3)
+                } -MaxEvents 30 -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Message -match 'MajucauWorker' } |
+                    Select-Object -First 3 TimeCreated, Id, LevelDisplayName, Message
+            )
+        } catch { }
+        throw "O serviço não foi registrado e iniciado: $($diagnostics | ConvertTo-Json -Depth 5 -Compress)"
     }
     $service = Get-Service -Name 'MajucauWorker' -ErrorAction Stop
     if ($service.Status -ne 'Running') { throw "Estado do worker inesperado: $($service.Status)." }

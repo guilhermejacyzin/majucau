@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"io"
 	"os"
@@ -84,9 +85,22 @@ func runInstallWorkerService(args []string, output io.Writer) int {
 		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_INSTALL_FAILED", ExitCode: installer.ExitInternal, ErrorCode: "INVALID_ARGUMENT"})
 	}
 	if err := installer.InstallOrUpdateWorkerService(installer.WorkerServiceOptions{InstallDir: *installDir, WorkerPath: *workerPath, DataDir: *dataDir}); err != nil {
-		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_INSTALL_FAILED", ExitCode: installer.ExitBlocked, ErrorCode: "WORKER_SERVICE_INSTALL_FAILED"})
+		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_INSTALL_FAILED", ExitCode: installer.ExitBlocked, ErrorCode: workerServiceInstallErrorCode(err)})
 	}
 	return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_REGISTERED_AND_RUNNING", ExitCode: installer.ExitReady})
+}
+
+func workerServiceInstallErrorCode(err error) string {
+	switch {
+	case errors.Is(err, installer.ErrInstallerLockFailed):
+		return "INSTALL_LOCK_FAILED"
+	case errors.Is(err, installer.ErrWorkerServiceState):
+		return "WORKER_SERVICE_STATE_FAILED"
+	case errors.Is(err, installer.ErrWorkerServiceConfig):
+		return "WORKER_SERVICE_CONFIG_INVALID"
+	default:
+		return "WORKER_SERVICE_INSTALL_FAILED"
+	}
 }
 
 func runRemoveWorkerService(args []string, output io.Writer) int {

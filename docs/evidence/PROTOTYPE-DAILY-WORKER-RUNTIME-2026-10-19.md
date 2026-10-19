@@ -25,3 +25,4 @@ Não foram alteradas telas aprovadas, regras financeiras, configuração do serv
 - A captura anterior com campos vazios e pontos mascarados não comprova que o segredo estava salvo; ela foi feita antes da sessão atual do protótipo. Nenhuma tela ou regra financeira foi alterada nesta conferência.
 - O status real permanece `NOT_CONFIGURED` até que o Client Secret do aplicativo seja salvo no Majucau e o OAuth seja autorizado.
 - Às 08:47, `npm run test` passou com 33 testes em 3 arquivos; `go test ./internal/integrations/bling ./cmd/worker` também passou. Esses testes verificam o comportamento local e a resposta segura quando falta configuração; não autorizam a conta nem comprovam chamadas reais ao Bling.
+- Às 08:50, `go test ./internal/integrations/googledrive ./cmd/worker` passou. Ele valida os testes locais do leitor do Drive e worker, sem usar a conta financeira, ler arquivos reais ou confirmar acesso à identidade técnica.

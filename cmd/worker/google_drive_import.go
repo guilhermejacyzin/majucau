@@ -19,6 +19,7 @@ import (
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/jsonstream"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
+	"majucau.local/financial-intelligence/internal/integrations/xlsstream"
 	"majucau.local/financial-intelligence/internal/integrations/xlsxstream"
 	"majucau.local/financial-intelligence/internal/scheduler"
 	"majucau.local/financial-intelligence/internal/securetemp"
@@ -35,6 +36,7 @@ var (
 	errDriveFutureFileMismatch     = errors.New("staged Drive source does not match its approved inventory metadata")
 	errDriveFutureInvalidTSV       = errors.New("Nuvem Pago TSV structure is invalid or exceeds safety limits")
 	errDriveFutureInvalidJSON      = errors.New("Nuvem Pago JSON structure is invalid or exceeds safety limits")
+	errDriveFutureInvalidXLS       = errors.New("Nuvem Pago XLS structure is invalid or exceeds safety limits")
 )
 
 type dailyDriveInventoryService interface {
@@ -191,20 +193,21 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 			isCSV := strings.EqualFold(extension, ".csv")
 			isTSV := strings.EqualFold(extension, ".tsv")
 			isJSON := strings.EqualFold(extension, ".json")
+			isXLS := strings.EqualFold(extension, ".xls")
 			isXLSX := strings.EqualFold(extension, ".xlsx")
-			if !isCSV && !isTSV && !isJSON && !isXLSX {
+			if !isCSV && !isTSV && !isJSON && !isXLS && !isXLSX {
 				if !addPendingCount(&pending.UnsupportedFiles, 1) {
 					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 				}
 				continue
 			}
-			if !file.SizeKnown || file.Size < 0 || isXLSX && file.Size == 0 || stagedSequence == int64(^uint64(0)>>1) {
+			if !file.SizeKnown || file.Size < 0 || ((isXLS || isXLSX) && file.Size == 0) || stagedSequence == int64(^uint64(0)>>1) {
 				if !addPendingCount(&pending.InvalidMetadataFiles, 1) {
 					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 				}
 				continue
 			}
-			if isXLSX && file.Size > xlsxstream.MaxFileBytes || isJSON && file.Size > jsonstream.MaxFileBytes {
+			if (isXLS && file.Size > xlsstream.MaxFileBytes) || (isXLSX && file.Size > xlsxstream.MaxFileBytes) || (isJSON && file.Size > jsonstream.MaxFileBytes) {
 				if !addPendingCount(&pending.UnsupportedFiles, 1) {
 					return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 				}
@@ -220,6 +223,8 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 				stagedExtension = ".tsv"
 			} else if isJSON {
 				stagedExtension = ".json"
+			} else if isXLS {
+				stagedExtension = ".xls"
 			} else if isXLSX {
 				stagedExtension = ".xlsx"
 			}
@@ -239,13 +244,16 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 					if isJSON {
 						return validateDriveJSON(stageCtx, stagedPath, size)
 					}
+					if isXLS {
+						return validateDriveXLS(stageCtx, stagedPath, size)
+					}
 					if !isXLSX {
 						return nil
 					}
 					return validateDriveXLSX(stageCtx, stagedPath, workspace.Path(), size)
 				},
 			)
-			if isXLSX || isTSV || isJSON {
+			if isXLS || isXLSX || isTSV || isJSON {
 				if cleanupErr := securetemp.RemoveFile(stagedPath); cleanupErr != nil {
 					return nuvempago.FutureImportResult{}, cleanupErr
 				}
@@ -259,6 +267,12 @@ func (s *dailyGoogleDriveImportSyncer) importFutureSnapshot(ctx context.Context,
 					return nuvempago.FutureImportResult{}, stageErr
 				}
 				if isXLSX && (errors.Is(stageErr, xlsxstream.ErrInvalidWorkbook) || errors.Is(stageErr, xlsxstream.ErrLimitExceeded)) {
+					if !addPendingCount(&pending.UnsupportedFiles, 1) {
+						return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
+					}
+					continue
+				}
+				if isXLS && (errors.Is(stageErr, errDriveFutureInvalidXLS) || errors.Is(stageErr, xlsstream.ErrInvalidWorkbook) || errors.Is(stageErr, xlsstream.ErrLimitExceeded)) {
 					if !addPendingCount(&pending.UnsupportedFiles, 1) {
 						return nuvempago.FutureImportResult{}, nuvempago.ErrFuturePendingInvalid
 					}
@@ -317,6 +331,21 @@ func validateDriveXLSX(ctx context.Context, path, tempParent string, size int64)
 	}
 	_, parseErr := xlsxstream.Stream(ctx, file, size, tempParent, func(context.Context, xlsxstream.Row) error { return nil })
 	closeErr := file.Close()
+	return errors.Join(parseErr, closeErr)
+}
+
+// validateDriveXLS reads BIFF8 worksheets one bounded row at a time. Rows are
+// discarded because no approved financial contract maps this format yet.
+func validateDriveXLS(ctx context.Context, path string, size int64) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return errDriveFutureStaging
+	}
+	_, parseErr := xlsstream.Stream(ctx, file, size, func(context.Context, xlsstream.Row) error { return nil })
+	closeErr := file.Close()
+	if errors.Is(parseErr, xlsstream.ErrInvalidWorkbook) || errors.Is(parseErr, xlsstream.ErrLimitExceeded) {
+		parseErr = errors.Join(errDriveFutureInvalidXLS, parseErr)
+	}
 	return errors.Join(parseErr, closeErr)
 }
 

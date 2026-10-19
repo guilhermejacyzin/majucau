@@ -18,6 +18,7 @@ import (
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/jsonstream"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
+	"majucau.local/financial-intelligence/internal/integrations/xlsstream"
 	"majucau.local/financial-intelligence/internal/integrations/xlsxstream"
 )
 
@@ -144,6 +145,8 @@ func driveSnapshotFile(id, name, modifiedAt string, content []byte) (googledrive
 	mimeType := "text/csv"
 	if strings.EqualFold(filepath.Ext(name), ".xlsx") {
 		mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	} else if strings.EqualFold(filepath.Ext(name), ".xls") {
+		mimeType = "application/vnd.ms-excel"
 	} else if strings.EqualFold(filepath.Ext(name), ".json") {
 		mimeType = "application/json"
 	}
@@ -186,6 +189,42 @@ func TestDailyDrivePipelineValidatesJSONInStreamingAndKeepsItPending(t *testing.
 	}
 	if entries, readErr := os.ReadDir(tempRoot); readErr != nil || len(entries) != 0 {
 		t.Fatalf("JSON staging artifacts remain: entries=%v error=%v", entries, readErr)
+	}
+}
+
+func TestDailyDrivePipelineValidatesXLSInStreamingAndKeepsItPending(t *testing.T) {
+	scheduledAt := time.Date(2026, 10, 19, 9, 30, 0, 0, time.FixedZone("UTC-3", -3*60*60))
+	validBytes, err := os.ReadFile(filepath.Join("..", "..", "internal", "integrations", "xlsstream", "testdata", "simple.xls"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	valid, validFixture := driveSnapshotFile("file-xls-valid", "receipts.xls", "2026-10-19T09:10:00-03:00", validBytes)
+	invalid, invalidFixture := driveSnapshotFile("file-xls-invalid", "broken.xls", "2026-10-19T09:11:00-03:00", []byte("not an XLS workbook"))
+	oversized, _ := driveSnapshotFile("file-xls-large", "large.xls", "2026-10-19T09:12:00-03:00", nil)
+	oversized.Size = xlsstream.MaxFileBytes + 1
+	reader := &fakeDriveSnapshotReader{pages: map[string]googledrive.FileInventorySnapshotPage{"": {Files: []googledrive.File{valid, invalid, oversized}}}}
+	stager := &fakeDrivePrivateStager{files: map[string]driveStageFixture{
+		valid.ID: validFixture, invalid.ID: invalidFixture,
+	}}
+	importer := &fakeStagedFutureImporter{pendingResult: nuvempago.FutureImportResult{Status: "PARTIAL", SourceMissing: true, PendingFiles: 3}}
+	tempRoot := t.TempDir()
+	syncer, err := newDailyGoogleDriveImportSyncer(fakeDailyDriveInventory{result: successfulDriveInventory("SUCCESS", 0)}, reader, stager, importer, tempRoot, testNuvemPagoFolderID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := syncer.SyncDaily(context.Background(), scheduledAt)
+	if !errors.Is(err, googledrive.ErrDailySyncIncomplete) || result.Status != "PARTIAL" || result.FutureStatus != "PARTIAL" || result.FuturePending != 3 {
+		t.Fatalf("XLS import result=%+v error=%v", result, err)
+	}
+	if importer.pendingCalls != 1 || importer.importCalls != 0 || importer.recorded.UnsupportedFiles != 3 || !importer.recorded.NoCompatibleCSV {
+		t.Fatalf("XLS must remain pending without creating records: importer=%+v", importer)
+	}
+	if len(stager.calls) != 2 || stager.calls[0] != valid.ID || stager.calls[1] != invalid.ID {
+		t.Fatalf("XLS staging calls=%#v", stager.calls)
+	}
+	if entries, readErr := os.ReadDir(tempRoot); readErr != nil || len(entries) != 0 {
+		t.Fatalf("XLS staging artifacts remain: entries=%v error=%v", entries, readErr)
 	}
 }
 

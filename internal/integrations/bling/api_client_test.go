@@ -80,17 +80,20 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 	}
 }
 
-func TestListReceivablesDoesNotAssumeEmptyDataMeansCompletion(t *testing.T) {
+func TestListReceivablesInfersCompletionFromDocumentedPageSize(t *testing.T) {
 	for _, test := range []struct {
 		name        string
 		body        string
+		limit       int
 		wantKnown   bool
 		wantHasNext bool
 	}{
-		{name: "non-empty page continues conservatively", body: `{"data":[{"id":321}]}`, wantKnown: true, wantHasNext: true},
-		{name: "short page continues conservatively", body: `{"data":[{"id":321}],"pagination":{"page":1,"limit":100}}`, wantKnown: true, wantHasNext: true},
-		{name: "empty page without metadata is ambiguous", body: `{"data":[]}`},
-		{name: "explicit terminal marker confirms completion", body: `{"data":[],"pagination":{"hasNext":false}}`, wantKnown: true},
+		{name: "short data-only page is terminal", body: `{"data":[{"id":321}]}`, limit: 2, wantKnown: true, wantHasNext: false},
+		{name: "full data-only page continues", body: `{"data":[{"id":321}]}`, limit: 1, wantKnown: true, wantHasNext: true},
+		{name: "empty data-only page is terminal", body: `{"data":[]}`, limit: 1, wantKnown: true, wantHasNext: false},
+		{name: "short page with server limit is terminal", body: `{"data":[{"id":321}],"pagination":{"page":1,"limit":2}}`, limit: 2, wantKnown: true, wantHasNext: false},
+		{name: "full page with server limit continues", body: `{"data":[{"id":321}],"pagination":{"page":1,"limit":1}}`, limit: 1, wantKnown: true, wantHasNext: true},
+		{name: "explicit terminal marker confirms completion", body: `{"data":[],"pagination":{"hasNext":false}}`, limit: 1, wantKnown: true, wantHasNext: false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -101,7 +104,7 @@ func TestListReceivablesDoesNotAssumeEmptyDataMeansCompletion(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			page, err := client.ListReceivables(context.Background(), ReceivablesFilter{})
+			page, err := client.ListReceivables(context.Background(), ReceivablesFilter{Limit: test.limit})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -109,6 +112,20 @@ func TestListReceivablesDoesNotAssumeEmptyDataMeansCompletion(t *testing.T) {
 				t.Fatalf("pagination = known:%t next:%t, want known:%t next:%t", page.HasNextKnown, page.HasNext, test.wantKnown, test.wantHasNext)
 			}
 		})
+	}
+}
+
+func TestListReceivablesRejectsDataLargerThanEffectivePageSize(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data":[{"id":1},{"id":2}],"pagination":{"page":1,"limit":1}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.ListReceivables(context.Background(), ReceivablesFilter{Limit: 1}); !errors.Is(err, ErrBlingAPISchemaMismatch) {
+		t.Fatalf("oversized page error = %v, want schema mismatch", err)
 	}
 }
 

@@ -214,9 +214,10 @@ type BlingReceivablesPage struct {
 	Total   *int
 	HasNext bool
 	// HasNextKnown is true when API metadata establishes continuation or
-	// completion, or when a non-empty page is conservatively followed by
-	// another request. An empty page without explicit metadata is not proof of
-	// completion and remains unknown.
+	// completion, when a documented page size allows completion to be inferred
+	// from the number of returned records, or when a non-empty page without a
+	// known size is conservatively followed. Empty data with no known size is
+	// still ambiguous.
 	HasNextKnown bool
 }
 
@@ -386,6 +387,9 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 			if *envelope.Pagination.Limit < 1 || *envelope.Pagination.Limit > BlingMaxPageSize {
 				return BlingReceivablesPage{}, fmt.Errorf("%w: pagination limit is outside the supported range", ErrBlingAPISchemaMismatch)
 			}
+			if requestedLimitKnown && *envelope.Pagination.Limit > filter.Limit {
+				return BlingReceivablesPage{}, fmt.Errorf("%w: response page limit exceeds the requested limit", ErrBlingAPISchemaMismatch)
+			}
 			page.Limit = *envelope.Pagination.Limit
 			pageLimitKnown = true
 		}
@@ -404,12 +408,19 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 			page.HasNextKnown = true
 		}
 	}
+	if pageLimitKnown && page.Limit > 0 && len(page.Records) > page.Limit {
+		return BlingReceivablesPage{}, fmt.Errorf("%w: response data exceeds the page limit", ErrBlingAPISchemaMismatch)
+	}
 	if !page.HasNextKnown {
-		// Bling's public list schema does not document a last-page marker.
-		// Continue after every non-empty page, including short pages. An empty
-		// page without explicit pagination metadata is ambiguous; the sync layer
-		// must fail closed instead of publishing a possibly incomplete snapshot.
-		if len(page.Records) > 0 {
+		// The documented list responses expose a data array, while pagina/limite
+		// (default 100) identify the page window. A full page may have another
+		// page; a short page is terminal. This also handles an empty page after
+		// an exact multiple of the page size. If no page size is documented or
+		// returned, keep the conservative behavior and reject an empty result.
+		if pageLimitKnown && page.Limit > 0 {
+			page.HasNext = len(page.Records) == page.Limit
+			page.HasNextKnown = true
+		} else if len(page.Records) > 0 {
 			page.HasNext = true
 			page.HasNextKnown = true
 		}

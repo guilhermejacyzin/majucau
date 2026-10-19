@@ -42,3 +42,22 @@ O teste de integração PostgreSQL também cobre esse caso: falha auditada, curs
 inalterado, retrato anterior preservado e apenas páginas confirmadas mantidas
 em checkpoint. Os testes unitários, `go vet`, integração PostgreSQL e CI
 Windows/PostgreSQL passaram no commit `aff28d3`: [execução 39173420786](https://github.com/guilhermejacyzin/majucau/actions/runs/39173420786). A conta real continua sem homologação.
+
+## Regra atual de término — 18/10/2026
+
+Após rechecagem da OpenAPI oficial, o adapter usa o limite efetivo nas listas
+que documentam `pagina` e `limite`: página cheia continua; página curta ou
+vazia encerra. Isso permite ler a resposta publicada como `data[]`, sem exigir
+metadados que o schema não promete. Respostas maiores que o limite são
+rejeitadas. Em rotas sem limite efetivo nem metadados de paginação, o caso
+vazio permanece desconhecido e continua falhando sem publicar o retrato ou
+avançar o cursor. A implementação foi validada com testes locais; a conexão e
+homologação da conta Majucau ainda estão pendentes.
+
+Validação local registrada nesta execução: `go test -count=1 ./internal/integrations/bling`,
+conferência do backlog e o build completo Windows passaram. O build também
+verificou frontend, segurança, migrations e pacote portátil. O `govulncheck` não
+encontrou vulnerabilidades alcançáveis; registrou um alerta numa parte OpenPGP
+não utilizada da dependência `x/crypto`. A conta real ainda não foi autorizada:
+a senha de entrada do Bling não substitui o Client Secret do aplicativo, que
+deve ser cadastrado diretamente no Majucau.

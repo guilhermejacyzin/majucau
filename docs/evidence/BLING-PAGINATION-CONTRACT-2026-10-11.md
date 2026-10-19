@@ -111,3 +111,41 @@ Fontes oficiais consultadas em 13/10/2026:
 - O lote grava também a página vazia que confirmou o término. Ao concluir, aposenta páginas antigas que excediam esse término por meio da função aprovada de rollover RAW. Aposentadoria, páginas atuais, cursor e sucesso estão na mesma transação; qualquer erro reverte a troca inteira.
 - A suíte local do adapter e `go vet ./internal/integrations/bling` passaram. O teste PostgreSQL foi ampliado para cobrir falha/rollback, aposentadoria de páginas antigas e replay idempotente, mas foi pulado localmente porque `MAJUCAU_TEST_DATABASE_URL` não está configurado; a execução em banco descartável aguarda a CI deste commit. Nenhum dado real do Bling foi consultado nesta implementação.
 - A decisão do Drive também fica registrada: o serviço Go será o leitor somente de leitura das três pastas autorizadas; o Site continua responsável apenas pelo OAuth do Bling. Provisionamento de identidade, IDs reais e autorização do Google Drive ainda não foram feitos.
+
+## Regra atual de término por limite documentado — 18/10/2026
+
+A referência OpenAPI consultada hoje confirma que `GET /contas/receber` e
+`GET /contas/pagar` são paginados com `pagina` e `limite` (padrão 100), e que
+suas respostas HTTP 200 expõem `data[]`, sem objeto de paginação obrigatório.
+As páginas oficiais de boas práticas explicam que `pagina` percorre a lista e
+`limite` define quantos registros vêm em cada chamada. O adapter tinha exigido
+`hasNext`/`total`, campos que o contrato público não promete; por isso uma
+resposta normal `{"data":[...]}` podia terminar em `BLING_API_PAGINATION_UNKNOWN`.
+
+As boas práticas e o FAQ também descrevem o limite padrão de até 100 registros
+por chamada e a navegação por `pagina`, mas não incluem um campo obrigatório
+que informe o número total de páginas. O uso do limite pedido para concluir
+páginas curtas é uma inferência operacional do contrato de paginação; por isso,
+continua condicionado à homologação com a conta Majucau antes de declarar a
+integração real aprovada.
+
+Regra aplicada para uma lista quando o tamanho da página é conhecido:
+
+- quantidade retornada igual ao limite efetivo: consultar a próxima página;
+- quantidade menor que o limite (inclusive zero): encerrar a lista;
+- quantidade acima do limite: rejeitar a resposta por divergência de schema;
+- metadados explícitos válidos continuam sendo aceitos;
+- se a rota não documentar limite e não devolver metadados, página vazia
+  continua ambígua e a carga falha sem substituir o retrato anterior.
+
+O código continua a guardar páginas RAW em checkpoints e só publica o novo
+retrato/cursor quando a leitura termina. Os testes do adapter cobrem
+resposta data-only curta, cheia e vazia, mais metadados e resposta acima do
+limite. A consulta autenticada e a homologação da conta real ainda não foram
+feitas; esta implementação não altera tela nem regra financeira.
+
+Fontes oficiais:
+
+- [OpenAPI do Bling v3 — GET /contas/receber e GET /contas/pagar](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json)
+- [Boas práticas — paginação](https://developer.bling.com.br/boas-praticas)
+- [Perguntas frequentes — 100 registros e paginação](https://developer.bling.com.br/perguntas-frequentes)

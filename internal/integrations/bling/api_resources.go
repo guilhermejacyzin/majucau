@@ -116,9 +116,9 @@ func (c *BlingAPIClient) WalkFinancialCategoryHierarchy(ctx context.Context, id 
 }
 
 // ListFinancialCategories reads one bounded page of Bling income/expense
-// categories. Without explicit pagination metadata, every non-empty page is
-// followed. An empty page without metadata leaves completion unknown; callers
-// must check HasNextKnown before treating the list as complete.
+// categories. When explicit next-page metadata is absent, the documented
+// requested page size determines completion: full pages continue and short
+// pages are terminal.
 func (c *BlingAPIClient) ListFinancialCategories(ctx context.Context, page, limit int) (BlingReceivablesPage, error) {
 	return c.listFinancialResource(ctx, "categorias/receitas-despesas", ReceivablesFilter{Page: page, Limit: limit})
 }
@@ -173,8 +173,8 @@ func (f CashMovementsFilter) normalized() (CashMovementsFilter, error) {
 
 // ListCashMovements reads one bounded page from GET /caixas and preserves
 // each item as RAW JSON. MaxRecords is an application-side cap, not a query
-// parameter. HasNextKnown must be checked before a caller treats the result as
-// complete; a short page is not proof that pagination ended.
+// parameter. If the response also omits a page size or explicit page metadata,
+// HasNextKnown stays false for an empty page; callers must fail closed.
 func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovementsFilter) (BlingAPIResourcePage, error) {
 	if c == nil || c.baseURL == nil || c.httpClient == nil {
 		return BlingReceivablesPage{}, ErrBlingAPIConfiguration

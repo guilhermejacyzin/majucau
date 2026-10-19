@@ -180,7 +180,7 @@ O teste Windows de `internal/securetemp` agora verifica que falhas simultâneas 
 
 ## Revisão da paginação Bling e dependências de CAPEX — 2026-10-12
 
-A OpenAPI pública atual de `GET /caixas` confirma os filtros de data e categoria, mas não documenta o parâmetro `limite` nem um total de páginas ou indicador de próxima página. O adapter lê uma página limitada e preserva os dados brutos, mas não pode declarar a sincronização completa com segurança até homologar o fim da lista. O endpoint de categorias também não documenta metadados para identificar a última página. A execução real da conta ainda depende de acesso ao Bling no navegador.
+A OpenAPI pública atual de `GET /caixas` confirma os filtros de data e categoria, mas não documenta o parâmetro `limite`; sem limite efetivo nem metadados, essa rota ainda não pode comprovar o fim da lista. Em `GET /contas/receber`, `GET /contas/pagar` e listas de categorias, a referência documenta `pagina` e `limite` (padrão 100), e o schema publicado responde com `data[]`. O adapter agora considera página cheia como continuação e página menor que o limite como final; se o tamanho não for conhecido, mantém falha segura. A consulta autenticada da conta real e a homologação continuam pendentes.
 
 Fonte primária: [OpenAPI oficial do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json).
 
@@ -207,3 +207,7 @@ O salvamento de Client ID e Redirect URI não depende mais do segredo: se ele ai
 ## Registro Nuvem Pago necessário para importar projeções — 2026-10-18
 
 O serviço de importação de recebimentos futuros depende de um `integration_connections` do Nuvem Pago. A migration `000008` cria esse registro em estado `UNAVAILABLE`: arquivos aprovados podem ser processados sem declarar a API do provedor conectada. O teste PostgreSQL exige esse estado após as migrations e executa a importação/idempotência já existente. A conexão OAuth não foi criada e nenhuma regra financeira mudou. A CI/PostgreSQL é necessária para provar o caminho ponta a ponta; não foi usado banco local de dados financeiros. Evidência: `docs/evidence/NUVEM-PAGO-IMPORT-CONNECTION-SEED-2026-10-18.md`.
+
+## Paginação do Bling conforme o contrato documentado — 2026-10-18
+
+As listas paginadas de Contas a Receber e a Pagar publicam `pagina`, `limite` e uma resposta `data[]`, sem exigir um objeto de metadados. O adapter agora continua quando recebe uma página cheia e encerra ao receber menos registros que o limite efetivo; valida que a resposta não exceda esse limite. Metadados explícitos válidos continuam sendo aceitos. Para `/caixas`, que não documenta `limite`, página vazia sem metadados continua falhando com segurança. Testes do adapter cobrem página curta, cheia, vazia, limite incompatível e dados acima do limite. A chamada autenticada e a homologação da conta Majucau seguem pendentes. Fontes: OpenAPI oficial e [boas práticas de paginação](https://developer.bling.com.br/boas-praticas). Evidência: `docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.

@@ -19,7 +19,7 @@ Nenhuma tela, regra financeira, conteúdo do Drive ou permissão de conta foi al
 - `go test -count=1 ./cmd/worker ./internal/scheduler`: passou após a implementação final.
 - `scripts/verify.ps1`: passou nesta execução; incluiu a suíte Go, `go vet`, `govulncheck`, limites de arquitetura, checksums de migração, geração SQL determinística, scan de segredos, verificações do instalador, ESLint, TypeScript, 33 testes de interface, build e `npm audit` sem vulnerabilidades.
 - `govulncheck` não encontrou vulnerabilidades alcançáveis no código; reportou uma vulnerabilidade em módulo requerido que o código não parece chamar, já acompanhada em `docs/evidence/DEPENDENCY-SECURITY-REMEDIATION-2026-10-10.md`.
-- A CI do GitHub para o commit desta correção ainda precisa ser executada após o push.
+- A CI do GitHub executou no run [#39220194655](https://github.com/guilhermejacyzin/majucau/actions/runs/39220194655). A verificação do backlog passou; o workflow de mudanças falhou somente na validação da mensagem do commit, pois os campos percentuais incluíam texto adicional. Como `CONTRIBUTING.md` proíbe reescrever histórico publicado, a correção de governança será enviada em um commit separado com os percentuais no formato exato exigido. A CI desse novo commit ainda precisa passar.
 - Não foi feita sincronização real do Drive: a conta técnica não foi provisionada. A execução real com a pasta, o serviço Windows persistente e a homologação continuam pendentes.
 
 ## Próximo bloqueio de BK-039

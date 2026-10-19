@@ -39,6 +39,7 @@ O código pode preparar a autorização com os campos públicos, mas não pode i
 Na conferência seguinte, o executável do instalador ainda tinha data de 18/10, enquanto os demais arquivos do protótipo haviam sido reconstruídos em 19/10. Para que o pacote instalado possa receber as correções mais recentes de configuração, executei novamente `scripts/build-windows.ps1 -Installer` a partir do commit `bf401d0c22ab7ce852413775e13feb4f1d48f837`.
 
 - O build completo terminou com sucesso: testes Go, lint, tipos, 33 testes frontend, `go vet`, `govulncheck`, npm audit, checksums das migrations, geração SQLC e validação/empacotamento NSIS passaram.
+- Após o envio, a CI `39213017306` passou em `detect-changes` e `verify-backlog`; Windows e PostgreSQL foram corretamente ignorados por o commit conter somente documentação.
 - O instalador foi reconstruído em `artifacts/windows/Majucau Financial Intelligence-amd64-installer.exe` em 19/10/2026 às 03:54 (horário local), com 20.435.058 bytes e SHA-256 `D8FEBAF37D3C7C51C1F3558DCE2744B1DA2F04030DA2E4121D3A8FB3E01A9A27`.
 - A assinatura Authenticode do instalador é `NotSigned`; ele continua destinado ao protótipo/homologação local e não à produção.
 - O novo pacote foi gerado, mas não foi instalado nesta execução. Portanto, ainda não confirmei qual versão está aberta na máquina nem se a tela corrigida já está visível nela.

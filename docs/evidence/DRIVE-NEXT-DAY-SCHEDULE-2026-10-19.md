@@ -16,7 +16,7 @@ Não alterei os formatos, contratos, regras financeiras, dados, telas ou permiss
 - Os testes da agenda diária continuam cobrindo a borda de 09:30 e a execução no fuso aprovado.
 - `go test ./cmd/worker ./internal/scheduler -count=1` — aprovado.
 - `scripts/verify.ps1` — aprovado integralmente: Go, `go vet`, `govulncheck`, migrations, SQLC determinístico, scan de secrets, verificações do instalador, lint, TypeScript, 33 testes frontend, build e `npm audit` sem vulnerabilidades.
-- A CI do GitHub será registrada depois do envio desta correção; ela ainda não foi confirmada.
+- CI do GitHub: [execução 39214216651](https://github.com/guilhermejacyzin/majucau/actions/runs/39214216651) aprovada nos quatro trabalhos: `detect-changes`, `verify-backlog`, `verify-postgres` e `verify-windows`. O Windows executou testes, análises, build do aplicativo/worker, criação e smoke do instalador, pacote portátil e consolidação dos outputs.
 - BK-039 permanece em 50% (50% restante): a correção fecha um desvio de horário, mas ainda faltam integração real do Drive, leitura persistente, operação contínua e homologação. A média do projeto permanece em 11,8% concluído (88,2% restante).
 
 ## Limpeza

@@ -56,6 +56,12 @@ func TestDailyGoogleDriveCatchUpUsesConfiguredBrasiliaSchedule(t *testing.T) {
 	if _, _, due, err := runDailyGoogleDriveCatchUp(context.Background(), syncer, time.Time{}); due || err != nil || syncer.calls != 0 {
 		t.Fatalf("Drive catch-up with zero time due=%v error=%v calls=%d; want no run", due, err, syncer.calls)
 	}
+	atSchedule := time.Date(2026, 10, 18, 9, 30, 0, 0, location)
+	boundarySyncer := &fakeDailyGoogleDriveSyncer{result: googledrive.DailyFileInventorySyncResult{Status: "SUCCESS", FoldersRead: 3}}
+	_, boundaryScheduledAt, due, err := runDailyGoogleDriveCatchUp(context.Background(), boundarySyncer, atSchedule)
+	if err != nil || !due || boundarySyncer.calls != 1 || !boundaryScheduledAt.Equal(atSchedule) {
+		t.Fatalf("Drive catch-up at schedule = %s due=%v error=%v calls=%d; want one run at 2026-10-18T09:30:00-03:00", boundaryScheduledAt.Format(time.RFC3339), due, err, boundarySyncer.calls)
+	}
 	startedAfterRun := time.Date(2026, 10, 18, 14, 15, 0, 0, time.UTC)
 	_, scheduledAt, due, err := runDailyGoogleDriveCatchUp(context.Background(), syncer, startedAfterRun)
 	if err != nil || !due || syncer.calls != 1 || !syncer.scheduledAt.Equal(scheduledAt) || scheduledAt.Format(time.RFC3339) != "2026-10-18T09:30:00-03:00" {

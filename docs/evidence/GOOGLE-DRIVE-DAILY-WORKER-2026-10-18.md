@@ -16,7 +16,7 @@ Variáveis esperadas para configurar o worker:
 
 ## Limites desta etapa
 
-Esta rotina atualiza somente o inventário de metadados. Ela ainda não baixa os conteúdos para staging, não interpreta CSV/TSV/JSON/XLS/XLSX e não publica fatos financeiros. Ainda não validamos se os arquivos reais são encontrados. O tratamento de arquivo que chega depois das 09:30 também continua pendente no pipeline de importação.
+Esta rotina atualiza somente o inventário de metadados. O adapter agora também oferece um componente de download para estágio privado, mas a rotina diária ainda não o chama. CSV/TSV/JSON/XLS/XLSX não são interpretados e nenhum fato financeiro é publicado. Ainda não validamos se os arquivos reais são encontrados. O tratamento de arquivo que chega depois das 09:30 também continua pendente no pipeline de importação.
 
 Não foram usados dados financeiros reais, credenciais, IDs reais ou conexão com o Drive. Nenhuma tela aprovada ou regra financeira foi alterada.
 
@@ -30,4 +30,4 @@ Não foram usados dados financeiros reais, credenciais, IDs reais ou conexão co
 
 ## Próximo passo
 
-Conectar o download em fluxo ao staging seguro do Majucau, preservando hash, limites de tamanho, verificação da versão do arquivo, limpeza garantida e publicação atômica. Depois, ligar cada formato ao contrato homologado. Excel permanece pendente até existir parser seguro e amostras autorizadas.
+Ligar o estágio privado ao pipeline depois que os contratos das três pastas forem homologados. O componente valida hash, limites, versão do arquivo e limpeza; a integração ao worker, os parsers e a homologação continuam pendentes. Excel permanece pendente até existir parser seguro e amostras autorizadas.

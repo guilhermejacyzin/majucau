@@ -1322,7 +1322,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "56% (estimativa): além do núcleo Go de listagem/download GET em fluxo, dos checkpoints persistentes por página, versões de metadados e publicação atômica já registrados, o worker agora agenda o inventário diário das três pastas às 09:30 quando IDs e credencial DPAPI estão configurados. Correlação estável por dia/pasta, falha independente por origem e provisionamento inicial NOT_CONFIGURED estão implementados. A suíte completa Go, go vet, go mod verify, SQLC determinístico, checksum das migrations, verificação do backlog e limites Go passaram localmente. O teste PostgreSQL local foi ignorado porque não havia banco descartável configurado; a aplicação da migration e a CI completa aguardam o push. Ainda faltam credenciais/IDs reais, download para staging, contratos e importação real; XLS/XLSX continuam sem parser seguro. Evidências: docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md e docs/evidence/GOOGLE-DRIVE-DAILY-WORKER-2026-10-18.md.",
+    "evidence": "58% (estimativa): o núcleo GET do Drive lista e baixa em fluxo, mantém checkpoints/páginas e versões de metadados e publica o inventário de forma atômica. O worker agenda a listagem diária das três pastas às 09:30 quando IDs e credencial DPAPI estão configurados, com correlação estável por dia/pasta e falha independente por origem. Nesta atualização, `WithPrivateStage` grava o download verificado numa pasta temporária privada, expõe o conteúdo como `io.Reader` ao callback e limpa o temporário ao terminar; retry substitui bytes incompletos e erros de limpeza preservam caminho tipado sem expô-lo na mensagem comum. `go test ./... -count=1`, `go vet ./...`, `go mod verify`, verificação do backlog, limites Go e `git diff --check` passaram no Windows. O novo estágio ainda não foi ligado ao worker ou a importadores homologados. Ainda faltam contratos e amostras, credenciais/IDs reais, importação e homologação; XLS/XLSX continuam sem parser seguro. Evidências: docs/evidence/GOOGLE-DRIVE-READ-ADAPTER-2026-10-18.md, docs/evidence/GOOGLE-DRIVE-DAILY-WORKER-2026-10-18.md e docs/evidence/GOOGLE-DRIVE-PRIVATE-STAGING-2026-10-18.md.",
     "weight": 1,
     "dependencies": [
       "BK-010",
@@ -1330,7 +1330,7 @@
       "BK-038",
       "BK-024"
     ],
-    "progress": 0.56
+    "progress": 0.58
   },
   {
     "key": "parsers",

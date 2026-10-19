@@ -407,12 +407,12 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### Estado atual do backlog — 18/10/2026
 
-- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (78%), BK-042 (56%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
+- O backlog mantém 127 tarefas: 7 concluídas, 19 em andamento e 101 não iniciadas. Em andamento: BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (78%), BK-042 (58%), BK-043 (40%), BK-056 (5%), BK-067 (25%) e BK-102 (1%).
 - Pela média simples do rastreador, soma dos percentuais das tarefas ÷ 127 = 11,6%; restam 88,4%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 - O prazo global continua sem previsão confiável. A conexão real do Bling e várias tarefas de negócio, homologação e produção seguem pendentes.
 - BK-027 está em 40%: a CI 38383732688 confirmou a allowlist exata do papel do worker em PostgreSQL descartável. Ainda faltam conferir o provisionamento do instalador, a configuração de produção e uma VM limpa; nenhuma permissão foi aplicada ao banco local. Evidência: `docs/evidence/WORKER-RUNTIME-DATABASE-PRIVILEGES-2026-10-13.md`.
 - BK-024 permanece em 35%: a revisão de streaming corrigiu no Site o formulário protegido do Client Secret, limitando a leitura a 8 KiB, e publicou a versão 16. Os 28 testes do Site passaram. Isso fecha esse ponto específico; ACLs em VM limpa, carga/memória e outros riscos continuam pendentes, então a estimativa da tarefa de segurança geral não muda. Evidências: `docs/evidence/DATA-STREAMING-STATIC-AUDIT-2026-10-11.md` e `docs/evidence/DRIVE-STREAMING-IMPORT-2026-10-13.md`.
-- Os arquivos diários do Drive também incluem XLS e XLSX; ainda são recusados até existir parser seguro. A arquitetura ADR-003 de leitura pelo serviço Go com identidade técnica restrita foi aprovada em 18/10/2026. O núcleo GET/streaming do adapter e o provedor de token foram implementados e testados localmente; provisionamento, wiring, importação real, parser e homologação dos formatos continuam pendentes em BK-042/BK-043.
+- Os arquivos diários do Drive também incluem XLS e XLSX; ainda são recusados até existir parser seguro. A arquitetura ADR-003 de leitura pelo serviço Go com identidade técnica restrita foi aprovada em 18/10/2026. O núcleo GET/streaming, o provedor de token, o inventário diário e o estágio temporário privado com callback em fluxo foram implementados e testados localmente. O staging ainda não está ligado ao worker/importadores; provisionamento, importação real, parser e homologação dos formatos continuam pendentes em BK-042/BK-043.
 - A CI [39168729070](https://github.com/guilhermejacyzin/majucau/actions/runs/39168729070), no commit `f1cc8e2`, concluiu com sucesso nos quatro jobs: verificação de mensagens, backlog, Windows e PostgreSQL. Ela valida a serialização concorrente e a aposentadoria em blocos das páginas RAW já descritas nesta seção; não confirma OAuth, fim de paginação ou sincronização com a conta real Bling.
 
 ### Proteção de valores indisponíveis na Visão Executiva — 18/10/2026
@@ -1515,7 +1515,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-042 — Implementar leitura das três estruturas autorizadas do Google Drive
 
-**Situação:** Em andamento. **Evolução:** 56% (estimativa: o núcleo de listagem paginada e download GET em fluxo, restrito por IDs de pasta, os checkpoints persistentes por página, as versões de metadados, a publicação atômica do inventário e o provedor de token de service account via cofre foram implementados localmente; nesta execução, o inventário também foi ligado ao worker diário às 09:30, com correlação idempotente por pasta/data e falhas independentes. Testes locais do worker e do adapter passaram. Ainda não há credencial/IDs reais, download para staging, contratos de arquivos, importação ou homologação; XLS/XLSX continuam pendentes). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 58% (estimativa: o núcleo de listagem paginada e download GET em fluxo, restrito por IDs de pasta, checkpoints persistentes, versões de metadados, publicação atômica do inventário, provedor de token via cofre e agendamento diário às 09:30 estão implementados localmente. O download agora pode ser entregue ao processador por `io.Reader` a partir de estágio temporário privado; o retry descarta bytes parciais e o workspace é removido no fim. O novo estágio ainda não está ligado ao worker ou aos importadores. Não há credencial/IDs reais, contrato homologado ou importação; XLS/XLSX continuam pendentes). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Importar arquivos preservando integralmente a pasta compartilhada.
 
@@ -1560,6 +1560,14 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A role do worker recebeu somente as operações necessárias para checkpoints temporários e metadados; a verificação de privilégios inclui a allowlist exata. Adicionada cobertura unitária e de integração PostgreSQL para retomada, replay, falha, snapshot antigo e publicação sem arquivo ausente.
 - `go test ./internal/integrations/... -count=1`, `go vet ./internal/integrations/...`, `sqlc generate -f database/sqlc.yaml`, checksums das migrations e `git diff --check` passaram localmente. A CI completa `39177839087` passou em Windows, PostgreSQL, backlog e detecção de mudanças; o teste de integração PostgreSQL foi executado no banco descartável da CI, pois não há DSN descartável configurada localmente.
 - BK-042 sobe de 47% para 52% estimados. Ainda faltam ligar o serviço ao worker diário e ao staging seguro, provisionar identidade/IDs reais, importar conteúdo e validar os contratos CSV/TSV/JSON e o parser XLS/XLSX, além de homologação. Nenhuma tela aprovada nem regra financeira foi alterada.
+
+#### Estágio privado temporário com leitura em fluxo — 18/10/2026
+
+- `Client.WithPrivateStage` grava o conteúdo em pasta privada de curta duração, valida o arquivo via `StreamFile` e só então entrega um `io.Reader` ao callback. Os nomes em disco são aleatórios e o nome externo não é usado como caminho.
+- A escrita fica em arquivo parcial; o rename local torna o conteúdo visível só depois da verificação. O cliente aplica retry GET, o sink redefine os bytes entre tentativas e o teste confirma que a resposta parcial não chega ao callback.
+- `go test ./internal/integrations/googledrive -count=1` passou em Windows. Cobertura nova inclui sucesso, erro do consumidor, limite e limpeza do temporário. O callback precisa persistir de forma atômica/idempotente; este componente não define contratos nem publica fatos.
+- BK-042 avança de 56% para 58% estimados (42% restantes). O estágio ainda não está conectado ao worker/importadores; faltam contratos homologados, IDs/credencial reais, parsers, importação e homologação. Projeto: 11,6% estimado concluído e 88,4% restante. Não há prazo global confiável.
+- Nenhuma tela aprovada, regra financeira, arquivo real ou fato foi alterado. Evidência: `docs/evidence/GOOGLE-DRIVE-PRIVATE-STAGING-2026-10-18.md`.
 
 ### BK-043 — Implementar validação e interpretação dos arquivos
 

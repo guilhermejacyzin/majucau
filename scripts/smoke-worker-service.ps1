@@ -121,9 +121,9 @@ try {
     $parameterRules = @($parametersAcl.GetAccessRules($true, $false, [System.Security.Principal.SecurityIdentifier]))
     if ($parameterRules.Count -ne 3) { throw 'As permissões da configuração de identidade do serviço não são exatas.' }
     $expectedRegistryRights = @{}
-    $expectedRegistryRights[$serviceSid] = [int][Microsoft.Win32.RegistryRights]::ReadKey
-    $expectedRegistryRights['S-1-5-18'] = [int][Microsoft.Win32.RegistryRights]::FullControl
-    $expectedRegistryRights['S-1-5-32-544'] = [int][Microsoft.Win32.RegistryRights]::FullControl
+    $expectedRegistryRights[$serviceSid] = 0x00020019 # KEY_READ
+    $expectedRegistryRights['S-1-5-18'] = 0x000F003F # KEY_ALL_ACCESS
+    $expectedRegistryRights['S-1-5-32-544'] = 0x000F003F # KEY_ALL_ACCESS
     foreach ($rule in $parameterRules) {
         $sid = $rule.IdentityReference.Value
         if (-not $expectedRegistryRights.ContainsKey($sid) -or [int]$rule.RegistryRights -ne $expectedRegistryRights[$sid] -or $rule.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow) {

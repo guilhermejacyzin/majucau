@@ -46,4 +46,12 @@ Além desses pontos, há outras tarefas do backlog para concluir a operação, s
 
 ## Próximo passo
 
-Próximo passo: confirmar a CI PostgreSQL desta alteração; provisionar a identidade técnica somente leitura e fazer uma leitura real do Drive; então homologar os contratos antes de interpretar valores. Também falta concluir a autorização/homologação da paginação do Bling. As pastas vazias ficam pendentes conforme a decisão já aprovada. O backlog segue em 11,8% estimado; a homologação ainda não ocorreu.
+Próximo passo: concluir a confirmação de identidade solicitada pelo Google Cloud Console e verificar se já existe projeto/conta técnica para o Majucau. O mapa local das três pastas está preparado, fora do Git, para provisionamento posterior; a chave técnica ainda precisa ser criada ou localizada, autorizada apenas para leitura e gravada pelo fluxo DPAPI. Depois será necessário executar a primeira sincronização real e homologar as fontes. Também falta concluir a autorização/homologação da paginação do Bling. A CI #697 do último commit documental passou; isso não conclui BK-039. O backlog segue em 11,8% estimado; a homologação ainda não ocorreu.
+
+## Estado da meta e interrupções — 19/10/2026
+
+- A consulta persistida do Codex (`get_goal`) confirma que a meta continua **ativa**, sem orçamento máximo configurado. Não foi chamada nenhuma ação para pausar ou concluir a meta nesta continuação.
+- O histórico recente mostra encerramentos normais de turnos do chat, não encerramento da meta. Também registra esperas por CI e interrupções anteriores do Chrome quando o controle não conseguiu confirmar a URL da página. A sessão financeira do Drive foi aberta corretamente; a tentativa seguinte ao Google Cloud Console abriu uma confirmação de identidade e permanece pendente.
+- O histórico antigo menciona que uma meta anterior ficou pausada e depois foi recriada, mas não contém o evento nem o agente/ação que provocou a pausa. O estado atual do Goals expõe apenas o estado vigente, não o histórico de transições. Portanto, a causa exata daquela pausa antiga **não pode ser comprovada** pelos registros disponíveis; não será inventada.
+- O backlog foi contado novamente: 127 tarefas, 7 concluídas, 20 em andamento e 100 não iniciadas. BK-039 segue em 50%; o projeto permanece estimado em 11,8% concluído e 88,2% restante.
+- Em 19/10, confirmei no Chrome a conta `financeiro@majucau.com.br` e as três estruturas de pastas. Os IDs estão no arquivo local ignorado `artifacts/retained/google-drive-folder-ids.json`, registrado no inventário local. A validação encontrou três escopos distintos; nenhum ID, segredo ou arquivo financeiro foi adicionado ao Git.

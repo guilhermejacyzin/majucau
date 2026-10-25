@@ -296,6 +296,12 @@ func InstallOrUpdateWorkerService(options WorkerServiceOptions) (returnErr error
 // RemoveWorkerService stops and removes only the Majucau service whose image
 // is contained in installDir. Application data and protected secrets remain.
 func RemoveWorkerService(installDir string) (returnErr error) {
+	failureStage := "PATH_VALIDATION"
+	defer func() {
+		if returnErr != nil {
+			returnErr = workerServiceFailure{stage: failureStage, cause: returnErr}
+		}
+	}()
 	installDir, err := filepath.Abs(filepath.Clean(strings.TrimSpace(installDir)))
 	if err != nil || installDir == "." {
 		return ErrWorkerServiceConfig
@@ -304,16 +310,19 @@ func RemoveWorkerService(installDir string) (returnErr error) {
 	if programFiles == "" || !pathWithin(installDir, programFiles) || rejectReparsePath(installDir) != nil {
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "INSTALL_LOCK"
 	installLock, err := AcquireInstallLock(DefaultInstallLockName)
 	if err != nil {
 		return ErrInstallerLockFailed
 	}
 	defer func() { returnErr = errors.Join(returnErr, installLock.Release()) }()
+	failureStage = "CONNECT_SCM"
 	manager, err := mgr.Connect()
 	if err != nil {
 		return ErrWorkerServiceConfig
 	}
 	defer manager.Disconnect()
+	failureStage = "OPEN_SERVICE"
 	service, err := manager.OpenService(WorkerServiceName)
 	if errors.Is(err, windows.ERROR_SERVICE_DOES_NOT_EXIST) {
 		return nil
@@ -321,15 +330,18 @@ func RemoveWorkerService(installDir string) (returnErr error) {
 	if err != nil {
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "VALIDATE_SERVICE"
 	config, err := service.Config()
 	if err != nil || config.ServiceStartName != workerServiceAccount || config.SidType != windows.SERVICE_SID_TYPE_RESTRICTED || !workerServiceImageWithin(config.BinaryPathName, installDir) {
 		_ = service.Close()
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "STOP_SERVICE"
 	if err := stopWorkerService(service); err != nil {
 		_ = service.Close()
 		return ErrWorkerServiceState
 	}
+	failureStage = "DELETE_SERVICE"
 	if err := service.Delete(); err != nil {
 		_ = service.Close()
 		return ErrWorkerServiceConfig
@@ -337,6 +349,7 @@ func RemoveWorkerService(installDir string) (returnErr error) {
 	if err := service.Close(); err != nil {
 		return ErrWorkerServiceConfig
 	}
+	failureStage = "WAIT_FOR_DELETE"
 	deadline := time.Now().Add(workerServiceTimeout)
 	for time.Now().Before(deadline) {
 		probe, openErr := manager.OpenService(WorkerServiceName)

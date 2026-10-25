@@ -101,7 +101,7 @@ func runRemoveWorkerService(args []string, output io.Writer) int {
 		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_REMOVE_FAILED", ExitCode: installer.ExitInternal, ErrorCode: "INVALID_ARGUMENT"})
 	}
 	if err := installer.RemoveWorkerService(*installDir); err != nil {
-		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_REMOVE_FAILED", ExitCode: installer.ExitBlocked, ErrorCode: "WORKER_SERVICE_REMOVE_FAILED"})
+		return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_REMOVE_FAILED", ExitCode: installer.ExitBlocked, ErrorCode: installer.WorkerServiceFailureCode(err)})
 	}
 	return writeWorkerServiceResult(output, workerServiceResponse{SchemaVersion: "1.0", Status: "SERVICE_REMOVED", ExitCode: installer.ExitReady})
 }

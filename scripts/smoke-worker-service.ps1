@@ -134,7 +134,9 @@ try {
     if ($expectedRegistryRights.Count -ne 0) { throw 'Faltam permissões necessárias para o serviço ler sua configuração.' }
 
     $remove = Invoke-HelperJson @('remove-service', '--install-dir', $installRoot)
-    if ($remove.status -ne 'SERVICE_REMOVED' -or $remove.exit_code -ne 0) { throw 'O serviço não foi removido com sucesso.' }
+    if ($remove.status -ne 'SERVICE_REMOVED' -or $remove.exit_code -ne 0) {
+        throw "O serviço não foi removido (status=$($remove.status), etapa=$($remove.error_code), código=$($remove.exit_code))."
+    }
     $serviceRemoved = $null -eq (Get-Service -Name 'MajucauWorker' -ErrorAction SilentlyContinue)
     if (-not $serviceRemoved) { throw 'O serviço permaneceu registrado após a remoção.' }
     if (-not (Test-Path -LiteralPath (Join-Path $dataRoot 'WorkerSecrets') -PathType Container) -or -not (Test-Path -LiteralPath (Join-Path $dataRoot 'WorkerLogs') -PathType Container)) {

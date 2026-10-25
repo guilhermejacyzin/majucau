@@ -12,7 +12,9 @@ func TestDoRetriesReplaySafeGETWithinSharedLimit(t *testing.T) {
 	transient := errors.New("temporary")
 	calls := 0
 	var waits []time.Duration
-	value, err := Do(context.Background(), Policy{
+	counter := NewCounter()
+	ctx := WithCounter(context.Background(), counter)
+	value, err := Do(ctx, Policy{
 		Method:    http.MethodGet,
 		Retryable: func(err error) bool { return errors.Is(err, transient) },
 		Wait: func(_ context.Context, delay time.Duration) error {
@@ -35,6 +37,9 @@ func TestDoRetriesReplaySafeGETWithinSharedLimit(t *testing.T) {
 	}
 	if len(waits) != 2 || waits[0] != 300*time.Millisecond || waits[1] != 550*time.Millisecond {
 		t.Fatalf("waits = %v, want 300ms and 550ms", waits)
+	}
+	if counter.Count() != 2 {
+		t.Fatalf("retry count = %d, want two repeated requests", counter.Count())
 	}
 }
 
@@ -116,6 +121,8 @@ func TestDoStopsForCancelledContextBeforeRequest(t *testing.T) {
 
 func TestDoStopsWhenWaitIsCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
+	counter := NewCounter()
+	ctx = WithCounter(ctx, counter)
 	transient := errors.New("temporary")
 	calls := 0
 	_, err := Do(ctx, Policy{
@@ -131,6 +138,9 @@ func TestDoStopsWhenWaitIsCancelled(t *testing.T) {
 	})
 	if !errors.Is(err, context.Canceled) || calls != 1 {
 		t.Fatalf("Do() = %v, calls=%d; want cancellation after one request", err, calls)
+	}
+	if counter.Count() != 0 {
+		t.Fatalf("retry count = %d, want zero because the retry request never ran", counter.Count())
 	}
 }
 

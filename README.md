@@ -26,7 +26,7 @@ A screen de Integrações exibe esse tarifário como configuração/projeção i
 |---|---|
 | Desktop | Wails v2.13.0 |
 | Interface | React 19 + TypeScript + Vite |
-| Backend e worker | Go 1.26.9 |
+| Backend e worker | Go 1.26.10 |
 | Banco | PostgreSQL x64 — local na implementação atual; privado centralizado no alvo ADR-002 |
 | Acesso SQL | `pgx/v5` + código gerado por `sqlc` |
 | Segredos | Windows DPAPI sob a identidade do worker |
@@ -104,7 +104,7 @@ scripts/                 bootstrap, validação e build
 Antes de alterar o projeto, leia [Como contribuir](CONTRIBUTING.md),
 `AGENTS.md` e as decisões aprovadas no `G0-DECISION-REGISTER.md`.
 
-Pré-requisitos: Windows 10/11 x64, Go 1.26.9, Node.js 24.x, WebView2 Runtime e PostgreSQL descartável para testes reais de migration. O bootstrap instala Wails CLI 2.13.0, `sqlc` 1.31.1 e `govulncheck` 1.7.0 em `artifacts/tools/go/bin`; caches e temporários ficam sob `artifacts/cache/`.
+Pré-requisitos: Windows 10/11 x64, Go 1.26.10, Node.js 24.x, WebView2 Runtime e PostgreSQL descartável para testes reais de migration. O bootstrap instala Wails CLI 2.13.0, `sqlc` 1.31.1 e `govulncheck` 1.7.0 em `artifacts/tools/go/bin`; caches e temporários ficam sob `artifacts/cache/`.
 
 ```powershell
 ./scripts/bootstrap.ps1

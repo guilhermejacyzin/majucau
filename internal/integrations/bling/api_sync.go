@@ -18,6 +18,7 @@ import (
 	"majucau.local/financial-intelligence/database/gen"
 	"majucau.local/financial-intelligence/internal/dbtx"
 	"majucau.local/financial-intelligence/internal/domain"
+	"majucau.local/financial-intelligence/internal/integrations/httpretry"
 )
 
 const ReceivablesAPIResource = "contas.receber"
@@ -43,6 +44,7 @@ type APISyncResult struct {
 	RecordsRead  int
 	PagesCreated int
 	PagesUpdated int
+	RetryCount   int32
 	Status       string
 }
 
@@ -154,11 +156,14 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		return APISyncResult{}, fmt.Errorf("remove superseded Bling page checkpoints: %w", err)
 	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
+	retryCounter := httpretry.NewCounter()
+	ctx = httpretry.WithCounter(ctx, retryCounter)
 	if _, err := tx.Exec(ctx, "SAVEPOINT bling_api_sync_data"); err != nil {
 		return result, fmt.Errorf("create Bling API sync savepoint: %w", err)
 	}
 	fail := func(code string, cause error) (APISyncResult, error) {
 		result.Status = "FAILED"
+		result.RetryCount = retryCounter.Count()
 		return result, s.finishFailed(ctx, tx, queries, batch.ID, result, code, cause)
 	}
 	current := filter
@@ -258,8 +263,9 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	if err := queries.UpsertSyncCursor(ctx, database.UpsertSyncCursorParams{ConnectionID: connection.ID, Resource: s.resource, CursorValue: &cursorValue, WatermarkAt: watermark}); err != nil {
 		return fail("BLING_SYNC_CURSOR_FAILED", err)
 	}
+	result.RetryCount = retryCounter.Count()
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
-		ID: batch.ID, Status: "SUCCESS", RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated),
+		ID: batch.ID, Status: "SUCCESS", RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated), RetryCount: result.RetryCount,
 	}); err != nil {
 		return fail("BLING_SYNC_BATCH_FINISH_FAILED", err)
 	}
@@ -473,7 +479,7 @@ func (s *apiResourceSyncService) finishFailed(ctx context.Context, tx pgx.Tx, qu
 	message := code
 	if err := queries.FinishIntegrationSyncBatch(auditCtx, database.FinishIntegrationSyncBatchParams{
 		ID: batchID, Status: "FAILED", RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated),
-		ErrorCode: &code, ErrorMessageSanitized: &message,
+		RetryCount: result.RetryCount, ErrorCode: &code, ErrorMessageSanitized: &message,
 	}); err != nil {
 		return fmt.Errorf("%w: finish failed Bling sync batch: %v", cause, err)
 	}

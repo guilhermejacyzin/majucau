@@ -20,7 +20,8 @@ SET finished_at = clock_timestamp(),
     records_updated = $5,
     records_failed = $6,
     error_code = $7,
-    error_message_sanitized = $8
+    error_message_sanitized = $8,
+    retry_count = $9
 WHERE id = $1
 `
 
@@ -33,6 +34,7 @@ type FinishIntegrationSyncBatchParams struct {
 	RecordsFailed         int64       `json:"records_failed"`
 	ErrorCode             *string     `json:"error_code"`
 	ErrorMessageSanitized *string     `json:"error_message_sanitized"`
+	RetryCount            int32       `json:"retry_count"`
 }
 
 func (q *Queries) FinishIntegrationSyncBatch(ctx context.Context, arg FinishIntegrationSyncBatchParams) error {
@@ -45,6 +47,7 @@ func (q *Queries) FinishIntegrationSyncBatch(ctx context.Context, arg FinishInte
 		arg.RecordsFailed,
 		arg.ErrorCode,
 		arg.ErrorMessageSanitized,
+		arg.RetryCount,
 	)
 	return err
 }

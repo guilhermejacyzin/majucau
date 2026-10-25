@@ -91,7 +91,9 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 		mu.Lock()
 		currentPhase := phase
 		token := request.URL.Query().Get("pageToken")
-		pageCalls[fmt.Sprintf("%d:%s:%s", currentPhase, folderQuery, token)]++
+		callKey := fmt.Sprintf("%d:%s:%s", currentPhase, folderQuery, token)
+		pageCalls[callKey]++
+		requestNumber := pageCalls[callKey]
 		mu.Unlock()
 
 		writer.Header().Set("Content-Type", "application/json")
@@ -100,6 +102,10 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 			switch currentPhase {
 			case 1:
 				if token == "" {
+					if requestNumber == 1 {
+						writer.WriteHeader(http.StatusServiceUnavailable)
+						return
+					}
 					writeDriveFilePageMany(writer, "next-one", testDriveFile(fileID, "version-one", "1"), testDriveFolder(childFolderID, "folder-a"))
 					return
 				}
@@ -136,23 +142,28 @@ func TestFileInventorySyncResumesAndPublishesWholeSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create test Drive client: %v", err)
 	}
+	client.wait = func(ctx context.Context, _ time.Duration) error { return ctx.Err() }
 	service, err := NewFileInventorySyncService(pool, client)
 	if err != nil {
 		t.Fatalf("create inventory sync service: %v", err)
 	}
 
 	first, err := service.SyncFolder(ctx, scope, testFolderIDs[0], correlationOne)
-	if err != nil || first.Status != "SUCCESS" || first.PagesRead != 3 || first.FilesRead != 4 || first.FilesCreated != 4 || first.FilesUpdated != 0 {
+	if err != nil || first.Status != "SUCCESS" || first.PagesRead != 3 || first.FilesRead != 4 || first.FilesCreated != 4 || first.FilesUpdated != 0 || first.RetryCount != 1 {
 		t.Fatalf("initial snapshot = %#v, error=%v", first, err)
 	}
 	firstBatch := loadTestBatchID(t, ctx, pool, first.BatchID)
+	var persistedRetryCount int32
+	if err := pool.QueryRow(ctx, `SELECT retry_count FROM integration_sync_batches WHERE id = $1::uuid`, first.BatchID).Scan(&persistedRetryCount); err != nil || persistedRetryCount != 1 {
+		t.Fatalf("initial snapshot retry count = %d, error=%v; want one persisted HTTP retry", persistedRetryCount, err)
+	}
 	initialCursor, _, cursorExists := readTestCursor(t, ctx, pool, connectionID, resource)
 	if !cursorExists || initialCursor != first.BatchID {
 		t.Fatalf("initial cursor = %q, exists=%t; want batch %q", initialCursor, cursorExists, first.BatchID)
 	}
 
 	replayed, err := service.SyncFolder(ctx, scope, testFolderIDs[0], correlationOne)
-	if err != nil || !replayed.Skipped || replayed.BatchID != first.BatchID || callsFor("1:'folder-a' in parents and trashed = false:") != 1 || callsFor("1:'folder-a' in parents and trashed = false:next-one") != 1 {
+	if err != nil || !replayed.Skipped || replayed.BatchID != first.BatchID || callsFor("1:'folder-a' in parents and trashed = false:") != 2 || callsFor("1:'folder-a' in parents and trashed = false:next-one") != 1 {
 		t.Fatalf("completed retry = %#v, error=%v, calls=%v", replayed, err, pageCalls)
 	}
 

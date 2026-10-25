@@ -2,7 +2,7 @@ module majucau.local/financial-intelligence
 
 go 1.26.0
 
-toolchain go1.26.9
+toolchain go1.26.10
 
 ignore ./artifacts
 

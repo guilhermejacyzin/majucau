@@ -24,7 +24,8 @@ SET finished_at = clock_timestamp(),
     records_updated = $5,
     records_failed = $6,
     error_code = $7,
-    error_message_sanitized = $8
+    error_message_sanitized = $8,
+    retry_count = $9
 WHERE id = $1;
 
 -- name: UpsertReceipt :one

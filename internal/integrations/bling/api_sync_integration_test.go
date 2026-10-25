@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"os"
 	"sync"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/database/gen"
+	"majucau.local/financial-intelligence/internal/integrations/httpretry"
 )
 
 func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
@@ -91,6 +93,8 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	pageTwo := BlingReceivablesPage{Page: 2, Limit: 1, HasNext: false, HasNextKnown: true, Records: []json.RawMessage{json.RawMessage(`{"id":"page-two-new"}`)}}
 	unknownEmptyPage := BlingReceivablesPage{Page: 2, Limit: 1, HasNext: false, HasNextKnown: false, Records: []json.RawMessage{}}
 	pageTwoFailure := errors.New("injected page read failure")
+	transientPageFailure := errors.New("injected transient page request")
+	retryRequests := 0
 	failSecondPage := true
 	unknownPagination := false
 	pageOneCalls := 0
@@ -106,10 +110,24 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		maxPages:     3,
 		resource:     resource,
 		sourceEntity: sourceEntity,
-		list: func(_ context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+		list: func(requestCtx context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
 			switch filter.Page {
 			case 1:
 				pageOneCalls++
+				_, retryErr := httpretry.Do(requestCtx, httpretry.Policy{
+					Method:    http.MethodGet,
+					Retryable: func(err error) bool { return errors.Is(err, transientPageFailure) },
+					Wait:      func(context.Context, time.Duration) error { return nil },
+				}, func() (struct{}, error) {
+					retryRequests++
+					if retryRequests == 1 {
+						return struct{}{}, transientPageFailure
+					}
+					return struct{}{}, nil
+				})
+				if retryErr != nil {
+					return BlingReceivablesPage{}, retryErr
+				}
 				return pageOne, nil
 			case 2:
 				if failSecondPage {
@@ -129,18 +147,19 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if !errors.Is(err, pageTwoFailure) {
 		t.Fatalf("failed page sync error = %v, want injected read failure", err)
 	}
-	if failed.Status != "FAILED" || failed.BatchID == "" {
+	if failed.Status != "FAILED" || failed.BatchID == "" || failed.RetryCount != 1 || retryRequests != 2 {
 		t.Fatalf("failed sync result = %+v", failed)
 	}
 	var failedStatus, failedCode string
 	var failedRecordsRead int
+	var failedRetryCount int32
 	if err := pool.QueryRow(ctx, `
-		SELECT status, COALESCE(error_code, ''), records_read
-		FROM integration_sync_batches WHERE id = $1::uuid`, failed.BatchID).Scan(&failedStatus, &failedCode, &failedRecordsRead); err != nil {
+		SELECT status, COALESCE(error_code, ''), records_read, retry_count
+		FROM integration_sync_batches WHERE id = $1::uuid`, failed.BatchID).Scan(&failedStatus, &failedCode, &failedRecordsRead, &failedRetryCount); err != nil {
 		t.Fatalf("read persisted failed batch: %v", err)
 	}
-	if failedStatus != "FAILED" || failedCode != "BLING_API_READ_FAILED" || failedRecordsRead != 1 {
-		t.Fatalf("failed batch status/code/records = %q/%q/%d", failedStatus, failedCode, failedRecordsRead)
+	if failedStatus != "FAILED" || failedCode != "BLING_API_READ_FAILED" || failedRecordsRead != 1 || failedRetryCount != 1 {
+		t.Fatalf("failed batch status/code/records/retries = %q/%q/%d/%d", failedStatus, failedCode, failedRecordsRead, failedRetryCount)
 	}
 	var currentHash, cursor string
 	if err := pool.QueryRow(ctx, `
@@ -179,7 +198,7 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if err != nil {
 		t.Fatalf("successful paginated sync: %v", err)
 	}
-	if succeeded.Status != "SUCCESS" || succeeded.PagesRead != 2 || succeeded.RecordsRead != 2 {
+	if succeeded.Status != "SUCCESS" || succeeded.PagesRead != 2 || succeeded.RecordsRead != 2 || succeeded.RetryCount != 0 {
 		t.Fatalf("successful sync result = %+v", succeeded)
 	}
 	if pageOneCalls != 1 {

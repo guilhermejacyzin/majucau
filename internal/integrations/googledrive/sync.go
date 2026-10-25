@@ -19,6 +19,7 @@ import (
 
 	"majucau.local/financial-intelligence/database/gen"
 	"majucau.local/financial-intelligence/internal/dbtx"
+	"majucau.local/financial-intelligence/internal/integrations/httpretry"
 )
 
 const (
@@ -96,6 +97,7 @@ type FileInventorySyncResult struct {
 	FilesRead    int64
 	FilesCreated int64
 	FilesUpdated int64
+	RetryCount   int32
 	Skipped      bool
 }
 
@@ -284,6 +286,8 @@ func (s *FileInventorySyncService) SyncFolder(ctx context.Context, scope DriveFo
 	}
 	out.BatchID = batch.ID.String()
 	out.Status = "RUNNING"
+	retryCounter := httpretry.NewCounter()
+	ctx = httpretry.WithCounter(ctx, retryCounter)
 	if _, err := tx.Exec(ctx, "SAVEPOINT google_drive_sync_data"); err != nil {
 		return out, fmt.Errorf("create Google Drive sync savepoint: %w", err)
 	}
@@ -291,6 +295,7 @@ func (s *FileInventorySyncService) SyncFolder(ctx context.Context, scope DriveFo
 		out.Status = "FAILED"
 		out.FilesCreated = 0
 		out.FilesUpdated = 0
+		out.RetryCount = retryCounter.Count()
 		return out, s.finishFailed(ctx, tx, queries, batch.ID, out, code, cause)
 	}
 	if err := s.client.resetDescendants(folderID); err != nil {
@@ -386,8 +391,9 @@ func (s *FileInventorySyncService) SyncFolder(ctx context.Context, scope DriveFo
 		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`, connection.ID, resource, correlationID); err != nil {
 		return fail("GOOGLE_DRIVE_CHECKPOINT_CLEANUP_FAILED", err)
 	}
+	out.RetryCount = retryCounter.Count()
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
-		ID: batch.ID, Status: "SUCCESS", RecordsRead: out.FilesRead, RecordsCreated: out.FilesCreated, RecordsUpdated: out.FilesUpdated,
+		ID: batch.ID, Status: "SUCCESS", RecordsRead: out.FilesRead, RecordsCreated: out.FilesCreated, RecordsUpdated: out.FilesUpdated, RetryCount: out.RetryCount,
 	}); err != nil {
 		return fail("GOOGLE_DRIVE_BATCH_FINISH_FAILED", err)
 	}
@@ -1015,7 +1021,7 @@ func (s *FileInventorySyncService) finishFailed(ctx context.Context, tx pgx.Tx, 
 		return fmt.Errorf("%w: release Google Drive sync savepoint: %v", cause, err)
 	}
 	message := code
-	if err := queries.FinishIntegrationSyncBatch(auditCtx, database.FinishIntegrationSyncBatchParams{ID: batchID, Status: "FAILED", RecordsRead: result.FilesRead, ErrorCode: &code, ErrorMessageSanitized: &message}); err != nil {
+	if err := queries.FinishIntegrationSyncBatch(auditCtx, database.FinishIntegrationSyncBatchParams{ID: batchID, Status: "FAILED", RecordsRead: result.FilesRead, RetryCount: result.RetryCount, ErrorCode: &code, ErrorMessageSanitized: &message}); err != nil {
 		return fmt.Errorf("%w: finish failed Google Drive sync batch: %v", cause, err)
 	}
 	if err := tx.Commit(auditCtx); err != nil {

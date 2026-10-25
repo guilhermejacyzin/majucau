@@ -61,3 +61,10 @@ A lista também foi guardada em `artifacts/retained/manual-cleanup/go-global-cac
 - Removidos com `scripts/SafeCleanup.psm1` os caches regeneráveis `artifacts/cache/go-build/`, `artifacts/cache/go-tmp/`, `artifacts/cache/npm/` e `artifacts/cache/vite/`, além de todas as prévias temporárias `frontend-dist-*` e do log em `artifacts/verification/`.
 - Mantidos `artifacts/cache/go-mod/` para dependências Go, `artifacts/cache/webview2/` para reconstruir o instalador Windows sem novo download, `frontend/node_modules/` para verificações futuras e as ferramentas e pacotes oficiais em `artifacts/tools/` e `artifacts/windows/`.
 - A saída `frontend/dist/` já havia sido removida pelo fluxo de verificação. Nenhum cache global, dado real do Drive ou arquivo que precise de limpeza manual foi gerado ou removido.
+
+## Limpeza após correção de tentativas e dependências — 25/10/2026
+
+- Removidos com `scripts/SafeCleanup.psm1` a cópia de teste `artifacts/verification/frontend-patched-deps-20261025/`, o cache npm isolado `artifacts/cache/npm-patched/`, o cache npm da verificação `artifacts/cache/npm/` e os temporários `artifacts/cache/go-tmp/`.
+- Mantidos o protótipo aberto, `artifacts/cache/go-mod/`, `artifacts/cache/go-build/`, os pacotes oficiais e os dados locais necessários à continuação.
+- A checagem final `go test` usou os caches compartilhados do perfil Windows (`%USERPROFILE%\go\pkg\mod` e `%LOCALAPPDATA%\go-build`) e baixou ali o toolchain Go 1.26.10. Esses caminhos compartilhados não foram removidos; seguem registrados para limpeza manual em `artifacts/retained/manual-cleanup/go-global-caches-2026-10-18.txt`.
+- Nenhum arquivo do Drive, credencial ou dado financeiro foi lido, alterado ou excluído.

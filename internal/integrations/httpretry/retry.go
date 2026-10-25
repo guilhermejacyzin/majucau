@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -25,6 +26,44 @@ var (
 	ErrUnsafeMethod  = errors.New("automatic retry is restricted to replay-safe GET requests")
 	ErrInvalidPolicy = errors.New("HTTP retry policy is invalid")
 )
+
+type retryCounterKey struct{}
+
+// Counter records replay-safe HTTP retries for one integration sync batch.
+// It is intentionally separate from request/page counts and contains no
+// provider response data.
+type Counter struct {
+	retries atomic.Int32
+}
+
+func NewCounter() *Counter {
+	return &Counter{}
+}
+
+// WithCounter attaches a retry counter to an operation context. The HTTP
+// retry helper increments it only when a retry request is actually issued.
+func WithCounter(ctx context.Context, counter *Counter) context.Context {
+	if ctx == nil || counter == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, retryCounterKey{}, counter)
+}
+
+func (c *Counter) Count() int32 {
+	if c == nil {
+		return 0
+	}
+	return c.retries.Load()
+}
+
+func countRetry(ctx context.Context) {
+	if ctx == nil {
+		return
+	}
+	if counter, ok := ctx.Value(retryCounterKey{}).(*Counter); ok && counter != nil {
+		counter.retries.Add(1)
+	}
+}
 
 // Policy classifies provider-specific transient failures while this package
 // enforces the shared limits, backoff, cancellation, and GET-only default.
@@ -69,6 +108,9 @@ func Do[T any](ctx context.Context, policy Policy, request func() (T, error)) (T
 	for attempt := 1; attempt <= attempts; attempt++ {
 		if err := ctx.Err(); err != nil {
 			return zero, err
+		}
+		if attempt > 1 {
+			countRetry(ctx)
 		}
 		value, err := request()
 		if err == nil {

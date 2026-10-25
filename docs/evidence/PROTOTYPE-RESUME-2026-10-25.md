@@ -5,14 +5,13 @@
 - Às 20:03 (horário de Brasília), a pedido da usuária, iniciei `scripts/start-prototype.ps1` novamente.
 - O PostgreSQL isolado está ouvindo em `127.0.0.1:55438`; a interface Wails/Vite está ativa nas portas locais `34115` e `5173`.
 - A execução anterior não persistiu como processo entre as sessões. O protótipo foi iniciado novamente nesta retomada.
-- O último estado de configuração Bling confirmado foi em 19/10: `NOT_CONFIGURED`, `secret_configured:false`. Nesta retomada, não confirmei se a usuária salvou o Client Secret depois daquela data. Não assumir que o estado antigo ainda é atual.
+- A pasta DPAPI ativa contém somente `.entropy` e `.scope`; não existe `bling_credentials_v1.dpapi`, que é o arquivo definido pelo código para a credencial do Bling. Isso confirma que o segredo não foi salvo nesta instância. Nenhum segredo foi lido.
 - Não houve OAuth, chamada real, sincronização de dados, alteração de código, tela ou regra financeira nesta retomada.
 - A branch está sincronizada com `origin/codex/majucau-artifact-consolidation` no commit `bf9481a`.
 
 ## Próximo passo
 
-1. Conferir na tela **Importações/Integrações → Bling** o estado que aparece agora.
-2. Se continuar desconectado, informar o Client Secret do aplicativo diretamente nessa tela, salvar, conectar e concluir a autorização do Bling. Não enviar o segredo no chat.
+1. Na tela **Importações/Integrações → Bling** do protótipo aberto, informar o Client Secret do aplicativo diretamente, salvar, conectar e concluir a autorização. Não enviar o segredo no chat.
 3. Confirmar o estado conectado, testar a API, validar a paginação e realizar a sincronização inicial. Corrigir qualquer falha antes de encerrar BK-039.
 
 ## Progresso e proteção

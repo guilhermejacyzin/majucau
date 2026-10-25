@@ -16,7 +16,7 @@
 - `scripts/verify-backlog.ps1` confirmou 127 tarefas, 7 concluídas, 20 em andamento e 100 não iniciadas; 11,8% estimado concluído e 88,2% restante.
 - `git diff --check`: passou antes do commit `351d167`.
 - A verificação Go encontrou 0 vulnerabilidades chamadas pelo código. Um aviso de módulo não chamado permanece explicitamente fora do bloqueio da ferramenta; não foi declarado como ausência total de avisos em dependências.
-- O job `verify-windows` da mesma CI falhou no smoke de remoção do serviço Windows. A mensagem original não indicava a etapa interna. Foi adicionada telemetria de erro com códigos estáveis e sem caminhos locais; essa alteração ainda precisa ser enviada e executada no runner Windows.
+- O job `verify-windows` da CI #40245161243 falhou no smoke de remoção do serviço Windows. A mensagem original não indicava a etapa interna. O commit `f7ad842` adicionou códigos estáveis de etapa e apresentação sanitizada no smoke. A execução seguinte, CI #40245975900, passou por completo, inclusive no smoke Windows; a falha anterior não se repetiu e não teve causa determinística confirmada.
 
 ## Segurança e escopo
 
@@ -27,7 +27,7 @@
 
 ## Próximo passo
 
-1. Enviar a telemetria de etapa para a branch `codex/majucau-artifact-consolidation`, repetir o smoke no runner Windows e corrigir a etapa que ele identificar.
+1. Manter os códigos de etapa sanitizados caso o smoke do serviço volte a falhar; a CI #40245975900 confirmou a execução atual.
 2. Depois que a usuária salvar o Client Secret diretamente na tela do Majucau, conferir apenas o estado sanitizado, concluir OAuth e validar teste, paginação e sincronização do Bling.
 3. Continuar a validação da credencial técnica de leitura do Drive e da sincronização diária às 09:30.
 4. Manter BK-039 em 50% até esses critérios operacionais serem comprovados; média estimada do projeto: 11,8% concluída, 88,2% restante.

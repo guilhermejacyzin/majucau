@@ -68,3 +68,10 @@ A lista também foi guardada em `artifacts/retained/manual-cleanup/go-global-cac
 - Mantidos o protótipo aberto, `artifacts/cache/go-mod/`, `artifacts/cache/go-build/`, os pacotes oficiais e os dados locais necessários à continuação.
 - A checagem final `go test` usou os caches compartilhados do perfil Windows (`%USERPROFILE%\go\pkg\mod` e `%LOCALAPPDATA%\go-build`) e baixou ali o toolchain Go 1.26.10. Esses caminhos compartilhados não foram removidos; seguem registrados para limpeza manual em `artifacts/retained/manual-cleanup/go-global-caches-2026-10-18.txt`.
 - Nenhum arquivo do Drive, credencial ou dado financeiro foi lido, alterado ou excluído.
+
+## Limpeza após validação da CI Windows — 25/10/2026
+
+- Removidos com `scripts/SafeCleanup.psm1` os caches temporários `artifacts/cache/go-build/` e `artifacts/cache/go-tmp/`, após confirmar que nenhum compilador Go estava em execução.
+- Mantido `artifacts/cache/dev/` porque contém o worker que continua executando o protótipo (PID 31900). Também foram mantidos `artifacts/cache/go-mod/`, `artifacts/cache/vite/` e `artifacts/cache/webview2/`, necessários para a continuidade offline e para a interface/instalador.
+- Para limpeza manual futura, preservei em `artifacts/retained/manual-cleanup/workspace-outputs-2026-10-25.txt` os caminhos de três pastas temporárias `frontend-dist-*` e de `artifacts/verification/artifacts/`. A última contém uma cópia do worker e uma pasta `cache`; como o protótipo está ativo, não removi esses itens sem confirmar que não são dependências.
+- O protótipo e suas portas ativas foram mantidos; nenhum arquivo real do Drive ou credencial foi lido, alterado ou excluído.

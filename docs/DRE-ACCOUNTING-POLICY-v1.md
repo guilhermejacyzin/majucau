@@ -77,6 +77,10 @@ A pedido de Gisele em 2026-10-04, a faixa de indicadores da T6 terá duas inform
 
 Os dois números ficam em cards fora da tabela DRE e não entram no lucro. A depreciação é contabilizada separadamente conforme o uso e a regra aprovada. Gisele confirmou que os relatórios existentes informam CAPEX. O painel ainda não importa esses valores: sua consulta atual não inclui métricas de CAPEX. O trabalho pendente é ligar os valores dos relatórios aos cards e conferir os períodos; até a integração, os cards mostram `—`. Não estimar CAPEX usando pagamentos genéricos ou extratos.
 
-## 8. Próxima etapa
+## 8. Indicadores EBIT e EBITDA
+
+EBIT e EBITDA aparecem somente nos cards aprovados, fora das linhas da tabela DRE. Conforme o exemplo aprovado por Gisele, EBIT é o resultado operacional depois da depreciação/amortização reconhecida no período; EBITDA soma de volta esse valor. A conta aceita somente o resultado operacional e o valor de depreciação/amortização já classificados e conciliados para o mesmo período. Depreciação/amortização ausente ou resultado operacional indisponível mantém os dois cards sem valor. A função não classifica lançamentos, não presume valor zero e não muda nenhuma linha da DRE.
+
+## 9. Próxima etapa
 
 Com a contabilidade, montar uma tabela de conferência com: conta/lançamento, documento, fato econômico, linha da DRE, custo ou despesa, competência, efeito no estoque, tratamento de tributo, fonte e divergência. Depois validar os critérios pendentes e os campos disponíveis nas integrações. Só então fechar casos de referência e implementar o cálculo no Majucau.

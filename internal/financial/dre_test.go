@@ -29,15 +29,16 @@ func TestCalculateDREUsesExactSignedAmountsForApprovedLines(t *testing.T) {
 	end := time.Date(2026, 10, 31, 22, 0, 0, 0, start.Location())
 	result, err := CalculateDRE(DREInput{
 		PeriodStart: start, PeriodEnd: end, RuleVersion: "dre-v1",
-		GrossRevenue:        availableDREAmount(t, "1000000"),
-		RevenueDeductions:   availableDREAmount(t, "0"),
-		CostOfGoodsSold:     availableDREAmount(t, "-600000"),
-		SellingExpenses:     availableDREAmount(t, "-100000"),
-		Administrative:      availableDREAmount(t, "-100000"),
-		OtherOperating:      availableDREAmount(t, "-80000"),
-		FinancialResult:     availableDREAmount(t, "-20000"),
-		OtherIncomeExpenses: availableDREAmount(t, "0"),
-		IncomeTaxes:         availableDREAmount(t, "-25000"),
+		GrossRevenue:                availableDREAmount(t, "1000000"),
+		RevenueDeductions:           availableDREAmount(t, "0"),
+		CostOfGoodsSold:             availableDREAmount(t, "-600000"),
+		SellingExpenses:             availableDREAmount(t, "-100000"),
+		Administrative:              availableDREAmount(t, "-100000"),
+		OtherOperating:              availableDREAmount(t, "-80000"),
+		DepreciationAndAmortization: availableDREAmount(t, "-30000"),
+		FinancialResult:             availableDREAmount(t, "-20000"),
+		OtherIncomeExpenses:         availableDREAmount(t, "0"),
+		IncomeTaxes:                 availableDREAmount(t, "-25000"),
 	})
 	if err != nil {
 		t.Fatalf("CalculateDRE() error = %v", err)
@@ -60,6 +61,12 @@ func TestCalculateDREUsesExactSignedAmountsForApprovedLines(t *testing.T) {
 		if !line.Available || line.Amount.String() != want {
 			t.Errorf("line %s = (%s, available=%t), want (%s, available=true)", code, line.Amount, line.Available, want)
 		}
+	}
+	if !result.Indicators.EBIT.Available || result.Indicators.EBIT.Amount.String() != "120000.0000" {
+		t.Errorf("EBIT card = %#v, want available 120000.0000", result.Indicators.EBIT)
+	}
+	if !result.Indicators.EBITDA.Available || result.Indicators.EBITDA.Amount.String() != "150000.0000" {
+		t.Errorf("EBITDA card = %#v, want available 150000.0000", result.Indicators.EBITDA)
 	}
 }
 
@@ -118,5 +125,53 @@ func TestCalculateDREPropagatesOverflow(t *testing.T) {
 	})
 	if !errors.Is(err, domain.ErrMoneyOverflow) || result.Lines != nil {
 		t.Fatalf("overflow should fail without a partial result: result=%#v err=%v", result, err)
+	}
+}
+
+func TestCalculateDREIndicatorsMatchApprovedExample(t *testing.T) {
+	indicators, err := CalculateDREIndicators(
+		availableDREAmount(t, "120000"),
+		availableDREAmount(t, "-30000"),
+	)
+	if err != nil {
+		t.Fatalf("CalculateDREIndicators() error = %v", err)
+	}
+	if !indicators.EBIT.Available || indicators.EBIT.Amount.String() != "120000.0000" {
+		t.Fatalf("EBIT = %#v, want available 120000", indicators.EBIT)
+	}
+	if !indicators.EBITDA.Available || indicators.EBITDA.Amount.String() != "150000.0000" {
+		t.Fatalf("EBITDA = %#v, want available 150000", indicators.EBITDA)
+	}
+}
+
+func TestCalculateDREIndicatorsStayUnavailableWhenInputsAreMissing(t *testing.T) {
+	zero := availableDREAmount(t, "0")
+	for _, input := range [][2]DREAmount{
+		{{}, zero},
+		{zero, {}},
+	} {
+		indicators, err := CalculateDREIndicators(input[0], input[1])
+		if err != nil {
+			t.Fatalf("CalculateDREIndicators() error = %v", err)
+		}
+		if indicators.EBIT.Available || indicators.EBITDA.Available {
+			t.Fatalf("missing required source must keep both cards unavailable: %#v", indicators)
+		}
+	}
+}
+
+func TestCalculateDREIndicatorsRejectPositiveDepreciationAndOverflow(t *testing.T) {
+	if _, err := CalculateDREIndicators(availableDREAmount(t, "120"), availableDREAmount(t, "1")); !errors.Is(err, ErrInvalidDREInput) {
+		t.Fatalf("positive depreciation error = %v, want ErrInvalidDREInput", err)
+	}
+	max, err := domain.ParseMoney("922337203685477.5807")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := CalculateDREIndicators(
+		DREAmount{Amount: max, Available: true},
+		availableDREAmount(t, "-0.0001"),
+	); !errors.Is(err, domain.ErrMoneyOverflow) {
+		t.Fatalf("overflow error = %v, want ErrMoneyOverflow", err)
 	}
 }

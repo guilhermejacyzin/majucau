@@ -44,15 +44,16 @@ type DREInput struct {
 	PeriodEnd   time.Time
 	RuleVersion string
 
-	GrossRevenue        DREAmount
-	RevenueDeductions   DREAmount
-	CostOfGoodsSold     DREAmount
-	SellingExpenses     DREAmount
-	Administrative      DREAmount
-	OtherOperating      DREAmount
-	FinancialResult     DREAmount
-	OtherIncomeExpenses DREAmount
-	IncomeTaxes         DREAmount
+	GrossRevenue                DREAmount
+	RevenueDeductions           DREAmount
+	CostOfGoodsSold             DREAmount
+	SellingExpenses             DREAmount
+	Administrative              DREAmount
+	OtherOperating              DREAmount
+	DepreciationAndAmortization DREAmount
+	FinancialResult             DREAmount
+	OtherIncomeExpenses         DREAmount
+	IncomeTaxes                 DREAmount
 }
 
 type DRELine struct {
@@ -67,6 +68,7 @@ type DREResult struct {
 	RuleVersion string
 	Status      domain.DataStatus
 	Lines       []DRELine
+	Indicators  DREIndicators
 }
 
 // CalculateDRE applies only the arithmetic of the approved DRE structure to
@@ -99,6 +101,10 @@ func CalculateDRE(in DREInput) (DREResult, error) {
 	netIncome, err := sumDREAmounts(beforeTax, in.IncomeTaxes)
 	if err != nil {
 		return DREResult{}, fmt.Errorf("calculate net income: %w", err)
+	}
+	indicators, err := CalculateDREIndicators(operatingResult, in.DepreciationAndAmortization)
+	if err != nil {
+		return DREResult{}, err
 	}
 
 	inputs := []DREAmount{
@@ -135,6 +141,36 @@ func CalculateDRE(in DREInput) (DREResult, error) {
 			dreLine(DREIncomeTaxesCode, in.IncomeTaxes),
 			dreLine(DRENetIncomeCode, netIncome),
 		},
+		Indicators: indicators,
+	}, nil
+}
+
+// DREIndicators contains the two approved result cards. These are derived
+// indicators, not additional DRE table lines.
+type DREIndicators struct {
+	EBIT   DREAmount
+	EBITDA DREAmount
+}
+
+// CalculateDREIndicators treats operatingResult as EBIT after the period's
+// recognized depreciation and amortization. DepreciationAndAmortization is a
+// signed operating expense (zero or negative); EBITDA adds that expense back.
+// Source classification is outside this function, so missing inputs remain
+// unavailable rather than being treated as zero.
+func CalculateDREIndicators(operatingResult, depreciationAndAmortization DREAmount) (DREIndicators, error) {
+	if depreciationAndAmortization.Available && depreciationAndAmortization.Amount.IsPositive() {
+		return DREIndicators{}, ErrInvalidDREInput
+	}
+	if !operatingResult.Available || !depreciationAndAmortization.Available {
+		return DREIndicators{}, nil
+	}
+	ebitda, err := operatingResult.Amount.Sub(depreciationAndAmortization.Amount)
+	if err != nil {
+		return DREIndicators{}, fmt.Errorf("calculate EBITDA: %w", err)
+	}
+	return DREIndicators{
+		EBIT:   DREAmount{Amount: operatingResult.Amount, Available: true},
+		EBITDA: DREAmount{Amount: ebitda, Available: true},
 	}, nil
 }
 

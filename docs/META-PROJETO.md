@@ -95,3 +95,11 @@ Próximo passo da BK-041: salvar no Majucau o Client Secret do aplicativo Bling,
 - A checagem segura do cofre local ainda mostra apenas os arquivos de escopo/entropia, sem o arquivo DPAPI do Client Secret. Nenhum segredo foi lido. Logo, não houve login, OAuth ou sincronização real; o controle de navegador desta sessão também não permite automatizar a autenticação.
 - Ainda faltam resolver a paginação segura de `GET /caixas`, obter o Client Secret no cofre e concluir OAuth, persistir movimentos e suas categorias com idempotência, e conciliar os totais reais antes de preencher os cards. A consulta histórica também precisa ser homologada na conta Bling.
 - A BK-067 permanece em 25%; a correção de validação fortalece o adapter, mas não conclui a classificação, persistência, período histórico ou conciliação. O projeto permanece estimado em 11,8% concluído e 88,2% restante. Nenhuma tela aprovada ou regra financeira foi alterada.
+
+### Atualização — documentação de paginação e acesso — 26/10/2026
+
+- A documentação geral oficial do Bling diz que listas GET usam `pagina` e `limite` (100 por padrão). A referência específica de `GET /caixas` não deixa clara a resposta de fim de lista; por isso o código continua recusando publicar um retrato sem comprovação de término, em vez de presumir paginação completa.
+- A documentação de limites da API informa que filtros com intervalo maior que um ano retornam erro 400. A faixa aprovada de 01/01/2026 até a data de hoje ainda está dentro desse limite; antes da virada do limite, será necessário dividir a leitura histórica em períodos sem lacunas e manter a publicação atômica.
+- Tentei ler a aba Chrome já aberta em “Caixas e bancos”. O controle de navegador recusou o acesso ao domínio por uma permissão salva/política, mesmo com “Sempre permitir” aparecendo nas configurações. Não tentei contornar esse bloqueio nem cliquei em autenticação.
+- A conferência de nomes de arquivos do cofre mostrou somente `.entropy` e `.scope`, sem `bling_credentials_v1.dpapi`; o segredo não foi lido. Assim, a conexão real continua sem comprovação.
+- Próximo passo: restabelecer acesso autorizado do navegador ou validar via resposta/exportação sanitizada; salvar o Client Secret no Majucau sem enviá-lo pelo chat; então concluir OAuth, testar a paginação real e conciliar antes de liberar os cards.

@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
 import { tooltipCatalog } from './tooltips'
-import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPreviewAdapter, BootstrapAdapter, BootstrapState, DashboardSnapshotAdapter, NuvemshopConfigAdapter } from './bootstrap'
+import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPreviewAdapter, BootstrapAdapter, BootstrapState, DashboardSnapshotAdapter, NuvemPagoFutureImportAdapter, NuvemPagoFuturePreviewAdapter, NuvemshopConfigAdapter } from './bootstrap'
 
 const connectedBootstrap: BootstrapState = { app_version: '0.1.0-g1', worker: { service: 'majucau-worker', version: 'test-worker', state: 'OK', checked_at: '2026-08-16T12:00:00Z' }, integrations: [{ provider: 'BLING', status: 'CONNECTED', last_success_at: '2026-08-16T11:58:00Z', last_attempt_at: '2026-08-16T11:58:00Z' }, { provider: 'NUVEMSHOP', status: 'PARTIALLY_AVAILABLE' }, { provider: 'NUVEM_PAGO', status: 'UNAVAILABLE' }], checked_at: '2026-08-16T12:00:00Z' }
 const adapterFor = (state: BootstrapState): BootstrapAdapter => ({ getState: () => Promise.resolve(state) })
@@ -342,5 +342,99 @@ describe('shell financeiro', () => {
     expect(screen.getByText(/1 linha\(s\) com atenção/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Importar e gravar' }))
     expect(await screen.findByText(/Lote SUCCESS/)).toBeInTheDocument()
+  })
+
+  it('atualiza o snapshot após importar dados do Bling, inclusive em lote parcial', async () => {
+    const user = userEvent.setup()
+    let snapshotReads = 0
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        return snapshotAdapterFor(snapshotReads === 1 ? '100.0000' : '125.0000').getSnapshot()
+      },
+    }
+    const blingPreviewAdapter: BlingPreviewAdapter = { preview: async () => ({ files: [{ name: 'recebidos.csv', sha256: 'a'.repeat(64), receipt_count: 3, error_count: 1 }], receipt_count: 3, error_count: 1, ignored_count: 0 }) }
+    const blingImportAdapter: BlingImportAdapter = { import: async () => ({ status: 'PARTIAL', records_read: 3, records_created: 2, records_updated: 0, records_failed: 1, ignored_count: 0, batch_id: 'batch-partial' }) }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} blingPreviewAdapter={blingPreviewAdapter} blingImportAdapter={blingImportAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    await user.type(screen.getByLabelText('Pasta dos relatórios CSV'), 'C:\\imports\\bling')
+    await user.click(screen.getByRole('button', { name: 'Validar pasta' }))
+    await screen.findByText('3 recebimento(s) válido(s)')
+    await user.click(screen.getByRole('button', { name: 'Importar e gravar' }))
+    expect(await screen.findByText(/Lote PARTIAL/)).toBeInTheDocument()
+    await waitFor(() => expect(snapshotReads).toBe(2))
+    await user.click(screen.getByRole('button', { name: 'Visão Executiva' }))
+    expect(await screen.findByText('R$ 125,00')).toBeInTheDocument()
+  })
+
+  it('não recarrega o snapshot quando a importação do Bling falha', async () => {
+    const user = userEvent.setup()
+    let snapshotReads = 0
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        return snapshotAdapterFor().getSnapshot()
+      },
+    }
+    const blingPreviewAdapter: BlingPreviewAdapter = { preview: async () => ({ files: [{ name: 'recebidos.csv', sha256: 'a'.repeat(64), receipt_count: 1, error_count: 0 }], receipt_count: 1, error_count: 0, ignored_count: 0 }) }
+    const blingImportAdapter: BlingImportAdapter = { import: async () => ({ status: 'FAILED', records_read: 1, records_created: 0, records_updated: 0, records_failed: 1, ignored_count: 0, error_code: 'BLING_IMPORT_FAILED' }) }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} blingPreviewAdapter={blingPreviewAdapter} blingImportAdapter={blingImportAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    await user.type(screen.getByLabelText('Pasta dos relatórios CSV'), 'C:\\imports\\bling')
+    await user.click(screen.getByRole('button', { name: 'Validar pasta' }))
+    await screen.findByText('1 recebimento(s) válido(s)')
+    await user.click(screen.getByRole('button', { name: 'Importar e gravar' }))
+    expect(await screen.findByText('BLING_IMPORT_FAILED')).toBeInTheDocument()
+    expect(snapshotReads).toBe(1)
+  })
+
+  it('atualiza o snapshot depois de uma sincronização Bling bem-sucedida', async () => {
+    const user = userEvent.setup()
+    let snapshotReads = 0
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        return snapshotAdapterFor().getSnapshot()
+      },
+    }
+    const blingOAuthAdapter: BlingOAuthAdapter = {
+      start: async () => ({ status: 'AUTHORIZING' }),
+      status: async () => ({ status: 'CONNECTED' }),
+      test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      disconnect: async () => ({ status: 'NOT_CONFIGURED' }),
+      sync: async () => ({ status: 'SUCCESS', receivables: { pages_read: 1, records_read: 2 }, payables: { pages_read: 1, records_read: 1 } }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} blingOAuthAdapter={blingOAuthAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    await user.click(screen.getAllByRole('button', { name: 'Sincronizar agora' })[0])
+    await user.type(screen.getByLabelText(/Data inicial/), '2026-09-01')
+    await user.click(screen.getByRole('button', { name: 'Executar sincronização' }))
+    expect(await screen.findByText(/Lote SUCCESS/)).toBeInTheDocument()
+    await waitFor(() => expect(snapshotReads).toBe(2))
+  })
+
+  it('atualiza o snapshot após importar recebimentos futuros do Nuvem Pago', async () => {
+    const user = userEvent.setup()
+    let snapshotReads = 0
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        return snapshotAdapterFor().getSnapshot()
+      },
+    }
+    const futurePreviewAdapter: NuvemPagoFuturePreviewAdapter = { preview: async () => ({ files: [{ name: 'futuros.csv', sha256: 'b'.repeat(64), receivable_count: 1, rejected_row_count: 0 }], receivable_count: 1, error_count: 0, ignored_count: 0 }) }
+    const futureImportAdapter: NuvemPagoFutureImportAdapter = { import: async () => ({ status: 'SUCCESS', records_read: 1, records_created: 1, records_updated: 0, records_failed: 0, ignored_count: 0 }) }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} futurePreviewAdapter={futurePreviewAdapter} futureImportAdapter={futureImportAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    await user.type(screen.getByLabelText('Pasta dos recebimentos futuros'), 'C:\\imports\\nuvem-pago')
+    await user.click(screen.getByRole('button', { name: 'Validar futuros' }))
+    await screen.findByText('1 recebível(is) futuro(s) válido(s)')
+    await user.click(screen.getByRole('button', { name: 'Importar futuros' }))
+    expect(await screen.findByText(/Lote SUCCESS/)).toBeInTheDocument()
+    await waitFor(() => expect(snapshotReads).toBe(2))
   })
 })

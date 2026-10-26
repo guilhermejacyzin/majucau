@@ -27,7 +27,9 @@
 
 ## Próximo passo
 
+- O backlog oficial v2 separa BK-039 (trabalhos em segundo plano, 50%), BK-040 (cobertura de dados Bling, 0%), BK-041 (adaptador Bling, 80%) e BK-042 (Drive, 70%).
+
 1. Manter os códigos de etapa sanitizados caso o smoke do serviço volte a falhar; a CI #40245975900 confirmou a execução atual.
-2. Depois que a usuária salvar o Client Secret diretamente na tela do Majucau, conferir apenas o estado sanitizado, concluir OAuth e validar teste, paginação e sincronização do Bling.
-3. Continuar a validação da credencial técnica de leitura do Drive e da sincronização diária às 09:30.
-4. Manter BK-039 em 50% até esses critérios operacionais serem comprovados; média estimada do projeto: 11,8% concluída, 88,2% restante.
+2. Depois que a usuária salvar o Client Secret diretamente na tela do Majucau, conferir apenas o estado sanitizado, concluir OAuth e validar teste, paginação e sincronização do Bling (BK-041).
+3. Continuar a validação da credencial técnica de leitura do Drive e da sincronização diária às 09:30 (BK-042 e BK-039).
+4. Manter BK-039 (execução de trabalhos em segundo plano) em 50% até comprovar continuidade e integração; BK-041 permanece em 80% e aguarda autenticação/homologação Bling; BK-042 está em 70% e aguarda acesso técnico e homologação Drive; BK-040 continua em 0% até validar cobertura real dos dados do Bling. Média estimada do projeto: 11,8% concluída, 88,2% restante.

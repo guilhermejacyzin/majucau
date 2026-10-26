@@ -73,7 +73,7 @@ Para calcular CPV/CMV, extrato bancário ou contas a pagar/receber não bastam. 
 A pedido de Gisele em 2026-10-04, a faixa de indicadores da T6 terá duas informações distintas:
 
 - **CAPEX pago no mês/período mostrado:** dinheiro efetivamente pago por aquisições de ativos identificadas como CAPEX. É informação de caixa, não despesa da DRE. Não classificar todo pagamento a fornecedor como CAPEX.
-- **CAPEX acumulado:** total dos investimentos em ativos reconhecidos como CAPEX desde o início do histórico confiável disponível. Não é lucro, saldo bancário nem valor líquido contábil dos ativos.
+- **CAPEX acumulado:** total dos investimentos em ativos reconhecidos como CAPEX desde **01/01/2026 (inclusive)**, data inicial aprovada por Gisele para o histórico do card. Não é lucro, saldo bancário nem valor líquido contábil dos ativos.
 
 Os dois números ficam em cards fora da tabela DRE e não entram no lucro. A depreciação é contabilizada separadamente conforme o uso e a regra aprovada. Gisele confirmou que os relatórios existentes informam CAPEX. O painel ainda não importa esses valores: sua consulta atual não inclui métricas de CAPEX. O trabalho pendente é ligar os valores dos relatórios aos cards e conferir os períodos; até a integração, os cards mostram `—`. Não estimar CAPEX usando pagamentos genéricos ou extratos.
 

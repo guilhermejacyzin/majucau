@@ -77,3 +77,9 @@ O leitor do painel transmite linhas tipadas de recebíveis, recebimentos, contas
 - Correção de entendimento: **CAPEX aparece, sim, no resumo agrupado por categoria enviado em print**. O que esses dois PDFs não mostram é o vínculo entre a categoria CAPEX e cada pagamento, nem o período do filtro do print. Portanto, o CAPEX não está ausente dos relatórios do Bling; a evidência recebida ainda não identifica qual valor do resumo corresponde ao card mensal e qual corresponde ao acumulado desde o início.
 - Os cards `CAPEX PAGO NO MÊS` e `CAPEX ACUMULADO` já existem fora da tabela da DRE. O contrato do snapshot aceita as duas métricas, mas o leitor/backend ainda não as preenche; sem período e origem conciliáveis, continuam mostrando `—`.
 - Não foram copiados para o repositório valores, fornecedores, documentos ou credenciais. Os PDFs originais continuam fora do Git. Nenhuma tela ou regra financeira foi alterada.
+
+## Confirmação do início do acumulado — 2026-10-26
+
+- Gisele aprovou **01/01/2026 (inclusive)** como a data inicial do histórico do card `CAPEX ACUMULADO`, conforme o início do período do relatório geral.
+- Essa decisão resolve apenas a data inicial do acumulado. Os PDFs ainda não associam categoria CAPEX, data de pagamento/liquidação e valor a cada lançamento; portanto, não bastam para calcular os cards com segurança. Os valores permanecem `—` até a origem ser ligada e reconciliada.
+- O início aprovado não altera a distinção entre CAPEX pago no mês e CAPEX acumulado, nem faz o CAPEX entrar no lucro da DRE.

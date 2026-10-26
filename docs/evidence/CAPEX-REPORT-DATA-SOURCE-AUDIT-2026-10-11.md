@@ -59,6 +59,13 @@ O schema da lista documenta `data[]`, mas não documenta limite de página, tota
 
 Referência: [OpenAPI oficial atual do Bling — `GET /caixas`](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) e [changelog oficial de formato de datas de `/caixas`](https://developer.bling.com.br/changelogs).
 
+## Implementação atual e início aprovado do acumulado — 2026-10-26
+
+- Gisele confirmou **01/01/2026 (inclusive)** como início do card `CAPEX ACUMULADO`. A rotina diária às 09:30 já consulta `/caixas` desde essa data até a data da execução e preserva as páginas recebidas como RAW no PostgreSQL.
+- Essa carga ainda não converte as movimentações em valores CAPEX nem atualiza o snapshot. O dado RAW, por si só, não prova que uma movimentação é CAPEX nem que representa investimento reconhecido; nenhum valor deve aparecer no card antes da classificação e conciliação aprovadas.
+- A sessão do Bling no Chrome não pôde ser inspecionada: a política de acesso do navegador bloqueou a leitura e vedou qualquer tentativa por outra superfície. Não consultei nem alterei dados da conta.
+- Os PDFs e o print anteriormente fornecidos continuam sem uma linha que mostre, ao mesmo tempo, categoria CAPEX, data de pagamento/liquidação e valor. Para concluir a integração com dados reais, é necessária uma exportação sanitizada dessas colunas e a conciliação com o relatório do período. Os cards continuam `—`; nenhuma tela ou regra financeira foi alterada.
+
 ## Conferência visual complementar dos PDFs enviados — 13/10/2026
 
 - Revisei visualmente as oito páginas das duas cópias atuais dos relatórios. Nas linhas individuais aparecem fornecedor, histórico, número do documento, vencimento, liquidação, situação e valor pago; não há coluna de categoria CAPEX.

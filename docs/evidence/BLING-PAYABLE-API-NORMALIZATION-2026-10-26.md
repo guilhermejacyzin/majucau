@@ -45,7 +45,16 @@ de obrigações e mantém as telas e regras financeiras aprovadas.
   `NORMALIZED` e preservação do snapshot anterior em falha de categoria. Ele só
   executa no banco dedicado `majucau_test`.
 - Ainda não há `MAJUCAU_TEST_DATABASE_URL` configurada nesta máquina; por isso o
-  teste de banco precisa ser confirmado pela CI após o push.
+  teste local de banco foi pulado. A CI do GitHub executou esse teste em um
+  PostgreSQL descartável.
+- A CI final do commit `19166f8` passou nos quatro jobs: validação da mensagem e
+  backlog, migrations e privilégios em PostgreSQL 18, testes de integração
+  PostgreSQL, testes e `go vet` no Windows, frontend, segurança e builds do
+  aplicativo/worker/instalador. [Execução #40273517345](https://github.com/guilhermejacyzin/majucau/actions/runs/40273517345).
+- As primeiras execuções apontaram e permitiram corrigir três defeitos antes da
+  aprovação final: permissão concedida antes da criação da role de runtime,
+  lista de privilégios esperados sem a inserção em `payables` e coluna `status`
+  ambígua na consulta do teste. A execução final passou após essas correções.
 - A conta Bling real ainda não foi homologada; esta mudança não declara os dados
   reais confirmados.
 

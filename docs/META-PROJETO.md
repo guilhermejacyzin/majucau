@@ -119,3 +119,11 @@ Próximo passo da BK-041: salvar no Majucau o Client Secret do aplicativo Bling,
 - Isso atualiza somente dados já persistidos no PostgreSQL. Não dispara chamadas ao Bling ou ao Drive, nem altera o desenho ou as regras financeiras. A tela pode levar até um minuto para refletir uma carga concluída.
 - `frontend/src/App.test.tsx` passou com 27 testes; `npm run typecheck` e ESLint direcionado passaram. Não houve revisão visual do protótipo ativo. As respostas Bling seguem RAW-only e ainda não preenchem as tabelas operacionais.
 - BK-102 permanece em 1% e o percentual geral não muda: ainda faltam integração real, conversão RAW, reconciliação e aceites das demais telas. Evidência: `docs/evidence/EXECUTIVE-DETAIL-DATA-FLOW-2026-10-25.md`.
+
+### Integração diária de Contas a Pagar — resultado da CI — 26/10/2026
+
+- A API do Bling agora transforma as contas a pagar da carga diária completa em registros tipados com valores decimais exatos, datas, situação, fornecedor, categoria e vínculos RAW. A Visão Executiva e T4 leem o mesmo snapshot completo; a publicação é transacional e preserva o snapshot anterior em falha.
+- A CI #40273517345 passou nos quatro jobs, incluindo migrations e permissões em PostgreSQL descartável, teste de integração da carga e preservação do snapshot, suíte Windows, frontend e builds do aplicativo, worker e instalador. O teste local PostgreSQL foi pulado por falta de uma URL de banco dedicada; não alterei o banco ativo do protótipo.
+- A CI utiliza respostas de teste. Isso comprova o código e o banco, não a autenticação nem os dados reais da conta Bling; portanto, a sincronização real e a homologação continuam pendentes. BK-041 fica em 80% (20% restante) e a estimativa do projeto permanece em 11,8% concluído (88,2% restante).
+- Nenhuma tela aprovada ou regra financeira mudou. A regra aprovada do CAPEX acumulado continua começando em 01/01/2026 e o CAPEX permanece fora do lucro da DRE.
+- Evidência: `docs/evidence/BLING-PAYABLE-API-NORMALIZATION-2026-10-26.md`; [CI #40273517345](https://github.com/guilhermejacyzin/majucau/actions/runs/40273517345).

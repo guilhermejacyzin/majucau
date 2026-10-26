@@ -64,3 +64,9 @@ func TestDailyBlingSyncErrorCodeDoesNotExposeUnderlyingError(t *testing.T) {
 		t.Fatalf("error code = %q", got)
 	}
 }
+
+func TestDailyBlingSyncErrorCodeIdentifiesMissingClientSecret(t *testing.T) {
+	if got := dailyBlingSyncErrorCode(bling.ErrBlingCredentialMissing); got != "BLING_SECRET_REQUIRED" {
+		t.Fatalf("error code = %q, want BLING_SECRET_REQUIRED", got)
+	}
+}

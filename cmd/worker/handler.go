@@ -237,6 +237,8 @@ func syncResourceResult(result bling.APISyncResult) application.BlingSyncResourc
 
 func blingSyncErrorCode(err error) string {
 	switch {
+	case errors.Is(err, bling.ErrBlingCredentialMissing):
+		return "BLING_SECRET_REQUIRED"
 	case errors.Is(err, bling.ErrBlingAPISyncDatabaseUnavailable):
 		return "BLING_DATABASE_NOT_CONFIGURED"
 	case errors.Is(err, bling.ErrBlingAPISyncConnectionMissing):
@@ -264,6 +266,8 @@ func blingSyncErrorCode(err error) string {
 
 func blingSyncErrorMessage(err error) string {
 	switch blingSyncErrorCode(err) {
+	case "BLING_SECRET_REQUIRED":
+		return "Informe e salve o Client Secret do aplicativo Bling antes de sincronizar."
 	case "BLING_DATABASE_NOT_CONFIGURED":
 		return "O banco local ainda não está configurado para sincronizar o Bling."
 	case "BLING_CONNECTION_NOT_CONFIGURED":

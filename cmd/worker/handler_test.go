@@ -330,12 +330,16 @@ func TestBlingSyncErrorClassificationIsSanitized(t *testing.T) {
 		err  error
 		code string
 	}{
+		{err: bling.ErrBlingCredentialMissing, code: "BLING_SECRET_REQUIRED"},
 		{err: bling.ErrBlingAPIUnauthorized, code: "BLING_API_UNAUTHORIZED"},
 		{err: bling.ErrBlingAPIRateLimited, code: "BLING_API_RATE_LIMITED"},
 		{err: bling.ErrBlingAPIUnavailable, code: "BLING_API_UNAVAILABLE"},
 		{err: bling.ErrBlingAPISchemaMismatch, code: "BLING_SCHEMA_MISMATCH"},
 		{err: bling.ErrBlingAPIPaginationUnknown, code: "BLING_API_PAGINATION_UNKNOWN"},
 		{err: bling.ErrBlingAPIInvalidResponse, code: "BLING_INVALID_RESPONSE"},
+	}
+	if message := blingSyncErrorMessage(bling.ErrBlingCredentialMissing); message != "Informe e salve o Client Secret do aplicativo Bling antes de sincronizar." {
+		t.Fatalf("missing secret message = %q", message)
 	}
 	for _, test := range tests {
 		t.Run(test.code, func(t *testing.T) {

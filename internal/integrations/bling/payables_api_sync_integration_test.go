@@ -125,7 +125,7 @@ func TestDailyPayablesAPIIsNormalizedAtomicallyAndKeepsLastSnapshotOnFailure(t *
 	var dueDate, statusCode, document, category, supplier string
 	var originalAmount, openBalance string
 	if err := pool.QueryRow(ctx, `
-		SELECT COUNT(*), MIN(due_date)::text, MIN(status), MIN(document), MIN(category),
+		SELECT COUNT(*), MIN(p.due_date)::text, MIN(p.status), MIN(p.document), MIN(p.category),
 		       MIN(original_amount)::text, MIN(open_balance)::text,
 		       MIN(c.name)
 		FROM payables p LEFT JOIN contacts c ON c.id = p.supplier_id

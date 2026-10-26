@@ -1,16 +1,20 @@
 # Retorno OAuth do Bling ao Majucau local — 13/10/2026
 
-> Atualização posterior: Gisele confirmou que o aplicativo Bling está cadastrado
-> com o retorno `https://majucau-bling-bridge.giselegalha.chatgpt.site/oauth/bling/callback`.
-> O código correspondente redireciona o navegador para o callback local fixo do
-> Majucau (`127.0.0.1:43821`) levando somente o código temporário e o `state`.
-> A versão pública atual é a 16 e mantém esse caminho. Isso confirma a
-> compatibilidade do retorno no código; uma conexão real ainda precisa ser
-> concluída e testada no aplicativo.
+> **Revisão de evidência — 26/10/2026:** Gisele confirmou que o aplicativo Bling
+> está cadastrado com o retorno
+> `https://majucau-bling-bridge.giselegalha.chatgpt.site/oauth/bling/callback`.
+> O conector Sites confirma que a ponte está publicada na versão 16, criada a
+> partir do commit `fdce727d8f3d868b5bea418d52208039054e7cf8`. Abri essa versão no
+> cache consolidado `artifacts/cache/sites/majucau-bling-bridge` e confirmei que
+> a rota `/oauth/bling/callback` encaminha o código temporário e o `state` para
+> `http://127.0.0.1:43821/callback`, destino fixo no código. Os 28 testes da
+> versão 16, a compilação e a validação do pacote passaram localmente. Isso
+> confirma a implementação da ponte, mas não uma autorização real: o cofre do
+> protótipo continua sem o Client Secret e não houve OAuth ou sincronização.
 
 ## Resultado em linguagem simples
 
-O Bling já está cadastrado para devolver a autorização ao endereço HTTPS do Site Majucau. O Majucau instalado no computador, porém, espera receber o retorno em `127.0.0.1`. O fluxo agora liga esses dois endereços: o Site entrega somente o código temporário ao aplicativo local, e o aplicativo troca o código pelo token usando a URL de retorno HTTPS registrada no Bling.
+O Bling está cadastrado para devolver a autorização ao endereço HTTPS do Site Majucau. O código da versão 16 encaminha o retorno ao endereço local fixo `127.0.0.1:43821`. O Majucau confere o `state` e troca o código usando a URL HTTPS registrada. A ponte foi comprovada no código e nos testes; falta concluir uma autorização real pela conta da empresa.
 
 O Site não troca nem guarda o token nessa autorização iniciada pelo Majucau local. O token é validado e guardado pelo Majucau no cofre protegido do Windows. O fluxo iniciado pelo botão do próprio Site permanece compatível.
 
@@ -18,8 +22,8 @@ O Site não troca nem guarda o token nessa autorização iniciada pelo Majucau l
 
 - O Majucau aceita automaticamente somente o callback HTTPS exato já cadastrado e conhecido: `https://majucau-bling-bridge.giselegalha.chatgpt.site/oauth/bling/callback`. Outros callbacks HTTPS não reconhecidos são rejeitados.
 - O Majucau continua gerando `state` com 32 bytes aleatórios, confere a correspondência antes de aceitar o código e abre o listener apenas em `127.0.0.1:43821`. O listener limita o cabeçalho/request line a 16 KiB e o código a 4 KiB.
-- O Site só reconhece o formato de `state` gerado pelo fluxo local; o endereço de destino é fixo e nunca vem da solicitação. O Site devolve somente o código de autorização e `state`, com limite de 4 KiB em bytes e recusa caracteres de controle.
-- A resposta do Site não é armazenada em cache, não envia referenciador e não depende do banco do Site. Cancelamento volta ao Majucau como erro controlado.
+- A versão 16 só aceita para o encaminhamento local um `state` no formato hexadecimal de 32 bytes; o destino é fixo no código e nunca vem da solicitação. O Site devolve somente o código de autorização e o `state`, limita o código a 4 KiB e recusa caracteres de controle. Os testes da versão 16 verificam esses casos.
+- O retorno local da versão 16 não é armazenado em cache, não envia referenciador e não depende do banco do Site; cancelamento volta ao Majucau como erro controlado. Testes locais verificam o comportamento, mas não simulam o navegador ou a conta real.
 - O Majucau troca o código de uso único usando o HTTPS cadastrado, valida a conexão com uma consulta de leitura e armazena os tokens no cofre local. A resposta do callback remove os parâmetros OAuth da barra do navegador, não é armazenada em cache e usa política de conteúdo restritiva.
 - A sincronização de dados continua sendo uma ação separada; autorizar não altera nem inicia uma sincronização financeira.
 
@@ -27,7 +31,8 @@ O Site não troca nem guarda o token nessa autorização iniciada pelo Majucau l
 
 - Testes locais do pacote Go Bling passaram após a mudança do callback e da limpeza dos parâmetros da URL.
 - As 20 verificações do Site passaram. A compilação Worker e a validação do pacote também passaram.
-- Site v13 publicado com sucesso em `https://majucau-bling-bridge.giselegalha.chatgpt.site`, a partir do commit de origem `4c8cf47262df49628136aa2908d7f69c8045c201`.
+- Site v13 publicado com sucesso em `https://majucau-bling-bridge.giselegalha.chatgpt.site`, a partir do commit de origem `4c8cf47262df49628136aa2908d7f69c8045c201`. A versão atualmente publicada é a 16, criada a partir do commit `fdce727d8f3d868b5bea418d52208039054e7cf8`; seu código-fonte foi aberto no cache consolidado sem alterações nem publicação.
+- Na cópia exata da versão 16, `npm test` passou com 28 testes; `npm run build` e `npm run validate` também passaram. `npm audit --omit=dev` não encontrou vulnerabilidades nas dependências de produção. A auditoria completa registrou quatro alertas moderados em ferramentas de desenvolvimento: `drizzle-kit` inclui um `esbuild` antigo usado pelo servidor de desenvolvimento; isso não aparece nas dependências do pacote de produção. A atualização dessa ferramenta continua registrada para avaliação, sem aplicar downgrade automático.
 - A versão foi publicada mantendo o público e a URL que já estavam configurados. Nenhuma tela aprovada ou regra financeira foi alterada.
 - O fluxo foi validado com testes automatizados, não com uma autorização real da conta Majucau. Ainda não há evidência de conta conectada ou dados importados.
 

@@ -42,7 +42,12 @@ GRANT INSERT, UPDATE ON TABLE
   receivables,
   payables
 TO majucau_runtime;
-GRANT INSERT ON TABLE raw_records, bling_sync_page_checkpoints, payable_sources TO majucau_runtime;
+GRANT INSERT ON TABLE
+  raw_records,
+  bling_sync_page_checkpoints,
+  payable_sync_snapshot_rows,
+  payable_sources
+TO majucau_runtime;
 GRANT DELETE ON TABLE bling_sync_page_checkpoints TO majucau_runtime;
 GRANT INSERT, DELETE ON TABLE google_drive_sync_page_checkpoints TO majucau_runtime;
 GRANT INSERT, UPDATE, DELETE ON TABLE google_drive_sync_folders TO majucau_runtime;

@@ -71,9 +71,4 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION upsert_bling_supplier_contact(uuid, text, text, uuid) FROM PUBLIC, majucau_runtime;
-GRANT EXECUTE ON FUNCTION upsert_bling_supplier_contact(uuid, text, text, uuid) TO majucau_runtime;
-
-GRANT SELECT, INSERT ON TABLE payable_sync_snapshot_rows TO majucau_runtime;
-GRANT INSERT, UPDATE ON TABLE payables TO majucau_runtime;
-GRANT INSERT ON TABLE payable_sources TO majucau_runtime;
+REVOKE ALL ON FUNCTION upsert_bling_supplier_contact(uuid, text, text, uuid) FROM PUBLIC;

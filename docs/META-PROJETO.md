@@ -98,8 +98,14 @@ Próximo passo da BK-041: salvar no Majucau o Client Secret do aplicativo Bling,
 
 ### Atualização — documentação de paginação e acesso — 26/10/2026
 
-- A documentação geral oficial do Bling diz que listas GET usam `pagina` e `limite` (100 por padrão). A referência específica de `GET /caixas` não deixa clara a resposta de fim de lista; por isso o código continua recusando publicar um retrato sem comprovação de término, em vez de presumir paginação completa.
+- A documentação geral oficial do Bling diz que listas GET usam `pagina` e `limite` (100 por padrão). O adapter de `/caixas` envia esse limite, mas só considera página curta/vazia como terminal se a resposta confirmar o limite aplicado ou trouxer metadados suficientes; sem essa confirmação, a carga permanece incompleta.
 - A documentação de limites da API informa que filtros com intervalo maior que um ano retornam erro 400. A faixa aprovada de 01/01/2026 até a data de hoje ainda está dentro desse limite; antes da virada do limite, será necessário dividir a leitura histórica em períodos sem lacunas e manter a publicação atômica.
 - Tentei ler a aba Chrome já aberta em “Caixas e bancos”. O controle de navegador recusou o acesso ao domínio por uma permissão salva/política, mesmo com “Sempre permitir” aparecendo nas configurações. Não tentei contornar esse bloqueio nem cliquei em autenticação.
 - A conferência de nomes de arquivos do cofre mostrou somente `.entropy` e `.scope`, sem `bling_credentials_v1.dpapi`; o segredo não foi lido. Assim, a conexão real continua sem comprovação.
-- Próximo passo: restabelecer acesso autorizado do navegador ou validar via resposta/exportação sanitizada; salvar o Client Secret no Majucau sem enviá-lo pelo chat; então concluir OAuth, testar a paginação real e conciliar antes de liberar os cards.
+- Próximo passo: restabelecer acesso autorizado do navegador ou validar via resposta/exportação sanitizada; salvar o Client Secret no Majucau sem enviá-lo pelo chat; então concluir OAuth, confirmar que `/caixas` aceita o limite e detectar o fim real da lista; depois persistir e conciliar movimentos antes de liberar os cards.
+
+### Implementação local do limite de página de `/caixas` — 26/10/2026
+
+- A consulta de movimentos envia `limite=100`. A resposta só é tratada como página final quando o Bling confirma o tamanho aplicado ou fornece metadados suficientes; uma página vazia sem esses dados continua ambígua e não pode substituir o retrato anterior.
+- Testes locais em `internal/integrations/bling` e `go vet` passaram. Não houve chamada real porque o controle do Chrome recusou acesso à origem e o cofre segue sem o arquivo DPAPI do Client Secret.
+- A etapa avançou em confiabilidade local, mas a integração real e a normalização permanecem pendentes; percentuais não mudaram.

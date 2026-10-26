@@ -125,8 +125,8 @@ func (c *BlingAPIClient) ListFinancialCategories(ctx context.Context, page, limi
 }
 
 // CashMovementsFilter contains documented date/page/category parameters and a
-// local response record cap. MaxRecords is not sent to Bling because the
-// current GET /caixas contract does not document a limit query parameter.
+// bounded page size. The Bling pagination guide documents `limite` for GET
+// list resources, with 100 records by default.
 type CashMovementsFilter struct {
 	Page        int
 	MaxRecords  int
@@ -195,9 +195,8 @@ func parseCashMovementDate(value string) (time.Time, bool) {
 }
 
 // ListCashMovements reads one bounded page from GET /caixas and preserves
-// each item as RAW JSON. MaxRecords is an application-side cap, not a query
-// parameter. If the response also omits a page size or explicit page metadata,
-// HasNextKnown stays false for an empty page; callers must fail closed.
+// each item as RAW JSON. It requests the general-guide page size, but only
+// trusts pagination completion when the response confirms the applied limit.
 func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovementsFilter) (BlingAPIResourcePage, error) {
 	if c == nil || c.baseURL == nil || c.httpClient == nil {
 		return BlingReceivablesPage{}, ErrBlingAPIConfiguration
@@ -210,6 +209,7 @@ func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovem
 	pathURL.Path = strings.TrimRight(pathURL.Path, "/") + "/caixas"
 	query := pathURL.Query()
 	query.Set("pagina", strconv.Itoa(filter.Page))
+	query.Set("limite", strconv.Itoa(filter.MaxRecords))
 	setOptionalQuery(query, "dataInicial", filter.DateFrom)
 	setOptionalQuery(query, "dataFinal", filter.DateTo)
 	for _, categoryID := range filter.CategoryIDs {
@@ -224,7 +224,11 @@ func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovem
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 	req.Header.Set("enable-jwt", "1")
-	return c.doFinancialResourceRequestWithoutPageLimit(req, ReceivablesFilter{Page: filter.Page, Limit: filter.MaxRecords})
+	// The general Bling guide documents pagina/limite for list resources, but
+	// the endpoint-specific /caixas contract has not yet been confirmed against
+	// this account. Request the bounded page size, but do not infer that Bling
+	// applied it unless the response confirms pagination metadata.
+	return c.doFinancialResourceRequestWithLimit(req, ReceivablesFilter{Page: filter.Page, Limit: filter.MaxRecords}, false)
 }
 
 func (c *BlingAPIClient) getDataRecord(ctx context.Context, resource string) (json.RawMessage, error) {

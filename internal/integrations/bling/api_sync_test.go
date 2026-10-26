@@ -68,8 +68,8 @@ func TestCashMovementsAPISyncServicePreservesPagedRAWContract(t *testing.T) {
 		if query.Get("dataInicial") != "2026-01-01" || query.Get("dataFinal") != "2026-10-18" {
 			t.Fatalf("date range = %q..%q, want 2026-01-01..2026-10-18", query.Get("dataInicial"), query.Get("dataFinal"))
 		}
-		if _, ok := r.URL.Query()["limite"]; ok {
-			t.Fatal("cash movement request sent undocumented limite parameter")
+		if r.URL.Query().Get("limite") != "100" {
+			t.Fatalf("cash movement page size = %q, want 100", r.URL.Query().Get("limite"))
 		}
 		if r.Header.Get("enable-jwt") != "1" || r.Header.Get("Authorization") != "Bearer test-token" {
 			t.Fatal("cash movement request did not preserve JWT authorization headers")

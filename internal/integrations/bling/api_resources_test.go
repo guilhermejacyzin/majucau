@@ -264,7 +264,7 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 		if r.Method != http.MethodGet || r.URL.Path != "/Api/v3/caixas" {
 			t.Fatalf("request = %s %s, want GET /Api/v3/caixas", r.Method, r.URL.Path)
 		}
-		if r.URL.Query().Get("pagina") != "2" || r.URL.Query().Has("limite") {
+		if r.URL.Query().Get("pagina") != "2" || r.URL.Query().Get("limite") != "2" {
 			t.Fatalf("pagination query = %s", r.URL.RawQuery)
 		}
 		categoryIDs := r.URL.Query()["idsCategorias"]
@@ -326,7 +326,7 @@ func TestListCashMovementsRejectsInvalidCategoryIDsBeforeNetworkCall(t *testing.
 	}
 }
 
-func TestListCashMovementsContinuesWhenResponseHasDataButNoPageSize(t *testing.T) {
+func TestListCashMovementsContinuesConservativelyWhenResponseOmitsPageSize(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"data":[{"id":789}],"pagination":{"total":5}}`))
 	}))
@@ -340,7 +340,28 @@ func TestListCashMovementsContinuesWhenResponseHasDataButNoPageSize(t *testing.T
 		t.Fatal(err)
 	}
 	if !page.HasNextKnown || !page.HasNext || page.Limit != 0 {
-		t.Fatalf("non-empty page without a known page size did not continue conservatively: %+v", page)
+		t.Fatalf("cash movement response without applied page-size metadata should continue conservatively: %+v", page)
+	}
+}
+
+func TestListCashMovementsUsesResponseLimitToConfirmShortPageEnd(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("limite") != "2" {
+			t.Fatalf("limit = %q, want 2", r.URL.Query().Get("limite"))
+		}
+		_, _ = w.Write([]byte(`{"data":[{"id":789}],"pagination":{"limit":2,"total":1}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := client.ListCashMovements(context.Background(), CashMovementsFilter{Page: 1, MaxRecords: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Limit != 2 || !page.HasNextKnown || page.HasNext {
+		t.Fatalf("short cash movement page = %+v, want terminal page confirmed by response metadata", page)
 	}
 }
 

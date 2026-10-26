@@ -15,13 +15,13 @@
 ## Proteções mantidas
 
 - Somente chamadas `GET` com JWT; o retry compartilhado permanece limitado a falhas transitórias.
-- O cliente não envia `limite` para `/caixas`, pois a OpenAPI pública consultada não documenta esse parâmetro. O teto de 100 registros por resposta é local, não é tratado como contrato do Bling.
+- O cliente envia `limite=100` seguindo a orientação geral de paginação do Bling. Como a OpenAPI específica de `/caixas` não foi confirmada para esta conta, o adapter não presume que o parâmetro foi aceito: uma página curta só encerra a lista se a resposta confirmar o tamanho ou trouxer metadados suficientes. Sem confirmação, a carga falha fechada.
 - Uma resposta sem prova do fim da paginação falha com `BLING_API_PAGINATION_UNKNOWN`. O rollback preserva o snapshot/cursor anterior; dados incompletos não são exibidos como carga confirmada.
 - O conteúdo continua JSON bruto. Não há classificação em CAPEX, conta, categoria contábil, entrada ou saída nesta etapa.
 
 ## Verificação
 
-- `go test -count=1 ./internal/integrations/bling ./cmd/worker`: passou no Windows. O teste inclui a montagem da consulta `/caixas`, ausência do parâmetro não documentado e preservação dos headers JWT.
+- Na implementação inicial de 25/10, o teste verificava que `/caixas` não enviava `limite`; a atualização de 26/10 passou a verificar que a consulta pede explicitamente 100 itens e mantém comportamento conservador sem confirmação da resposta.
 - O teste PostgreSQL `TestBlingDailySyncSkipsACompletedScheduledLoad` foi atualizado para exigir os três recursos e precisa passar na CI com PostgreSQL. Essa evidência ainda está pendente da publicação.
 - A sessão local do protótipo verificada antes desta implementação informou `NOT_CONFIGURED` para Bling e Client Secret ausente. Nenhuma chamada autenticada à conta real aconteceu; “testes passaram” não significa que a integração real sincronizou.
 
@@ -33,3 +33,10 @@
 4. Homologar paginação, campos e categorias da conta com evidência sanitizada antes de mapear qualquer valor para CAPEX, DRE, fluxo de caixa ou indicadores.
 
 Nenhuma tela aprovada, regra financeira, regra de negócio ou credencial foi alterada.
+
+## Atualização do limite de página — 26/10/2026
+
+- A orientação geral oficial de paginação do Bling define `pagina` e `limite`, com 100 registros por padrão. O adaptador envia `limite=100` em `GET /caixas`, mas não deduz que o endpoint aplicou o tamanho solicitado.
+- Página curta/vazia só encerra a leitura quando a resposta confirma o limite ou fornece metadados suficientes. Sem confirmação, a sincronização falha e preserva o retrato/cursor anterior; não publica uma carga incompleta como completa.
+- Testes sintéticos do pacote Bling e `go vet` passaram; a verificação do backlog também passou. Isso valida montagem da consulta e comportamento conservador quando faltam metadados, não a resposta da conta Majucau.
+- A aceitação do parâmetro e o fim da lista continuam pendentes de homologação OAuth com a conta real. O pacote não normaliza os lançamentos nem os classifica como CAPEX.

@@ -80,13 +80,15 @@ Os schemas públicos de categorias e de caixa descrevem `data[]`, sem informar
 como identificar a última página; o cliente não pode declarar a lista completa
 sem esse marcador. O adaptador agora oferece `ListCashMovements` e
 `GetCashMovement`, que aplicam limite local de registros, JWT, cancelamento e
-retry seguro, e preservam a resposta como RAW. Em `GET /caixas`, esse limite
-não é enviado como parâmetro `limite`, pois a OpenAPI atual não o documenta.
-A leitura de caixa ainda não é persistida nem integrada ao snapshot. A lista
-não envia filtro por ID de categoria até que sua codificação exata seja
-homologada. Os IDs/hierarquia de CAPEX e a
-correspondência dos movimentos com os relatórios da Majucau precisam ser
-confirmados antes de exibir valores. Consulte
+retry seguro, e preservam a resposta como RAW. Em `GET /caixas`, a consulta
+envia `limite=100` conforme a orientação geral de paginação do Bling, mas não
+presume que esta rota aplicou o parâmetro. Uma página curta/vazia só encerra a
+lista quando a resposta confirma o limite ou fornece metadados suficientes;
+caso contrário, a carga é rejeitada como incompleta e o retrato anterior é
+mantido. A lista ainda não foi homologada na conta real. Ela não envia filtro
+por ID de categoria até que sua codificação exata seja homologada. Os
+IDs/hierarquia de CAPEX e a correspondência dos movimentos com os relatórios
+da Majucau precisam ser confirmados antes de exibir valores. Consulte
 `docs/evidence/CAPEX-REPORT-STRUCTURE-REVIEW-2026-10-11.md`.
 
 Um `total` sem tamanho de página conhecido não basta para inferir se há próxima

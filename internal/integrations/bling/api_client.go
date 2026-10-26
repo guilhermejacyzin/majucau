@@ -412,11 +412,11 @@ func (c *BlingAPIClient) doFinancialResourceAttempt(req *http.Request, filter Re
 		return BlingReceivablesPage{}, fmt.Errorf("%w: response data exceeds the page limit", ErrBlingAPISchemaMismatch)
 	}
 	if !page.HasNextKnown {
-		// The documented list responses expose a data array, while pagina/limite
-		// (default 100) identify the page window. A full page may have another
-		// page; a short page is terminal. This also handles an empty page after
-		// an exact multiple of the page size. If no page size is documented or
-		// returned, keep the conservative behavior and reject an empty result.
+		// A short page is terminal only when the endpoint's page size is known
+		// from its established contract or returned pagination metadata. This
+		// also handles an empty page after an exact multiple of the page size.
+		// If a limit was merely requested but not confirmed, keep the conservative
+		// behavior and reject an empty result rather than claiming completeness.
 		if pageLimitKnown && page.Limit > 0 {
 			page.HasNext = len(page.Records) == page.Limit
 			page.HasNextKnown = true

@@ -359,6 +359,33 @@ func TestListCashMovementsRejectsOversizedDateFilterBeforeNetworkCall(t *testing
 	}
 }
 
+func TestListCashMovementsRejectsInvalidDatesBeforeNetworkCall(t *testing.T) {
+	doer := &errorHTTPDoer{err: errors.New("network should not be called")}
+	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name   string
+		filter CashMovementsFilter
+	}{
+		{name: "invalid start day", filter: CashMovementsFilter{DateFrom: "2026-02-30"}},
+		{name: "invalid end month", filter: CashMovementsFilter{DateTo: "2026-13-01"}},
+		{name: "non-canonical date", filter: CashMovementsFilter{DateFrom: "2026-9-01"}},
+		{name: "reversed period", filter: CashMovementsFilter{DateFrom: "2026-10-01", DateTo: "2026-09-30"}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := client.ListCashMovements(context.Background(), test.filter); !errors.Is(err, ErrBlingAPIConfiguration) {
+				t.Fatalf("filter error = %v, want configuration error", err)
+			}
+		})
+	}
+	if doer.calls != 0 {
+		t.Fatalf("network calls = %d, want 0", doer.calls)
+	}
+}
+
 func TestGetCashMovementRejectsInvalidIDBeforeNetworkCall(t *testing.T) {
 	doer := &errorHTTPDoer{err: errors.New("network should not be called")}
 	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")

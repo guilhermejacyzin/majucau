@@ -389,12 +389,18 @@ func (s *BlingOAuthService) Disconnect(ctx context.Context) error {
 // payables. Status-only requests retain the existing behavior and read both.
 // This method never invents a financial window and never normalizes records.
 func (s *BlingOAuthService) Sync(ctx context.Context, filter ReceivablesFilter) (BlingRawSyncResult, error) {
-	return s.sync(ctx, filter, nil, false)
+	return s.sync(ctx, filter, nil, false, nil)
 }
 
-func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, correlationID *uuid.UUID, includeCashMovements bool) (BlingRawSyncResult, error) {
+func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, correlationID *uuid.UUID, includeCashMovements bool, cashMovementFilter *CashMovementsFilter) (BlingRawSyncResult, error) {
 	if includeCashMovements && correlationID == nil {
 		return BlingRawSyncResult{}, errors.New("daily cash movement sync requires a stable correlation ID")
+	}
+	if includeCashMovements && cashMovementFilter == nil {
+		return BlingRawSyncResult{}, fmt.Errorf("%w: daily cash movement sync requires an explicit date range", ErrBlingAPIConfiguration)
+	}
+	if !includeCashMovements && cashMovementFilter != nil {
+		return BlingRawSyncResult{}, fmt.Errorf("%w: cash movement date range is only valid for a cash movement sync", ErrBlingAPIConfiguration)
 	}
 	dateMode, err := financialDateFilterMode(filter)
 	if err != nil {
@@ -452,7 +458,7 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 		}
 	}
 	if includeCashMovements {
-		cashMovements := NewCashMovementsAPISyncService(s.pool, client)
+		cashMovements := newCashMovementsAPISyncService(s.pool, client, *cashMovementFilter)
 		result.CashMovements, err = cashMovements.SyncWithCorrelationID(ctx, ReceivablesFilter{}, pgUUID(*correlationID))
 		if err != nil {
 			if result.Receivables.Status == "SUCCESS" || result.Payables.Status == "SUCCESS" {

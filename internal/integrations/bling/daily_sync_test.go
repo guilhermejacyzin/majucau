@@ -37,3 +37,20 @@ func TestDailyBlingCorrelationIDRequiresTheApprovedSchedule(t *testing.T) {
 		t.Fatalf("wrong schedule time error = %v", err)
 	}
 }
+
+func TestDailyCashMovementHistoryFilterUsesApprovedCapexPeriod(t *testing.T) {
+	local := time.FixedZone("Brasilia", -3*60*60)
+	filter, err := dailyCashMovementHistoryFilter(time.Date(2026, 10, 18, 9, 30, 0, 0, local))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filter.DateFrom != "2026-01-01" || filter.DateTo != "2026-10-18" {
+		t.Fatalf("cash movement history = %q..%q, want 2026-01-01..2026-10-18", filter.DateFrom, filter.DateTo)
+	}
+}
+
+func TestDailyCashMovementHistoryFilterRejectsZeroTime(t *testing.T) {
+	if _, err := dailyCashMovementHistoryFilter(time.Time{}); !errors.Is(err, ErrBlingDailyScheduleInvalid) {
+		t.Fatalf("zero schedule time error = %v", err)
+	}
+}

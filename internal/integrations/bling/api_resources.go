@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // GetPayable reads one account-payable detail from Bling and preserves its
@@ -143,6 +144,17 @@ func (f CashMovementsFilter) normalized() (CashMovementsFilter, error) {
 	if len(f.DateFrom) > maxCashMovementDateFilterBytes || len(f.DateTo) > maxCashMovementDateFilterBytes {
 		return CashMovementsFilter{}, fmt.Errorf("%w: date filters exceed %d bytes", ErrBlingAPIConfiguration, maxCashMovementDateFilterBytes)
 	}
+	dateFrom, hasDateFrom := parseCashMovementDate(f.DateFrom)
+	if f.DateFrom != "" && !hasDateFrom {
+		return CashMovementsFilter{}, fmt.Errorf("%w: invalid cash movement start date", ErrBlingAPIConfiguration)
+	}
+	dateTo, hasDateTo := parseCashMovementDate(f.DateTo)
+	if f.DateTo != "" && !hasDateTo {
+		return CashMovementsFilter{}, fmt.Errorf("%w: invalid cash movement end date", ErrBlingAPIConfiguration)
+	}
+	if hasDateFrom && hasDateTo && dateFrom.After(dateTo) {
+		return CashMovementsFilter{}, fmt.Errorf("%w: cash movement start date is after end date", ErrBlingAPIConfiguration)
+	}
 	if len(f.CategoryIDs) > maxCashMovementCategoryIDs {
 		return CashMovementsFilter{}, fmt.Errorf("%w: category filter exceeds %d IDs", ErrBlingAPIConfiguration, maxCashMovementCategoryIDs)
 	}
@@ -169,6 +181,17 @@ func (f CashMovementsFilter) normalized() (CashMovementsFilter, error) {
 		return CashMovementsFilter{}, fmt.Errorf("%w: max records must be between 1 and %d", ErrBlingAPIConfiguration, BlingMaxPageSize)
 	}
 	return f, nil
+}
+
+func parseCashMovementDate(value string) (time.Time, bool) {
+	if value == "" {
+		return time.Time{}, false
+	}
+	parsed, err := time.Parse("2006-01-02", value)
+	if err != nil || parsed.Format("2006-01-02") != value {
+		return time.Time{}, false
+	}
+	return parsed, true
 }
 
 // ListCashMovements reads one bounded page from GET /caixas and preserves

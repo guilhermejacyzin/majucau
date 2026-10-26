@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	dailyBlingLockClass int32 = 0x4D414A55
-	dailyBlingLockKey   int32 = 0x424C494E
+	dailyBlingLockClass   int32 = 0x4D414A55
+	dailyBlingLockKey     int32 = 0x424C494E
+	capexHistoryStartDate       = "2026-01-01"
 )
 
 var (
@@ -31,6 +32,10 @@ var (
 // successfully.
 func (s *BlingOAuthService) SyncDaily(ctx context.Context, scheduledAt time.Time) (result BlingRawSyncResult, skipped bool, returnErr error) {
 	correlationID, err := dailyBlingCorrelationID(scheduledAt)
+	if err != nil {
+		return BlingRawSyncResult{}, false, err
+	}
+	cashMovementFilter, err := dailyCashMovementHistoryFilter(scheduledAt)
 	if err != nil {
 		return BlingRawSyncResult{}, false, err
 	}
@@ -59,8 +64,24 @@ func (s *BlingOAuthService) SyncDaily(ctx context.Context, scheduledAt time.Time
 	if completed {
 		return BlingRawSyncResult{Status: "SUCCESS"}, true, nil
 	}
-	result, err = s.sync(ctx, ReceivablesFilter{}, &correlationID, true)
+	result, err = s.sync(ctx, ReceivablesFilter{}, &correlationID, true, &cashMovementFilter)
 	return result, false, err
+}
+
+func dailyCashMovementHistoryFilter(scheduledAt time.Time) (CashMovementsFilter, error) {
+	if scheduledAt.IsZero() {
+		return CashMovementsFilter{}, ErrBlingDailyScheduleInvalid
+	}
+	location, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		return CashMovementsFilter{}, errors.Join(ErrBlingDailyScheduleInvalid, err)
+	}
+	dateTo := scheduledAt.In(location).Format("2006-01-02")
+	filter := CashMovementsFilter{DateFrom: capexHistoryStartDate, DateTo: dateTo}
+	if _, err := filter.normalized(); err != nil {
+		return CashMovementsFilter{}, errors.Join(ErrBlingDailyScheduleInvalid, err)
+	}
+	return filter, nil
 }
 
 func dailyBlingSyncCompleted(ctx context.Context, connection *pgxpool.Conn, correlation pgtype.UUID) (bool, error) {

@@ -99,10 +99,17 @@ func (s *PayablesAPISyncService) SyncWithCorrelationID(ctx context.Context, filt
 type CashMovementsAPISyncService struct{ *apiResourceSyncService }
 
 func NewCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *CashMovementsAPISyncService {
+	return newCashMovementsAPISyncService(pool, client, CashMovementsFilter{})
+}
+
+func newCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient, dateFilter CashMovementsFilter) *CashMovementsAPISyncService {
 	var list func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
 	if client != nil {
 		list = func(ctx context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
-			return client.ListCashMovements(ctx, CashMovementsFilter{Page: filter.Page, MaxRecords: filter.Limit})
+			request := dateFilter
+			request.Page = filter.Page
+			request.MaxRecords = filter.Limit
+			return client.ListCashMovements(ctx, request)
 		}
 	}
 	return &CashMovementsAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: CashMovementsAPIResource, sourceEntity: "bling.caixas.page", list: list}}

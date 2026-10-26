@@ -61,8 +61,12 @@ func TestCashMovementsAPISyncServicePreservesPagedRAWContract(t *testing.T) {
 		if r.Method != http.MethodGet || r.URL.Path != "/caixas" {
 			t.Fatalf("request = %s %s, want GET /caixas", r.Method, r.URL.Path)
 		}
-		if r.URL.Query().Get("pagina") != "3" {
-			t.Fatalf("page = %q, want 3", r.URL.Query().Get("pagina"))
+		query := r.URL.Query()
+		if query.Get("pagina") != "3" {
+			t.Fatalf("page = %q, want 3", query.Get("pagina"))
+		}
+		if query.Get("dataInicial") != "2026-01-01" || query.Get("dataFinal") != "2026-10-18" {
+			t.Fatalf("date range = %q..%q, want 2026-01-01..2026-10-18", query.Get("dataInicial"), query.Get("dataFinal"))
 		}
 		if _, ok := r.URL.Query()["limite"]; ok {
 			t.Fatal("cash movement request sent undocumented limite parameter")
@@ -79,7 +83,7 @@ func TestCashMovementsAPISyncServicePreservesPagedRAWContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewCashMovementsAPISyncService(nil, client)
+	service := newCashMovementsAPISyncService(nil, client, CashMovementsFilter{DateFrom: "2026-01-01", DateTo: "2026-10-18"})
 	if service.resource != CashMovementsAPIResource || service.sourceEntity != "bling.caixas.page" {
 		t.Fatalf("resource/source = %q/%q", service.resource, service.sourceEntity)
 	}

@@ -21,6 +21,15 @@ func (c *BlingAPIClient) GetPayable(ctx context.Context, id int64) (json.RawMess
 	return c.getDataRecord(ctx, "contas/pagar/"+strconv.FormatInt(id, 10))
 }
 
+// GetContact reads one Bling contact by its numeric ID. Its response remains
+// raw and size-bounded until the caller validates the fields it needs.
+func (c *BlingAPIClient) GetContact(ctx context.Context, id int64) (json.RawMessage, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("%w: contact ID must be positive", ErrBlingAPIConfiguration)
+	}
+	return c.getDataRecord(ctx, "contatos/"+strconv.FormatInt(id, 10))
+}
+
 // GetBordero reads one payment bordero from Bling and preserves the response
 // as RAW JSON. It does not infer category membership or allocate payments.
 func (c *BlingAPIClient) GetBordero(ctx context.Context, id int64) (json.RawMessage, error) {

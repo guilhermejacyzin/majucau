@@ -63,14 +63,20 @@ classificados sem devolver corpo de resposta ou segredo em mensagens. Ainda não
 há mapeamento de campos financeiros: ele só será ativado depois do BK-040 com
 uma resposta real sanitizada da conta autorizada.
 
-`BlingAPIClient.ListPayables` também cobre `GET /contas/pagar`, e o sync RAW
-genérico diferencia `bling.contas_receber.page` de `bling.contas_pagar.page`.
-Os dois recursos continuam somente leitura e sem normalização financeira.
-O client também lê o detalhe de uma conta a pagar, de um borderô e de uma
-categoria, além de listar categorias por página. As respostas de detalhe permanecem em JSON original e
-limitado; ainda não são persistidas nem ligadas ao snapshot de CAPEX. A listagem
-de categorias só pode ser continuada ou encerrada quando a API fornece um
-marcador de paginação explícito.
+`BlingAPIClient.ListPayables` cobre `GET /contas/pagar`. Na carga diária completa
+com identidade estável, o worker também busca o detalhe de cada obrigação, o
+contato e a categoria referenciados, preserva cada resposta como RAW e grava os
+campos tipados da obrigação com lineage. Esse snapshot só é publicado como
+`NORMALIZED` depois que todas as páginas e referências terminam; erro reverte
+RAW, fatos e cursor juntos e preserva o snapshot anterior. A Visão Executiva e
+T4 leem o mesmo último snapshot completo. As demais sincronizações de Contas a
+Pagar continuam `RAW_ONLY`; Contas a Receber, pagamentos e Caixa também ainda
+não têm normalizador da API. Isso não calcula CAPEX nem classifica regras da
+DRE. O client lê ainda detalhes de borderô e categoria, além de listar
+categorias por página. A listagem de categorias só pode ser continuada ou
+encerrada quando a API fornece um marcador de paginação explícito. A primeira
+integração do normalizador está coberta por teste PostgreSQL dedicado, mas esse
+teste ainda precisa executar na CI e a conta real ainda requer homologação.
 
 O início do OAuth desktop está em `internal/integrations/bling/oauth_service.go`:
 o worker cria sessão efêmera, valida `state` e escuta somente `127.0.0.1`.

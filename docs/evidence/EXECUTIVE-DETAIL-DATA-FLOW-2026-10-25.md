@@ -216,3 +216,17 @@ A falha inicial não se repetiu, mas sua causa exata continua sem confirmação.
 A conversão da resposta API Bling RAW para registros financeiros, a validação
 com a conta real e as outras famílias de tela seguem pendentes; esta correção
 evita apresentar a leitura RAW como zero financeiro.
+
+## Normalização diária de Contas a Pagar — 26/10/2026
+
+A carga diária completa de `contas.pagar` agora converte cada título para
+`payables`, preserva respostas da obrigação, contato e categoria em RAW, cria
+lineage e registra os títulos associados ao lote normalizado. O resumo e as
+linhas da tela T4 filtram contas de API pela associação do último snapshot
+completo; a Visão Executiva continua usando o mesmo snapshot. Uma falha em
+qualquer detalhe reverte a carga e mantém o retrato anterior. Contas a Receber,
+pagamentos, `/caixas`, conciliação, CAPEX e as demais telas ainda não têm esse
+conversor. Os testes Go locais e as verificações estáticas passaram; o teste
+PostgreSQL está aguardando execução da CI, pois não há URL de banco de testes
+configurada nesta máquina. Nenhuma tela, cálculo ou regra financeira foi
+alterada. Evidência: `docs/evidence/BLING-PAYABLE-API-NORMALIZATION-2026-10-26.md`.

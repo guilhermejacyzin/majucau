@@ -22,6 +22,7 @@ GRANT SELECT ON TABLE
   google_drive_source_validation_runs,
   sync_cursors,
   raw_records,
+  payable_sync_snapshot_rows,
   receipts,
   receivables,
   payables,
@@ -30,7 +31,7 @@ GRANT SELECT ON TABLE
 TO majucau_runtime;
 
 -- Writes are restricted to the configuration, sync ledger, RAW ingestion,
--- cursors, imported receivable/receipt facts, and temporary page checkpoints.
+-- cursors, normalized financial facts, and bounded snapshot/checkpoint rows.
 -- The worker cannot delete published Drive inventory or mutate other domain tables.
 GRANT INSERT, UPDATE ON TABLE
   integration_connections,
@@ -38,9 +39,10 @@ GRANT INSERT, UPDATE ON TABLE
   google_drive_source_validation_runs,
   sync_cursors,
   receipts,
-  receivables
+  receivables,
+  payables
 TO majucau_runtime;
-GRANT INSERT ON TABLE raw_records, bling_sync_page_checkpoints TO majucau_runtime;
+GRANT INSERT ON TABLE raw_records, bling_sync_page_checkpoints, payable_sources TO majucau_runtime;
 GRANT DELETE ON TABLE bling_sync_page_checkpoints TO majucau_runtime;
 GRANT INSERT, DELETE ON TABLE google_drive_sync_page_checkpoints TO majucau_runtime;
 GRANT INSERT, UPDATE, DELETE ON TABLE google_drive_sync_folders TO majucau_runtime;
@@ -57,6 +59,7 @@ REVOKE ALL ON TABLE audit_events FROM PUBLIC, majucau_runtime;
 REVOKE ALL ON ALL ROUTINES IN SCHEMA public FROM PUBLIC, majucau_runtime;
 GRANT EXECUTE ON FUNCTION retire_current_raw_record(uuid) TO majucau_runtime;
 GRANT EXECUTE ON FUNCTION audit_google_drive_credential_configured(text, uuid, boolean) TO majucau_runtime;
+GRANT EXECUTE ON FUNCTION upsert_bling_supplier_contact(uuid, text, text, uuid) TO majucau_runtime;
 
 -- The schema uses UUID defaults and does not need runtime sequence access.
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC;

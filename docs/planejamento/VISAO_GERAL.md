@@ -28,9 +28,11 @@ O backlog contém 127 tarefas, de BK-000 a BK-126. Os números **2,4% por quanti
 
 Na planilha, uma tarefa pontua 100% somente quando está concluída e possui evidência de aceite. Os pesos iniciais são iguais a 1. O acompanhamento não é sincronizado automaticamente com commits, issues ou projetos do GitHub.
 
-### Estado atual do backlog — 19/10/2026
+### Estado do backlog — 26/10/2026
 
 O backlog registra **7 tarefas concluídas, 20 em andamento e 100 não iniciadas**. As tarefas em andamento são BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (80%), BK-042 (70%), BK-043 (40%), BK-056 (5%), BK-066 (5%), BK-067 (25%) e BK-102 (1%). Pela média simples das 127 tarefas, o acompanhamento estima **11,8% concluído e 88,2% restante**. Essa média é uma estimativa de planejamento; não comprova prontidão para homologação ou produção.
+
+Na atualização de 26/10, Contas a Pagar ganhou conversão transacional da API para fatos tipados com lineage, e o snapshot usado pela Visão Executiva e T4 agora aceita essa carga diária completa. BK-041 permanece em 80% enquanto autenticação real, resposta/paginação da conta, pagamento realizado e homologação seguirem pendentes; o acréscimo local ainda não encerra a tarefa. O teste PostgreSQL novo aguarda a CI após o push. A composição do backlog não mudou, então a estimativa geral continua em 11,8% concluído e 88,2% restante. Evidência: `docs/evidence/BLING-PAYABLE-API-NORMALIZATION-2026-10-26.md`.
 
 **Correção de 19/10/2026:** o Drive roda apenas na agenda diária das 09:30 de Brasília. Se o serviço iniciar depois desse horário, aguarda a próxima execução das 09:30; não faz coleta imediata no mesmo dia. Assim, arquivo ausente ou atrasado só é processado no dia seguinte. Evidência: `docs/evidence/DRIVE-NEXT-DAY-SCHEDULE-2026-10-19.md`.
 

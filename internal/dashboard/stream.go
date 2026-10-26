@@ -353,6 +353,17 @@ WITH eligible_receivables AS (
     ) AS month_count,
     COUNT(id) FILTER (WHERE source_system = 'BLING' AND status = 'CONFIRMED') AS total_count
   FROM receipts
+), latest_daily_payable_snapshot AS (
+  SELECT b.id AS sync_batch_id
+    FROM integration_sync_batches b
+    JOIN integration_connections c ON c.id = b.connection_id
+   WHERE c.provider = 'BLING'
+     AND b.resource = 'contas.pagar'
+     AND b.correlation_id IS NOT NULL
+     AND b.status = 'SUCCESS'
+     AND b.data_stage = 'NORMALIZED'
+   ORDER BY b.finished_at DESC, b.id DESC
+   LIMIT 1
 ), p AS (
   SELECT
     COALESCE(SUM(open_balance), 0)::text AS total_value,
@@ -363,7 +374,14 @@ WITH eligible_receivables AS (
       WHERE open_balance > 0 AND due_date < $1::date
     ), 0)::text AS overdue_value,
     COUNT(id) FILTER (WHERE open_balance > 0 AND due_date < $1::date) AS overdue_count
-  FROM payables WHERE open_balance > 0
+  FROM payables pw
+  WHERE pw.open_balance > 0
+    AND (pw.source_entity <> 'bling.conta_pagar' OR EXISTS (
+      SELECT 1
+        FROM latest_daily_payable_snapshot latest
+        JOIN payable_sync_snapshot_rows membership ON membership.sync_batch_id = latest.sync_batch_id
+       WHERE membership.payable_id = pw.id
+    ))
 ), pm AS (
   SELECT
     COALESCE(SUM(amount) FILTER (
@@ -443,6 +461,18 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
 `
 
 const dashboardPayableRowsSQL = `
+WITH latest_daily_payable_snapshot AS (
+  SELECT b.id AS sync_batch_id
+    FROM integration_sync_batches b
+    JOIN integration_connections c ON c.id = b.connection_id
+   WHERE c.provider = 'BLING'
+     AND b.resource = 'contas.pagar'
+     AND b.correlation_id IS NOT NULL
+     AND b.status = 'SUCCESS'
+     AND b.data_stage = 'NORMALIZED'
+   ORDER BY b.finished_at DESC, b.id DESC
+   LIMIT 1
+)
 SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.supplier END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.document END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.due_date END,
@@ -450,7 +480,14 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.supplier END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.category END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.status END,
        limits.exceeds_limit
-  FROM (SELECT * FROM payables WHERE open_balance > 0
+  FROM (SELECT * FROM payables pw
+         WHERE pw.open_balance > 0
+           AND (pw.source_entity <> 'bling.conta_pagar' OR EXISTS (
+             SELECT 1
+               FROM latest_daily_payable_snapshot latest
+               JOIN payable_sync_snapshot_rows membership ON membership.sync_batch_id = latest.sync_batch_id
+              WHERE membership.payable_id = pw.id
+           ))
          ORDER BY due_date, source_id LIMIT 50) pw
   LEFT JOIN contacts c ON c.id = pw.supplier_id
  CROSS JOIN LATERAL (

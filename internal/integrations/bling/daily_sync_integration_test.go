@@ -58,8 +58,8 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 	}()
 	for _, resource := range []string{ReceivablesAPIResource, PayablesAPIResource} {
 		if _, err := pool.Exec(ctx, `
-			INSERT INTO integration_sync_batches (connection_id, resource, status, finished_at, correlation_id)
-			VALUES ($1, $2, 'SUCCESS', clock_timestamp(), $3)`, connection.ID, resource, correlation); err != nil {
+			INSERT INTO integration_sync_batches (connection_id, resource, status, finished_at, correlation_id, data_stage)
+			VALUES ($1, $2, 'SUCCESS', clock_timestamp(), $3, CASE WHEN $2 = 'contas.pagar' THEN 'RAW_ONLY' ELSE 'UNVERIFIED' END)`, connection.ID, resource, correlation); err != nil {
 			t.Fatalf("seed completed %s batch: %v", resource, err)
 		}
 	}
@@ -73,6 +73,13 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 		INSERT INTO integration_sync_batches (connection_id, resource, status, finished_at, correlation_id)
 		VALUES ($1, $2, 'SUCCESS', clock_timestamp(), $3)`, connection.ID, CashMovementsAPIResource, correlation); err != nil {
 		t.Fatalf("seed completed %s batch: %v", CashMovementsAPIResource, err)
+	}
+	result, skipped, err = service.SyncDaily(ctx, scheduledAt)
+	if err == nil || skipped || result.Status == "SUCCESS" {
+		t.Fatalf("RAW-only payable load was accepted as complete: result=%+v skipped=%v error=%v", result, skipped, err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE correlation_id = $1 AND resource = $2`, correlation, PayablesAPIResource); err != nil {
+		t.Fatalf("mark payable fixture as normalized: %v", err)
 	}
 	for attempt := 0; attempt < 2; attempt++ {
 		result, skipped, err = service.SyncDaily(ctx, scheduledAt)

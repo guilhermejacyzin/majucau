@@ -536,6 +536,13 @@ type PayableSource struct {
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
+// Records the payables included in a completed daily Bling snapshot; dashboard readers must use the latest successful NORMALIZED daily batch.
+type PayableSyncSnapshotRow struct {
+	SyncBatchID pgtype.UUID        `json:"sync_batch_id"`
+	PayableID   pgtype.UUID        `json:"payable_id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
 type Payment struct {
 	ID                 pgtype.UUID        `json:"id"`
 	ConnectionID       pgtype.UUID        `json:"connection_id"`

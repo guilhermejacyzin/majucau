@@ -49,16 +49,18 @@ type APISyncResult struct {
 	Status       string
 }
 
-// apiResourceSyncService stores API pages as append-only RAW evidence. It
-// intentionally does not normalize financial fields: source IDs and meanings
-// are still subject to BK-040 confirmation from the real Bling account.
+// apiResourceSyncService stages API pages as append-only RAW evidence. The
+// approved full daily payable snapshot also normalizes its fields in the same
+// publication transaction; other resources remain RAW_ONLY until their
+// mapping contracts are implemented and approved.
 type apiResourceSyncService struct {
-	pool         *pgxpool.Pool
-	client       *BlingAPIClient
-	maxPages     int
-	resource     string
-	sourceEntity string
-	list         func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
+	pool          *pgxpool.Pool
+	client        *BlingAPIClient
+	maxPages      int
+	resource      string
+	sourceEntity  string
+	list          func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
+	normalizePage func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error
 }
 
 type ReceivablesAPISyncService struct{ *apiResourceSyncService }
@@ -81,7 +83,7 @@ const PayablesAPIResource = "contas.pagar"
 type PayablesAPISyncService struct{ *apiResourceSyncService }
 
 func NewPayablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *PayablesAPISyncService {
-	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables}}
+	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables, normalizePage: normalizePayablesAPISnapshotPage(client)}}
 }
 
 // SyncWithCorrelationID runs payables as part of a stable daily operation.
@@ -187,6 +189,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		return APISyncResult{}, fmt.Errorf("remove superseded Bling page checkpoints: %w", err)
 	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
+	fullDailyPayablesSnapshot := s.resource == PayablesAPIResource && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
 	retryCounter := httpretry.NewCounter()
 	ctx = httpretry.WithCounter(ctx, retryCounter)
 	if _, err := tx.Exec(ctx, "SAVEPOINT bling_api_sync_data"); err != nil {
@@ -278,6 +281,24 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		}
 		if updated {
 			result.PagesUpdated++
+		}
+		if fullDailyPayablesSnapshot {
+			records, err := decodePageRecords(payload)
+			if err != nil {
+				return fail("BLING_API_CHECKPOINT_INVALID", err)
+			}
+			if err := s.normalizePage(ctx, queries, connection.ID, batch.ID, records); err != nil {
+				return fail("BLING_API_NORMALIZATION_FAILED", err)
+			}
+		}
+	}
+	if fullDailyPayablesSnapshot {
+		updated, err := queries.MarkIntegrationSyncBatchNormalized(ctx, batch.ID)
+		if err != nil {
+			return fail("BLING_API_NORMALIZATION_FAILED", err)
+		}
+		if updated != 1 {
+			return fail("BLING_API_NORMALIZATION_FAILED", errors.New("daily payable batch stage changed unexpectedly"))
 		}
 	}
 	if err := retireCurrentResourcePagesAfter(ctx, tx, connection.ID, s.sourceEntity, finalPage); err != nil {
@@ -526,6 +547,17 @@ type receivablesPagePayload struct {
 	Total   *int              `json:"total,omitempty"`
 	HasNext bool              `json:"has_next"`
 	Records []json.RawMessage `json:"records"`
+}
+
+func decodePageRecords(payload []byte) ([]json.RawMessage, error) {
+	var page receivablesPagePayload
+	if err := json.Unmarshal(payload, &page); err != nil {
+		return nil, fmt.Errorf("%w: saved Bling page payload is invalid", ErrBlingAPICheckpointInvalid)
+	}
+	if page.Records == nil {
+		return nil, fmt.Errorf("%w: saved Bling page records are missing", ErrBlingAPICheckpointInvalid)
+	}
+	return page.Records, nil
 }
 
 func marshalReceivablesPage(page BlingReceivablesPage) ([]byte, error) {

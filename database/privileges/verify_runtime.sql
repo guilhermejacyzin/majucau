@@ -59,6 +59,7 @@ BEGIN
       'public.google_drive_source_validation_runs',
       'public.sync_cursors',
       'public.raw_records',
+      'public.payable_sync_snapshot_rows',
       'public.receipts',
       'public.receivables',
       'public.payables',
@@ -76,6 +77,8 @@ BEGIN
       'public.google_drive_files',
       'public.sync_cursors',
       'public.raw_records',
+      'public.payable_sync_snapshot_rows',
+      'public.payable_sources',
       'public.receipts',
       'public.receivables'
     ]::text[]);
@@ -86,6 +89,7 @@ BEGIN
       'public.google_drive_sync_folders',
       'public.google_drive_files',
       'public.google_drive_source_validation_runs',
+      'public.payables',
       'public.receipts',
       'public.receivables'
     ]::text[]);
@@ -123,7 +127,8 @@ BEGIN
        has_function_privilege(runtime_oid, function_row.oid, 'EXECUTE') IS DISTINCT FROM (
          function_row.oid = ANY (ARRAY[
            'public.retire_current_raw_record(uuid)'::regprocedure,
-           'public.audit_google_drive_credential_configured(text,uuid,boolean)'::regprocedure
+           'public.audit_google_drive_credential_configured(text,uuid,boolean)'::regprocedure,
+           'public.upsert_bling_supplier_contact(uuid,text,text,uuid)'::regprocedure
          ])
        ) THEN
       RAISE EXCEPTION 'runtime role has unexpected function privileges on %', function_row.oid::regprocedure;

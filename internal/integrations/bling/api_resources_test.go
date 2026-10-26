@@ -2,6 +2,7 @@ package bling
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -71,6 +72,44 @@ func TestGetPayableRejectsInvalidIDBeforeNetworkCall(t *testing.T) {
 	}
 	if doer.calls != 0 {
 		t.Fatalf("network calls = %d, want 0", doer.calls)
+	}
+}
+
+func TestGetContactReadsOnlyTheRequestedNumericContact(t *testing.T) {
+	var gotPath string
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		gotPath = request.URL.Path
+		response.Header().Set("Content-Type", "application/json")
+		_, _ = response.Write([]byte(`{"data":{"id":123,"nome":"Fornecedor teste"}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	contact, err := client.GetContact(context.Background(), 123)
+	if err != nil {
+		t.Fatalf("GetContact() error = %v", err)
+	}
+	if gotPath != "/Api/v3/contatos/123" {
+		t.Fatalf("GetContact() path = %q", gotPath)
+	}
+	if !json.Valid(contact) || !strings.Contains(string(contact), `"nome":"Fornecedor teste"`) {
+		t.Fatalf("GetContact() data = %s", contact)
+	}
+}
+
+func TestGetContactRejectsInvalidIDBeforeNetworkCall(t *testing.T) {
+	doer := &errorHTTPDoer{err: errors.New("network should not be called")}
+	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.GetContact(context.Background(), 0); !errors.Is(err, ErrBlingAPIConfiguration) {
+		t.Fatalf("GetContact(0) error = %v", err)
+	}
+	if doer.calls != 0 {
+		t.Fatalf("GetContact(0) network calls = %d, want 0", doer.calls)
 	}
 }
 

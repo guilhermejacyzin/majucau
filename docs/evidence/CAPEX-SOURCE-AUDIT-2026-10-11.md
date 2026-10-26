@@ -81,3 +81,7 @@ A revisão do modelo local identificou um caminho possível, mas ainda não impl
 - A busca no adapter Bling não encontrou persistência de pagamentos, movimentações de caixa, nem preenchimento desse vínculo.
 
 Assim, o valor CAPEX pago só poderá ser separado com segurança após importar o pagamento e sua ligação idempotente à conta categorizada. O acumulado continua seguindo a decisão registrada: ativos reconhecidos como CAPEX desde o início do histórico confiável. Não somar todos os pagamentos, nem usar fornecedor ou histórico como classificação. Até haver dados vinculados e conferidos com os relatórios, manter ambos os cards indisponíveis.
+
+## Início aprovado para o histórico acumulado — 26/10/2026
+
+Gisele aprovou `01/01/2026`, a data inicial do relatório geral, como início do histórico do card `CAPEX ACUMULADO`. A rotina de consulta já usa essa data como limite inferior. Isso fecha a data de início, mas não identifica por si só os lançamentos CAPEX: o card permanece indisponível até os registros da fonte serem associados à categoria e conciliados com datas e valores do relatório.

@@ -34,7 +34,9 @@ também exige que a data da primeira linha corresponda ao D0 informado.
   encontrou uma vulnerabilidade em um módulo requerido que não é chamado pelo
   código verificado.
 - Os testes opt-in que exigem um PostgreSQL externo não foram executados nesta
-  máquina. Essa alteração cobre o cálculo puro e não altera persistência.
+  máquina. A CI [#40310803417](https://github.com/guilhermejacyzin/majucau/actions/runs/40310803417)
+  passou nos quatro jobs, incluindo PostgreSQL e Windows. A CI usa dados de
+  teste; esta alteração cobre o cálculo puro e não altera persistência.
 
 ## Limites restantes
 

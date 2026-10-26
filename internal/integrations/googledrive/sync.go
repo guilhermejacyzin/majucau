@@ -267,7 +267,7 @@ func (s *FileInventorySyncService) SyncFolder(ctx context.Context, scope DriveFo
 	if err := discardLegacyDriveCheckpoints(ctx, s.pool, connection.ID, resource, correlationID); err != nil {
 		return out, err
 	}
-	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: resource})
+	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: resource, DataStage: "RAW_ONLY"})
 	if err != nil {
 		return out, fmt.Errorf("create Google Drive sync batch: %w", err)
 	}

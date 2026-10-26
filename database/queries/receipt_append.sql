@@ -1,9 +1,9 @@
 -- name: InsertIntegrationSyncBatch :one
-INSERT INTO integration_sync_batches (connection_id, resource)
-VALUES ($1, $2)
+INSERT INTO integration_sync_batches (connection_id, resource, data_stage)
+VALUES ($1, $2, $3)
 RETURNING id, connection_id, resource, started_at, finished_at, status,
           records_read, records_created, records_updated, records_failed,
-          retry_count, error_code, error_message_sanitized, correlation_id;
+          retry_count, error_code, error_message_sanitized, correlation_id, data_stage;
 
 -- name: GetIntegrationConnectionByProvider :one
 SELECT id, provider, configured_by, status, external_account_id,

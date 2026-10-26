@@ -454,9 +454,10 @@ type IntegrationSyncBatch struct {
 	ErrorCode             *string            `json:"error_code"`
 	ErrorMessageSanitized *string            `json:"error_message_sanitized"`
 	CorrelationID         pgtype.UUID        `json:"correlation_id"`
+	// Describes whether an import produced normalized domain records. RAW_ONLY batches must not confirm financial dashboard metrics.
+	DataStage string `json:"data_stage"`
 }
 
-// Compatibility/reporting view over integration_sync_batches; no duplicated log source.
 type IntegrationSyncLog struct {
 	ID                    pgtype.UUID        `json:"id"`
 	ConnectionID          pgtype.UUID        `json:"connection_id"`
@@ -472,6 +473,7 @@ type IntegrationSyncLog struct {
 	ErrorCode             *string            `json:"error_code"`
 	ErrorMessageSanitized *string            `json:"error_message_sanitized"`
 	CorrelationID         pgtype.UUID        `json:"correlation_id"`
+	DataStage             string             `json:"data_stage"`
 }
 
 type InvestmentCalculation struct {

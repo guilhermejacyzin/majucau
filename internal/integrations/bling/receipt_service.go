@@ -69,7 +69,7 @@ func (s *ReceiptImportService) Import(ctx context.Context, folder string) (out R
 	if !connection.ID.Valid {
 		return ReceiptImportResult{}, ErrBlingConnectionMissing
 	}
-	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: ReceiptsReportSourceEntity})
+	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: ReceiptsReportSourceEntity, DataStage: "NORMALIZED"})
 	if err != nil {
 		return ReceiptImportResult{}, fmt.Errorf("create receipt import batch: %w", err)
 	}

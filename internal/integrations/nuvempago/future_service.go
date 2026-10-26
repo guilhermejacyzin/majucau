@@ -160,7 +160,7 @@ func (s *FutureImportService) importWithPending(ctx context.Context, folder stri
 	if !connection.ID.Valid {
 		return FutureImportResult{}, ErrNuvemPagoConnectionMissing
 	}
-	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: FutureSourceEntity})
+	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: FutureSourceEntity, DataStage: "NORMALIZED"})
 	if err != nil {
 		return FutureImportResult{}, fmt.Errorf("create future import batch: %w", err)
 	}
@@ -254,7 +254,7 @@ func (s *FutureImportService) RecordPending(ctx context.Context, pending FutureI
 	if !connection.ID.Valid {
 		return FutureImportResult{}, ErrNuvemPagoConnectionMissing
 	}
-	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: FutureSourceEntity})
+	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: FutureSourceEntity, DataStage: "UNVERIFIED"})
 	if err != nil {
 		return FutureImportResult{}, fmt.Errorf("create pending future source batch: %w", err)
 	}

@@ -116,12 +116,12 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	monthStart := time.Date(businessDate.Year(), businessDate.Month(), 1, 0, 0, 0, 0, time.UTC)
 	monthEnd := monthStart.AddDate(0, 1, 0)
 	var (
-		receivablesValue, futureValue, receiptsMonthValue, receivablesOverdueValue       string
-		payablesValue, payablesTodayValue, payablesOverdueValue, paymentsMonthValue      string
-		receivablesCount, futureCount, receiptsTotalCount, receiptsMonthCount            int64
-		receivablesOverdueCount, payablesCount, payablesTodayCount, payablesOverdueCount int64
-		paymentsTotalCount, paymentsMonthCount                                           int64
-		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt                     pgtype.Timestamptz
+		receivablesValue, futureValue, receiptsMonthValue, receivablesOverdueValue             string
+		payablesValue, payablesTodayValue, payablesOverdueValue, paymentsMonthValue            string
+		receivablesCount, futureCount, receiptsTotalCount, receiptsMonthCount                  int64
+		receivablesOverdueCount, payablesCount, payablesTodayCount, payablesOverdueCount       int64
+		paymentsTotalCount, paymentsMonthCount                                                 int64
+		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt pgtype.Timestamptz
 	)
 	schedule, err := scheduler.NewSaoPaulo0930()
 	if err != nil {
@@ -149,14 +149,16 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&lastBlingSyncAt,
 		&dailyReceivablesSyncAt,
 		&dailyPayablesSyncAt,
+		&dailyCashMovementsSyncAt,
 	)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
 	}
 	receivablesFresh := completedBy(dailyReceivablesSyncAt, asOf)
 	payablesFresh := completedBy(dailyPayablesSyncAt, asOf)
+	cashMovementsFresh := completedBy(dailyCashMovementsSyncAt, asOf)
 	state := "UNAVAILABLE"
-	if futureCount > 0 || receivablesFresh || payablesFresh {
+	if futureCount > 0 || receivablesFresh || payablesFresh || cashMovementsFresh {
 		state = "PARTIAL"
 	}
 	var lastBlingSyncTime *time.Time
@@ -170,12 +172,12 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		DataState:          state,
 		Receivables:        metricForSourceRun(receivablesValue, receivablesCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
 		FutureB2C:          metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
-		ReceiptsMonth:      metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, receivablesFresh, "BLING"),
+		ReceiptsMonth:      metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING"),
 		ReceivablesOverdue: metricForSourceRun(receivablesOverdueValue, receivablesOverdueCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
 		Payables:           metricForSourceRun(payablesValue, payablesCount, payablesCount, payablesFresh, "BLING"),
 		PayablesDueToday:   metricForSourceRun(payablesTodayValue, payablesTodayCount, payablesCount, payablesFresh, "BLING"),
 		PayablesOverdue:    metricForSourceRun(payablesOverdueValue, payablesOverdueCount, payablesCount, payablesFresh, "BLING"),
-		PaymentsMonth:      metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, payablesFresh, "BLING"),
+		PaymentsMonth:      metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING"),
 	}, nil
 }
 
@@ -380,8 +382,9 @@ WITH eligible_receivables AS (
      AND b.status IN ('SUCCESS', 'PARTIAL')
 ), current_daily_bling_sync AS (
   SELECT
-    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.receber' AND b.status = 'SUCCESS') AS receivables_finished_at,
-    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar' AND b.status = 'SUCCESS') AS payables_finished_at
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.receber' AND b.status = 'SUCCESS' AND b.data_stage = 'NORMALIZED') AS receivables_finished_at,
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar' AND b.status = 'SUCCESS' AND b.data_stage = 'NORMALIZED') AS payables_finished_at,
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas' AND b.status = 'SUCCESS' AND b.data_stage = 'NORMALIZED') AS cash_movements_finished_at
     FROM integration_sync_batches b
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
@@ -395,7 +398,8 @@ SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        pm.month_value, pm.month_count, pm.total_count,
        last_bling_sync.finished_at,
        current_daily_bling_sync.receivables_finished_at,
-       current_daily_bling_sync.payables_finished_at
+       current_daily_bling_sync.payables_finished_at,
+       current_daily_bling_sync.cash_movements_finished_at
 FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync CROSS JOIN current_daily_bling_sync
 `
 

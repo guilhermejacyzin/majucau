@@ -155,9 +155,9 @@ nunca como chamada direta da tela.
 - O snapshot já distingue `UNAVAILABLE` de zero confirmado quando a carga
   correspondente concluiu sem registros. Essa proteção deve continuar por
   métrica, sem esconder carga parcial de outra fonte.
-- A conclusão da CI dos testes do código não comprova conexão real. A evidência
-  local mais recente deste incremento registrou Bling como não configurado e
-  sem Client Secret aceito; não houve chamada autenticada à conta real.
+- A conclusão da CI dos testes do código não comprova conexão real. A última
+  evidência anterior a esta correção registrou Bling sem Client Secret aceito;
+  não houve chamada autenticada à conta real durante esta alteração.
 
 ## Proteção e escopo
 
@@ -175,3 +175,29 @@ Fontes revisadas: `AGENTS.md`, `API-INTEGRATION-MAP.md`,
 `internal/integrations/bling/daily_sync.go`,
 `internal/integrations/bling/oauth_service.go` e buscas nas migrations e
 persistências financeiras de produção.
+
+## Correção do estado dos dados — 2026-10-25
+
+A migration `000013` acrescenta `data_stage` ao lote de integração: `RAW_ONLY`
+quando a fonte apenas foi lida/arquivada, `NORMALIZED` quando os fatos foram
+gravados nas tabelas financeiras e `UNVERIFIED` para lotes antigos ou de
+auditoria sem fatos. O valor também aparece na view `integration_sync_logs`.
+
+O adapter da API Bling marca os lotes como `RAW_ONLY`; os importadores que
+persistem fatos financeiros marcam seus lotes como `NORMALIZED`. A Visão
+Executiva só confirma A Receber e A Pagar quando os respectivos lotes diários
+foram normalizados. Recebido no Mês e Pago no Mês dependem de `/caixas`
+normalizado, em vez de presumirem que a leitura de contas a receber/pagar
+confirma esses movimentos. O horário de sincronização continua informando a
+hora real da leitura RAW. As telas e fórmulas permanecem iguais.
+
+`go test -count=1 ./...` e `go vet ./...` passaram. Também passaram a geração
+determinística do sqlc, a conferência das migrations, dos limites de arquitetura
+Go e do backlog. Foi acrescentado um teste PostgreSQL que confirma que lotes
+RAW-only não viram zeros e que cada métrica aguarda seu próprio recurso
+normalizado. Ele não executou localmente, pois `MAJUCAU_TEST_DATABASE_URL` não
+estava configurada; o banco ativo do protótipo não foi usado. A CI remota ainda
+precisa confirmar esse caminho após o push. A conversão da resposta API Bling
+RAW para registros financeiros, a validação com a conta real e as outras
+famílias de tela seguem pendentes; esta correção evita apresentar a leitura RAW
+como zero financeiro.

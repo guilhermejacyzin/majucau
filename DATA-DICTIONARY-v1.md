@@ -104,6 +104,7 @@ O estado da conexão e o estado de frescor serão armazenados separadamente. A r
 |---|---|---|
 | `connection_id` | uuid | Conexão executada |
 | `resource` | text | Recurso sincronizado |
+| `data_stage` | text | `UNVERIFIED`, `RAW_ONLY` ou `NORMALIZED`; só lote normalizado pode confirmar métricas financeiras |
 | `started_at` | timestamptz | Início |
 | `finished_at` | timestamptz nullable | Ausente enquanto em execução |
 | `status` | text | RUNNING/SUCCESS/PARTIAL/FAILED/CANCELLED |
@@ -115,7 +116,7 @@ O estado da conexão e o estado de frescor serão armazenados separadamente. A r
 | `error_code` | text nullable | Código interno estável |
 | `error_message_sanitized` | text nullable | Sem segredo nem dado pessoal desnecessário |
 
-`integration_sync_logs` será uma view de auditoria sobre `integration_sync_batches`, com os mesmos IDs, recurso, início/fim, status, contagens, retries e erros sanitizados. Assim, o nome literal exigido pelo handoff permanece disponível sem duplicar a fonte de verdade.
+`integration_sync_logs` é uma view de auditoria sobre `integration_sync_batches`, com IDs, recurso, etapa dos dados, início/fim, status, contagens, retries e erros sanitizados. Assim, o nome literal exigido pelo handoff permanece disponível sem duplicar a fonte de verdade.
 
 ## 5. RAW
 

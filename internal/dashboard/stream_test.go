@@ -208,7 +208,7 @@ func TestReadStreamSummaryUsesBusinessDateAtUtcMonthBoundary(t *testing.T) {
 func TestWriteDashboardSnapshotHidesBlingDataUntilTodaysScheduledLoadCompletes(t *testing.T) {
 	asOf := time.Date(2026, 9, 21, 13, 0, 0, 0, time.UTC)
 	values := dashboardSummaryValues()
-	values[19], values[20] = nil, nil
+	values[19], values[20], values[21] = nil, nil, nil
 	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
 	reader := &Reader{db: &scriptedDashboardDB{tx: tx}, now: func() time.Time { return asOf }}
 	var output bytes.Buffer
@@ -262,11 +262,11 @@ func TestReadStreamSummaryKeepsEmptySourcesUnavailableInsteadOfZero(t *testing.T
 	}
 }
 
-func TestReadStreamSummaryConfirmsZeroAfterSuccessfulDailyBlingLoad(t *testing.T) {
+func TestReadStreamSummaryConfirmsZeroAfterSuccessfulNormalizedDailyBlingLoad(t *testing.T) {
 	finishedAt := time.Date(2026, 10, 19, 13, 15, 0, 0, time.UTC)
 	asOf := time.Date(2026, 10, 19, 16, 0, 0, 0, time.UTC)
 	values := emptyDashboardSummaryValues()
-	values[18], values[19], values[20] = finishedAt, finishedAt, finishedAt
+	values[18], values[19], values[20], values[21] = finishedAt, finishedAt, finishedAt, finishedAt
 	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
 	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
 	if err != nil {
@@ -292,6 +292,52 @@ func TestReadStreamSummaryConfirmsZeroAfterSuccessfulDailyBlingLoad(t *testing.T
 	}
 	if snapshot.FutureB2C.State != "UNAVAILABLE" || snapshot.FutureB2C.Value != "" {
 		t.Fatalf("Nuvem Pago future source should retain its independent availability: %+v", snapshot.FutureB2C)
+	}
+}
+
+func TestReadStreamSummaryDoesNotTreatRawOnlyBlingPagesAsConfirmedZero(t *testing.T) {
+	finishedAt := time.Date(2026, 10, 19, 13, 15, 0, 0, time.UTC)
+	asOf := time.Date(2026, 10, 19, 16, 0, 0, 0, time.UTC)
+	values := emptyDashboardSummaryValues()
+	values[18] = finishedAt // The RAW sync itself completed successfully.
+	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
+	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
+	if err != nil {
+		t.Fatalf("readStreamSummary() error = %v", err)
+	}
+	if snapshot.LastBlingSyncAt == nil || !snapshot.LastBlingSyncAt.Equal(finishedAt) {
+		t.Fatalf("last RAW sync time = %v, want %s", snapshot.LastBlingSyncAt, finishedAt)
+	}
+	for _, item := range []struct {
+		name   string
+		metric application.DashboardMetric
+	}{
+		{name: "receivables", metric: snapshot.Receivables},
+		{name: "receipts this month", metric: snapshot.ReceiptsMonth},
+		{name: "payables", metric: snapshot.Payables},
+		{name: "payments this month", metric: snapshot.PaymentsMonth},
+	} {
+		if item.metric.State != "UNAVAILABLE" || item.metric.Value != "" {
+			t.Errorf("%s = %+v, want unavailable until RAW pages are normalized", item.name, item.metric)
+		}
+	}
+}
+
+func TestReadStreamSummaryUsesCashMovementSyncForReceiptAndPaymentMetrics(t *testing.T) {
+	finishedAt := time.Date(2026, 10, 19, 13, 15, 0, 0, time.UTC)
+	asOf := time.Date(2026, 10, 19, 16, 0, 0, 0, time.UTC)
+	values := emptyDashboardSummaryValues()
+	values[18], values[19], values[20] = finishedAt, finishedAt, finishedAt
+	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
+	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
+	if err != nil {
+		t.Fatalf("readStreamSummary() error = %v", err)
+	}
+	if snapshot.Receivables.State != "CONFIRMED" || snapshot.Payables.State != "CONFIRMED" {
+		t.Fatalf("receivables/payables should follow their own resources: %+v / %+v", snapshot.Receivables, snapshot.Payables)
+	}
+	if snapshot.ReceiptsMonth.State != "UNAVAILABLE" || snapshot.PaymentsMonth.State != "UNAVAILABLE" {
+		t.Fatalf("cash movement metrics must stay unavailable without a normalized caixas load: %+v / %+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
 }
 
@@ -364,7 +410,7 @@ func dashboardSummaryValues() []any {
 		"25.0000", int64(1), int64(3), "5.0000", int64(1),
 		"80.0000", int64(2), "10.0000", int64(1), "4.0000", int64(1),
 		"30.0000", int64(1), int64(2), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
-		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
+		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
 	}
 }
 
@@ -373,7 +419,7 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
-		"0.0000", int64(0), int64(0), nil, nil, nil,
+		"0.0000", int64(0), int64(0), nil, nil, nil, nil,
 	}
 }
 

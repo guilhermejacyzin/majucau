@@ -157,7 +157,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, blingAPIResourceSyncLockKey(connection.ID, s.resource)); err != nil {
 		return APISyncResult{}, fmt.Errorf("lock Bling API resource sync: %w", err)
 	}
-	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: s.resource})
+	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: s.resource, DataStage: "RAW_ONLY"})
 	if err != nil {
 		return APISyncResult{}, fmt.Errorf("create Bling API sync batch: %w", err)
 	}

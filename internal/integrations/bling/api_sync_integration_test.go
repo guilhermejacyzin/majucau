@@ -219,6 +219,13 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	if persistedCorrelationID != dailyCorrelationID.String() {
 		t.Fatalf("persisted correlation ID = %q, want %q", persistedCorrelationID, dailyCorrelationID)
 	}
+	var dataStage string
+	if err := pool.QueryRow(ctx, `SELECT data_stage FROM integration_sync_batches WHERE id = $1::uuid`, succeeded.BatchID).Scan(&dataStage); err != nil {
+		t.Fatalf("read published Bling data stage: %v", err)
+	}
+	if dataStage != "RAW_ONLY" {
+		t.Fatalf("published API page data stage = %q, want RAW_ONLY until a domain normalizer runs", dataStage)
+	}
 	if err := pool.QueryRow(ctx, `SELECT cursor_value FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource).Scan(&cursor); err != nil {
 		t.Fatalf("read cursor after successful sync: %v", err)
 	}

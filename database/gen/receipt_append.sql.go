@@ -120,20 +120,21 @@ func (q *Queries) GetSyncCursor(ctx context.Context, arg GetSyncCursorParams) (S
 }
 
 const insertIntegrationSyncBatch = `-- name: InsertIntegrationSyncBatch :one
-INSERT INTO integration_sync_batches (connection_id, resource)
-VALUES ($1, $2)
+INSERT INTO integration_sync_batches (connection_id, resource, data_stage)
+VALUES ($1, $2, $3)
 RETURNING id, connection_id, resource, started_at, finished_at, status,
           records_read, records_created, records_updated, records_failed,
-          retry_count, error_code, error_message_sanitized, correlation_id
+          retry_count, error_code, error_message_sanitized, correlation_id, data_stage
 `
 
 type InsertIntegrationSyncBatchParams struct {
 	ConnectionID pgtype.UUID `json:"connection_id"`
 	Resource     string      `json:"resource"`
+	DataStage    string      `json:"data_stage"`
 }
 
 func (q *Queries) InsertIntegrationSyncBatch(ctx context.Context, arg InsertIntegrationSyncBatchParams) (IntegrationSyncBatch, error) {
-	row := q.db.QueryRow(ctx, insertIntegrationSyncBatch, arg.ConnectionID, arg.Resource)
+	row := q.db.QueryRow(ctx, insertIntegrationSyncBatch, arg.ConnectionID, arg.Resource, arg.DataStage)
 	var i IntegrationSyncBatch
 	err := row.Scan(
 		&i.ID,
@@ -150,6 +151,7 @@ func (q *Queries) InsertIntegrationSyncBatch(ctx context.Context, arg InsertInte
 		&i.ErrorCode,
 		&i.ErrorMessageSanitized,
 		&i.CorrelationID,
+		&i.DataStage,
 	)
 	return i, err
 }

@@ -345,8 +345,9 @@ func TestCalculateAgingFromStopsWhenContextIsCancelled(t *testing.T) {
 }
 
 func TestApplicationConservativeLimits(t *testing.T) {
-	rows, _ := DailyProjection(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), money(t, "100"), []Movement{{Date: time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC), Outflows: money(t, "80")}})
-	got, err := MaximumApplication(ApplicationInput{EligibleAccumulatedProfit: money(t, "100"), AlreadyInvested: money(t, "20"), MinimumReserve: money(t, "30"), Balances: rows, RuleVersion: "D-003-A"})
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	rows, _ := DailyProjection(start, money(t, "100"), []Movement{{Date: time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC), Outflows: money(t, "80")}})
+	got, err := MaximumApplication(ApplicationInput{EligibleAccumulatedProfit: money(t, "100"), AlreadyInvested: money(t, "20"), MinimumReserve: money(t, "30"), AsOfDate: start, Balances: rows, RuleVersion: "D-003-A"})
 	if err != nil || got.MaximumInvestment.String() != "0.0000" || got.WorstWeekCash.String() != "20.0000" {
 		t.Fatalf("application: %#v %v", got, err)
 	}
@@ -364,6 +365,7 @@ func TestApplicationGoldenFormulaD003A(t *testing.T) {
 		EligibleAccumulatedProfit: money(t, "200.00"),
 		AlreadyInvested:           money(t, "40.00"),
 		MinimumReserve:            money(t, "50.00"),
+		AsOfDate:                  start,
 		Balances:                  rows,
 		RuleVersion:               "D-003-A",
 	})
@@ -386,6 +388,7 @@ func TestApplicationFloorsInsufficientProfitAndReserveBreach(t *testing.T) {
 		EligibleAccumulatedProfit: money(t, "30.00"),
 		AlreadyInvested:           money(t, "40.00"),
 		MinimumReserve:            money(t, "50.00"),
+		AsOfDate:                  start,
 		Balances:                  rows,
 		RuleVersion:               "D-003-A",
 	})
@@ -410,13 +413,14 @@ func TestSuggestedReserveD003CIsInformational(t *testing.T) {
 		EligibleAccumulatedProfit: money(t, "500000"),
 		AlreadyInvested:           money(t, "0"),
 		MinimumReserve:            money(t, "50000"),
+		AsOfDate:                  start,
 		Balances:                  balances,
 		RuleVersion:               "D-003-A",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	suggested, err := SuggestedReserve(balances, money(t, "50000"))
+	suggested, err := SuggestedReserve(start, balances, money(t, "50000"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -436,17 +440,20 @@ func TestSuggestedReserveRejectsInvalidInputsAndPropagatesOverflow(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := SuggestedReserve(balances[:60], money(t, "50")); err != ErrInvalidProjection {
+	if _, err := SuggestedReserve(start, balances[:60], money(t, "50")); err != ErrInvalidProjection {
 		t.Fatalf("invalid horizon error = %v, want %v", err, ErrInvalidProjection)
 	}
-	if _, err := SuggestedReserve(balances, money(t, "-0.0001")); err != ErrInvalidApplicationInput {
+	if _, err := SuggestedReserve(start, balances, money(t, "-0.0001")); err != ErrInvalidApplicationInput {
 		t.Fatalf("negative reserve error = %v, want %v", err, ErrInvalidApplicationInput)
+	}
+	if _, err := SuggestedReserve(start.AddDate(0, 0, 1), balances, money(t, "50")); err != ErrInvalidApplicationInput {
+		t.Fatalf("shifted D0 error = %v, want %v", err, ErrInvalidApplicationInput)
 	}
 	maximumReserve, err := domain.ParseMoney("922337203685477.5807")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := SuggestedReserve(balances, maximumReserve); err == nil {
+	if _, err := SuggestedReserve(start, balances, maximumReserve); err == nil {
 		t.Fatal("expected overflow when adding the projected cash drawdown")
 	}
 }
@@ -460,6 +467,7 @@ func TestApplicationRejectsInvalidHorizonAndNegativeParameters(t *testing.T) {
 		EligibleAccumulatedProfit: money(t, "100"),
 		AlreadyInvested:           money(t, "20"),
 		MinimumReserve:            money(t, "30"),
+		AsOfDate:                  rows[0].Date,
 		Balances:                  rows,
 		RuleVersion:               "D-003-A",
 	}
@@ -477,6 +485,52 @@ func TestApplicationRejectsInvalidHorizonAndNegativeParameters(t *testing.T) {
 	negativeReserve.MinimumReserve = money(t, "-0.0001")
 	if _, err := MaximumApplication(negativeReserve); err != ErrInvalidApplicationInput {
 		t.Fatalf("expected negative reserve rejection, got %v", err)
+	}
+}
+
+func TestApplicationRejectsProjectionOutsideD0ToD60Contract(t *testing.T) {
+	start := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	rows, err := DailyProjection(start, money(t, "100"), []Movement{{Date: start.AddDate(0, 0, 10), Outflows: money(t, "5")}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	base := ApplicationInput{
+		EligibleAccumulatedProfit: money(t, "100"),
+		MinimumReserve:            money(t, "50"),
+		AsOfDate:                  start,
+		Balances:                  rows,
+		RuleVersion:               "D-003-A",
+	}
+	cases := []struct {
+		name   string
+		mutate func(*ApplicationInput)
+	}{
+		{name: "first date is not D0", mutate: func(in *ApplicationInput) { in.AsOfDate = start.AddDate(0, 0, 1) }},
+		{name: "first balance is not provisional", mutate: func(in *ApplicationInput) {
+			in.Balances = append([]DailyBalance(nil), rows...)
+			in.Balances[0].Type = Projected
+		}},
+		{name: "daily balance does not reconcile", mutate: func(in *ApplicationInput) {
+			in.Balances = append([]DailyBalance(nil), rows...)
+			in.Balances[10].ClosingBalance = money(t, "999")
+		}},
+		{name: "a day is missing", mutate: func(in *ApplicationInput) {
+			in.Balances = append([]DailyBalance(nil), rows...)
+			in.Balances[10].Date = in.Balances[9].Date
+		}},
+		{name: "opening balance does not continue previous day", mutate: func(in *ApplicationInput) {
+			in.Balances = append([]DailyBalance(nil), rows...)
+			in.Balances[10].OpeningBalance = money(t, "999")
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			input := base
+			tc.mutate(&input)
+			if _, err := MaximumApplication(input); err != ErrInvalidApplicationInput {
+				t.Fatalf("invalid projection error = %v, want %v", err, ErrInvalidApplicationInput)
+			}
+		})
 	}
 }
 

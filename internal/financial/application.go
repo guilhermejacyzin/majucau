@@ -11,8 +11,10 @@ var ErrInvalidApplicationInput = errors.New("invalid application input")
 
 type ApplicationInput struct {
 	EligibleAccumulatedProfit, AlreadyInvested, MinimumReserve domain.Money
-	Balances                                                   []DailyBalance
-	RuleVersion                                                string
+	// AsOfDate is the business date represented by D0 in the 61-day balances.
+	AsOfDate    time.Time
+	Balances    []DailyBalance
+	RuleVersion string
 }
 type ApplicationResult struct {
 	EligibleAccumulatedProfit, AlreadyInvested, AvailableProfit, WorstWeekCash, MinimumReserve, FinancialLimit, MaximumInvestment domain.Money
@@ -20,22 +22,26 @@ type ApplicationResult struct {
 	Status                                                                                                                        domain.DataStatus
 }
 
-// MaximumApplication implements D-003-A. Only balances supplied by an
-// approved source should be passed by the caller; this package does not infer
-// or manufacture expected receipts.
+// MaximumApplication implements D-003-A. AsOfDate must match the provisional
+// D0 balance, and all 61 daily balances must be complete and internally
+// consistent. Only balances supplied by an approved source should be passed by
+// the caller; this package does not infer or manufacture expected receipts.
 func MaximumApplication(in ApplicationInput) (ApplicationResult, error) {
-	if in.RuleVersion == "" || len(in.Balances) != 61 ||
+	if in.RuleVersion == "" || in.AsOfDate.IsZero() || len(in.Balances) != 61 ||
 		in.AlreadyInvested.IsNegative() || in.MinimumReserve.IsNegative() {
 		return ApplicationResult{}, ErrInvalidApplicationInput
 	}
-	for index := 1; index < len(in.Balances); index++ {
-		expected := dateOnly(in.Balances[index-1].Date).AddDate(0, 0, 1)
-		if !dateOnly(in.Balances[index].Date).Equal(expected) {
+	minimum, err := FindMinimumProjectedBalance(in.Balances)
+	if err != nil {
+		if errors.Is(err, ErrInvalidProjection) {
 			return ApplicationResult{}, ErrInvalidApplicationInput
 		}
+		return ApplicationResult{}, err
+	}
+	if !dateOnly(in.Balances[0].Date).Equal(dateOnly(in.AsOfDate)) {
+		return ApplicationResult{}, ErrInvalidApplicationInput
 	}
 	available := in.EligibleAccumulatedProfit
-	var err error
 	if available.IsNegative() {
 		available = domain.ZeroMoney()
 	}
@@ -46,12 +52,7 @@ func MaximumApplication(in ApplicationInput) (ApplicationResult, error) {
 	if available.IsNegative() {
 		available = domain.ZeroMoney()
 	}
-	worst := in.Balances[0].ClosingBalance
-	for _, b := range in.Balances[1:] {
-		if b.ClosingBalance.Compare(worst) < 0 {
-			worst = b.ClosingBalance
-		}
-	}
+	worst := minimum.ClosingBalance
 	limit, err := worst.Sub(in.MinimumReserve)
 	if err != nil {
 		return ApplicationResult{}, err
@@ -68,13 +69,16 @@ func MaximumApplication(in ApplicationInput) (ApplicationResult, error) {
 
 // SuggestedReserve calculates the approved, informational D-003-C suggestion
 // from a validated D0-D+60 projection. It does not change MaximumApplication.
-func SuggestedReserve(balances []DailyBalance, minimumReserve domain.Money) (domain.Money, error) {
-	if minimumReserve.IsNegative() {
+func SuggestedReserve(asOfDate time.Time, balances []DailyBalance, minimumReserve domain.Money) (domain.Money, error) {
+	if asOfDate.IsZero() || minimumReserve.IsNegative() {
 		return domain.ZeroMoney(), ErrInvalidApplicationInput
 	}
 	minimum, err := FindMinimumProjectedBalance(balances)
 	if err != nil {
 		return domain.ZeroMoney(), err
+	}
+	if !dateOnly(balances[0].Date).Equal(dateOnly(asOfDate)) {
+		return domain.ZeroMoney(), ErrInvalidApplicationInput
 	}
 	drawdown, err := balances[0].ClosingBalance.Sub(minimum.ClosingBalance)
 	if err != nil {

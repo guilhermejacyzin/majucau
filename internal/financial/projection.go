@@ -156,7 +156,8 @@ func FindMinimumProjectedBalance(rows []DailyBalance) (MinimumBalance, error) {
 			}
 		} else {
 			expectedDate := dateOnly(rows[index-1].Date).AddDate(0, 0, 1)
-			if !dateOnly(row.Date).Equal(expectedDate) || row.Type != Projected {
+			if !dateOnly(row.Date).Equal(expectedDate) || row.Type != Projected ||
+				row.OpeningBalance.Compare(rows[index-1].ClosingBalance) != 0 {
 				return MinimumBalance{}, ErrInvalidProjection
 			}
 		}

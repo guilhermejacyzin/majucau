@@ -33,7 +33,7 @@
 
 ## Checagem de gravação do cofre — 25/10/2026
 
-- **CI GitHub:** a execução [#40248166091](https://github.com/guilhermejacyzin/majucau/actions/runs/40248166091), do commit `1a97485`, terminou com sucesso nos quatro trabalhos. Após o commit documental `86dc8ec`, a execução [#40249171034](https://github.com/guilhermejacyzin/majucau/actions/runs/40249171034) também terminou com sucesso: `detect-changes` e `verify-backlog` passaram; `verify-postgres` e `verify-windows` foram pulados por não haver mudança de código. Nenhuma das duas execuções fez uma chamada real ou sincronização do Bling.
+- **CI GitHub:** as execuções [#40248166091](https://github.com/guilhermejacyzin/majucau/actions/runs/40248166091) (commit `1a97485`) e [#40249171034](https://github.com/guilhermejacyzin/majucau/actions/runs/40249171034) (commit documental `86dc8ec`) terminaram com resultado geral “sucesso”. Em ambas, `detect-changes` e `verify-backlog` passaram; `verify-postgres` e `verify-windows` foram pulados porque os commits só alteraram documentação. A CI completa #40245975900, registrada no resumo do projeto, passou nos quatro trabalhos. Nenhuma dessas execuções fez uma chamada real ou sincronização do Bling.
 - **Estado de Goals:** a meta e o thread continuam `active`. O controle do Chrome falhou numa leitura anterior do Drive, encerrando aquela tentativa. A ferramenta de Goals só expõe o estado atual, sem o histórico de transições; a causa/autoria de uma pausa antiga permanece não comprovada.
 
 - O protótipo continua ativo no checkout local do Majucau (branch `codex/majucau-artifact-consolidation`, commit `1a97485`).

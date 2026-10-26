@@ -15,6 +15,7 @@ type Metric = { title: string; tooltip: TooltipId; group: CardGroup; icon: Metri
 // secret remains user-provided and is stored only in the Windows credential vault.
 const defaultBlingClientID = 'b30aa019864b8ca8b974331d6a07d07bc4eaa1ae'
 const defaultBlingRedirectURI = 'https://majucau-bling-bridge.giselegalha.chatgpt.site/oauth/bling/callback'
+const dashboardSnapshotRefreshIntervalMs = 60_000
 
 const metrics: Metric[] = [
   { title: 'Saldo Inicial do Dia', tooltip: 'treasury.openingBalance', group: 'Tesouraria', icon: 'wallet', status: 'UNAVAILABLE' },
@@ -400,6 +401,27 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
   const [dashboardSnapshot, setDashboardSnapshot] = useState<DashboardSnapshot | null>(null)
   const mainRef = useRef<HTMLElement>(null)
   const previousScreenRef = useRef<Screen>('executive')
+  useEffect(() => {
+    let active = true
+    let polling = false
+    const refreshSnapshot = async () => {
+      if (polling) return
+      polling = true
+      try {
+        const [bootstrapResult, snapshotResult] = await Promise.allSettled([adapter.getState(), snapshotAdapter.getSnapshot()])
+        if (!active) return
+        if (bootstrapResult.status === 'fulfilled') setBootstrap(bootstrapResult.value)
+        if (snapshotResult.status === 'fulfilled') setDashboardSnapshot(snapshotResult.value)
+      } finally {
+        polling = false
+      }
+    }
+    const timer = window.setInterval(() => { void refreshSnapshot() }, dashboardSnapshotRefreshIntervalMs)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [adapter, snapshotAdapter])
   const refreshDataViews = useCallback(async () => {
     const [bootstrapResult, snapshotResult] = await Promise.allSettled([adapter.getState(), snapshotAdapter.getSnapshot()])
     if (bootstrapResult.status === 'fulfilled' && !bootstrapResult.value.error_code) setBootstrap(bootstrapResult.value)

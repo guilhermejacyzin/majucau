@@ -3080,6 +3080,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Regras e verificações vinculadas:** Q-02,F-08
 
+**Atualização de dados em segundo plano — 26/10/2026:** enquanto o aplicativo fica aberto, o frontend consulta o worker e o snapshot local uma vez por minuto, sem chamadas externas nem navegação. O timer evita consultas sobrepostas e é cancelado ao desmontar a aplicação. Teste focal comprova mudança do valor na tela sem navegação; TypeScript e ESLint passaram. Isso não normaliza dados RAW do Bling nem atualiza valores não persistidos. BK-102 permanece em 1% até os indicadores aprovados chegarem às telas e aos detalhes com origem reconciliada.
+
 ### BK-103 — Implementar os módulos adicionais confirmados no escopo
 
 **Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Produto + Full Stack.

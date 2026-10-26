@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { tooltipCatalog } from './tooltips'
 import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPreviewAdapter, BootstrapAdapter, BootstrapState, DashboardSnapshotAdapter, NuvemPagoFutureImportAdapter, NuvemPagoFuturePreviewAdapter, NuvemshopConfigAdapter } from './bootstrap'
@@ -57,6 +57,27 @@ describe('shell financeiro', () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     expect(screen.getByText(/Última sincronização:/)).toHaveTextContent('Última sincronização: —')
+  })
+
+  it('atualiza os dados sem trocar de tela depois de uma sincronização em segundo plano', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    let snapshotReads = 0
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        return snapshotAdapterFor(snapshotReads === 1 ? '100.0000' : '125.0000').getSnapshot()
+      },
+    }
+    const rendered = render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
+    try {
+      expect(await screen.findByText('R$ 100,00')).toBeInTheDocument()
+      await act(async () => { await vi.advanceTimersByTimeAsync(60_000) })
+      expect(await screen.findByText('R$ 125,00')).toBeInTheDocument()
+      expect(snapshotReads).toBe(2)
+    } finally {
+      rendered.unmount()
+      vi.useRealTimers()
+    }
   })
 
   it('não apresenta zero como valor confirmado quando não há dados do Bling', async () => {

@@ -37,8 +37,9 @@ Telas de detalhe e Visão Executiva reutilizam os campos disponíveis
   transação somente de leitura. O resumo e as linhas limitadas das contas a
   receber e a pagar vêm da mesma visão consistente do banco.
 - O frontend guarda esse snapshot em memória e o entrega à tela aberta. O
-  snapshot é lido quando o aplicativo inicia e novamente quando a pessoa volta
-  de Integrações para outra tela.
+  snapshot é lido quando o aplicativo inicia, quando a pessoa volta de
+  Integrações e, enquanto o aplicativo fica aberto, a cada 60 segundos. Essa
+  leitura consulta o worker/PostgreSQL local; não chama serviços externos.
 - A atualização diária atual do Bling lê Contas a Receber, Contas a Pagar e
   `/caixas`. As páginas são preservadas como conteúdo original (RAW), com hash,
   checkpoints e proteção contra duplicidade. `/caixas` entrou nessa carga em
@@ -146,9 +147,9 @@ nunca como chamada direta da tela.
 
 ## Pontos de atenção encontrados
 
-- O snapshot atual só é lido ao abrir o aplicativo e ao voltar de Integrações.
-  Uma carga diária concluída enquanto outra tela estiver aberta não atualiza
-  essa tela automaticamente neste código.
+- O snapshot é relido a cada 60 segundos enquanto o aplicativo estiver aberto.
+  Uma carga concluída pode levar até esse intervalo para aparecer numa tela que
+  permaneça aberta; a confirmação depende de dados já normalizados no banco.
 - O cabeçalho comum de telas usa `last_bling_sync_at`, que é a tentativa mais
   recente concluída com status `SUCCESS` ou `PARTIAL`; esse horário não
   significa, por si só, que todas as fontes do painel concluíram.
@@ -175,6 +176,13 @@ Fontes revisadas: `AGENTS.md`, `API-INTEGRATION-MAP.md`,
 `internal/integrations/bling/daily_sync.go`,
 `internal/integrations/bling/oauth_service.go` e buscas nas migrations e
 persistências financeiras de produção.
+
+## Atualização automática em tela aberta — 26/10/2026
+
+- O frontend agora atualiza o estado do worker e o snapshot financeiro local a cada 60 segundos, sem navegar para outra tela. Leituras em andamento não se sobrepõem; ao fechar a aplicação, o timer é cancelado.
+- A atualização somente consulta o worker/PostgreSQL. Ela não aciona OAuth, não sincroniza o Bling e não muda filtros, layout ou cálculos.
+- Teste focal: `frontend/src/App.test.tsx` comprova que o valor muda após uma leitura em segundo plano mantendo a mesma tela aberta. TypeScript, ESLint e os 27 testes deste arquivo passaram.
+- Limite: isso propaga registros que já foram normalizados. As páginas do Bling continuam RAW-only; logo, a atualização automática não faz os valores do Bling aparecerem antes da conversão financeira aprovada.
 
 ## Correção do estado dos dados — 2026-10-25
 

@@ -109,3 +109,10 @@ Próximo passo da BK-041: salvar no Majucau o Client Secret do aplicativo Bling,
 - A consulta de movimentos envia `limite=100`. A resposta só é tratada como página final quando o Bling confirma o tamanho aplicado ou fornece metadados suficientes; uma página vazia sem esses dados continua ambígua e não pode substituir o retrato anterior.
 - Testes locais em `internal/integrations/bling` e `go vet` passaram. Não houve chamada real porque o controle do Chrome recusou acesso à origem e o cofre segue sem o arquivo DPAPI do Client Secret.
 - A etapa avançou em confiabilidade local, mas a integração real e a normalização permanecem pendentes; percentuais não mudaram.
+
+### Atualização das telas após carga em segundo plano — 26/10/2026
+
+- Se o worker finalizar uma carga enquanto a pessoa permanece numa tela aberta, o frontend agora relê o snapshot local a cada 60 segundos. Uma chamada em andamento impede sobreposição; fechar a aplicação limpa o timer.
+- Isso atualiza somente dados já persistidos no PostgreSQL. Não dispara chamadas ao Bling ou ao Drive, nem altera o desenho ou as regras financeiras. A tela pode levar até um minuto para refletir uma carga concluída.
+- `frontend/src/App.test.tsx` passou com 27 testes; `npm run typecheck` e ESLint direcionado passaram. Não houve revisão visual do protótipo ativo. As respostas Bling seguem RAW-only e ainda não preenchem as tabelas operacionais.
+- BK-102 permanece em 1% e o percentual geral não muda: ainda faltam integração real, conversão RAW, reconciliação e aceites das demais telas. Evidência: `docs/evidence/EXECUTIVE-DETAIL-DATA-FLOW-2026-10-25.md`.

@@ -79,6 +79,7 @@ BEGIN
       'public.raw_records',
       'public.payable_sync_snapshot_rows',
       'public.payable_sources',
+      'public.payables',
       'public.receipts',
       'public.receivables'
     ]::text[]);

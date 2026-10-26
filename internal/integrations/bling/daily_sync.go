@@ -27,7 +27,8 @@ var (
 // SyncDaily runs a full Bling refresh for the scheduled São Paulo business
 // date. A PostgreSQL session lock prevents parallel worker instances from
 // processing the same daily load, and the batch correlation ID lets a restart
-// skip a load whose receivables and payables both finished successfully.
+// skip a load whose receivables, payables, and cash movements all finished
+// successfully.
 func (s *BlingOAuthService) SyncDaily(ctx context.Context, scheduledAt time.Time) (result BlingRawSyncResult, skipped bool, returnErr error) {
 	correlationID, err := dailyBlingCorrelationID(scheduledAt)
 	if err != nil {
@@ -58,7 +59,7 @@ func (s *BlingOAuthService) SyncDaily(ctx context.Context, scheduledAt time.Time
 	if completed {
 		return BlingRawSyncResult{Status: "SUCCESS"}, true, nil
 	}
-	result, err = s.sync(ctx, ReceivablesFilter{}, &correlationID)
+	result, err = s.sync(ctx, ReceivablesFilter{}, &correlationID, true)
 	return result, false, err
 }
 
@@ -67,8 +68,9 @@ func dailyBlingSyncCompleted(ctx context.Context, connection *pgxpool.Conn, corr
 	err := connection.QueryRow(ctx, `
 		SELECT
 			EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $2 AND status = 'SUCCESS')
-			AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $3 AND status = 'SUCCESS')`,
-		correlation, ReceivablesAPIResource, PayablesAPIResource,
+			AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $3 AND status = 'SUCCESS')
+			AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $4 AND status = 'SUCCESS')`,
+		correlation, ReceivablesAPIResource, PayablesAPIResource, CashMovementsAPIResource,
 	).Scan(&completed)
 	return completed, err
 }

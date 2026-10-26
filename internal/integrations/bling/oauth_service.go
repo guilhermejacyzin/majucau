@@ -68,9 +68,10 @@ type BlingOAuthTestResult struct {
 }
 
 type BlingRawSyncResult struct {
-	Status      string
-	Receivables APISyncResult
-	Payables    APISyncResult
+	Status        string
+	Receivables   APISyncResult
+	Payables      APISyncResult
+	CashMovements APISyncResult `json:"-"`
 }
 
 type blingOAuthRepository interface {
@@ -388,10 +389,13 @@ func (s *BlingOAuthService) Disconnect(ctx context.Context) error {
 // payables. Status-only requests retain the existing behavior and read both.
 // This method never invents a financial window and never normalizes records.
 func (s *BlingOAuthService) Sync(ctx context.Context, filter ReceivablesFilter) (BlingRawSyncResult, error) {
-	return s.sync(ctx, filter, nil)
+	return s.sync(ctx, filter, nil, false)
 }
 
-func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, correlationID *uuid.UUID) (BlingRawSyncResult, error) {
+func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, correlationID *uuid.UUID, includeCashMovements bool) (BlingRawSyncResult, error) {
+	if includeCashMovements && correlationID == nil {
+		return BlingRawSyncResult{}, errors.New("daily cash movement sync requires a stable correlation ID")
+	}
 	dateMode, err := financialDateFilterMode(filter)
 	if err != nil {
 		return BlingRawSyncResult{}, err
@@ -418,7 +422,7 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 		return BlingRawSyncResult{}, err
 	}
 	notApplicable := APISyncResult{Status: "NOT_APPLICABLE"}
-	result := BlingRawSyncResult{Receivables: notApplicable, Payables: notApplicable}
+	result := BlingRawSyncResult{Receivables: notApplicable, Payables: notApplicable, CashMovements: notApplicable}
 	if dateMode != blingDateFilterPayment {
 		receivables := NewReceivablesAPISyncService(s.pool, client)
 		if correlationID == nil {
@@ -440,6 +444,18 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 		}
 		if err != nil {
 			if result.Receivables.Status == "SUCCESS" {
+				result.Status = "PARTIAL"
+			} else {
+				result.Status = "FAILED"
+			}
+			return result, err
+		}
+	}
+	if includeCashMovements {
+		cashMovements := NewCashMovementsAPISyncService(s.pool, client)
+		result.CashMovements, err = cashMovements.SyncWithCorrelationID(ctx, ReceivablesFilter{}, pgUUID(*correlationID))
+		if err != nil {
+			if result.Receivables.Status == "SUCCESS" || result.Payables.Status == "SUCCESS" {
 				result.Status = "PARTIAL"
 			} else {
 				result.Status = "FAILED"

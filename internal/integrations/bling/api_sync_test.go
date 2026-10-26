@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -51,6 +53,42 @@ func TestBlingAPIResourceSyncLockKeyIsScoped(t *testing.T) {
 	}
 	if got := blingAPIResourceSyncLockKey(otherConnection, ReceivablesAPIResource); got == key {
 		t.Fatalf("different connection reused lock key %d", key)
+	}
+}
+
+func TestCashMovementsAPISyncServicePreservesPagedRAWContract(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/caixas" {
+			t.Fatalf("request = %s %s, want GET /caixas", r.Method, r.URL.Path)
+		}
+		if r.URL.Query().Get("pagina") != "3" {
+			t.Fatalf("page = %q, want 3", r.URL.Query().Get("pagina"))
+		}
+		if _, ok := r.URL.Query()["limite"]; ok {
+			t.Fatal("cash movement request sent undocumented limite parameter")
+		}
+		if r.Header.Get("enable-jwt") != "1" || r.Header.Get("Authorization") != "Bearer test-token" {
+			t.Fatal("cash movement request did not preserve JWT authorization headers")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":[{"id":91}],"pagination":{"page":3,"hasNext":false}}`))
+	}))
+	defer server.Close()
+
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "test-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := NewCashMovementsAPISyncService(nil, client)
+	if service.resource != CashMovementsAPIResource || service.sourceEntity != "bling.caixas.page" {
+		t.Fatalf("resource/source = %q/%q", service.resource, service.sourceEntity)
+	}
+	page, err := service.list(context.Background(), ReceivablesFilter{Page: 3, Limit: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Page != 3 || !page.HasNextKnown || page.HasNext || len(page.Records) != 1 || string(page.Records[0]) != `{"id":91}` {
+		t.Fatalf("page = %+v", page)
 	}
 }
 

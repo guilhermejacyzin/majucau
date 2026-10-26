@@ -82,7 +82,7 @@ func dailyBlingCatchUpAt(now time.Time) (time.Time, bool) {
 }
 
 func logDailyBlingSuccess(logger *slog.Logger, scheduledAt time.Time, result bling.BlingRawSyncResult) {
-	logger.Info("daily Bling synchronization completed", slog.String("scheduled_at", scheduledAt.Format(time.RFC3339)), slog.Int("pages_read", result.Receivables.PagesRead+result.Payables.PagesRead), slog.Int("records_read", result.Receivables.RecordsRead+result.Payables.RecordsRead))
+	logger.Info("daily Bling synchronization completed", slog.String("scheduled_at", scheduledAt.Format(time.RFC3339)), slog.Int("pages_read", result.Receivables.PagesRead+result.Payables.PagesRead+result.CashMovements.PagesRead), slog.Int("records_read", result.Receivables.RecordsRead+result.Payables.RecordsRead+result.CashMovements.RecordsRead))
 }
 
 func dailyBlingSyncErrorCode(err error) string {

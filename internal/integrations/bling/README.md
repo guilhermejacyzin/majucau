@@ -94,11 +94,15 @@ página: o limite local de registros não é usado como se tivesse sido enviado
 ao Bling. A leitura permanece incompleta até receber um marcador explícito ou
 homologar o contrato real da conta.
 
-O `ReceivablesAPISyncService` já fecha a etapa seguinte de infraestrutura: lê
-as páginas e grava cada página como evidência RAW append-only em uma transação
-PostgreSQL, com hash, versão corrente, deduplicação e lote de sincronização.
-Ele não transforma a página em recebimento nem em indicador enquanto o ID e os
-campos financeiros do payload real não estiverem homologados.
+Os serviços de sincronização leem páginas e gravam cada página como evidência
+RAW append-only em uma transação PostgreSQL, com hash, versão corrente,
+deduplicação, checkpoints e lote de sincronização. A atualização diária das
+09:30 agora inclui `GET /caixas`, além de Contas a Receber e a Pagar. Se a rota
+de caixa não comprovar o fim da lista, essa fonte falha sem substituir o último
+retrato publicado nem avançar o cursor. A sincronização manual mantém os mesmos
+recursos financeiros e filtros já aprovados. Nenhuma página é transformada em
+recebimento, pagamento, CAPEX ou indicador enquanto os campos e categorias da
+conta real não forem homologados.
 
 ## Importador CSV de apoio — Contas Recebidas
 

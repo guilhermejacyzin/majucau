@@ -65,8 +65,17 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 	}
 
 	service := &BlingOAuthService{pool: pool}
+	result, skipped, err := service.SyncDaily(ctx, scheduledAt)
+	if err == nil || skipped || result.Status == "SUCCESS" {
+		t.Fatalf("incomplete two-resource run was accepted: result=%+v skipped=%v error=%v", result, skipped, err)
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO integration_sync_batches (connection_id, resource, status, finished_at, correlation_id)
+		VALUES ($1, $2, 'SUCCESS', clock_timestamp(), $3)`, connection.ID, CashMovementsAPIResource, correlation); err != nil {
+		t.Fatalf("seed completed %s batch: %v", CashMovementsAPIResource, err)
+	}
 	for attempt := 0; attempt < 2; attempt++ {
-		result, skipped, err := service.SyncDaily(ctx, scheduledAt)
+		result, skipped, err = service.SyncDaily(ctx, scheduledAt)
 		if err != nil || !skipped || result.Status != "SUCCESS" {
 			t.Fatalf("attempt %d: result=%+v skipped=%v error=%v", attempt+1, result, skipped, err)
 		}
@@ -75,7 +84,7 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM integration_sync_batches WHERE correlation_id = $1`, correlation).Scan(&batchCount); err != nil {
 		t.Fatalf("count daily sync batches: %v", err)
 	}
-	if batchCount != 2 {
-		t.Fatalf("restarted daily load created duplicate batches: got %d, want 2", batchCount)
+	if batchCount != 3 {
+		t.Fatalf("restarted daily load created duplicate batches: got %d, want 3", batchCount)
 	}
 }

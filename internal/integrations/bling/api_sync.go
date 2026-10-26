@@ -22,6 +22,7 @@ import (
 )
 
 const ReceivablesAPIResource = "contas.receber"
+const CashMovementsAPIResource = "caixas"
 
 // Bound a full read even if the provider never returns a verifiable end marker.
 const maxBlingAPIPageReads = 1001
@@ -48,7 +49,7 @@ type APISyncResult struct {
 	Status       string
 }
 
-// ReceivablesAPISyncService stores API pages as append-only RAW evidence. It
+// apiResourceSyncService stores API pages as append-only RAW evidence. It
 // intentionally does not normalize financial fields: source IDs and meanings
 // are still subject to BK-040 confirmation from the real Bling account.
 type apiResourceSyncService struct {
@@ -86,6 +87,29 @@ func NewPayablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *Paya
 // SyncWithCorrelationID runs payables as part of a stable daily operation.
 // The ID lets a restarted worker determine whether that scheduled run finished.
 func (s *PayablesAPISyncService) SyncWithCorrelationID(ctx context.Context, filter ReceivablesFilter, correlationID pgtype.UUID) (APISyncResult, error) {
+	if s == nil || s.apiResourceSyncService == nil {
+		return APISyncResult{}, ErrBlingAPISyncClientRequired
+	}
+	return s.apiResourceSyncService.sync(ctx, filter, &correlationID)
+}
+
+// CashMovementsAPISyncService stores the Bling cash/bank movement pages as
+// append-only RAW evidence. It does not classify a movement as CAPEX or a
+// financial fact; those meanings still require account homologation.
+type CashMovementsAPISyncService struct{ *apiResourceSyncService }
+
+func NewCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *CashMovementsAPISyncService {
+	var list func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
+	if client != nil {
+		list = func(ctx context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+			return client.ListCashMovements(ctx, CashMovementsFilter{Page: filter.Page, MaxRecords: filter.Limit})
+		}
+	}
+	return &CashMovementsAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: CashMovementsAPIResource, sourceEntity: "bling.caixas.page", list: list}}
+}
+
+// SyncWithCorrelationID runs cash movements as part of the stable daily load.
+func (s *CashMovementsAPISyncService) SyncWithCorrelationID(ctx context.Context, filter ReceivablesFilter, correlationID pgtype.UUID) (APISyncResult, error) {
 	if s == nil || s.apiResourceSyncService == nil {
 		return APISyncResult{}, ErrBlingAPISyncClientRequired
 	}

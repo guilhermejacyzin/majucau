@@ -197,13 +197,14 @@ Go e do backlog. Foi acrescentado um teste PostgreSQL que confirma que lotes
 RAW-only não viram zeros e que cada métrica aguarda seu próprio recurso
 normalizado. Ele não executou localmente, pois `MAJUCAU_TEST_DATABASE_URL` não
 estava configurada; o banco ativo do protótipo não foi usado. Na CI
-[40256582913](https://github.com/guilhermejacyzin/majucau/actions/runs/40256582913),
-o job PostgreSQL passou, assim como os testes, scans, frontend e builds do job
-Windows. O smoke final do ciclo de vida do serviço Windows falhou esperando o
-estado `Running` (`WORKER_SERVICE_WAIT_FOR_RUNNING`), embora a coleta de
-diagnóstico imediatamente posterior tenha observado o serviço em `Running`.
-A causa ainda não foi confirmada e o job não pôde ser reexecutado pelo conector
-GitHub disponível. Portanto, a CI completa não deve ser descrita como aprovada.
+A primeira tentativa da CI
+[40256582913](https://github.com/guilhermejacyzin/majucau/actions/runs/40256582913)
+passou no job PostgreSQL, nos testes, scans, frontend e builds do job Windows.
+O smoke final do ciclo de vida do serviço Windows falhou esperando o estado
+`Running` (`WORKER_SERVICE_WAIT_FOR_RUNNING`), embora a coleta de diagnóstico
+imediatamente posterior tenha observado o serviço em `Running`. Reexecutamos
+somente o job Windows; o smoke passou e os quatro jobs do run ficaram verdes.
+A falha inicial não se repetiu, mas sua causa exata continua sem confirmação.
 A conversão da resposta API Bling RAW para registros financeiros, a validação
 com a conta real e as outras famílias de tela seguem pendentes; esta correção
 evita apresentar a leitura RAW como zero financeiro.

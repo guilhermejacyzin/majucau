@@ -2,6 +2,8 @@
 
 Este registro resume o estado conferido do protótipo e do backlog. O objetivo continua sendo concluir as tarefas aprovadas, deixar o protótipo pronto para homologação e só então seguir para a finalização.
 
+Relatório completo do processo, com contexto, decisões, evidências, pendências e ordem de retomada: [abrir o documento Word](../artifacts/planejamento/outputs/PROCESSO-REAL-PROJETO-MAJUCAU-2026-10-31.docx).
+
 ## FEITO
 
 - O protótipo local abre com um PostgreSQL isolado e um serviço local de integração. Na última conferência, os processos e o banco estavam ativos.

@@ -20,6 +20,8 @@ Na janela Majucau aberta, a responsável deve abrir `Integrações`, informar o 
 
 Após essa gravação, verificar somente o estado configurado sem revelar o conteúdo do cofre, executar `Testar conexão` e então prosseguir com OAuth e uma sincronização de leitura autorizada. Qualquer etapa que abra uma tela de autenticação precisa ser feita pela responsável.
 
+BK-041 está **80% concluída, com 20% restante**. A média do projeto segue em **11,8% concluído, com 88,2% restante**.
+
 ## Arquivos temporários e limpeza
 
 - Os logs, o worker e o banco temporário permanecem sob `artifacts/retained/postgresql-dev/` enquanto a janela estiver aberta; caches de build ficam sob `artifacts/cache/`.

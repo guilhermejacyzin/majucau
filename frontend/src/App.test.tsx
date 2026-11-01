@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { tooltipCatalog } from './tooltips'
-import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPreviewAdapter, BootstrapAdapter, BootstrapState, DashboardSnapshotAdapter, NuvemPagoFutureImportAdapter, NuvemPagoFuturePreviewAdapter, NuvemshopConfigAdapter } from './bootstrap'
+import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPreviewAdapter, BootstrapAdapter, BootstrapState, DashboardSnapshotAdapter, NuvemPagoFutureImportAdapter, NuvemPagoFuturePreviewAdapter } from './bootstrap'
 
 const connectedBootstrap: BootstrapState = { app_version: '0.1.0-g1', worker: { service: 'majucau-worker', version: 'test-worker', state: 'OK', checked_at: '2026-08-16T12:00:00Z' }, integrations: [{ provider: 'BLING', status: 'CONNECTED', last_success_at: '2026-08-16T11:58:00Z', last_attempt_at: '2026-08-16T11:58:00Z' }, { provider: 'NUVEMSHOP', status: 'PARTIALLY_AVAILABLE' }, { provider: 'NUVEM_PAGO', status: 'UNAVAILABLE' }], checked_at: '2026-08-16T12:00:00Z' }
 const adapterFor = (state: BootstrapState): BootstrapAdapter => ({ getState: () => Promise.resolve(state) })
@@ -26,7 +26,7 @@ describe('shell financeiro', () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
 
-    const pages = ['Visão Executiva', 'Fluxo de Caixa', 'Contas a Receber', 'Contas a Pagar', 'DRE', 'Balancete', 'Calculadora de Aplicação', 'Estoque', 'Produção', 'Compras', 'Lançamentos & Pendências', 'Alertas', 'Integrações']
+    const pages = ['Visão Executiva', 'Fluxo de Caixa', 'Contas a Receber', 'Contas a Pagar', 'DRE', 'Balancete', 'Calculadora de Aplicação', 'Estoque', 'Produção', 'Compras', 'Lançamentos & Pendências', 'Alertas', 'Integrações', 'Parâmetros', 'Usuários']
     for (const page of pages) {
       if (page !== 'Visão Executiva') await user.click(screen.getByRole('button', { name: page }))
       expect(screen.queryByRole('button', { name: /^Exportar/i })).not.toBeInTheDocument()
@@ -179,7 +179,7 @@ describe('shell financeiro', () => {
     await user.click(screen.getByRole('button', { name: 'Integrações' }))
     expect(screen.getByRole('heading', { name: 'Integrações' })).toBeInTheDocument()
     expect(screen.getByLabelText(/Client ID/)).toBeInTheDocument()
-    expect(screen.getAllByLabelText(/Client Secret/)).toHaveLength(2)
+    expect(screen.getAllByLabelText(/Client Secret/)).toHaveLength(1)
     expect(screen.getByRole('heading', { name: 'Nuvem Pago' })).toBeInTheDocument()
     expect(screen.getByText('Indisponível para confirmação financeira')).toBeInTheDocument()
     expect(screen.getByText('Tarifário configurado')).toBeInTheDocument()
@@ -198,7 +198,7 @@ describe('shell financeiro', () => {
     expect(screen.getAllByRole('button', { name: 'Conectar' })[0]).toBeEnabled()
     expect(screen.getAllByRole('button', { name: 'Testar conexão' })[0]).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Salvar configuração' })).toBeEnabled()
-    expect(screen.getAllByText(/autorização e sincronização continuam separadas/)).toHaveLength(2)
+    expect(screen.getAllByText(/autorização e sincronização continuam separadas/)).toHaveLength(1)
   })
 
   it('mantém cobertura estrutural de ajuda em todos os controles funcionais', async () => {
@@ -223,13 +223,13 @@ describe('shell financeiro', () => {
   })
 
   it('reflete bootstrap real e falha explicitamente no worker', async () => {
-    const unavailable: BootstrapState = { ...connectedBootstrap, worker: { ...connectedBootstrap.worker, state: 'UNAVAILABLE' }, integrations: [{ provider: 'BLING', status: 'NOT_CONFIGURED' }, { provider: 'NUVEMSHOP', status: 'AUTH_ERROR' }, { provider: 'NUVEM_PAGO', status: 'UNAVAILABLE' }], error_code: 'WORKER_UNAVAILABLE', message: 'O serviço local ainda não está disponível.' }
+    const unavailable: BootstrapState = { ...connectedBootstrap, worker: { ...connectedBootstrap.worker, state: 'UNAVAILABLE' }, integrations: [{ provider: 'BLING', status: 'AUTH_ERROR' }, { provider: 'NUVEMSHOP', status: 'NOT_CONFIGURED' }, { provider: 'NUVEM_PAGO', status: 'UNAVAILABLE' }], error_code: 'WORKER_UNAVAILABLE', message: 'O serviço local ainda não está disponível.' }
     render(<App bootstrapAdapter={adapterFor(unavailable)} />)
     await screen.findByText(/WORKER_UNAVAILABLE/)
     await userEvent.click(screen.getByRole('button', { name: 'Integrações' }))
     expect(screen.getByText('Erro de autorização')).toBeInTheDocument()
     expect(screen.getByText('Indisponível para confirmação financeira')).toBeInTheDocument()
-    expect(screen.getAllByText(/autorização e sincronização continuam separadas/)).toHaveLength(2)
+    expect(screen.getAllByText(/autorização e sincronização continuam separadas/)).toHaveLength(1)
   })
 
   it('salva a configuração Bling sem exibir o segredo na resposta', async () => {
@@ -310,19 +310,67 @@ describe('shell financeiro', () => {
     expect(screen.getAllByLabelText(/Client Secret/)[0]).toHaveValue('')
   })
 
-  it('limpa o Client Secret da Nuvemshop e mantém os campos públicos', async () => {
+  it('mantém Parâmetros e Usuários em telas próprias sem inventar dados', async () => {
     const user = userEvent.setup()
-    let receivedSecret = ''
-    const nuvemshopConfigAdapter: NuvemshopConfigAdapter = { save: async (input) => { receivedSecret = input.client_secret; return { app_id: input.app_id, redirect_uri: input.redirect_uri, secret_configured: true, status: 'NOT_CONFIGURED' } } }
-    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} nuvemshopConfigAdapter={nuvemshopConfigAdapter} />)
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Parâmetros' }))
+    expect(await screen.findByRole('heading', { name: 'PARÂMETROS' })).toBeInTheDocument()
+    expect(screen.getByRole('table')).toHaveTextContent('Histórico do forecast')
+    expect(screen.getByRole('table')).toHaveTextContent('24 meses')
+    expect(screen.getByRole('heading', { name: 'MAPA DE PARÂMETROS' })).toBeInTheDocument()
+    for (const group of ['Projeções', 'Investimentos', 'Estoque', 'Compras', 'Integrações']) expect(screen.getAllByText(group).length).toBeGreaterThan(0)
+    expect(screen.queryByText('Confirmado')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Exportar/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Usuários' }))
+    expect(await screen.findByRole('heading', { name: 'USUÁRIOS' })).toBeInTheDocument()
+    expect(screen.getByRole('table')).toHaveTextContent('Consulta segura de usuários ainda não está disponível')
+    expect(screen.getByRole('heading', { name: 'DISTRIBUIÇÃO DE PERFIS' })).toBeInTheDocument()
+    const profileDistribution = screen.getByRole('heading', { name: 'DISTRIBUIÇÃO DE PERFIS' }).closest('.mocap-panel')
+    expect(profileDistribution).toHaveTextContent('ADMIN')
+    expect(profileDistribution).toHaveTextContent('DIRETORES')
+    expect(profileDistribution).not.toHaveTextContent('FINANCEIRO')
+    expect(profileDistribution).not.toHaveTextContent('OPERAÇÃO')
+    expect(screen.queryByText('Ana Majucau')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Exportar/i })).not.toBeInTheDocument()
+  })
+
+  it('não oferece conexão direta da Nuvemshop nem solicita segredo', async () => {
+    const user = userEvent.setup()
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await user.click(screen.getByRole('button', { name: 'Integrações' }))
-    const secret = screen.getAllByLabelText(/Client Secret/)[1]
-    await user.type(secret, 'nuvem-secret-only-in-request')
-    await user.click(screen.getByRole('button', { name: 'Salvar configuração da Nuvemshop' }))
-    expect(receivedSecret).toBe('nuvem-secret-only-in-request')
-    expect(await screen.findByText('Configuração salva')).toBeInTheDocument()
-    expect(secret).toHaveValue('')
+    expect(await screen.findByRole('heading', { name: 'Nuvemshop' })).toBeInTheDocument()
+    expect(screen.getByText('Conexão direta desativada')).toBeInTheDocument()
+    expect(screen.getByText(/arquivos externos aprovados ou no Bling/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/App ID/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Salvar configuração da Nuvemshop' })).not.toBeInTheDocument()
+    expect(screen.getAllByLabelText(/Client Secret/)).toHaveLength(1)
+  })
+
+  it('só habilita o teste do Bling depois da autorização e libera nova tentativa após cancelamento', async () => {
+    const user = userEvent.setup()
+    const notConnected: BootstrapState = {
+      ...connectedBootstrap,
+      integrations: connectedBootstrap.integrations.map((item) => item.provider === 'BLING' ? { ...item, status: 'NOT_CONFIGURED' as const } : item),
+    }
+    const blingOAuthAdapter: BlingOAuthAdapter = {
+      start: async () => ({ session_id: 'session-1', status: 'AUTHORIZING' }),
+      status: async () => ({ session_id: 'session-1', status: 'CANCELLED', error_code: 'BLING_OAUTH_EXPIRED', message: 'A autorização expirou. Inicie a conexão novamente.' }),
+      test: async () => ({ error_code: 'BLING_NOT_CONNECTED', message: 'Autorize o Bling antes de testar a conexão.', page_record_count: 0 }),
+      disconnect: async () => ({ status: 'NOT_CONFIGURED' }),
+      sync: async () => ({ status: 'FAILED', receivables: { pages_read: 0, records_read: 0 }, payables: { pages_read: 0, records_read: 0 } }),
+    }
+    render(<App bootstrapAdapter={adapterFor(notConnected)} blingOAuthAdapter={blingOAuthAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
+    expect(screen.getAllByRole('button', { name: 'Testar conexão' })[0]).toBeDisabled()
+    expect(screen.getAllByRole('button', { name: 'Conectar' })[0]).toBeEnabled()
+    await user.click(screen.getAllByRole('button', { name: 'Conectar' })[0])
+    expect(await screen.findByText('A autorização expirou. Inicie a conexão novamente.')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Conectar' })[0]).toBeEnabled()
+    expect(screen.getAllByRole('button', { name: 'Testar conexão' })[0]).toBeDisabled()
   })
 
   it('inicia OAuth no navegador externo e acompanha o retorno sanitizado', async () => {

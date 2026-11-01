@@ -124,7 +124,7 @@ body { background: #fff; color: var(--mockup-ink); }
 @media (max-width: 850px) { .sidebar { width: 220px; } .main-area { width: calc(100% - 220px); } .dashboard-header-actions { flex-wrap: wrap; justify-content: flex-end; } .treasury-row,.five-column-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-bottom-grid { grid-template-columns: 1fr; } }
 @media (max-width: 680px) { .app-shell { display: block; } .sidebar { width: 100%; min-height: 0; padding: 12px 10px; } .brand { padding-bottom: 13px; } .sidebar nav { display: flex; overflow-x: auto; gap: 4px; } .nav-label,.global-filters,.sidebar-footer { display: none; } .nav-item { min-height: 36px; white-space: nowrap; } .main-area { width: 100%; } .dashboard-header { display: block; } .dashboard-header-actions { justify-content: flex-start; margin-top: 14px; } .dashboard-context { display: block; } .dashboard-context > span { display: block; margin-bottom: 8px; } .treasury-row,.five-column-row,.realized-row,.dashboard-lower-grid { grid-template-columns: 1fr; } .realized-buckets { margin: 10px 0 0; } }
 
-/* Mocap T1–T15: shell compartilhado extraído das telas aprovadas. */
+/* Mocap T01–T17, exceto T05 removida: shell compartilhado das telas aprovadas. */
 :root { --mocap-navy: #071d5d; --mocap-teal: #008e8d; --mocap-cyan: #20b9d4; --mocap-blue: #1169e8; --mocap-border: #dfebf2; --mocap-muted: #4d6bb0; --mocap-surface: #fff; }
 body { background: #fff; }
 .mocap-sidebar { width: 253px; min-height: 100vh; flex: 0 0 253px; padding: 0 14px 17px; color: #fff; background: linear-gradient(180deg,#032f4a 0%,#001d37 100%); overflow-y: auto; }

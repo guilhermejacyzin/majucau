@@ -9,8 +9,8 @@ Aplicativo Wails de inteligência financeira para Windows 10/11 x64. A implement
 - visão executiva com os cards financeiros oficiais do handoff;
 - projeção diária contínua de D0 a D+60;
 - recebíveis B2B classificados de forma conservadora a partir do Bling;
-- pedidos Nuvemshop operacionais/provisórios;
-- tela de integrações editável, com configuração e OAuth/teste do Bling no worker; Nuvemshop e Nuvem Pago continuam condicionados às evidências oficiais aprovadas;
+- dados operacionais da loja por arquivo externo aprovado ou Bling, conforme a origem definida para cada informação; a tela não conecta diretamente à API da Nuvemshop;
+- tela de integrações editável para configuração, OAuth e teste do Bling no worker; a confirmação financeira do Nuvem Pago continua condicionada a uma fonte oficial aprovada;
 - trilha de auditoria e lineage até o registro RAW de origem;
 - estados explícitos para dado confirmado, provisório, parcial, desatualizado ou indisponível;
 - aplicação desktop e worker nativos, sem Docker ou Node.js na máquina do usuário;
@@ -138,7 +138,7 @@ Qualquer mudança nessas regras exige versão, regressão financeira e aprovaç�
 
 ## Integrações e credenciais
 
-A tela **Configurações > Integrações** é a área editável para preencher os dados públicos e secrets das APIs de Bling, Nuvemshop e, quando houver fonte oficial, Nuvem Pago. O Bling permite salvar Client ID, Redirect URI e Client Secret pelo IPC autenticado, iniciar OAuth no navegador externo, acompanhar o callback loopback, testar uma leitura mínima e abrir uma sincronização filtrada explícita com tipo de data e período; o secret e os tokens vão para DPAPI e os metadados públicos para PostgreSQL. A Nuvemshop também permite salvar App ID, Redirect URI HTTPS e Client Secret pelo mesmo caminho protegido; OAuth e sincronização continuam bloqueados até o relay HTTPS/PKCE ser homologado. A sincronização só é executada depois que a pessoa informa um filtro e o Bling está conectado. Para a pessoa usuária, a experiência é normal de aplicativo — editar, salvar, conectar no navegador externo, acompanhar o estado e executar um período escolhido — sem o React persistir ou executar secrets.
+A tela **Configurações > Integrações** permite configurar, autorizar, testar e sincronizar o Bling pelo worker autenticado. Gisele definiu que o sistema não terá conexão direta com a API da Nuvemshop: os dados correspondentes virão de arquivo externo aprovado ou do Bling conforme o contrato de cada informação. Essa definição sobre a forma de conexão não altera, por si só, a regra financeira nem a fonte aprovada de cada campo. O Client Secret e os tokens do Bling vão para DPAPI; metadados públicos vão para PostgreSQL. O teste de conexão e a sincronização só ficam disponíveis após OAuth concluído. Nuvem Pago não confirma valores financeiros até existir uma fonte oficial aprovada.
 
 - secrets e tokens não entram no frontend, Git, logs ou banco em texto aberto;
 - a UI envia a credencial ao worker por IPC local autenticado;

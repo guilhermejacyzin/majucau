@@ -204,12 +204,10 @@ if (-not [string]::IsNullOrWhiteSpace($StructuredPath)) {
     }
 
     try {
-        $structuredTasks = @(
-            ConvertFrom-Json -InputObject ([System.IO.File]::ReadAllText(
-                $structuredFullPath,
-                [System.Text.UTF8Encoding]::new($false, $true)
-            )) -ErrorAction Stop
-        )
+        $structuredTasks = ConvertFrom-Json -InputObject ([System.IO.File]::ReadAllText(
+            $structuredFullPath,
+            [System.Text.UTF8Encoding]::new($false, $true)
+        )) -ErrorAction Stop
     }
     catch {
         throw "Arquivo estruturado do backlog não contém JSON válido: $($_.Exception.Message)"

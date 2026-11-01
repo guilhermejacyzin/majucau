@@ -37,5 +37,13 @@ O protótipo local já está aberto com a versão atual. Se a janela ainda mostr
 ## Conferência da janela atual — 01/11/2026
 
 - Consultei a janela ativa do executável `majucau-dev.exe` iniciado a partir deste checkout. A navegação contém Visão Executiva, Fluxo de Caixa, Contas a Receber, Contas a Pagar, DRE, Balancete, Calculadora de Aplicação, Estoque, Produção, Compras, Lançamentos & Pendências, Alertas, Integrações, Parâmetros e Usuários. Não existe item nem página independente chamada “Conciliação”.
-- Ainda há o texto “Conciliação pendente aguardando fonte oficial” entre os alertas da Visão Executiva. Ele descreve um estado interno de dados e não abre uma tela; foi mantido para não alterar o alerta/card aprovado nem a regra de negócio.
+- Na primeira conferência ainda havia o alerta “Conciliação pendente aguardando fonte oficial” na Visão Executiva. Ele não abria a tela antiga, mas mantinha uma referência visual à T05.
 - A árvore acessível da janela foi lida com sucesso. A captura de imagem continuou expirando por timeout, portanto não afirmo validação visual por screenshot.
+
+## Remoção do alerta residual — 01/11/2026
+
+- Gisele pediu nova atualização do protótipo porque ainda via a tela de Conciliação. A conferência da janela mostrou que não havia página nem opção de navegação T05; a referência restante era o alerta antigo na T01.
+- Removi da Visão Executiva somente o alerta `Conciliação pendente aguardando fonte oficial`, que remetia à tela retirada. Os três outros alertas, os cards principais, os indicadores e as regras internas permanecem iguais.
+- O card `CONCILIAÇÃO` de Contas a Receber foi preservado porque pertence à tela ativa aprovada e mostra um controle operacional distinto da página T05.
+- A regressão de interface verifica que nem a navegação oferece T05 nem a Visão Executiva exibe o alerta legado. Após o hot reload, a árvore acessível da janela aberta confirmou que o alerta sumiu e os três outros alertas continuam visíveis; esta conferência usou a árvore acessível, sem captura visual.
+- Verificações da correção: `npm run test -- --reporter=dot` passou com 46 testes em 5 arquivos; `npm run lint` e `npm run typecheck` também passaram. A CI do commit desta correção será registrada após o push.

@@ -25,7 +25,8 @@
 - `python work/verify_package.py`, executado em `docs/planejamento`: 127 tarefas, 108 decisões, 90 links locais válidos e nenhuma fórmula com erro na planilha oficial.
 - A planilha oficial v2 foi regenerada pelo builder existente e as linhas alteradas de BK-012, BK-086, BK-097, BK-104, BK-109 e as decisões de exportação foram revisadas em prévias temporárias.
 - Busca no código de interface não encontrou botões/textos ativos `Exportar`, `Gerar pedidos` ou `Gerar compras`. Referências históricas e o helper interno de XLSX não são ações disponíveis em tela.
-- Na janela local ativa, a árvore acessível confirma que a navegação não inclui a página T05 — Conciliação. O texto “Conciliação pendente” permanece apenas como alerta na Visão Executiva, sem rota para a antiga página. A captura visual da janela expirou por timeout.
+- Na conferência posterior, a árvore acessível confirmou que a navegação não inclui a página T05 — Conciliação. Gisele apontou que o alerta legado “Conciliação pendente aguardando fonte oficial” ainda dava a impressão de que a tela existia; esse alerta foi removido da T01. Os demais alertas/cards e os controles internos das telas ativas permanecem preservados.
+- Após a correção residual da T05, o protótipo aberto recebeu a atualização por hot reload e a árvore acessível confirmou três alertas na T01, sem o alerta antigo. `npm run test -- --reporter=dot` passou com 46 testes em 5 arquivos; `npm run lint` e `npm run typecheck` passaram. A captura visual não foi necessária para distinguir a página/alerta pela árvore acessível.
 
 ## Limite
 

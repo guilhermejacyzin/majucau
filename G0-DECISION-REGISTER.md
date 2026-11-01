@@ -297,6 +297,7 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Permanecem as regras internas de correspondência por evidência, prevenção de duplicidade, estados pendentes/ambíguos/divergentes e vínculo à origem. Elas continuam necessárias para a confiabilidade dos valores e resultados das telas ativas; a retirada de T05 não autoriza alterar essas regras ou os cards aprovados de T01–T04 e T06–T17.
 - T01 continua agregando apenas resultados de telas de origem ativas, sem consulta paralela direta ao Bling. Se faltar uma fonte, o resultado permanece pendente/indisponível e a responsável é sinalizada.
 - A imagem original T5 permanece arquivada apenas como histórico da referência. O backlog BK-055 passa a registrar a retirada de escopo, e não a construção da tela.
+- **Esclarecimento aprovado por Gisele em 2026-11-01:** após perceber que o protótipo ainda exibia um cartão “Conciliação pendente” na Visão Executiva, autorizou removê-lo junto com a referência à antiga T05. Remover somente esse alerta residual da T01; manter os outros cards aprovados, os estados internos de conciliação e o card de conciliação aprovado dentro de Contas a Receber.
 - Evidência de implementação e documentação: `docs/evidence/T05-RETIREMENT-2026-10-31.md`.
 
 ## Decisão posterior aprovada — ações indisponíveis no protótipo

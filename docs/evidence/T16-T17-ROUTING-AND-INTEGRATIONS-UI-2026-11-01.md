@@ -26,6 +26,8 @@
 
 Esta execução não validou a conta Bling real, nem rodou a matriz de instalação em VM limpa. A confirmação manual visual da janela Wails também não foi feita; a validação desta fatia foi por comparação com as imagens de referência e pelos testes automatizados.
 
+A CI do commit `cbca622` terminou com sucesso em todos os quatro jobs: `detect-changes`, `verify-backlog`, `verify-windows` e `verify-postgres` ([execução #41348424281](https://github.com/guilhermejacyzin/majucau/actions/runs/41348424281)). Isso confirma compilação e verificações automatizadas no Windows e PostgreSQL, mas não substitui a homologação com a conta real do Bling nem o teste visual manual.
+
 ## Limpeza
 
 Os bundles temporários de verificação foram removidos com `scripts/SafeCleanup.psm1`. Foram preservados os caches centralizados necessários ao desenvolvimento e os artefatos oficiais do backlog em `artifacts/verification/backlog-v2/`.

@@ -29,6 +29,21 @@ Relatório completo do processo, com contexto, decisões, evidências, pendênci
 - A tarefa da conexão real do Bling, BK-041, está registrada em **80% concluída, com 20% restante**.
 - Nesta execução `scripts/verify.ps1` terminou com sucesso; também passaram a instalação limpa do frontend a partir do lockfile atualizado e seus lint, typecheck, 39 testes, build e auditoria npm (zero vulnerabilidades). O teste SQL de PostgreSQL foi ignorado localmente por falta de `MAJUCAU_TEST_DATABASE_URL`, mas a CI [41261894619](https://github.com/guilhermejacyzin/majucau/actions/runs/41261894619) executou e aprovou os quatro trabalhos, inclusive PostgreSQL e Windows. Isso não substitui a homologação com a conta real do Bling.
 
+## Atualização da continuação — 31/10/2026
+
+- O commit atual após a correção de aging é `11f4205` na branch
+  `codex/majucau-artifact-consolidation`; a alteração local
+  `frontend/package.json.md5` continua preservada e fora do Git.
+- Na CI [41262694158](https://github.com/guilhermejacyzin/majucau/actions/runs/41262694158),
+  `detect-changes`, `verify-backlog` e `verify-postgres` passaram. O Windows
+  falhou apenas no smoke de ciclo de vida do serviço worker, embora o diagnóstico
+  posterior tenha encontrado o serviço `Running` e `Status=OK`.
+- A correção em andamento repete consultas somente de leitura ao estado do
+  serviço até o limite aprovado; erro persistente continua resultando em falha.
+  A verificação local completa passou. A CI do novo commit ainda precisa
+  confirmar o smoke Windows.
+- Evidência e limites: [investigação do smoke Windows](./evidence/WINDOWS-WORKER-SMOKE-RETRY-2026-10-31.md).
+
 ## PENDÊNCIA REAL
 
 1. **Conectar o Bling:** falta salvar o Client Secret do aplicativo no campo **Client Secret** em **Importações/Integrações → Bling** no Majucau. Essa credencial é diferente da senha usada para entrar no site Bling; não deve ser enviada pelo chat.

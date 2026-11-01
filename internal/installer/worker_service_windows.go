@@ -712,16 +712,54 @@ func stopWorkerService(service *mgr.Service) error {
 }
 
 func waitForWorkerServiceState(service *mgr.Service, state svc.State) error {
-	deadline := time.Now().Add(workerServiceTimeout)
-	for time.Now().Before(deadline) {
-		status, err := service.Query()
-		if err != nil {
-			return err
-		}
-		if status.State == state {
-			return nil
-		}
-		time.Sleep(200 * time.Millisecond)
+	return waitForServiceState(service.Query, state, workerServiceTimeout, 200*time.Millisecond)
+}
+
+// waitForServiceState retries the read-only SCM status query until the target
+// state is observed or the timeout expires. A query error is never treated as
+// success; it is retained as the cause if no later query can confirm the state.
+func waitForServiceState(query func() (svc.Status, error), state svc.State, timeout, interval time.Duration) error {
+	if query == nil || timeout <= 0 {
+		return ErrWorkerServiceState
 	}
-	return ErrWorkerServiceState
+	if interval <= 0 {
+		interval = 200 * time.Millisecond
+	}
+	deadline := time.Now().Add(timeout)
+	var lastQueryErr error
+	firstQuery := true
+	for {
+		if !firstQuery && !time.Now().Before(deadline) {
+			if lastQueryErr != nil {
+				return fmt.Errorf("%w: status query did not recover before timeout: %w", ErrWorkerServiceState, lastQueryErr)
+			}
+			return ErrWorkerServiceState
+		}
+		status, err := query()
+		if err != nil {
+			lastQueryErr = err
+		} else {
+			lastQueryErr = nil
+			if status.State == state {
+				if !time.Now().Before(deadline) {
+					return ErrWorkerServiceState
+				}
+				return nil
+			}
+		}
+
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			if lastQueryErr != nil {
+				return fmt.Errorf("%w: status query did not recover before timeout: %w", ErrWorkerServiceState, lastQueryErr)
+			}
+			return ErrWorkerServiceState
+		}
+		wait := interval
+		if remaining < wait {
+			wait = remaining
+		}
+		time.Sleep(wait)
+		firstQuery = false
+	}
 }

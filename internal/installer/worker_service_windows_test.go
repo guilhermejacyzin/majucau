@@ -6,7 +6,45 @@ import (
 	"errors"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"golang.org/x/sys/windows/svc"
 )
+
+func TestWaitForServiceStateRetriesQueryErrorsUntilTargetIsObserved(t *testing.T) {
+	calls := 0
+	err := waitForServiceState(func() (svc.Status, error) {
+		calls++
+		if calls < 3 {
+			return svc.Status{}, errors.New("temporary SCM query failure")
+		}
+		return svc.Status{State: svc.Running}, nil
+	}, svc.Running, time.Second, time.Millisecond)
+	if err != nil {
+		t.Fatalf("waitForServiceState returned an error after observing Running: %v", err)
+	}
+	if calls != 3 {
+		t.Fatalf("expected two retries before observing the target, got %d queries", calls)
+	}
+}
+
+func TestWaitForServiceStateFailsWhenQueriesNeverRecover(t *testing.T) {
+	queryErr := errors.New("persistent SCM query failure")
+	calls := 0
+	err := waitForServiceState(func() (svc.Status, error) {
+		calls++
+		return svc.Status{}, queryErr
+	}, svc.Running, 15*time.Millisecond, time.Millisecond)
+	if !errors.Is(err, ErrWorkerServiceState) {
+		t.Fatalf("expected service-state timeout, got %v", err)
+	}
+	if !errors.Is(err, queryErr) {
+		t.Fatalf("expected final query failure to remain available for diagnostics, got %v", err)
+	}
+	if calls < 2 {
+		t.Fatalf("expected query retry before timeout, got %d query", calls)
+	}
+}
 
 func TestWorkerServiceFailureCodeContainsOnlyKnownStage(t *testing.T) {
 	err := workerServiceFailure{stage: "PREPARE_PARAMETERS_ACL", cause: errors.New(`failure at C:\private\path`)}

@@ -21,11 +21,12 @@
 
 ## Validação e publicação
 
-- Revisão estática: procurar referências ativas à tela nos arquivos do frontend e conferir que não restem rota, navegação ou configuração T05.
-- `git diff --check` deve passar antes do commit.
-- A suíte da CI do GitHub valida a compilação e os testes existentes após o push. Nenhuma validação da conta real Bling ou de dados financeiros é implicada por remover a página.
-- O processo `majucau-dev` e o servidor Vite do projeto já estavam em execução, portanto a edição da tela é servida pelo protótipo local. A captura da janela falhou duas vezes por timeout; não foi possível confirmar visualmente a atualização nesta execução.
+- A revisão do frontend confirmou que o tipo de tela, o painel/configuração e os itens de navegação T05 foram retirados. Permanecem apenas textos de conciliação em telas ativas que descrevem controles internos já aprovados.
+- `git diff --check` passou antes da publicação.
+- Commits publicados na branch `codex/majucau-artifact-consolidation`: `86cd8bd` (retirada da tela) e ajustes pequenos nos verificadores e no resumo ativo do backlog (`421bb4a`, `6068c95`, `9c7c3d0`).
+- A CI do GitHub [41265605349](https://github.com/guilhermejacyzin/majucau/actions/runs/41265605349), no commit `9c7c3d0`, passou nos quatro jobs: detecção/mensagem de commit, backlog, Windows e PostgreSQL. Os testes/builds automatizados do Windows e a verificação de PostgreSQL passaram. Isso não equivale à homologação de dados reais do Bling.
+- O protótipo local e o servidor Vite já estavam em execução. A captura visual da janela falhou duas vezes por timeout; por isso, não consegui confirmar a tela diretamente no computador, embora a versão tenha passado pela compilação automatizada de Windows.
 
 ## Próximo passo
 
-Confirmar no protótipo iniciado novamente que “Conciliação” não aparece no menu e acompanhar a CI do commit. A operação financeira de correspondência permanece no escopo interno das telas que dependem dela.
+Na próxima conferência visual, confirmar que “Conciliação” não aparece no menu. Se a janela ainda mostrar o estado anterior, reiniciar o protótipo local para carregar a versão atualizada. A operação financeira de correspondência permanece no escopo interno das telas que dependem dela.

@@ -83,3 +83,9 @@ A lista também foi guardada em `artifacts/retained/manual-cleanup/go-global-cac
 - Preservados os caches centralizados reutilizáveis, `frontend/node_modules/` e os diretórios necessários aos processos de desenvolvimento. Na conferência final estavam ativos `majucau-worker.exe` (PID 46712), `majucau-dev.exe` (PID 14180), `wails.exe` (PID 46084) e um processo Node associado ao Vite (PID 10936); nenhum processo Go de compilação estava ativo.
 - `frontend/package.json.md5` permanece fora do commit porque é estado local do protótipo. `artifacts/verification/artifacts/` também foi preservado para conferência manual; ambos estão registrados em `artifacts/retained/manual-cleanup/workspace-outputs-2026-10-25.txt`.
 - O banco de desenvolvimento, o worker e a sessão do protótipo não foram interrompidos. Nenhuma credencial ou conteúdo do Drive foi lido.
+
+## Limpeza após alinhamento do aging de Contas a Pagar — 31/10/2026
+
+- `go test -count=1 ./internal/dashboard` passou usando `artifacts/cache/go-build/` e `artifacts/cache/go-mod/`; o teste que exige PostgreSQL foi pulado localmente por ausência de `MAJUCAU_TEST_DATABASE_URL`.
+- Depois de confirmar que não havia processo `go` ou `compile` ativo, removi `artifacts/cache/go-build/` com `scripts/SafeCleanup.psm1`. Mantive `artifacts/cache/go-mod/` para não exigir novo download das dependências.
+- Nenhum dado financeiro, credencial ou arquivo do Drive foi acessado. O protótipo e seus serviços permaneceram ativos.

@@ -371,12 +371,22 @@ WITH eligible_receivables AS (
   SELECT
     COALESCE(SUM(open_balance), 0)::text AS total_value,
     COUNT(id) AS total_count,
-    COALESCE(SUM(open_balance) FILTER (WHERE due_date = $1::date), 0)::text AS today_value,
-    COUNT(id) FILTER (WHERE due_date = $1::date) AS today_count,
+    COALESCE(SUM(open_balance) FILTER (
+      WHERE due_date = $1::date
+        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+    ), 0)::text AS today_value,
+    COUNT(id) FILTER (
+      WHERE due_date = $1::date
+        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+    ) AS today_count,
     COALESCE(SUM(open_balance) FILTER (
       WHERE open_balance > 0 AND due_date < $1::date
+        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ), 0)::text AS overdue_value,
-    COUNT(id) FILTER (WHERE open_balance > 0 AND due_date < $1::date) AS overdue_count,
+    COUNT(id) FILTER (
+      WHERE open_balance > 0 AND due_date < $1::date
+        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+    ) AS overdue_count,
     COALESCE(SUM(open_balance) FILTER (
       WHERE due_date > $1::date AND due_date < ($1::date + 8)
         AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')

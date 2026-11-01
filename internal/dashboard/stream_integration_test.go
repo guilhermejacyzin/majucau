@@ -140,8 +140,8 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		($4::uuid, 'bling.conta_pagar', 10, $12::date + 1, 'OPEN'),
 		($5::uuid, 'bling.conta_pagar', 30, $12::date + 7, 'OPEN'),
 		($6::uuid, 'bling.conta_pagar', 50, $12::date + 8, 'OPEN'),
-		($7::uuid, 'bling.conta_pagar', 60, $12::date + 2, 'CANCELLED'),
-		($8::uuid, 'bling.conta_pagar', 70, $12::date + 2, 'CANCELED'),
+		($7::uuid, 'bling.conta_pagar', 60, $12::date, 'CANCELLED'),
+		($8::uuid, 'bling.conta_pagar', 70, $12::date - 1, 'CANCELED'),
 		($9::uuid, 'bling.conta_pagar', 80, $12::date + 2, 'REFUNDED'),
 		($10::uuid, 'bling.conta_pagar', 90, $12::date + 2, 'REVERSED'),
 		($11::uuid, 'bling.conta_pagar', 100, $12::date + 2, 'ESTORNADO')`,
@@ -163,5 +163,11 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.PayablesDueNext7Days.State != "CONFIRMED" || snapshot.PayablesDueNext7Days.Value != "40" || snapshot.PayablesDueNext7Days.Count != 2 {
 		t.Fatalf("upcoming payables should include only open titles due on days 1–7 from the current snapshot: %+v, want R$ 40 from 2 rows", snapshot.PayablesDueNext7Days)
+	}
+	if snapshot.PayablesDueToday.State != "CONFIRMED" || snapshot.PayablesDueToday.Value != "220" || snapshot.PayablesDueToday.Count != 2 {
+		t.Fatalf("today's aging should ignore canceled titles and retain the current and legacy open titles: %+v, want R$ 220 from 2 rows", snapshot.PayablesDueToday)
+	}
+	if snapshot.PayablesOverdue.State != "CONFIRMED" || snapshot.PayablesOverdue.Value != "0" || snapshot.PayablesOverdue.Count != 0 {
+		t.Fatalf("overdue aging should exclude a canceled title: %+v, want confirmed zero", snapshot.PayablesOverdue)
 	}
 }

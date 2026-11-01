@@ -10,6 +10,7 @@ Relatório completo do processo, com contexto, decisões, evidências, pendênci
 - Há código para conectar ao Bling, guardar o Client Secret no cofre protegido do Windows e usar a API atual com autenticação JWT. A integração também tem controles de paginação, repetição segura e gravação transacional/idempotente. Isso ainda não prova acesso à conta real.
 - A leitura de Contas a Pagar já tem conversão técnica para os dados internos e atualização compartilhada das telas Visão Executiva e Contas a Pagar.
 - Em 31/10, o card já aprovado “VENCIMENTOS 7 DIAS” foi ligado ao cálculo do backend: considera saldo aberto com vencimento nos dias 1–7 e exclui situações canceladas/estornadas. O desenho não mudou; essa entrega é parcial e não conclui T04 nem BK-058/BK-059.
+- Também em 31/10, os cálculos existentes “Vence hoje” e “Em atraso” passaram a excluir cancelados/estornados, conforme aging aprovado. Os testes locais do pacote passaram; a integração PostgreSQL desta continuação aguarda CI. O total geral e a tabela permaneceram iguais.
 - Os cálculos de consulta dos cards EBIT e EBITDA e as validações da calculadora para D0 até D+60 estão implementados. Ainda faltam dados reais e validação contábil da empresa.
 - A regra aprovada para CAPEX começa em 01/01/2026 e prevê os cards de valor pago no mês e acumulado. Os valores ainda não estão confirmados.
 - Existem leitores em fluxo para CSV, XLS e XLSX. A leitura financeira real dos arquivos do Drive ainda não foi homologada.

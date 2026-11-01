@@ -22,6 +22,11 @@ aprovada. A métrica vem da mesma carga diária normalizada do Bling usada para
 Contas a Pagar; até essa carga estar atualizada, o backend a marca indisponível
 e a tela não apresenta valor como confirmado.
 
+Na continuação desta fatia, os totais de aging “Vence hoje” e “Em atraso”
+também passaram a excluir cancelados/estornados, conforme D-005-A. O teste
+PostgreSQL verifica um título cancelado com vencimento hoje e outro vencido.
+O total geral a pagar e a tabela não foram alterados nessa correção.
+
 Arquivos alterados nesta fatia:
 
 - `internal/dashboard/stream.go` e `internal/application/contracts.go`: consulta,
@@ -30,7 +35,7 @@ Arquivos alterados nesta fatia:
   contrato e vínculo ao card já aprovado.
 - `internal/dashboard/stream_test.go` e
   `internal/dashboard/stream_integration_test.go`: cobertura de contrato, limites
-  de data, carga atual e estados cancelados/estornados.
+  de data, carga atual e estados cancelados/estornados para as faixas de aging.
 - `frontend/src/App.test.tsx` e `frontend/src/bootstrap.test.ts`: cobertura do
   contrato de interface, do mesmo total em T01 e T04 e da exibição no card
   existente de vencimentos.

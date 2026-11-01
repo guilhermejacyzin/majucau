@@ -7,7 +7,7 @@ Relatório completo do processo, com contexto, decisões, evidências, pendênci
 ## Atualização de 01/11/2026
 
 - A página independente de Conciliação e o alerta residual foram retirados e enviados ao GitHub. Gisele confirmou que não localizou mais essa página/referência. O card “CONCILIAÇÃO” dentro de Contas a Receber continua porque pertence à tela aprovada.
-- Os atalhos “Ver detalhes” da Visão Executiva agora levam às telas que explicam os resultados. O desenho e os cálculos foram preservados e clicar não consulta o Bling. 57 testes, lint e typecheck passaram localmente; CI após o push e confirmação manual no protótipo ainda estão pendentes.
+- Os atalhos “Ver detalhes” da Visão Executiva agora levam às telas que explicam os resultados. O desenho e os cálculos foram preservados e clicar não consulta o Bling. 57 testes, lint e typecheck passaram localmente; a CI [#41274539700](https://github.com/guilhermejacyzin/majucau/actions/runs/41274539700) passou nos quatro jobs, incluindo Windows e PostgreSQL. A confirmação manual no protótipo não foi possível porque a captura da janela expirou.
 - O projeto segue estimado em 11,9% concluído (88,1% restante). BK-102 continua em 1%; integração com dados reais e aceites das telas ainda faltam.
 
 ## FEITO

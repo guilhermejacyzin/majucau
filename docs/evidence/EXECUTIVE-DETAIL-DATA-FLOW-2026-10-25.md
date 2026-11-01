@@ -231,9 +231,10 @@ origem e a T01 continuam usando a base/snapshot do Majucau; ausências continuam
 pendentes ou indisponíveis.
 
 Validação local: 57 testes frontend em 6 arquivos, lint e typecheck passaram.
-A conferência manual do clique não foi concluída porque a captura da janela do
-protótipo expirou; não afirmo validação visual. A CI após o envio e a confirmação
-manual ainda estão pendentes.
+A CI [#41274539700](https://github.com/guilhermejacyzin/majucau/actions/runs/41274539700)
+passou nos quatro jobs, incluindo Windows e PostgreSQL. A conferência manual do
+clique não foi concluída porque a captura da janela do protótipo expirou; não
+afirmo validação visual.
 
 ## Normalização diária de Contas a Pagar — 26/10/2026
 

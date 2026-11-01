@@ -236,6 +236,47 @@ passou nos quatro jobs, incluindo Windows e PostgreSQL. A conferência manual do
 clique não foi concluída porque a captura da janela do protótipo expirou; não
 afirmo validação visual.
 
+## Cobertura real dos indicadores da T01 — auditoria de 01/11/2026
+
+Conferi o contrato TypeScript do snapshot, os pontos em que os cards leem esse
+snapshot e o leitor Go que consulta o PostgreSQL. O clique de um card apenas
+abre a tela de origem; não inicia uma chamada ao Bling.
+
+| Indicador da T01 | Origem/detalhe | Situação encontrada no código |
+|---|---|---|
+| A Receber | Contas a Receber | Usa `snapshot.receivables`, o mesmo total da tela de detalhe. A consulta inclui B2C projetado do Nuvem Pago e B2B do Bling, conforme o filtro existente. |
+| A Pagar | Contas a Pagar | Usa `snapshot.payables`, o mesmo total da tela de detalhe, ligado ao último lote diário normalizado. |
+| Saldo atual | Fluxo de Caixa | Ainda não existe saldo de conta no contrato do snapshot. Não há saldo por banco para mostrar. |
+| Menor saldo 30/60 dias e gráfico projetado | Fluxo de Caixa | Não há série de saldo projetado no snapshot; o gráfico continua sem dados. |
+| Distribuição do saldo | Fluxo de Caixa | O snapshot não traz saldos por conta/meio nem estado por banco. |
+| Vendas do mês e margem bruta | DRE | A navegação abre DRE, mas o snapshot executivo não fornece esses indicadores. |
+| Estoque/cobertura | Estoque | Não há métrica correspondente no snapshot executivo. |
+| Produção prevista | Produção | Não há métrica correspondente no snapshot executivo. |
+| Compras previstas | Compras | Não há métrica correspondente no snapshot executivo. |
+
+Os itens sem métrica permanecem como “—”/“Sem dados”; não são preenchidos por
+estimativa paralela. O contrato também prevê campos CAPEX opcionais, mas o leitor
+atual não os preenche. Os avisos mostrados na T01 ainda são textos configurados
+na interface, não alertas gerados pelas métricas do snapshot.
+
+Também encontrei um ponto para decisão de apresentação: se `A RECEBER` ou
+`A PAGAR` chegar com estado `PARTIAL` e valor, a função atual pode mostrar esse
+valor, mas o card não identifica visualmente o estado parcial. Não alterei isso;
+uma indicação ou bloqueio de valor mexeria na forma aprovada de apresentar o
+resultado e precisa de definição antes de implementação.
+
+**Resposta sobre Itaú e Mercado Pago:** hoje o detalhe não lista os saldos desses
+bancos. O sistema ainda não tem saldo por conta normalizado para confirmá-los;
+não vou afirmar que os dois aparecem. Essa lacuna foi registrada para a próxima
+etapa de integração do Fluxo de Caixa. Nenhuma consulta direta extra ao Bling foi
+feita.
+
+**Implicação para homologação:** os dois totais de contas compartilham dados
+comprovados. Os demais indicadores da T01 ainda dependem de suas telas/fontes de
+origem serem alimentadas e expostas no snapshot. O código não apresenta ainda um
+aviso dinâmico dizendo qual origem está faltando; antes de acrescentar tal aviso
+na tela aprovada, será necessário definir com Gisele onde ele cabe sem redesenho.
+
 ## Normalização diária de Contas a Pagar — 26/10/2026
 
 A carga diária completa de `contas.pagar` agora converte cada título para

@@ -26,6 +26,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - B2B futuro vem exclusivamente do Bling após classificação aprovada.
 - Nunca somar B2C Nuvem + B2C Bling.
 - Total a Receber = B2C Nuvem + B2B Bling.
+- T01 é um agregador dos resultados das telas de origem T02–T17: reaproveita os mesmos valores, filtros, períodos, cálculos e estados, sem fórmula duplicada nem consulta direta paralela ao provedor. Se uma tela de origem não tiver um dado necessário, manter esse resultado pendente/indisponível e sinalizar a responsável; a T01 só poderá buscar diretamente no Bling para esse dado após autorização explícita dela.
 - Recebimentos e pagamentos realizados usam a fonte oficial Bling.
 - Saldo Inicial D = Saldo Final Conciliado D-1.
 - Saldo Final = Saldo Inicial + Entradas - Saídas +/- Ajustes Autorizados.

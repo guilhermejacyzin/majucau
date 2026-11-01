@@ -7,7 +7,7 @@ import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPr
 
 const connectedBootstrap: BootstrapState = { app_version: '0.1.0-g1', worker: { service: 'majucau-worker', version: 'test-worker', state: 'OK', checked_at: '2026-08-16T12:00:00Z' }, integrations: [{ provider: 'BLING', status: 'CONNECTED', last_success_at: '2026-08-16T11:58:00Z', last_attempt_at: '2026-08-16T11:58:00Z' }, { provider: 'NUVEMSHOP', status: 'PARTIALLY_AVAILABLE' }, { provider: 'NUVEM_PAGO', status: 'UNAVAILABLE' }], checked_at: '2026-08-16T12:00:00Z' }
 const adapterFor = (state: BootstrapState): BootstrapAdapter => ({ getState: () => Promise.resolve(state) })
-const snapshotAdapterFor = (value = '100.0000'): DashboardSnapshotAdapter => ({ getSnapshot: () => Promise.resolve({ as_of: '2026-09-21T12:00:00Z', last_bling_sync_at: '2026-09-21T11:30:00Z', data_state: 'PARTIAL', receivables: { value, count: 1, state: 'CONFIRMED', source_system: 'BLING + NUVEM_PAGO' }, future_b2c: { state: 'UNAVAILABLE', source_system: 'NUVEM_PAGO' }, receipts_month: { state: 'UNAVAILABLE', source_system: 'BLING' }, receivables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING + NUVEM_PAGO' }, payables: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_due_today: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING' }, payments_month: { state: 'UNAVAILABLE', source_system: 'BLING' } }) })
+const snapshotAdapterFor = (value = '100.0000'): DashboardSnapshotAdapter => ({ getSnapshot: () => Promise.resolve({ as_of: '2026-09-21T12:00:00Z', last_bling_sync_at: '2026-09-21T11:30:00Z', data_state: 'PARTIAL', receivables: { value, count: 1, state: 'CONFIRMED', source_system: 'BLING + NUVEM_PAGO' }, future_b2c: { state: 'UNAVAILABLE', source_system: 'NUVEM_PAGO' }, receipts_month: { state: 'UNAVAILABLE', source_system: 'BLING' }, receivables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING + NUVEM_PAGO' }, payables: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_due_today: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_due_next_7_days: { state: 'UNAVAILABLE', source_system: 'BLING' }, payments_month: { state: 'UNAVAILABLE', source_system: 'BLING' } }) })
 
 describe('shell financeiro', () => {
   it('exibe a composição oficial do mockup T1 sem números inventados', async () => {
@@ -133,6 +133,26 @@ describe('shell financeiro', () => {
     expect(screen.getByText('Cliente real')).toBeInTheDocument()
     expect(screen.getByText('R$ 40,00')).toBeInTheDocument()
     expect(screen.getByText('PROJECTED')).toBeInTheDocument()
+  })
+
+  it('mostra no card existente os títulos que vencem nos próximos sete dias', async () => {
+    const user = userEvent.setup()
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => ({
+        ...await snapshotAdapterFor().getSnapshot(),
+        payables: { value: '100.0000', count: 4, state: 'CONFIRMED', source_system: 'BLING' },
+        payables_due_next_7_days: { value: '40.0000', count: 2, state: 'CONFIRMED', source_system: 'BLING' },
+      }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    const executivePayablesCard = screen.getByText('A PAGAR').closest('article')
+    expect(executivePayablesCard).toHaveTextContent('R$ 100,00')
+    await user.click(screen.getByRole('button', { name: 'Contas a Pagar' }))
+    const payableTotalCard = screen.getByText('TOTAL A PAGAR').closest('article')
+    expect(payableTotalCard).toHaveTextContent('R$ 100,00')
+    const upcomingCard = screen.getByText('VENCIMENTOS 7 DIAS').closest('article')
+    expect(upcomingCard).toHaveTextContent('R$ 40,00')
   })
 
   it('navega por teclado até integrações e mantém campos com labels visíveis', async () => {

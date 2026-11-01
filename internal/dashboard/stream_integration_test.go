@@ -50,7 +50,7 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		`CREATE TEMP TABLE integration_sync_batches (id uuid DEFAULT gen_random_uuid(), connection_id uuid, resource text, started_at timestamptz, finished_at timestamptz, status text, correlation_id uuid, data_stage text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE receivables (id uuid, source_system text, business_type text, status text, open_balance numeric, net_amount numeric, gross_amount numeric, due_date date) ON COMMIT DROP`,
 		`CREATE TEMP TABLE receipts (id uuid, source_system text, status text, receipt_date date, amount numeric) ON COMMIT DROP`,
-		`CREATE TEMP TABLE payables (id uuid, source_entity text, open_balance numeric, due_date date) ON COMMIT DROP`,
+		`CREATE TEMP TABLE payables (id uuid, source_entity text, open_balance numeric, due_date date, status text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payable_sync_snapshot_rows (sync_batch_id uuid, payable_id uuid) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payments (id uuid, source_system text, payment_date date, amount numeric) ON COMMIT DROP`,
 	} {
@@ -123,21 +123,45 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	currentPayableID := "00000000-0000-4000-8000-000000000011"
 	stalePayableID := "00000000-0000-4000-8000-000000000012"
 	legacyPayableID := "00000000-0000-4000-8000-000000000013"
+	dayOnePayableID := "00000000-0000-4000-8000-000000000014"
+	daySevenPayableID := "00000000-0000-4000-8000-000000000015"
+	dayEightPayableID := "00000000-0000-4000-8000-000000000016"
+	cancelledPayableID := "00000000-0000-4000-8000-000000000017"
+	canceledPayableID := "00000000-0000-4000-8000-000000000018"
+	refundedPayableID := "00000000-0000-4000-8000-000000000019"
+	reversedPayableID := "00000000-0000-4000-8000-000000000020"
+	estornadoPayableID := "00000000-0000-4000-8000-000000000021"
+	businessDate := asOf.Format("2006-01-02")
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO payables (id, source_entity, open_balance, due_date) VALUES
-		($1::uuid, 'bling.conta_pagar', 200, $4::date),
-		($2::uuid, 'bling.conta_pagar', 900, $4::date),
-		($3::uuid, 'legacy.report', 20, $4::date)`, currentPayableID, stalePayableID, legacyPayableID, asOf.Format("2006-01-02")); err != nil {
-		t.Fatalf("seed current, stale, and legacy payable rows: %v", err)
+		INSERT INTO payables (id, source_entity, open_balance, due_date, status) VALUES
+		($1::uuid, 'bling.conta_pagar', 200, $12::date, 'OPEN'),
+		($2::uuid, 'bling.conta_pagar', 900, $12::date, 'OPEN'),
+		($3::uuid, 'legacy.report', 20, $12::date, 'OPEN'),
+		($4::uuid, 'bling.conta_pagar', 10, $12::date + 1, 'OPEN'),
+		($5::uuid, 'bling.conta_pagar', 30, $12::date + 7, 'OPEN'),
+		($6::uuid, 'bling.conta_pagar', 50, $12::date + 8, 'OPEN'),
+		($7::uuid, 'bling.conta_pagar', 60, $12::date + 2, 'CANCELLED'),
+		($8::uuid, 'bling.conta_pagar', 70, $12::date + 2, 'CANCELED'),
+		($9::uuid, 'bling.conta_pagar', 80, $12::date + 2, 'REFUNDED'),
+		($10::uuid, 'bling.conta_pagar', 90, $12::date + 2, 'REVERSED'),
+		($11::uuid, 'bling.conta_pagar', 100, $12::date + 2, 'ESTORNADO')`,
+		currentPayableID, stalePayableID, legacyPayableID, dayOnePayableID, daySevenPayableID, dayEightPayableID,
+		cancelledPayableID, canceledPayableID, refundedPayableID, reversedPayableID, estornadoPayableID, businessDate); err != nil {
+		t.Fatalf("seed current, stale, legacy, boundary, and canceled payable rows: %v", err)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO payable_sync_snapshot_rows (sync_batch_id, payable_id) VALUES ($1::uuid, $2::uuid)`, payableBatchID, currentPayableID); err != nil {
-		t.Fatalf("seed current payable snapshot membership: %v", err)
+	for _, payableID := range []string{currentPayableID, dayOnePayableID, daySevenPayableID, dayEightPayableID, cancelledPayableID, canceledPayableID, refundedPayableID, reversedPayableID, estornadoPayableID} {
+		if _, err := tx.Exec(ctx, `INSERT INTO payable_sync_snapshot_rows (sync_batch_id, payable_id) VALUES ($1::uuid, $2::uuid)`, payableBatchID, payableID); err != nil {
+			t.Fatalf("seed current payable snapshot membership: %v", err)
+		}
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil {
 		t.Fatalf("read summary with daily payable membership: %v", err)
 	}
-	if snapshot.Payables.Value != "220" || snapshot.Payables.Count != 2 {
-		t.Fatalf("payable total includes a stale account or excludes a legacy row: %+v, want R$ 220 from 2 rows", snapshot.Payables)
+	if snapshot.Payables.Value != "710" || snapshot.Payables.Count != 10 {
+		t.Fatalf("payable total includes a stale account or excludes a legacy row: %+v, want R$ 710 from 10 rows", snapshot.Payables)
+	}
+	if snapshot.PayablesDueNext7Days.State != "CONFIRMED" || snapshot.PayablesDueNext7Days.Value != "40" || snapshot.PayablesDueNext7Days.Count != 2 {
+		t.Fatalf("upcoming payables should include only open titles due on days 1–7 from the current snapshot: %+v, want R$ 40 from 2 rows", snapshot.PayablesDueNext7Days)
 	}
 }

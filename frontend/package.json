@@ -36,5 +36,8 @@
     "vite": "7.3.7",
     "vitest": "4.1.12",
     "vitest-axe": "0.1.0"
+  },
+  "overrides": {
+    "minimatch": "11.0.1"
   }
 }

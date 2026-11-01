@@ -157,7 +157,7 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 		t.Fatalf("stream output is not valid snapshot JSON: %v", err)
 	}
 	wantLastSync := time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC)
-	if !snapshot.AsOf.Equal(asOf) || snapshot.DataState != "PARTIAL" || snapshot.Receivables.Value != "100.0000" || snapshot.LastBlingSyncAt == nil || !snapshot.LastBlingSyncAt.Equal(wantLastSync) {
+	if !snapshot.AsOf.Equal(asOf) || snapshot.DataState != "PARTIAL" || snapshot.Receivables.Value != "100.0000" || snapshot.PayablesDueNext7Days.Value != "35.0000" || snapshot.PayablesDueNext7Days.Count != 2 || snapshot.LastBlingSyncAt == nil || !snapshot.LastBlingSyncAt.Equal(wantLastSync) {
 		t.Fatalf("unexpected snapshot summary: %+v", snapshot)
 	}
 	if len(snapshot.ReceivableRows) != 1 || snapshot.ReceivableRows[0].Customer != "Cliente" || len(snapshot.PayableRows) != 1 || snapshot.PayableRows[0].Supplier != "Fornecedor" {
@@ -253,6 +253,7 @@ func TestReadStreamSummaryKeepsEmptySourcesUnavailableInsteadOfZero(t *testing.T
 		{name: "payables", metric: snapshot.Payables},
 		{name: "payables due today", metric: snapshot.PayablesDueToday},
 		{name: "payables overdue", metric: snapshot.PayablesOverdue},
+		{name: "payables due next 7 days", metric: snapshot.PayablesDueNext7Days},
 		{name: "payments this month", metric: snapshot.PaymentsMonth},
 	}
 	for _, item := range metrics {
@@ -284,6 +285,7 @@ func TestReadStreamSummaryConfirmsZeroAfterSuccessfulNormalizedDailyBlingLoad(t 
 		{name: "payables", metric: snapshot.Payables},
 		{name: "payables due today", metric: snapshot.PayablesDueToday},
 		{name: "payables overdue", metric: snapshot.PayablesOverdue},
+		{name: "payables due next 7 days", metric: snapshot.PayablesDueNext7Days},
 		{name: "payments this month", metric: snapshot.PaymentsMonth},
 	} {
 		if item.metric.State != "CONFIRMED" || item.metric.Value != "0.0000" || item.metric.Count != 0 {
@@ -411,6 +413,7 @@ func dashboardSummaryValues() []any {
 		"80.0000", int64(2), "10.0000", int64(1), "4.0000", int64(1),
 		"30.0000", int64(1), int64(2), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
 		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
+		"35.0000", int64(2),
 	}
 }
 
@@ -420,6 +423,7 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), int64(0), nil, nil, nil, nil,
+		"0.0000", int64(0),
 	}
 }
 

@@ -266,6 +266,7 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Organizar o detalhamento das consultas na mesma ordem visual da tela aprovada “Visão Executiva”: cards do topo, área central, cards inferiores e alertas.
 - Essa ordem serve para planejar e detalhar as consultas existentes. Não autoriza criar telas novas nem mudar fórmulas, cálculos ou regras de negócio.
 - A DRE continua em sua tela própria como resultado consolidado conforme as regras aprovadas; os cards EBIT/EBITDA permanecem no lugar de UNMAPPED, com o alerta de pendências visível.
+- **Reforço aprovado por Gisele em 2026-10-31:** T01 deve refletir os resultados das telas de origem, com os mesmos filtros, cálculos e estados. Se um resultado necessário estiver ausente na tela correspondente, o Majucau deve sinalizar a responsável e manter o dado pendente/indisponível; não deve buscar esse dado diretamente no Bling sem autorização explícita para aquele caso.
 
 ## Decisão posterior aprovada — DRE própria do Majucau
 

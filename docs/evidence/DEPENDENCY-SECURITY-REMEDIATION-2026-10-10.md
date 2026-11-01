@@ -40,3 +40,21 @@ Esta execução foi somente uma análise de vulnerabilidades: não executou test
 não acessou dados de produção e não alterou telas ou regras financeiras. A
 evidência pública do alerta está em
 [GO-2026-5932](https://pkg.go.dev/vuln/GO-2026-5932).
+
+## Correção de minimatch — 2026-10-31
+
+`npm audit` passou a sinalizar a vulnerabilidade moderada
+[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) na
+versão transitiva `minimatch@10.2.6`. Os consumidores atuais ainda restringem
+essa dependência à série 10, e o `npm audit fix --force` propunha uma alteração
+de versão incompatível no ESLint TypeScript. Para evitar esse downgrade, o
+`frontend/package.json` fixa o override transitivo em `minimatch@11.0.1`; o
+lockfile foi regenerado sem reinstalar nem interromper o protótipo em execução.
+
+O patch upstream `11.0.1` é o primeiro indicado como corrigido no aviso; ele
+suporta Node 18, 20 e 22 ou superior, incluindo o Node 24 fixado no CI. Uma
+instalação npm limpa foi feita em cópia descartável sob `artifacts/verification/`
+e confirmou `minimatch@11.0.1`; lint, typecheck, 39 testes da interface, build
+e `npm audit` passaram. Depois, `scripts/verify.ps1` passou por completo. A
+compatibilidade final no ambiente CI continua sendo confirmada pelo próximo
+push. Nenhuma tela ou regra financeira foi alterada.

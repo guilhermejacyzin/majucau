@@ -106,6 +106,7 @@ function metricForCard(screen: MockupScreenKey, label: string, snapshot?: Dashbo
   if (screen === 'payables' && label === 'TOTAL A PAGAR') return snapshot.payables
   if (screen === 'payables' && label === 'VENCE HOJE') return snapshot.payables_due_today
   if (screen === 'payables' && label === 'EM ATRASO') return snapshot.payables_overdue
+  if (screen === 'payables' && label === 'VENCIMENTOS 7 DIAS') return snapshot.payables_due_next_7_days
   if (screen === 'cashflow' && label === 'RECEBIDO NO MÊS') return snapshot.receipts_month
   if (screen === 'cashflow' && label === 'PAGO NO MÊS') return snapshot.payments_month
   return undefined

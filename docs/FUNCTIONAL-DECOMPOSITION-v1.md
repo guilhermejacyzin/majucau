@@ -123,6 +123,14 @@ Garantir que a aplicação saiba para qual empresa, período, cenário e instala
 
 Permitir uma leitura rápida da posição financeira, tendência, risco, origem e próxima ação. É um agregador; não é fonte contábil nem lugar para esconder divergências.
 
+T01 consome os resultados produzidos pelas telas de origem T02–T17 usando os
+mesmos filtros, períodos, cálculos, estados e fontes. Se uma tela de origem não
+produzir um dado necessário, T01 deve sinalizar a falta e manter o resultado
+pendente/indisponível. Não consultar o Bling diretamente como fallback sem
+autorização explícita da responsável para aquele dado. Use apenas os componentes
+de estado já aprovados para indicar ausência; não acrescente indicadores ou
+redesenhe a tela.
+
 ### Composição visual realinhada
 
 1. cabeçalho: Visão Executiva, empresa, data-base, última atualização, ajuda;

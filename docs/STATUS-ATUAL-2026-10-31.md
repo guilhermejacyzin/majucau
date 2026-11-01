@@ -9,6 +9,7 @@ Relatório completo do processo, com contexto, decisões, evidências, pendênci
 - O protótipo local abre com um PostgreSQL isolado e um serviço local de integração. Na última conferência, os processos e o banco estavam ativos.
 - Há código para conectar ao Bling, guardar o Client Secret no cofre protegido do Windows e usar a API atual com autenticação JWT. A integração também tem controles de paginação, repetição segura e gravação transacional/idempotente. Isso ainda não prova acesso à conta real.
 - A leitura de Contas a Pagar já tem conversão técnica para os dados internos e atualização compartilhada das telas Visão Executiva e Contas a Pagar.
+- Em 31/10, o card já aprovado “VENCIMENTOS 7 DIAS” foi ligado ao cálculo do backend: considera saldo aberto com vencimento nos dias 1–7 e exclui situações canceladas/estornadas. O desenho não mudou; essa entrega é parcial e não conclui T04 nem BK-058/BK-059.
 - Os cálculos de consulta dos cards EBIT e EBITDA e as validações da calculadora para D0 até D+60 estão implementados. Ainda faltam dados reais e validação contábil da empresa.
 - A regra aprovada para CAPEX começa em 01/01/2026 e prevê os cards de valor pago no mês e acumulado. Os valores ainda não estão confirmados.
 - Existem leitores em fluxo para CSV, XLS e XLSX. A leitura financeira real dos arquivos do Drive ainda não foi homologada.
@@ -25,6 +26,7 @@ Relatório completo do processo, com contexto, decisões, evidências, pendênci
 - O checksum local `frontend/package.json.md5` está modificado pelo protótipo em execução e não foi incluído nesses commits. O registro local de limpeza explica quando restaurá-lo.
 - O estado geral do backlog é 127 tarefas: 7 concluídas, 20 em andamento e 100 não iniciadas. A estimativa média é **11,8% concluído e 88,2% restante**; ela não mede prontidão para homologação.
 - A tarefa da conexão real do Bling, BK-041, está registrada em **80% concluída, com 20% restante**.
+- Nesta execução `scripts/verify.ps1` terminou com sucesso; também passaram a instalação limpa do frontend a partir do lockfile atualizado e seus lint, typecheck, 39 testes, build e auditoria npm (zero vulnerabilidades). O teste SQL de PostgreSQL foi ignorado localmente por falta de `MAJUCAU_TEST_DATABASE_URL`; a CI do código ainda está pendente.
 
 ## PENDÊNCIA REAL
 
@@ -45,3 +47,4 @@ Relatório completo do processo, com contexto, decisões, evidências, pendênci
 - [Pré-checagem da conexão Bling](./evidence/BLING-CONNECTION-PRECHECK-2026-10-31.md)
 - [Política contábil da DRE](./DRE-ACCOUNTING-POLICY-v1.md)
 - [Auditoria da fonte de CAPEX](./evidence/CAPEX-REPORT-DATA-SOURCE-AUDIT-2026-10-11.md)
+- [Evidência parcial T04 — vencimentos nos próximos sete dias](./evidence/T04-PAYABLES-NEXT-7-DAYS-2026-10-31.md)

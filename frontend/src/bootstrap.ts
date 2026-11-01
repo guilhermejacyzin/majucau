@@ -33,6 +33,7 @@ export type DashboardSnapshot = {
   payables: DashboardMetric
   payables_due_today: DashboardMetric
   payables_overdue: DashboardMetric
+  payables_due_next_7_days: DashboardMetric
   payments_month: DashboardMetric
   capex_paid_month?: DashboardMetric
   capex_accumulated?: DashboardMetric
@@ -155,7 +156,7 @@ async function readWailsBootstrap(): Promise<unknown> {
 const unavailableDashboardSnapshot = (errorCode = 'WORKER_UNAVAILABLE', message = 'O serviço local ainda não está disponível.'): DashboardSnapshot => {
   const asOf = new Date().toISOString()
   const unavailable = (): DashboardMetric => ({ state: 'UNAVAILABLE' })
-  return { as_of: asOf, data_state: 'UNAVAILABLE', receivables: unavailable(), future_b2c: unavailable(), receipts_month: unavailable(), receivables_overdue: unavailable(), payables: unavailable(), payables_due_today: unavailable(), payables_overdue: unavailable(), payments_month: unavailable(), error_code: errorCode, message }
+  return { as_of: asOf, data_state: 'UNAVAILABLE', receivables: unavailable(), future_b2c: unavailable(), receipts_month: unavailable(), receivables_overdue: unavailable(), payables: unavailable(), payables_due_today: unavailable(), payables_overdue: unavailable(), payables_due_next_7_days: unavailable(), payments_month: unavailable(), error_code: errorCode, message }
 }
 
 async function readWailsDashboardSnapshot(): Promise<unknown> {
@@ -185,7 +186,7 @@ function isDashboardPayableRow(value: unknown): value is DashboardPayableRow {
 function isDashboardSnapshot(value: unknown): value is DashboardSnapshot {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<DashboardSnapshot>
-  return typeof candidate.as_of === 'string' && (candidate.last_bling_sync_at === undefined || typeof candidate.last_bling_sync_at === 'string') && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payments_month) && (candidate.capex_paid_month === undefined || isDashboardMetric(candidate.capex_paid_month)) && (candidate.capex_accumulated === undefined || isDashboardMetric(candidate.capex_accumulated)) && (candidate.receivable_rows === undefined || (Array.isArray(candidate.receivable_rows) && candidate.receivable_rows.every(isDashboardReceivableRow))) && (candidate.payable_rows === undefined || (Array.isArray(candidate.payable_rows) && candidate.payable_rows.every(isDashboardPayableRow)))
+  return typeof candidate.as_of === 'string' && (candidate.last_bling_sync_at === undefined || typeof candidate.last_bling_sync_at === 'string') && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payables_due_next_7_days) && isDashboardMetric(candidate.payments_month) && (candidate.capex_paid_month === undefined || isDashboardMetric(candidate.capex_paid_month)) && (candidate.capex_accumulated === undefined || isDashboardMetric(candidate.capex_accumulated)) && (candidate.receivable_rows === undefined || (Array.isArray(candidate.receivable_rows) && candidate.receivable_rows.every(isDashboardReceivableRow))) && (candidate.payable_rows === undefined || (Array.isArray(candidate.payable_rows) && candidate.payable_rows.every(isDashboardPayableRow)))
 }
 
 export function createDashboardSnapshotAdapter(source: DashboardSnapshotSource = readWailsDashboardSnapshot): DashboardSnapshotAdapter {

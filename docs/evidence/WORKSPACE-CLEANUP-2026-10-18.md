@@ -75,3 +75,11 @@ A lista também foi guardada em `artifacts/retained/manual-cleanup/go-global-cac
 - Mantido `artifacts/cache/dev/` porque contém o worker que continua executando o protótipo (PID 31900). Também foram mantidos `artifacts/cache/go-mod/`, `artifacts/cache/vite/` e `artifacts/cache/webview2/`, necessários para a continuidade offline e para a interface/instalador.
 - Para limpeza manual futura, preservei em `artifacts/retained/manual-cleanup/workspace-outputs-2026-10-25.txt` os caminhos de três pastas temporárias `frontend-dist-*` e de `artifacts/verification/artifacts/`. A última contém uma cópia do worker e uma pasta `cache`; como o protótipo está ativo, não removi esses itens sem confirmar que não são dependências.
 - O protótipo e suas portas ativas foram mantidos; nenhum arquivo real do Drive ou credencial foi lido, alterado ou excluído.
+
+## Limpeza após fatia de T04 — 31/10/2026
+
+- Removidos com `scripts/SafeCleanup.psm1` os caches transitórios `artifacts/cache/format-go-build/`, `artifacts/cache/format-go-tmp/` e `artifacts/cache/go-tmp/`; a cópia temporária de instalação limpa `artifacts/verification/frontend-clean-install-20261031/`; o cache npm acidentalmente criado em `frontend/artifacts/`; e as oito cópias de bundle `frontend-dist-*` em `artifacts/verification/`.
+- A instalação limpa foi executada apenas na cópia temporária centralizada e apagada após lint, typecheck, 39 testes, build e `npm audit` passarem com `minimatch@11.0.1`.
+- Preservados os caches centralizados reutilizáveis, `frontend/node_modules/` e os diretórios necessários aos processos de desenvolvimento. Na conferência final estavam ativos `majucau-worker.exe` (PID 46712), `majucau-dev.exe` (PID 14180), `wails.exe` (PID 46084) e um processo Node associado ao Vite (PID 10936); nenhum processo Go de compilação estava ativo.
+- `frontend/package.json.md5` permanece fora do commit porque é estado local do protótipo. `artifacts/verification/artifacts/` também foi preservado para conferência manual; ambos estão registrados em `artifacts/retained/manual-cleanup/workspace-outputs-2026-10-25.txt`.
+- O banco de desenvolvimento, o worker e a sessão do protótipo não foram interrompidos. Nenhuma credencial ou conteúdo do Drive foi lido.

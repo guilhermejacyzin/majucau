@@ -26,7 +26,7 @@
 - A planilha oficial v2 foi regenerada pelo builder existente e as linhas alteradas de BK-012, BK-086, BK-097, BK-104, BK-109 e as decisões de exportação foram revisadas em prévias temporárias.
 - Busca no código de interface não encontrou botões/textos ativos `Exportar`, `Gerar pedidos` ou `Gerar compras`. Referências históricas e o helper interno de XLSX não são ações disponíveis em tela.
 - Na conferência posterior, a árvore acessível confirmou que a navegação não inclui a página T05 — Conciliação. Gisele apontou que o alerta legado “Conciliação pendente aguardando fonte oficial” ainda dava a impressão de que a tela existia; esse alerta foi removido da T01. Os demais alertas/cards e os controles internos das telas ativas permanecem preservados.
-- Após a correção residual da T05, o protótipo aberto recebeu a atualização por hot reload e a árvore acessível confirmou três alertas na T01, sem o alerta antigo. `npm run test -- --reporter=dot` passou com 46 testes em 5 arquivos; `npm run lint` e `npm run typecheck` passaram. A captura visual não foi necessária para distinguir a página/alerta pela árvore acessível.
+- Após a correção residual da T05, o protótipo aberto recebeu a atualização por hot reload e a árvore acessível confirmou três alertas na T01, sem o alerta antigo. `npm run test -- --reporter=dot` passou com 46 testes em 5 arquivos; `npm run lint` e `npm run typecheck` passaram. A CI do commit `e2bdb90` [#41270518884](https://github.com/guilhermejacyzin/majucau/actions/runs/41270518884) passou em backlog, PostgreSQL e Windows. A conferência foi feita pela árvore acessível, sem captura visual.
 
 ## Limite
 

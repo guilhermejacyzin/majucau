@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 Set-StrictMode -Version Latest
@@ -32,7 +32,12 @@ try {
         }
     }
 
-    $packageLines = @(& $goCommand list -f '{{.ImportPath}}|{{join .Imports " "}}' ./...)
+    # Keep the Go template free of embedded shell quotes. Windows PowerShell
+    # otherwise splits the native argument at `" "`, which makes Go parse an
+    # incomplete template and prevents the architecture check from running.
+    # fmt renders the import slice as `[path path ...]`; import paths cannot
+    # contain whitespace, so it is safe to split that representation below.
+    $packageLines = @(& $goCommand list -f '{{.ImportPath}}|{{.Imports}}' ./...)
     if ($LASTEXITCODE -ne 0) {
         throw 'Não foi possível montar o grafo de imports do projeto Go.'
     }
@@ -51,8 +56,12 @@ try {
         }
 
         $packagePath = $line.Substring(0, $separator)
-        $importsText = $line.Substring($separator + 1)
-        $imports = if ([string]::IsNullOrWhiteSpace($importsText)) { @() } else { @($importsText -split '\s+') }
+        $importsText = $line.Substring($separator + 1).Trim()
+        if ($importsText -notmatch '^\[(.*)\]$') {
+            throw 'A saída da lista de imports Go tem um formato inesperado.'
+        }
+        $importsBody = $Matches[1]
+        $imports = if ([string]::IsNullOrWhiteSpace($importsBody)) { @() } else { @($importsBody -split '\s+') }
 
         foreach ($importPath in $imports) {
             if ($importPath.StartsWith("$modulePath/cmd/", [System.StringComparison]::Ordinal)) {

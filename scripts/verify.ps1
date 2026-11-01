@@ -1,10 +1,11 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $artifactRoot = Join-Path $projectRoot 'artifacts'
 $verificationRoot = Join-Path $artifactRoot 'verification'
+$generatedFrontendDist = $false
 $env:GOCACHE = Join-Path $artifactRoot 'cache\go-build'
 $goModCacheRoot = Join-Path $artifactRoot 'cache\go-mod'
 $goToolBinRoot = Join-Path $artifactRoot 'tools\go\bin'
@@ -41,6 +42,7 @@ try {
     # main.go embeds frontend/dist; create the ignored bundle before the first
     # Go package scan when verification runs from a clean checkout.
     if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'frontend\dist'))) {
+        $generatedFrontendDist = $true
         Push-Location (Join-Path $projectRoot 'frontend')
         try {
             Write-Host 'frontend dist ausente; executando npm run build antes dos checks Go'
@@ -102,7 +104,7 @@ try {
 finally {
     Pop-Location
     $frontendDist = Join-Path $projectRoot 'frontend\dist'
-    if (Test-Path -LiteralPath $frontendDist -PathType Container) {
+    if ($generatedFrontendDist -and (Test-Path -LiteralPath $frontendDist -PathType Container)) {
         $projectRootFull = [System.IO.Path]::GetFullPath($projectRoot).TrimEnd([System.IO.Path]::DirectorySeparatorChar)
         $projectPrefix = $projectRootFull + [System.IO.Path]::DirectorySeparatorChar
         $artifactRootFull = [System.IO.Path]::GetFullPath($artifactRoot)
@@ -132,7 +134,21 @@ finally {
         if (-not $destination.StartsWith($verificationRootFull + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
             throw 'O destino de verificação saiu da raiz de artifacts/verification.'
         }
-        Move-Item -LiteralPath $frontendDistFull -Destination $destination
+        $moveError = $null
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            try {
+                Move-Item -LiteralPath $frontendDistFull -Destination $destination -ErrorAction Stop
+                $moveError = $null
+                break
+            }
+            catch {
+                $moveError = $_
+                if ($attempt -lt 3) { Start-Sleep -Milliseconds (250 * $attempt) }
+            }
+        }
+        if ($null -ne $moveError) {
+            throw "Não foi possível consolidar o bundle gerado em artifacts/verification após 3 tentativas: $($moveError.Exception.Message)"
+        }
     }
 }
 

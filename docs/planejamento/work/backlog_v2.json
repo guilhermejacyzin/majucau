@@ -756,7 +756,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "",
+    "evidence": "70%: README, convenções Git e estrutura do projeto existem. Nesta execução, corrigi incompatibilidades do verificador local com Windows PowerShell 5.1 e confirmei a suíte local; ainda faltam completar os itens restantes de configuração/revisão do repositório antes de marcar a base como pronta. Evidência: docs/evidence/WINDOWS-LOCAL-VERIFICATION-2026-11-01.md.",
     "weight": 1,
     "dependencies": [
       "BK-002",

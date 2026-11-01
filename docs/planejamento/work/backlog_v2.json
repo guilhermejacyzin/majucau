@@ -3495,7 +3495,7 @@
     "owner": "QA + Backend",
     "kind": "Qualidade",
     "status": "Não iniciada",
-    "evidence": "",
+    "evidence": "Evidência parcial de centavos e arredondamento da apresentação em docs/evidence/FRONTEND-BRL-EXACT-FORMATTING-2026-11-01.md. Isto não conclui as demais verificações de BK-106; estado e percentual permanecem sem mudança.",
     "weight": 1,
     "dependencies": [
       "BK-105",

@@ -1,6 +1,7 @@
 import { Tooltip } from './components/Tooltip'
 import type { TooltipId } from './tooltips'
 import type { DashboardMetric, DashboardPayableRow, DashboardReceivableRow, DashboardSnapshot } from './bootstrap'
+import { formatBRL } from './money'
 import sidebarReference from './assets/images/mocap-sidebar.png'
 
 export type MockupScreenKey = 'executive' | 'cashflow' | 'receivables' | 'payables' | 'dre' | 'trial-balance' | 'investment-calculator' | 'inventory' | 'production' | 'purchases' | 'forecast' | 'pending' | 'alerts' | 'integrations'
@@ -71,17 +72,11 @@ function MocapHeader({ config, snapshot }: { config: ScreenConfig; snapshot?: Da
 }
 
 function MocapCard({ card }: { card: Card }) {
-  return <article className={`mocap-card tone-${card.tone} ${card.variant ? `variant-${card.variant}` : ''}`}><div className="mocap-card-icon"><Icon icon={card.icon} /></div><div className="mocap-card-body"><Tooltip id="metric.details"><span className="mocap-card-label">{card.label}</span></Tooltip>{card.variant === 'minimum-balance' ? <div className="mocap-minimum-values"><div><strong>30 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div><div><strong>60 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div></div> : <><span className="mocap-empty-value">{card.value ? formatMoney(card.value) : '—'}</span>{card.supporting && <span className="mocap-card-support">{card.supporting}</span>}</>}<Tooltip id="metric.details"><button type="button" className="mocap-card-action">{card.variant === 'minimum-balance' ? 'Ver detalhes' : 'Ver detalhes'} <span>⌄</span></button></Tooltip></div></article>
-}
-
-function formatMoney(value: string): string {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed)) return '—'
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parsed)
+  return <article className={`mocap-card tone-${card.tone} ${card.variant ? `variant-${card.variant}` : ''}`}><div className="mocap-card-icon"><Icon icon={card.icon} /></div><div className="mocap-card-body"><Tooltip id="metric.details"><span className="mocap-card-label">{card.label}</span></Tooltip>{card.variant === 'minimum-balance' ? <div className="mocap-minimum-values"><div><strong>30 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div><div><strong>60 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div></div> : <><span className="mocap-empty-value">{card.value ? formatBRL(card.value) : '—'}</span>{card.supporting && <span className="mocap-card-support">{card.supporting}</span>}</>}<Tooltip id="metric.details"><button type="button" className="mocap-card-action">{card.variant === 'minimum-balance' ? 'Ver detalhes' : 'Ver detalhes'} <span>⌄</span></button></Tooltip></div></article>
 }
 
 function displayMoney(value?: string): string {
-  return value && value.trim() !== '' ? formatMoney(value) : '—'
+  return value && value.trim() !== '' ? formatBRL(value) : '—'
 }
 
 function receivableTableRow(row: DashboardReceivableRow): string[] {
@@ -191,7 +186,7 @@ function DreDerivedIndicators() {
 
 function capexValue(metric?: DashboardMetric): string {
   if (!metric || metric.state === 'UNAVAILABLE' || metric.state === 'PROJECTED' || !metric.value) return '—'
-  return formatMoney(metric.value)
+  return formatBRL(metric.value)
 }
 
 function capexSupport(metric?: DashboardMetric): string {

@@ -3188,6 +3188,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Fonte:** I_Testes: catálogo previsto, ainda não executado; Consolidação 13/09/2026, §§6–12; Fechamento vigente 13/09/2026, §§2–4,6,8
 
+**Evidência parcial:** `docs/evidence/FRONTEND-BRL-EXACT-FORMATTING-2026-11-01.md` cobre a formatação exata de centavos no frontend. Não altera o estado nem o percentual desta tarefa; datas, estados e os demais casos continuam pendentes.
+
 ### BK-107 — Validar integrações, concorrência e reinício
 
 **Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Qualidade. **Responsável sugerido:** QA + Integrações.

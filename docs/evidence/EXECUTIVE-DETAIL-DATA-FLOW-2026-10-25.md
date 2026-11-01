@@ -259,11 +259,12 @@ estimativa paralela. O contrato também prevê campos CAPEX opcionais, mas o lei
 atual não os preenche. Os avisos mostrados na T01 ainda são textos configurados
 na interface, não alertas gerados pelas métricas do snapshot.
 
-Também encontrei um ponto para decisão de apresentação: se `A RECEBER` ou
-`A PAGAR` chegar com estado `PARTIAL` e valor, a função atual pode mostrar esse
-valor, mas o card não identifica visualmente o estado parcial. Não alterei isso;
-uma indicação ou bloqueio de valor mexeria na forma aprovada de apresentar o
-resultado e precisa de definição antes de implementação.
+Gisele aprovou mostrar o valor de `A RECEBER` ou `A PAGAR` quando o snapshot vier
+com estado `PARTIAL`, acompanhado do aviso “Parcial”. Implementei o aviso no
+mesmo texto de apoio já existente (por exemplo, “Parcial · B2C + B2B”); o valor
+original não é alterado nem recalculado, e nenhum elemento ou espaço novo foi
+adicionado à tela. Valores confirmados mantêm o texto atual. Um teste de
+regressão verifica os dois casos.
 
 **Resposta sobre Itaú e Mercado Pago:** hoje o detalhe não lista os saldos desses
 bancos. O sistema ainda não tem saldo por conta normalizado para confirmá-los;

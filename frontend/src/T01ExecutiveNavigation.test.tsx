@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import type { DashboardSnapshot } from './bootstrap'
 import { MockupDashboard, type MockupScreenKey } from './mockupDashboard'
 
 const cardRoutes = [
@@ -16,6 +17,31 @@ const cardRoutes = [
 ] as const satisfies ReadonlyArray<readonly [string, MockupScreenKey]>
 
 describe('atalhos da Visão Executiva para as telas de origem', () => {
+  it('identifica como parcial o valor incompleto sem mudar a identificação dos demais cards', () => {
+    const unavailable = { state: 'UNAVAILABLE' as const }
+    const snapshot: DashboardSnapshot = {
+      as_of: '2026-11-01T12:00:00Z',
+      data_state: 'PARTIAL',
+      receivables: { value: '125.00', state: 'PARTIAL', source_system: 'BLING + NUVEM_PAGO' },
+      future_b2c: unavailable,
+      receipts_month: unavailable,
+      receivables_overdue: unavailable,
+      payables: { value: '80.00', state: 'CONFIRMED', source_system: 'BLING' },
+      payables_due_today: unavailable,
+      payables_overdue: unavailable,
+      payables_due_next_7_days: unavailable,
+      payments_month: unavailable,
+    }
+    render(<MockupDashboard screen="executive" snapshot={snapshot} />)
+
+    const receivables = screen.getByText('A RECEBER').closest('article')
+    const payables = screen.getByText('A PAGAR').closest('article')
+    expect(receivables).toHaveTextContent('125,00')
+    expect(within(receivables as HTMLElement).getByText('Parcial · B2C + B2B')).toBeInTheDocument()
+    expect(within(payables as HTMLElement).getByText('Bling')).toBeInTheDocument()
+    expect(within(payables as HTMLElement).queryByText(/Parcial/)).not.toBeInTheDocument()
+  })
+
   it.each(cardRoutes)('o card %s abre sua tela de origem', async (label, target) => {
     const user = userEvent.setup()
     const onNavigate = vi.fn()

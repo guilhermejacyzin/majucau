@@ -3085,7 +3085,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Dependências:** BK-004, BK-062, BK-067, BK-078, BK-081, BK-096, BK-101
 
 **Fonte:** Menus: Visão Executiva; Fechamento vigente 13/09/2026, §4.2,5
-**Evidência:** Parcial — atalhos existentes de T01 foram ligados às telas de origem, reutilizando navegação e snapshot; ver docs/evidence/EXECUTIVE-DETAIL-DATA-FLOW-2026-10-25.md. Sem alteração visual ou nova consulta ao Bling. Integração e aceite de dados reais continuam pendentes.
+
+**Evidência:** Parcial — atalhos existentes de T01 foram ligados às telas de origem, reutilizando navegação e snapshot; valores PARTIAL agora mostram o aviso 'Parcial' no texto de apoio existente conforme aprovação de Gisele em 2026-11-01, sem alterar o valor nem criar elemento de layout; ver docs/evidence/EXECUTIVE-DETAIL-DATA-FLOW-2026-10-25.md. Integração e aceite de dados reais continuam pendentes.
+
+
 
 **Regras e verificações vinculadas:** Q-02,F-08
 

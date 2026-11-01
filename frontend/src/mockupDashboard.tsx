@@ -105,7 +105,14 @@ function metricForCard(screen: MockupScreenKey, label: string, snapshot?: Dashbo
 
 function withSnapshot(screen: MockupScreenKey, card: Card, snapshot?: DashboardSnapshot): Card {
   const metric = metricForCard(screen, card.label, snapshot)
-  return metric?.state !== 'UNAVAILABLE' && metric?.value ? { ...card, value: metric.value } : card
+  if (metric?.state === 'UNAVAILABLE' || !metric?.value) return card
+  return {
+    ...card,
+    value: metric.value,
+    supporting: metric.state === 'PARTIAL'
+      ? `Parcial${card.supporting ? ` · ${card.supporting}` : ''}`
+      : card.supporting,
+  }
 }
 
 function EmptyChart({ title, onNavigate }: { title: string; onNavigate?: (screen: MockupScreenKey) => void }) {

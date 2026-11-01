@@ -247,4 +247,4 @@ if (-not [string]::IsNullOrWhiteSpace($StructuredPath)) {
     }
 }
 
-Write-Output "Backlog conferido: $($tasks.Count) tarefas no catálogo; $($activeTasks.Count) ativas e $outOfScope fora do escopo; $completed concluídas, $inProgress em andamento e $notStarted não iniciadas; $calculatedPercent% concluído, $calculatedRemaining% restante."
+Write-Output "Backlog conferido: $($activeTasks.Count) tarefas; $completed concluídas, $inProgress em andamento e $notStarted não iniciadas; $calculatedPercent% concluído, $calculatedRemaining% restante."

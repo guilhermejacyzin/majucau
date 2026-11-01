@@ -756,14 +756,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "70%: README, convenções Git e estrutura do projeto existem. Nesta execução, corrigi incompatibilidades do verificador local com Windows PowerShell 5.1 e confirmei a suíte local; ainda faltam completar os itens restantes de configuração/revisão do repositório antes de marcar a base como pronta. Evidência: docs/evidence/WINDOWS-LOCAL-VERIFICATION-2026-11-01.md.",
+    "evidence": "80%: README, convenções Git, estrutura do projeto e verificadores locais para Windows existem. O arquivo .github/CODEOWNERS solicita revisão do proprietário em todas as mudanças. A regra administrativa de proteção da branch e aprovação obrigatória ainda não foi confirmada nem ativada; depende de conta GitHub administradora. Evidências: CONTRIBUTING.md e docs/evidence/REPOSITORY-REVIEW-GOVERNANCE-2026-11-01.md.",
     "weight": 1,
     "dependencies": [
       "BK-002",
       "BK-017",
       "BK-015"
     ],
-    "progress": 0.7
+    "progress": 0.8
   },
   {
     "key": "devsetup",

@@ -9,6 +9,10 @@ Atualização de 19/10/2026: implementação e testes locais agora cobrem valida
 
 **Atualização de escopo — 31/10/2026:** T05 — Conciliação foi retirada como tela independente. BK-055 fica no catálogo para registrar a decisão, com situação “Fora do escopo”, e não entra na evolução geral; são 126 tarefas ativas. A média das estimativas atuais dessas 126 tarefas é 11,9% concluída (88,1% restante). As regras internas de correspondência permanecem.
 
+**Atualização do andamento — 01/11/2026:** o catálogo mantém 126 tarefas ativas: 7 concluídas, 20 em andamento e 99 não iniciadas. BK-025 avançou para 80% após adicionar `.github/CODEOWNERS`, que solicita revisão do proprietário do repositório, e documentar a diferença entre solicitação de revisão e proteção obrigatória. Restam 20% em BK-025: a branch `main`, aprovações e checks obrigatórios ainda dependem de configuração por uma pessoa administradora do GitHub. A média atual é **12,0% concluída e 88,0% restante**. Os registros anteriores abaixo são fotografias históricas.
+- O backlog tem 126 tarefas: 7 concluídas, 20 em andamento e 99 não iniciadas. BK-055 está fora do escopo e não entra na contagem ativa.
+- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,0%; restam 88,0%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+
 Adendo aprovado em 04/10/2026, registrado no `G0-DECISION-REGISTER.md`: o Majucau calculará sua própria DRE com regras contábeis aprovadas; a DRE pronta do Bling deixa de ser tratada como resultado final. Este adendo substitui os trechos conflitantes abaixo. Princípios para estoque, produção e CPV/CMV foram recebidos e organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`; o mapeamento por conta/operação, os critérios específicos da empresa e os dados de origem continuam pendentes de validação contábil.
 
 Foram revisadas 70 tarefas mantendo os IDs BK-000 a BK-126. As versões anteriores estão preservadas como histórico. Suas regras superadas não devem orientar a implementação.
@@ -427,6 +431,11 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - Foram acrescentados testes no backend e na interface para confirmar que, sem dados confirmados, o cartão “A RECEBER” mostra `—` e não `R$ 0,00`, e que a hora da consulta não é mostrada como sincronização. `go test` focal, `go vet` e os 20 testes de `App.test.tsx` passaram. Evidência: `docs/evidence/DASHBOARD-UNAVAILABLE-METRICS-2026-10-18.md`.
 - A CI [39169340120](https://github.com/guilhermejacyzin/majucau/actions/runs/39169340120), no commit `d9a9f1a`, passou nos quatro jobs, incluindo a suíte completa do Windows e os testes PostgreSQL. Isso continua sendo validação automatizada com dados artificiais, sem sincronização real do Bling.
 - Isso protege o estado vazio já previsto no desenho; nenhuma tela, fórmula ou regra financeira foi alterada. Ainda não comprova o fluxo real do Bling nem explica o painel vazio do protótipo. BK-102 permanece em 1%; contagem e estimativa geral permanecem em 127 tarefas, 7 concluídas, 19 em andamento, 101 não iniciadas, 11,4% concluído e 88,6% restante.
+
+### Estado atualizado do backlog — 01/11/2026
+
+- O backlog tem 126 tarefas: 7 concluídas, 20 em andamento e 99 não iniciadas. BK-055 permanece no catálogo como fora do escopo e não entra na contagem ativa.
+- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,0%; restam 88,0%. BK-025 está em 80% (20% restante); proteção e checks obrigatórios da branch ainda dependem de uma pessoa administradora.
 
 ## 00 Descoberta e decisões
 
@@ -1078,7 +1087,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-025 — Preparar o repositório e as convenções do projeto
 
-**Situação:** Em andamento. **Evolução:** 70% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` explica o fluxo seguro de mudanças, commits e evidências. `scripts/verify-backlog.ps1` e seu teste de divergência passaram na CI Windows, e a CI completa do commit `a61dd71` concluiu com sucesso. A consulta pública à API do GitHub confirmou `protected: false` para `main`; os jobs de CI existentes são `verify-windows` e `verify-postgres`, mas ainda não são exigidos pela branch. Falta uma pessoa administradora configurar as proteções e verificações obrigatórias). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 80% (estimativa de planejamento; README, `.gitignore`, estrutura e `AGENTS.md` já registram instalação, separação do projeto, proteção de segredos e regras essenciais. `CONTRIBUTING.md` explica o fluxo seguro de mudanças, commits, evidências e a diferença entre solicitar revisão e exigir aprovação. `.github/CODEOWNERS` solicita revisão do proprietário do repositório em todas as mudanças. `scripts/verify-backlog.ps1` e seu teste de divergência passaram localmente. A branch `main` ainda está sem proteção; a conta conectada tem permissão de escrita, mas não administrativa. Falta uma pessoa administradora exigir as verificações e aprovações nas regras do GitHub. A CI desta atualização ainda depende do push). Evidência: `docs/evidence/REPOSITORY-REVIEW-GOVERNANCE-2026-11-01.md`. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Criar uma base reproduzível para a equipe.
 

@@ -6,7 +6,7 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** 11,9% concluído e 88,1% restante, segundo a última conferência do backlog registrada abaixo. Esse número só muda quando os critérios de aceite das tarefas forem cumpridos; alterações de documentação, sozinhas, não contam como conclusão funcional.
+- **Andamento registrado — atualização de 01/11/2026:** 12,0% concluído e 88,0% restante, segundo a média atual do backlog. É uma estimativa de planejamento, não prova de homologação. BK-025 está em 80% (20% restante); regras obrigatórias da branch continuam dependendo de uma pessoa administradora.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
 ## O que queremos entregar
@@ -22,6 +22,8 @@ Concluir o backlog aprovado do Majucau e entregar primeiro um protótipo que pos
 - Registrar cada avanço, teste, pendência e próximo passo no projeto e enviar as atualizações ao GitHub.
 
 ## Andamento registrado
+
+- **Governança do repositório — 01/11/2026:** adicionei `.github/CODEOWNERS` para solicitar revisão do proprietário do repositório em todas as mudanças e expliquei em `CONTRIBUTING.md` que isso não ativa proteção de branch nem exige aprovação/CI. A conta conectada tem permissão de escrita, sem administração; não foi possível ativar essas regras. BK-025 avançou de 70% para 80%. Backlog atual: 126 tarefas ativas (7 concluídas, 20 em andamento, 99 não iniciadas), 12,0% concluído e 88,0% restante. Atualizei a planilha oficial; preservei suas fórmulas e conferi visualmente o resumo e BK-025.
 
 - **Estado atualizado da credencial Bling — 01/11/2026:** confirmei somente que o arquivo protegido das credenciais existe no cofre local; não li seu conteúdo. A última captura do Majucau mostra a autorização interrompida (`BLING_NOT_CONNECTED`), e uma chamada de API registrada separadamente retornou HTTP 403 ao consultar categorias. A situação correta é: o segredo não precisa ser salvo de novo; a autorização/permissão e a sincronização ainda precisam ser confirmadas no fluxo do próprio Majucau. Nenhuma permissão externa, tela ou regra foi alterada. Evidência: `docs/evidence/BLING-AUTHORIZATION-STATE-2026-11-01.md`. BK-041 continua em 80%; projeto em 11,9% concluído / 88,1% restante.
 - **Correção dos verificadores locais do Windows — 01/11/2026:** corrigi a análise do template `go list` no Windows PowerShell 5.1 e a leitura das mensagens em português do verificador NSIS (BOM UTF-8). `scripts/verify.ps1` passou com testes Go, limites de arquitetura, vet, govulncheck, migrations, SQLC, scan de secrets, NSIS, lint, typecheck, 61 testes frontend, build e `npm audit` sem vulnerabilidades. O bundle `frontend/dist` não pôde ser movido pelo Windows e ficou registrado para limpeza manual sem interromper processos ativos. BK-025 permanece em 70%; projeto em 11,9% / 88,1%. Evidência: `docs/evidence/WINDOWS-LOCAL-VERIFICATION-2026-11-01.md`.

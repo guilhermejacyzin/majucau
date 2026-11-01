@@ -47,6 +47,11 @@ Este guia ajuda a fazer mudanças pequenas e seguras. Antes de começar, consult
 
 - Faça um commit pequeno por tarefa ou unidade coerente. Não inclua alterações
   locais de outra pessoa.
+- O arquivo `.github/CODEOWNERS` solicita revisão do proprietário do repositório
+  em mudanças de qualquer área. Isso encaminha a revisão; não obriga a aprovação.
+- A proteção da branch, quantidade mínima de aprovações e bloqueio de merge sem
+  CI verde devem ser configurados nas regras do GitHub por uma conta administradora.
+  Não declare essas regras ativas apenas porque existe um `CODEOWNERS`.
 - Use um título curto no formato `tipo(área): resumo`, por exemplo
   `docs(governanca): registrar convencoes de contribuicao`.
 - O corpo do commit deve informar:

@@ -27,6 +27,7 @@
 - A CI do GitHub [41265605349](https://github.com/guilhermejacyzin/majucau/actions/runs/41265605349), no commit `9c7c3d0`, passou nos quatro jobs: detecção/mensagem de commit, backlog, Windows e PostgreSQL. Os testes/builds automatizados do Windows e a verificação de PostgreSQL passaram. Isso não equivale à homologação de dados reais do Bling.
 - Em 31/10, foi confirmado que a janela aberta havia iniciado às 23:05, antes do commit de retirada de T05 às 23:27. A execução antiga foi fechada normalmente e o protótipo foi reaberto às 23:51 por `scripts/start-prototype.ps1`; Wails e Vite compilaram e iniciaram sem erro.
 - A regressão automatizada agora verifica que não existe botão de navegação “Conciliação”. `npm run test -- --reporter=dot` passou com 41 testes em 4 arquivos. A tela independente também não existe no tipo de telas nem na configuração React.
+- A CI [41267096669](https://github.com/guilhermejacyzin/majucau/actions/runs/41267096669), no commit `1e1f1a1`, terminou com sucesso nos quatro jobs: mensagem do commit, backlog, Windows e PostgreSQL.
 - A captura visual da janela depois da reabertura ainda falhou por timeout. Assim, a remoção está confirmada no código, nos testes e na nova execução, mas a inspeção por imagem não pôde ser concluída nesta sessão.
 
 ## Próximo passo

@@ -26,3 +26,7 @@ Não foram guardados tokens, nomes, IDs, respostas brutas ou valores financeiros
 
 - [Erros comuns: HTTP 403 por escopo insuficiente](https://developer.bling.com.br/erros-comuns)
 - [Aplicativos: seleção de escopos e revogação das autorizações ao alterar escopos](https://developer.bling.com.br/aplicativos)
+
+## CI do commit de diagnóstico
+
+Na execução [`CI on: push`](https://github.com/guilhermejacyzin/majucau/actions/runs/41347408143) do commit `a96a634`, a verificação de backlog passou. A etapa `detect-changes` reprovou a mensagem por não conter os dois campos percentuais com os rótulos e formato numérico obrigatórios pelo verificador do repositório; por isso, os trabalhos Windows e PostgreSQL foram pulados. O código e os testes Go locais passaram. Esta atualização registra a falha e corrige o processo nos próximos commits: antes do envio, a mensagem será verificada com `scripts/verify-commit-messages.py` e usará os campos definidos em `CONTRIBUTING.md`. A execução da CI do novo commit ainda precisa confirmar essa correção.

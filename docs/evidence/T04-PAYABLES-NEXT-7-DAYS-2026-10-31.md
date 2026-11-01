@@ -52,9 +52,14 @@ Arquivos alterados nesta fatia:
 - O `npm audit` encontrou zero vulnerabilidades. O `govulncheck` encontrou zero
   vulnerabilidades alcançáveis pelo código; reportou um módulo requerido que
   não é chamado pelos símbolos analisados, conforme a saída do verificador.
+- A CI [41261894619](https://github.com/guilhermejacyzin/majucau/actions/runs/41261894619)
+  passou nos quatro trabalhos: `detect-changes`, `verify-backlog`,
+  `verify-postgres` e `verify-windows`. O teste de integração SQL foi executado
+  em PostgreSQL descartável e passou.
 - O teste PostgreSQL dedicado não executou localmente porque
-  `MAJUCAU_TEST_DATABASE_URL` não está configurada. A CI do commit de código e a
-  homologação com a conta real do Bling ainda estão pendentes.
+  `MAJUCAU_TEST_DATABASE_URL` não está configurada; a execução aprovada de CI
+  acima cobre essa validação. A homologação com a conta real do Bling ainda está
+  pendente.
 
 ## Limite do aceite
 

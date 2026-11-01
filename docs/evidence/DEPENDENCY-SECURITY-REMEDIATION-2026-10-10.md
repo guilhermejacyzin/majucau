@@ -55,6 +55,7 @@ O patch upstream `11.0.1` é o primeiro indicado como corrigido no aviso; ele
 suporta Node 18, 20 e 22 ou superior, incluindo o Node 24 fixado no CI. Uma
 instalação npm limpa foi feita em cópia descartável sob `artifacts/verification/`
 e confirmou `minimatch@11.0.1`; lint, typecheck, 39 testes da interface, build
-e `npm audit` passaram. Depois, `scripts/verify.ps1` passou por completo. A
-compatibilidade final no ambiente CI continua sendo confirmada pelo próximo
-push. Nenhuma tela ou regra financeira foi alterada.
+e `npm audit` passaram. Depois, `scripts/verify.ps1` terminou com sucesso. A CI
+[41261894619](https://github.com/guilhermejacyzin/majucau/actions/runs/41261894619)
+passou nos trabalhos Windows e PostgreSQL, além de detectar mudanças e verificar
+o backlog. Nenhuma tela ou regra financeira foi alterada.

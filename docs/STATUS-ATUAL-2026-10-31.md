@@ -26,7 +26,7 @@ Relatório completo do processo, com contexto, decisões, evidências, pendênci
 - O checksum local `frontend/package.json.md5` está modificado pelo protótipo em execução e não foi incluído nesses commits. O registro local de limpeza explica quando restaurá-lo.
 - O estado geral do backlog é 127 tarefas: 7 concluídas, 20 em andamento e 100 não iniciadas. A estimativa média é **11,8% concluído e 88,2% restante**; ela não mede prontidão para homologação.
 - A tarefa da conexão real do Bling, BK-041, está registrada em **80% concluída, com 20% restante**.
-- Nesta execução `scripts/verify.ps1` terminou com sucesso; também passaram a instalação limpa do frontend a partir do lockfile atualizado e seus lint, typecheck, 39 testes, build e auditoria npm (zero vulnerabilidades). O teste SQL de PostgreSQL foi ignorado localmente por falta de `MAJUCAU_TEST_DATABASE_URL`; a CI do código ainda está pendente.
+- Nesta execução `scripts/verify.ps1` terminou com sucesso; também passaram a instalação limpa do frontend a partir do lockfile atualizado e seus lint, typecheck, 39 testes, build e auditoria npm (zero vulnerabilidades). O teste SQL de PostgreSQL foi ignorado localmente por falta de `MAJUCAU_TEST_DATABASE_URL`, mas a CI [41261894619](https://github.com/guilhermejacyzin/majucau/actions/runs/41261894619) executou e aprovou os quatro trabalhos, inclusive PostgreSQL e Windows. Isso não substitui a homologação com a conta real do Bling.
 
 ## PENDÊNCIA REAL
 

@@ -31,17 +31,18 @@ Relatório completo do processo, com contexto, decisões, evidências, pendênci
 
 ## Atualização da continuação — 31/10/2026
 
-- O commit atual após a correção de aging é `11f4205` na branch
+- O commit atual é `ea7e379` na branch
   `codex/majucau-artifact-consolidation`; a alteração local
   `frontend/package.json.md5` continua preservada e fora do Git.
-- Na CI [41262694158](https://github.com/guilhermejacyzin/majucau/actions/runs/41262694158),
-  `detect-changes`, `verify-backlog` e `verify-postgres` passaram. O Windows
-  falhou apenas no smoke de ciclo de vida do serviço worker, embora o diagnóstico
-  posterior tenha encontrado o serviço `Running` e `Status=OK`.
-- A correção em andamento repete consultas somente de leitura ao estado do
-  serviço até o limite aprovado; erro persistente continua resultando em falha.
-  A verificação local completa passou. A CI do novo commit ainda precisa
-  confirmar o smoke Windows.
+- A falha Windows do commit anterior foi corrigida com repetição limitada das
+  consultas somente de leitura ao estado do serviço. Erros persistentes continuam
+  resultando em falha.
+- A CI [41263767050](https://github.com/guilhermejacyzin/majucau/actions/runs/41263767050)
+  passou em `detect-changes`, `verify-backlog`, `verify-postgres` e
+  `verify-windows`, incluindo o smoke do ciclo de vida do serviço.
+- `scripts/verify.ps1` também passou localmente. O smoke local de instalação do
+  serviço foi preservado para a CI, pois o worker do protótipo estava ativo e o
+  terminal não estava elevado.
 - Evidência e limites: [investigação do smoke Windows](./evidence/WINDOWS-WORKER-SMOKE-RETRY-2026-10-31.md).
 
 ## PENDÊNCIA REAL

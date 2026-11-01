@@ -37,14 +37,16 @@ identidade do serviço, tela ou regra financeira foi alterado.
   por isso a validação local não substitui a etapa PostgreSQL da CI.
 - O smoke que instala serviço Windows não foi executado localmente: há um
   processo de worker do protótipo em execução e o terminal não está elevado. A
-  instalação local poderia interferir com o protótipo. A CI em runner limpo é
-  o próximo teste desse ciclo.
-- A causa nativa da falha anterior permanece não comprovada. A mudança melhora
-  a tolerância a falhas temporárias sem esconder erros persistentes; a conclusão
-  depende do resultado do próximo job Windows da CI.
+  instalação local poderia interferir com o protótipo.
+- O commit `ea7e379` passou na CI
+  [41263767050](https://github.com/guilhermejacyzin/majucau/actions/runs/41263767050):
+  `detect-changes`, `verify-backlog`, `verify-postgres` e `verify-windows` foram
+  aprovados, inclusive `Smoke Windows worker service lifecycle`.
+- A causa nativa da falha anterior permanece não comprovada porque o log original
+  não preservou o erro Win32. O novo smoke passou com a repetição segura da
+  consulta. Erros persistentes continuam falhando após o limite de 45 segundos.
 
 ## Próximo passo
 
-Enviar esta correção para o branch de trabalho e verificar a nova CI. Não fechar
-esta investigação nem avançar para outra fatia enquanto o job Windows não
-passar ou enquanto uma nova falha não for investigada e corrigida.
+Correção concluída e enviada ao branch de trabalho. A próxima fatia fica
+registrada separadamente, sem reabrir esta investigação.

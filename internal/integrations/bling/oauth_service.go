@@ -763,6 +763,8 @@ func oauthErrorCode(err error) string {
 		return "BLING_OAUTH_CALLBACK_INVALID"
 	case errors.Is(err, ErrBlingOAuthRejected):
 		return "BLING_OAUTH_REJECTED"
+	case errors.Is(err, ErrBlingAPIScopeInsufficient):
+		return "BLING_API_SCOPE_INSUFFICIENT"
 	case errors.Is(err, ErrBlingAPIUnauthorized):
 		return "BLING_UNAUTHORIZED"
 	case errors.Is(err, ErrBlingAPIRateLimited):
@@ -784,6 +786,8 @@ func oauthErrorMessage(err error) string {
 		return "O retorno do Bling não passou na validação de segurança."
 	case "BLING_OAUTH_REJECTED":
 		return "A autorização foi recusada ou cancelada no Bling."
+	case "BLING_API_SCOPE_INSUFFICIENT":
+		return "O aplicativo Bling não tem permissão para consultar este recurso. Ajuste a permissão e autorize a conexão novamente."
 	case "BLING_UNAUTHORIZED":
 		return "O Bling recusou a autorização. Confira o aplicativo e os escopos."
 	case "BLING_RATE_LIMITED":

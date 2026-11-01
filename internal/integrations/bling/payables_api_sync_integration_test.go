@@ -155,7 +155,7 @@ func TestDailyPayablesAPIIsNormalizedAtomicallyAndKeepsLastSnapshotOnFailure(t *
 
 	failCategory = true
 	failed, err := service.SyncWithCorrelationID(ctx, ReceivablesFilter{}, pgUUID(secondCorrelation))
-	if !errors.Is(err, ErrBlingAPIUnauthorized) || failed.Status != "FAILED" {
+	if !errors.Is(err, ErrBlingAPIScopeInsufficient) || failed.Status != "FAILED" {
 		t.Fatalf("failed sync result/error = %+v/%v, want failed authorization", failed, err)
 	}
 	if err := pool.QueryRow(ctx, `SELECT data_stage, status FROM integration_sync_batches WHERE id = $1::uuid`, failed.BatchID).Scan(&stage, &status); err != nil {

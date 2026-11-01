@@ -375,7 +375,7 @@ func TestListReceivablesDoesNotRetryPermanentOrInvalidResponses(t *testing.T) {
 	}{
 		{name: "bad request", status: http.StatusBadRequest, body: `{"error":"invalid"}`, wantAPIStatus: http.StatusBadRequest},
 		{name: "unauthorized", status: http.StatusUnauthorized, body: `{"error":"invalid"}`, want: ErrBlingAPIUnauthorized, wantAPIStatus: http.StatusUnauthorized},
-		{name: "forbidden", status: http.StatusForbidden, body: `{"error":"invalid"}`, want: ErrBlingAPIUnauthorized, wantAPIStatus: http.StatusForbidden},
+		{name: "forbidden", status: http.StatusForbidden, body: `{"error":"invalid"}`, want: ErrBlingAPIScopeInsufficient, wantAPIStatus: http.StatusForbidden},
 		{name: "invalid JSON", status: http.StatusOK, body: "not json", want: ErrBlingAPIInvalidResponse},
 		{name: "unexpected schema", status: http.StatusOK, body: `{"data":{"id":1}}`, want: ErrBlingAPISchemaMismatch},
 	} {

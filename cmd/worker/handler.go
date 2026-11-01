@@ -245,6 +245,8 @@ func blingSyncErrorCode(err error) string {
 		return "BLING_CONNECTION_NOT_CONFIGURED"
 	case errors.Is(err, bling.ErrBlingAPISyncPageLimit):
 		return "BLING_SYNC_PAGE_LIMIT"
+	case errors.Is(err, bling.ErrBlingAPIScopeInsufficient):
+		return "BLING_API_SCOPE_INSUFFICIENT"
 	case errors.Is(err, bling.ErrBlingAPIUnauthorized):
 		return "BLING_API_UNAUTHORIZED"
 	case errors.Is(err, bling.ErrBlingAPIRateLimited):
@@ -274,6 +276,8 @@ func blingSyncErrorMessage(err error) string {
 		return "Configure e autorize o Bling antes de sincronizar."
 	case "BLING_SYNC_PAGE_LIMIT":
 		return "A sincronização atingiu o limite de segurança de páginas; reduza a janela."
+	case "BLING_API_SCOPE_INSUFFICIENT":
+		return "O aplicativo Bling não tem permissão para consultar este recurso. Ajuste a permissão e autorize a conexão novamente."
 	case "BLING_API_UNAUTHORIZED":
 		return "A autorização do Bling expirou ou foi revogada; conecte novamente."
 	case "BLING_API_RATE_LIMITED":

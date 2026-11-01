@@ -331,6 +331,7 @@ func TestBlingSyncErrorClassificationIsSanitized(t *testing.T) {
 		code string
 	}{
 		{err: bling.ErrBlingCredentialMissing, code: "BLING_SECRET_REQUIRED"},
+		{err: bling.ErrBlingAPIScopeInsufficient, code: "BLING_API_SCOPE_INSUFFICIENT"},
 		{err: bling.ErrBlingAPIUnauthorized, code: "BLING_API_UNAUTHORIZED"},
 		{err: bling.ErrBlingAPIRateLimited, code: "BLING_API_RATE_LIMITED"},
 		{err: bling.ErrBlingAPIUnavailable, code: "BLING_API_UNAVAILABLE"},

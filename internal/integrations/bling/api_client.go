@@ -38,16 +38,17 @@ const (
 )
 
 var (
-	ErrBlingAPIUnauthorized    = errors.New("bling api is not authorized")
-	ErrBlingAPIRateLimited     = errors.New("bling api rate limit reached")
-	ErrBlingAPIUnavailable     = errors.New("bling api is unavailable")
-	ErrBlingAPIInvalidResponse = errors.New("bling api returned an invalid response")
-	ErrBlingAPISchemaMismatch  = errors.New("bling api response schema is not homologated")
-	ErrBlingAPIConfiguration   = errors.New("bling api configuration is invalid")
-	errBlingDataMissing        = errors.New("bling response data array is missing")
-	errBlingDataNotArray       = errors.New("bling response data is not an array")
-	errBlingPageTooLarge       = errors.New("bling response page exceeds the supported record count")
-	errBlingResponseTooLarge   = errors.New("bling response exceeds the configured byte limit")
+	ErrBlingAPIUnauthorized      = errors.New("bling api is not authorized")
+	ErrBlingAPIScopeInsufficient = errors.New("bling api scope is insufficient")
+	ErrBlingAPIRateLimited       = errors.New("bling api rate limit reached")
+	ErrBlingAPIUnavailable       = errors.New("bling api is unavailable")
+	ErrBlingAPIInvalidResponse   = errors.New("bling api returned an invalid response")
+	ErrBlingAPISchemaMismatch    = errors.New("bling api response schema is not homologated")
+	ErrBlingAPIConfiguration     = errors.New("bling api configuration is invalid")
+	errBlingDataMissing          = errors.New("bling response data array is missing")
+	errBlingDataNotArray         = errors.New("bling response data is not an array")
+	errBlingPageTooLarge         = errors.New("bling response page exceeds the supported record count")
+	errBlingResponseTooLarge     = errors.New("bling response exceeds the configured byte limit")
 )
 
 // HTTPDoer is intentionally small so the adapter can be tested with an
@@ -95,8 +96,10 @@ func (e *BlingAPIError) Unwrap() error {
 		return nil
 	}
 	switch {
-	case e.StatusCode == http.StatusUnauthorized || e.StatusCode == http.StatusForbidden:
+	case e.StatusCode == http.StatusUnauthorized:
 		return ErrBlingAPIUnauthorized
+	case e.StatusCode == http.StatusForbidden:
+		return ErrBlingAPIScopeInsufficient
 	case e.StatusCode == http.StatusTooManyRequests:
 		return ErrBlingAPIRateLimited
 	case isBlingServerError(e.StatusCode) || e.StatusCode == http.StatusRequestTimeout:

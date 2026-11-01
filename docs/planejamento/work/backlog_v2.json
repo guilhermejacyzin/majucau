@@ -3342,7 +3342,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "",
+    "evidence": "Parcial — atalhos existentes de T01 foram ligados às telas de origem, reutilizando navegação e snapshot; ver docs/evidence/EXECUTIVE-DETAIL-DATA-FLOW-2026-10-25.md. Sem alteração visual ou nova consulta ao Bling. Integração e aceite de dados reais continuam pendentes.",
     "weight": 1,
     "dependencies": [
       "BK-004",

@@ -187,11 +187,13 @@ describe('shell financeiro', () => {
     expect(screen.getByText('Na hora')).toBeInTheDocument()
   })
 
-  it('navega pelo aviso e mantém autorização sem worker desabilitada', async () => {
+  it('navega do aviso para a tela de origem e mantém os controles de integração disponíveis', async () => {
     const user = userEvent.setup()
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
-    await user.click(screen.getByRole('button', { name: /Ir para Integrações/ }))
+    await user.click(screen.getByRole('button', { name: /Ver fluxo: Saldo projetado/ }))
+    expect(screen.getByRole('heading', { name: 'FLUXO DE CAIXA' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Integrações' }))
     expect(screen.getByRole('heading', { name: 'Integrações' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Conectar' })[0]).toBeEnabled()
     expect(screen.getAllByRole('button', { name: 'Testar conexão' })[0]).toBeEnabled()

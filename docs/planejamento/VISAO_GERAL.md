@@ -39,6 +39,8 @@ Na atualização de 26/10, Contas a Pagar ganhou conversão transacional da API 
 
 **Ajuste do protótipo — 01/11/2026:** após a tela T05 ter sido retirada, a Visão Executiva ainda mostrava um alerta antigo com o nome “Conciliação pendente”. Esse alerta específico também foi removido a pedido de Gisele. Nenhum outro card foi alterado; a conciliação continua como controle interno e o card aprovado de Contas a Receber foi preservado. O progresso do backlog continua em 11,9% concluído e 88,1% restante.
 
+**T01 para telas de detalhe — 01/11/2026:** liguei os botões e links “Ver detalhes” existentes às telas de origem apropriadas, sem mudança de desenho, texto, indicador ou regra financeira. Não há consulta direta adicional ao Bling; os módulos compartilham a base/snapshot do Majucau. Testes, lint e typecheck locais passaram; CI e confirmação manual no protótipo ainda aguardam. BK-102 continua em 1%, pois integração, dados reais e aceites seguem pendentes. Evidência: `docs/evidence/EXECUTIVE-DETAIL-DATA-FLOW-2026-10-25.md`.
+
 **Correção de 19/10/2026:** o Drive roda apenas na agenda diária das 09:30 de Brasília. Se o serviço iniciar depois desse horário, aguarda a próxima execução das 09:30; não faz coleta imediata no mesmo dia. Assim, arquivo ausente ou atrasado só é processado no dia seguinte. Evidência: `docs/evidence/DRIVE-NEXT-DAY-SCHEDULE-2026-10-19.md`.
 
 BK-016 avançou para 20% com um mapa técnico inicial dos sete contextos. A propriedade final dos fatos, agregados e eventos de negócio ainda aguarda validação. BK-017 avançou com o registro dos limites arquiteturais e a propriedade explícita do pool PostgreSQL pelo worker; o fechamento formal continua dependendo de BK-016.

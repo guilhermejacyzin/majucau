@@ -217,6 +217,24 @@ A conversão da resposta API Bling RAW para registros financeiros, a validação
 com a conta real e as outras famílias de tela seguem pendentes; esta correção
 evita apresentar a leitura RAW como zero financeiro.
 
+## Navegação da T01 para os detalhes — 01/11/2026
+
+Os botões “Ver detalhes” e links já desenhados na T01 agora navegam para a tela
+existente que explica cada indicador. Caixa abre Fluxo de Caixa; receber e pagar
+abrem suas telas; vendas e margem abrem DRE; estoque, produção e compras abrem
+seus respectivos módulos. Gráfico, distribuição do saldo e avisos também levam
+à origem correspondente.
+
+A navegação só troca de tela. Ela não busca dados, não cria fórmula paralela e
+não muda os valores ou o desenho aprovado. Quando houver dados, o módulo de
+origem e a T01 continuam usando a base/snapshot do Majucau; ausências continuam
+pendentes ou indisponíveis.
+
+Validação local: 57 testes frontend em 6 arquivos, lint e typecheck passaram.
+A conferência manual do clique não foi concluída porque a captura da janela do
+protótipo expirou; não afirmo validação visual. A CI após o envio e a confirmação
+manual ainda estão pendentes.
+
 ## Normalização diária de Contas a Pagar — 26/10/2026
 
 A carga diária completa de `contas.pagar` agora converte cada título para

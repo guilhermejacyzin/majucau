@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Tooltip } from './components/Tooltip'
 import type { TooltipId } from './tooltips'
 import type { DashboardMetric, DashboardPayableRow, DashboardReceivableRow, DashboardSnapshot } from './bootstrap'
@@ -68,8 +67,7 @@ function formatSnapshotDate(value?: string): string {
 }
 
 function MocapHeader({ config, snapshot }: { config: ScreenConfig; snapshot?: DashboardSnapshot }) {
-  const [exportOpen, setExportOpen] = useState(false)
-  return <header className="mocap-header"><div className="mocap-heading"><span className="mocap-number">{config.number}</span><div><h1 aria-label={config.title === 'VISÃO EXECUTIVA' ? 'Visão Executiva' : config.title}>{config.title}</h1><p>{config.subtitle}</p></div></div><div className="mocap-header-actions"><div className="mocap-sync"><span>Posição: <strong>—</strong></span><span>Última sincronização: <strong>{formatSnapshotDate(snapshot?.last_bling_sync_at)}</strong> <Icon icon="refresh" /></span></div><div className="mocap-export-wrap"><Tooltip id="metric.details"><button type="button" className="mocap-export" onClick={() => setExportOpen((open) => !open)}><Icon icon="export" />Exportar <span>⌄</span></button></Tooltip>{exportOpen && <div className="mocap-export-menu" role="menu"><Tooltip id="metric.details"><button type="button" disabled>Exportação indisponível sem dados confirmados</button></Tooltip></div>}</div></div></header>
+  return <header className="mocap-header"><div className="mocap-heading"><span className="mocap-number">{config.number}</span><div><h1 aria-label={config.title === 'VISÃO EXECUTIVA' ? 'Visão Executiva' : config.title}>{config.title}</h1><p>{config.subtitle}</p></div></div><div className="mocap-header-actions"><div className="mocap-sync"><span>Posição: <strong>—</strong></span><span>Última sincronização: <strong>{formatSnapshotDate(snapshot?.last_bling_sync_at)}</strong> <Icon icon="refresh" /></span></div></div></header>
 }
 
 function MocapCard({ card }: { card: Card }) {
@@ -163,7 +161,7 @@ function EmptyImpactTable({ title, subtitle, columns }: { title: string; subtitl
 }
 
 function EmptyPurchaseTable({ columns }: { columns: string[] }) {
-  return <section className="mocap-panel mocap-purchase-panel"><div className="mocap-panel-heading"><div><Icon icon="shopping" /><div><h2>COMPRAS RECOMENDADAS</h2><p>Com base em forecast, produção, estoque, lead time e mercado</p></div></div><div className="mocap-table-actions"><button type="button" disabled>Próximos 60 dias⌄</button><button type="button" disabled>Todos os insumos⌄</button><button type="button" disabled>Gerar pedidos</button></div></div><div className="mocap-table-scroll"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody><tr><td colSpan={columns.length}><span>Sem dados confirmados</span></td></tr></tbody></table></div></section>
+  return <section className="mocap-panel mocap-purchase-panel"><div className="mocap-panel-heading"><div><Icon icon="shopping" /><div><h2>COMPRAS RECOMENDADAS</h2><p>Com base em forecast, produção, estoque, lead time e mercado</p></div></div><div className="mocap-table-actions"><button type="button" disabled>Próximos 60 dias⌄</button><button type="button" disabled>Todos os insumos⌄</button></div></div><div className="mocap-table-scroll"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody><tr><td colSpan={columns.length}><span>Sem dados confirmados</span></td></tr></tbody></table></div></section>
 }
 
 function DreDerivedIndicators() {

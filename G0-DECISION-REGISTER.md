@@ -299,6 +299,15 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - A imagem original T5 permanece arquivada apenas como histórico da referência. O backlog BK-055 passa a registrar a retirada de escopo, e não a construção da tela.
 - Evidência de implementação e documentação: `docs/evidence/T05-RETIREMENT-2026-10-31.md`.
 
+## Decisão posterior aprovada — ações indisponíveis no protótipo
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-11-01 (America/Sao_Paulo).
+- Remover o botão `Exportar` de todas as telas do protótipo. Nesta etapa, nenhum relatório será exportado ou baixado pela interface.
+- Na T11 — Compras, remover por completo o botão `Gerar pedidos`; a tela permanece somente para consulta e não cria, altera ou envia pedidos.
+- Esta decisão substitui, para a interface do protótipo e a etapa de finalização em andamento, as aprovações visuais anteriores que mantinham esses botões ou definiam exportação Excel em T13–T15. As informações e dados das telas, seus cards, layout aprovado e regras financeiras permanecem inalterados, exceto pelo espaço dos botões removidos.
+- A capacidade futura de exportar relatórios/backup para Diretores fica adiada até depois da finalização do que foi solicitado. Não reativar controles nem disponibilizar arquivos antes dessa etapa.
+- O helper interno de XLSX e permissões persistidas podem permanecer sem rota exposta; não representam exportação disponível no protótipo. Qualquer ativação deverá respeitar a decisão de fase e o controle de acesso já aprovado.
+
 ## Decisão posterior aprovada — dois cards informativos de CAPEX na T6
 
 - **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).

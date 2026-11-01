@@ -2,6 +2,8 @@
 
 **Atualização de escopo — 31/10/2026:** a tela independente T05 — Conciliação foi retirada. Menções a T05 nas fontes abaixo são históricas; as regras internas de correspondência, prevenção de duplicidade e status continuam válidas para os dados das telas ativas. Não implementar a página nem usar sua imagem como tela vigente. Detalhes em `docs/evidence/T05-RETIREMENT-2026-10-31.md`.
 
+**Atualização de interface — 01/11/2026:** o protótipo não mostra `Exportar` em nenhuma tela nem disponibiliza arquivos durante a finalização atual. T11 — Compras não mostra `Gerar pedidos`. As exportações aprovadas anteriormente ficam adiadas para depois da finalização; cards, desenho restante e regras financeiras permanecem protegidos. Consulte `G0-DECISION-REGISTER.md`.
+
 Esta revisão corrige a interpretação que tratava regras já definidas e responsabilidades técnicas como perguntas de negócio. O fechamento registrado aqui é o de 13/09/2026. A confirmação de “somente atualizar o backlog” valia para aquela rodada. Decisões aprovadas depois e evidências atuais estão listadas a seguir e prevalecem em caso de conflito, sem alterar telas ou regras que continuam aprovadas.
 
 Registro histórico de 13/09/2026: 70 tarefas revisadas; 3 levantamentos concluídos, 2,4% por quantidade e 0% de desenvolvimento. Naquela data não havia implementação nem testes reais do produto. Esse registro não representa o estado atual.
@@ -39,7 +41,7 @@ Registro histórico de 13/09/2026: 70 tarefas revisadas; 3 levantamentos conclu�
 - **F-11 — Meta financeira não fabrica SKUs:** Meta de faturamento é referência comercial/cenário. Forecast se fundamenta em histórico; meta direta por produto só é planejamento quando existir explicitamente. Não ratear total financeiro automaticamente em unidades.
 - **F-12 — Cobertura histórica real:** Usar histórico confiável de 2025 em diante e medir cobertura real por SKU; não completar meses ou assumir venda zero. Qualidade requer backtest real.
 - **F-13 — Precedência e design congelado:** Visual/layout: mockup aprovado. Fonte/cálculo/comportamento: documentação consolidada. Usar última versão aprovada/congelada, sem redesenho. Artefato ausente precisa ser localizado, sem reabrir a aprovação.
-- **F-14 — Exportação aprovada preservada:** Manter exportações aprovadas, inclusive Excel onde especificado. Arquivo usa os mesmos dados, filtros, período, snapshot e métricas da tela.
+- **F-14 — Exportação aprovada preservada (adiada):** as exportações previamente aprovadas ficam para depois da finalização atual; nenhuma tela exibe botão nem disponibiliza arquivos agora. Quando a fase futura for reaberta, preservar os mesmos dados, filtros, período, snapshot e métricas da tela.
 - **F-15 — Capacidades e menor privilégio:** Usuário + perfil + capacidade. Separar leitura/exportação/metas/parâmetros/pendências/usuários/auditoria; não hardcodar nomes nem permitir autoelevação.
 - **F-16 — Vigência, fechamento e auditoria:** Metas são planejamento. Alterações registram usuário, antes/depois, data, período e vigência. Período fechado não muda silenciosamente; reprocessamento é explícito, autorizado, auditado e preserva versão anterior.
 - **F-17 — Operação é engenharia:** Windows local por serviços independentes de login humano, inicialização controlada, autenticação, segredos no backend, backup automático, restauração testada, logs e suporte documentados. Acesso externo só quando habilitado.
@@ -95,7 +97,7 @@ As dez frentes HT abaixo são trabalho futuro, não novas perguntas de negócio.
 | BK-009 | Especificar forecast, metas e planejamento de reposição | title, action, steps, accept, status, owner |
 | BK-010 | Homologar contratos do Bling e das três estruturas do Google Drive | steps, status |
 | BK-011 | Definir fontes e critérios dos sinais do cacau | steps, accept, status, owner |
-| BK-012 | Especificar ações e exportações já previstas | title, action, steps, accept, status |
+| BK-012 | Especificar ações da interface e exportações futuras | title, action, steps, accept, status |
 | BK-013 | Especificar perfis, capacidades, vigência e auditoria | title, action, steps, accept, status, owner |
 | BK-014 | Inventariar o Windows e propor a operação local | title, action, steps, accept, status, owner |
 | BK-015 | Organizar responsáveis, estimativas e marcos de entrega | steps, status |
@@ -144,7 +146,8 @@ As dez frentes HT abaixo são trabalho futuro, não novas perguntas de negócio.
 | BK-096 | Implementar T12 Projeções e ajuste de metas | steps |
 | BK-102 | Implementar T01 Visão Executiva | action, steps |
 | BK-103 | Implementar os módulos adicionais confirmados no escopo | action, steps |
-| BK-104 | Implementar exportações financeiras e de controle aprovadas | steps, accept |
+| BK-104 | Implementar exportações financeiras e de controle após a finalização | steps, accept |
+| BK-109 | Validar exportações depois da finalização | title, action, steps, accept |
 | BK-105 | Rastrear cada requisito até tarefa e teste | steps |
 | BK-106 | Validar regras de domínio e casos de fronteira | steps, deps |
 | BK-107 | Validar integrações, concorrência e reinício | steps |
@@ -458,7 +461,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Exportações previstas/aprovadas permanecem; implementar contrato técnico com mesmos dados/filtros e Excel quando especificado, sem perguntar novamente se a função entra.
+**Regra / trabalho vigente:** nenhuma tela do protótipo exibe Exportar ou disponibiliza arquivos durante a finalização. A aprovação anterior de Excel para T13–T15 fica adiada até depois da etapa atual; quando reaberta, preservar linhas da tabela e data exibida. Ver `G0-DECISION-REGISTER.md`, decisão de 2026-11-01.
 
 **Fonte:** D_Lacunas!A24:G24; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -628,7 +631,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Botões e navegação seguem referência aprovada; contrato de execução e exportação é detalhamento técnico, sem redesenhar ou retirar função existente.
+**Regra / trabalho vigente:** preservar telas, cards e regras aprovados. Nesta finalização não mostrar Exportar nem disponibilizar arquivos; T11 fica em consulta e não mostra Gerar pedidos. Exportações são futuras. Ver `G0-DECISION-REGISTER.md`, decisão de 2026-11-01.
 
 **Fonte:** T02–T07; T13–T15; L-22; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -638,7 +641,7 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Usuário, perfil e capacidade com menor privilégio; atribuição concreta é configuração administrativa explícita na implantação, sem hardcode por pessoa.
+**Regra / trabalho vigente:** Financeiro usa `ADMIN`; Diretores usam a conta compartilhada aprovada para consulta/sincronização e importação CSV. A exportação de backup/relatórios fica adiada até depois da finalização e não está disponível no protótipo. Ver `G0-DECISION-REGISTER.md`.
 
 **Fonte:** T17; L-26; Fechamento das questões ainda tratadas como abertas — 13/09/2026
 
@@ -1144,11 +1147,11 @@ Este registro não é um questionário. Definida indica regra recebida; Execuç�
 
 **Tarefas:** BK-000, BK-004, BK-021, BK-022, BK-108
 
-### F-14 — Exportação aprovada preservada
+### F-14 — Exportação aprovada preservada (adiada)
 
 **Situação:** Definida. **Natureza:** Regra/atribuição definida.
 
-**Regra / trabalho vigente:** Manter exportações aprovadas, inclusive Excel onde especificado. Arquivo usa os mesmos dados, filtros, período, snapshot e métricas da tela. Esta regra não autoriza exportação em toda tela: em 10/10/2026, a responsável definiu T11 Compras como somente consulta, sem exportar ou baixar arquivo e sem gerar/alterar pedidos. Ver `G0-DECISION-REGISTER.md`.
+**Regra / trabalho vigente:** As exportações previamente aprovadas, inclusive Excel quando especificado, ficam adiadas até depois da finalização atual. Nenhuma tela do protótipo oferece botão Exportar ou disponibiliza arquivos nesta etapa. Quando a fase futura for reaberta, preservar os dados, filtros, período, snapshot e métricas da tela; T11 Compras continua somente consulta. Ver `G0-DECISION-REGISTER.md`, decisão de 2026-11-01.
 
 **Fonte:** Fechamento das questões ainda tratadas como abertas — 13/09/2026; §5.7
 

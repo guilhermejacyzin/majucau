@@ -21,6 +21,23 @@ describe('shell financeiro', () => {
     expect(screen.queryByText('R$ 258.420,00')).not.toBeInTheDocument()
   })
 
+  it('não oferece exportação em nenhuma tela nem geração de pedidos em Compras', async () => {
+    const user = userEvent.setup()
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+
+    const pages = ['Visão Executiva', 'Fluxo de Caixa', 'Contas a Receber', 'Contas a Pagar', 'DRE', 'Balancete', 'Calculadora de Aplicação', 'Estoque', 'Produção', 'Compras', 'Lançamentos & Pendências', 'Alertas', 'Integrações']
+    for (const page of pages) {
+      if (page !== 'Visão Executiva') await user.click(screen.getByRole('button', { name: page }))
+      expect(screen.queryByRole('button', { name: /^Exportar/i })).not.toBeInTheDocument()
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Compras' }))
+    expect(screen.queryByRole('button', { name: /Gerar (?:pedidos|compras)/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Próximos 60 dias/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Todos os insumos/ })).toBeDisabled()
+  })
+
   it('mantém as correções aprovadas e mostra CAPEX pago e acumulado fora do lucro da DRE', async () => {
     const user = userEvent.setup()
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)

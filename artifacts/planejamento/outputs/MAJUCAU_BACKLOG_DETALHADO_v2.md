@@ -1,5 +1,8 @@
 # Majucau — backlog de ponta a ponta, versão 2
 
+**Atualização de escopo — 01/11/2026:** durante a finalização atual, nenhuma tela do protótipo deve exibir `Exportar` ou disponibilizar arquivos. A tela T11 — Compras não exibe `Gerar pedidos` e continua somente para consulta. As aprovações de exportação anteriores ficam adiadas até depois da finalização; cards, desenho restante e regras financeiras permanecem protegidos.
+
+
 Base funcional de 13/09/2026: fechamento funcional enviado pelo usuário incorporado. Naquela revisão, o escopo era atualizar o backlog sem executar código do produto, integrações, serviços ou testes reais.
 
 Atualização de 19/10/2026: implementação e testes locais agora cobrem validação estrutural em fluxo de arquivos nas três pastas aprovadas do Drive, sem interpretar perdas/frete como valores financeiros. A planilha oficial foi regenerada. Nenhuma regra financeira ou tela foi alterada e nenhum arquivo real do Drive foi importado. A confirmação do teste PostgreSQL depende da CI após o envio.
@@ -739,21 +742,22 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Regras e verificações vinculadas:** L-19,R-14,HT-10,F-07
 
-### BK-012 — Especificar ações e exportações já previstas
+### BK-012 — Especificar ações da interface e exportações futuras
 
-**Situação:** Em andamento. **Evolução:** 30% (a auditoria estática inclui matriz parcial das referências T02–T07 e T13–T15, mapeando botões aprovados, campos visíveis, ações de leitura e capacidades. Gisele aprovou Excel com as linhas da tabela e a data exibida na tela para T13–T15. Há agora um gerador XLSX em fluxo com limites e proteção contra fórmulas; ele ainda não está ligado às telas nem às consultas. Permanecem pendentes a rota, a autorização efetiva no worker, o arquivo temporário privado, o formato/conteúdo de T02–T07, filtros e escopo, contratos de detalhe e testes de ponta a ponta; não presumir conteúdo). **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
+**Situação:** Em andamento. **Evolução:** 30% (inventário estático parcial das referências e capacidades. A revisão atual confirmou que o protótipo não oferece `Exportar` em nenhuma tela nem `Gerar pedidos` em Compras. A especificação completa e qualquer exportação ficam para depois da finalização atual; o percentual não avançou). **Tipo:** Planejamento. **Responsável sugerido:** Majucau + UX.
 
-**Objetivo:** Especificar o que cada botão pode fazer.
+**Objetivo:** Especificar o que cada controle pode fazer e em que etapa fica disponível.
 
 **O que fazer:** Mapear os controles aprovados a casos de uso, dados e capacidades.
 
 **Como fazer:**
 
-1. Preservar botões, navegação e exportações dos mockups/contratos congelados; não pedir nova aprovação da função existente. Exceção aprovada em 10/10/2026: T11 Compras somente mostra dados e não exporta nem baixa arquivos.
-2. Definir tecnicamente contratos de detalhes, atualização e downloads somente onde a exportação estiver aprovada, preservando filtros, período, snapshot, dados e Excel onde especificado. T11 não oferece download.
-3. Resolução de pendência registra responsável, data, alteração, origem e justificativa; resolver exige tratar a causa e não apenas esconder o alerta.
+1. Preservar as telas, cards e navegação aprovados; no protótipo atual não mostrar botões `Exportar` nem disponibilizar arquivos.
+2. Manter as definições Excel aprovadas para T13–T15 apenas como referência futura; detalhar e implementar depois da finalização. Não expor rota nem ação nesta etapa.
+3. T11 Compras é somente para consulta e não exibe botão para gerar, alterar ou enviar pedidos.
+4. Resolução de pendência registra responsável, data, alteração, origem e justificativa; resolver exige tratar a causa e não apenas esconder o alerta.
 
-**Critério de aceite:** Cada controle aprovado tem caso de uso e capacidade associados; exportações autorizadas reproduzem a tela. T11 permanece somente para consulta, sem exportação/download. Ausência de arquivo de referência é localização documental, sem função inventada.
+**Critério de aceite:** Os controles ativos têm casos de uso e capacidades associados. O protótipo não oferece exportação/saída de arquivo, e T11 não permite gerar/alterar pedidos. Qualquer implementação de exportação fica para depois da finalização.
 
 **Impacto:** Evita botões decorativos e encerramento indevido de problemas.
 
@@ -2685,9 +2689,9 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 1. Apresentar necessidade, quantidade, cobertura, prazo e prioridade pelo contrato funcional vigente nos blocos aprovados.
 2. Preservar bloco de inteligência do cacau com componentes disponíveis; ausência/refinamento de fonte externa não bloqueia motor principal.
 3. Somente mostrar os dados; não disponibilizar exportação/download, criação, alteração ou envio de pedidos ao Bling.
-4. Manter “Gerar pedidos” no mesmo lugar e desativado, conforme confirmação visual de 11/10/2026. Não associar handler nem ação de exportação, download, criação, alteração ou envio de pedido. A referência histórica permanece arquivada.
+4. Não exibir o botão “Gerar pedidos”; sua remoção foi aprovada para manter a tela estritamente consultiva.
 
-**Critério de aceite:** A tela exibe dados consultivos consistentes com a mesma base e versão; não existe ação funcional para exportar/baixar ou gerar/alterar pedidos. O botão “Gerar pedidos” permanece no lugar aprovado e desativado. Qualquer outra mudança visual depende de aprovação explícita.
+**Critério de aceite:** A tela exibe dados consultivos consistentes com a mesma base e versão; não há botão para exportar/baixar ou gerar/alterar/enviar pedidos. A tela permanece somente para consulta e respeita os blocos aprovados.
 
 **Impacto:** Permite discutir compras com evidência sem alterar o ERP.
 
@@ -2949,7 +2953,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Objetivo:** Produzir artefato de planejamento reproduzível.
 
-**O que fazer:** Gerar XLSX estruturado do snapshot selecionado.
+**O que fazer:** Preservar o escopo do XLSX para avaliação depois da finalização atual; não implementar nem disponibilizar exportação nesta etapa.
 
 **Como fazer:**
 
@@ -2957,7 +2961,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 2. Incluir Metas, Qualidade_Estudo, OP_Projetada e Metadados
 3. Preservar filtros, versões, unidades e marcação PROJECTED
 
-**Critério de aceite:** Valores conciliam com tela; OP é explicitamente projetada e nenhum fato é escrito no Bling.
+**Critério de aceite:** Esta entrega fica adiada até depois da finalização atual. Enquanto adiada, nenhuma tela expõe ação de exportação, download ou criação de arquivo.
 
 **Impacto:** Permite discutir planejamento fora do sistema com contexto.
 
@@ -3112,21 +3116,21 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ## 10 Verificação integrada
 
-### BK-104 — Implementar exportações financeiras e de controle aprovadas
+### BK-104 — Implementar exportações financeiras e de controle após a finalização
 
 **Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Full Stack.
 
 **Objetivo:** Transformar botões homologados em relatórios completos.
 
-**O que fazer:** Construir contratos de exportação por tela, endpoint, gerador e integração do botão.
+**O que fazer:** Manter a implementação de relatórios e arquivos adiada até depois da finalização atual; não expor botões, rotas ou downloads nesta etapa.
 
 **Como fazer:**
 
-1. Implementar os formatos/colunas definidos nas referências aprovadas para T02–T07 e T13–T15, incluindo Excel quando especificado.
-2. Consumir mesmos dados, filtros, snapshot, unidade e período da tela, com capacidade de exportação.
+1. Após a finalização atual, reavaliar e implementar os formatos/colunas aprovados para T02–T07 e T13–T15, incluindo Excel onde especificado.
+2. Quando autorizada essa fase, consumir os mesmos dados, filtros, snapshot, unidade e período da tela, com capacidade de exportação.
 3. Conferir totais, tipos, tratamento seguro de conteúdo e falhas de download; ausência de dado não é zero.
 
-**Critério de aceite:** Botões de exportação aprovados permanecem funcionais e geram conteúdo coerente com a tela; não exigir nova decisão sobre uma função já congelada.
+**Critério de aceite:** Durante a finalização atual nenhuma tela expõe exportação, rota de relatório ou download. Implementação e disponibilização ficam para depois desta etapa, com conteúdo coerente com a tela e controle de acesso.
 
 **Impacto:** Evita aprovar uma interface com botão de exportação sem implementação.
 
@@ -3234,21 +3238,21 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Regras e verificações vinculadas:** F-13
 
-### BK-109 — Validar arquivos exportados e proteção do conteúdo
+### BK-109 — Validar exportações depois da finalização
 
 **Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Qualidade. **Responsável sugerido:** QA.
 
 **Objetivo:** Garantir que relatórios correspondam à tela e ao perfil.
 
-**O que fazer:** Conferir contratos XLSX/CSV/PDF apenas onde aprovados.
+**O que fazer:** Manter validações de arquivos exportados para a fase posterior à finalização; não gerar amostras nem arquivos nesta etapa.
 
 **Como fazer:**
 
-1. Validar colunas, tipos, filtros, totais e metadados
-2. Proteger células de texto contra injeção de fórmulas
-3. Abrir amostras no programa usado pela Majucau
+1. Depois da finalização e da reabertura autorizada do escopo, validar colunas, tipos, filtros, totais e metadados.
+2. Proteger células de texto contra injeção de fórmulas.
+3. Abrir amostras no programa usado pela Majucau e confirmar que não há segredos nem linhas sem permissão.
 
-**Critério de aceite:** Exports não incluem segredos nem linhas sem permissão; dados conferem com snapshot.
+**Critério de aceite:** Nenhuma exportação ou amostra é disponibilizada na finalização atual. Na fase futura aprovada, os arquivos não incluem segredos nem linhas sem permissão e conferem com o snapshot.
 
 **Impacto:** Evita relatório incorreto ou exposição de informação.
 

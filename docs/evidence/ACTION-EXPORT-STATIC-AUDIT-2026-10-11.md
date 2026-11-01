@@ -1,5 +1,7 @@
 # Auditoria estática de ações e exportações — 2026-10-11
 
+> **Registro histórico supersedido:** em 2026-11-01, a responsável aprovou remover o botão Exportar de todas as telas do protótipo e adiar qualquer exportação/arquivo até depois da finalização atual. Esta auditoria registra a decisão e a interface existentes em 11/10/2026; não é autorização para restaurar os botões nem disponibilizar arquivos agora. Ver `G0-DECISION-REGISTER.md`.
+
 ## Escopo
 
 Leitura das referências T13–T15 preservadas em `docs/source/`, das decisões vigentes e do catálogo de chamadas Wails/IPC. Nenhuma tela, botão, regra financeira, permissão ou operação foi alterada ou executada. Os números das imagens são exemplos visuais, não dados reais nem valores de teste.

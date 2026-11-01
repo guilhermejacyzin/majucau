@@ -325,15 +325,16 @@
     "key": "actionpolicy",
     "id": "BK-012",
     "phase": "00 Descoberta e decisões",
-    "title": "Especificar ações e exportações já previstas",
+    "title": "Especificar ações da interface e exportações futuras",
     "goal": "Especificar o que cada botão pode fazer.",
     "action": "Mapear os controles aprovados a casos de uso, dados e capacidades.",
     "steps": [
-      "Preservar botões, navegação e exportações dos mockups/contratos congelados; não pedir nova aprovação da função existente. Exceção aprovada em 10/10/2026: T11 Compras somente mostra dados e não exporta nem baixa arquivos.",
-      "T13–T15: exportar em Excel com as linhas da tabela e a data exibida na tela, conforme aprovação de 11/10/2026. Definir tecnicamente filtros, escopo/paginação e contratos de detalhe, preservando período, snapshot e dados da tela. T02–T07 ainda precisam de formato/conteúdo; T11 não oferece download.",
+      "Preservar as telas, cards e navegação aprovados. Durante a finalização atual, a interface do protótipo não oferece botões Exportar nem ações de saída de arquivos.",
+      "Manter as definições de conteúdo Excel já aprovadas para T13–T15 apenas como referência futura; detalhar e implementar exportações depois da finalização. Não expor rota nem ação de exportação na interface nesta etapa.",
+      "T11 Compras é somente para consulta; não exibir botão para gerar, alterar ou enviar pedidos.",
       "Resolução de pendência registra responsável, data, alteração, origem e justificativa; resolver exige tratar a causa e não apenas esconder o alerta."
     ],
-    "accept": "Cada controle aprovado tem caso de uso e capacidade associados; exportações autorizadas reproduzem a tela. T13–T15 geram Excel com as linhas da tabela e a data exibida. T11 permanece somente para consulta, sem exportação/download. Ausência de arquivo de referência é localização documental, sem função inventada.",
+    "accept": "Os controles ativos têm casos de uso e capacidades associados. No protótipo atual não há botão Exportar nem saída de arquivo, e T11 não permite gerar/alterar pedidos. Qualquer implementação de exportação fica para depois da finalização.",
     "impact": "Evita botões decorativos e encerramento indevido de problemas.",
     "deps": [],
     "refs": "S/T/U CEIs; T02–T07; T13–T15; Fechamento vigente 13/09/2026, §§5–6",
@@ -341,7 +342,7 @@
     "owner": "Majucau + UX",
     "kind": "Planejamento",
     "status": "Em andamento",
-    "evidence": "30%: T02–T07/T13–T15 parcialmente mapeadas. Excel aprovado para T13–T15; falta ligar consulta, rota e autorização.",
+    "evidence": "30%: inventário estático parcial das referências e capacidades; revisão atual confirmou ausência de Exportar em todas as telas do protótipo e ausência de Gerar pedidos em T11. Não houve avanço percentual da especificação completa.",
     "weight": 1,
     "dependencies": [],
     "progress": 0.3
@@ -2786,9 +2787,9 @@
       "Apresentar necessidade, quantidade, cobertura, prazo e prioridade pelo contrato funcional vigente nos blocos aprovados.",
       "Preservar bloco de inteligência do cacau com componentes disponíveis; ausência/refinamento de fonte externa não bloqueia motor principal.",
       "Somente mostrar os dados; não disponibilizar exportação/download, criação, alteração ou envio de pedidos ao Bling.",
-      "Manter “Gerar pedidos” no mesmo lugar e desativado, conforme confirmação visual de 11/10/2026. Não associar handler nem ação de exportação, download, criação, alteração ou envio de pedido. A referência histórica permanece arquivada."
+      "Não exibir botão Gerar pedidos; sua remoção foi aprovada para manter a tela estritamente consultiva."
     ],
-    "accept": "A tela exibe dados consultivos consistentes com a mesma base e versão; não existe ação funcional para exportar/baixar ou gerar/alterar pedidos. O botão “Gerar pedidos” permanece no lugar aprovado e desativado. Qualquer outra mudança visual depende de aprovação explícita.",
+    "accept": "A tela exibe dados consultivos consistentes com a mesma base e versão; não há botão para exportar/baixar ou gerar/alterar/enviar pedidos. A tela permanece somente para consulta e respeita os blocos aprovados.",
     "impact": "Permite discutir compras com evidência sem alterar o ERP.",
     "deps": [
       "missing",
@@ -3153,13 +3154,13 @@
     "phase": "08 Projeções e cenários",
     "title": "Exportar o cenário de projeções para Excel",
     "goal": "Produzir artefato de planejamento reproduzível.",
-    "action": "Gerar XLSX estruturado do snapshot selecionado.",
+    "action": "Manter o escopo técnico do XLSX registrado para avaliação depois da finalização atual; não implementar nem disponibilizar exportação nesta etapa.",
     "steps": [
       "Criar Resumo_Cenario, Projecao_Vendas_SKU, Projecao_Producao_SKU e Estoque_Projetado_SKU",
       "Incluir Metas, Qualidade_Estudo, OP_Projetada e Metadados",
       "Preservar filtros, versões, unidades e marcação PROJECTED"
     ],
-    "accept": "Valores conciliam com tela; OP é explicitamente projetada e nenhum fato é escrito no Bling.",
+    "accept": "Esta entrega fica adiada até depois da finalização atual. Enquanto adiada, nenhuma tela expõe ação de exportação, download ou criação de arquivo.",
     "impact": "Permite discutir planejamento fora do sistema com contexto.",
     "deps": [
       "projectionsscreen",
@@ -3170,7 +3171,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Não iniciada",
-    "evidence": "",
+    "evidence": "Adiada conforme decisão de 2026-11-01: não exportar nem disponibilizar arquivos durante a finalização atual; preservar apenas o escopo futuro para reavaliação após essa etapa.",
     "weight": 1,
     "dependencies": [
       "BK-096",
@@ -3391,15 +3392,15 @@
     "key": "approvedexports",
     "id": "BK-104",
     "phase": "10 Verificação integrada",
-    "title": "Implementar exportações financeiras e de controle aprovadas",
+    "title": "Implementar exportações financeiras e de controle após a finalização",
     "goal": "Transformar botões homologados em relatórios completos.",
-    "action": "Construir contratos de exportação por tela, endpoint, gerador e integração do botão.",
+    "action": "Manter a implementação de relatórios e arquivos adiada até depois da finalização atual; não expor botões, rotas ou downloads nesta etapa.",
     "steps": [
-      "Implementar os formatos/colunas definidos nas referências aprovadas para T02–T07 e T13–T15, incluindo Excel quando especificado.",
-      "Consumir mesmos dados, filtros, snapshot, unidade e período da tela, com capacidade de exportação.",
+      "Após a finalização atual, reavaliar e implementar os formatos/colunas aprovados para T02–T07 e T13–T15, incluindo Excel onde especificado.",
+      "Quando autorizada essa fase, consumir os mesmos dados, filtros, snapshot, unidade e período da tela, com capacidade de exportação.",
       "Conferir totais, tipos, tratamento seguro de conteúdo e falhas de download; ausência de dado não é zero."
     ],
-    "accept": "Botões de exportação aprovados permanecem funcionais e geram conteúdo coerente com a tela; não exigir nova decisão sobre uma função já congelada.",
+    "accept": "Durante a finalização atual nenhuma tela expõe exportação, rota de relatório ou download. Implementação e disponibilização ficam para depois desta etapa, com conteúdo coerente com a tela e controle de acesso.",
     "impact": "Evita aprovar uma interface com botão de exportação sem implementação.",
     "deps": [
       "actionpolicy",
@@ -3417,7 +3418,7 @@
     "owner": "Full Stack",
     "kind": "Desenvolvimento",
     "status": "Não iniciada",
-    "evidence": "",
+    "evidence": "Adiada pela decisão de 2026-11-01; sem botão, rota de interface ou arquivo disponibilizado no protótipo.",
     "weight": 1,
     "dependencies": [
       "BK-012",
@@ -3600,15 +3601,15 @@
     "key": "exportverification",
     "id": "BK-109",
     "phase": "10 Verificação integrada",
-    "title": "Validar arquivos exportados e proteção do conteúdo",
+    "title": "Validar exportações depois da finalização",
     "goal": "Garantir que relatórios correspondam à tela e ao perfil.",
-    "action": "Conferir contratos XLSX/CSV/PDF apenas onde aprovados.",
+    "action": "Manter validações de arquivos exportados para a fase posterior à finalização; não gerar amostras nem arquivos nesta etapa.",
     "steps": [
-      "Validar colunas, tipos, filtros, totais e metadados",
-      "Proteger células de texto contra injeção de fórmulas",
-      "Abrir amostras no programa usado pela Majucau"
+      "Depois da finalização e da reabertura autorizada do escopo, validar colunas, tipos, filtros, totais e metadados.",
+      "Proteger células de texto contra injeção de fórmulas.",
+      "Abrir amostras no programa usado pela Majucau e confirmar que não há segredos nem linhas sem permissão."
     ],
-    "accept": "Exports não incluem segredos nem linhas sem permissão; dados conferem com snapshot.",
+    "accept": "Nenhuma exportação ou amostra é disponibilizada na finalização atual. Na fase futura aprovada, os arquivos não incluem segredos nem linhas sem permissão e conferem com o snapshot.",
     "impact": "Evita relatório incorreto ou exposição de informação.",
     "deps": [
       "projectionexport",
@@ -3621,7 +3622,7 @@
     "owner": "QA",
     "kind": "Qualidade",
     "status": "Não iniciada",
-    "evidence": "",
+    "evidence": "Adiada conforme decisão de 2026-11-01; não executar exportação nesta etapa.",
     "weight": 1,
     "dependencies": [
       "BK-097",

@@ -1,6 +1,8 @@
 # Revisão visual das telas T1–T15 — 10/10/2026
 
 > Atualização de escopo em 2026-10-31: Gisele retirou a página independente T05 — Conciliação. A linha antiga de T05 nesta auditoria é histórica. As pendências de vínculo e correspondência permanecem como regras internas e devem ser auditadas dentro das telas ativas que dependem desses dados, sem criar uma tela substituta.
+>
+> Atualização de interface em 2026-11-01: o protótipo não deve exibir botões `Exportar` e a tela T11 não deve exibir `Gerar pedidos`. As observações abaixo sobre a aparência anterior desses botões descrevem a auditoria histórica e foram supersedidas pela aprovação registrada em `G0-DECISION-REGISTER.md`.
 
 ## Objetivo e limites
 

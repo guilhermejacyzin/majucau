@@ -147,14 +147,9 @@ body { background: #fff; }
 .mocap-sync { display: grid; gap: 5px; color: var(--mocap-navy); font-size: 15px; white-space: nowrap; }
 .mocap-sync strong { font-weight: 800; }
 .mocap-sync .mocap-icon { width: 22px; height: 22px; margin-left: 3px; vertical-align: middle; color: var(--mocap-teal); }
-.mocap-export-wrap { position: relative; }
-.mocap-export,.mocap-help { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 9px; font-size: 15px; font-weight: 700; }
-.mocap-export { min-width: 135px; padding: 0 13px; border: 1px solid #087f83; color: white; background: #087f83; }
-.mocap-export .mocap-icon { width: 20px; height: 20px; }
+.mocap-help { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 9px; font-size: 15px; font-weight: 700; }
 .mocap-help { min-width: 96px; padding: 0 15px; border: 1px solid #9dd8e5; color: #087c91; background: white; }
 .mocap-help .mocap-icon { width: 21px; height: 21px; }
-.mocap-export-menu { position: absolute; z-index: 20; top: 49px; right: 0; width: 245px; padding: 7px; border: 1px solid var(--mocap-border); border-radius: 7px; background: #fff; box-shadow: 0 8px 20px rgba(15,51,103,.16); }
-.mocap-export-menu button { width: 100%; padding: 8px; border: 0; color: #6075ab; background: #f6f9fc; text-align: left; font-size: 11px; }
 .mocap-top-cards,.mocap-lower-cards { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 11px; margin-bottom: 15px; }
 .mocap-card { min-width: 0; min-height: 168px; display: flex; gap: 13px; padding: 18px 15px; border: 1px solid var(--mocap-border); border-radius: 9px; background: linear-gradient(135deg,#fff 45%,#fbfdff); }
 .mocap-card-icon { display: grid; place-items: center; width: 67px; height: 67px; flex: 0 0 67px; border-radius: 50%; color: var(--mocap-teal); background: #dcf3f0; }

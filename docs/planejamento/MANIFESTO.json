@@ -54,8 +54,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 197732,
-      "sha256": "f65cf71ec196c198253d031ef866a4e5af87cc4baaaac3e082288880a8f0d797"
+      "bytes": 202737,
+      "sha256": "b927957e00168de2693f955340e936ce1e68edbee9fab198b0e904b9723a9ae0"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -84,8 +84,8 @@
     },
     {
       "path": "docs/planejamento/work/decisions_v2.json",
-      "bytes": 99712,
-      "sha256": "c91944175b2adf63dae3224d4b54cd12dec3cef9d55779c94b0ebf6d0de458bd"
+      "bytes": 101655,
+      "sha256": "4f757a021eba684b85355611a708ad5543800b3b543792252c57c758d513dae1"
     },
     {
       "path": "docs/planejamento/work/financeiro.md",

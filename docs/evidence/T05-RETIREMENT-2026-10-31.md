@@ -33,3 +33,9 @@
 ## Próximo passo
 
 O protótipo local já está aberto com a versão atual. Se a janela ainda mostrar uma página independente “Conciliação”, informar isso para investigarmos qual executável está sendo aberto. A operação financeira de correspondência permanece no escopo interno das telas ativas que dependem dela.
+
+## Conferência da janela atual — 01/11/2026
+
+- Consultei a janela ativa do executável `majucau-dev.exe` iniciado a partir deste checkout. A navegação contém Visão Executiva, Fluxo de Caixa, Contas a Receber, Contas a Pagar, DRE, Balancete, Calculadora de Aplicação, Estoque, Produção, Compras, Lançamentos & Pendências, Alertas, Integrações, Parâmetros e Usuários. Não existe item nem página independente chamada “Conciliação”.
+- Ainda há o texto “Conciliação pendente aguardando fonte oficial” entre os alertas da Visão Executiva. Ele descreve um estado interno de dados e não abre uma tela; foi mantido para não alterar o alerta/card aprovado nem a regra de negócio.
+- A árvore acessível da janela foi lida com sucesso. A captura de imagem continuou expirando por timeout, portanto não afirmo validação visual por screenshot.

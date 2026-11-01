@@ -313,7 +313,7 @@ Testes:
 - drill-down: card -> módulo -> detalhe -> registro -> RAW;
 - tooltips simples em todos os componentes funcionais;
 - estados de dado desatualizado sem zerar valor;
-- exportação controlada quando aprovada.
+- consulta somente no protótipo durante a finalização atual; exportação de relatórios e backup permanece adiada para depois dessa etapa, conforme decisão vigente em `G0-DECISION-REGISTER.md`.
 
 Cards obrigatórios, com estes nomes oficiais:
 
@@ -512,7 +512,7 @@ Esses itens não impedem o desenvolvimento da fundação e dos módulos independ
 - definir API/serviço central autenticado e manter PostgreSQL em rede privada;
 - agendar a atualização diária às 09:30 no fuso `America/Sao_Paulo`; reler todas as contas do Bling em páginas; processar fontes externas disponíveis de forma independente e deixar arquivo ausente pendente até a atualização das 09:30 do dia seguinte. O worker local agenda o Bling, grava um identificador diário nas auditorias existentes, bloqueia concorrência entre instâncias e retoma a carga do dia após reinício, relendo todos os dados. Ainda faltam checkpoint por página, validação de ponta a ponta e homologação da última página do Bling: a OpenAPI descreve `pagina`/`limite` e `data[]`, mas não documenta o encerramento; hoje o adapter segue após páginas não vazias e usa `data: []` apenas como marcador provisório. Esse fluxo não está homologado na conta real. A decisão ADR-003 aprova o serviço Go como leitor direto do Drive, usando identidade técnica Leitor limitada às três pastas autorizadas. O núcleo local GET/streaming do adapter está implementado e testado, e o inventário de metadados está ligado ao agendamento diário do worker quando os IDs e a credencial estiverem configurados; ainda faltam provisionar a identidade e credencial, baixar os arquivos para staging, integrar o processamento e homologar;
 - encaminhar sincronização diária, credenciais, auditoria e idempotência ao serviço autorizado;
-- implementar os perfis aprovados: Financeiro como `ADMIN`; Diretores usando a conta compartilhada `contato@majucau.com.br`, com consulta, sincronização (incluindo importação manual de CSV) e exportação de backups e relatórios. A auditoria registra a conta compartilhada e a ação, sem identificar qual Diretor agiu;
+- implementar os perfis aprovados: Financeiro como `ADMIN`; Diretores usando a conta compartilhada `contato@majucau.com.br`, com consulta e sincronização (incluindo importação manual de CSV). A capacidade futura de exportar backups e relatórios fica para depois da finalização atual. A auditoria registra a conta compartilhada e a ação, sem identificar qual Diretor agiu;
 - validar os CSVs no cliente para prévia local sem banco e validar de novo no serviço antes da persistência;
 - aprovar canal de envio, retenção e limpeza dos arquivos externos;
 - definir provedor, região, orçamento, disponibilidade, MFA, backups cifrados, observabilidade e resposta a incidentes;

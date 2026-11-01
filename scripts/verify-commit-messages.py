@@ -15,7 +15,7 @@ PERCENT_FIELDS = (
     (
         "Quanto falta da tarefa",
         re.compile(
-            r"^\s*Quanto falta (?:da tarefa(?:\s+\[[^\]]+\])?|da meta para terminar a tarefa):\s*"
+            r"^\s*Quanto falta (?:da tarefa(?:\s+(?:\[[^\]]+\]|BK-\d{3}))?|da meta para terminar a tarefa):\s*"
             r"([0-9]+(?:[.,][0-9]+)?)\s*%\.?"
             r"(?:\s+(?:\([^\r\n]*\)|[^%\r\n]*))?\.?\s*$",
             re.MULTILINE,

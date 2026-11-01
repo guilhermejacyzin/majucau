@@ -98,6 +98,20 @@ try {
         }
 
         if ($null -ne $currentTask) {
+            $outOfScopeMatch = [regex]::Match(
+                $line,
+                '\*\*Situação:\*\*\s*(?<status>Fora do escopo)\b'
+            )
+            if ($outOfScopeMatch.Success) {
+                $tasks.Add([pscustomobject]@{
+                    Id = $currentTask.Id
+                    Status = $outOfScopeMatch.Groups['status'].Value
+                    Progress = 0.0
+                })
+                $currentTask = $null
+                continue
+            }
+
             $statusMatch = [regex]::Match(
                 $line,
                 '\*\*Situação:\*\*\s*(?<status>Concluída|Em andamento|Não iniciada)\.'
@@ -150,22 +164,24 @@ if ($tasks.Count -eq 0) {
     throw 'Nenhuma tarefa detalhada foi encontrada no backlog.'
 }
 
-$completed = @($tasks | Where-Object { $_.Status -eq 'Concluída' }).Count
-$inProgress = @($tasks | Where-Object { $_.Status -eq 'Em andamento' }).Count
-$notStarted = @($tasks | Where-Object { $_.Status -eq 'Não iniciada' }).Count
-$sumProgress = ($tasks | Measure-Object -Property Progress -Sum).Sum
+$activeTasks = @($tasks | Where-Object { $_.Status -ne 'Fora do escopo' })
+$outOfScope = $tasks.Count - $activeTasks.Count
+$completed = @($activeTasks | Where-Object { $_.Status -eq 'Concluída' }).Count
+$inProgress = @($activeTasks | Where-Object { $_.Status -eq 'Em andamento' }).Count
+$notStarted = @($activeTasks | Where-Object { $_.Status -eq 'Não iniciada' }).Count
+$sumProgress = ($activeTasks | Measure-Object -Property Progress -Sum).Sum
 $calculatedPercent = [Math]::Round(
-    ([double]$sumProgress / [double]$tasks.Count),
+    ([double]$sumProgress / [double]$activeTasks.Count),
     1,
     [System.MidpointRounding]::AwayFromZero
 )
 $calculatedRemaining = [Math]::Round(
-    (100 - ([double]$sumProgress / [double]$tasks.Count)),
+    (100 - ([double]$sumProgress / [double]$activeTasks.Count)),
     1,
     [System.MidpointRounding]::AwayFromZero
 )
 
-if ($declaredCounts.Total -ne $tasks.Count -or
+if ($declaredCounts.Total -ne $activeTasks.Count -or
     $declaredCounts.Done -ne $completed -or
     $declaredCounts.InProgress -ne $inProgress -or
     $declaredCounts.NotStarted -ne $notStarted) {
@@ -231,4 +247,4 @@ if (-not [string]::IsNullOrWhiteSpace($StructuredPath)) {
     }
 }
 
-Write-Output "Backlog conferido: $($tasks.Count) tarefas; $completed concluídas, $inProgress em andamento e $notStarted não iniciadas; $calculatedPercent% concluído, $calculatedRemaining% restante."
+Write-Output "Backlog conferido: $($tasks.Count) tarefas no catálogo; $($activeTasks.Count) ativas e $outOfScope fora do escopo; $completed concluídas, $inProgress em andamento e $notStarted não iniciadas; $calculatedPercent% concluído, $calculatedRemaining% restante."

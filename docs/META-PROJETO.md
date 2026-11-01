@@ -1,5 +1,14 @@
 # Meta do Majucau
 
+## Meta ativa no Codex — 01/11/2026
+
+- **Objetivo:** entregar um protótipo funcional e homologável até **30/11/2026**.
+- **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
+- **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
+- **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
+- **Andamento registrado:** 11,9% concluído e 88,1% restante, segundo a última conferência do backlog registrada abaixo. Esse número só muda quando os critérios de aceite das tarefas forem cumpridos; alterações de documentação, sozinhas, não contam como conclusão funcional.
+- **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
+
 ## O que queremos entregar
 
 Concluir o backlog aprovado do Majucau e entregar primeiro um protótipo que possa ser testado e homologado. Depois da homologação, seguir para a finalização e entrada em produção previstas no próprio backlog.

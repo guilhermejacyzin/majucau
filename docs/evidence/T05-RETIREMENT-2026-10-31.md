@@ -48,3 +48,11 @@ O protótipo local já está aberto com a versão atual. Se a janela ainda mostr
 - A regressão de interface verifica que nem a navegação oferece T05 nem a Visão Executiva exibe o alerta legado. Após o hot reload, a árvore acessível da janela aberta confirmou que o alerta sumiu e os três outros alertas continuam visíveis; esta conferência usou a árvore acessível, sem captura visual.
 - Verificações da correção: `npm run test -- --reporter=dot` passou com 46 testes em 5 arquivos; `npm run lint` e `npm run typecheck` também passaram. A CI do commit `e2bdb90` [#41270518884](https://github.com/guilhermejacyzin/majucau/actions/runs/41270518884) passou nos quatro jobs, incluindo Windows e PostgreSQL.
 - Em 01/11, ao ser perguntada se ainda localizava a página ou referência de Conciliação, Gisele informou “Não localizei nada”. Isso confirma que não há outra página/controle visível a retirar. O card aprovado “CONCILIAÇÃO” dentro de Contas a Receber permanece preservado.
+
+## Auditoria dos cards vistos na captura — 01/11/2026
+
+- Os cards `PRIORIDADE`, `FALLBACK`, `REUSO BLOQUEADO`, `CHARGEBACKS` e `SEM ID BLING` pertenciam à faixa inferior da antiga página T05. Eles não pertencem à T03 — Contas a Receber.
+- A referência aprovada T03 foi conferida em `sources/private/material-original/T03_Contas_a_Receber.png`: mantém os quatro cards superiores (`TOTAL A RECEBER`, `RECEBIDO NO MÊS`, `EM ATRASO`, `CONCILIAÇÃO`) e a faixa inferior (`PIX`, `BOLETOS`, `CARTÃO`, `AMBÍGUOS`, `CHARGEBACKS`). Esses cards continuam definidos no protótipo.
+- Acrescentei uma regressão para assegurar que T03 preserve esses cards aprovados e não volte a exibir os quatro cards exclusivos de T05; a página T05 segue fora da navegação e do produto.
+- `npm run test -- --reporter=dot src/T05Navigation.test.tsx` passou: 3 testes em 1 arquivo. A suíte completa `npm run test -- --reporter=dot` também passou: 61 testes em 6 arquivos. `npm run lint` e `npm run typecheck` passaram.
+- A captura do protótipo falhou duas vezes por timeout nesta execução. Por isso, esta conferência comprova o conteúdo da referência e do código/teste, mas não uma inspeção visual da janela aberta.

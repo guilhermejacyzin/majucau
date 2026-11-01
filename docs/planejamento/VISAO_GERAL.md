@@ -20,6 +20,7 @@ Planejamento do sistema de gestão e análise da Majucau. A **versão 2** é a r
 - Monólito com DDD e arquitetura hexagonal, backend em Go e frontend em React + TypeScript + Vite (conforme ADR-001 e código atual).
 - Primeira entrada em produção com os módulos confirmados no material. Balanço Patrimonial está excluído.
 - Bling como fonte de lançamentos; o motor Majucau calcula a DRE conforme regras contábeis aprovadas e o relatório do Bling serve para comparação. Três estruturas específicas do Google Drive permanecem somente de leitura.
+- A tela independente T05 — Conciliação foi retirada em 31/10/2026. As regras internas de correspondência e controle permanecem necessárias para validar dados de outras telas; não haverá uma página substituta.
 - O fechamento funcional vigente está registrado na v2. Regras antigas substituídas nas v0/v1 são histórico.
 
 ## Evolução registrada
@@ -28,11 +29,13 @@ O backlog contém 127 tarefas, de BK-000 a BK-126. Os números **2,4% por quanti
 
 Na planilha, uma tarefa pontua 100% somente quando está concluída e possui evidência de aceite. Os pesos iniciais são iguais a 1. O acompanhamento não é sincronizado automaticamente com commits, issues ou projetos do GitHub.
 
-### Estado do backlog — 26/10/2026
+### Estado do backlog — fotografia de 26/10/2026
 
 O backlog registra **7 tarefas concluídas, 20 em andamento e 100 não iniciadas**. As tarefas em andamento são BK-006 (30%), BK-007 (20%), BK-012 (30%), BK-013 (20%), BK-014 (15%), BK-016 (20%), BK-017 (95%), BK-024 (35%), BK-025 (70%), BK-026 (60%), BK-027 (40%), BK-031 (85%), BK-039 (50%), BK-041 (80%), BK-042 (70%), BK-043 (40%), BK-056 (5%), BK-066 (5%), BK-067 (25%) e BK-102 (1%). Pela média simples das 127 tarefas, o acompanhamento estima **11,8% concluído e 88,2% restante**. Essa média é uma estimativa de planejamento; não comprova prontidão para homologação ou produção.
 
 Na atualização de 26/10, Contas a Pagar ganhou conversão transacional da API para fatos tipados com lineage, e o snapshot usado pela Visão Executiva e T4 agora aceita essa carga diária completa. A CI #40273517345 passou nos testes PostgreSQL e Windows, incluindo migrations, permissões do worker, integração de Contas a Pagar e build/instalador. BK-041 permanece em 80% enquanto autenticação real, confirmação de paginação, pagamentos realizados e homologação dos dados da conta seguirem pendentes; a CI usa dados de teste e não comprova acesso à conta Bling da Majucau. A composição do backlog não mudou: 11,8% concluído e 88,2% restante. Evidência: `docs/evidence/BLING-PAYABLE-API-NORMALIZATION-2026-10-26.md`.
+
+**Atualização de escopo — 31/10/2026:** T05 — Conciliação não terá página independente. O protótipo e o catálogo de tarefas foram ajustados; BK-055 fica fora do escopo e não entra no cálculo de progresso. Permanecem 126 tarefas ativas (7 concluídas, 20 em andamento e 99 não iniciadas); pela média das estimativas registradas no backlog, 11,9% concluído e 88,1% restante. Essa mudança de escopo não significa que regras ou dados internos de conciliação foram removidos.
 
 **Correção de 19/10/2026:** o Drive roda apenas na agenda diária das 09:30 de Brasília. Se o serviço iniciar depois desse horário, aguarda a próxima execução das 09:30; não faz coleta imediata no mesmo dia. Assim, arquivo ausente ou atrasado só é processado no dia seguinte. Evidência: `docs/evidence/DRIVE-NEXT-DAY-SCHEDULE-2026-10-19.md`.
 

@@ -29,9 +29,9 @@
   },
   {
     "code": "T05",
-    "module": "Conciliação",
-    "coverage": "Imagem recebida",
-    "source": "T05_Conciliacao.png; fechamento vigente (função/fonte)",
+    "module": "T05 — tela retirada",
+    "coverage": "Página fora do escopo; regras de correspondência permanecem internas às telas dependentes",
+    "source": "Decisão aprovada em 2026-10-31; imagem T05 preservada somente como histórico",
     "task": "BK-055"
   },
   {

@@ -8,7 +8,7 @@ import './mockup.css'
 
 type Screen = MockupScreenKey
 type CardGroup = 'Tesouraria' | 'Recebíveis' | 'Obrigações' | 'Resultado' | 'Planejamento' | 'Gestão'
-type MetricIcon = 'wallet' | 'trend' | 'calendar' | 'clock' | 'cart' | 'document' | 'database' | 'warning' | 'chart' | 'building' | 'settings' | 'home' | 'flow' | 'receivable' | 'payable' | 'reconcile' | 'result' | 'balance' | 'investment' | 'calculator' | 'inventory' | 'production' | 'shopping' | 'control' | 'import' | 'user' | 'export' | 'pie' | 'refresh' | 'help' | 'bank' | 'money' | 'target'
+type MetricIcon = 'wallet' | 'trend' | 'calendar' | 'clock' | 'cart' | 'document' | 'database' | 'warning' | 'chart' | 'building' | 'settings' | 'home' | 'flow' | 'receivable' | 'payable' | 'result' | 'balance' | 'investment' | 'calculator' | 'inventory' | 'production' | 'shopping' | 'control' | 'import' | 'user' | 'export' | 'pie' | 'refresh' | 'help' | 'bank' | 'money' | 'target'
 type Metric = { title: string; tooltip: TooltipId; group: CardGroup; icon: MetricIcon; status?: 'UNAVAILABLE' | 'PROVISIONAL' }
 
 // These are public OAuth application values supplied for Majucau. The client
@@ -46,7 +46,6 @@ const navItems: NavItem[] = [
   { label: 'Fluxo de Caixa', icon: 'flow', tooltip: 'nav.treasury', section: 'TESOURARIA' },
   { label: 'Contas a Receber', icon: 'receivable', tooltip: 'nav.receivables' },
   { label: 'Contas a Pagar', icon: 'payable', tooltip: 'nav.payables' },
-  { label: 'Conciliação', icon: 'reconcile', tooltip: 'nav.conciliations' },
   { label: 'DRE', icon: 'result', tooltip: 'nav.result', section: 'RESULTADOS' },
   { label: 'Balancete', icon: 'balance', tooltip: 'nav.accounting' },
   { label: 'Calculadora de Aplicação', icon: 'calculator', tooltip: 'nav.investments' },
@@ -100,7 +99,6 @@ function MetricGlyph({ icon }: { icon: MetricIcon }) {
     flow: 'M4 7h16 M4 12h10 M4 17h16 M16 9l4 3-4 3',
     receivable: 'M12 3 15 8h4l-3 4 1 8H7l1-8-3-4h4z M10 12h4',
     payable: 'M5 3h10l4 4v14H5z M15 3v5h4 M8 12h6 M8 16h4',
-    reconcile: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18 M8 12l3 3 5-6',
     result: 'M5 3h11l3 3v15H5z M8 10h8 M8 14h8 M8 18h5',
     balance: 'M4 20h16 M6 20V9h12v11 M4 9l8-5 8 5 M9 13h2 M13 13h2 M9 16h2 M13 16h2',
     investment: 'M4 17l4-5 3 3 5-7 M14 8h5v5',

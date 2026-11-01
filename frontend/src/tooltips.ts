@@ -41,7 +41,6 @@ export const tooltipCatalog = {
   'nav.workingCapital': 'Capital de giro explica a necessidade de recursos de curto prazo.',
   'nav.investments': 'Tesouraria de aplicações mostra capacidade de aplicação após reserva.',
   'nav.accounting': 'Contabilidade gerencial e patrimonial permanece disponível conforme os contratos aprovados.',
-  'nav.conciliations': 'Conciliações e divergências mostram origem, diferença e ação necessária.',
   'settings.open': 'Abre as configurações de integrações e segurança.',
   'metric.details': 'Abre a composição do valor, a regra usada e os registros de origem quando houver dados confirmados.',
   'notice.integrations': 'As fontes oficiais são conectadas nas configurações de integrações.',

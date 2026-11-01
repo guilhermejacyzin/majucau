@@ -2,6 +2,8 @@
 
 ## Referência vigente: v2
 
+Atualização de escopo em 31/10/2026: a tela independente T05 — Conciliação foi retirada. A documentação v2 foi atualizada para registrar essa decisão; a imagem aprovada original segue apenas no arquivo histórico. Regras internas de correspondência continuam no escopo.
+
 - [Backlog detalhado](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md).
 - [Análise e decisões](../../artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md).
 - [Planilha de evolução](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx).

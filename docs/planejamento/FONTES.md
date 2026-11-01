@@ -14,6 +14,8 @@ A pasta continha uma planilha e dezesseis PNGs. O PNG com nome ChatGPT repete a 
 | T03_Contas_a_Receber.png | `1844863e9a7cfb271ac9c5077c2dce29099093fcc7b885e703bea6180d0efde9` |
 | T04_Contas_a_Pagar.png | `e0beba0257e027e925cd644e170903a9e7b8a463d3edf8d1d3d02d0a1c22126b` |
 | T05_Conciliacao.png | `50b75ffb1ca4c95f1983acef64b4c4a8d5b47fbb7954da63743dba7de092b734` |
+
+O mockup T05 é uma fonte histórica preservada para rastreabilidade. A tela foi retirada do produto em 31/10/2026; essa imagem não deve ser tratada como interface vigente.
 | T06_DRE.png | `94a5ac357405720e19cc2e92375dc0816aee1c1578d174bea4e03360d8497c02` |
 | T07_Balancete.png | `20b3ef6b31af48983c8b18416010ba5023115b939374595b1c33600735252192` |
 | T08_Calculadora_de_Aplicacao.png | `7987ae139fa1b0590635660578b73ba2ba859178d0517a46884f895ec2f61ac1` |

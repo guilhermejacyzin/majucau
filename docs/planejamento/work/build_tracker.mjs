@@ -6,14 +6,16 @@ const base=path.resolve('.');
 const tasks=JSON.parse(await fs.readFile(path.join(base,'work/backlog_v2.json'),'utf8'));
 const decisions=JSON.parse(await fs.readFile(path.join(base,'work/decisions_v2.json'),'utf8'));
 const scope=JSON.parse(await fs.readFile(path.join(base,'work/scope_v2.json'),'utf8'));
+const inScopeTasks=tasks.filter(t=>t.status!=='Fora do escopo');
 const statusDate=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo'}).format(new Date());
 const statusCounts={
- completed:tasks.filter(t=>t.status==='Concluída').length,
- inProgress:tasks.filter(t=>t.status==='Em andamento').length,
- notStarted:tasks.filter(t=>t.status==='Não iniciada').length,
+ completed:inScopeTasks.filter(t=>t.status==='Concluída').length,
+ inProgress:inScopeTasks.filter(t=>t.status==='Em andamento').length,
+ notStarted:inScopeTasks.filter(t=>t.status==='Não iniciada').length,
+ outOfScope:tasks.length-inScopeTasks.length,
 };
-const totalWeight=tasks.reduce((total,t)=>total+t.weight,0);
-const progressPercent=tasks.reduce((total,t)=>total+(t.progress??0)*t.weight,0)/totalWeight*100;
+const totalWeight=inScopeTasks.reduce((total,t)=>total+t.weight,0);
+const progressPercent=inScopeTasks.reduce((total,t)=>total+(t.progress??0)*t.weight,0)/totalWeight*100;
 const remainingPercent=100-progressPercent;
 const percentText=value=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value);
 const wb=Workbook.create();
@@ -37,13 +39,13 @@ const n=tasks.length,last=n+5;
 baseStyle(backlog,`A1:N${last}`);backlog.tabColor=teal;
 widths(backlog,{A:78,B:215,C:385,D:120,E:142,F:60,G:85,H:260,I:230,J:230,K:230,L:420,M:130,N:130});
 title(backlog,'A2','Majucau — tarefas do backlog');
-backlog.getRange('A3').values=[['Detalhes de objetivo, execução, aceite e impacto: documento MAJUCAU_BACKLOG_DETALHADO_v2.md, pelo ID.']];
+backlog.getRange('A3').values=[['Detalhes de objetivo, execução, aceite e impacto: documento MAJUCAU_BACKLOG_DETALHADO_v2.md, pelo ID. Tarefas fora do escopo são preservadas apenas no histórico.']];
 backlog.getRange('A3').format.font={name:'Arial',size:10,italic:true,color:muted};
 headers(backlog,'A5:N5',['ID','Fase','Tarefa','Natureza','Situação','Peso','Evolução estimada','Evidência de aceite','Responsável sugerido','Dependências','Decisões a acompanhar','Referências','Peso com aceite','Peso da evolução']);
 const rows=tasks.map(t=>[t.id,t.phase,t.title,t.kind,t.status,t.weight,t.progress??0,t.evidence,t.owner,t.dependencies.join(', '),t.questions,t.refs||'Necessidade técnica de entrega e operação.',null,null]);
 backlog.getRange(`A6:N${last}`).values=rows;
 backlog.getRange(`M6:M${last}`).formulas=rows.map((_,i)=>[`=IF(AND(E${i+6}="Concluída",H${i+6}<>""),F${i+6},0)`]);
-backlog.getRange(`N6:N${last}`).formulas=rows.map((_,i)=>[`=F${i+6}*G${i+6}`]);
+backlog.getRange(`N6:N${last}`).formulas=rows.map((_,i)=>[`=IF(E${i+6}="Fora do escopo",0,F${i+6}*G${i+6})`]);
 band(backlog,6,last,'N');backlog.getRange(`A6:N${last}`).format.wrapText=true;
 backlog.getRange(`A6:N${last}`).format.rowHeight=72;
 backlog.getRange(`E6:F${last}`).format.fill=amber;
@@ -51,7 +53,7 @@ backlog.getRange(`H6:H${last}`).format.fill=amber;
 backlog.getRange(`F6:G${last}`).format.horizontalAlignment='right';
 backlog.getRange(`G6:G${last}`).setNumberFormat('0%');
 backlog.getRange(`F6:F${last}`).setNumberFormat('0');
-backlog.getRange(`E6:E${last}`).dataValidation={rule:{type:'list',values:['Não iniciada','Aguarda decisão','Em andamento','Em validação','Bloqueada','Concluída']}};
+backlog.getRange(`E6:E${last}`).dataValidation={rule:{type:'list',values:['Não iniciada','Aguarda decisão','Em andamento','Em validação','Bloqueada','Concluída','Fora do escopo']}};
 backlog.dataValidations.add({range:`F6:F${last}`,rule:{type:'whole',operator:'between',formula1:1,formula2:100}});
 backlog.getRange(`A6:N${last}`).conditionalFormats.addCustom('AND($E6="Concluída",$H6="")',{fill:'#FDE4E0',font:{color:'#A12622'}});
 backlog.freezePanes.freezeRows(5);backlog.freezePanes.freezeColumns(3);
@@ -80,13 +82,13 @@ sc.freezePanes.freezeRows(5);sc.tables.add(`A5:E${sl}`,true,'MajucauCobertura');
 
 baseStyle(summary,'A1:G43');widths(summary,{A:295,B:125,C:170,D:28,E:340,F:150,G:150});summary.tabColor=dark;
 title(summary,'A2','Majucau — evolução do backlog');
-summary.getRange('A3').values=[[`Status atualizado em ${statusDate} | fechamento funcional de 13/09/2026`]];
+summary.getRange('A3').values=[[`Status atualizado em ${statusDate} | itens fora do escopo ficam no histórico e não entram no percentual`]];
 summary.getRange('A3').format.font={name:'Arial',size:10,italic:true,color:muted};
 headers(summary,'A5:C5',['Medida','Valor','Interpretação']);
-const metrics=[['Tarefas no catálogo',n,'Escopo provisório'],['Levantamentos concluídos',null,'Com evidência de aceite'],['Evolução estimada por peso',null,'Estimativa; não é prontidão'],['Desenvolvimento aceito',null,'Somente concluído com evidência'],['Frentes técnicas',null,'HT: execução futura']];
+const metrics=[['Tarefas no catálogo',n,'Inclui itens retirados do escopo'],['Levantamentos concluídos',null,'Com evidência de aceite'],['Evolução estimada por peso',null,'Estimativa; não é prontidão'],['Desenvolvimento aceito',null,'Somente concluído com evidência'],['Frentes técnicas',null,'HT: execução futura']];
 summary.getRange('A6:C10').values=metrics;
 summary.getRange('B7').formulas=[[`=SUMIFS('Tarefas'!$M$6:$M$${last},'Tarefas'!$D$6:$D$${last},"Planejamento")`]];
-summary.getRange('B8').formulas=[[`=SUM('Tarefas'!$N$6:$N$${last})/SUM('Tarefas'!$F$6:$F$${last})`]];
+summary.getRange('B8').formulas=[[`=SUM('Tarefas'!$N$6:$N$${last})/SUMIFS('Tarefas'!$F$6:$F$${last},'Tarefas'!$E$6:$E$${last},"<>Fora do escopo")`]];
 summary.getRange('B9').formulas=[[`=SUMIFS('Tarefas'!$M$6:$M$${last},'Tarefas'!$D$6:$D$${last},"Desenvolvimento")/SUMIFS('Tarefas'!$F$6:$F$${last},'Tarefas'!$D$6:$D$${last},"Desenvolvimento")`]];
 summary.getRange('B10').formulas=[[`=COUNTIFS('Decisoes'!$I$6:$I$${dl},"Homologação técnica")`]];
 summary.getRange('A11:C11').values=[['Tarefas aceitas com evidência',null,'Contagem de entregas concluídas']];
@@ -99,8 +101,8 @@ summary.getRange('A12').values=[['Avanço por fase']];summary.getRange('A12').fo
 headers(summary,'A13:C13',['Fase','Tarefas','Evolução estimada']);
 const phases=[...new Set(tasks.map(t=>t.phase))];
 summary.getRange(`A14:A${13+phases.length}`).values=phases.map(p=>[p]);
-summary.getRange(`B14:B${13+phases.length}`).formulas=phases.map((_,i)=>[`=COUNTIFS('Tarefas'!$B$6:$B$${last},A${i+14})`]);
-summary.getRange(`C14:C${13+phases.length}`).formulas=phases.map((_,i)=>[`=SUMIFS('Tarefas'!$N$6:$N$${last},'Tarefas'!$B$6:$B$${last},A${i+14})/SUMIFS('Tarefas'!$F$6:$F$${last},'Tarefas'!$B$6:$B$${last},A${i+14})`]);
+summary.getRange(`B14:B${13+phases.length}`).formulas=phases.map((_,i)=>[`=COUNTIFS('Tarefas'!$B$6:$B$${last},A${i+14},'Tarefas'!$E$6:$E$${last},"<>Fora do escopo")`]);
+summary.getRange(`C14:C${13+phases.length}`).formulas=phases.map((_,i)=>[`=SUMIFS('Tarefas'!$N$6:$N$${last},'Tarefas'!$B$6:$B$${last},A${i+14})/SUMIFS('Tarefas'!$F$6:$F$${last},'Tarefas'!$B$6:$B$${last},A${i+14},'Tarefas'!$E$6:$E$${last},"<>Fora do escopo")`]);
 summary.getRange(`C14:C${13+phases.length}`).setNumberFormat('0%');band(summary,14,13+phases.length,'C');
 summary.getRange(`A14:C${13+phases.length}`).format.rowHeight=30;
 headers(summary,'E5:G5',['Decisões já recebidas','','']);
@@ -116,7 +118,7 @@ const instructions=[
 'A média global é estimativa do backlog; não é prontidão para produção.',
 'Peso inicial 1 mede quantidade, sem estimativa de esforço.',
 'Após estimar com a equipe, revise os pesos e registre a mudança.',
-'As fórmulas consideram todas as linhas atuais, mesmo filtradas.',
+'Tarefas fora do escopo ficam no histórico, mas não entram nas médias.',
 'Ao incluir tarefas, ampliar tabela e fórmulas de resumo.',
 'Detalhamento passo a passo fica no documento pelo ID BK.',
 'Não existe atualização automática de atividade no GitHub.'
@@ -126,7 +128,7 @@ summary.getRange('E18:E27').format.rowHeight=29;
 summary.getRange('A28').values=[['Responsáveis são papéis sugeridos; prazo e esforço aguardam a equipe.']];
 summary.getRange('A30').values=[['Fonte: imagens e planilha MAJUCAU_CONSOLIDACAO_DEV_GATE_RC3_CEI_CONFIGURACOES_T16_T17.xlsx fornecidas pelo usuário.']];
 summary.getRange('A31').values=[['Fechamento de 13/09/2026; decisões posteriores registradas no G0-DECISION-REGISTER.md até 11/10/2026.']];
-summary.getRange('A33').values=[[`Backlog em ${statusDate}: ${statusCounts.completed} concluídas, ${statusCounts.inProgress} em andamento e ${statusCounts.notStarted} não iniciadas. Estimativa: ${percentText(progressPercent)}%; restante: ${percentText(remainingPercent)}%. É uma estimativa, não prova de prontidão.`]];
+summary.getRange('A33').values=[[`Backlog em ${statusDate}: ${statusCounts.completed} concluídas, ${statusCounts.inProgress} em andamento, ${statusCounts.notStarted} não iniciadas e ${statusCounts.outOfScope} fora do escopo. Percentual calculado sobre ${inScopeTasks.length} tarefas ativas: ${percentText(progressPercent)}%; restante: ${percentText(remainingPercent)}%. É uma estimativa, não prova de prontidão.`]];
 summary.getRange('A34').values=[['D-1: análise/conciliação normal até ontem; agenda futura continua na projeção.']];
 summary.getRange('A35').values=[['Nenhuma regra foi reaberta nesta auditoria. Paginação do Bling e outras pendências técnicas continuam em verificação.']];
 summary.getRange('A30:A31').format.font={name:'Arial',size:10,italic:true,color:muted};

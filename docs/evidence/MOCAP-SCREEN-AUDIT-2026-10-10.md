@@ -1,5 +1,7 @@
 # Revisão visual das telas T1–T15 — 10/10/2026
 
+> Atualização de escopo em 2026-10-31: Gisele retirou a página independente T05 — Conciliação. A linha antiga de T05 nesta auditoria é histórica. As pendências de vínculo e correspondência permanecem como regras internas e devem ser auditadas dentro das telas ativas que dependem desses dados, sem criar uma tela substituta.
+
 ## Objetivo e limites
 
 Revalidar as imagens que já estão no repositório, comparar os exemplos visíveis com as decisões posteriores e direcionar diferenças para o backlog. Foram examinadas T1–T15; `T1-Visao-Executiva-2026-09-20.png` é cópia exata de T1 e `C11-mockup-2026-09-20.png`/`C11.png` são cópias exatas de T11, conforme o inventário de hashes em `docs/source/README.md`.
@@ -12,9 +14,8 @@ Esta revisão não altera telas, códigos, cálculos ou regras de negócio. Os v
 |---|---|---|
 | T1 — Visão Executiva | `T1-mockup-2026-09-20.png`; BK-102 | Os indicadores e gráficos são exemplos. O menu da imagem ainda mostra “Balanço Patrimonial” e “Aplicações”; decisões posteriores os retiraram da versão 1. Não reintroduzir por causa da imagem histórica. |
 | T2 — Fluxo de Caixa | `T2-mockup-2026-09-20.png`; BK-062 | Mantêm-se as divergências de reserva, janela de datas e alerta já registradas como FIN-01 a FIN-03. Os valores não podem ser usados para preencher o produto. A definição de “semana crítica” segue pendente. |
-| T3 — Contas a Receber | `T3-mockup-2026-09-20.png`; BK-057 | Permanecem as diferenças de universo/total entre cartões e a conciliação com T5, registradas como FIN-04, FIN-05, FIN-08 e FIN-09. Precisam de fonte e denominador comuns antes de se tornarem cálculos do produto. |
+| T3 — Contas a Receber | `T3-mockup-2026-09-20.png`; BK-057 | Permanecem as diferenças de universo/total entre cartões e os vínculos internos de recebimento, registradas como FIN-04, FIN-05, FIN-08 e FIN-09. Precisam de fonte e denominador comuns antes de se tornarem cálculos do produto. Não dependem de uma página T05, que foi retirada. |
 | T4 — Contas a Pagar | `T4-mockup-2026-09-20.png`; BK-059 | Permanecem FIN-06 e FIN-07: o cartão e a distribuição divergem em R$ 180, e uma obrigação ainda não vencida aparece como atrasada na data de referência. Os exemplos não definem regra de vencimento. |
-| T5 — Conciliação | `T5-mockup-2026-09-20.png`; BK-055 | Os estados de algumas transações não coincidem com T3 e a taxa de conciliação usa denominador diferente (FIN-08/09). O sistema precisa separar situação do título de situação do vínculo de conciliação, conforme contrato aprovado; não inferir correção pelos números da imagem. |
 | T6 — DRE | `T6-mockup-2026-09-20.png`; BK-067 | A tabela ilustrativa chega a R$ 74.380, mas margem e gráfico não reconciliam conforme FIN-10/11. A decisão posterior mantém a DRE própria do Majucau e aprovou cards separados de EBIT, EBITDA e CAPEX fora da tabela; a imagem antiga não substitui essa decisão. CAPEX não entra no lucro. |
 | T7 — Balancete | `T7-mockup-2026-09-20.png`; BK-069 | Débitos e créditos do cabeçalho coincidem. Continuam FIN-12/13: o sinal de certas contas requer convenção contábil e “saldo zero” não prova saldo final conhecido quando os saldos iniciais estão abertos. A imagem ainda contém links históricos para Balanço Patrimonial e Aplicações. |
 | T8 — Calculadora de Aplicação | `T8-mockup-2026-09-20.png`; BK-073 | Os números não demonstram a fórmula: a capacidade ilustrada de R$ 96.800 supera o lucro elegível de R$ 74.380 e a memória não resolve a diferença (FIN-14 a FIN-17). A responsável aprovou uma sugestão informativa separada: R$ 50.000 + a queda prevista do caixa entre D0 e o menor saldo diário até D+60. Ela não altera o valor máximo da regra existente. Ver `INVESTMENT-RESERVE-SUGGESTION-2026-10-10.md`. Nenhum valor ilustrativo deve ser copiado. |
@@ -34,7 +35,7 @@ Esta revisão não altera telas, códigos, cálculos ou regras de negócio. Os v
 
 ## Decisões e próximos passos
 
-- O inventário, as inconsistências visuais e as ambiguidades estão associados às tarefas BK-052, BK-055, BK-057, BK-059, BK-062, BK-067, BK-069, BK-073, BK-078, BK-081, BK-082, BK-084, BK-086, BK-096, BK-099, BK-101 e BK-102.
+- O inventário, as inconsistências visuais e as ambiguidades estão associados às tarefas BK-052, BK-057, BK-059, BK-062, BK-067, BK-069, BK-073, BK-078, BK-081, BK-082, BK-084, BK-086, BK-096, BK-099, BK-101 e BK-102. BK-055 passou a registrar somente a retirada de escopo de T05 em 31/10/2026.
 - Não se alterou nenhuma tela aprovada nem regra de negócio. Valores dos desenhos não foram copiados como dados ou exemplos de produção.
 - A fórmula informativa da reserva sugerida da T8 foi aprovada; D-003-A e o valor máximo não mudam. O mapeamento dos dados necessários continua pendente.
 - A responsável confirmou T11 como somente para exibir dados, sem exportação ou download. A criação/alteração de pedidos está proibida. Em 11/10/2026, confirmou manter “Gerar pedidos” no mesmo lugar e desativado; essa apresentação já existe no protótipo atual.

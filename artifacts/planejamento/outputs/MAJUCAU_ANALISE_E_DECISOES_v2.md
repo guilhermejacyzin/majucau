@@ -1,5 +1,7 @@
 # Majucau — fechamento vigente e rastreabilidade, versão 2
 
+**Atualização de escopo — 31/10/2026:** a tela independente T05 — Conciliação foi retirada. Menções a T05 nas fontes abaixo são históricas; as regras internas de correspondência, prevenção de duplicidade e status continuam válidas para os dados das telas ativas. Não implementar a página nem usar sua imagem como tela vigente. Detalhes em `docs/evidence/T05-RETIREMENT-2026-10-31.md`.
+
 Esta revisão corrige a interpretação que tratava regras já definidas e responsabilidades técnicas como perguntas de negócio. O fechamento registrado aqui é o de 13/09/2026. A confirmação de “somente atualizar o backlog” valia para aquela rodada. Decisões aprovadas depois e evidências atuais estão listadas a seguir e prevalecem em caso de conflito, sem alterar telas ou regras que continuam aprovadas.
 
 Registro histórico de 13/09/2026: 70 tarefas revisadas; 3 levantamentos concluídos, 2,4% por quantidade e 0% de desenvolvimento. Naquela data não havia implementação nem testes reais do produto. Esse registro não representa o estado atual.

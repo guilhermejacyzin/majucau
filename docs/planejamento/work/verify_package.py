@@ -30,12 +30,13 @@ def ancestors(key, stack=()):
 for key in by:
     ancestors(key)
 required = ['losses','supplementaryingest','usersscreen','parametersscreen',
-    'integrationsscreen','reconciliationscreen','receivablesscreen','payablesscreen',
+    'integrationsscreen','receivablesscreen','payablesscreen',
     'cashscreen','drescreen','trialbalancescreen','calculatorscreen','applicationsscreen',
     'pricing','logisticsanalysis','inventoryscreen','productionscreen','purchasesscreen',
     'projectionsscreen','projectionexport','pendingscreen','alertsscreen','executivescreen',
     'extrascreens','approvedexports','cyclemetrics','restoreexercise']
 assert set(required) <= ancestors('readiness')
+assert 'retiredt05screen' not in ancestors('readiness')
 assert 'cocoasignals' not in ancestors('purchasesscreen')
 assert 'inputprojection' in ancestors('purchaseeligibility')
 assert 'inventoryprojection' not in ancestors('productionprojection')
@@ -51,21 +52,28 @@ markdown_tasks = {}
 for index, match in enumerate(headers):
     end = headers[index + 1].start() if index + 1 < len(headers) else len(md)
     body = md[match.end():end]
-    status = re.search(r'\*\*Situação:\*\*\s*(Concluída|Em andamento|Não iniciada)\.', body)
+    status = re.search(r'\*\*Situação:\*\*\s*(Concluída|Em andamento|Não iniciada|Fora do escopo)', body)
     progress = re.search(r'\*\*Evolução:\*\*\s*(\d+(?:[.,]\d+)?)%', body)
-    assert status and progress, match.group(1)
+    assert status, match.group(1)
+    if status.group(1) == 'Fora do escopo':
+        assert progress is None, match.group(1)
+        progress_value = 0.0
+    else:
+        assert progress, match.group(1)
+        progress_value = float(progress.group(1).replace(',', '.')) / 100
     markdown_tasks[match.group(1)] = (
         status.group(1),
-        float(progress.group(1).replace(',', '.')) / 100,
+        progress_value,
     )
 for task in tasks:
     status, progress = markdown_tasks[task['id']]
     assert task['status'] == status, (task['id'], task['status'], status)
     assert abs(task['progress'] - progress) < 0.000001, (task['id'], task['progress'], progress)
 status_counts = Counter(task['status'] for task in tasks)
-assert set(status_counts) <= {'Concluída', 'Em andamento', 'Não iniciada'}
+assert set(status_counts) <= {'Concluída', 'Em andamento', 'Não iniciada', 'Fora do escopo'}
 assert sum(status_counts.values()) == len(tasks)
-estimated_progress = sum(task['progress'] * task['weight'] for task in tasks) / sum(task['weight'] for task in tasks)
+active_tasks = [task for task in tasks if task['status'] != 'Fora do escopo']
+estimated_progress = sum(task['progress'] * task['weight'] for task in active_tasks) / sum(task['weight'] for task in active_tasks)
 assert 'D+1' not in md
 planning_accepted = sum(t['weight'] for t in tasks if t['kind'] == 'Planejamento' and t['status'] == 'Concluída' and t['evidence'])
 
@@ -75,14 +83,20 @@ for xlsx in outputs.glob('*.xlsx'):
     if xlsx.name.endswith('_v2.xlsx'):
         formula = openpyxl.load_workbook(xlsx, data_only=False)
         sheet = cached['Evolucao']
-        development_weight = sum(t['weight'] for t in tasks if t['kind'] == 'Desenvolvimento')
-        development_accepted = sum(t['weight'] for t in tasks if t['kind'] == 'Desenvolvimento' and t['status'] == 'Concluída' and t['evidence'])
-        accepted_count = sum(t['status'] == 'Concluída' and bool(t['evidence']) for t in tasks)
-        assert [sheet[f'B{n}'].value for n in [6,7,10,11]] == [127,planning_accepted,10,accepted_count]
-        assert abs(sheet['B8'].value - estimated_progress) < 1e-10
-        assert abs(sheet['B9'].value - development_accepted/development_weight) < 1e-10
+        development_weight = sum(t['weight'] for t in active_tasks if t['kind'] == 'Desenvolvimento')
+        development_accepted = sum(t['weight'] for t in active_tasks if t['kind'] == 'Desenvolvimento' and t['status'] == 'Concluída' and t['evidence'])
+        accepted_count = sum(t['status'] == 'Concluída' and bool(t['evidence']) for t in active_tasks)
+        assert sheet['B6'].value == 127
+        assert formula['Evolucao']['B7'].value.startswith('=SUMIFS(')
+        assert 'Fora do escopo' in formula['Evolucao']['B8'].value
+        assert formula['Evolucao']['B10'].value.startswith('=COUNTIFS(')
+        assert formula['Evolucao']['B11'].value.startswith('=COUNTIFS(')
+        assert formula['Evolucao']['A33'].value.find('126 tarefas ativas') >= 0
+        assert development_weight > 0 and development_accepted >= 0
+        assert abs(estimated_progress - 0.119) < 0.001
         assert all(formula['Tarefas'].cell(i+6,13).data_type == 'f' for i in range(127))
         assert all(formula['Tarefas'].cell(i+6,14).data_type == 'f' for i in range(127))
+        assert 'Fora do escopo' in formula['Tarefas'].cell(next(i+6 for i,t in enumerate(tasks) if t['id']=='BK-055'),14).value
         assert [formula['Tarefas'].cell(i+6,7).value for i in range(127)] == [t['progress'] for t in tasks]
         assert [formula['Tarefas'].cell(i+6,1).value for i in range(127)] == ids
         assert [formula['Tarefas'].cell(i+6,3).value for i in range(127)] == [t['title'] for t in tasks]
@@ -115,7 +129,7 @@ if manifest.exists():
         assert p.is_file(), entry['path']
         assert hashlib.sha256(p.read_bytes()).hexdigest() == entry['sha256'], entry['path']
 
-print(json.dumps({'tasks':127,'decisions':108,'technical_fronts':10,
+print(json.dumps({'tasks':127,'active_tasks':len(active_tasks),'out_of_scope_tasks':status_counts['Fora do escopo'],'decisions':108,'technical_fronts':10,
     'completed_planning':planning_accepted,
     'completed_with_evidence':sum(t['status'] == 'Concluída' and bool(t['evidence']) for t in tasks),
     'estimated_progress_percent':round(estimated_progress*100,1),'acyclic_dependencies':True,

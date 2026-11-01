@@ -4,6 +4,8 @@ Base funcional de 13/09/2026: fechamento funcional enviado pelo usuário incorpo
 
 Atualização de 19/10/2026: implementação e testes locais agora cobrem validação estrutural em fluxo de arquivos nas três pastas aprovadas do Drive, sem interpretar perdas/frete como valores financeiros. A planilha oficial foi regenerada. Nenhuma regra financeira ou tela foi alterada e nenhum arquivo real do Drive foi importado. A confirmação do teste PostgreSQL depende da CI após o envio.
 
+**Atualização de escopo — 31/10/2026:** T05 — Conciliação foi retirada como tela independente. BK-055 fica no catálogo para registrar a decisão, com situação “Fora do escopo”, e não entra na evolução geral; são 126 tarefas ativas. A média das estimativas atuais dessas 126 tarefas é 11,9% concluída (88,1% restante). As regras internas de correspondência permanecem.
+
 Adendo aprovado em 04/10/2026, registrado no `G0-DECISION-REGISTER.md`: o Majucau calculará sua própria DRE com regras contábeis aprovadas; a DRE pronta do Bling deixa de ser tratada como resultado final. Este adendo substitui os trechos conflitantes abaixo. Princípios para estoque, produção e CPV/CMV foram recebidos e organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`; o mapeamento por conta/operação, os critérios específicos da empresa e os dados de origem continuam pendentes de validação contábil.
 
 Foram revisadas 70 tarefas mantendo os IDs BK-000 a BK-126. As versões anteriores estão preservadas como histórico. Suas regras superadas não devem orientar a implementação.
@@ -22,7 +24,7 @@ As regras funcionais existentes permanecem fechadas. A decisão posterior aprovo
 
 **Registro histórico de 13/09/2026 — não representa o progresso atual:** naquele levantamento, havia 127 tarefas, 3 levantamentos concluídos com evidência, 2,4% por quantidade e 0% de desenvolvimento do produto. O andamento atual exige auditoria tarefa a tarefa; não apresentar estes números históricos como estado de hoje.
 
-Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. Peso inicial 1 mede quantidade. Evolução geral = soma(peso × conclusão) / soma(pesos). O denominador inclui tarefas condicionais ainda previstas; quando o escopo for efetivamente alterado, registrar a versão e revisar pesos/denominador. Não existe atualização automática pelo GitHub.
+Cada tarefa recebe 100% quando está Concluída e possui evidência de aceite. Peso inicial 1 mede quantidade. Evolução geral = soma(peso × conclusão) / soma dos pesos das tarefas ativas. Itens “Fora do escopo” ficam registrados para histórico, mas não entram no denominador; mudanças desse tipo exigem decisão registrada. Não existe atualização automática pelo GitHub.
 
 ### Auditoria histórica — 04/10/2026
 
@@ -1899,27 +1901,27 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Regras e verificações vinculadas:** F-19,F-20
 
-### BK-055 — Implementar T05 Conciliação
+### BK-055 — Retirar T05 Conciliação do produto
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Fora do escopo por decisão aprovada em 31/10/2026. **Evolução de entrega:** não aplicável; o item fica no catálogo apenas para rastrear a decisão. **Tipo:** Escopo.
 
-**Objetivo:** Dar visibilidade aos vínculos e exceções.
+**Objetivo:** Registrar e aplicar a decisão de não manter uma página independente de conciliação.
 
-**O que fazer:** Construir cartões, tabela, distribuição e detalhamento.
+**O que fazer:** Remover a tela e sua navegação, preservando os controles financeiros internos.
 
 **Como fazer:**
 
-1. Adicionar busca/filtros aprovados e paginação
-2. Exibir ID Bling, origem Nuvem, bruto, recebimento e situação
-3. Conectar pendentes, ambíguos, divergentes, chargebacks e regras
+1. Remover o tipo, a configuração e o item de navegação da tela T05.
+2. Não criar tela substituta nem redistribuir seus cards ou tabelas.
+3. Manter as regras internas de correspondência, prevenção de duplicidade e rastreabilidade.
 
-**Critério de aceite:** Contagens totalizam a mesma população; cada linha permite consultar evidência e revisão autorizada.
+**Critério de aceite:** Nenhuma navegação ou página T05 aparece no protótipo; as regras internas continuam protegendo os resultados das telas ativas.
 
-**Impacto:** Facilita resolver divergências sem procurar em vários sistemas.
+**Impacto:** Retira uma tela sem enfraquecer as validações financeiras nem alterar as demais telas aprovadas.
 
-**Dependências:** BK-054, BK-028
+**Dependências:** Nenhuma.
 
-**Fonte:** T05; T-RECON-*
+**Fonte:** Decisão aprovada em 31/10/2026; `docs/evidence/T05-RETIREMENT-2026-10-31.md`. A imagem T05 original permanece somente como histórico.
 
 ### BK-056 — Implementar regras e leitura de Contas a Receber
 
@@ -1966,7 +1968,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Impacto:** Reduz dúvidas sobre o que ainda será recebido.
 
-**Dependências:** BK-056, BK-055
+**Dependências:** BK-056
 
 **Fonte:** T03
 
@@ -3128,7 +3130,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Impacto:** Evita aprovar uma interface com botão de exportação sem implementação.
 
-**Dependências:** BK-012, BK-062, BK-057, BK-059, BK-055, BK-067, BK-069, BK-099, BK-101, BK-052
+**Dependências:** BK-012, BK-062, BK-057, BK-059, BK-067, BK-069, BK-099, BK-101, BK-052
 
 **Fonte:** T02–T07; T13–T15; L-22; Fechamento vigente 13/09/2026, §5.7
 
@@ -3226,7 +3228,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Impacto:** Evita entregar apenas uma aparência semelhante sem usabilidade.
 
-**Dependências:** BK-102, BK-103, BK-074, BK-075, BK-076, BK-086, BK-037, BK-035, BK-055, BK-057, BK-059, BK-069, BK-073, BK-099
+**Dependências:** BK-102, BK-103, BK-074, BK-075, BK-076, BK-086, BK-037, BK-035, BK-057, BK-059, BK-069, BK-073, BK-099
 
 **Fonte:** Todas as imagens e decisões UX; Fechamento vigente 13/09/2026, §5
 

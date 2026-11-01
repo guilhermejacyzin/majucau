@@ -289,6 +289,16 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - **Dependência de dados:** posição e movimentação de matérias-primas, produtos em processo e acabados; consumo e produção por produto; vendas/devoluções; mão de obra e custos fabris; notas de entrada e tributos; cadastro/depreciação do imobilizado; plano de contas e balancete. Se uma fonte não fornecer o dado necessário, o componente afetado permanece indisponível, sem estimativa ou substituição por caixa.
 - Base normativa consultada: [CPC 16 (R1) — Estoques](https://www.cpc.org.br/Arquivos/Documentos/243_CPC_16_R1_rev%2012.pdf), [CPC 27 — Ativo Imobilizado](https://www.cpc.org.br/Arquivos/Documentos/316_CPC_27_rev%2014.pdf) e [CFC — Tributos Recuperáveis](https://cfc.org.br/tecnica/perguntas-frequentes/4066-2/). A aplicação tributária depende dos fatos concretos da empresa e deve ser validada com a contabilidade.
 
+## Decisão posterior aprovada — retirada da tela independente T05
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-31 (America/Sao_Paulo).
+- A tela independente **T05 — Conciliação** foi retirada do protótipo e da versão 1 por não haver necessidade de uma página separada.
+- Remover a página, sua configuração e seu item de navegação. Não criar página substituta nem mover seus cards/tabelas para as demais telas.
+- Permanecem as regras internas de correspondência por evidência, prevenção de duplicidade, estados pendentes/ambíguos/divergentes e vínculo à origem. Elas continuam necessárias para a confiabilidade dos valores e resultados das telas ativas; a retirada de T05 não autoriza alterar essas regras ou os cards aprovados de T01–T04 e T06–T17.
+- T01 continua agregando apenas resultados de telas de origem ativas, sem consulta paralela direta ao Bling. Se faltar uma fonte, o resultado permanece pendente/indisponível e a responsável é sinalizada.
+- A imagem original T5 permanece arquivada apenas como histórico da referência. O backlog BK-055 passa a registrar a retirada de escopo, e não a construção da tela.
+- Evidência de implementação e documentação: `docs/evidence/T05-RETIREMENT-2026-10-31.md`.
+
 ## Decisão posterior aprovada — dois cards informativos de CAPEX na T6
 
 - **Aprovada por:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo).

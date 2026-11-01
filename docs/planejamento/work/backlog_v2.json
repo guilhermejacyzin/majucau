@@ -1733,34 +1733,28 @@
     "progress": 0
   },
   {
-    "key": "reconciliationscreen",
+    "key": "retiredt05screen",
     "id": "BK-055",
     "phase": "05 Tesouraria e conciliação",
-    "title": "Implementar T05 Conciliação",
-    "goal": "Dar visibilidade aos vínculos e exceções.",
-    "action": "Construir cartões, tabela, distribuição e detalhamento.",
+    "title": "Retirar T05 Conciliação do produto",
+    "goal": "Registrar e aplicar a decisão de não manter uma página independente de conciliação.",
+    "action": "Remover a tela e sua navegação, preservando os controles financeiros internos.",
     "steps": [
-      "Adicionar busca/filtros aprovados e paginação",
-      "Exibir ID Bling, origem Nuvem, bruto, recebimento e situação",
-      "Conectar pendentes, ambíguos, divergentes, chargebacks e regras"
+      "Remover o tipo, a configuração e o item de navegação da tela T05",
+      "Não criar tela substituta nem redistribuir cards ou tabelas",
+      "Manter regras internas de correspondência, prevenção de duplicidade e rastreabilidade"
     ],
-    "accept": "Contagens totalizam a mesma população; cada linha permite consultar evidência e revisão autorizada.",
-    "impact": "Facilita resolver divergências sem procurar em vários sistemas.",
-    "deps": [
-      "manualmatch",
-      "reactfoundation"
-    ],
-    "refs": "T05; T-RECON-*",
+    "accept": "Nenhuma navegação ou página T05 aparece no protótipo; as regras internas continuam protegendo os resultados das telas ativas.",
+    "impact": "Retira uma tela sem enfraquecer as validações financeiras nem alterar telas aprovadas.",
+    "deps": [],
+    "refs": "Decisão aprovada em 2026-10-31; docs/evidence/T05-RETIREMENT-2026-10-31.md; T05 original somente como referência histórica",
     "questions": "",
     "owner": "Engenharia",
-    "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "kind": "Escopo",
+    "status": "Fora do escopo",
+    "evidence": "Retirada aprovada por Gisele em 2026-10-31 e aplicada no protótipo; regras internas de conciliação preservadas. Ver docs/evidence/T05-RETIREMENT-2026-10-31.md.",
     "weight": 1,
-    "dependencies": [
-      "BK-054",
-      "BK-028"
-    ],
+    "dependencies": [],
     "progress": 0
   },
   {
@@ -1812,8 +1806,7 @@
     "accept": "Lista, cartões e gráfico usam a mesma posição; usuário chega à origem de qualquer valor.",
     "impact": "Reduz dúvidas sobre o que ainda será recebido.",
     "deps": [
-      "receivables",
-      "reconciliationscreen"
+      "receivables"
     ],
     "refs": "T03",
     "questions": "",
@@ -1823,8 +1816,7 @@
     "evidence": "",
     "weight": 1,
     "dependencies": [
-      "BK-056",
-      "BK-055"
+      "BK-056"
     ],
     "progress": 0
   },
@@ -3414,7 +3406,6 @@
       "cashscreen",
       "receivablesscreen",
       "payablesscreen",
-      "reconciliationscreen",
       "drescreen",
       "trialbalancescreen",
       "pendingscreen",
@@ -3433,7 +3424,6 @@
       "BK-062",
       "BK-057",
       "BK-059",
-      "BK-055",
       "BK-067",
       "BK-069",
       "BK-099",
@@ -3576,7 +3566,6 @@
       "purchasesscreen",
       "parametersscreen",
       "usersscreen",
-      "reconciliationscreen",
       "receivablesscreen",
       "payablesscreen",
       "trialbalancescreen",
@@ -3599,7 +3588,6 @@
       "BK-086",
       "BK-037",
       "BK-035",
-      "BK-055",
       "BK-057",
       "BK-059",
       "BK-069",

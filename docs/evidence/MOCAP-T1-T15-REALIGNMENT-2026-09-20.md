@@ -1,5 +1,7 @@
 # Evidência — realinhamento ao mocap T1–T15/C11
 
+> Registro histórico. Em 2026-10-31, Gisele retirou a tela independente T05 — Conciliação do produto. A imagem T5 abaixo permanece arquivada apenas como referência histórica; não representa uma tela ativa nem deve ser implementada. As regras internas de conciliação continuam aplicáveis aos dados e indicadores das telas existentes.
+
 ## Fonte visual obrigatória
 
 As referências entregues pelo usuário foram incorporadas em `docs/source` e são a fonte de verdade visual deste incremento:
@@ -13,7 +15,7 @@ originais.
 - `T2-mockup-2026-09-20.png` — Fluxo de Caixa;
 - `T3-mockup-2026-09-20.png` — Contas a Receber;
 - `T4-mockup-2026-09-20.png` — Contas a Pagar;
-- `T5-mockup-2026-09-20.png` — Conciliação;
+- `T5-mockup-2026-09-20.png` — Conciliação (referência histórica; tela retirada em 2026-10-31);
 - `T6-mockup-2026-09-20.png` — DRE;
 - `T7-mockup-2026-09-20.png` — Balancete;
 - `T8-mockup-2026-09-20.png` — Calculadora de Aplicação;
@@ -46,7 +48,7 @@ O handoff técnico-funcional versionado em `docs/source/Handoff-Tecnico-Funciona
 - cards inferiores e bloco `ALERTAS IMPORTANTES`;
 - responsividade para a janela Windows, preservando a composição desktop do mocap;
 - tooltip simples em todos os botões, campos e seletores funcionais;
-- navegação para as quinze telas sem abandonar o contrato atual da tela de integrações.
+- navegação para as telas ativas aprovadas, sem abandonar o contrato atual da tela de integrações; T05 foi retirada em 2026-10-31.
 
 ## Mapeamento funcional
 
@@ -56,7 +58,7 @@ O handoff técnico-funcional versionado em `docs/source/Handoff-Tecnico-Funciona
 | T2 | `cashflow` | shell de fluxo de caixa |
 | T3 | `receivables` | tabela e distribuição de recebíveis |
 | T4 | `payables` | tabela e distribuição de obrigações |
-| T5 | `conciliation` | matches e status de conciliação |
+| T5 | — | retirada do produto em 2026-10-31; imagem mantida somente como histórico |
 | T6 | `dre` | DRE consolidada |
 | T7 | `trial-balance` | balancete |
 | T8 | `investment-calculator` | cálculo de capacidade |
@@ -79,7 +81,7 @@ O handoff técnico-funcional versionado em `docs/source/Handoff-Tecnico-Funciona
 
 ## Limite honesto deste incremento
 
-O realinhamento visual cobre o shell e a composição de todas as telas de referência. A ligação dos números e tabelas aos dados reais de cada módulo, a validação em máquina Windows limpa e o instalador NSIS continuam no backlog de produção. Nenhuma dessas pendências autoriza inserir números fictícios na tela.
+O realinhamento visual cobre o shell e a composição das telas ativas de referência, exceto T05, retirada em 2026-10-31. A ligação dos números e tabelas aos dados reais de cada módulo, a validação em máquina Windows limpa e o instalador NSIS continuam no backlog de produção. Nenhuma dessas pendências autoriza inserir números fictícios na tela.
 
 ### Verificação automatizada das correções aprovadas — 2026-10-10
 

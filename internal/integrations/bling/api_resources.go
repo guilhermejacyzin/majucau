@@ -54,7 +54,11 @@ func (c *BlingAPIClient) GetFinancialCategory(ctx context.Context, id int64) (js
 	if id <= 0 {
 		return nil, fmt.Errorf("%w: financial category ID must be positive", ErrBlingAPIConfiguration)
 	}
-	return c.getDataRecord(ctx, "categorias/receitas-despesas/"+strconv.FormatInt(id, 10))
+	payload, err := c.getDataRecord(ctx, "categorias/receitas-despesas/"+strconv.FormatInt(id, 10))
+	if errors.Is(err, ErrBlingAPIScopeInsufficient) {
+		return nil, fmt.Errorf("%w: %w", ErrBlingFinancialCategoryScopeInsufficient, err)
+	}
+	return payload, err
 }
 
 const maxFinancialCategoryHierarchyDepth = 32

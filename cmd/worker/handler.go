@@ -245,6 +245,8 @@ func blingSyncErrorCode(err error) string {
 		return "BLING_CONNECTION_NOT_CONFIGURED"
 	case errors.Is(err, bling.ErrBlingAPISyncPageLimit):
 		return "BLING_SYNC_PAGE_LIMIT"
+	case errors.Is(err, bling.ErrBlingFinancialCategoryScopeInsufficient):
+		return "BLING_CATEGORY_SCOPE_INSUFFICIENT"
 	case errors.Is(err, bling.ErrBlingAPIScopeInsufficient):
 		return "BLING_API_SCOPE_INSUFFICIENT"
 	case errors.Is(err, bling.ErrBlingAPIUnauthorized):
@@ -276,6 +278,8 @@ func blingSyncErrorMessage(err error) string {
 		return "Configure e autorize o Bling antes de sincronizar."
 	case "BLING_SYNC_PAGE_LIMIT":
 		return "A sincronização atingiu o limite de segurança de páginas; reduza a janela."
+	case "BLING_CATEGORY_SCOPE_INSUFFICIENT":
+		return "O Bling recusou a consulta de categorias. No cadastro do aplicativo, permita somente leitura em ‘Categorias — Receitas e Despesas’ e autorize a conexão novamente."
 	case "BLING_API_SCOPE_INSUFFICIENT":
 		return "O aplicativo Bling não tem permissão para consultar este recurso. Ajuste a permissão e autorize a conexão novamente."
 	case "BLING_API_UNAUTHORIZED":

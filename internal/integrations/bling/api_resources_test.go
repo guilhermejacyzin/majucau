@@ -59,6 +59,29 @@ func TestGetPayableAndBorderoReadBoundedRawDetails(t *testing.T) {
 	}
 }
 
+func TestGetFinancialCategoryExplainsInsufficientReadScope(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/Api/v3/categorias/receitas-despesas/9" {
+			t.Fatalf("unexpected category request: %s %s", r.Method, r.URL.Path)
+		}
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":{"message":"private provider response"}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.GetFinancialCategory(context.Background(), 9)
+	if !errors.Is(err, ErrBlingFinancialCategoryScopeInsufficient) || !errors.Is(err, ErrBlingAPIScopeInsufficient) {
+		t.Fatalf("category error = %v, want category-specific and generic scope errors", err)
+	}
+	if strings.Contains(err.Error(), "private provider response") {
+		t.Fatal("category scope error exposed the provider response body")
+	}
+}
+
 func TestGetPayableRejectsInvalidIDBeforeNetworkCall(t *testing.T) {
 	doer := &errorHTTPDoer{err: errors.New("network should not be called")}
 	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")

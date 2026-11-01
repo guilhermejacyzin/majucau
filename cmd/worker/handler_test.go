@@ -331,6 +331,7 @@ func TestBlingSyncErrorClassificationIsSanitized(t *testing.T) {
 		code string
 	}{
 		{err: bling.ErrBlingCredentialMissing, code: "BLING_SECRET_REQUIRED"},
+		{err: errors.Join(bling.ErrBlingFinancialCategoryScopeInsufficient, bling.ErrBlingAPIScopeInsufficient), code: "BLING_CATEGORY_SCOPE_INSUFFICIENT"},
 		{err: bling.ErrBlingAPIScopeInsufficient, code: "BLING_API_SCOPE_INSUFFICIENT"},
 		{err: bling.ErrBlingAPIUnauthorized, code: "BLING_API_UNAUTHORIZED"},
 		{err: bling.ErrBlingAPIRateLimited, code: "BLING_API_RATE_LIMITED"},
@@ -341,6 +342,11 @@ func TestBlingSyncErrorClassificationIsSanitized(t *testing.T) {
 	}
 	if message := blingSyncErrorMessage(bling.ErrBlingCredentialMissing); message != "Informe e salve o Client Secret do aplicativo Bling antes de sincronizar." {
 		t.Fatalf("missing secret message = %q", message)
+	}
+	categoryScopeError := errors.Join(bling.ErrBlingFinancialCategoryScopeInsufficient, bling.ErrBlingAPIScopeInsufficient)
+	categoryMessage := blingSyncErrorMessage(categoryScopeError)
+	if !strings.Contains(categoryMessage, "Categorias — Receitas e Despesas") || !strings.Contains(categoryMessage, "somente leitura") {
+		t.Fatalf("category scope message = %q", categoryMessage)
 	}
 	for _, test := range tests {
 		t.Run(test.code, func(t *testing.T) {

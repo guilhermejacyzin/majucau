@@ -11,22 +11,41 @@ func TestParseCashMovementAPIRecordKeepsDirectionSeparateFromMagnitude(t *testin
 		name      string
 		payload   string
 		direction string
+		status    string
 		wantError string
 	}{
 		{
-			name:      "debit is an outflow",
-			payload:   `{"id":1,"debCred":"D","situacao":"R","valor":125.50,"data":"2026-11-02","contaFinanceira":{"id":8,"descricao":"Conta teste"}}`,
+			name:      "debit negative value becomes outflow magnitude",
+			payload:   `{"id":1,"debCred":"D","situacao":"R","valor":-125.50,"data":"2026-11-02","contaFinanceira":{"id":8,"descricao":"Conta teste"}}`,
+			direction: "OUTFLOW",
+			status:    "R",
+		},
+		{
+			name:      "credit positive value becomes inflow magnitude",
+			payload:   `{"id":2,"debCred":"C","situacao":"R","valor":75.25,"data":"2026-11-02","contaFinanceira":{"id":8,"descricao":"Conta teste"}}`,
+			direction: "INFLOW",
+			status:    "R",
+		},
+		{
+			name:      "optional empty status is preserved without classification",
+			payload:   `{"id":6,"debCred":"D","situacao":"","valor":-10,"data":"2026-11-02"}`,
 			direction: "OUTFLOW",
 		},
 		{
-			name:      "credit is an inflow",
-			payload:   `{"id":2,"debCred":"C","situacao":"R","valor":75.25,"data":"2026-11-02","contaFinanceira":{"id":8,"descricao":"Conta teste"}}`,
-			direction: "INFLOW",
+			name:      "new provider status remains source metadata",
+			payload:   `{"id":7,"debCred":"D","situacao":"Pendente","valor":-10,"data":"2026-11-02"}`,
+			direction: "OUTFLOW",
+			status:    "Pendente",
 		},
 		{
-			name:      "negative magnitude rejected without changing sign semantics",
-			payload:   `{"id":3,"debCred":"D","situacao":"R","valor":-10,"data":"2026-11-02","contaFinanceira":{"id":8,"descricao":"Conta teste"}}`,
-			wantError: "BLING_CASH_MOVEMENT_AMOUNT_INVALID",
+			name:      "debit positive value is inconsistent",
+			payload:   `{"id":3,"debCred":"D","situacao":"R","valor":10,"data":"2026-11-02"}`,
+			wantError: "BLING_CASH_MOVEMENT_DIRECTION_AMOUNT_MISMATCH",
+		},
+		{
+			name:      "credit negative value is inconsistent",
+			payload:   `{"id":8,"debCred":"C","situacao":"R","valor":-10,"data":"2026-11-02"}`,
+			wantError: "BLING_CASH_MOVEMENT_DIRECTION_AMOUNT_MISMATCH",
 		},
 	}
 	for _, test := range tests {
@@ -34,7 +53,7 @@ func TestParseCashMovementAPIRecordKeepsDirectionSeparateFromMagnitude(t *testin
 			got, err := parseCashMovementAPIRecord(json.RawMessage(test.payload))
 			if test.wantError != "" {
 				if err == nil {
-					t.Fatal("expected invalid movement amount")
+					t.Fatal("expected movement field error")
 				}
 				var fieldErr *cashMovementSchemaFieldError
 				if !errors.As(err, &fieldErr) || fieldErr.code != test.wantError {
@@ -45,15 +64,18 @@ func TestParseCashMovementAPIRecordKeepsDirectionSeparateFromMagnitude(t *testin
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got.Direction != test.direction || !got.Amount.Valid || got.Amount.NaN || got.Amount.Int == nil {
+			if got.Direction != test.direction || !got.Amount.Valid || got.Amount.NaN || got.Amount.Int == nil || got.Amount.Int.Sign() <= 0 {
 				t.Fatalf("normalized movement = %+v, want direction %s and exact positive magnitude", got, test.direction)
+			}
+			if got.SourceStatus != test.status {
+				t.Fatalf("source status = %q, want source value %q", got.SourceStatus, test.status)
 			}
 		})
 	}
 }
 
 func TestParseCashMovementAPIRecordWithoutAccountCanBeIdentifiedAsPartial(t *testing.T) {
-	got, err := parseCashMovementAPIRecord(json.RawMessage(`{"id":4,"debCred":"D","situacao":"R","valor":10,"data":"2026-11-02"}`))
+	got, err := parseCashMovementAPIRecord(json.RawMessage(`{"id":4,"debCred":"D","situacao":"R","valor":-10,"data":"2026-11-02"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +85,7 @@ func TestParseCashMovementAPIRecordWithoutAccountCanBeIdentifiedAsPartial(t *tes
 }
 
 func TestParseCashMovementAPIRecordPreservesAccountIDWithoutDescription(t *testing.T) {
-	got, err := parseCashMovementAPIRecord(json.RawMessage(`{"id":5,"debCred":"D","situacao":"R","valor":10,"data":"2026-11-02","contaFinanceira":{"id":9}}`))
+	got, err := parseCashMovementAPIRecord(json.RawMessage(`{"id":5,"debCred":"D","situacao":"R","valor":-10,"data":"2026-11-02","contaFinanceira":{"id":9}}`))
 	if err != nil {
 		t.Fatal(err)
 	}

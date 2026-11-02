@@ -67,25 +67,29 @@ homologação funcional dos campos. A homologação BK-040 ainda precisa registr
 endpoint, campo, significado, ausência, limites e uma amostra sanitizada da
 conta autorizada antes da normalização contábil.
 
-A integração não encerra em uma página curta. Sem metadados de paginação, ela
-continua após toda página não vazia. Uma resposta vazia sem metadados explícitos
-não confirma o fim: a sincronização falha com `BLING_API_PAGINATION_UNKNOWN`,
-mantendo o retrato publicado e o cursor anteriores. O contrato público não
-garante o comportamento além da última página; homologar esse marcador na conta
-real ou obter documentação oficial continua obrigatório antes de publicar uma
-carga como completa. A evidência e os limites desta proteção estão em
-`docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md`.
+O adapter aplica o contrato oficial geral do Bling para listas GET: `pagina`,
+`limite` e 100 registros por página por padrão. Na leitura real de `GET /caixas`
+em 02/11/2026, páginas cheias corresponderam ao limite solicitado e a última
+página com dados veio menor. A correção de paginação e normalização foi aplicada; a execução real terminou `SUCCESS`/`NORMALIZED` e publicou movimentos no banco local. A API retornou situação vazia, preservada sem interpretação financeira; sua inclusão nos totais realizados aguarda confirmação da responsável. Se ocorrer erro futuro, a publicação continua atômica: o retrato anterior e o cursor permanecem intactos. A evidência e os limites desta proteção estão em
+`docs/evidence/BLING-PAGINATION-CONTRACT-2026-10-11.md` e
+`docs/evidence/BLING-CASH-PAGINATION-2026-11-02.md`.
 
-Os schemas públicos de categorias e de caixa descrevem `data[]`, sem informar
-como identificar a última página; o cliente não pode declarar a lista completa
-sem esse marcador. O adaptador agora oferece `ListCashMovements` e
+Os schemas públicos de categorias e de caixa descrevem `data[]`. Para `GET
+/caixas`, a regra geral oficial de paginação somada à resposta observada na conta
+define o limite efetivo de 100 registros. O adaptador oferece `ListCashMovements` e
 `GetCashMovement`, que aplicam limite local de registros, JWT, cancelamento e
 retry seguro, e preservam a resposta como RAW. Em `GET /caixas`, a consulta
-envia `limite=100` conforme a orientação geral de paginação do Bling, mas não
-presume que esta rota aplicou o parâmetro. Uma página curta/vazia só encerra a
-lista quando a resposta confirma o limite ou fornece metadados suficientes;
-caso contrário, a carga é rejeitada como incompleta e o retrato anterior é
-mantido. A lista ainda não foi homologada na conta real. Ela não envia filtro
+envia `limite=100`; uma página curta encerra a lista mesmo sem metadados de
+paginação porque o limite foi documentado e observado nas páginas da conta.
+Uma falha antes de uma página curta reconhecida rejeita a carga como incompleta
+e mantém o retrato anterior. A lista foi confirmada em execução real `SUCCESS`/`NORMALIZED` em 02/11/2026; a semântica de situação vazia continua pendente para os totais financeiros. O campo `situacao` da movimentação é uma string
+opcional; valores vazios ou novos são preservados como metadado sem classificação
+financeira implícita. A tela só deve contá-los conforme a regra financeira
+aprovada. O campo `valor` chega assinado na conta: `debCred=D` e valor negativo
+formam uma saída, enquanto `debCred=C` e valor positivo formam uma entrada. O
+adapter confere essa combinação, grava a magnitude exata e conserva a direção;
+a consulta financeira apresenta saídas com sinal negativo. Uma combinação
+divergente rejeita o lote. A lista não envia filtro
 por ID de categoria até que sua codificação exata seja homologada. Os
 IDs/hierarquia de CAPEX e a correspondência dos movimentos com os relatórios
 da Majucau precisam ser confirmados antes de exibir valores. Consulte

@@ -6,9 +6,11 @@
 
 ## Resposta curta
 
-O Bling está conectado e já respondeu à API. O motivo de os valores ainda não aparecerem é que “recebido da API” e “pronto para a tela” são etapas diferentes. A consulta recente trouxe 14.896 contas a receber, mas essas linhas ficaram guardadas como dados brutos (`RAW_ONLY`). A tabela financeira que o painel consulta continua vazia para esse módulo.
+Na verificação ao vivo das 20:06, o Bling continua conectado. `/caixas` terminou `SUCCESS`/`NORMALIZED`; Contas a Receber terminou `SUCCESS`/`RAW_ONLY` com 14.901 registros lidos; Contas a Pagar ainda não tem lote normalizado publicado. O último lote de pagar publicado falhou por rejeitar um saldo negativo, mas o normalizador atual já aceita esse sinal e os testes focados passaram. A tentativa atual permanece dentro de uma transação sem publicação visível; só um lote concluído provará a correção com dados reais.
 
-A rotina de hoje começou pelo Bling às 19:29. Contas a Receber terminou às 19:33 com 14.896 linhas brutas. Contas a Pagar está sendo normalizada em uma transação; o banco ainda não mostrou a publicação do lote. A etapa de movimentos do fluxo de caixa vem depois de Contas a Pagar, então ainda não há resultado confirmado de `/caixas` nesta execução. No momento da conferência, as tabelas normalizadas de receber, pagar e movimentos tinham zero linhas.
+A T01 foi conferida no protótipo e continua exibindo `—` e “Sem dados confirmados”. Isso ocorre porque receber ainda está em dados brutos, pagar ainda não publicou retrato normalizado e os movimentos de caixa têm `situacao` vazia. Essa situação não pode ser interpretada como realizado sem aprovação; portanto esses movimentos não entram nos totais realizados. Não existe saldo atual oficial por banco confirmado, e a leitura do Drive falhou porque as pastas ainda não estão configuradas no worker.
+
+O primeiro diagnóstico, feito às 19:29 antes da execução completar, está preservado abaixo como histórico. Ele dizia que `/caixas` vinha depois de Contas a Pagar; essa ordem foi alterada para publicar primeiro a fonte de caixa e foi confirmada no lote real acima.
 
 ## Caminho esperado
 
@@ -23,9 +25,9 @@ A rotina de hoje começou pelo Bling às 19:29. Contas a Receber terminou às 19
 | Fonte/etapa | Evidência observada | Efeito na tela |
 |---|---|---|
 | Autorização Bling | Integração `CONNECTED`; último teste de conexão `SUCCESS`. | A autenticação está funcionando; isso, sozinho, não confirma carga financeira. |
-| Contas a Receber | Lote terminou `SUCCESS`, 14.896 linhas lidas, estágio `RAW_ONLY`. | Não alimenta o total nem as linhas da tela porque ainda não foi convertido para a tabela `receivables`. |
-| Contas a Pagar | Tentativas anteriores falharam ao rejeitar `saldo` negativo. A regra do parser e a migration 000016 agora aceitam o sinal negativo aprovado. A nova carga ainda estava em andamento durante a conferência. | Nenhum valor foi confirmado na tabela `payables` naquele instante. |
-| Movimentos de caixa | O código já consulta `/caixas`, mantém direção separada do valor e grava saídas como saídas. A rotina diária executa receber, pagar e depois caixa. | A nova etapa `/caixas` ainda não tinha um lote finalizado nesta execução. |
+| Contas a Receber | Lote mais recente terminou `SUCCESS`, 14.901 linhas lidas, estágio `RAW_ONLY`. | Não alimenta o total nem as linhas da tela porque ainda não foi convertido para a tabela `receivables`. |
+| Contas a Pagar | O último lote publicado falhou com `BLING_PAYABLE_OPEN_BALANCE_NEGATIVE`. O parser atual converte saldo em aberto para saída negativa e os testes passaram. A tentativa posterior ainda não publicou lote e mantém uma transação aberta. | Sem lote novo confirmado na tabela `payables`; a tela permanece sem total atual. |
+| Movimentos de caixa | `/caixas` terminou `SUCCESS`/`NORMALIZED`; a paginação e o sinal foram confirmados tecnicamente. `situacao` veio vazia e foi preservada sem interpretação. | Os movimentos não entram no realizado até a responsável confirmar se os itens dessa lista podem ser considerados concluídos. |
 | Google Drive | O worker registrou `GOOGLE_DRIVE_FOLDERS_NOT_CONFIGURED`. | Os arquivos externos não podem ser lidos até a configuração das três pastas autorizadas; o sistema deixa a fonte pendente. |
 | Saldo por banco | A tabela `bling_cash_movements` guarda movimentos com data e direção, não um saldo atual validado de cada conta. | Não é seguro somar movimentos e chamar o resultado de saldo do Itaú ou Mercado Pago. |
 
@@ -46,18 +48,19 @@ Em Contas a Pagar, a API lista 10.198 títulos. O registro de lista observado co
 
 ## Próxima ordem de trabalho
 
-1. Deixar a carga atual terminar e conferir os lotes de pagar e `/caixas`; comparar somente os totais agregados com o Bling, sem expor linhas pessoais nos logs.
-2. Implementar e validar a transformação de Contas a Receber. Registros sem classificação B2B/B2C confirmada devem ficar como não classificados/pendentes e não entrar silenciosamente no total confirmado.
-3. Reduzir o custo da carga de Contas a Pagar sem pular títulos, sem alterar sinais nem enfraquecer idempotência, transações, limites ou o retry aprovado. Primeiro é preciso medir quanto tempo a leitura atual realmente leva.
-4. Ligar os dados confirmados às telas de origem e então verificar T01 usando o mesmo retrato compartilhado. Preservar desenho, textos e indicadores aprovados.
-5. Tratar saldo por banco como fonte distinta. Configurar as pastas Drive antes de contar os arquivos externos. Depois reconciliar a DRE e CAPEX com as regras e documentos aprovados.
+1. Aguardar a nova leitura de Contas a Pagar terminar e conferir se o sinal negativo foi aceito; comparar somente totais agregados com o Bling, sem expor linhas pessoais nos logs.
+2. Aplicar a decisão da responsável para movimentos `/caixas` com situação vazia; manter pendente até a resposta, sem adivinhar se foram concluídos.
+3. Implementar e validar a transformação de Contas a Receber. Registros sem classificação B2B/B2C confirmada devem ficar como não classificados/pendentes e não entrar silenciosamente no total confirmado.
+4. Medir e, se necessário, reduzir o tempo de Contas a Pagar sem pular títulos, sem alterar sinais nem enfraquecer idempotência, transações, limites ou o retry aprovado.
+5. Ligar os dados confirmados às telas de origem e então verificar T01 usando o mesmo retrato compartilhado. Preservar desenho, textos e indicadores aprovados.
+6. Tratar saldo por banco como fonte distinta. Configurar as pastas Drive antes de contar os arquivos externos. Depois reconciliar a DRE e CAPEX com as regras e documentos aprovados.
 
 ## Estado da execução local
 
-- Migrations 000015 e 000016 aplicadas ao PostgreSQL isolado do protótipo.
+- Migrations 000015, 000016 e 000017 aplicadas ao PostgreSQL isolado do protótipo.
 - Permissões do worker reaplicadas como administrador de provisionamento e verificadas: `runtime database privileges: PASS`.
 - Worker recompilado e reiniciado no protótipo local; integração Bling continua `CONNECTED`.
-- A tentativa de sincronização diária continua em andamento. O lote bruto de receber chegou; pagar e caixa ainda não foram confirmados como normalizados.
+- A leitura de `/caixas` foi publicada normalizada e receber foi recebida em RAW. A tentativa de Contas a Pagar está em transação sem lote publicado. Na observação das 20:04, o banco mostrava uma transação aberta há 376 segundos, aguardando resposta do cliente; o worker continuava ativo. Não é possível afirmar ainda que a importação de pagar terminou.
 - Nenhum valor de exemplo foi inserido para mascarar a falta de dados.
 
 ## Progresso e prazo

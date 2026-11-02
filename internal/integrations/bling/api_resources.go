@@ -208,8 +208,10 @@ func parseCashMovementDate(value string) (time.Time, bool) {
 }
 
 // ListCashMovements reads one bounded page from GET /caixas and preserves
-// each item as RAW JSON. It requests the general-guide page size, but only
-// trusts pagination completion when the response confirms the applied limit.
+// each item as RAW JSON. The official Bling pagination guide defines pagina
+// and limite for GET lists (100 by default); a live read confirmed that this
+// endpoint applies the requested 100-record page size, so short pages are
+// terminal even when /caixas omits pagination metadata.
 func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovementsFilter) (BlingAPIResourcePage, error) {
 	if c == nil || c.baseURL == nil || c.httpClient == nil {
 		return BlingReceivablesPage{}, ErrBlingAPIConfiguration
@@ -237,11 +239,7 @@ func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovem
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 	req.Header.Set("enable-jwt", "1")
-	// The general Bling guide documents pagina/limite for list resources, but
-	// the endpoint-specific /caixas contract has not yet been confirmed against
-	// this account. Request the bounded page size, but do not infer that Bling
-	// applied it unless the response confirms pagination metadata.
-	return c.doFinancialResourceRequestWithLimit(req, ReceivablesFilter{Page: filter.Page, Limit: filter.MaxRecords}, false)
+	return c.doFinancialResourceRequestWithLimit(req, ReceivablesFilter{Page: filter.Page, Limit: filter.MaxRecords}, true)
 }
 
 func (c *BlingAPIClient) getDataRecord(ctx context.Context, resource string) (json.RawMessage, error) {

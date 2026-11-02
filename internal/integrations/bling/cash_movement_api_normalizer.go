@@ -19,6 +19,7 @@ const (
 	maxCashMovementSourceIDBytes  = 64
 	maxCashMovementAccountName    = 512
 	maxCashMovementOriginType     = 128
+	maxCashMovementStatusBytes    = 128
 )
 
 type cashMovementSchemaFieldError struct{ code string }
@@ -128,7 +129,7 @@ func parseCashMovementAPIRecord(payload json.RawMessage) (normalizedCashMovement
 	default:
 		return normalizedCashMovement{}, cashMovementFieldError("BLING_CASH_MOVEMENT_DIRECTION_INVALID")
 	}
-	if !validCashMovementStatus(record.Status) {
+	if !validCashMovementSourceStatus(record.Status) {
 		return normalizedCashMovement{}, cashMovementFieldError("BLING_CASH_MOVEMENT_STATUS_INVALID")
 	}
 	amountText, ok := decodeCashMovementDecimal(record.Amount)
@@ -136,7 +137,14 @@ func parseCashMovementAPIRecord(payload json.RawMessage) (normalizedCashMovement
 		return normalizedCashMovement{}, cashMovementFieldError("BLING_CASH_MOVEMENT_AMOUNT_INVALID")
 	}
 	amount, err := domain.ParseMoney(amountText)
-	if err != nil || amount.IsNegative() {
+	if err != nil {
+		return normalizedCashMovement{}, cashMovementFieldError("BLING_CASH_MOVEMENT_AMOUNT_INVALID")
+	}
+	if (direction == "OUTFLOW" && amount.IsPositive()) || (direction == "INFLOW" && amount.IsNegative()) {
+		return normalizedCashMovement{}, cashMovementFieldError("BLING_CASH_MOVEMENT_DIRECTION_AMOUNT_MISMATCH")
+	}
+	amountMagnitude, err := amount.AbsExact()
+	if err != nil {
 		return normalizedCashMovement{}, cashMovementFieldError("BLING_CASH_MOVEMENT_AMOUNT_INVALID")
 	}
 	date, err := parseCashMovementAPIDate(record.MovementDate)
@@ -145,7 +153,7 @@ func parseCashMovementAPIRecord(payload json.RawMessage) (normalizedCashMovement
 	}
 	accountID, accountName := parseCashMovementAccount(record.Account)
 	originType := optionalCashMovementOriginType(record.Origin)
-	numericAmount, err := numeric(amount)
+	numericAmount, err := numeric(amountMagnitude)
 	if err != nil {
 		return normalizedCashMovement{}, cashMovementFieldError("BLING_CASH_MOVEMENT_AMOUNT_INVALID")
 	}
@@ -207,13 +215,11 @@ func parseCashMovementAPIDate(value string) (time.Time, error) {
 	return time.Time{}, errors.New("invalid Bling cash movement date")
 }
 
-func validCashMovementStatus(value string) bool {
-	switch value {
-	case "R", "E", "H", "N", "P", "C":
-		return true
-	default:
-		return false
-	}
+func validCashMovementSourceStatus(value string) bool {
+	// Bling's public schema marks situacao as an optional string and gives R
+	// only as an example. Preserve a missing/empty or new value without assigning
+	// financial meaning to it; dashboard queries decide which statuses count.
+	return len(value) <= maxCashMovementStatusBytes
 }
 
 func parseCashMovementAccount(account *cashMovementAPIAccount) (*string, *string) {

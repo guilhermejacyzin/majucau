@@ -401,8 +401,8 @@ func TestListCashMovementsContinuesConservativelyWhenResponseOmitsPageSize(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !page.HasNextKnown || !page.HasNext || page.Limit != 0 {
-		t.Fatalf("cash movement response without applied page-size metadata should continue conservatively: %+v", page)
+	if !page.HasNextKnown || !page.HasNext || page.Limit != 1 {
+		t.Fatalf("cash movement response should use the requested documented page size and continue: %+v", page)
 	}
 }
 
@@ -424,6 +424,27 @@ func TestListCashMovementsUsesResponseLimitToConfirmShortPageEnd(t *testing.T) {
 	}
 	if page.Limit != 2 || !page.HasNextKnown || page.HasNext {
 		t.Fatalf("short cash movement page = %+v, want terminal page confirmed by response metadata", page)
+	}
+}
+
+func TestListCashMovementsUsesDocumentedRequestedLimitWhenMetadataIsOmitted(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("limite") != "2" || r.URL.Query().Get("pagina") != "3" {
+			t.Fatalf("query = %s, want pagina=3&limite=2", r.URL.RawQuery)
+		}
+		_, _ = w.Write([]byte(`{"data":[{"id":789}]}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := client.ListCashMovements(context.Background(), CashMovementsFilter{Page: 3, MaxRecords: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Limit != 2 || !page.HasNextKnown || page.HasNext {
+		t.Fatalf("short caixa page = %+v, want terminal page based on documented requested limit", page)
 	}
 }
 

@@ -79,6 +79,20 @@ type blingSyncStep struct {
 	run    func() (APISyncResult, error)
 }
 
+func buildBlingSyncSteps(result *BlingRawSyncResult, dateMode string, includeCashMovements bool, cash, receivables, payables func() (APISyncResult, error)) []blingSyncStep {
+	steps := make([]blingSyncStep, 0, 3)
+	if includeCashMovements {
+		steps = append(steps, blingSyncStep{target: &result.CashMovements, run: cash})
+	}
+	if dateMode != blingDateFilterPayment {
+		steps = append(steps, blingSyncStep{target: &result.Receivables, run: receivables})
+	}
+	if dateMode != blingDateFilterReceived {
+		steps = append(steps, blingSyncStep{target: &result.Payables, run: payables})
+	}
+	return steps
+}
+
 // runIndependentBlingSyncSteps attempts every applicable resource. A failure
 // in one financial source must not prevent other independently readable Bling
 // sources from refreshing their own snapshots.
@@ -474,31 +488,35 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 	}
 	notApplicable := APISyncResult{Status: "NOT_APPLICABLE"}
 	result := BlingRawSyncResult{Receivables: notApplicable, Payables: notApplicable, CashMovements: notApplicable}
-	steps := make([]blingSyncStep, 0, 3)
+	var cashSync, receivablesSync, payablesSync func() (APISyncResult, error)
+	// Publish realized cash movements first. The cash-flow view can then use
+	// confirmed receipts/payments even when detail hydration for a large payable
+	// snapshot takes longer; each resource still commits independently.
+	if includeCashMovements {
+		cashMovements := newCashMovementsAPISyncService(s.pool, client, *cashMovementFilter)
+		cashSync = func() (APISyncResult, error) {
+			return cashMovements.SyncWithCorrelationID(ctx, ReceivablesFilter{}, pgUUID(*correlationID))
+		}
+	}
 	if dateMode != blingDateFilterPayment {
 		receivables := NewReceivablesAPISyncService(s.pool, client)
-		steps = append(steps, blingSyncStep{target: &result.Receivables, run: func() (APISyncResult, error) {
+		receivablesSync = func() (APISyncResult, error) {
 			if correlationID == nil {
 				return receivables.Sync(ctx, filter)
 			}
 			return receivables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
-		}})
+		}
 	}
 	if dateMode != blingDateFilterReceived {
 		payables := NewPayablesAPISyncService(s.pool, client)
-		steps = append(steps, blingSyncStep{target: &result.Payables, run: func() (APISyncResult, error) {
+		payablesSync = func() (APISyncResult, error) {
 			if correlationID == nil {
 				return payables.Sync(ctx, filter)
 			}
 			return payables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
-		}})
+		}
 	}
-	if includeCashMovements {
-		cashMovements := newCashMovementsAPISyncService(s.pool, client, *cashMovementFilter)
-		steps = append(steps, blingSyncStep{target: &result.CashMovements, run: func() (APISyncResult, error) {
-			return cashMovements.SyncWithCorrelationID(ctx, ReceivablesFilter{}, pgUUID(*correlationID))
-		}})
-	}
+	steps := buildBlingSyncSteps(&result, dateMode, includeCashMovements, cashSync, receivablesSync, payablesSync)
 	return finishBlingRawSyncResult(result, runIndependentBlingSyncSteps(steps...))
 }
 

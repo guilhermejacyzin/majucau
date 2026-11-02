@@ -741,9 +741,6 @@ func waitForServiceState(query func() (svc.Status, error), state svc.State, time
 		} else {
 			lastQueryErr = nil
 			if status.State == state {
-				if !time.Now().Before(deadline) {
-					return ErrWorkerServiceState
-				}
 				return nil
 			}
 		}

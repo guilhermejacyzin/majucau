@@ -28,6 +28,16 @@ func TestWaitForServiceStateRetriesQueryErrorsUntilTargetIsObserved(t *testing.T
 	}
 }
 
+func TestWaitForServiceStateAcceptsConfirmedTargetAfterSlowQuery(t *testing.T) {
+	err := waitForServiceState(func() (svc.Status, error) {
+		time.Sleep(20 * time.Millisecond)
+		return svc.Status{State: svc.Running}, nil
+	}, svc.Running, 10*time.Millisecond, time.Millisecond)
+	if err != nil {
+		t.Fatalf("a confirmed target state must succeed even when the status query returns after the wait deadline: %v", err)
+	}
+}
+
 func TestWaitForServiceStateFailsWhenQueriesNeverRecover(t *testing.T) {
 	queryErr := errors.New("persistent SCM query failure")
 	err := waitForServiceState(func() (svc.Status, error) {

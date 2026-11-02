@@ -68,20 +68,21 @@ type AuditEvent struct {
 
 // Current normalized read model for cash/bank movements from a completed Bling batch; signed cash impact is derived from direction, never from payable title balance.
 type BlingCashMovement struct {
-	ID              pgtype.UUID        `json:"id"`
-	ConnectionID    pgtype.UUID        `json:"connection_id"`
-	SyncBatchID     pgtype.UUID        `json:"sync_batch_id"`
-	SourceID        string             `json:"source_id"`
-	AccountSourceID *string            `json:"account_source_id"`
-	AccountName     *string            `json:"account_name"`
-	Direction       string             `json:"direction"`
-	Amount          pgtype.Numeric     `json:"amount"`
-	MovementDate    pgtype.Date        `json:"movement_date"`
-	SourceStatus    string             `json:"source_status"`
-	OriginType      *string            `json:"origin_type"`
-	RawRecordID     pgtype.UUID        `json:"raw_record_id"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	ID              pgtype.UUID    `json:"id"`
+	ConnectionID    pgtype.UUID    `json:"connection_id"`
+	SyncBatchID     pgtype.UUID    `json:"sync_batch_id"`
+	SourceID        string         `json:"source_id"`
+	AccountSourceID *string        `json:"account_source_id"`
+	AccountName     *string        `json:"account_name"`
+	Direction       string         `json:"direction"`
+	Amount          pgtype.Numeric `json:"amount"`
+	MovementDate    pgtype.Date    `json:"movement_date"`
+	// Optional source status from Bling; blank or unknown values are retained as metadata and are not implicitly treated as realized.
+	SourceStatus string             `json:"source_status"`
+	OriginType   *string            `json:"origin_type"`
+	RawRecordID  pgtype.UUID        `json:"raw_record_id"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
 // Temporary, bounded RAW pages for one Bling load. Pages become current RAW only in the final atomic publish transaction; stale runs are removed when a new correlation starts.

@@ -8,7 +8,7 @@
 
 Na verificação ao vivo das 20:06, o Bling continua conectado. `/caixas` terminou `SUCCESS`/`NORMALIZED`; Contas a Receber terminou `SUCCESS`/`RAW_ONLY` com 14.901 registros lidos; Contas a Pagar ainda não tem lote normalizado publicado. O último lote de pagar publicado falhou por rejeitar um saldo negativo, mas o normalizador atual já aceita esse sinal e os testes focados passaram. A tentativa atual permanece dentro de uma transação sem publicação visível; só um lote concluído provará a correção com dados reais.
 
-A T01 foi conferida no protótipo e continua exibindo `—` e “Sem dados confirmados”. Isso ocorre porque receber ainda está em dados brutos, pagar ainda não publicou retrato normalizado e os movimentos de caixa têm `situacao` vazia. Essa situação não pode ser interpretada como realizado sem aprovação; portanto esses movimentos não entram nos totais realizados. Não existe saldo atual oficial por banco confirmado, e a leitura do Drive falhou porque as pastas ainda não estão configuradas no worker.
+A T01 foi conferida no protótipo antes da correção dos filtros e continuava exibindo `—` e “Sem dados confirmados”. Receber ainda está em dados brutos e pagar ainda não publicou retrato normalizado. Os movimentos de caixa têm `situacao` vazia; depois da conversa de 02/11, passei a mostrá-los nos indicadores mensais com estado **Parcial**, mantendo os sinais já aprovados. A nova build ainda não foi aplicada ao protótipo. Não existe saldo atual oficial por banco confirmado, e a leitura do Drive falhou porque as pastas ainda não estão configuradas no worker.
 
 O primeiro diagnóstico, feito às 19:29 antes da execução completar, está preservado abaixo como histórico. Ele dizia que `/caixas` vinha depois de Contas a Pagar; essa ordem foi alterada para publicar primeiro a fonte de caixa e foi confirmada no lote real acima.
 
@@ -27,7 +27,7 @@ O primeiro diagnóstico, feito às 19:29 antes da execução completar, está pr
 | Autorização Bling | Integração `CONNECTED`; último teste de conexão `SUCCESS`. | A autenticação está funcionando; isso, sozinho, não confirma carga financeira. |
 | Contas a Receber | Lote mais recente terminou `SUCCESS`, 14.901 linhas lidas, estágio `RAW_ONLY`. | Não alimenta o total nem as linhas da tela porque ainda não foi convertido para a tabela `receivables`. |
 | Contas a Pagar | O último lote publicado falhou com `BLING_PAYABLE_OPEN_BALANCE_NEGATIVE`. O parser atual converte saldo em aberto para saída negativa e os testes passaram. A tentativa posterior ainda não publicou lote e mantém uma transação aberta. | Sem lote novo confirmado na tabela `payables`; a tela permanece sem total atual. |
-| Movimentos de caixa | `/caixas` terminou `SUCCESS`/`NORMALIZED`; a paginação e o sinal foram confirmados tecnicamente. `situacao` veio vazia e foi preservada sem interpretação. | Os movimentos não entram no realizado até a responsável confirmar se os itens dessa lista podem ser considerados concluídos. |
+| Movimentos de caixa | `/caixas` terminou `SUCCESS`/`NORMALIZED`; 31.032 linhas, nove contas e todas as situações vazias. Paginação e direção foram confirmadas tecnicamente. | O filtro anterior contava somente `R` e descartava todas as linhas. A nova versão inclui `R` e vazio com estado `PARTIAL`; precisa ser aplicada e conferida no protótipo. |
 | Google Drive | O worker registrou `GOOGLE_DRIVE_FOLDERS_NOT_CONFIGURED`. | Os arquivos externos não podem ser lidos até a configuração das três pastas autorizadas; o sistema deixa a fonte pendente. |
 | Saldo por banco | A tabela `bling_cash_movements` guarda movimentos com data e direção, não um saldo atual validado de cada conta. | Não é seguro somar movimentos e chamar o resultado de saldo do Itaú ou Mercado Pago. |
 
@@ -49,7 +49,7 @@ Em Contas a Pagar, a API lista 10.198 títulos. O registro de lista observado co
 ## Próxima ordem de trabalho
 
 1. Aguardar a nova leitura de Contas a Pagar terminar e conferir se o sinal negativo foi aceito; comparar somente totais agregados com o Bling, sem expor linhas pessoais nos logs.
-2. Aplicar a decisão da responsável para movimentos `/caixas` com situação vazia; manter pendente até a resposta, sem adivinhar se foram concluídos.
+2. Aplicar a nova versão e conferir os movimentos `/caixas` com situação vazia nos indicadores mensais, identificados como **Parcial**.
 3. Implementar e validar a transformação de Contas a Receber. Registros sem classificação B2B/B2C confirmada devem ficar como não classificados/pendentes e não entrar silenciosamente no total confirmado.
 4. Medir e, se necessário, reduzir o tempo de Contas a Pagar sem pular títulos, sem alterar sinais nem enfraquecer idempotência, transações, limites ou o retry aprovado.
 5. Ligar os dados confirmados às telas de origem e então verificar T01 usando o mesmo retrato compartilhado. Preservar desenho, textos e indicadores aprovados.

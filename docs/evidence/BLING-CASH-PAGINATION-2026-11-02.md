@@ -27,3 +27,7 @@ Com a paginação corrigida, a validação passou a conferir os campos reais. A 
 A execução real corrigida terminou `SUCCESS`/`NORMALIZED` e publicou movimentos no banco local, confirmando a paginação e a normalização técnica. Isso não homologa os totais financeiros: a situação veio vazia e os movimentos ainda não entram como realizados até confirmação da regra; a validação visual nas telas também permanece pendente.
 
 A tela continua incluindo somente `source_status='R'` nos totais confirmados. Os registros com `situacao` vazia ficam guardados sem classificação até a regra de inclusão ser confirmada; não devem ser somados automaticamente como realizados.
+
+## Atualização de decisão e filtro — 02/11/2026
+
+Gisele esclareceu que o fluxo de caixa do Bling é a fonte onde as despesas estão registradas e aprovou que resultados incompletos sejam mostrados como **Parcial**. Por isso, a nova versão passa a considerar linhas com situação `R` ou vazia nos indicadores mensais existentes e a marcar a carga como `PARTIAL` quando a situação faltar. Entradas continuam positivas, saídas negativas; nenhuma tela ou regra aprovada de sinal mudou. Situações não vazias diferentes de `R` continuam fora dos totais até serem validadas. A correção está em código, ainda precisa ser aplicada e conferida no protótipo; ver `BLING-CASH-MOVEMENT-STATUS-GAP-2026-11-02.md`.

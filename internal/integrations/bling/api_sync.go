@@ -320,6 +320,8 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 					message = "Os títulos foram carregados; alguns não têm categoria atribuída no Bling."
 				case "BLING_CASH_ACCOUNT_ID_MISSING":
 					message = "As movimentações foram carregadas; falta identificar a conta financeira de algumas linhas."
+				case "BLING_CASH_MOVEMENT_STATUS_MISSING":
+					message = "As movimentações do caixa foram carregadas; o Bling não informou a situação de algumas linhas, então os totais aparecem como parciais."
 				}
 				batchErrorCode, batchErrorMessage = &code, &message
 			}

@@ -65,6 +65,7 @@ type normalizedCashMovement struct {
 
 func normalizeCashMovementAPISnapshotPage() (func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error, func() string) {
 	accountMissing := false
+	statusIncomplete := false
 	normalize := func(ctx context.Context, queries *database.Queries, connectionID, batchID pgtype.UUID, records []json.RawMessage) error {
 		if queries == nil || !connectionID.Valid || !batchID.Valid {
 			return fmt.Errorf("%w: cash movement normalizer dependencies are missing", ErrBlingAPIConfiguration)
@@ -83,6 +84,9 @@ func normalizeCashMovementAPISnapshotPage() (func(context.Context, *database.Que
 			}
 			if movement.AccountSourceID == nil {
 				accountMissing = true
+			}
+			if !cashMovementStatusIsKnown(movement.SourceStatus) {
+				statusIncomplete = true
 			}
 			if err := queries.UpsertBlingCashMovement(ctx, database.UpsertBlingCashMovementParams{
 				ConnectionID:    connectionID,
@@ -106,9 +110,16 @@ func normalizeCashMovementAPISnapshotPage() (func(context.Context, *database.Que
 		if accountMissing {
 			return "BLING_CASH_ACCOUNT_ID_MISSING"
 		}
+		if statusIncomplete {
+			return "BLING_CASH_MOVEMENT_STATUS_MISSING"
+		}
 		return ""
 	}
 	return normalize, partialErrorCode
+}
+
+func cashMovementStatusIsKnown(value string) bool {
+	return strings.TrimSpace(value) == "R"
 }
 
 func parseCashMovementAPIRecord(payload json.RawMessage) (normalizedCashMovement, error) {

@@ -364,14 +364,14 @@ WITH eligible_receivables AS (
 ), rc AS (
   SELECT
     COALESCE(SUM(amount) FILTER (
-      WHERE direction = 'INFLOW' AND source_status = 'R'
+      WHERE direction = 'INFLOW' AND source_status IN ('R', '')
         AND movement_date >= $2::date AND movement_date < $3::date
     ), 0)::text AS month_value,
     COUNT(id) FILTER (
-      WHERE direction = 'INFLOW' AND source_status = 'R'
+      WHERE direction = 'INFLOW' AND source_status IN ('R', '')
         AND movement_date >= $2::date AND movement_date < $3::date
     ) AS month_count,
-    COUNT(id) FILTER (WHERE direction = 'INFLOW' AND source_status = 'R') AS total_count
+    COUNT(id) FILTER (WHERE direction = 'INFLOW' AND source_status IN ('R', '')) AS total_count
   FROM bling_cash_movements movement
   JOIN cash_snapshot snapshot ON snapshot.sync_batch_id = movement.sync_batch_id
 ), latest_daily_payable_snapshot AS (
@@ -424,14 +424,14 @@ WITH eligible_receivables AS (
 ), pm AS (
   SELECT
     COALESCE(SUM(-amount) FILTER (
-      WHERE direction = 'OUTFLOW' AND source_status = 'R'
+      WHERE direction = 'OUTFLOW' AND source_status IN ('R', '')
         AND movement_date >= $2::date AND movement_date < $3::date
     ), 0)::text AS month_value,
     COUNT(id) FILTER (
-      WHERE direction = 'OUTFLOW' AND source_status = 'R'
+      WHERE direction = 'OUTFLOW' AND source_status IN ('R', '')
         AND movement_date >= $2::date AND movement_date < $3::date
     ) AS month_count,
-    COUNT(id) FILTER (WHERE direction = 'OUTFLOW' AND source_status = 'R') AS total_count
+    COUNT(id) FILTER (WHERE direction = 'OUTFLOW' AND source_status IN ('R', '')) AS total_count
   FROM bling_cash_movements movement
   JOIN cash_snapshot snapshot ON snapshot.sync_batch_id = movement.sync_batch_id
 ), last_bling_sync AS (

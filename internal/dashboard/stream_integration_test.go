@@ -119,21 +119,26 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE connection_id = $1::uuid AND resource = 'caixas' AND correlation_id = $2`, connectionID, correlationID); err != nil {
 		t.Fatalf("mark cash movement batch normalized: %v", err)
 	}
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET status = 'PARTIAL' WHERE id = $1::uuid`, cashBatchID); err != nil {
+		t.Fatalf("mark cash source with missing statuses partial: %v", err)
+	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO bling_cash_movements (id, sync_batch_id, direction, source_status, movement_date, amount) VALUES
 		('00000000-0000-4000-8000-000000000031', $1::uuid, 'INFLOW', 'R', '2026-10-10', 100.00),
-		('00000000-0000-4000-8000-000000000032', $1::uuid, 'OUTFLOW', 'R', '2026-10-11', 25.00)`, cashBatchID); err != nil {
-		t.Fatalf("seed confirmed realized cash movements: %v", err)
+		('00000000-0000-4000-8000-000000000032', $1::uuid, 'OUTFLOW', 'R', '2026-10-11', 25.00),
+		('00000000-0000-4000-8000-000000000033', $1::uuid, 'INFLOW', '', '2026-10-12', 20.00),
+		('00000000-0000-4000-8000-000000000034', $1::uuid, 'OUTFLOW', '', '2026-10-13', 5.00)`, cashBatchID); err != nil {
+		t.Fatalf("seed cash movements including entries with missing source status: %v", err)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil {
 		t.Fatalf("readStreamSummary() failed against PostgreSQL with normalized cash batch: %v", err)
 	}
-	if snapshot.ReceiptsMonth.State != "CONFIRMED" || snapshot.PaymentsMonth.State != "CONFIRMED" {
-		t.Fatalf("cash movement metrics should follow normalized caixas: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
+	if snapshot.ReceiptsMonth.State != "PARTIAL" || snapshot.PaymentsMonth.State != "PARTIAL" {
+		t.Fatalf("cash movement metrics should keep values visible and mark missing source status partial: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
-	if snapshot.ReceiptsMonth.Value != "100.00" || snapshot.PaymentsMonth.Value != "-25.00" {
-		t.Fatalf("cash flow should show inflows positive and outflows negative: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
+	if snapshot.ReceiptsMonth.Value != "120.00" || snapshot.PaymentsMonth.Value != "-30.00" {
+		t.Fatalf("cash flow should include listed movements, with inflows positive and outflows negative: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
 	currentPayableID := "00000000-0000-4000-8000-000000000011"
 	stalePayableID := "00000000-0000-4000-8000-000000000012"

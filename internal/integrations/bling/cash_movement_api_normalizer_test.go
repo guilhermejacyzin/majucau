@@ -84,6 +84,17 @@ func TestParseCashMovementAPIRecordWithoutAccountCanBeIdentifiedAsPartial(t *tes
 	}
 }
 
+func TestCashMovementStatusRequiresExplicitRegularStatusForConfirmedTotals(t *testing.T) {
+	if !cashMovementStatusIsKnown("R") {
+		t.Fatal("regular Bling status should be considered known")
+	}
+	for _, status := range []string{"", " ", "Pendente", "E"} {
+		if cashMovementStatusIsKnown(status) {
+			t.Errorf("status %q should remain unconfirmed until its meaning is mapped", status)
+		}
+	}
+}
+
 func TestParseCashMovementAPIRecordPreservesAccountIDWithoutDescription(t *testing.T) {
 	got, err := parseCashMovementAPIRecord(json.RawMessage(`{"id":5,"debCred":"D","situacao":"R","valor":-10,"data":"2026-11-02","contaFinanceira":{"id":9}}`))
 	if err != nil {

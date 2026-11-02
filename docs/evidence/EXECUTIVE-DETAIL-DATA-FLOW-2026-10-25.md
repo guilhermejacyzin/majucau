@@ -230,6 +230,43 @@ não muda os valores ou o desenho aprovado. Quando houver dados, o módulo de
 origem e a T01 continuam usando a base/snapshot do Majucau; ausências continuam
 pendentes ou indisponíveis.
 
+## Rechecagem da projeção e da regra da T01 — 02/11/2026
+
+Gisele confirmou novamente que a T01 é resultado das telas de origem: quando
+um valor válido aparecer na tela correspondente, a T01 deve mostrar o mesmo
+resultado a partir do snapshot compartilhado. A T01 não cria uma fórmula nem
+faz uma busca paralela ao Bling para substituir o resultado ausente de outra
+tela. A regra já está registrada em `AGENTS.md` e permanece protegida.
+
+**A projeção T02 ainda não tem valores**, por estes motivos técnicos
+confirmados:
+
+- A regra financeira exige que o saldo inicial de hoje seja o saldo final
+  conciliado de ontem. O núcleo de cálculo D0–D+60 existe, mas não tem uma
+  leitura de produção desse saldo inicial nem de movimentos normalizados.
+- No contrato OpenAPI oficial do Bling, `GET /contas-contabeis` retorna dados
+  cadastrais da conta (`id`, descrição, tipo e alias), não o saldo atual. A
+  resposta de `/caixas` lista lançamentos e não traz um campo de saldo final.
+  A referência pública também não oferece, na resposta de `/caixas`, um total
+  ou marcador de última página que permita provar uma releitura histórica
+  completa. Fonte: [Referência oficial da API Bling](https://developer.bling.com.br/referencia).
+- O sincronizador ainda guarda `/caixas` como dado bruto; não há movimentos
+  normalizados alimentando o motor de projeção. Contas a Receber também está
+  `RAW_ONLY`. Contas a Pagar tem normalização, mas a última carga real foi
+  revertida por `BLING_PAYABLE_OPEN_BALANCE_NEGATIVE`; o valor negativo não foi
+  convertido em zero nem publicado.
+- A política de atualização da T01 mantém saldo/projeção indisponíveis enquanto
+  a T02 não tiver esses resultados. Nenhum valor estimado, conta não conciliada
+  ou fechamento antigo será tratado como atual.
+
+Logo, a API respondeu e o Majucau recebeu registros, mas isso não significa
+que existam resultados financeiros prontos para as telas. A próxima
+dependência para projetar saldo real é uma fonte comprovada do saldo conciliado
+de D-1 por conta; a interpretação do saldo negativo em Contas a Pagar também
+continua pendente de regra aprovada. Não foi feita inspeção visual do Bling
+nesta atualização porque a política salva do navegador bloqueou a observação
+da página.
+
 Validação local: 57 testes frontend em 6 arquivos, lint e typecheck passaram.
 A CI [#41274539700](https://github.com/guilhermejacyzin/majucau/actions/runs/41274539700)
 passou nos quatro jobs, incluindo Windows e PostgreSQL. A conferência manual do

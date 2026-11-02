@@ -155,9 +155,10 @@ negativa no resultado financeiro. O normalizador e a regra do banco que
 rejeitavam o saldo negativo foram ajustados para guardar a obrigação como
 saída negativa e incluir esses valores nos totais, vencimentos e linhas da T04
 e no indicador correspondente da T01. Isso não representa saldo bancário.
-O commit `9696bd9` já está publicado na branch `codex/majucau-artifact-consolidation`.
-As verificações locais passaram; na última consulta, os jobs Windows e
-PostgreSQL da CI ainda estavam em execução. O protótipo aberto continuava usando
-binários anteriores, e a migration/sincronização reais ainda não tinham sido
-executadas. Portanto, a correção está no código publicado, mas os valores
-reais nas telas ainda não foram comprovados.
+O commit `9696bd9` e a correção da expectativa de integração no `10a7164` estão
+publicados na branch `codex/majucau-artifact-consolidation`. A CI
+[#41535352924](https://github.com/guilhermejacyzin/majucau/actions/runs/41535352924)
+passou em Windows e PostgreSQL. O protótipo aberto continuava usando binários
+anteriores, e a migration/sincronização reais ainda não tinham sido executadas.
+Portanto, a correção passou nos gates de código, mas os valores reais nas telas
+ainda não foram comprovados.

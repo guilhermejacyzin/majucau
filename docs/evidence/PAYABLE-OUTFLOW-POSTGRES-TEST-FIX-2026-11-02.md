@@ -24,15 +24,17 @@ Pagar como saída negativa.
 ## Estado e limites
 
 A execução CI `41533971213` passou por aplicar o schema, permissões, health do
-worker e restore de backup. A etapa de testes de integração falhou pela
-expectativa antiga acima; o job ainda estava encerrando seu contêiner quando
-consultado. Os logs remotos não estavam disponíveis pelo conector. A correção
-do teste foi feita localmente e precisa de novo push/CI.
+worker e restore de backup. A etapa de integração falhou pela expectativa antiga
+acima. Depois da correção do teste, a CI `41535352924` passou em Windows e
+PostgreSQL, incluindo aplicação das migrations, suíte de integração, build e
+empacotamento. A execução está registrada em
+https://github.com/guilhermejacyzin/majucau/actions/runs/41535352924.
 
 Esse teste usa dados inventados e não comprova sincronização real do Bling nem
 valores visíveis no protótipo. A janela do protótipo não pôde ser capturada pelo
 controle do computador; o banco de teste usado nesta reprodução é descartável e
-separado do protótipo.
+separado do protótipo. Na verificação posterior, o protótipo continuava usando
+binários anteriores ao commit que contém a correção.
 
 Não foram alteradas telas nem regras financeiras. A correção implementa a
 regra já confirmada: obrigação a pagar é saída negativa no resultado financeiro;

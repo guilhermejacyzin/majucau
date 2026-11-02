@@ -104,21 +104,127 @@ func (e *payableSchemaFieldError) Unwrap() error { return ErrBlingAPISchemaMisma
 
 func payableSchemaField(code string) error { return &payableSchemaFieldError{code: code} }
 
-func normalizePayablesAPISnapshotPage(client *BlingAPIClient) (func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error, func() string) {
-	contactCache := make(map[int64]string)
-	categoryCache := make(map[int64]string)
+type preparedPayableAPISnapshotRecord struct {
+	Detail                   json.RawMessage `json:"detail"`
+	Contact                  json.RawMessage `json:"contact,omitempty"`
+	Category                 json.RawMessage `json:"category,omitempty"`
+	CategoryScopeUnavailable bool            `json:"category_scope_unavailable,omitempty"`
+}
+
+func normalizePayablesAPISnapshotPage(client *BlingAPIClient) (
+	func(context.Context, pgtype.UUID, []json.RawMessage) ([]json.RawMessage, error),
+	func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error,
+	func() string,
+) {
+	preparedContactCache := make(map[int64]json.RawMessage)
+	preparedCategoryCache := make(map[int64]json.RawMessage)
+	contactNameCache := make(map[int64]string)
+	categoryNameCache := make(map[int64]string)
 	contactRawCache := make(map[int64]pgtype.UUID)
 	categoryRawCache := make(map[int64]pgtype.UUID)
 	categoryScopeUnavailable := false
 	categoryUnassigned := false
 	var cachedBatch pgtype.UUID
+	var preparedBatch pgtype.UUID
+
+	prepare := func(ctx context.Context, batchID pgtype.UUID, records []json.RawMessage) ([]json.RawMessage, error) {
+		if client == nil {
+			return nil, fmt.Errorf("%w: payable API client is missing", ErrBlingAPIConfiguration)
+		}
+		if !batchID.Valid {
+			return nil, fmt.Errorf("%w: payable batch identity is missing", ErrBlingAPIConfiguration)
+		}
+		if !preparedBatch.Valid || preparedBatch.Bytes != batchID.Bytes {
+			clear(preparedContactCache)
+			clear(preparedCategoryCache)
+			categoryScopeUnavailable = false
+			preparedBatch = batchID
+		}
+		preparedRecords := make([]json.RawMessage, 0, len(records))
+		for _, record := range records {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			var listItem payableAPIListRecord
+			if err := json.Unmarshal(record, &listItem); err != nil || listItem.ID <= 0 {
+				return nil, errors.Join(errBlingPayableListSchemaMismatch, payableSchemaField("BLING_PAYABLE_LIST_ID_INVALID"))
+			}
+			detailPayload, err := client.GetPayable(ctx, listItem.ID)
+			if err != nil {
+				return nil, err
+			}
+			payable, err := parsePayableAPIDetail(detailPayload, listItem.ID)
+			if err != nil {
+				return nil, errors.Join(errBlingPayableDetailSchemaMismatch, err)
+			}
+			prepared := preparedPayableAPISnapshotRecord{Detail: detailPayload}
+			if payable.SupplierSource != "" {
+				contactID, _ := strconv.ParseInt(payable.SupplierSource, 10, 64)
+				contactPayload, ok := preparedContactCache[contactID]
+				if !ok {
+					contactPayload, err = client.GetContact(ctx, contactID)
+					if err != nil {
+						return nil, err
+					}
+					if _, err := parsePayableContactDetail(contactPayload, contactID); err != nil {
+						return nil, errors.Join(errBlingContactDetailSchemaMismatch, err)
+					}
+					if len(preparedContactCache) >= maxPayableLookupCache {
+						clear(preparedContactCache)
+					}
+					preparedContactCache[contactID] = contactPayload
+				}
+				prepared.Contact = contactPayload
+			}
+			if payable.CategoryUnassigned {
+				categoryUnassigned = true
+			}
+			if payable.CategoryID > 0 {
+				if categoryScopeUnavailable {
+					prepared.CategoryScopeUnavailable = true
+				} else {
+					categoryPayload, ok := preparedCategoryCache[payable.CategoryID]
+					if !ok {
+						categoryPayload, err = client.GetFinancialCategory(ctx, payable.CategoryID)
+						if err != nil {
+							if errors.Is(err, ErrBlingFinancialCategoryScopeInsufficient) {
+								categoryScopeUnavailable = true
+								prepared.CategoryScopeUnavailable = true
+							} else {
+								return nil, err
+							}
+						}
+						if !categoryScopeUnavailable {
+							if _, err := parsePayableCategoryDetail(categoryPayload, payable.CategoryID); err != nil {
+								return nil, errors.Join(errBlingCategoryDetailSchemaMismatch, err)
+							}
+							if len(preparedCategoryCache) >= maxPayableLookupCache {
+								clear(preparedCategoryCache)
+							}
+							preparedCategoryCache[payable.CategoryID] = categoryPayload
+						}
+					}
+					if !prepared.CategoryScopeUnavailable {
+						prepared.Category = categoryPayload
+					}
+				}
+			}
+			encoded, err := json.Marshal(prepared)
+			if err != nil {
+				return nil, fmt.Errorf("encode prepared Bling payable: %w", err)
+			}
+			preparedRecords = append(preparedRecords, encoded)
+		}
+		return preparedRecords, nil
+	}
+
 	normalize := func(ctx context.Context, queries *database.Queries, connectionID, batchID pgtype.UUID, records []json.RawMessage) error {
-		if client == nil || queries == nil || !connectionID.Valid || !batchID.Valid {
+		if queries == nil || !connectionID.Valid || !batchID.Valid {
 			return fmt.Errorf("%w: payable normalizer dependencies are missing", ErrBlingAPIConfiguration)
 		}
 		if !cachedBatch.Valid || cachedBatch.Bytes != batchID.Bytes {
-			clear(contactCache)
-			clear(categoryCache)
+			clear(contactNameCache)
+			clear(categoryNameCache)
 			clear(contactRawCache)
 			clear(categoryRawCache)
 			categoryScopeUnavailable = false
@@ -129,81 +235,72 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) (func(context.Cont
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			var listItem payableAPIListRecord
-			if err := json.Unmarshal(record, &listItem); err != nil || listItem.ID <= 0 {
-				return errors.Join(errBlingPayableListSchemaMismatch, payableSchemaField("BLING_PAYABLE_LIST_ID_INVALID"))
+			var prepared preparedPayableAPISnapshotRecord
+			if len(record) == 0 || json.Unmarshal(record, &prepared) != nil || len(prepared.Detail) == 0 {
+				return errors.Join(errBlingPayableDetailSchemaMismatch, payableSchemaField("BLING_PAYABLE_DETAIL_ID_INVALID"))
 			}
-			detailPayload, err := client.GetPayable(ctx, listItem.ID)
-			if err != nil {
-				return err
+			var detail payableAPIDetail
+			if json.Unmarshal(prepared.Detail, &detail) != nil || detail.ID <= 0 {
+				return errors.Join(errBlingPayableDetailSchemaMismatch, payableSchemaField("BLING_PAYABLE_DETAIL_ID_INVALID"))
 			}
-			payable, err := parsePayableAPIDetail(detailPayload, listItem.ID)
+			payable, err := parsePayableAPIDetail(prepared.Detail, detail.ID)
 			if err != nil {
 				return errors.Join(errBlingPayableDetailSchemaMismatch, err)
 			}
-			if payable.CategoryUnassigned {
-				categoryUnassigned = true
-			}
+			categoryScopeUnavailable = categoryScopeUnavailable || prepared.CategoryScopeUnavailable
+			categoryUnassigned = categoryUnassigned || payable.CategoryUnassigned
+
 			if payable.SupplierSource != "" {
 				contactID, _ := strconv.ParseInt(payable.SupplierSource, 10, 64)
-				name, ok := contactCache[contactID]
+				name, ok := contactNameCache[contactID]
 				if !ok {
-					contactPayload, err := client.GetContact(ctx, contactID)
-					if err != nil {
-						return err
+					if len(prepared.Contact) == 0 {
+						return errors.Join(errBlingContactDetailSchemaMismatch, payableSchemaField("BLING_CONTACT_DETAIL_ID_INVALID"))
 					}
-					name, err = parsePayableContactDetail(contactPayload, contactID)
+					name, err = parsePayableContactDetail(prepared.Contact, contactID)
 					if err != nil {
 						return errors.Join(errBlingContactDetailSchemaMismatch, err)
 					}
-					contactRawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, "bling.contato", payable.SupplierSource, contactPayload)
+					rawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, "bling.contato", payable.SupplierSource, prepared.Contact)
 					if err != nil {
 						return fmt.Errorf("persist Bling contact source: %w", err)
 					}
-					if len(contactCache) >= maxPayableLookupCache {
-						clear(contactCache)
+					if len(contactNameCache) >= maxPayableLookupCache {
+						clear(contactNameCache)
 						clear(contactRawCache)
 					}
-					contactCache[contactID] = name
-					contactRawCache[contactID] = contactRawID
+					contactNameCache[contactID] = name
+					contactRawCache[contactID] = rawID
 				}
 				payable.SupplierName = name
 				payable.SupplierRawID = contactRawCache[contactID]
 			}
-			if payable.CategoryID > 0 && !categoryScopeUnavailable {
-				name, ok := categoryCache[payable.CategoryID]
+			if payable.CategoryID > 0 && !prepared.CategoryScopeUnavailable {
+				name, ok := categoryNameCache[payable.CategoryID]
 				if !ok {
-					categoryPayload, err := client.GetFinancialCategory(ctx, payable.CategoryID)
+					if len(prepared.Category) == 0 {
+						return errors.Join(errBlingCategoryDetailSchemaMismatch, payableSchemaField("BLING_CATEGORY_DETAIL_ID_INVALID"))
+					}
+					name, err = parsePayableCategoryDetail(prepared.Category, payable.CategoryID)
 					if err != nil {
-						if errors.Is(err, ErrBlingFinancialCategoryScopeInsufficient) {
-							categoryScopeUnavailable = true
-						} else {
-							return err
-						}
+						return errors.Join(errBlingCategoryDetailSchemaMismatch, err)
 					}
-					if !categoryScopeUnavailable {
-						name, err = parsePayableCategoryDetail(categoryPayload, payable.CategoryID)
-						if err != nil {
-							return errors.Join(errBlingCategoryDetailSchemaMismatch, err)
-						}
-						categoryRawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, "bling.categoria_receita_despesa", strconv.FormatInt(payable.CategoryID, 10), categoryPayload)
-						if err != nil {
-							return fmt.Errorf("persist Bling category source: %w", err)
-						}
-						if len(categoryCache) >= maxPayableLookupCache {
-							clear(categoryCache)
-							clear(categoryRawCache)
-						}
-						categoryCache[payable.CategoryID] = name
-						categoryRawCache[payable.CategoryID] = categoryRawID
+					rawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, "bling.categoria_receita_despesa", strconv.FormatInt(payable.CategoryID, 10), prepared.Category)
+					if err != nil {
+						return fmt.Errorf("persist Bling category source: %w", err)
 					}
+					if len(categoryNameCache) >= maxPayableLookupCache {
+						clear(categoryNameCache)
+						clear(categoryRawCache)
+					}
+					categoryNameCache[payable.CategoryID] = name
+					categoryRawCache[payable.CategoryID] = rawID
 				}
-				if !categoryScopeUnavailable {
-					payable.Category = &name
-					payable.CategoryRawID = categoryRawCache[payable.CategoryID]
-				}
+				payable.Category = &name
+				payable.CategoryRawID = categoryRawCache[payable.CategoryID]
 			}
-			rawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, payableAPISourceEntity, payable.SourceID, detailPayload)
+
+			rawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, payableAPISourceEntity, payable.SourceID, prepared.Detail)
 			if err != nil {
 				return fmt.Errorf("persist Bling payable source: %w", err)
 			}
@@ -220,18 +317,10 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) (func(context.Cont
 				}
 			}
 			payableID, err := queries.UpsertBlingPayable(ctx, database.UpsertBlingPayableParams{
-				ConnectionID:   connectionID,
-				SourceID:       payable.SourceID,
-				SupplierID:     supplierID,
-				Document:       payable.Document,
-				Category:       payable.Category,
-				CompetenceDate: payable.CompetenceDate,
-				DueDate:        payable.DueDate,
-				PaymentDate:    payable.PaymentDate,
-				OriginalAmount: payable.OriginalAmount,
-				OpenBalance:    payable.OpenBalance,
-				Status:         payable.Status,
-				RawRecordID:    rawID,
+				ConnectionID: connectionID, SourceID: payable.SourceID, SupplierID: supplierID,
+				Document: payable.Document, Category: payable.Category, CompetenceDate: payable.CompetenceDate,
+				DueDate: payable.DueDate, PaymentDate: payable.PaymentDate, OriginalAmount: payable.OriginalAmount,
+				OpenBalance: payable.OpenBalance, Status: payable.Status, RawRecordID: rawID,
 			})
 			if err != nil {
 				return fmt.Errorf("persist normalized Bling payable: %w", err)
@@ -256,7 +345,7 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) (func(context.Cont
 		}
 		return nil
 	}
-	return normalize, func() string {
+	return prepare, normalize, func() string {
 		switch {
 		case categoryScopeUnavailable && categoryUnassigned:
 			return "BLING_CATEGORY_INCOMPLETE"

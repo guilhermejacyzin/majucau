@@ -69,9 +69,31 @@ Na rechecagem do PostgreSQL isolado, o worker continuava ativo e havia uma conex
 
 A inspeção do código explica a duração: `apiResourceSyncService.sync` abre a transação antes de ler as páginas e mantém a transação enquanto `normalizePayablesAPISnapshotPage` faz chamadas HTTP sequenciais para obter o detalhe de cada título e, quando necessário, de fornecedores e categorias. Com 10.198 títulos na lista, uma espera externa longa também mantém a transação e a trava abertas. Isso preserva a publicação atômica, mas impede observar progresso persistido e deixa a tela sem um lote novo até a conclusão.
 
-**Correção técnica necessária, sem mudar regras ou telas:** buscar e validar os detalhes em blocos limitados fora da transação final; guardar cada bloco em staging privado associado ao checkpoint e à identidade idempotente da carga; validar hash e retomada; só então abrir uma transação curta para publicar RAW, normalizados, snapshot, cursor e auditoria em conjunto. Uma falha deve manter o retrato anterior e não avançar o cursor. O staging precisa ter limpeza/retomada segura e permissões explícitas. Essa mudança ainda não foi implementada nem homologada.
+**Correção técnica:** buscar e validar páginas e detalhes fora da transação final, guardar cada página em checkpoint e só então publicar RAW, normalizados, snapshot, cursor e auditoria em conjunto. Uma falha deve manter o retrato anterior e não avançar o cursor. A implementação local agora segue esse fluxo; testes PostgreSQL descartáveis passaram, mas a mudança ainda não foi enviada à CI nem aplicada ao worker do protótipo. O resultado real continua pendente.
 
 A captura visual da janela Majucau falhou duas vezes nesta sessão; por isso esta rechecagem não afirma que os valores já estejam visíveis na interface.
+
+### Rechecagem e teste da correção — 20:39 BRT
+
+O worker iniciado às 19:57 permanecia ativo. O PostgreSQL mostrava a sessão em
+`idle in transaction`, aguardando a resposta do cliente, com cerca de 42 minutos
+de transação; o último lote publicado de Contas a Pagar ainda era a falha antiga
+`BLING_PAYABLE_OPEN_BALANCE_NEGATIVE`. O novo lote não estava visível fora da
+transação. Não encerrei esse processo nem alterei os dados do protótipo.
+
+Na árvore local, alterei a sincronização para encerrar a transação de preparação
+antes de chamar o Bling. As páginas são persistidas em checkpoints limitados;
+detalhes e referências são preparados fora da transação final; RAW, dados
+normalizados, snapshot, cursor e auditoria entram em uma única publicação
+atômica. A validação confere metadados do checkpoint e mantém a saída de Contas a
+Pagar negativa. O teste PostgreSQL verificou ausência de transação aberta durante
+as requisições, falha segura e preservação do snapshot anterior.
+
+As suítes Go focadas e quatro conjuntos de integração PostgreSQL passaram em um
+cluster descartável, que foi parado e removido. A correção ainda não foi
+publicada e não altera o worker já em execução. Portanto, isso demonstra a
+correção em teste, não a sincronização real nem valores visíveis no protótipo.
+Veja [evidência do staging paginado e publicação atômica](./BLING-API-BOUNDED-READ-ATOMIC-PUBLISH-2026-11-02.md).
 
 ## Progresso e prazo
 

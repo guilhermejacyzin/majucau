@@ -20,7 +20,8 @@ Conectar o Bling é como abrir a torneira: primeiro os dados chegam. Depois o Ma
 Neste momento:
 
 - Contas a Receber chegou, mas continua em dados brutos.
-- O último lote publicado de Contas a Pagar falhou às 18:10 com `BLING_PAYABLE_OPEN_BALANCE_NEGATIVE`. A regra do código já foi corrigida e testada para aceitar saldo devedor negativo; às 20:29 a nova tentativa estava em uma transação aberta havia cerca de 30 minutos, sem publicar o lote. O código mantém chamadas de detalhe do Bling dentro dessa transação; isso precisa ser corrigido para buscar em blocos e publicar atomicamente no final. A regra financeira não será alterada.
+- O erro antigo de Contas a Pagar (`BLING_PAYABLE_OPEN_BALANCE_NEGATIVE`) era da validação do saldo em aberto do título; não significava que o saldo de Caixa e Bancos estava negativo. Conta a pagar é saída e deve ser negativa no fluxo. Às 20:39, a tentativa iniciada às 19:57 seguia esperando dentro do banco havia aproximadamente 42 minutos e ainda não tinha publicado um novo lote.
+- Preparei a correção para buscar páginas e detalhes do Bling sem manter aberta a transação que publica os dados. As páginas são guardadas em checkpoints limitados; no final, RAW, valores normalizados, snapshot, cursor e auditoria são publicados juntos em uma transação. A integração PostgreSQL descartável confirmou saída negativa, falha sem publicação parcial, preservação do retrato anterior e ausência de transação aberta durante as chamadas ao Bling. Esse código ainda não foi enviado ao GitHub nem aplicado ao worker que está aberto.
 - Todas as 31.032 linhas de caixa vieram com `situacao` vazia. A orientação da usuária foi usar o fluxo de caixa do Bling como fonte dos movimentos registrados; passei a mostrar esses valores com aviso **Parcial**, sem mudar o sinal: entrada positiva e saída negativa.
 - A execução das 19:57 terminou Contas a Receber em `SUCCESS`/`RAW_ONLY`; os dados foram recebidos, mas ainda não passaram para a tabela usada pela tela. O worker iniciou a etapa seguinte, mas Contas a Pagar segue sem lote normalizado confirmado.
 - O sistema não tem saldo atual confirmado, separado por banco. Movimento de caixa não pode ser confundido com saldo da conta.
@@ -42,6 +43,8 @@ Neste momento:
 - **Meta:** protótipo funcional e pronto para homologação até 30/11/2026.
 - **Backlog:** 12,1% concluído; **87,9% falta**. BK-058, BK-059 e BK-062 continuam em 5% cada até os resultados reais aparecerem e serem conferidos.
 - **Tempo:** ainda não há uma estimativa confiável. A carga de Contas a Pagar continua em andamento e o resultado não foi publicado. Vou medir o tempo quando essa etapa terminar, sem apresentar estimativa inventada.
+
+Atualização técnica e evidências de 02/11: [staging paginado e publicação atômica de Contas a Pagar](./evidence/BLING-API-BOUNDED-READ-ATOMIC-PUBLISH-2026-11-02.md).
 
 Nenhuma tela ou regra financeira aprovada foi alterada nesta atualização.
 

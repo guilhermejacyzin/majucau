@@ -78,7 +78,7 @@ func TestDailyPayablesAPIIsNormalizedAtomicallyWithCategoryScopeGap(t *testing.T
 	cleanup := func() {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cleanupCancel()
-		_, _ = pool.Exec(cleanupCtx, `DELETE FROM bling_sync_page_checkpoints WHERE connection_id = $1 AND resource = $2 AND correlation_id IN ($3, $4, $5, $6)`, connection.ID, PayablesAPIResource, pgUUID(firstCorrelation), pgUUID(secondCorrelation), pgUUID(thirdCorrelation), pgUUID(fourthCorrelation))
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM bling_sync_page_checkpoints WHERE connection_id = $1 AND resource = ANY($2::text[]) AND correlation_id IN ($3, $4, $5, $6)`, connection.ID, []string{PayablesAPIResource, PayablesAPIResource + ".prepared"}, pgUUID(firstCorrelation), pgUUID(secondCorrelation), pgUUID(thirdCorrelation), pgUUID(fourthCorrelation))
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM payable_sync_snapshot_rows WHERE sync_batch_id IN (SELECT id FROM integration_sync_batches WHERE connection_id = $1 AND resource = $2 AND correlation_id IN ($3, $4, $5, $6))`, connection.ID, PayablesAPIResource, pgUUID(firstCorrelation), pgUUID(secondCorrelation), pgUUID(thirdCorrelation), pgUUID(fourthCorrelation))
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM payable_sources WHERE payable_id IN (SELECT id FROM payables WHERE connection_id = $1 AND source_system = 'BLING' AND source_entity = $2 AND source_id = $3)`, connection.ID, payableAPISourceEntity, sourceID)
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM payables WHERE connection_id = $1 AND source_system = 'BLING' AND source_entity = $2 AND source_id = $3`, connection.ID, payableAPISourceEntity, sourceID)
@@ -93,9 +93,22 @@ func TestDailyPayablesAPIIsNormalizedAtomicallyWithCategoryScopeGap(t *testing.T
 	failCategory := false
 	failPayableDetail := false
 	unassignedCategory := false
+	detailRequestObserved := false
+	publicationTransactionOpenDuringRequest := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || r.Header.Get("enable-jwt") != "1" {
 			t.Errorf("unexpected method/header for %s", r.URL.Path)
+		}
+		var openTransactions int
+		if err := pool.QueryRow(r.Context(), `
+			SELECT COUNT(*)
+			FROM pg_stat_activity
+			WHERE datname = current_database()
+			  AND state = 'idle in transaction'
+			  AND pid <> pg_backend_pid()`).Scan(&openTransactions); err != nil {
+			t.Errorf("check publication transactions during Bling request: %v", err)
+		} else if openTransactions > 0 {
+			publicationTransactionOpenDuringRequest = true
 		}
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
@@ -105,6 +118,7 @@ func TestDailyPayablesAPIIsNormalizedAtomicallyWithCategoryScopeGap(t *testing.T
 			}
 			_, _ = w.Write([]byte(`{"data":[{"id":` + sourceID + `}]}`))
 		case "/Api/v3/contas/pagar/" + sourceID:
+			detailRequestObserved = true
 			if failPayableDetail {
 				_, _ = w.Write([]byte(`{"data":{"id":` + sourceID + `}}`))
 				return
@@ -140,6 +154,16 @@ func TestDailyPayablesAPIIsNormalizedAtomicallyWithCategoryScopeGap(t *testing.T
 	}
 	if first.Status != "SUCCESS" {
 		t.Fatalf("first sync status = %q", first.Status)
+	}
+	if !detailRequestObserved || publicationTransactionOpenDuringRequest {
+		t.Fatalf("Bling detail read observed=%t with publication transaction open=%t; want a provider read outside the publication transaction", detailRequestObserved, publicationTransactionOpenDuringRequest)
+	}
+	var remainingPreparedCheckpoints int
+	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM bling_sync_page_checkpoints WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`, connection.ID, PayablesAPIResource+".prepared", pgUUID(firstCorrelation)).Scan(&remainingPreparedCheckpoints); err != nil {
+		t.Fatalf("check prepared checkpoint cleanup: %v", err)
+	}
+	if remainingPreparedCheckpoints != 0 {
+		t.Fatalf("successful publication left %d prepared page checkpoints", remainingPreparedCheckpoints)
 	}
 	var stage, status string
 	if err := pool.QueryRow(ctx, `SELECT data_stage, status FROM integration_sync_batches WHERE id = $1::uuid`, first.BatchID).Scan(&stage, &status); err != nil {

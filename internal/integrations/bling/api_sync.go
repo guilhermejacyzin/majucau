@@ -62,6 +62,7 @@ type apiResourceSyncService struct {
 	resource         string
 	sourceEntity     string
 	list             func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
+	preparePage      func(context.Context, pgtype.UUID, []json.RawMessage) ([]json.RawMessage, error)
 	normalizePage    func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error
 	partialErrorCode func() string
 }
@@ -86,8 +87,8 @@ const PayablesAPIResource = "contas.pagar"
 type PayablesAPISyncService struct{ *apiResourceSyncService }
 
 func NewPayablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *PayablesAPISyncService {
-	normalizePage, partialErrorCode := normalizePayablesAPISnapshotPage(client)
-	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables, normalizePage: normalizePage, partialErrorCode: partialErrorCode}}
+	preparePage, normalizePage, partialErrorCode := normalizePayablesAPISnapshotPage(client)
+	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables, preparePage: preparePage, normalizePage: normalizePage, partialErrorCode: partialErrorCode}}
 }
 
 // SyncWithCorrelationID runs payables as part of a stable daily operation.
@@ -145,18 +146,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	if s.maxPages <= 0 {
 		return APISyncResult{}, ErrBlingAPISyncPageLimit
 	}
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return APISyncResult{}, fmt.Errorf("begin Bling API sync: %w", err)
-	}
-	defer func() {
-		if err := dbtx.Rollback(ctx, tx); err != nil {
-			out = APISyncResult{}
-			returnErr = errors.Join(returnErr, err)
-		}
-	}()
-	queries := database.New(tx)
-	connection, err := queries.GetIntegrationConnectionByProvider(ctx, string(domain.OriginBling))
+	connection, err := database.New(s.pool).GetIntegrationConnectionByProvider(ctx, string(domain.OriginBling))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return APISyncResult{}, ErrBlingAPISyncConnectionMissing
@@ -166,11 +156,38 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	if !connection.ID.Valid {
 		return APISyncResult{}, ErrBlingAPISyncConnectionMissing
 	}
-	// Keep manual and scheduled syncs of the same Bling resource from racing
-	// while their page snapshots and current RAW records are being replaced.
-	// The transaction lock is released automatically on commit or rollback.
-	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, blingAPIResourceSyncLockKey(connection.ID, s.resource)); err != nil {
+	// Keep the resource serialized across the bounded provider-read phase and
+	// the final publication transaction without holding an open SQL transaction
+	// while waiting on Bling. The dedicated session remains pinned until unlock.
+	lockConn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return APISyncResult{}, fmt.Errorf("acquire Bling API resource lock: %w", err)
+	}
+	if _, err := lockConn.Exec(ctx, `SELECT pg_advisory_lock($1)`, blingAPIResourceSyncLockKey(connection.ID, s.resource)); err != nil {
+		closeHijackedConnection(lockConn)
 		return APISyncResult{}, fmt.Errorf("lock Bling API resource sync: %w", err)
+	}
+	defer func() {
+		if err := releaseAPIResourceSyncLock(lockConn, connection.ID, s.resource); err != nil {
+			returnErr = errors.Join(returnErr, err)
+		}
+	}()
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return APISyncResult{}, fmt.Errorf("begin Bling API sync: %w", err)
+	}
+	defer func() {
+		if tx != nil {
+			if err := dbtx.Rollback(ctx, tx); err != nil {
+				out = APISyncResult{}
+				returnErr = errors.Join(returnErr, err)
+			}
+		}
+	}()
+	queries := database.New(tx)
+	lockedConnection, err := queries.GetIntegrationConnectionByProvider(ctx, string(domain.OriginBling))
+	if err != nil || lockedConnection.ID.Bytes != connection.ID.Bytes {
+		return APISyncResult{}, errors.Join(fmt.Errorf("load Bling API connection under resource lock: %w", ErrBlingAPISyncConnectionMissing), err)
 	}
 	batch, err := queries.InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: s.resource, DataStage: "RAW_ONLY"})
 	if err != nil {
@@ -194,24 +211,40 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		connection.ID, s.resource, checkpointCorrelationID); err != nil {
 		return APISyncResult{}, fmt.Errorf("remove superseded Bling page checkpoints: %w", err)
 	}
+	preparedResource := s.resource + ".prepared"
+	if _, err := tx.Exec(ctx, `
+		DELETE FROM bling_sync_page_checkpoints
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id <> $3`,
+		connection.ID, preparedResource, checkpointCorrelationID); err != nil {
+		return APISyncResult{}, fmt.Errorf("remove superseded prepared Bling page checkpoints: %w", err)
+	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
 	fullDailyNormalizedSnapshot := (s.resource == PayablesAPIResource || s.resource == CashMovementsAPIResource) && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
 	retryCounter := httpretry.NewCounter()
 	ctx = httpretry.WithCounter(ctx, retryCounter)
-	if _, err := tx.Exec(ctx, "SAVEPOINT bling_api_sync_data"); err != nil {
-		return result, fmt.Errorf("create Bling API sync savepoint: %w", err)
-	}
 	fail := func(code string, cause error) (APISyncResult, error) {
 		result.Status = "FAILED"
 		result.RetryCount = retryCounter.Count()
+		if tx == nil {
+			return result, s.finishFailedAfterStaging(ctx, batch.ID, result, code, cause)
+		}
 		return result, s.finishFailed(ctx, tx, queries, batch.ID, result, code, cause)
 	}
+	// Keep the batch and page checkpoints durable, then release the setup
+	// transaction before any provider request. Page reads and detail lookups can
+	// be slow; they must never hold a publication transaction open.
+	if err := tx.Commit(ctx); err != nil {
+		tx = nil
+		return result, s.finishFailedAfterStaging(ctx, batch.ID, result, "BLING_API_STAGE_COMMIT_FAILED", err)
+	}
+	tx = nil
+	queries = database.New(s.pool)
 	current := filter
 	if current.Page == 0 {
 		current.Page = 1
 	}
 	startingPage := current.Page
-	checkpoint, err := loadAPIPageCheckpointSummary(ctx, tx, connection.ID, s.resource, checkpointCorrelationID, startingPage, s.maxPages)
+	checkpoint, err := loadAPIPageCheckpointSummary(ctx, s.pool, connection.ID, s.resource, checkpointCorrelationID, startingPage, s.maxPages)
 	if err != nil {
 		return fail("BLING_API_CHECKPOINT_INVALID", err)
 	}
@@ -263,22 +296,72 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	if !completed {
 		return fail("BLING_API_PAGE_LIMIT", ErrBlingAPISyncPageLimit)
 	}
-	for pageNumber := startingPage; pageNumber <= finalPage; pageNumber++ {
-		var payload []byte
-		var payloadHash string
-		var hasNext bool
-		if err := tx.QueryRow(ctx, `
-			SELECT payload, payload_hash, has_next
-			FROM bling_sync_page_checkpoints
-			WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND page_number = $4`,
-			connection.ID, s.resource, checkpointCorrelationID, pageNumber,
-		).Scan(&payload, &payloadHash, &hasNext); err != nil {
-			return fail("BLING_API_CHECKPOINT_INVALID", fmt.Errorf("%w: missing staged page", ErrBlingAPICheckpointInvalid))
+	if fullDailyNormalizedSnapshot && s.preparePage != nil {
+		// List pages are durable checkpoints. Fetch one bounded page of detail
+		// records at a time, persist its prepared payload, and keep no database
+		// publication transaction open while waiting on the provider.
+		for pageNumber := startingPage; pageNumber <= finalPage; pageNumber++ {
+			if err := ctx.Err(); err != nil {
+				return fail("SYNC_CANCELLED", err)
+			}
+			original, err := loadAPIPageCheckpoint(ctx, s.pool, connection.ID, s.resource, checkpointCorrelationID, pageNumber)
+			if err != nil {
+				return fail("BLING_API_CHECKPOINT_INVALID", err)
+			}
+			originalRecords, err := decodeCheckpointPage(original, pageNumber)
+			if err != nil || (pageNumber < finalPage && !original.HasNext) || (pageNumber == finalPage && original.HasNext) {
+				return fail("BLING_API_CHECKPOINT_INVALID", ErrBlingAPICheckpointInvalid)
+			}
+			prepared, err := loadAPIPageCheckpoint(ctx, s.pool, connection.ID, preparedResource, checkpointCorrelationID, pageNumber)
+			if err == nil {
+				if prepared.Limit != original.Limit || prepared.HasNext != original.HasNext || prepared.RecordCount != original.RecordCount {
+					return fail("BLING_API_CHECKPOINT_INVALID", ErrBlingAPICheckpointInvalid)
+				}
+				if _, err := decodeCheckpointPage(prepared, pageNumber); err != nil {
+					return fail("BLING_API_CHECKPOINT_INVALID", err)
+				}
+				continue
+			}
+			if !errors.Is(err, pgx.ErrNoRows) {
+				return fail("BLING_API_CHECKPOINT_INVALID", err)
+			}
+			preparedRecords, err := s.preparePage(ctx, batch.ID, originalRecords)
+			if err != nil {
+				return fail(blingAPINormalizationFailureCode(err), err)
+			}
+			if len(preparedRecords) != original.RecordCount {
+				return fail("BLING_API_CHECKPOINT_INVALID", ErrBlingAPICheckpointInvalid)
+			}
+			preparedPage := BlingReceivablesPage{Page: pageNumber, Limit: original.Limit, HasNext: original.HasNext, HasNextKnown: true, Records: preparedRecords}
+			preparedPayload, err := marshalReceivablesPage(preparedPage)
+			if err != nil {
+				return fail("BLING_API_PAYLOAD_INVALID", err)
+			}
+			if err := persistAPIPageCheckpoint(ctx, s.pool, connection.ID, preparedResource, checkpointCorrelationID, preparedPage, preparedPayload); err != nil {
+				return fail("BLING_API_CHECKPOINT_FAILED", err)
+			}
 		}
-		if (pageNumber < finalPage && !hasNext) || (pageNumber == finalPage && hasNext) {
+	}
+	tx, err = s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		tx = nil
+		return fail("BLING_API_PUBLICATION_BEGIN_FAILED", err)
+	}
+	queries = database.New(tx)
+	if _, err := tx.Exec(ctx, "SAVEPOINT bling_api_sync_data"); err != nil {
+		_ = tx.Rollback(context.WithoutCancel(ctx))
+		tx = nil
+		return fail("BLING_API_PUBLICATION_BEGIN_FAILED", err)
+	}
+	for pageNumber := startingPage; pageNumber <= finalPage; pageNumber++ {
+		original, err := loadAPIPageCheckpoint(ctx, tx, connection.ID, s.resource, checkpointCorrelationID, pageNumber)
+		if err != nil {
+			return fail("BLING_API_CHECKPOINT_INVALID", err)
+		}
+		if _, err := decodeCheckpointPage(original, pageNumber); err != nil || (pageNumber < finalPage && !original.HasNext) || (pageNumber == finalPage && original.HasNext) {
 			return fail("BLING_API_CHECKPOINT_INVALID", ErrBlingAPICheckpointInvalid)
 		}
-		created, updated, err := persistResourcePageWithHash(ctx, queries, connection.ID, batch.ID, pageNumber, s.sourceEntity, payload, payloadHash)
+		created, updated, err := persistResourcePageWithHash(ctx, queries, connection.ID, batch.ID, pageNumber, s.sourceEntity, original.Payload, original.PayloadHash)
 		if err != nil {
 			return fail("BLING_API_RAW_FAILED", err)
 		}
@@ -289,7 +372,18 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 			result.PagesUpdated++
 		}
 		if fullDailyNormalizedSnapshot {
-			records, err := decodePageRecords(payload)
+			normalizationPayload := original.Payload
+			if s.preparePage != nil {
+				prepared, err := loadAPIPageCheckpoint(ctx, tx, connection.ID, preparedResource, checkpointCorrelationID, pageNumber)
+				if err != nil || prepared.Limit != original.Limit || prepared.HasNext != original.HasNext || prepared.RecordCount != original.RecordCount {
+					return fail("BLING_API_CHECKPOINT_INVALID", errors.Join(ErrBlingAPICheckpointInvalid, err))
+				}
+				if _, err := decodeCheckpointPage(prepared, pageNumber); err != nil {
+					return fail("BLING_API_CHECKPOINT_INVALID", err)
+				}
+				normalizationPayload = prepared.Payload
+			}
+			records, err := decodePageRecords(normalizationPayload)
 			if err != nil {
 				return fail("BLING_API_CHECKPOINT_INVALID", err)
 			}
@@ -332,8 +426,8 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	}
 	if _, err := tx.Exec(ctx, `
 		DELETE FROM bling_sync_page_checkpoints
-		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3`,
-		connection.ID, s.resource, checkpointCorrelationID); err != nil {
+		WHERE connection_id = $1 AND resource = ANY($2::text[]) AND correlation_id = $3`,
+		connection.ID, []string{s.resource, preparedResource}, checkpointCorrelationID); err != nil {
 		return fail("BLING_API_CHECKPOINT_CLEANUP_FAILED", err)
 	}
 	cursorValue := fmt.Sprintf("page:%d", finalPage)
@@ -481,12 +575,12 @@ type apiPageCheckpointSummary struct {
 	LastHasNext bool
 }
 
-func loadAPIPageCheckpointSummary(ctx context.Context, tx pgx.Tx, connectionID pgtype.UUID, resource string, correlationID pgtype.UUID, startingPage, maxPages int) (apiPageCheckpointSummary, error) {
-	if !connectionID.Valid || !correlationID.Valid || resource == "" || startingPage < 1 || maxPages < 1 {
+func loadAPIPageCheckpointSummary(ctx context.Context, reader apiPageCheckpointReader, connectionID pgtype.UUID, resource string, correlationID pgtype.UUID, startingPage, maxPages int) (apiPageCheckpointSummary, error) {
+	if reader == nil || !connectionID.Valid || !correlationID.Valid || resource == "" || startingPage < 1 || maxPages < 1 {
 		return apiPageCheckpointSummary{}, ErrBlingAPICheckpointInvalid
 	}
 	var summary apiPageCheckpointSummary
-	if err := tx.QueryRow(ctx, `
+	if err := reader.QueryRow(ctx, `
 		SELECT COUNT(*)::integer, COALESCE(MIN(page_number), 0), COALESCE(MAX(page_number), 0),
 		       COALESCE(SUM(record_count), 0)::bigint
 		FROM bling_sync_page_checkpoints
@@ -501,7 +595,7 @@ func loadAPIPageCheckpointSummary(ctx context.Context, tx pgx.Tx, connectionID p
 	if summary.FirstPage != startingPage || summary.LastPage-summary.FirstPage+1 != summary.PageCount || summary.PageCount > maxPages || summary.RecordCount < 0 {
 		return apiPageCheckpointSummary{}, ErrBlingAPICheckpointInvalid
 	}
-	if err := tx.QueryRow(ctx, `
+	if err := reader.QueryRow(ctx, `
 		SELECT page_limit, has_next
 		FROM bling_sync_page_checkpoints
 		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND page_number = $4`,
@@ -510,6 +604,40 @@ func loadAPIPageCheckpointSummary(ctx context.Context, tx pgx.Tx, connectionID p
 		return apiPageCheckpointSummary{}, fmt.Errorf("read last Bling page checkpoint: %w", err)
 	}
 	return summary, nil
+}
+
+type apiPageCheckpointReader interface {
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
+
+type apiPageCheckpoint struct {
+	Payload     []byte
+	PayloadHash string
+	Limit       int
+	HasNext     bool
+	RecordCount int
+}
+
+func loadAPIPageCheckpoint(ctx context.Context, reader apiPageCheckpointReader, connectionID pgtype.UUID, resource string, correlationID pgtype.UUID, pageNumber int) (apiPageCheckpoint, error) {
+	if reader == nil || !connectionID.Valid || resource == "" || !correlationID.Valid || pageNumber < 1 {
+		return apiPageCheckpoint{}, ErrBlingAPICheckpointInvalid
+	}
+	var checkpoint apiPageCheckpoint
+	if err := reader.QueryRow(ctx, `
+		SELECT payload, payload_hash, page_limit, has_next, record_count
+		FROM bling_sync_page_checkpoints
+		WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3 AND page_number = $4`,
+		connectionID, resource, correlationID, pageNumber,
+	).Scan(&checkpoint.Payload, &checkpoint.PayloadHash, &checkpoint.Limit, &checkpoint.HasNext, &checkpoint.RecordCount); err != nil {
+		return apiPageCheckpoint{}, err
+	}
+	if len(checkpoint.Payload) == 0 || len(checkpoint.PayloadHash) != sha256.Size*2 || checkpoint.RecordCount < 0 {
+		return apiPageCheckpoint{}, ErrBlingAPICheckpointInvalid
+	}
+	if _, err := hex.DecodeString(checkpoint.PayloadHash); err != nil {
+		return apiPageCheckpoint{}, ErrBlingAPICheckpointInvalid
+	}
+	return checkpoint, nil
 }
 
 func persistAPIPageCheckpoint(ctx context.Context, pool *pgxpool.Pool, connectionID pgtype.UUID, resource string, correlationID pgtype.UUID, page BlingReceivablesPage, payload []byte) error {
@@ -564,6 +692,24 @@ func blingAPIResourceSyncLockKey(connectionID pgtype.UUID, resource string) int6
 	_, _ = hash.Write([]byte{0})
 	_, _ = hash.Write([]byte(resource))
 	return int64(binary.BigEndian.Uint64(hash.Sum(nil)[:8]))
+}
+
+func releaseAPIResourceSyncLock(connection *pgxpool.Conn, connectionID pgtype.UUID, resource string) error {
+	if connection == nil {
+		return errors.New("Bling API resource lock connection is missing")
+	}
+	unlockCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var unlocked bool
+	if err := connection.QueryRow(unlockCtx, `SELECT pg_advisory_unlock($1)`, blingAPIResourceSyncLockKey(connectionID, resource)).Scan(&unlocked); err != nil || !unlocked {
+		closeErr := closeHijackedConnection(connection)
+		if err == nil {
+			err = errors.New("database did not confirm the Bling API resource lock release")
+		}
+		return errors.Join(err, closeErr)
+	}
+	connection.Release()
+	return nil
 }
 
 // retireCurrentResourcePagesAfter removes stale page snapshots only after a
@@ -685,6 +831,31 @@ func (s *apiResourceSyncService) finishFailed(ctx context.Context, tx pgx.Tx, qu
 	return cause
 }
 
+// finishFailedAfterStaging records a provider-read/preparation failure after
+// the list-page transaction has committed. No normalized or current RAW data
+// has been changed yet, so this short transaction only updates the audit row;
+// page checkpoints remain available for a safe retry with the same correlation.
+func (s *apiResourceSyncService) finishFailedAfterStaging(ctx context.Context, batchID pgtype.UUID, result APISyncResult, code string, cause error) error {
+	auditCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer cancel()
+	tx, err := s.pool.BeginTx(auditCtx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("%w: begin failed Bling sync audit: %v", cause, err)
+	}
+	defer func() { _ = dbtx.Rollback(auditCtx, tx) }()
+	message := code
+	if err := database.New(tx).FinishIntegrationSyncBatch(auditCtx, database.FinishIntegrationSyncBatchParams{
+		ID: batchID, Status: "FAILED", RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated),
+		RetryCount: result.RetryCount, ErrorCode: &code, ErrorMessageSanitized: &message,
+	}); err != nil {
+		return fmt.Errorf("%w: finish failed Bling sync audit: %v", cause, err)
+	}
+	if err := tx.Commit(auditCtx); err != nil {
+		return fmt.Errorf("%w: commit failed Bling sync audit: %v", cause, err)
+	}
+	return cause
+}
+
 type receivablesPagePayload struct {
 	Page    int               `json:"page"`
 	Limit   int               `json:"limit"`
@@ -700,6 +871,18 @@ func decodePageRecords(payload []byte) ([]json.RawMessage, error) {
 	}
 	if page.Records == nil {
 		return nil, fmt.Errorf("%w: saved Bling page records are missing", ErrBlingAPICheckpointInvalid)
+	}
+	return page.Records, nil
+}
+
+func decodeCheckpointPage(checkpoint apiPageCheckpoint, expectedPage int) ([]json.RawMessage, error) {
+	if expectedPage < 1 || checkpoint.RecordCount < 0 {
+		return nil, ErrBlingAPICheckpointInvalid
+	}
+	var page receivablesPagePayload
+	if err := json.Unmarshal(checkpoint.Payload, &page); err != nil || page.Records == nil ||
+		page.Page != expectedPage || page.Limit != checkpoint.Limit || page.HasNext != checkpoint.HasNext || len(page.Records) != checkpoint.RecordCount {
+		return nil, ErrBlingAPICheckpointInvalid
 	}
 	return page.Records, nil
 }

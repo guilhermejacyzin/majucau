@@ -9,6 +9,10 @@
 - **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. A suíte PostgreSQL isolada passou localmente e a CI [#41535352924](https://github.com/guilhermejacyzin/majucau/actions/runs/41535352924) passou em Windows e PostgreSQL, incluindo migrations, integrações, build e pacote. Ainda faltam atualizar o protótipo, sincronizar os dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
+### Atualização operacional — dados reais do Bling
+
+Em 02/11/2026, apliquei ao PostgreSQL isolado do protótipo as migrations 000015/000016, reapliquei as permissões de runtime com a conta de provisionamento e a verificação terminou `PASS`. Recompilei e reiniciei o worker atual; a conexão Bling continua `CONNECTED`. A carga diária trouxe 14.896 linhas de Contas a Receber em `RAW_ONLY`, portanto nenhuma delas foi publicada na tabela que alimenta os cards. A etapa de Contas a Pagar ainda não havia concluído; movimentos `/caixas` ficam depois dela na rotina. As tabelas normalizadas de receber, pagar e caixa estavam vazias na conferência. O Drive retornou `GOOGLE_DRIVE_FOLDERS_NOT_CONFIGURED`. Não alterei telas ou regras financeiras e não aumentei os percentuais: projeto 12,1% concluído/87,9% restante; BK-058, BK-059 e BK-062 continuam em 5%. Não há estimativa confiável de término antes de medir a carga de mais de 10 mil títulos. Relatórios: [status simples](./STATUS-ATUAL-2026-11-02.md) e [auditoria detalhada](./evidence/BLING-DATA-PROJECTION-AUDIT-2026-11-02.md).
+
 ## O que queremos entregar
 
 Concluir o backlog aprovado do Majucau e entregar primeiro um protótipo que possa ser testado e homologado. Depois da homologação, seguir para a finalização e entrada em produção previstas no próprio backlog.

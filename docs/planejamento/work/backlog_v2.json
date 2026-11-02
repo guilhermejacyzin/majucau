@@ -48,7 +48,7 @@
     "evidence": "Concluída 11/10: originais/cópias conferidos 17/17 por nome, tamanho e hash; ZIP intacto. Extração: 20 abas. Mockups: 19 hashes e 3 duplicatas conferidos. Detalhes: docs/planejamento/FONTES.md.",
     "weight": 1,
     "dependencies": [],
-    "progress": 1.0
+    "progress": 1
   },
   {
     "key": "repoaudit",
@@ -924,7 +924,7 @@
       "BK-027",
       "BK-028"
     ],
-    "progress": 1.0
+    "progress": 1
   },
   {
     "key": "observabilitybase",
@@ -1844,15 +1844,15 @@
     "questions": "",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "Atualizado em 02/11: normalizador guarda saldo aberto como saída negativa; valores positivos do Bling são convertidos e negativos preservados. Faltam validar aging, estornos/cancelamentos, CI PostgreSQL e sincronização real. Evidência: docs/evidence/BLING-PAYABLE-OUTFLOW-SIGN-2026-11-02.md.",
     "weight": 1,
     "dependencies": [
       "BK-047",
       "BK-005",
       "BK-053"
     ],
-    "progress": 0
+    "progress": 0.05
   },
   {
     "key": "payablesscreen",
@@ -1876,14 +1876,14 @@
     "questions": "",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "Atualizado em 02/11: T04/T01 recebem valores de saídas negativas em cartões e linhas existentes, sem alteração visual. Falta aplicar migration no protótipo, confirmar CI e conferir os dados reais do Bling. Evidência: docs/evidence/BLING-PAYABLE-OUTFLOW-SIGN-2026-11-02.md.",
     "weight": 1,
     "dependencies": [
       "BK-058",
       "BK-028"
     ],
-    "progress": 0
+    "progress": 0.05
   },
   {
     "key": "cashengine",
@@ -1968,7 +1968,7 @@
       "Mostrar posição da fonte e indisponibilidade de cálculos parciais",
       "Identificar a origem e data do caixa consolidado e distinguir o valor transferível do Itaú para aplicação; recebíveis futuros permanecem previstos."
     ],
-    "accept": "Valores, folgas, datas e gráfico conferem com motor; export mantém filtros aprovados.",
+    "accept": "Valores, folgas, datas e gráfico conferem com o motor e as fontes; a tela permanece somente para consulta e sem botão de exportação conforme decisão de 01/11/2026.",
     "impact": "Torna a situação do caixa compreensível.",
     "deps": [
       "criticalweek",
@@ -1979,15 +1979,15 @@
     "questions": "",
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
-    "status": "Não iniciada",
-    "evidence": "",
+    "status": "Em andamento",
+    "evidence": "Atualizado em 02/11: backend normaliza /caixas, com entradas positivas e saídas negativas; a carga independe de falha em Contas a Pagar. Falta CI PostgreSQL, aplicação da migration e conferência real na tela. Evidência: docs/evidence/BLING-CASH-MOVEMENTS-NORMALIZATION-2026-11-02.md.",
     "weight": 1,
     "dependencies": [
       "BK-061",
       "BK-028",
       "BK-012"
     ],
-    "progress": 0
+    "progress": 0.05
   },
   {
     "key": "historicalcost",

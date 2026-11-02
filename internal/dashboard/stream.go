@@ -122,7 +122,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		receivablesOverdueCount, payablesCount, payablesTodayCount, payablesOverdueCount, payablesDueNext7DaysCount int64
 		paymentsTotalCount, paymentsMonthCount                                                                      int64
 		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt                      pgtype.Timestamptz
-		dailyPayablesPartial                                                                                        bool
+		dailyPayablesPartial, dailyCashMovementsPartial                                                             bool
 	)
 	schedule, err := scheduler.NewSaoPaulo0930()
 	if err != nil {
@@ -152,6 +152,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&dailyPayablesSyncAt,
 		&dailyPayablesPartial,
 		&dailyCashMovementsSyncAt,
+		&dailyCashMovementsPartial,
 		&payablesDueNext7DaysValue,
 		&payablesDueNext7DaysCount,
 	)
@@ -176,13 +177,13 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		DataState:            state,
 		Receivables:          metricForSourceRun(receivablesValue, receivablesCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
 		FutureB2C:            metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
-		ReceiptsMonth:        metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING"),
+		ReceiptsMonth:        metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
 		ReceivablesOverdue:   metricForSourceRun(receivablesOverdueValue, receivablesOverdueCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
 		Payables:             metricForSourceRun(payablesValue, payablesCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesDueToday:     metricForSourceRun(payablesTodayValue, payablesTodayCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesOverdue:      metricForSourceRun(payablesOverdueValue, payablesOverdueCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesDueNext7Days: metricForSourceRun(payablesDueNext7DaysValue, payablesDueNext7DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
-		PaymentsMonth:        metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING"),
+		PaymentsMonth:        metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
 	}, nil
 }
 
@@ -349,18 +350,30 @@ WITH eligible_receivables AS (
       WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND due_date < $1::date
     ) AS overdue_count
   FROM eligible_receivables
+), cash_snapshot AS (
+  SELECT b.id AS sync_batch_id, b.status
+    FROM integration_sync_batches b
+    JOIN integration_connections c ON c.id = b.connection_id
+   WHERE c.provider = 'BLING'
+     AND b.resource = 'caixas'
+     AND b.correlation_id = $4
+     AND b.status IN ('SUCCESS', 'PARTIAL')
+     AND b.data_stage = 'NORMALIZED'
+   ORDER BY b.finished_at DESC, b.id DESC
+   LIMIT 1
 ), rc AS (
   SELECT
     COALESCE(SUM(amount) FILTER (
-      WHERE source_system = 'BLING' AND status = 'CONFIRMED'
-        AND receipt_date >= $2::date AND receipt_date < $3::date
+      WHERE direction = 'INFLOW' AND source_status = 'R'
+        AND movement_date >= $2::date AND movement_date < $3::date
     ), 0)::text AS month_value,
     COUNT(id) FILTER (
-      WHERE source_system = 'BLING' AND status = 'CONFIRMED'
-        AND receipt_date >= $2::date AND receipt_date < $3::date
+      WHERE direction = 'INFLOW' AND source_status = 'R'
+        AND movement_date >= $2::date AND movement_date < $3::date
     ) AS month_count,
-    COUNT(id) FILTER (WHERE source_system = 'BLING' AND status = 'CONFIRMED') AS total_count
-  FROM receipts
+    COUNT(id) FILTER (WHERE direction = 'INFLOW' AND source_status = 'R') AS total_count
+  FROM bling_cash_movements movement
+  JOIN cash_snapshot snapshot ON snapshot.sync_batch_id = movement.sync_batch_id
 ), latest_daily_payable_snapshot AS (
   SELECT b.id AS sync_batch_id
     FROM integration_sync_batches b
@@ -385,11 +398,11 @@ WITH eligible_receivables AS (
         AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ) AS today_count,
     COALESCE(SUM(open_balance) FILTER (
-      WHERE open_balance > 0 AND due_date < $1::date
+      WHERE open_balance <> 0 AND due_date < $1::date
         AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ), 0)::text AS overdue_value,
     COUNT(id) FILTER (
-      WHERE open_balance > 0 AND due_date < $1::date
+      WHERE open_balance <> 0 AND due_date < $1::date
         AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ) AS overdue_count,
     COALESCE(SUM(open_balance) FILTER (
@@ -401,7 +414,7 @@ WITH eligible_receivables AS (
         AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ) AS due_next_7_days_count
   FROM payables pw
-  WHERE pw.open_balance > 0
+  WHERE pw.open_balance <> 0
     AND (pw.source_entity <> 'bling.conta_pagar' OR EXISTS (
       SELECT 1
         FROM latest_daily_payable_snapshot latest
@@ -410,14 +423,17 @@ WITH eligible_receivables AS (
     ))
 ), pm AS (
   SELECT
-    COALESCE(SUM(amount) FILTER (
-      WHERE source_system = 'BLING' AND payment_date >= $2::date AND payment_date < $3::date
+    COALESCE(SUM(-amount) FILTER (
+      WHERE direction = 'OUTFLOW' AND source_status = 'R'
+        AND movement_date >= $2::date AND movement_date < $3::date
     ), 0)::text AS month_value,
     COUNT(id) FILTER (
-      WHERE source_system = 'BLING' AND payment_date >= $2::date AND payment_date < $3::date
+      WHERE direction = 'OUTFLOW' AND source_status = 'R'
+        AND movement_date >= $2::date AND movement_date < $3::date
     ) AS month_count,
-    COUNT(id) FILTER (WHERE source_system = 'BLING') AS total_count
-  FROM payments
+    COUNT(id) FILTER (WHERE direction = 'OUTFLOW' AND source_status = 'R') AS total_count
+  FROM bling_cash_movements movement
+  JOIN cash_snapshot snapshot ON snapshot.sync_batch_id = movement.sync_batch_id
 ), last_bling_sync AS (
   SELECT MAX(b.finished_at) AS finished_at
     FROM integration_sync_batches b
@@ -429,7 +445,8 @@ WITH eligible_receivables AS (
     MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.receber' AND b.status = 'SUCCESS' AND b.data_stage = 'NORMALIZED') AS receivables_finished_at,
     MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS payables_finished_at,
     COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.pagar' AND b.data_stage = 'NORMALIZED'), false) AS payables_partial,
-    MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas' AND b.status = 'SUCCESS' AND b.data_stage = 'NORMALIZED') AS cash_movements_finished_at
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS cash_movements_finished_at,
+    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'caixas' AND b.data_stage = 'NORMALIZED'), false) AS cash_movements_partial
     FROM integration_sync_batches b
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
@@ -446,6 +463,7 @@ SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        current_daily_bling_sync.payables_finished_at,
        current_daily_bling_sync.payables_partial,
        current_daily_bling_sync.cash_movements_finished_at,
+       current_daily_bling_sync.cash_movements_partial,
        p.due_next_7_days_value, p.due_next_7_days_count
 FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync CROSS JOIN current_daily_bling_sync
 `
@@ -510,7 +528,7 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.supplier END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.status END,
        limits.exceeds_limit
   FROM (SELECT * FROM payables pw
-         WHERE pw.open_balance > 0
+         WHERE pw.open_balance <> 0
            AND (pw.source_entity <> 'bling.conta_pagar' OR EXISTS (
              SELECT 1
                FROM latest_daily_payable_snapshot latest

@@ -26,7 +26,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
       future_b2c: unavailable,
       receipts_month: unavailable,
       receivables_overdue: unavailable,
-      payables: { value: '80.00', state: 'CONFIRMED', source_system: 'BLING' },
+      payables: { value: '-80.00', state: 'CONFIRMED', source_system: 'BLING' },
       payables_due_today: unavailable,
       payables_overdue: unavailable,
       payables_due_next_7_days: unavailable,
@@ -39,6 +39,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(receivables).toHaveTextContent('125,00')
     expect(within(receivables as HTMLElement).getByText('Parcial · B2C + B2B')).toBeInTheDocument()
     expect(within(payables as HTMLElement).getByText('Bling')).toBeInTheDocument()
+    expect(payables?.textContent).toContain('-')
     expect(within(payables as HTMLElement).queryByText(/Parcial/)).not.toBeInTheDocument()
   })
 

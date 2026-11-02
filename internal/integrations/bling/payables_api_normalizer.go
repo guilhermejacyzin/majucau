@@ -286,7 +286,7 @@ func parsePayableAPIDetail(payload []byte, expectedID int64) (normalizedPayable,
 	if err != nil {
 		return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_AMOUNT_INVALID")
 	}
-	openBalance, err := parseRequiredAPIMoney(detail.OpenBalance)
+	openBalance, err := parseRequiredAPIOpenBalance(detail.OpenBalance)
 	if err != nil {
 		var moneyErr *payableAPIMoneyError
 		if errors.As(err, &moneyErr) {
@@ -338,6 +338,28 @@ func parseRequiredAPIMoney(raw json.RawMessage) (pgtype.Numeric, error) {
 	var value pgtype.Numeric
 	if err := value.Scan(textValue); err != nil || !value.Valid || value.Int == nil || value.Int.Sign() < 0 {
 		return pgtype.Numeric{}, &payableAPIMoneyError{code: "VALUE_INVALID"}
+	}
+	return value, nil
+}
+
+// Payables are outflows in Majucau's financial view. Keep the source's exact
+// open-balance magnitude, but normalize its sign to negative regardless of
+// whether Bling returns the amount as positive or already signed.
+func parseRequiredAPIOpenBalance(raw json.RawMessage) (pgtype.Numeric, error) {
+	textValue, err := decodeAPIStringOrNumber(raw)
+	if err != nil {
+		return pgtype.Numeric{}, &payableAPIMoneyError{code: classifyPayableMoneyShape(raw)}
+	}
+	magnitude := strings.TrimPrefix(textValue, "-")
+	if !isExactPayableDecimal(magnitude) {
+		return pgtype.Numeric{}, &payableAPIMoneyError{code: classifyPayableMoneyShape(raw)}
+	}
+	var value pgtype.Numeric
+	if err := value.Scan(textValue); err != nil || !value.Valid || value.Int == nil {
+		return pgtype.Numeric{}, &payableAPIMoneyError{code: "VALUE_INVALID"}
+	}
+	if value.Int.Sign() > 0 {
+		value.Int.Neg(value.Int)
 	}
 	return value, nil
 }

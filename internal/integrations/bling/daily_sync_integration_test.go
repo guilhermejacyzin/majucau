@@ -81,6 +81,9 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE correlation_id = $1 AND resource = $2`, correlation, PayablesAPIResource); err != nil {
 		t.Fatalf("mark payable fixture as normalized: %v", err)
 	}
+	if _, err := pool.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE correlation_id = $1 AND resource = $2`, correlation, CashMovementsAPIResource); err != nil {
+		t.Fatalf("mark cash movements fixture as normalized: %v", err)
+	}
 	for attempt := 0; attempt < 2; attempt++ {
 		result, skipped, err = service.SyncDaily(ctx, scheduledAt)
 		if err != nil || !skipped || result.Status != "SUCCESS" {

@@ -149,7 +149,7 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 		summary: scriptedDashboardSummaryRow{values: dashboardSummaryValues()},
 		queryRows: []pgx.Rows{
 			&scriptedDashboardRows{values: []dashboardRowValues{{fields: [6]string{"Cliente", "Nuvem Pago", "2026-09-22", "40.0000", "39.0000", "PROJECTED"}}}},
-			&scriptedDashboardRows{values: []dashboardRowValues{{fields: [6]string{"Fornecedor", "NF-1", "2026-09-23", "80.0000", "Insumos", "OPEN"}}}},
+			&scriptedDashboardRows{values: []dashboardRowValues{{fields: [6]string{"Fornecedor", "NF-1", "2026-09-23", "-80.0000", "Insumos", "OPEN"}}}},
 		},
 	}
 	db := &scriptedDashboardDB{tx: tx}
@@ -164,7 +164,7 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 		t.Fatalf("stream output is not valid snapshot JSON: %v", err)
 	}
 	wantLastSync := time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC)
-	if !snapshot.AsOf.Equal(asOf) || snapshot.DataState != "PARTIAL" || snapshot.Receivables.Value != "100.0000" || snapshot.PayablesDueNext7Days.Value != "35.0000" || snapshot.PayablesDueNext7Days.Count != 2 || snapshot.LastBlingSyncAt == nil || !snapshot.LastBlingSyncAt.Equal(wantLastSync) {
+	if !snapshot.AsOf.Equal(asOf) || snapshot.DataState != "PARTIAL" || snapshot.Receivables.Value != "100.0000" || snapshot.PayablesDueNext7Days.Value != "-35.0000" || snapshot.PayablesDueNext7Days.Count != 2 || snapshot.LastBlingSyncAt == nil || !snapshot.LastBlingSyncAt.Equal(wantLastSync) {
 		t.Fatalf("unexpected snapshot summary: %+v", snapshot)
 	}
 	if len(snapshot.ReceivableRows) != 1 || snapshot.ReceivableRows[0].Customer != "Cliente" || len(snapshot.PayableRows) != 1 || snapshot.PayableRows[0].Supplier != "Fornecedor" {
@@ -350,6 +350,25 @@ func TestReadStreamSummaryUsesCashMovementSyncForReceiptAndPaymentMetrics(t *tes
 	}
 }
 
+func TestReadStreamSummaryMarksCashFlowOutflowsNegativeAndPartial(t *testing.T) {
+	finishedAt := time.Date(2026, 11, 2, 13, 0, 0, 0, time.UTC)
+	asOf := time.Date(2026, 11, 2, 16, 0, 0, 0, time.UTC)
+	values := dashboardSummaryValues()
+	values[15], values[16], values[17] = "-125.5000", int64(1), int64(1)
+	values[22], values[23] = finishedAt, true
+	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
+	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snapshot.PaymentsMonth.State != "PARTIAL" || snapshot.PaymentsMonth.Value != "-125.5000" || snapshot.PaymentsMonth.Count != 1 {
+		t.Fatalf("payments month = %+v, want one partial outflow of -125.5000", snapshot.PaymentsMonth)
+	}
+	if snapshot.ReceiptsMonth.State != "PARTIAL" {
+		t.Fatalf("receipts month = %+v, want same partial cash source", snapshot.ReceiptsMonth)
+	}
+}
+
 func TestReadStreamSummaryShowsNormalizedPayablesWithCategoryGapAsPartial(t *testing.T) {
 	finishedAt := time.Date(2026, 11, 2, 13, 0, 0, 0, time.UTC)
 	values := dashboardSummaryValues()
@@ -359,8 +378,8 @@ func TestReadStreamSummaryShowsNormalizedPayablesWithCategoryGapAsPartial(t *tes
 	if err != nil {
 		t.Fatalf("readStreamSummary() error = %v", err)
 	}
-	if snapshot.Payables.State != "PARTIAL" || snapshot.Payables.Value != "80.0000" || snapshot.Payables.Count != 2 {
-		t.Fatalf("payables = %+v, want visible real value marked PARTIAL", snapshot.Payables)
+	if snapshot.Payables.State != "PARTIAL" || snapshot.Payables.Value != "-80.0000" || snapshot.Payables.Count != 2 {
+		t.Fatalf("payables = %+v, want visible negative outflow marked PARTIAL", snapshot.Payables)
 	}
 	if snapshot.PayablesDueNext7Days.State != "PARTIAL" {
 		t.Fatalf("payables due in seven days = %+v, want PARTIAL", snapshot.PayablesDueNext7Days)
@@ -376,7 +395,7 @@ func TestDashboardDetailStreamsUseExplicitBounds(t *testing.T) {
 		firstValue string
 	}{
 		{name: "receivables", stream: streamReceivableRows, fields: [6]string{"Cliente", "Bling", "2026-10-04", "100.00", "100.00", "OPEN"}, firstKey: "customer", firstValue: "Cliente"},
-		{name: "payables", stream: streamPayableRows, fields: [6]string{"Fornecedor", "NF-1", "2026-10-04", "100.00", "Insumos", "OPEN"}, firstKey: "supplier", firstValue: "Fornecedor"},
+		{name: "payables", stream: streamPayableRows, fields: [6]string{"Fornecedor", "NF-1", "2026-10-04", "-100.00", "Insumos", "OPEN"}, firstKey: "supplier", firstValue: "Fornecedor"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -434,10 +453,10 @@ func dashboardSummaryValues() []any {
 	return []any{
 		"100.0000", int64(2), "40.0000", int64(1),
 		"25.0000", int64(1), int64(3), "5.0000", int64(1),
-		"80.0000", int64(2), "10.0000", int64(1), "4.0000", int64(1),
+		"-80.0000", int64(2), "-10.0000", int64(1), "-4.0000", int64(1),
 		"30.0000", int64(1), int64(2), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
-		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false, time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
-		"35.0000", int64(2),
+		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false, time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false,
+		"-35.0000", int64(2),
 	}
 }
 
@@ -446,7 +465,7 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
-		"0.0000", int64(0), int64(0), nil, nil, nil, false, nil,
+		"0.0000", int64(0), int64(0), nil, nil, nil, false, nil, false,
 		"0.0000", int64(0),
 	}
 }

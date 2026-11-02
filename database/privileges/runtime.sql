@@ -22,6 +22,7 @@ GRANT SELECT ON TABLE
   google_drive_source_validation_runs,
   sync_cursors,
   raw_records,
+  bling_cash_movements,
   payable_sync_snapshot_rows,
   receipts,
   receivables,
@@ -40,7 +41,8 @@ GRANT INSERT, UPDATE ON TABLE
   sync_cursors,
   receipts,
   receivables,
-  payables
+  payables,
+  bling_cash_movements
 TO majucau_runtime;
 GRANT INSERT ON TABLE
   raw_records,

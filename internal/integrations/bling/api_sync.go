@@ -52,9 +52,9 @@ type APISyncResult struct {
 }
 
 // apiResourceSyncService stages API pages as append-only RAW evidence. The
-// approved full daily payable snapshot also normalizes its fields in the same
-// publication transaction; other resources remain RAW_ONLY until their
-// mapping contracts are implemented and approved.
+// full daily payable and cash-movement snapshots also normalize their approved
+// fields in the same publication transaction; other resources remain RAW_ONLY
+// until their mapping contracts are implemented and approved.
 type apiResourceSyncService struct {
 	pool             *pgxpool.Pool
 	client           *BlingAPIClient
@@ -99,9 +99,10 @@ func (s *PayablesAPISyncService) SyncWithCorrelationID(ctx context.Context, filt
 	return s.apiResourceSyncService.sync(ctx, filter, &correlationID)
 }
 
-// CashMovementsAPISyncService stores the Bling cash/bank movement pages as
-// append-only RAW evidence. It does not classify a movement as CAPEX or a
-// financial fact; those meanings still require account homologation.
+// CashMovementsAPISyncService stores append-only RAW pages and normalizes the
+// movement direction, exact amount, date, and account identity. It does not
+// classify a movement as CAPEX or a DRE line; those meanings still require
+// account and category homologation.
 type CashMovementsAPISyncService struct{ *apiResourceSyncService }
 
 func NewCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *CashMovementsAPISyncService {
@@ -110,6 +111,7 @@ func NewCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) 
 
 func newCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient, dateFilter CashMovementsFilter) *CashMovementsAPISyncService {
 	var list func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
+	normalizePage, partialErrorCode := normalizeCashMovementAPISnapshotPage()
 	if client != nil {
 		list = func(ctx context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
 			request := dateFilter
@@ -118,7 +120,7 @@ func newCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient, 
 			return client.ListCashMovements(ctx, request)
 		}
 	}
-	return &CashMovementsAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: CashMovementsAPIResource, sourceEntity: "bling.caixas.page", list: list}}
+	return &CashMovementsAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: CashMovementsAPIResource, sourceEntity: "bling.caixas.page", list: list, normalizePage: normalizePage, partialErrorCode: partialErrorCode}}
 }
 
 // SyncWithCorrelationID runs cash movements as part of the stable daily load.
@@ -193,7 +195,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		return APISyncResult{}, fmt.Errorf("remove superseded Bling page checkpoints: %w", err)
 	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
-	fullDailyPayablesSnapshot := s.resource == PayablesAPIResource && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
+	fullDailyNormalizedSnapshot := (s.resource == PayablesAPIResource || s.resource == CashMovementsAPIResource) && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
 	retryCounter := httpretry.NewCounter()
 	ctx = httpretry.WithCounter(ctx, retryCounter)
 	if _, err := tx.Exec(ctx, "SAVEPOINT bling_api_sync_data"); err != nil {
@@ -286,7 +288,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		if updated {
 			result.PagesUpdated++
 		}
-		if fullDailyPayablesSnapshot {
+		if fullDailyNormalizedSnapshot {
 			records, err := decodePageRecords(payload)
 			if err != nil {
 				return fail("BLING_API_CHECKPOINT_INVALID", err)
@@ -298,13 +300,13 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	}
 	batchStatus := "SUCCESS"
 	var batchErrorCode, batchErrorMessage *string
-	if fullDailyPayablesSnapshot {
+	if fullDailyNormalizedSnapshot {
 		updated, err := queries.MarkIntegrationSyncBatchNormalized(ctx, batch.ID)
 		if err != nil {
 			return fail("BLING_API_NORMALIZATION_FAILED", err)
 		}
 		if updated != 1 {
-			return fail("BLING_API_NORMALIZATION_FAILED", errors.New("daily payable batch stage changed unexpectedly"))
+			return fail("BLING_API_NORMALIZATION_FAILED", errors.New("daily normalized batch stage changed unexpectedly"))
 		}
 		if s.partialErrorCode != nil {
 			code := s.partialErrorCode()
@@ -316,6 +318,8 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 					message = "Os títulos foram carregados; a categoria ficou indisponível por falta de permissão de leitura no Bling."
 				case "BLING_CATEGORY_UNASSIGNED":
 					message = "Os títulos foram carregados; alguns não têm categoria atribuída no Bling."
+				case "BLING_CASH_ACCOUNT_ID_MISSING":
+					message = "As movimentações foram carregadas; falta identificar a conta financeira de algumas linhas."
 				}
 				batchErrorCode, batchErrorMessage = &code, &message
 			}
@@ -381,6 +385,18 @@ func blingAPINormalizationFailureCode(err error) string {
 			"BLING_CATEGORY_DETAIL_TYPE_INVALID",
 			"BLING_CATEGORY_DETAIL_DESCRIPTION_INVALID":
 			return fieldErr.code
+		}
+	}
+	var cashFieldErr *cashMovementSchemaFieldError
+	if errors.As(err, &cashFieldErr) {
+		switch cashFieldErr.code {
+		case "BLING_CASH_MOVEMENT_RECORD_INVALID",
+			"BLING_CASH_MOVEMENT_ID_INVALID",
+			"BLING_CASH_MOVEMENT_DIRECTION_INVALID",
+			"BLING_CASH_MOVEMENT_STATUS_INVALID",
+			"BLING_CASH_MOVEMENT_AMOUNT_INVALID",
+			"BLING_CASH_MOVEMENT_DATE_INVALID":
+			return cashFieldErr.code
 		}
 	}
 	switch {

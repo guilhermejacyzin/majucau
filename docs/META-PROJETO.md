@@ -1,12 +1,12 @@
 # Meta do Majucau
 
-## Meta ativa no Codex — 01/11/2026
+## Meta ativa no Codex — atualização de 02/11/2026
 
 - **Objetivo:** entregar um protótipo funcional e homologável até **30/11/2026**.
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado — atualização de 01/11/2026:** 12,0% concluído e 88,0% restante, segundo a média atual do backlog. É uma estimativa de planejamento, não prova de homologação. BK-025 está em 80% (20% restante); regras obrigatórias da branch continuam dependendo de uma pessoa administradora.
+- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. A parte de movimentos do Bling passou na verificação completa local, mas ainda aguarda CI PostgreSQL, migration no protótipo e conferência real com o Bling. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
 ## O que queremos entregar
@@ -22,6 +22,9 @@ Concluir o backlog aprovado do Majucau e entregar primeiro um protótipo que pos
 - Registrar cada avanço, teste, pendência e próximo passo no projeto e enviar as atualizações ao GitHub.
 
 ## Andamento registrado
+
+- **Sinal de saída em Contas a Pagar — 02/11/2026:** Gisele esclareceu que conta a pagar representa saída e deve aparecer negativa nos resultados financeiros. Removi a rejeição de `saldo` negativo na normalização; também converto para negativo os saldos que o Bling envia positivos, mantenho o sinal quando já vem negativo, permito esse valor no banco e incluí as saídas nos totais, vencimentos e linhas existentes de T04/T01. A interface/desenho não foi alterada. `scripts/verify.ps1` passou localmente; os testes PostgreSQL reais não rodaram porque `MAJUCAU_TEST_DATABASE_URL` está ausente. O protótipo ainda precisa receber a migration, sincronizar o Bling e ter os números conferidos. BK-058/BK-059 estão em 5% cada; projeto estimado em 12,1% concluído (87,9% restante). Evidência: `docs/evidence/BLING-PAYABLE-OUTFLOW-SIGN-2026-11-02.md`.
+- **Fluxo de Caixa Bling — 02/11/2026:** a carga agora normaliza movimentos de `/caixas`, separa entrada de saída e faz o pagamento realizado aparecer negativo nos indicadores mensais existentes. A tentativa de Caixa/Bancos não é mais pulada por falha em Contas a Pagar. Os testes Go focados e os checksums passaram. Neste registro inicial, a integração PostgreSQL local ainda não tinha sido executada e a nova migration precisava chegar ao protótipo. BK-062 está em 5% (95% restante). Após a correção do sinal de Contas a Pagar, a média geral foi atualizada para 12,1% (87,9% restante). Próximo passo: CI no push, carregar as migrations, reiniciar e comparar os valores reais com o Bling. Evidência: `docs/evidence/BLING-CASH-MOVEMENTS-NORMALIZATION-2026-11-02.md`.
 
 - **Correção do smoke de serviço Windows — 02/11/2026:** a CI [#41355117965](https://github.com/guilhermejacyzin/majucau/actions/runs/41355117965) confirmou que o worker já estava `Running`, mas o helper retornava erro porque a consulta ao Windows ultrapassava o prazo no instante da resposta. Ajustei a espera para aceitar o estado correto quando confirmado e acrescentei teste de regressão. `go test ./internal/installer` e `git diff --check` passaram localmente; nova CI necessária para concluir a validação no runner. Nenhuma tela ou regra financeira mudou. Progresso do projeto permanece 12,0% (88,0% restante); evidência: `docs/evidence/WINDOWS-WORKER-STATE-DEADLINE-2026-11-02.md`.
 - **Diagnóstico claro da permissão Bling — 01/11/2026:** corrigi o tratamento do HTTP 403 recebido ao consultar detalhe de categoria. O Majucau agora informa o nome exato da permissão de leitura necessária (`Categorias — Receitas e Despesas`) e orienta refazer a autorização, sem mostrar a resposta interna do provedor. Os testes focados do adapter e worker e `git diff --check` passaram localmente. Essa mudança não altera o cadastro Bling, não conclui OAuth e não comprova conexão real. BK-041 permanece em 80% (20% restante); projeto em 12,0% (88,0% restante). Próximo passo: salvar o escopo de leitura no aplicativo Bling, concluir a autorização pelo Majucau e repetir o teste real. Evidência: `docs/evidence/BLING-CATEGORY-SCOPE-DIAGNOSTIC-2026-11-01.md`.

@@ -131,3 +131,29 @@ do Bling](https://developer.bling.com.br/referencia), rotas `GET /caixas`,
 Nenhum desses passos permite mostrar um número presumido. O resultado só pode
 ser confirmado depois da cadeia inteira **fonte → RAW → normalizado → cálculo →
 snapshot → tela** estar conectada e reconciliada.
+
+## Atualização após a auditoria — normalização mensal de Caixa/Bancos
+
+Em 02/11/2026, foi implementada uma parte do caminho apontado acima: a carga
+diária normaliza `GET /caixas` em movimentos tipados e idempotentes, e a T02
+passa a calcular recebimentos realizados positivos e pagamentos realizados
+negativos por mês. A sincronização desse recurso roda mesmo se a carga de
+Contas a Pagar falhar. A implementação e seus limites estão detalhados em
+`docs/evidence/BLING-CASH-MOVEMENTS-NORMALIZATION-2026-11-02.md`.
+
+Esta atualização não altera o fato registrado na auditoria: o novo código ainda
+precisa ser publicado, instalado no protótipo, executado contra a conta Bling e
+comparado com os valores de origem. Também não implementa saldo bancário atual,
+saldo por Itaú/Mercado Pago, projeção D0–D+60, normalização de Contas a Receber
+nem os demais resultados T02–T17. A auditoria visual do protótipo continua sem
+nova captura.
+
+## Atualização — sinal de Contas a Pagar esclarecido
+
+Gisele confirmou em 02/11 que conta a pagar representa saída e deve aparecer
+negativa no resultado financeiro. O normalizador e a regra do banco que
+rejeitavam o saldo negativo foram ajustados para guardar a obrigação como
+saída negativa e incluir esses valores nos totais, vencimentos e linhas da T04
+e no indicador correspondente da T01. Isso não representa saldo bancário.
+Ainda falta publicar e validar essa correção no protótipo contra os valores do
+Bling; por isso a situação real continua sem homologação.

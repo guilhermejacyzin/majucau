@@ -60,6 +60,7 @@ BEGIN
       'public.google_drive_source_validation_runs',
       'public.sync_cursors',
       'public.raw_records',
+      'public.bling_cash_movements',
       'public.payable_sync_snapshot_rows',
       'public.receipts',
       'public.receivables',
@@ -79,6 +80,7 @@ BEGIN
       'public.google_drive_file_versions',
       'public.google_drive_files',
       'public.sync_cursors',
+      'public.bling_cash_movements',
       'public.raw_records',
       'public.payable_sync_snapshot_rows',
       'public.payable_sources',
@@ -93,6 +95,7 @@ BEGIN
       'public.google_drive_sync_folders',
       'public.google_drive_files',
       'public.google_drive_source_validation_runs',
+      'public.bling_cash_movements',
       'public.payables',
       'public.receipts',
       'public.receivables'

@@ -9,9 +9,9 @@ Atualização de 19/10/2026: implementação e testes locais agora cobrem valida
 
 **Atualização de escopo — 31/10/2026:** T05 — Conciliação foi retirada como tela independente. BK-055 fica no catálogo para registrar a decisão, com situação “Fora do escopo”, e não entra na evolução geral; são 126 tarefas ativas. A média das estimativas atuais dessas 126 tarefas é 11,9% concluída (88,1% restante). As regras internas de correspondência permanecem.
 
-**Atualização do andamento — 01/11/2026:** o catálogo mantém 126 tarefas ativas: 7 concluídas, 20 em andamento e 99 não iniciadas. BK-025 avançou para 80% após adicionar `.github/CODEOWNERS`, que solicita revisão do proprietário do repositório, e documentar a diferença entre solicitação de revisão e proteção obrigatória. Restam 20% em BK-025: a branch `main`, aprovações e checks obrigatórios ainda dependem de configuração por uma pessoa administradora do GitHub. A média atual é **12,0% concluída e 88,0% restante**. Os registros anteriores abaixo são fotografias históricas.
-- O backlog tem 126 tarefas: 7 concluídas, 20 em andamento e 99 não iniciadas. BK-055 está fora do escopo e não entra na contagem ativa.
-- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,0%; restam 88,0%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+**Atualização do andamento — 02/11/2026:** o catálogo mantém 126 tarefas ativas: 7 concluídas, 23 em andamento e 96 não iniciadas. BK-025 permanece em 80%. BK-058 e BK-059 estão em 5% cada após a implementação parcial do sinal negativo para saídas a pagar; BK-062 permanece em 5%. Restam 95% em cada uma dessas três tarefas: faltam CI com PostgreSQL, aplicação da migration, execução real e conferência das telas. A média estimada é **12,1% concluída e 87,9% restante**; não significa homologação.
+- O backlog tem 126 tarefas: 7 concluídas, 23 em andamento e 96 não iniciadas. BK-055 está fora do escopo e não entra na contagem ativa.
+- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,1%; restam 87,9%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 
 Adendo aprovado em 04/10/2026, registrado no `G0-DECISION-REGISTER.md`: o Majucau calculará sua própria DRE com regras contábeis aprovadas; a DRE pronta do Bling deixa de ser tratada como resultado final. Este adendo substitui os trechos conflitantes abaixo. Princípios para estoque, produção e CPV/CMV foram recebidos e organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`; o mapeamento por conta/operação, os critérios específicos da empresa e os dados de origem continuam pendentes de validação contábil.
 
@@ -432,10 +432,10 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 - A CI [39169340120](https://github.com/guilhermejacyzin/majucau/actions/runs/39169340120), no commit `d9a9f1a`, passou nos quatro jobs, incluindo a suíte completa do Windows e os testes PostgreSQL. Isso continua sendo validação automatizada com dados artificiais, sem sincronização real do Bling.
 - Isso protege o estado vazio já previsto no desenho; nenhuma tela, fórmula ou regra financeira foi alterada. Ainda não comprova o fluxo real do Bling nem explica o painel vazio do protótipo. BK-102 permanece em 1%; contagem e estimativa geral permanecem em 127 tarefas, 7 concluídas, 19 em andamento, 101 não iniciadas, 11,4% concluído e 88,6% restante.
 
-### Estado atualizado do backlog — 01/11/2026
+### Estado atualizado do backlog — 02/11/2026
 
-- O backlog tem 126 tarefas: 7 concluídas, 20 em andamento e 99 não iniciadas. BK-055 permanece no catálogo como fora do escopo e não entra na contagem ativa.
-- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,0%; restam 88,0%. BK-025 está em 80% (20% restante); proteção e checks obrigatórios da branch ainda dependem de uma pessoa administradora.
+- O backlog tem 126 tarefas: 7 concluídas, 23 em andamento e 96 não iniciadas. BK-055 permanece no catálogo como fora do escopo e não entra na contagem ativa. BK-058 e BK-059 estão em 5% cada; BK-062 continua em 5%.
+- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,1%; restam 87,9%. BK-025 está em 80% (20% restante); proteção e checks obrigatórios da branch ainda dependem de uma pessoa administradora.
 
 ## 00 Descoberta e decisões
 
@@ -1987,7 +1987,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-058 — Implementar regras de Contas a Pagar
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 5% (estimativa; o normalizador agora guarda saldo aberto como saída negativa, sem rejeitar o sinal que veio do Bling. Ainda faltam regras completas de aging, estorno, cancelamento, CI PostgreSQL e conferência real). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Mostrar obrigações e efeitos de pagamento de forma única.
 
@@ -2009,7 +2009,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-059 — Implementar T04 Contas a Pagar
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 5% (estimativa; os valores negativos agora passam aos cartões e linhas existentes de T04/T01, e saídas aparecem como negativas. Ainda faltam validar o restante do desenho e os resultados na instância real). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Permitir acompanhar fornecedores, vencimentos e divergências.
 
@@ -2081,7 +2081,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-062 — Implementar T02 Fluxo de Caixa
 
-**Situação:** Não iniciada. **Evolução:** 0%. **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 5% (estimativa; o backend já normaliza movimentos realizados do Bling e separa entradas/saídas pelos indicadores mensais, mas ainda não está no protótipo homologado. Saldos por banco, projeção D0–D+60, gráfico, semana crítica, demais detalhes e conferência real ainda faltam). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Apresentar a posição e os próximos compromissos.
 
@@ -2094,7 +2094,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 3. Mostrar posição da fonte e indisponibilidade de cálculos parciais
 4. Identificar a origem e data do caixa consolidado e distinguir o valor transferível do Itaú para aplicação; recebíveis futuros permanecem previstos.
 
-**Critério de aceite:** Valores, folgas, datas e gráfico conferem com motor; export mantém filtros aprovados.
+**Critério de aceite:** Valores, folgas, datas e gráfico conferem com o motor e as fontes; a tela permanece somente para consulta e sem botão de exportação conforme decisão de 01/11/2026.
 
 **Impacto:** Torna a situação do caixa compreensível.
 

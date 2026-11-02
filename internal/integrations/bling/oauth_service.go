@@ -74,6 +74,51 @@ type BlingRawSyncResult struct {
 	CashMovements APISyncResult `json:"-"`
 }
 
+type blingSyncStep struct {
+	target *APISyncResult
+	run    func() (APISyncResult, error)
+}
+
+// runIndependentBlingSyncSteps attempts every applicable resource. A failure
+// in one financial source must not prevent other independently readable Bling
+// sources from refreshing their own snapshots.
+func runIndependentBlingSyncSteps(steps ...blingSyncStep) []error {
+	var failures []error
+	for _, step := range steps {
+		if step.target == nil || step.run == nil {
+			failures = append(failures, ErrBlingAPIConfiguration)
+			continue
+		}
+		result, err := step.run()
+		*step.target = result
+		if err != nil {
+			failures = append(failures, err)
+		}
+	}
+	return failures
+}
+
+func finishBlingRawSyncResult(result BlingRawSyncResult, failures []error) (BlingRawSyncResult, error) {
+	completed := result.Receivables.Status == "SUCCESS" || result.Receivables.Status == "PARTIAL" ||
+		result.Payables.Status == "SUCCESS" || result.Payables.Status == "PARTIAL" ||
+		result.CashMovements.Status == "SUCCESS" || result.CashMovements.Status == "PARTIAL"
+	partial := result.Receivables.Status == "PARTIAL" || result.Payables.Status == "PARTIAL" || result.CashMovements.Status == "PARTIAL"
+	if len(failures) > 0 {
+		if completed {
+			result.Status = "PARTIAL"
+		} else {
+			result.Status = "FAILED"
+		}
+		return result, errors.Join(failures...)
+	}
+	if partial {
+		result.Status = "PARTIAL"
+	} else {
+		result.Status = "SUCCESS"
+	}
+	return result, nil
+}
+
 type blingOAuthRepository interface {
 	Connection(context.Context) (database.IntegrationConnection, error)
 	MarkAuthorizing(context.Context) error
@@ -429,51 +474,32 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 	}
 	notApplicable := APISyncResult{Status: "NOT_APPLICABLE"}
 	result := BlingRawSyncResult{Receivables: notApplicable, Payables: notApplicable, CashMovements: notApplicable}
+	steps := make([]blingSyncStep, 0, 3)
 	if dateMode != blingDateFilterPayment {
 		receivables := NewReceivablesAPISyncService(s.pool, client)
-		if correlationID == nil {
-			result.Receivables, err = receivables.Sync(ctx, filter)
-		} else {
-			result.Receivables, err = receivables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
-		}
-		if err != nil {
-			result.Status = "FAILED"
-			return result, err
-		}
+		steps = append(steps, blingSyncStep{target: &result.Receivables, run: func() (APISyncResult, error) {
+			if correlationID == nil {
+				return receivables.Sync(ctx, filter)
+			}
+			return receivables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
+		}})
 	}
 	if dateMode != blingDateFilterReceived {
 		payables := NewPayablesAPISyncService(s.pool, client)
-		if correlationID == nil {
-			result.Payables, err = payables.Sync(ctx, filter)
-		} else {
-			result.Payables, err = payables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
-		}
-		if err != nil {
-			if result.Receivables.Status == "SUCCESS" {
-				result.Status = "PARTIAL"
-			} else {
-				result.Status = "FAILED"
+		steps = append(steps, blingSyncStep{target: &result.Payables, run: func() (APISyncResult, error) {
+			if correlationID == nil {
+				return payables.Sync(ctx, filter)
 			}
-			return result, err
-		}
+			return payables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
+		}})
 	}
 	if includeCashMovements {
 		cashMovements := newCashMovementsAPISyncService(s.pool, client, *cashMovementFilter)
-		result.CashMovements, err = cashMovements.SyncWithCorrelationID(ctx, ReceivablesFilter{}, pgUUID(*correlationID))
-		if err != nil {
-			if result.Receivables.Status == "SUCCESS" || result.Payables.Status == "SUCCESS" {
-				result.Status = "PARTIAL"
-			} else {
-				result.Status = "FAILED"
-			}
-			return result, err
-		}
+		steps = append(steps, blingSyncStep{target: &result.CashMovements, run: func() (APISyncResult, error) {
+			return cashMovements.SyncWithCorrelationID(ctx, ReceivablesFilter{}, pgUUID(*correlationID))
+		}})
 	}
-	result.Status = "SUCCESS"
-	if result.Receivables.Status == "PARTIAL" || result.Payables.Status == "PARTIAL" || result.CashMovements.Status == "PARTIAL" {
-		result.Status = "PARTIAL"
-	}
-	return result, nil
+	return finishBlingRawSyncResult(result, runIndependentBlingSyncSteps(steps...))
 }
 
 func (s *BlingOAuthService) runSession(session *blingOAuthSession, clientID, redirectURI string) {

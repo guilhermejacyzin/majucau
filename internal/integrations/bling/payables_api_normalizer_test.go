@@ -23,11 +23,15 @@ func TestParsePayableAPIDetailUsesExactSourceAmountsAndDate(t *testing.T) {
 	if err := wantOriginal.Scan("120.5000"); err != nil {
 		t.Fatal(err)
 	}
-	if err := wantBalance.Scan("45.2500"); err != nil {
+	if err := wantBalance.Scan("-45.2500"); err != nil {
 		t.Fatal(err)
 	}
 	if got.OriginalAmount.Int.Cmp(wantOriginal.Int) != 0 || got.OriginalAmount.Exp != wantOriginal.Exp || got.OpenBalance.Int.Cmp(wantBalance.Int) != 0 || got.OpenBalance.Exp != wantBalance.Exp {
 		t.Fatalf("exact amounts = %s e%d / %s e%d", got.OriginalAmount.Int, got.OriginalAmount.Exp, got.OpenBalance.Int, got.OpenBalance.Exp)
+	}
+	signedOutflow, err := parsePayableAPIDetail([]byte(`{"id":22,"situacao":3,"vencimento":"2026-10-31","valor":120.5,"saldo":-45.2500,"categoria":{"id":9},"contato":{"id":88}}`), 22)
+	if err != nil || signedOutflow.OpenBalance.Int.Cmp(wantBalance.Int) != 0 || signedOutflow.OpenBalance.Exp != wantBalance.Exp {
+		t.Fatalf("already-negative source balance = %+v, %v; want exact negative outflow", signedOutflow.OpenBalance, err)
 	}
 	if got.SupplierSource != "88" || got.CategoryID != 9 || got.Document == nil || *got.Document != "NF-21" {
 		t.Fatalf("optional source mapping = %+v", got)
@@ -69,7 +73,7 @@ func TestParsePayableAPIDetailClassifiesOpenBalanceWithoutExposingValue(t *testi
 		name, raw, wantCode string
 	}{
 		{name: "object instead of decimal", raw: `{"amount":10}`, wantCode: "BLING_PAYABLE_OPEN_BALANCE_TYPE_INVALID"},
-		{name: "negative decimal", raw: `-1.25`, wantCode: "BLING_PAYABLE_OPEN_BALANCE_NEGATIVE"},
+		{name: "negative decimal remains an outflow", raw: `-1.25`, wantCode: ""},
 		{name: "unsupported precision", raw: `1.00001`, wantCode: "BLING_PAYABLE_OPEN_BALANCE_PRECISION_EXCEEDED"},
 		{name: "scientific notation", raw: `1e2`, wantCode: "BLING_PAYABLE_OPEN_BALANCE_SCIENTIFIC_NOTATION"},
 		{name: "locale decimal separator", raw: `"1,25"`, wantCode: "BLING_PAYABLE_OPEN_BALANCE_DECIMAL_SEPARATOR_INVALID"},
@@ -78,10 +82,13 @@ func TestParsePayableAPIDetailClassifiesOpenBalanceWithoutExposingValue(t *testi
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			payload := `{"id":21,"situacao":1,"vencimento":"2026-10-31","valor":10,"saldo":` + test.raw + `,"contato":{"id":9}}`
-			_, err := parsePayableAPIDetail([]byte(payload), 21)
+			got, err := parsePayableAPIDetail([]byte(payload), 21)
 			if test.wantCode == "" {
 				if err != nil {
 					t.Fatalf("parsePayableAPIDetail() error = %v", err)
+				}
+				if got.OpenBalance.Int.Sign() > 0 {
+					t.Fatalf("open balance = %s, want a non-positive outflow", got.OpenBalance.Int)
 				}
 				return
 			}

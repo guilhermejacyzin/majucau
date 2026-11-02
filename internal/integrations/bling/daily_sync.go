@@ -90,7 +90,7 @@ func dailyBlingSyncCompleted(ctx context.Context, connection *pgxpool.Conn, corr
 		SELECT
 			EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $2 AND status IN ('SUCCESS', 'PARTIAL'))
 		AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $3 AND status IN ('SUCCESS', 'PARTIAL') AND data_stage = 'NORMALIZED')
-			AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $4 AND status IN ('SUCCESS', 'PARTIAL'))`,
+		AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $4 AND status IN ('SUCCESS', 'PARTIAL') AND data_stage = 'NORMALIZED')`,
 		correlation, ReceivablesAPIResource, PayablesAPIResource, CashMovementsAPIResource,
 	).Scan(&completed)
 	return completed, err

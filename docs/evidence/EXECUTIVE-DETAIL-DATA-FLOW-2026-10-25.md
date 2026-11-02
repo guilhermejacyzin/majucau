@@ -309,6 +309,32 @@ não vou afirmar que os dois aparecem. Essa lacuna foi registrada para a próxim
 etapa de integração do Fluxo de Caixa. Nenhuma consulta direta extra ao Bling foi
 feita.
 
+### Separação das origens de saldo — orientação confirmada em 02/11/2026
+
+O resultado de caixa deve manter cada origem separada:
+
+| Resultado | Fonte prevista | Regra de apresentação quando não há dado válido |
+|---|---|---|
+| Itaú | Conta/movimentações correspondentes no Bling | Não criar saldo. A falta deste dado não elimina outros saldos disponíveis. |
+| Mercado Pago | Conta/movimentações correspondentes no Bling | Não criar saldo. A falta deste dado não elimina outros saldos disponíveis. |
+| Nuvem | Arquivo externo autorizado no Drive | Gisele informou que ainda não colocou arquivo nessa pasta. Portanto, não há resultado Nuvem a exibir; não mostrar zero, estimativa nem substituir por outro saldo. |
+
+Gisele esclareceu que uma origem externa sem arquivo não deve produzir um
+resultado nem bloquear os dados bancários do Bling. Não é necessário definir o
+conteúdo da fonte Nuvem até que um arquivo seja colocado nessa pasta. Esta
+orientação não autoriza inferir saldo a partir de recebimentos futuros, misturar
+Nuvem com Itaú/Mercado Pago ou alterar telas. Quando houver dados válidos, cada
+origem deve conservar seu próprio nome e lineage. A regra financeira de
+continuidade permanece: saldo inicial D = saldo final conciliado D-1, e a
+projeção só pode ser publicada depois que essa base e as movimentações
+necessárias forem comprovadas.
+
+**Situação técnica:** `/caixas` ainda está somente em RAW, sem fatos normalizados,
+e o contrato consultado não fornece saldo final pronto nem prova suficiente de
+histórico completo. Portanto Itaú e Mercado Pago ainda não estão prontos para
+publicação na T02. Nuvem está sem arquivo externo e deve simplesmente ficar fora
+do resultado; essa ausência não bloqueia os saldos Bling.
+
 **Implicação para homologação:** os dois totais de contas compartilham dados
 comprovados. Os demais indicadores da T01 ainda dependem de suas telas/fontes de
 origem serem alimentadas e expostas no snapshot. O código não apresenta ainda um

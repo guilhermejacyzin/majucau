@@ -43,6 +43,28 @@ resultados disponíveis do Bling.
 
 ## Situação das fontes financeiras relevantes
 
+### Correção confirmada sobre a origem do fluxo de caixa
+
+Gisele confirmou que o Bling já é usado para registrar o fluxo de caixa e as
+despesas. Portanto, essas despesas devem ser buscadas no Bling; a pasta externa
+da Nuvem não é uma fonte substituta para elas.
+
+Na referência oficial consultada em 02/11/2026, `GET /caixas` devolve os
+lançamentos com identificador, direção débito/crédito, situação, valor, data,
+conta financeira e origem. O detalhe do lançamento também informa competência,
+categoria e indicador de transferência. A rota `/contas-contabeis` fornece
+identificador, descrição e tipo das contas financeiras; o contrato consultado
+não fornece um campo de saldo atual nessa listagem. O adapter Majucau já chama
+`GET /caixas`, mas publica essas páginas como RAW_ONLY e ainda não consulta a
+lista de contas para transformar o ID em nomes como Itaú e Mercado Pago.
+
+Isso confirma que despesas e movimentos têm uma fonte no Bling; não confirma,
+por si só, que o saldo atual de cada banco possa ser calculado sem uma base
+inicial conciliada e a comprovação de histórico completo. Essa verificação faz
+parte do próximo passo técnico. A referência consultada foi a [OpenAPI oficial
+do Bling](https://developer.bling.com.br/referencia), rotas `GET /caixas`,
+`GET /caixas/{idCaixa}` e `GET /contas-contabeis`.
+
 | Fonte | Estado do caminho atual | O que falta para aparecer resultado |
 |---|---|---|
 | Itaú no Bling | `/caixas` é lido como página RAW; a tela não recebe cadastro de conta nem saldo por conta. | Implementar leitura/mapeamento de contas financeiras, associar cada movimento à conta correta, provar paginação completa e obter saldo inicial conciliado ou saldo atual oficial da fonte. |

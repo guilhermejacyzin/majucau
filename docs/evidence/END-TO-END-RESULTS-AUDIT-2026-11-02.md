@@ -17,7 +17,7 @@ normalizadas e o contrato do snapshot não contém saldos por conta nem série d
 projeção. Assim, uma chamada HTTP bem-sucedida pode coexistir com “—”/“Sem dados”
 na tela.
 
-Na execução real registrada em 02/11, o Bling concluiu a leitura de 14.891
+Na execução real registrada antes da correção de 02/11, o Bling concluiu a leitura de 14.891
 registros de Contas a Receber como `SUCCESS / RAW_ONLY`: houve resposta, mas
 esses dados ainda não foram transformados para alimentar os valores do painel.
 Na mesma execução, Contas a Pagar leu 10.198 títulos e teve o lote revertido
@@ -35,8 +35,8 @@ resultados disponíveis do Bling.
 |---|---|---|
 | 1. Autorização | OAuth e tokens são tratados pelo worker; a tela e o servidor têm estados de conexão separados. | O worker e o protótipo estavam em execução nesta máquina. Isso, sozinho, não prova OAuth ativo. O registro real de 02/11 prova que pelo menos uma leitura de Contas a Pagar chegou ao Bling. O estado OAuth atual não foi relido nesta auditoria. |
 | 2. Leitura Bling | A carga diária prevista para 09:30 consulta Contas a Receber, Contas a Pagar e `GET /caixas`. | Os recursos são chamados separadamente e com retry/checkpoint. A leitura de `/caixas` ainda não tem homologação real do fim da paginação. |
-| 3. Guarda RAW | As páginas são armazenadas com versão, hash e lote para preservar o retorno original. | RAW é evidência, não resultado financeiro. A maior parte das páginas de Contas a Receber e `/caixas` ainda fica em `RAW_ONLY`. |
-| 4. Normalização | O conversor valida os campos e grava fatos tipados usados pelo sistema. | O construtor de sincronização de Contas a Receber não configura conversor (`internal/integrations/bling/api_sync.go`, `NewReceivablesAPISyncService`); por isso publica RAW_ONLY. `/caixas` também não configura conversor para movimento/saldo por conta. Contas a Pagar tem conversor, mas uma falha em campo obrigatório pode reverter o lote inteiro; categoria ausente tem caminho parcial separado. |
+| 3. Guarda RAW | As páginas são armazenadas com versão, hash e lote para preservar o retorno original. | RAW é evidência, não resultado financeiro. Contas a Receber ainda fica em `RAW_ONLY`; `/caixas` mantém a resposta RAW para rastreabilidade e agora também publica movimentos normalizados. |
+| 4. Normalização | O conversor valida os campos e grava fatos tipados usados pelo sistema. | Contas a Receber continua RAW_ONLY. Desde o commit `9696bd9`, `/caixas` tem conversão idempotente para movimentos tipados e os indicadores mensais de realizado da T02 usam essa fonte. Contas a Pagar converte saldo em aberto para saída negativa e inclui os valores nas consultas de T01/T04. A CI PostgreSQL ainda precisa validar a migration; a sincronização real com o código novo não foi repetida. |
 | 5. Cálculo | O leitor do painel soma tabelas normalizadas; a projeção exige saldo inicial conciliado e movimentos. | O helper D0–D+60 existe, mas não é chamado por um fluxo de produção, não grava `daily_balances` e não fornece a projeção do T02. |
 | 6. Snapshot | O worker transmite ao protótipo os resultados já calculados no banco. | `DashboardSnapshot` (`internal/application/contracts.go`) oferece totais de receber/pagar e alguns realizados, além de campos opcionais CAPEX. Não oferece saldo por banco, série diária, semana crítica ou menor saldo. |
 | 7. Tela | Os cards escolhem campos do snapshot pelo nome e exibem o mesmo resultado no detalhe e na Visão Executiva. | `metricForCard` (`frontend/src/mockupDashboard.tsx`) liga somente alguns cards a métricas do snapshot. Gráficos e vários painéis continuam sem dados dinâmicos. T01 não tem dados de origem que possa consolidar nesses espaços. |
@@ -67,21 +67,21 @@ do Bling](https://developer.bling.com.br/referencia), rotas `GET /caixas`,
 
 | Fonte | Estado do caminho atual | O que falta para aparecer resultado |
 |---|---|---|
-| Itaú no Bling | `/caixas` é lido como página RAW; a tela não recebe cadastro de conta nem saldo por conta. | Implementar leitura/mapeamento de contas financeiras, associar cada movimento à conta correta, provar paginação completa e obter saldo inicial conciliado ou saldo atual oficial da fonte. |
-| Mercado Pago no Bling | Mesmo estado do Itaú; permanece uma origem independente. | Mesmo caminho, preservando o nome/ID de Mercado Pago e sem misturar com Itaú. |
+| Itaú no Bling | Os movimentos de `/caixas` já são normalizados com o identificador de conta; o snapshot ainda não expõe saldo atual separado por instituição. | Confirmar o ID/nome da conta, provar paginação completa e obter saldo inicial conciliado ou saldo atual oficial da fonte. Não inferir saldo bancário a partir de contas a pagar. |
+| Mercado Pago no Bling | Mesmo estado do Itaú; o identificador da conta é preservado no movimento. | Confirmar o ID/nome da conta, provar paginação completa e obter saldo inicial conciliado ou saldo atual oficial da fonte, mantendo Itaú e Mercado Pago separados. |
 | Nuvem externa | Gisele informou que a pasta ainda está vazia. | Não exibir valor Nuvem agora. Quando o arquivo existir, validar sua estrutura e ligar a fonte conforme seu conteúdo; a falta do arquivo não bloqueia Itaú/Mercado Pago. |
 | Contas a Receber | A execução real mais recente registrada leu 14.891 registros e concluiu `SUCCESS / RAW_ONLY`; o snapshot consulta a tabela normalizada `receivables`, não essas páginas RAW. | Ligar um normalizador da API, manter a classificação aprovada B2B/B2C, persistir idempotentemente e validar a reconciliação. |
-| Contas a Pagar | Há normalizador e snapshot diário; a carga real mais recente falhou no campo de saldo em aberto negativo de um título. | Conferir o registro de origem e obter decisão aprovada para essa situação. Não converter valor negativo em zero nem confundir com saldo bancário. |
-| Pagamentos/recebimentos realizados | A tela lê fatos em tabelas de pagamentos/recebimentos; `/caixas` ainda não popula essas tabelas pela API. | Mapear e persistir os movimentos com origem, conta, data, valor e lineage, sem contar o mesmo evento duas vezes. |
+| Contas a Pagar | O último lote real registrado antes da correção foi revertido ao encontrar saldo negativo. O commit `9696bd9` agora interpreta conta a pagar como saída negativa, preserva o valor original do título e permite o saldo assinado nas consultas de T01/T04. | Aplicar a migration `000016` no banco isolado, atualizar o worker, repetir a sincronização e comparar totais/linhas com o Bling. A decisão de sinal já está confirmada; a validação real permanece pendente. |
+| Pagamentos/recebimentos realizados | A T02 calcula os totais mensais realizados a partir de `bling_cash_movements`: crédito entra positivo e débito sai negativo. O lote normalizado preserva origem, conta, data e valor. | Confirmar fim da paginação e reconciliar por conta/período com o Bling. Evitar duplicar o mesmo movimento em outras fontes ou tabelas. |
 
 ## O que cada grupo de tela recebe hoje
 
 | Tela | Ligação encontrada | Situação do resultado |
 |---|---|---|
 | T01 — Visão Executiva | A Receber e A Pagar são ligados a métricas do snapshot. Saldo atual, menor saldo, gráfico e distribuição não têm campos no snapshot. | A RECEBER depende de Contas a Receber normalizada; A PAGAR depende do último snapshot válido. Caixa/projeção não chegam à tela. |
-| T02 — Fluxo de Caixa | Recebido no Mês e Pago no Mês apontam para métricas de recebimentos/pagamentos. Os demais cards não têm leitura de saldo/série. | Sem `/caixas` normalizado, os dois realizados não são confirmados pela API. Saldo atual, entradas/saídas 30 dias, semana crítica e menor saldo 30/60 dias seguem vazios. |
+| T02 — Fluxo de Caixa | Recebido no Mês e Pago no Mês usam movimentos realizados normalizados de `/caixas`, com crédito positivo e débito negativo. | A mudança foi enviada, mas aguarda CI PostgreSQL, atualização/migration do protótipo e conferência real. Saldo atual por banco, entradas/saídas projetadas, semana crítica e menor saldo 30/60 dias seguem sem validação de ponta a ponta. |
 | T03 — Contas a Receber | Usa totais e linhas do snapshot de recebíveis. | O pipeline da API Bling permanece RAW_ONLY; não há resultado B2B confirmado da API nesta tela. |
-| T04 — Contas a Pagar | Tem totais, próximos vencimentos e linhas ligados ao snapshot normalizado. | O último lote real foi revertido pelo título com campo `saldo` negativo. O caminho de categoria parcial não resolve esse campo financeiro obrigatório. |
+| T04 — Contas a Pagar | Tem totais, próximos vencimentos e linhas ligados ao snapshot normalizado; o código atualizado aceita a saída negativa confirmada pela responsável. | A carga real anterior foi revertida por esse caso. Falta aplicar `000016`, sincronizar novamente no protótipo e conferir total, vencimentos e linhas na tela, sem alterar seu desenho. |
 | T05 — Conciliação | Tela removida por decisão aprovada. | Continua removida; nenhuma reintrodução proposta. |
 | T06 — DRE | EBIT/EBITDA têm cards separados; CAPEX tem campos opcionais no snapshot. | Os cards EBIT/EBITDA são placeholders. O worker não fornece DRE calculada, depreciação ou CAPEX. Requisito contábil permanece bloqueado por fonte/mapeamento e reconciliação. |
 | T07 — Balancete | Não há resultado contábil no snapshot. | Plano de contas, saldos iniciais e partidas balanceadas ainda não alimentam a tela. |
@@ -148,12 +148,16 @@ saldo por Itaú/Mercado Pago, projeção D0–D+60, normalização de Contas a R
 nem os demais resultados T02–T17. A auditoria visual do protótipo continua sem
 nova captura.
 
-## Atualização — sinal de Contas a Pagar esclarecido
+## Atualização — sinal de Contas a Pagar esclarecido e corrigido
 
 Gisele confirmou em 02/11 que conta a pagar representa saída e deve aparecer
 negativa no resultado financeiro. O normalizador e a regra do banco que
 rejeitavam o saldo negativo foram ajustados para guardar a obrigação como
 saída negativa e incluir esses valores nos totais, vencimentos e linhas da T04
 e no indicador correspondente da T01. Isso não representa saldo bancário.
-Ainda falta publicar e validar essa correção no protótipo contra os valores do
-Bling; por isso a situação real continua sem homologação.
+O commit `9696bd9` já está publicado na branch `codex/majucau-artifact-consolidation`.
+As verificações locais passaram; na última consulta, os jobs Windows e
+PostgreSQL da CI ainda estavam em execução. O protótipo aberto continuava usando
+binários anteriores, e a migration/sincronização reais ainda não tinham sido
+executadas. Portanto, a correção está no código publicado, mas os valores
+reais nas telas ainda não foram comprovados.

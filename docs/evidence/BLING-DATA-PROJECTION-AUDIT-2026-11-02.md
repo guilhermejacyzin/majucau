@@ -63,6 +63,16 @@ Em Contas a Pagar, a API lista 10.198 títulos. O registro de lista observado co
 - A leitura de `/caixas` foi publicada normalizada e receber foi recebida em RAW. A tentativa de Contas a Pagar está em transação sem lote publicado. Na observação das 20:04, o banco mostrava uma transação aberta há 376 segundos, aguardando resposta do cliente; o worker continuava ativo. Não é possível afirmar ainda que a importação de pagar terminou.
 - Nenhum valor de exemplo foi inserido para mascarar a falta de dados.
 
+### Rechecagem do lote de Contas a Pagar — 20:29 BRT
+
+Na rechecagem do PostgreSQL isolado, o worker continuava ativo e havia uma conexão `idle in transaction`, aguardando leitura do cliente. A transação estava aberta havia aproximadamente 30 minutos; o último comando do banco era a inclusão de um título no snapshot provisório. O lote novo e suas linhas ainda não estavam visíveis fora da transação. O último lote publicado continuava sendo uma falha antiga. Nenhum valor financeiro foi consultado ou registrado nesta evidência.
+
+A inspeção do código explica a duração: `apiResourceSyncService.sync` abre a transação antes de ler as páginas e mantém a transação enquanto `normalizePayablesAPISnapshotPage` faz chamadas HTTP sequenciais para obter o detalhe de cada título e, quando necessário, de fornecedores e categorias. Com 10.198 títulos na lista, uma espera externa longa também mantém a transação e a trava abertas. Isso preserva a publicação atômica, mas impede observar progresso persistido e deixa a tela sem um lote novo até a conclusão.
+
+**Correção técnica necessária, sem mudar regras ou telas:** buscar e validar os detalhes em blocos limitados fora da transação final; guardar cada bloco em staging privado associado ao checkpoint e à identidade idempotente da carga; validar hash e retomada; só então abrir uma transação curta para publicar RAW, normalizados, snapshot, cursor e auditoria em conjunto. Uma falha deve manter o retrato anterior e não avançar o cursor. O staging precisa ter limpeza/retomada segura e permissões explícitas. Essa mudança ainda não foi implementada nem homologada.
+
+A captura visual da janela Majucau falhou duas vezes nesta sessão; por isso esta rechecagem não afirma que os valores já estejam visíveis na interface.
+
 ## Progresso e prazo
 
 O progresso do backlog permanece em **12,1% concluído / 87,9% restante**. BK-058, BK-059 e BK-062 permanecem em **5% cada**: uma alteração local no banco ou uma resposta bruta da API não basta para considerar telas alimentadas e homologadas. Não há prazo confiável para terminar a integração real enquanto a carga de 10.198 títulos ainda não concluiu e o retrato de caixa não foi comparado. A meta registrada no projeto segue em 30/11/2026; essa data é alvo, não uma previsão garantida.

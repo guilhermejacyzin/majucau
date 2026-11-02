@@ -20,7 +20,7 @@ Conectar o Bling é como abrir a torneira: primeiro os dados chegam. Depois o Ma
 Neste momento:
 
 - Contas a Receber chegou, mas continua em dados brutos.
-- O último lote publicado de Contas a Pagar falhou às 18:10 com `BLING_PAYABLE_OPEN_BALANCE_NEGATIVE`. A regra do código já foi corrigida e testada para aceitar saldo devedor negativo; há uma nova transação de sincronização em andamento, mas ainda não publicou lote. Precisa terminar para provar a correção com dados reais.
+- O último lote publicado de Contas a Pagar falhou às 18:10 com `BLING_PAYABLE_OPEN_BALANCE_NEGATIVE`. A regra do código já foi corrigida e testada para aceitar saldo devedor negativo; às 20:29 a nova tentativa estava em uma transação aberta havia cerca de 30 minutos, sem publicar o lote. O código mantém chamadas de detalhe do Bling dentro dessa transação; isso precisa ser corrigido para buscar em blocos e publicar atomicamente no final. A regra financeira não será alterada.
 - Todas as 31.032 linhas de caixa vieram com `situacao` vazia. A orientação da usuária foi usar o fluxo de caixa do Bling como fonte dos movimentos registrados; passei a mostrar esses valores com aviso **Parcial**, sem mudar o sinal: entrada positiva e saída negativa.
 - A execução das 19:57 terminou Contas a Receber em `SUCCESS`/`RAW_ONLY`; os dados foram recebidos, mas ainda não passaram para a tabela usada pela tela. O worker iniciou a etapa seguinte, mas Contas a Pagar segue sem lote normalizado confirmado.
 - O sistema não tem saldo atual confirmado, separado por banco. Movimento de caixa não pode ser confundido com saldo da conta.

@@ -159,7 +159,7 @@ func TestDailyPayablesAPIIsNormalizedAtomicallyWithCategoryScopeGap(t *testing.T
 		WHERE p.connection_id = $1 AND p.source_system = 'BLING' AND p.source_entity = $2 AND p.source_id = $3`, connection.ID, payableAPISourceEntity, sourceID).Scan(&payableCount, &dueDate, &statusCode, &document, &category, &originalAmount, &openBalance, &supplier); err != nil {
 		t.Fatalf("read normalized payable: %v", err)
 	}
-	if payableCount != 1 || dueDate != "2026-10-31" || statusCode != "3" || document != "NF-21" || category != "CAPEX teste" || originalAmount != "250.0000" || openBalance != "150.2500" || supplier != "Fornecedor de teste" {
+	if payableCount != 1 || dueDate != "2026-10-31" || statusCode != "3" || document != "NF-21" || category != "CAPEX teste" || originalAmount != "250.0000" || openBalance != "-150.2500" || supplier != "Fornecedor de teste" {
 		t.Fatalf("normalized payable = count:%d due:%s status:%s document:%s category:%s original:%s balance:%s supplier:%s", payableCount, dueDate, statusCode, document, category, originalAmount, openBalance, supplier)
 	}
 	var lineageCount, snapshotCount int

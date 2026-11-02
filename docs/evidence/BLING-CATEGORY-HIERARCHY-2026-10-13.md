@@ -13,7 +13,7 @@ A API também lista categorias ativas e inativas. Não é seguro declarar a list
 completa porque uma página veio curta, e a sincronização não deve usar `grupoDRE`
 do Bling como regra contábil do Majucau.
 
-Referência: [OpenAPI oficial do Bling — categorias de receitas e despesas](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), consultada em 13/10/2026.
+Referência: [OpenAPI oficial do Bling — categorias de receitas e despesas](https://developer.bling.com.br/referencia), consultada em 13/10/2026.
 
 ## Mudança técnica
 

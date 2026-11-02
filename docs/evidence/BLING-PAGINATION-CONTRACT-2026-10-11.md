@@ -25,7 +25,7 @@ A inspeção da resposta da conta Bling da Majucau não foi concluída naquela c
 
 - [Boas práticas — paginação](https://developer.bling.com.br/boas-praticas)
 - [Perguntas frequentes — limite padrão e parâmetro `pagina`](https://developer.bling.com.br/perguntas-frequentes)
-- [Referência OpenAPI da API Bling v3](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), rota `GET /contas/receber`
+- [Referência OpenAPI da API Bling v3](https://developer.bling.com.br/referencia), rota `GET /contas/receber`
 - [Limites — filtros por período e limites de requisições](https://developer.bling.com.br/limites)
 
 ## Limites desta evidência
@@ -48,7 +48,7 @@ Esta é uma leitura da documentação pública, não uma chamada autenticada à 
 
 Referências oficiais consultadas em 12/10/2026:
 
-- [OpenAPI do Bling v3 — rota `GET /contas/receber`](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json)
+- [OpenAPI do Bling v3 — rota `GET /contas/receber`](https://developer.bling.com.br/referencia)
 - [Boas práticas — paginação e limite padrão](https://developer.bling.com.br/boas-praticas)
 - [Perguntas frequentes — registros por página](https://developer.bling.com.br/perguntas-frequentes)
 
@@ -101,7 +101,7 @@ O endpoint também depende de autorização OAuth da API. A senha de login ao si
 
 Fontes oficiais consultadas em 13/10/2026:
 
-- [OpenAPI da API Bling v3 — `GET /contas/receber` e `GET /contas/pagar`](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json)
+- [OpenAPI da API Bling v3 — `GET /contas/receber` e `GET /contas/pagar`](https://developer.bling.com.br/referencia)
 - [Referência da API Bling](https://developer.bling.com.br/referencia)
 
 ## Paginação conservadora implementada — 18/10/2026
@@ -146,6 +146,6 @@ feitas; esta implementação não altera tela nem regra financeira.
 
 Fontes oficiais:
 
-- [OpenAPI do Bling v3 — GET /contas/receber e GET /contas/pagar](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json)
+- [OpenAPI do Bling v3 — GET /contas/receber e GET /contas/pagar](https://developer.bling.com.br/referencia)
 - [Boas práticas — paginação](https://developer.bling.com.br/boas-praticas)
 - [Perguntas frequentes — 100 registros e paginação](https://developer.bling.com.br/perguntas-frequentes)

@@ -22,7 +22,7 @@ Na OpenAPI pública consultada em 11/10/2026:
 - `GET /borderos/{idBordero}` documenta a data do borderô, a categoria e a lista de pagamentos com valor pago, contato e número do documento. O item de pagamento não documenta o ID da conta a pagar.
 - `GET /categorias/receitas-despesas` recebe página e limite, mas o schema público da resposta documenta somente `data[]`, sem `hasNext` nem `total`. A listagem atual, corretamente, não considera uma página sem marcador como a última; a consulta de uma categoria pelo ID já pode ser feita quando esse ID vier confirmado no detalhe da conta.
 
-Referências: [OpenAPI oficial — contas a pagar e filtro por pagamento](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), [OpenAPI oficial — categoria no detalhe da conta](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), [OpenAPI oficial — borderôs e valores pagos](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) e [OpenAPI oficial — categorias de receitas e despesas](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json).
+Referências: [OpenAPI oficial — contas a pagar e filtro por pagamento](https://developer.bling.com.br/referencia), [OpenAPI oficial — categoria no detalhe da conta](https://developer.bling.com.br/referencia), [OpenAPI oficial — borderôs e valores pagos](https://developer.bling.com.br/referencia) e [OpenAPI oficial — categorias de receitas e despesas](https://developer.bling.com.br/referencia).
 
 O contrato público mostra um caminho técnico possível, mas ainda falta uma resposta real sanitizada para confirmar como o Bling da Majucau liga pagamentos, borderôs e contas — especialmente em pagamentos parciais, parcelas ou um borderô com mais de um pagamento. Como cada pagamento do borderô não traz um ID da conta no schema documentado, não distribuir seu valor entre contas por aproximação. A documentação pública também não comprova os dados históricos existentes na conta.
 
@@ -47,7 +47,7 @@ O caminho de implementação fica mais claro: percorrer as contas pagas; buscar 
 
 Ainda falta confirmar na conta real se `bordero.data` corresponde à data de liquidação exibida no relatório, se a categoria do borderô coincide com a categoria da conta e como ficam pagamentos parciais ou borderôs ligados a mais de uma conta. A primeira sincronização precisa comparar um período com o relatório oficial. Até lá, os cards permanecem sem valores confirmados. A tela e as regras aprovadas não foram alteradas.
 
-Referência: [OpenAPI oficial atual do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), esquemas `ContasPagarDadosDTO`, `BorderosDadosDTO`, `BorderosPagamentoDTO` e `CategoriasReceitasDespesasDadosBaseDTO`.
+Referência: [OpenAPI oficial atual do Bling](https://developer.bling.com.br/referencia), esquemas `ContasPagarDadosDTO`, `BorderosDadosDTO`, `BorderosPagamentoDTO` e `CategoriasReceitasDespesasDadosBaseDTO`.
 
 ## Rota adicional para CAPEX pago — 2026-10-13
 
@@ -57,7 +57,7 @@ O schema da lista documenta `data[]`, mas não documenta limite de página, tota
 
 `/caixas` informa movimentação de caixa e não prova, sozinho, o total de CAPEX reconhecido como investimento. Portanto, a rota de caixa pode apoiar o card pago mensal; o card acumulado continua dependendo da fonte de CAPEX reconhecido, do histórico completo e da reconciliação contábil. Não somar os dois conceitos nem tratar uma transferência ou lançamento genérico como CAPEX.
 
-Referência: [OpenAPI oficial atual do Bling — `GET /caixas`](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) e [changelog oficial de formato de datas de `/caixas`](https://developer.bling.com.br/changelogs).
+Referência: [OpenAPI oficial atual do Bling — `GET /caixas`](https://developer.bling.com.br/referencia) e [changelog oficial de formato de datas de `/caixas`](https://developer.bling.com.br/changelogs).
 
 ## Implementação atual e início aprovado do acumulado — 2026-10-26
 

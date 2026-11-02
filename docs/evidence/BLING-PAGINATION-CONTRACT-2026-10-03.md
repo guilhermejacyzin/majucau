@@ -23,7 +23,7 @@
 
 ### O que a OpenAPI do endpoint confirma
 
-- A [referência oficial OpenAPI do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json) descreve `GET /contas/receber` como paginado e lista os parâmetros `pagina` e `limite`.
+- A [referência oficial OpenAPI do Bling](https://developer.bling.com.br/referencia) descreve `GET /contas/receber` como paginado e lista os parâmetros `pagina` e `limite`.
 - A definição oficial desses parâmetros informa `pagina` padrão 1 e mínimo 1; `limite` padrão 100 e mínimo 1. A OpenAPI não publica um limite máximo.
 - Para esse endpoint, a OpenAPI documenta filtros `dataInicial` e `dataFinal`, interpretados conforme `tipoFiltroData` (`E` emissão, `V` vencimento, `R` recebimento). Ela não lista `dataAlteracaoInicial` nem `dataAlteracaoFinal` entre os parâmetros de `GET /contas/receber`.
 - A resposta HTTP 200 documenta um objeto cuja propriedade `data` é uma lista de contas. Não documenta metadados como `pagination.hasNext`, `pagination.total` ou a quantidade total de páginas. O schema não é prova de que a API nunca envie campos adicionais fora da documentação.
@@ -52,7 +52,7 @@
 
 ## Conferência dos filtros dos dois endpoints — 2026-10-11
 
-Foi conferida novamente a [OpenAPI oficial do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), incluindo os dois endpoints usados pelo sincronizador:
+Foi conferida novamente a [OpenAPI oficial do Bling](https://developer.bling.com.br/referencia), incluindo os dois endpoints usados pelo sincronizador:
 
 - `GET /contas/receber` documenta `pagina` e `limite`; os filtros de data são `tipoFiltroData` (`E` emissão, `V` vencimento, `R` recebimento) junto com `dataInicial`/`dataFinal`. A situação usa `situacoes[]`. A resposta 200 descreve `data` como lista, sem metadado documentado de última página.
 - `GET /contas/pagar` documenta `pagina` e `limite`, filtros distintos de emissão, vencimento e pagamento, e situação singular `situacao`. A resposta 200 também descreve `data` como lista, sem metadado documentado de última página.

@@ -470,6 +470,9 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 		}
 	}
 	result.Status = "SUCCESS"
+	if result.Receivables.Status == "PARTIAL" || result.Payables.Status == "PARTIAL" || result.CashMovements.Status == "PARTIAL" {
+		result.Status = "PARTIAL"
+	}
 	return result, nil
 }
 

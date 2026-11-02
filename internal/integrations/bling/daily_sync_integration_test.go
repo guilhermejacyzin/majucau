@@ -87,6 +87,13 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 			t.Fatalf("attempt %d: result=%+v skipped=%v error=%v", attempt+1, result, skipped, err)
 		}
 	}
+	if _, err := pool.Exec(ctx, `UPDATE integration_sync_batches SET status = 'PARTIAL' WHERE correlation_id = $1 AND resource = $2`, correlation, PayablesAPIResource); err != nil {
+		t.Fatalf("mark normalized partial payable fixture: %v", err)
+	}
+	result, skipped, err = service.SyncDaily(ctx, scheduledAt)
+	if err != nil || !skipped || result.Status != "SUCCESS" {
+		t.Fatalf("normalized partial payable snapshot should remain idempotently complete: result=%+v skipped=%v error=%v", result, skipped, err)
+	}
 	var batchCount int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM integration_sync_batches WHERE correlation_id = $1`, correlation).Scan(&batchCount); err != nil {
 		t.Fatalf("count daily sync batches: %v", err)

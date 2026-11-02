@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"reflect"
 	"testing"
@@ -61,7 +62,7 @@ type scriptedDashboardSummaryRow struct{ values []any }
 
 func (row scriptedDashboardSummaryRow) Scan(dest ...any) error {
 	if len(dest) != len(row.values) {
-		return pgx.ErrNoRows
+		return fmt.Errorf("scripted summary has %d columns, scan expects %d", len(row.values), len(dest))
 	}
 	for index, value := range row.values {
 		switch target := dest[index].(type) {
@@ -73,6 +74,12 @@ func (row scriptedDashboardSummaryRow) Scan(dest ...any) error {
 			*target = converted
 		case *int64:
 			converted, ok := value.(int64)
+			if !ok {
+				return pgx.ErrNoRows
+			}
+			*target = converted
+		case *bool:
+			converted, ok := value.(bool)
 			if !ok {
 				return pgx.ErrNoRows
 			}
@@ -208,7 +215,7 @@ func TestReadStreamSummaryUsesBusinessDateAtUtcMonthBoundary(t *testing.T) {
 func TestWriteDashboardSnapshotHidesBlingDataUntilTodaysScheduledLoadCompletes(t *testing.T) {
 	asOf := time.Date(2026, 9, 21, 13, 0, 0, 0, time.UTC)
 	values := dashboardSummaryValues()
-	values[19], values[20], values[21] = nil, nil, nil
+	values[19], values[20], values[22] = nil, nil, nil
 	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
 	reader := &Reader{db: &scriptedDashboardDB{tx: tx}, now: func() time.Time { return asOf }}
 	var output bytes.Buffer
@@ -267,7 +274,7 @@ func TestReadStreamSummaryConfirmsZeroAfterSuccessfulNormalizedDailyBlingLoad(t 
 	finishedAt := time.Date(2026, 10, 19, 13, 15, 0, 0, time.UTC)
 	asOf := time.Date(2026, 10, 19, 16, 0, 0, 0, time.UTC)
 	values := emptyDashboardSummaryValues()
-	values[18], values[19], values[20], values[21] = finishedAt, finishedAt, finishedAt, finishedAt
+	values[18], values[19], values[20], values[22] = finishedAt, finishedAt, finishedAt, finishedAt
 	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
 	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
 	if err != nil {
@@ -343,6 +350,23 @@ func TestReadStreamSummaryUsesCashMovementSyncForReceiptAndPaymentMetrics(t *tes
 	}
 }
 
+func TestReadStreamSummaryShowsNormalizedPayablesWithCategoryGapAsPartial(t *testing.T) {
+	finishedAt := time.Date(2026, 11, 2, 13, 0, 0, 0, time.UTC)
+	values := dashboardSummaryValues()
+	values[20], values[21] = finishedAt, true
+	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
+	snapshot, err := readStreamSummary(context.Background(), tx, time.Date(2026, 11, 2, 16, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("readStreamSummary() error = %v", err)
+	}
+	if snapshot.Payables.State != "PARTIAL" || snapshot.Payables.Value != "80.0000" || snapshot.Payables.Count != 2 {
+		t.Fatalf("payables = %+v, want visible real value marked PARTIAL", snapshot.Payables)
+	}
+	if snapshot.PayablesDueNext7Days.State != "PARTIAL" {
+		t.Fatalf("payables due in seven days = %+v, want PARTIAL", snapshot.PayablesDueNext7Days)
+	}
+}
+
 func TestDashboardDetailStreamsUseExplicitBounds(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -412,7 +436,7 @@ func dashboardSummaryValues() []any {
 		"25.0000", int64(1), int64(3), "5.0000", int64(1),
 		"80.0000", int64(2), "10.0000", int64(1), "4.0000", int64(1),
 		"30.0000", int64(1), int64(2), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
-		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
+		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false, time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
 		"35.0000", int64(2),
 	}
 }
@@ -422,7 +446,7 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
-		"0.0000", int64(0), int64(0), nil, nil, nil, nil,
+		"0.0000", int64(0), int64(0), nil, nil, nil, false, nil,
 		"0.0000", int64(0),
 	}
 }

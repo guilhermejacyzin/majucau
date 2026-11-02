@@ -28,6 +28,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Total a Receber = B2C Nuvem + B2B Bling.
 - T01 é um agregador dos resultados das telas de origem ativas T02–T17, exceto a tela T05 retirada em 2026-10-31: reaproveita os mesmos valores, filtros, períodos, cálculos e estados, sem fórmula duplicada nem consulta direta paralela ao provedor. Se uma tela de origem não tiver um dado necessário, manter esse resultado pendente/indisponível e sinalizar a responsável; a T01 só poderá buscar diretamente no Bling para esse dado após autorização explícita dela.
 - Recebimentos e pagamentos realizados usam a fonte oficial Bling.
+- Se a API Bling negar somente o detalhe de uma categoria por falta de escopo, preservar e publicar como `PARTIAL` as contas a pagar cujos valores, datas, fornecedor e paginação foram validados; categoria fica ausente, com erro sanitizado. Cards/listas dependentes desse retrato mostram `Parcial`, e qualquer resultado que dependa da categoria deve respeitar as regras financeiras aprovadas e indicar sua dependência pendente, sem inventar uma classificação. Erro em campo financeiro obrigatório, detalhe de título, contato ou paginação continua cancelando a publicação e preservando o retrato anterior.
 - Saldo Inicial D = Saldo Final Conciliado D-1.
 - Saldo Final = Saldo Inicial + Entradas - Saídas +/- Ajustes Autorizados.
 - D0 é provisório/em andamento; D+1 a D+60 é projetado.

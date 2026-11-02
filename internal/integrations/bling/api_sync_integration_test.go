@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -46,13 +47,14 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 		t.Fatalf("load Bling connection: %v", err)
 	}
 
-	const resource = "ci.bling.api_sync.atomicity"
-	const sourceEntity = "ci.bling.api_sync.atomicity.page"
+	runID := strconv.FormatInt(time.Now().UnixNano(), 10)
+	resource := "ci.bling.api_sync.atomicity." + runID
+	sourceEntity := "ci.bling.api_sync.atomicity.page." + runID
 	cleanup := func() {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cleanupCancel()
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM bling_sync_page_checkpoints WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
-		_, _ = pool.Exec(cleanupCtx, `DELETE FROM raw_records WHERE source_entity = $1`, sourceEntity)
+		// RAW rows are append-only; the per-run source entity keeps fixtures isolated.
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM integration_sync_batches WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
 	}
@@ -340,13 +342,14 @@ func TestAPIResourceSyncSerializesConcurrentRunsForSameResource(t *testing.T) {
 		t.Fatalf("load Bling connection: %v", err)
 	}
 
-	const resource = "ci.bling.api_sync.concurrent"
-	const sourceEntity = "ci.bling.api_sync.concurrent.page"
+	runID := strconv.FormatInt(time.Now().UnixNano(), 10)
+	resource := "ci.bling.api_sync.concurrent." + runID
+	sourceEntity := "ci.bling.api_sync.concurrent.page." + runID
 	cleanup := func() {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cleanupCancel()
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM bling_sync_page_checkpoints WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
-		_, _ = pool.Exec(cleanupCtx, `DELETE FROM raw_records WHERE source_entity = $1`, sourceEntity)
+		// RAW rows are append-only; the per-run source entity keeps fixtures isolated.
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM sync_cursors WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
 		_, _ = pool.Exec(cleanupCtx, `DELETE FROM integration_sync_batches WHERE connection_id = $1 AND resource = $2`, connection.ID, resource)
 	}
@@ -380,12 +383,15 @@ func TestAPIResourceSyncSerializesConcurrentRunsForSameResource(t *testing.T) {
 			return page, nil
 		},
 	}
-	type syncOutcome struct{ err error }
+	type syncOutcome struct {
+		result APISyncResult
+		err    error
+	}
 	firstDone := make(chan syncOutcome, 1)
 	secondDone := make(chan syncOutcome, 1)
 	go func() {
-		_, err := firstService.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
-		firstDone <- syncOutcome{err: err}
+		result, err := firstService.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
+		firstDone <- syncOutcome{result: result, err: err}
 	}()
 	select {
 	case <-firstReadStarted:
@@ -393,8 +399,8 @@ func TestAPIResourceSyncSerializesConcurrentRunsForSameResource(t *testing.T) {
 		t.Fatalf("first sync did not reach the Bling read: %v", ctx.Err())
 	}
 	go func() {
-		_, err := secondService.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
-		secondDone <- syncOutcome{err: err}
+		result, err := secondService.Sync(ctx, ReceivablesFilter{Page: 1, Limit: 1})
+		secondDone <- syncOutcome{result: result, err: err}
 	}()
 	select {
 	case <-secondReadStarted:
@@ -408,11 +414,13 @@ func TestAPIResourceSyncSerializesConcurrentRunsForSameResource(t *testing.T) {
 		t.Fatalf("waiting for the resource lock check: %v", ctx.Err())
 	}
 	allowFirstReadToFinish()
+	var firstResult, secondResult APISyncResult
 	select {
 	case outcome := <-firstDone:
 		if outcome.err != nil {
 			t.Fatalf("first sync failed: %v", outcome.err)
 		}
+		firstResult = outcome.result
 	case <-ctx.Done():
 		t.Fatalf("first sync did not finish: %v", ctx.Err())
 	}
@@ -426,6 +434,7 @@ func TestAPIResourceSyncSerializesConcurrentRunsForSameResource(t *testing.T) {
 		if outcome.err != nil {
 			t.Fatalf("second sync failed: %v", outcome.err)
 		}
+		secondResult = outcome.result
 	case <-ctx.Done():
 		t.Fatalf("second sync did not finish: %v", ctx.Err())
 	}
@@ -433,7 +442,7 @@ func TestAPIResourceSyncSerializesConcurrentRunsForSameResource(t *testing.T) {
 	var successfulBatches int
 	if err := pool.QueryRow(ctx, `
 		SELECT count(*) FROM integration_sync_batches
-		WHERE connection_id = $1 AND resource = $2 AND status = 'SUCCESS'`, connection.ID, resource).Scan(&successfulBatches); err != nil {
+		WHERE id = ANY($1::uuid[]) AND connection_id = $2 AND resource = $3 AND status = 'SUCCESS'`, []string{firstResult.BatchID, secondResult.BatchID}, connection.ID, resource).Scan(&successfulBatches); err != nil {
 		t.Fatalf("count successful concurrent batches: %v", err)
 	}
 	if successfulBatches != 2 {

@@ -40,8 +40,13 @@ func TestRunDailyBlingSyncRejectsMissingOrIncompleteSource(t *testing.T) {
 		t.Fatalf("missing source error = %v", err)
 	}
 	syncer := &fakeDailyBlingSyncer{result: bling.BlingRawSyncResult{Status: "PARTIAL"}}
+	result, skipped, err := runDailyBlingSync(context.Background(), syncer, time.Now())
+	if err != nil || result.Status != "PARTIAL" || skipped {
+		t.Fatalf("partial data should be accepted and remain visible as partial: result=%+v skipped=%v error=%v", result, skipped, err)
+	}
+	syncer.result.Status = "FAILED"
 	if _, _, err := runDailyBlingSync(context.Background(), syncer, time.Now()); !errors.Is(err, ErrDailyBlingIncomplete) {
-		t.Fatalf("incomplete result error = %v", err)
+		t.Fatalf("failed result error = %v", err)
 	}
 }
 

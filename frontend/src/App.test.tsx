@@ -172,6 +172,30 @@ describe('shell financeiro', () => {
     expect(upcomingCard).toHaveTextContent('R$ 40,00')
   })
 
+  it('mantém títulos sem categoria visíveis e marca o total como parcial', async () => {
+    const user = userEvent.setup()
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => ({
+        ...await snapshotAdapterFor().getSnapshot(),
+        data_state: 'PARTIAL',
+        payables: { value: '250.0000', count: 1, state: 'PARTIAL', source_system: 'BLING' },
+        payable_rows: [{ supplier: 'Fornecedor real', document: 'DOC-1', due_date: '2026-11-05', value: '250.0000', status: '1' }],
+      }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Contas a Pagar' }))
+    const payableTotalCard = screen.getByText('TOTAL A PAGAR').closest('article')
+    expect(payableTotalCard).toHaveTextContent('R$ 250,00')
+    expect(payableTotalCard).toHaveTextContent('Parcial')
+    const row = screen.getByText('Fornecedor real').closest('tr')
+    expect(row).toHaveTextContent('DOC-1')
+    expect(row).toHaveTextContent('2026-11-05')
+    expect(row).toHaveTextContent('R$ 250,00')
+    expect(row).toHaveTextContent('—')
+    expect(row).toHaveTextContent('1')
+  })
+
   it('navega por teclado até integrações e mantém campos com labels visíveis', async () => {
     const user = userEvent.setup()
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)

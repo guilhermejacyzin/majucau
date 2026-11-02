@@ -9,9 +9,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -54,13 +56,14 @@ type APISyncResult struct {
 // publication transaction; other resources remain RAW_ONLY until their
 // mapping contracts are implemented and approved.
 type apiResourceSyncService struct {
-	pool          *pgxpool.Pool
-	client        *BlingAPIClient
-	maxPages      int
-	resource      string
-	sourceEntity  string
-	list          func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
-	normalizePage func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error
+	pool             *pgxpool.Pool
+	client           *BlingAPIClient
+	maxPages         int
+	resource         string
+	sourceEntity     string
+	list             func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
+	normalizePage    func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error
+	partialErrorCode func() string
 }
 
 type ReceivablesAPISyncService struct{ *apiResourceSyncService }
@@ -83,7 +86,8 @@ const PayablesAPIResource = "contas.pagar"
 type PayablesAPISyncService struct{ *apiResourceSyncService }
 
 func NewPayablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *PayablesAPISyncService {
-	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables, normalizePage: normalizePayablesAPISnapshotPage(client)}}
+	normalizePage, partialErrorCode := normalizePayablesAPISnapshotPage(client)
+	return &PayablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: PayablesAPIResource, sourceEntity: "bling.contas_pagar.page", list: client.ListPayables, normalizePage: normalizePage, partialErrorCode: partialErrorCode}}
 }
 
 // SyncWithCorrelationID runs payables as part of a stable daily operation.
@@ -288,10 +292,12 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 				return fail("BLING_API_CHECKPOINT_INVALID", err)
 			}
 			if err := s.normalizePage(ctx, queries, connection.ID, batch.ID, records); err != nil {
-				return fail("BLING_API_NORMALIZATION_FAILED", err)
+				return fail(blingAPINormalizationFailureCode(err), err)
 			}
 		}
 	}
+	batchStatus := "SUCCESS"
+	var batchErrorCode, batchErrorMessage *string
 	if fullDailyPayablesSnapshot {
 		updated, err := queries.MarkIntegrationSyncBatchNormalized(ctx, batch.ID)
 		if err != nil {
@@ -299,6 +305,20 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		}
 		if updated != 1 {
 			return fail("BLING_API_NORMALIZATION_FAILED", errors.New("daily payable batch stage changed unexpectedly"))
+		}
+		if s.partialErrorCode != nil {
+			code := s.partialErrorCode()
+			if code != "" {
+				batchStatus = "PARTIAL"
+				message := "Os títulos foram carregados; a classificação por categoria está incompleta."
+				switch code {
+				case "BLING_CATEGORY_SCOPE_INSUFFICIENT":
+					message = "Os títulos foram carregados; a categoria ficou indisponível por falta de permissão de leitura no Bling."
+				case "BLING_CATEGORY_UNASSIGNED":
+					message = "Os títulos foram carregados; alguns não têm categoria atribuída no Bling."
+				}
+				batchErrorCode, batchErrorMessage = &code, &message
+			}
 		}
 	}
 	if err := retireCurrentResourcePagesAfter(ctx, tx, connection.ID, s.sourceEntity, finalPage); err != nil {
@@ -317,15 +337,121 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 	}
 	result.RetryCount = retryCounter.Count()
 	if err := queries.FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{
-		ID: batch.ID, Status: "SUCCESS", RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated), RetryCount: result.RetryCount,
+		ID: batch.ID, Status: batchStatus, RecordsRead: int64(result.RecordsRead), RecordsCreated: int64(result.PagesCreated), RecordsUpdated: int64(result.PagesUpdated), RetryCount: result.RetryCount, ErrorCode: batchErrorCode, ErrorMessageSanitized: batchErrorMessage,
 	}); err != nil {
 		return fail("BLING_SYNC_BATCH_FINISH_FAILED", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return result, fmt.Errorf("commit Bling API sync: %w", err)
 	}
-	result.Status = "SUCCESS"
+	result.Status = batchStatus
 	return result, nil
+}
+
+// blingAPINormalizationFailureCode exposes only a reviewed, non-sensitive
+// category in the batch audit. Keeping the original error out of logs and the
+// database protects account data while still making a failed live import
+// diagnosable.
+func blingAPINormalizationFailureCode(err error) string {
+	var fieldErr *payableSchemaFieldError
+	if errors.As(err, &fieldErr) {
+		switch fieldErr.code {
+		case "BLING_PAYABLE_LIST_ID_INVALID",
+			"BLING_PAYABLE_DETAIL_ID_INVALID",
+			"BLING_PAYABLE_STATUS_INVALID",
+			"BLING_PAYABLE_DUE_DATE_INVALID",
+			"BLING_PAYABLE_AMOUNT_INVALID",
+			"BLING_PAYABLE_OPEN_BALANCE_INVALID",
+			"BLING_PAYABLE_OPEN_BALANCE_MISSING",
+			"BLING_PAYABLE_OPEN_BALANCE_TYPE_INVALID",
+			"BLING_PAYABLE_OPEN_BALANCE_NEGATIVE",
+			"BLING_PAYABLE_OPEN_BALANCE_SCIENTIFIC_NOTATION",
+			"BLING_PAYABLE_OPEN_BALANCE_DECIMAL_SEPARATOR_INVALID",
+			"BLING_PAYABLE_OPEN_BALANCE_PRECISION_EXCEEDED",
+			"BLING_PAYABLE_OPEN_BALANCE_OUT_OF_RANGE",
+			"BLING_PAYABLE_OPEN_BALANCE_FORMAT_INVALID",
+			"BLING_PAYABLE_OPEN_BALANCE_VALUE_INVALID",
+			"BLING_PAYABLE_COMPETENCE_DATE_INVALID",
+			"BLING_PAYABLE_DOCUMENT_INVALID",
+			"BLING_PAYABLE_CATEGORY_ID_INVALID",
+			"BLING_PAYABLE_SUPPLIER_ID_INVALID",
+			"BLING_CONTACT_DETAIL_ID_INVALID",
+			"BLING_CONTACT_DETAIL_NAME_INVALID",
+			"BLING_CATEGORY_DETAIL_ID_INVALID",
+			"BLING_CATEGORY_DETAIL_TYPE_INVALID",
+			"BLING_CATEGORY_DETAIL_DESCRIPTION_INVALID":
+			return fieldErr.code
+		}
+	}
+	switch {
+	case errors.Is(err, errBlingPayableListSchemaMismatch):
+		return "BLING_PAYABLE_LIST_SCHEMA_MISMATCH"
+	case errors.Is(err, errBlingPayableDetailSchemaMismatch):
+		return "BLING_PAYABLE_DETAIL_SCHEMA_MISMATCH"
+	case errors.Is(err, errBlingContactDetailSchemaMismatch):
+		return "BLING_CONTACT_DETAIL_SCHEMA_MISMATCH"
+	case errors.Is(err, errBlingCategoryDetailSchemaMismatch):
+		return "BLING_CATEGORY_DETAIL_SCHEMA_MISMATCH"
+	case errors.Is(err, ErrBlingFinancialCategoryScopeInsufficient):
+		return "BLING_CATEGORY_SCOPE_INSUFFICIENT"
+	case errors.Is(err, ErrBlingAPIScopeInsufficient):
+		return "BLING_API_SCOPE_INSUFFICIENT"
+	case errors.Is(err, ErrBlingAPIUnauthorized):
+		return "BLING_API_UNAUTHORIZED"
+	case errors.Is(err, ErrBlingAPIRateLimited):
+		return "BLING_API_RATE_LIMITED"
+	case errors.Is(err, ErrBlingAPIUnavailable):
+		return "BLING_API_UNAVAILABLE"
+	case errors.Is(err, ErrBlingAPIInvalidResponse):
+		return "BLING_API_INVALID_RESPONSE"
+	case errors.Is(err, ErrBlingAPISchemaMismatch):
+		return "BLING_API_SCHEMA_MISMATCH"
+	case errors.Is(err, ErrBlingAPIConfiguration):
+		return "BLING_API_CONFIGURATION_INVALID"
+	default:
+		var apiErr *BlingAPIError
+		if errors.As(err, &apiErr) {
+			switch apiErr.StatusCode {
+			case http.StatusBadRequest:
+				return "BLING_API_REQUEST_REJECTED"
+			case http.StatusNotFound:
+				return "BLING_API_RECORD_NOT_FOUND"
+			default:
+				return "BLING_API_RESPONSE_REJECTED"
+			}
+		}
+		var databaseErr *pgconn.PgError
+		if errors.As(err, &databaseErr) {
+			switch databaseErr.Code {
+			case "23505":
+				return "BLING_NORMALIZATION_DUPLICATE"
+			case "23503":
+				return "BLING_NORMALIZATION_REFERENCE_MISSING"
+			case "23514":
+				return "BLING_NORMALIZATION_CONSTRAINT_FAILED"
+			case "22003":
+				return "BLING_NORMALIZATION_VALUE_OUT_OF_RANGE"
+			default:
+				if safePostgreSQLState(databaseErr.Code) {
+					return "BLING_NORMALIZATION_STORAGE_" + databaseErr.Code
+				}
+				return "BLING_NORMALIZATION_STORAGE_FAILED"
+			}
+		}
+		return "BLING_API_NORMALIZATION_FAILED"
+	}
+}
+
+func safePostgreSQLState(code string) bool {
+	if len(code) != 5 {
+		return false
+	}
+	for _, char := range code {
+		if (char < '0' || char > '9') && (char < 'A' || char > 'Z') {
+			return false
+		}
+	}
+	return true
 }
 
 type apiPageCheckpointSummary struct {

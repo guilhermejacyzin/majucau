@@ -24,6 +24,13 @@ const (
 	maxPayableLookupCache  = 2048
 )
 
+var (
+	errBlingPayableListSchemaMismatch    = errors.New("Bling payable list schema mismatch")
+	errBlingPayableDetailSchemaMismatch  = errors.New("Bling payable detail schema mismatch")
+	errBlingContactDetailSchemaMismatch  = errors.New("Bling contact detail schema mismatch")
+	errBlingCategoryDetailSchemaMismatch = errors.New("Bling category detail schema mismatch")
+)
+
 type payableAPIListRecord struct {
 	ID int64 `json:"id"`
 }
@@ -38,7 +45,7 @@ type payableAPIContactDetail struct {
 }
 
 type payableAPICategory struct {
-	ID int64 `json:"id"`
+	ID *int64 `json:"id"`
 }
 
 type payableAPICategoryDetail struct {
@@ -60,29 +67,52 @@ type payableAPIDetail struct {
 }
 
 type normalizedPayable struct {
-	SourceID       string
-	SupplierSource string
-	SupplierName   string
-	SupplierRawID  pgtype.UUID
-	CategoryID     int64
-	CategoryRawID  pgtype.UUID
-	Document       *string
-	Category       *string
-	CompetenceDate pgtype.Date
-	DueDate        pgtype.Date
-	PaymentDate    pgtype.Date
-	OriginalAmount pgtype.Numeric
-	OpenBalance    pgtype.Numeric
-	Status         string
+	SourceID           string
+	SupplierSource     string
+	SupplierName       string
+	SupplierRawID      pgtype.UUID
+	CategoryID         int64
+	CategoryUnassigned bool
+	CategoryRawID      pgtype.UUID
+	Document           *string
+	Category           *string
+	CompetenceDate     pgtype.Date
+	DueDate            pgtype.Date
+	PaymentDate        pgtype.Date
+	OriginalAmount     pgtype.Numeric
+	OpenBalance        pgtype.Numeric
+	Status             string
 }
 
-func normalizePayablesAPISnapshotPage(client *BlingAPIClient) func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error {
+// payableSchemaFieldError carries a reviewed field identifier for the batch
+// audit. Its text intentionally contains no provider payload or field value.
+type payableSchemaFieldError struct {
+	code string
+}
+
+// payableAPIMoneyError reports only a reviewed, non-sensitive reason. It never
+// retains or formats the provider's financial value.
+type payableAPIMoneyError struct {
+	code string
+}
+
+func (e *payableAPIMoneyError) Error() string { return "invalid provider money field" }
+
+func (e *payableSchemaFieldError) Error() string { return ErrBlingAPISchemaMismatch.Error() }
+
+func (e *payableSchemaFieldError) Unwrap() error { return ErrBlingAPISchemaMismatch }
+
+func payableSchemaField(code string) error { return &payableSchemaFieldError{code: code} }
+
+func normalizePayablesAPISnapshotPage(client *BlingAPIClient) (func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error, func() string) {
 	contactCache := make(map[int64]string)
 	categoryCache := make(map[int64]string)
 	contactRawCache := make(map[int64]pgtype.UUID)
 	categoryRawCache := make(map[int64]pgtype.UUID)
+	categoryScopeUnavailable := false
+	categoryUnassigned := false
 	var cachedBatch pgtype.UUID
-	return func(ctx context.Context, queries *database.Queries, connectionID, batchID pgtype.UUID, records []json.RawMessage) error {
+	normalize := func(ctx context.Context, queries *database.Queries, connectionID, batchID pgtype.UUID, records []json.RawMessage) error {
 		if client == nil || queries == nil || !connectionID.Valid || !batchID.Valid {
 			return fmt.Errorf("%w: payable normalizer dependencies are missing", ErrBlingAPIConfiguration)
 		}
@@ -91,6 +121,8 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) func(context.Conte
 			clear(categoryCache)
 			clear(contactRawCache)
 			clear(categoryRawCache)
+			categoryScopeUnavailable = false
+			categoryUnassigned = false
 			cachedBatch = batchID
 		}
 		for _, record := range records {
@@ -99,7 +131,7 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) func(context.Conte
 			}
 			var listItem payableAPIListRecord
 			if err := json.Unmarshal(record, &listItem); err != nil || listItem.ID <= 0 {
-				return fmt.Errorf("%w: payable list identity is missing or invalid", ErrBlingAPISchemaMismatch)
+				return errors.Join(errBlingPayableListSchemaMismatch, payableSchemaField("BLING_PAYABLE_LIST_ID_INVALID"))
 			}
 			detailPayload, err := client.GetPayable(ctx, listItem.ID)
 			if err != nil {
@@ -107,7 +139,10 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) func(context.Conte
 			}
 			payable, err := parsePayableAPIDetail(detailPayload, listItem.ID)
 			if err != nil {
-				return err
+				return errors.Join(errBlingPayableDetailSchemaMismatch, err)
+			}
+			if payable.CategoryUnassigned {
+				categoryUnassigned = true
 			}
 			if payable.SupplierSource != "" {
 				contactID, _ := strconv.ParseInt(payable.SupplierSource, 10, 64)
@@ -119,7 +154,7 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) func(context.Conte
 					}
 					name, err = parsePayableContactDetail(contactPayload, contactID)
 					if err != nil {
-						return err
+						return errors.Join(errBlingContactDetailSchemaMismatch, err)
 					}
 					contactRawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, "bling.contato", payable.SupplierSource, contactPayload)
 					if err != nil {
@@ -135,30 +170,38 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) func(context.Conte
 				payable.SupplierName = name
 				payable.SupplierRawID = contactRawCache[contactID]
 			}
-			if payable.CategoryID > 0 {
+			if payable.CategoryID > 0 && !categoryScopeUnavailable {
 				name, ok := categoryCache[payable.CategoryID]
 				if !ok {
 					categoryPayload, err := client.GetFinancialCategory(ctx, payable.CategoryID)
 					if err != nil {
-						return err
+						if errors.Is(err, ErrBlingFinancialCategoryScopeInsufficient) {
+							categoryScopeUnavailable = true
+						} else {
+							return err
+						}
 					}
-					name, err = parsePayableCategoryDetail(categoryPayload, payable.CategoryID)
-					if err != nil {
-						return err
+					if !categoryScopeUnavailable {
+						name, err = parsePayableCategoryDetail(categoryPayload, payable.CategoryID)
+						if err != nil {
+							return errors.Join(errBlingCategoryDetailSchemaMismatch, err)
+						}
+						categoryRawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, "bling.categoria_receita_despesa", strconv.FormatInt(payable.CategoryID, 10), categoryPayload)
+						if err != nil {
+							return fmt.Errorf("persist Bling category source: %w", err)
+						}
+						if len(categoryCache) >= maxPayableLookupCache {
+							clear(categoryCache)
+							clear(categoryRawCache)
+						}
+						categoryCache[payable.CategoryID] = name
+						categoryRawCache[payable.CategoryID] = categoryRawID
 					}
-					categoryRawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, "bling.categoria_receita_despesa", strconv.FormatInt(payable.CategoryID, 10), categoryPayload)
-					if err != nil {
-						return fmt.Errorf("persist Bling category source: %w", err)
-					}
-					if len(categoryCache) >= maxPayableLookupCache {
-						clear(categoryCache)
-						clear(categoryRawCache)
-					}
-					categoryCache[payable.CategoryID] = name
-					categoryRawCache[payable.CategoryID] = categoryRawID
 				}
-				payable.Category = &name
-				payable.CategoryRawID = categoryRawCache[payable.CategoryID]
+				if !categoryScopeUnavailable {
+					payable.Category = &name
+					payable.CategoryRawID = categoryRawCache[payable.CategoryID]
+				}
 			}
 			rawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, payableAPISourceEntity, payable.SourceID, detailPayload)
 			if err != nil {
@@ -213,35 +256,54 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) func(context.Conte
 		}
 		return nil
 	}
+	return normalize, func() string {
+		switch {
+		case categoryScopeUnavailable && categoryUnassigned:
+			return "BLING_CATEGORY_INCOMPLETE"
+		case categoryScopeUnavailable:
+			return "BLING_CATEGORY_SCOPE_INSUFFICIENT"
+		case categoryUnassigned:
+			return "BLING_CATEGORY_UNASSIGNED"
+		default:
+			return ""
+		}
+	}
 }
 
 func parsePayableAPIDetail(payload []byte, expectedID int64) (normalizedPayable, error) {
 	var detail payableAPIDetail
-	if len(payload) == 0 || json.Unmarshal(payload, &detail) != nil || detail.ID != expectedID || detail.ID <= 0 || detail.Status < 1 || detail.Status > 7 {
-		return normalizedPayable{}, fmt.Errorf("%w: payable detail identity or status is invalid", ErrBlingAPISchemaMismatch)
+	if len(payload) == 0 || json.Unmarshal(payload, &detail) != nil || detail.ID != expectedID || detail.ID <= 0 {
+		return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_DETAIL_ID_INVALID")
+	}
+	if detail.Status < 1 || detail.Status > 7 {
+		return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_STATUS_INVALID")
 	}
 	dueDate, err := parseRequiredAPIDate(detail.DueDate)
 	if err != nil {
-		return normalizedPayable{}, fmt.Errorf("%w: payable due date is invalid", ErrBlingAPISchemaMismatch)
+		return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_DUE_DATE_INVALID")
 	}
 	amount, err := parseRequiredAPIMoney(detail.Amount)
 	if err != nil {
-		return normalizedPayable{}, fmt.Errorf("%w: payable amount is invalid", ErrBlingAPISchemaMismatch)
+		return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_AMOUNT_INVALID")
 	}
 	openBalance, err := parseRequiredAPIMoney(detail.OpenBalance)
 	if err != nil {
-		return normalizedPayable{}, fmt.Errorf("%w: payable open balance is invalid", ErrBlingAPISchemaMismatch)
+		var moneyErr *payableAPIMoneyError
+		if errors.As(err, &moneyErr) {
+			return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_OPEN_BALANCE_" + moneyErr.code)
+		}
+		return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_OPEN_BALANCE_INVALID")
 	}
 	var competenceDate pgtype.Date
 	if detail.CompetenceDate != nil && strings.TrimSpace(*detail.CompetenceDate) != "" {
 		competenceDate, err = parseOptionalAPIDate(*detail.CompetenceDate)
 		if err != nil {
-			return normalizedPayable{}, fmt.Errorf("%w: payable competence date is invalid", ErrBlingAPISchemaMismatch)
+			return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_COMPETENCE_DATE_INVALID")
 		}
 	}
 	document, err := optionalPayableText(detail.Document)
 	if err != nil {
-		return normalizedPayable{}, fmt.Errorf("%w: payable document is invalid", ErrBlingAPISchemaMismatch)
+		return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_DOCUMENT_INVALID")
 	}
 	result := normalizedPayable{
 		SourceID: strconv.FormatInt(detail.ID, 10), Document: document,
@@ -249,13 +311,17 @@ func parsePayableAPIDetail(payload []byte, expectedID int64) (normalizedPayable,
 		OriginalAmount: amount, OpenBalance: openBalance, Status: strconv.FormatInt(detail.Status, 10),
 	}
 	if detail.Category != nil {
-		if detail.Category.ID <= 0 {
-			return normalizedPayable{}, fmt.Errorf("%w: payable category identity is invalid", ErrBlingAPISchemaMismatch)
+		if detail.Category.ID == nil || *detail.Category.ID < 0 {
+			return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_CATEGORY_ID_INVALID")
 		}
-		result.CategoryID = detail.Category.ID
+		if *detail.Category.ID == 0 {
+			result.CategoryUnassigned = true
+		} else {
+			result.CategoryID = *detail.Category.ID
+		}
 	}
 	if detail.Contact == nil || detail.Contact.ID <= 0 {
-		return normalizedPayable{}, fmt.Errorf("%w: payable contact identity is missing or invalid", ErrBlingAPISchemaMismatch)
+		return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_SUPPLIER_ID_INVALID")
 	}
 	result.SupplierSource = strconv.FormatInt(detail.Contact.ID, 10)
 	return result, nil
@@ -263,14 +329,79 @@ func parsePayableAPIDetail(payload []byte, expectedID int64) (normalizedPayable,
 
 func parseRequiredAPIMoney(raw json.RawMessage) (pgtype.Numeric, error) {
 	textValue, err := decodeAPIStringOrNumber(raw)
-	if err != nil || !isExactPayableDecimal(textValue) {
-		return pgtype.Numeric{}, errors.New("invalid exact decimal")
+	if err != nil {
+		return pgtype.Numeric{}, &payableAPIMoneyError{code: classifyPayableMoneyShape(raw)}
+	}
+	if !isExactPayableDecimal(textValue) {
+		return pgtype.Numeric{}, &payableAPIMoneyError{code: classifyPayableMoneyShape(raw)}
 	}
 	var value pgtype.Numeric
 	if err := value.Scan(textValue); err != nil || !value.Valid || value.Int == nil || value.Int.Sign() < 0 {
-		return pgtype.Numeric{}, errors.New("invalid non-negative decimal")
+		return pgtype.Numeric{}, &payableAPIMoneyError{code: "VALUE_INVALID"}
 	}
 	return value, nil
+}
+
+func classifyPayableMoneyShape(raw json.RawMessage) string {
+	value := strings.TrimSpace(string(raw))
+	switch {
+	case value == "" || value == "null":
+		return "MISSING"
+	case strings.HasPrefix(value, "{") || strings.HasPrefix(value, "[") || value == "true" || value == "false":
+		return "TYPE_INVALID"
+	case strings.HasPrefix(value, `"`):
+		var decoded string
+		if json.Unmarshal(raw, &decoded) != nil {
+			return "FORMAT_INVALID"
+		}
+		return classifyPayableMoneyText(strings.TrimSpace(decoded))
+	default:
+		return classifyPayableMoneyText(value)
+	}
+}
+
+func classifyPayableMoneyText(value string) string {
+	if value == "" {
+		return "MISSING"
+	}
+	if strings.HasPrefix(value, "-") && isExactPayableDecimal(strings.TrimPrefix(value, "-")) {
+		return "NEGATIVE"
+	}
+	if strings.ContainsAny(value, "eE") {
+		return "SCIENTIFIC_NOTATION"
+	}
+	if strings.Contains(value, ",") {
+		return "DECIMAL_SEPARATOR_INVALID"
+	}
+	if len(value) > 20 {
+		return "OUT_OF_RANGE"
+	}
+	whole, fraction := value, ""
+	if decimalAt := strings.IndexByte(value, '.'); decimalAt >= 0 {
+		if strings.IndexByte(value[decimalAt+1:], '.') >= 0 {
+			return "FORMAT_INVALID"
+		}
+		whole, fraction = value[:decimalAt], value[decimalAt+1:]
+	}
+	if allASCIIDigits(whole) && len(whole) > 15 {
+		return "OUT_OF_RANGE"
+	}
+	if allASCIIDigits(whole) && len(fraction) > 4 && allASCIIDigits(fraction) {
+		return "PRECISION_EXCEEDED"
+	}
+	return "FORMAT_INVALID"
+}
+
+func allASCIIDigits(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, digit := range value {
+		if digit < '0' || digit > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func isExactPayableDecimal(value string) bool {
@@ -348,23 +479,26 @@ func optionalPayableText(value *string) (*string, error) {
 func parsePayableContactDetail(payload []byte, expectedID int64) (string, error) {
 	var detail payableAPIContactDetail
 	if len(payload) == 0 || json.Unmarshal(payload, &detail) != nil || detail.ID != expectedID {
-		return "", fmt.Errorf("%w: payable contact detail identity is invalid", ErrBlingAPISchemaMismatch)
+		return "", payableSchemaField("BLING_CONTACT_DETAIL_ID_INVALID")
 	}
 	name, err := optionalPayableText(&detail.Name)
 	if err != nil || name == nil {
-		return "", fmt.Errorf("%w: payable contact name is missing or invalid", ErrBlingAPISchemaMismatch)
+		return "", payableSchemaField("BLING_CONTACT_DETAIL_NAME_INVALID")
 	}
 	return *name, nil
 }
 
 func parsePayableCategoryDetail(payload []byte, expectedID int64) (string, error) {
 	var detail payableAPICategoryDetail
-	if len(payload) == 0 || json.Unmarshal(payload, &detail) != nil || detail.ID != expectedID || detail.Type < 1 || detail.Type > 3 {
-		return "", fmt.Errorf("%w: payable category detail identity is invalid", ErrBlingAPISchemaMismatch)
+	if len(payload) == 0 || json.Unmarshal(payload, &detail) != nil || detail.ID != expectedID {
+		return "", payableSchemaField("BLING_CATEGORY_DETAIL_ID_INVALID")
+	}
+	if detail.Type < 1 || detail.Type > 3 {
+		return "", payableSchemaField("BLING_CATEGORY_DETAIL_TYPE_INVALID")
 	}
 	description, err := optionalPayableText(&detail.Description)
 	if err != nil || description == nil {
-		return "", fmt.Errorf("%w: payable category description is missing or invalid", ErrBlingAPISchemaMismatch)
+		return "", payableSchemaField("BLING_CATEGORY_DETAIL_DESCRIPTION_INVALID")
 	}
 	return *description, nil
 }

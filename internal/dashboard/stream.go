@@ -122,6 +122,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		receivablesOverdueCount, payablesCount, payablesTodayCount, payablesOverdueCount, payablesDueNext7DaysCount int64
 		paymentsTotalCount, paymentsMonthCount                                                                      int64
 		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt                      pgtype.Timestamptz
+		dailyPayablesPartial                                                                                        bool
 	)
 	schedule, err := scheduler.NewSaoPaulo0930()
 	if err != nil {
@@ -149,6 +150,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&lastBlingSyncAt,
 		&dailyReceivablesSyncAt,
 		&dailyPayablesSyncAt,
+		&dailyPayablesPartial,
 		&dailyCashMovementsSyncAt,
 		&payablesDueNext7DaysValue,
 		&payablesDueNext7DaysCount,
@@ -176,10 +178,10 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		FutureB2C:            metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
 		ReceiptsMonth:        metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING"),
 		ReceivablesOverdue:   metricForSourceRun(receivablesOverdueValue, receivablesOverdueCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
-		Payables:             metricForSourceRun(payablesValue, payablesCount, payablesCount, payablesFresh, "BLING"),
-		PayablesDueToday:     metricForSourceRun(payablesTodayValue, payablesTodayCount, payablesCount, payablesFresh, "BLING"),
-		PayablesOverdue:      metricForSourceRun(payablesOverdueValue, payablesOverdueCount, payablesCount, payablesFresh, "BLING"),
-		PayablesDueNext7Days: metricForSourceRun(payablesDueNext7DaysValue, payablesDueNext7DaysCount, payablesCount, payablesFresh, "BLING"),
+		Payables:             metricForSourceRun(payablesValue, payablesCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
+		PayablesDueToday:     metricForSourceRun(payablesTodayValue, payablesTodayCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
+		PayablesOverdue:      metricForSourceRun(payablesOverdueValue, payablesOverdueCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
+		PayablesDueNext7Days: metricForSourceRun(payablesDueNext7DaysValue, payablesDueNext7DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PaymentsMonth:        metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING"),
 	}, nil
 }
@@ -188,11 +190,14 @@ func completedBy(syncAt pgtype.Timestamptz, asOf time.Time) bool {
 	return syncAt.Valid && !syncAt.Time.After(asOf)
 }
 
-func metricForSourceRun(value string, count, sourceCount int64, fresh bool, source string) application.DashboardMetric {
+func metricForSourceRun(value string, count, sourceCount int64, fresh bool, source string, partial ...bool) application.DashboardMetric {
 	if !fresh {
 		return application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: source}
 	}
 	state := stateForCount(sourceCount)
+	if len(partial) > 0 && partial[0] {
+		state = "PARTIAL"
+	}
 	if state == "UNAVAILABLE" {
 		// A successful daily load with no matching records confirms a zero; it
 		// is different from a source that has not completed its current load.
@@ -363,7 +368,7 @@ WITH eligible_receivables AS (
    WHERE c.provider = 'BLING'
      AND b.resource = 'contas.pagar'
      AND b.correlation_id IS NOT NULL
-     AND b.status = 'SUCCESS'
+     AND b.status IN ('SUCCESS', 'PARTIAL')
      AND b.data_stage = 'NORMALIZED'
    ORDER BY b.finished_at DESC, b.id DESC
    LIMIT 1
@@ -422,7 +427,8 @@ WITH eligible_receivables AS (
 ), current_daily_bling_sync AS (
   SELECT
     MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.receber' AND b.status = 'SUCCESS' AND b.data_stage = 'NORMALIZED') AS receivables_finished_at,
-    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar' AND b.status = 'SUCCESS' AND b.data_stage = 'NORMALIZED') AS payables_finished_at,
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS payables_finished_at,
+    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.pagar' AND b.data_stage = 'NORMALIZED'), false) AS payables_partial,
     MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas' AND b.status = 'SUCCESS' AND b.data_stage = 'NORMALIZED') AS cash_movements_finished_at
     FROM integration_sync_batches b
     JOIN integration_connections c ON c.id = b.connection_id
@@ -438,6 +444,7 @@ SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        last_bling_sync.finished_at,
        current_daily_bling_sync.receivables_finished_at,
        current_daily_bling_sync.payables_finished_at,
+       current_daily_bling_sync.payables_partial,
        current_daily_bling_sync.cash_movements_finished_at,
        p.due_next_7_days_value, p.due_next_7_days_count
 FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync CROSS JOIN current_daily_bling_sync
@@ -490,7 +497,7 @@ WITH latest_daily_payable_snapshot AS (
    WHERE c.provider = 'BLING'
      AND b.resource = 'contas.pagar'
      AND b.correlation_id IS NOT NULL
-     AND b.status = 'SUCCESS'
+     AND b.status IN ('SUCCESS', 'PARTIAL')
      AND b.data_stage = 'NORMALIZED'
    ORDER BY b.finished_at DESC, b.id DESC
    LIMIT 1

@@ -48,6 +48,12 @@ GRANT INSERT ON TABLE
   payable_sync_snapshot_rows,
   payable_sources
 TO majucau_runtime;
+-- ON CONFLICT DO NOTHING checks the unique lineage key. The worker may read
+-- only those identifiers; rule_version_id and created_at remain unavailable.
+REVOKE SELECT (payable_id, raw_record_id, rule_version_id, created_at)
+  ON TABLE payable_sources FROM PUBLIC, majucau_runtime;
+GRANT SELECT (payable_id, raw_record_id)
+  ON TABLE payable_sources TO majucau_runtime;
 GRANT DELETE ON TABLE bling_sync_page_checkpoints TO majucau_runtime;
 GRANT INSERT, DELETE ON TABLE google_drive_sync_page_checkpoints TO majucau_runtime;
 GRANT INSERT, UPDATE, DELETE ON TABLE google_drive_sync_folders TO majucau_runtime;

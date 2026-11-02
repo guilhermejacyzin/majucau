@@ -7,6 +7,7 @@ DECLARE
   function_row record;
   sequence_row record;
   expected_select boolean;
+  expected_column_select boolean;
   expected_insert boolean;
   expected_update boolean;
   expected_delete boolean;
@@ -66,6 +67,8 @@ BEGIN
       'public.payments',
       'public.contacts'
     ]::text[]);
+    expected_column_select := expected_select OR
+      relation_row.qualified_name = 'public.payable_sources';
     expected_insert := relation_row.qualified_name = ANY (ARRAY[
       'public.integration_connections',
       'public.integration_sync_batches',
@@ -109,13 +112,20 @@ BEGIN
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'REFERENCES') OR
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'TRIGGER') OR
        has_table_privilege(runtime_oid, relation_row.qualified_name, 'MAINTAIN') OR
-       has_any_column_privilege(runtime_oid, relation_row.qualified_name, 'SELECT') IS DISTINCT FROM expected_select OR
+       has_any_column_privilege(runtime_oid, relation_row.qualified_name, 'SELECT') IS DISTINCT FROM expected_column_select OR
        has_any_column_privilege(runtime_oid, relation_row.qualified_name, 'INSERT') IS DISTINCT FROM expected_insert OR
        has_any_column_privilege(runtime_oid, relation_row.qualified_name, 'UPDATE') IS DISTINCT FROM expected_update OR
        has_any_column_privilege(runtime_oid, relation_row.qualified_name, 'REFERENCES') THEN
       RAISE EXCEPTION 'runtime role has unexpected relation privileges on %', relation_row.qualified_name;
     END IF;
   END LOOP;
+
+  IF NOT has_column_privilege(runtime_oid, 'public.payable_sources', 'payable_id', 'SELECT') OR
+     NOT has_column_privilege(runtime_oid, 'public.payable_sources', 'raw_record_id', 'SELECT') OR
+     has_column_privilege(runtime_oid, 'public.payable_sources', 'rule_version_id', 'SELECT') OR
+     has_column_privilege(runtime_oid, 'public.payable_sources', 'created_at', 'SELECT') THEN
+    RAISE EXCEPTION 'runtime lineage-key column privileges are incorrect';
+  END IF;
 
   FOR function_row IN
     SELECT function_entry.oid, function_entry.proowner
@@ -171,6 +181,35 @@ BEGIN;
 SET LOCAL ROLE majucau_runtime;
 DO $verify_runtime_write_guards$
 BEGIN
+  BEGIN
+    PERFORM payable_id, raw_record_id
+      FROM public.payable_sources
+     LIMIT 0;
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE EXCEPTION 'runtime role cannot read payable lineage keys';
+  END;
+
+  BEGIN
+    PERFORM rule_version_id
+      FROM public.payable_sources
+     LIMIT 0;
+    RAISE EXCEPTION 'runtime role unexpectedly read payable lineage metadata';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+
+  BEGIN
+    INSERT INTO public.payable_sources (payable_id, raw_record_id)
+    VALUES (
+      '00000000-0000-0000-0000-000000000001'::uuid,
+      '00000000-0000-0000-0000-000000000002'::uuid
+    )
+    ON CONFLICT (payable_id, raw_record_id) DO NOTHING;
+    RAISE EXCEPTION 'runtime lineage permission check unexpectedly inserted a row';
+  EXCEPTION WHEN foreign_key_violation THEN
+    NULL;
+  END;
+
   BEGIN
     UPDATE public.raw_records SET is_current = false WHERE false;
     RAISE EXCEPTION 'runtime role unexpectedly updated RAW records';

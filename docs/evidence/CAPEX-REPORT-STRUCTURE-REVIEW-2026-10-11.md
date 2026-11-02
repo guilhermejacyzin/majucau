@@ -96,7 +96,7 @@ conta Majucau.
 
 Referências oficiais consultadas em 12/10/2026:
 
-- [OpenAPI oficial atual do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json)
+- [OpenAPI oficial atual do Bling](https://developer.bling.com.br/referencia)
 - [Changelog do Bling — formato de data em `/caixas`](https://developer.bling.com.br/changelogs)
 - [Migração para autenticação JWT](https://developer.bling.com.br/migracao-jwt)
 
@@ -145,4 +145,4 @@ categoria e o pagamento poderem ser conciliados com segurança.
 - O cliente do Majucau agora aceita uma lista limitada a 100 IDs positivos e os envia em `idsCategorias` como valores repetidos de query, seguindo o padrão de serialização de arrays do OpenAPI.
 - Os testes cobrem a montagem da consulta e rejeitam IDs zero, negativos, repetidos ou mais de 100 antes de qualquer chamada HTTP. `go test -count=1 ./internal/integrations/bling` e `go vet ./internal/integrations/bling` passaram em 13/10/2026.
 - A OpenAPI continua sem documentar o tamanho da página ou o marcador de continuação na resposta de `GET /caixas`. Os IDs e subcategorias CAPEX da conta também não foram consultados; portanto, não há persistência, conciliação ou valores nos cards.
-- Evidência técnica baseada na [OpenAPI oficial do Bling](https://developer.bling.com.br/build/assets/openapi-Dw6cY8yQ.json), rota `/caixas`.
+- Evidência técnica baseada na [OpenAPI oficial do Bling](https://developer.bling.com.br/referencia), rota `/caixas`.

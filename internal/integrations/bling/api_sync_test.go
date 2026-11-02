@@ -10,8 +10,47 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+func TestBlingAPINormalizationFailureCodeDoesNotExposeErrorText(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want string
+	}{
+		{name: "category permission", err: ErrBlingFinancialCategoryScopeInsufficient, want: "BLING_CATEGORY_SCOPE_INSUFFICIENT"},
+		{name: "resource permission", err: ErrBlingAPIScopeInsufficient, want: "BLING_API_SCOPE_INSUFFICIENT"},
+		{name: "authorization", err: ErrBlingAPIUnauthorized, want: "BLING_API_UNAUTHORIZED"},
+		{name: "invalid response", err: ErrBlingAPIInvalidResponse, want: "BLING_API_INVALID_RESPONSE"},
+		{name: "configuration", err: ErrBlingAPIConfiguration, want: "BLING_API_CONFIGURATION_INVALID"},
+		{name: "payable due date field", err: errors.Join(errBlingPayableDetailSchemaMismatch, payableSchemaField("BLING_PAYABLE_DUE_DATE_INVALID")), want: "BLING_PAYABLE_DUE_DATE_INVALID"},
+		{name: "payable amount field", err: errors.Join(errBlingPayableDetailSchemaMismatch, payableSchemaField("BLING_PAYABLE_AMOUNT_INVALID")), want: "BLING_PAYABLE_AMOUNT_INVALID"},
+		{name: "contact name field", err: errors.Join(errBlingContactDetailSchemaMismatch, payableSchemaField("BLING_CONTACT_DETAIL_NAME_INVALID")), want: "BLING_CONTACT_DETAIL_NAME_INVALID"},
+		{name: "category type field", err: errors.Join(errBlingCategoryDetailSchemaMismatch, payableSchemaField("BLING_CATEGORY_DETAIL_TYPE_INVALID")), want: "BLING_CATEGORY_DETAIL_TYPE_INVALID"},
+		{name: "payable list schema", err: errors.Join(errBlingPayableListSchemaMismatch, ErrBlingAPISchemaMismatch), want: "BLING_PAYABLE_LIST_SCHEMA_MISMATCH"},
+		{name: "payable detail schema", err: errors.Join(errBlingPayableDetailSchemaMismatch, ErrBlingAPISchemaMismatch), want: "BLING_PAYABLE_DETAIL_SCHEMA_MISMATCH"},
+		{name: "contact detail schema", err: errors.Join(errBlingContactDetailSchemaMismatch, ErrBlingAPISchemaMismatch), want: "BLING_CONTACT_DETAIL_SCHEMA_MISMATCH"},
+		{name: "category detail schema", err: errors.Join(errBlingCategoryDetailSchemaMismatch, ErrBlingAPISchemaMismatch), want: "BLING_CATEGORY_DETAIL_SCHEMA_MISMATCH"},
+		{name: "schema", err: ErrBlingAPISchemaMismatch, want: "BLING_API_SCHEMA_MISMATCH"},
+		{name: "missing detail", err: &BlingAPIError{StatusCode: http.StatusNotFound, Code: "provider detail"}, want: "BLING_API_RECORD_NOT_FOUND"},
+		{name: "rejected request", err: &BlingAPIError{StatusCode: http.StatusBadRequest, Code: "provider detail"}, want: "BLING_API_REQUEST_REJECTED"},
+		{name: "other provider response", err: &BlingAPIError{StatusCode: http.StatusConflict, Code: "sensitive provider payload"}, want: "BLING_API_RESPONSE_REJECTED"},
+		{name: "duplicate database row", err: &pgconn.PgError{Code: "23505", Message: "sensitive record details"}, want: "BLING_NORMALIZATION_DUPLICATE"},
+		{name: "database constraint", err: &pgconn.PgError{Code: "23514", Message: "sensitive constraint detail"}, want: "BLING_NORMALIZATION_CONSTRAINT_FAILED"},
+		{name: "other database state", err: &pgconn.PgError{Code: "22007", Message: "sensitive date detail"}, want: "BLING_NORMALIZATION_STORAGE_22007"},
+		{name: "unsafe database state", err: &pgconn.PgError{Code: "bad-state", Message: "sensitive detail"}, want: "BLING_NORMALIZATION_STORAGE_FAILED"},
+		{name: "unknown", err: errors.New("sensitive provider payload"), want: "BLING_API_NORMALIZATION_FAILED"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := blingAPINormalizationFailureCode(test.err); got != test.want {
+				t.Fatalf("normalization failure code = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
 
 func TestMarshalReceivablesPagePreservesUnhomologatedPayload(t *testing.T) {
 	total := 3

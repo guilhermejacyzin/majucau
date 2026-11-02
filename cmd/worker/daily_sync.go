@@ -32,7 +32,7 @@ func startDailyBlingSchedule(ctx context.Context, syncer blingDailySyncer, logge
 			} else if skipped {
 				logger.Info("daily Bling synchronization already completed", slog.String("scheduled_at", scheduledAt.Format(time.RFC3339)))
 			} else {
-				logDailyBlingSuccess(logger, scheduledAt, result)
+				logDailyBlingResult(logger, scheduledAt, result)
 			}
 		}
 		err = schedule.Run(ctx, func(runCtx context.Context, scheduledAt time.Time) error {
@@ -44,7 +44,7 @@ func startDailyBlingSchedule(ctx context.Context, syncer blingDailySyncer, logge
 				logger.Info("daily Bling synchronization already completed", slog.String("scheduled_at", scheduledAt.Format(time.RFC3339)))
 				return nil
 			}
-			logDailyBlingSuccess(logger, scheduledAt, result)
+			logDailyBlingResult(logger, scheduledAt, result)
 			return nil
 		}, func(_ time.Time, runErr error) {
 			logger.Warn("daily Bling synchronization did not complete", slog.String("error_code", dailyBlingSyncErrorCode(runErr)))
@@ -64,7 +64,7 @@ func runDailyBlingSync(ctx context.Context, syncer blingDailySyncer, scheduledAt
 	if err != nil {
 		return result, false, err
 	}
-	if result.Status != "SUCCESS" {
+	if result.Status != "SUCCESS" && result.Status != "PARTIAL" {
 		return result, false, ErrDailyBlingIncomplete
 	}
 	return result, skipped, nil
@@ -81,8 +81,12 @@ func dailyBlingCatchUpAt(now time.Time) (time.Time, bool) {
 	return scheduledAt, !local.Before(scheduledAt)
 }
 
-func logDailyBlingSuccess(logger *slog.Logger, scheduledAt time.Time, result bling.BlingRawSyncResult) {
-	logger.Info("daily Bling synchronization completed", slog.String("scheduled_at", scheduledAt.Format(time.RFC3339)), slog.Int("pages_read", result.Receivables.PagesRead+result.Payables.PagesRead+result.CashMovements.PagesRead), slog.Int("records_read", result.Receivables.RecordsRead+result.Payables.RecordsRead+result.CashMovements.RecordsRead))
+func logDailyBlingResult(logger *slog.Logger, scheduledAt time.Time, result bling.BlingRawSyncResult) {
+	message := "daily Bling synchronization completed"
+	if result.Status == "PARTIAL" {
+		message = "daily Bling synchronization completed with partial data"
+	}
+	logger.Info(message, slog.String("scheduled_at", scheduledAt.Format(time.RFC3339)), slog.Int("pages_read", result.Receivables.PagesRead+result.Payables.PagesRead+result.CashMovements.PagesRead), slog.Int("records_read", result.Receivables.RecordsRead+result.Payables.RecordsRead+result.CashMovements.RecordsRead))
 }
 
 func dailyBlingSyncErrorCode(err error) string {

@@ -1,31 +1,39 @@
 # Status atual do Majucau — 03/11/2026
 
-## Atualização mais recente — ligação parcial da T02 — 03/11/2026
+## Atualização mais recente — T02 recebe números reais da API — 03/11/2026, 05:38 BRT
 
-A T02 começou a receber uma composição feita com as APIs oficiais do Bling:
-movimentos de Caixa, contas a receber/pagar e configurações de formas de
-pagamento. Os cartões “Entradas 30 dias” e “Saídas 30 dias” e o gráfico existente
-agora têm ligação no código ao snapshot dessa composição; a T01 usa o mesmo
-snapshot.
+O serviço local agora entrega para os cards aprovados da T02: **Entradas 30
+dias: R$ 69.994,12 (Parcial)** e **Saídas 30 dias: R$ 263.930,47 (Parcial)**.
+O fluxo diário contém 61 datas, hoje até D+60. A saída segue negativa no valor
+interno. A T01 reutiliza o mesmo snapshot.
 
-Os valores ficam com aviso **Parcial**, pois a composição ainda não foi
-comparada com uma atualização atual do relatório Bling. O saldo de abertura e o
-float do relatório não são fornecidos pela rota pública documentada usada pelo
-projeto; não preenchi saldo atual, saldo projetado, menor saldo ou semana crítica
-por cálculo presumido. O desenho das telas e as regras financeiras continuam
-iguais.
+As causas corrigidas foram: a tela escolhia a execução diária anterior; o
+catálogo separado de contas responde 403, embora o endpoint de movimentos
+forneça IDs e nomes de conta; as situações das contas a pagar são numéricas,
+mas a projeção esperava palavras; e os valores de taxas vinham com oito casas
+decimais. O fallback identifica somente uma conta chamada Itaú e uma chamada
+Mercado Pago; quando não há match único, mantém indisponível. Os movimentos
+listados com situação vazia entram em valor Parcial; situações não reconhecidas
+continuam fora da soma. Nada foi alterado no desenho aprovado nem nas regras
+financeiras.
 
-`go test ./internal/...`, `go vet ./internal/dashboard ./internal/financial`,
-`git diff --check`, build/typecheck e lint do frontend, mais 70 testes de
-interface passaram numa cópia isolada. A CI 41587012467 passou em todos os
-trabalhos, incluindo PostgreSQL, Go, frontend, build desktop e smoke Windows do
-serviço temporário. A primeira tentativa encontrou um identificador aberto no
-smoke; o teste foi corrigido e confirmado na nova execução. A mudança ainda não
-foi instalada no executável Wails aberto nem conferida com os dados da conta
-real. BK-062 está estimado em 20%; backlog 12,2% concluído e 87,8% restante.
+O worker foi compilado e reiniciado, preservando a janela Wails. A consulta
+IPC real confirmou os valores e o período; a interface busca o snapshot a cada
+60 segundos. A captura visual automatizada expirou, então esta etapa não está
+visualmente homologada. Também não está comprovado que a composição por APIs
+equivale ao relatório pronto: ainda falta comparar a mesma janela/opções, obter
+saldo inicial/float e concluir indicadores derivados. O serviço retorna
+`PARTIAL` deliberadamente.
 
-**Próximo passo:** atualizar o protótipo para conferir a série com o relatório
-Bling na mesma conta, período e filtros.
+BK-062 permanece em 20% (80% restante); projeto em 12,2% (87,8% restante).
+Não subi os percentuais porque a comparação com o relatório ainda não aconteceu.
+Detalhes e próximos passos: [evidência T02](./evidence/T02-FLOW-SNAPSHOT-2026-11-03.md).
+
+> **Nota de leitura:** o conteúdo abaixo desta atualização preserva o histórico
+> das demais frentes e diagnósticos anteriores. Quando ele disser que T02 não
+> tem valores, que o catálogo de contas precisa ser liberado ou que não há série,
+> essas observações são anteriores à correção acima; o serviço atual entrega a
+> composição parcial documentada em `T02-FLOW-SNAPSHOT-2026-11-03.md`.
 
 ## Retomada da etapa 02 — conferência atual
 

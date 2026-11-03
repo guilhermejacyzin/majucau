@@ -126,7 +126,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt                                                                                                                                            pgtype.Timestamptz
 		dailyReceivablesPartial, dailyPayablesPartial, dailyCashMovementsPartial, dailyNuvemFuturePartial                                                                                                                                 bool
 	)
-	dailyCorrelationID, err := dailyBlingCorrelationID(asOf)
+	dailyCorrelationID, err := latestPublishedBlingCorrelationID(ctx, tx, asOf)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
 	}
@@ -215,6 +215,39 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		CashFlow:                 cashFlow,
 		PaymentsMonth:            metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
 	}, nil
+}
+
+const latestPublishedBlingCorrelationSQL = `
+SELECT b.correlation_id::text
+  FROM integration_sync_batches b
+  JOIN integration_connections c ON c.id = b.connection_id
+ WHERE c.provider = 'BLING'
+   AND b.resource IN ('caixas', 'contas.pagar', 'contas.receber')
+   AND b.correlation_id IS NOT NULL
+   AND b.status IN ('SUCCESS', 'PARTIAL')
+   AND b.data_stage = 'NORMALIZED'
+   AND b.finished_at <= $1
+ GROUP BY b.correlation_id
+HAVING COUNT(DISTINCT b.resource) = 3
+ ORDER BY MAX(b.finished_at) DESC, b.correlation_id DESC
+ LIMIT 1
+`
+
+// The screen uses the newest fully published daily snapshot, including a
+// manually rerun snapshot created before the next 09:30 slot. During an
+// incomplete run, it continues using the previous complete set rather than
+// combining sources from different runs. If no complete snapshot exists yet,
+// use the scheduled slot so existing freshness handling remains fail-closed.
+func latestPublishedBlingCorrelationID(ctx context.Context, tx pgx.Tx, asOf time.Time) (string, error) {
+	var correlationID string
+	err := tx.QueryRow(ctx, latestPublishedBlingCorrelationSQL, asOf.UTC()).Scan(&correlationID)
+	if err == nil {
+		return correlationID, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return "", err
+	}
+	return dailyBlingCorrelationID(asOf)
 }
 
 func dailyBlingCorrelationID(asOf time.Time) (string, error) {

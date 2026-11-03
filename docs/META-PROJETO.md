@@ -6,30 +6,36 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 20% com uma primeira composição parcial das entradas/saídas por API oficial, ligação ao snapshot e exibição no gráfico existente. A CI 41587012467 passou em todos os trabalhos, incluindo PostgreSQL, frontend, build desktop e smoke Windows. Ainda faltam sincronizar dados reais, comprovar equivalência com o relatório Bling e obter saldo de abertura/float. A integração e o protótipo continuam sem homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 20%, com composição parcial de entradas/saídas pela API oficial e valores reais visíveis no serviço e na série existente. A CI 41587012467 passou em todos os trabalhos, incluindo PostgreSQL, frontend, build desktop e smoke Windows. Ainda faltam comparar com o relatório Bling no mesmo período, completar saldo de abertura/float e homologar. A integração e o protótipo continuam sem homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
-### T02 — reprodução do relatório de Fluxo de Caixa Bling — atualização 04:15 BRT
+### T02 — valores da API do Bling exibidos no snapshot — atualização 05:38 BRT
 
-O pedido em andamento é exibir na tela 02 a projeção equivalente ao relatório
-Fluxo de Caixa do Bling, lida pelas APIs oficiais. Corrigi dois defeitos que
-impediam a atualização de publicar: o histórico RAW agora aceita que um conteúdo
-antigo volte a ocorrer como nova versão imutável, e a consulta de leitura após
-`UNION ALL` usa a ordenação válida. A migration 000022 e o teste de recorrência
-RAW foram adicionados; a reprodução local da inserção passou e foi revertida
-para não deixar dados de teste no banco real de desenvolvimento.
+A leitura do serviço local passou a entregar valores reais da última carga do
+Bling para a T02: Entradas 30 dias **R$ 69.994,12 (Parcial)** e Saídas 30 dias
+**R$ 263.930,47 (Parcial)**; a série tem 61 datas. O valor da saída continua
+negativo internamente. A T01 reutiliza esse mesmo snapshot. Não alterei telas
+aprovadas nem regras financeiras.
 
-Uma sincronização real continua em andamento. Contas a Receber foi normalizada;
-Caixas e Bancos está Parcial por situações não informadas pelo Bling; Contas a
-Pagar segue em preparação de detalhes (página 31/102 às 04:15 BRT). Contas
-financeiras e formas de pagamento ainda não terminaram nessa execução. Por isso
-a T02 ainda não tem série nova confirmada no snapshot. Não alterei tela nem regra
-financeira. Evidência: `docs/evidence/T02-BLING-CASHFLOW-SYNC-2026-11-03.md`.
+Corrigi a leitura do lote mais recente completo (antes a tela podia buscar o
+horário de execução anterior), a identificação de Itaú/Mercado Pago pelos nomes
+que vêm nos próprios movimentos quando o catálogo financeiro não está
+autorizado, os status numéricos dos títulos a pagar e taxas com casas decimais
+extras sem valor significativo. Movimentos que chegam sem `situacao` são
+incluídos em estado Parcial, conforme a orientação registrada; códigos
+desconhecidos continuam sem interpretação.
+
+O worker atualizado foi compilado, reiniciado sem encerrar a janela Wails e
+consultado pelo IPC; ele devolveu os dois valores, 61 datas e as tabelas do
+snapshot. A atualização da interface é automática a cada 60 segundos. A captura
+visual automatizada expirou nesta sessão, por isso não registro homologação
+visual.
 
 **Progresso não muda:** BK-062 continua em 20% (80% restante); projeto em 12,2%
-(87,8% restante). Esses percentuais não sobem até existir uma atualização
-completa, valores visíveis na T02 e comparação com o relatório Bling usando o
-mesmo período e as mesmas opções.
+(87,8% restante), conforme o critério já registrado. Os valores estão visíveis
+no serviço, mas a série ainda não foi comparada ao relatório Bling com a mesma
+janela e opções, não reproduz o saldo inicial/float, e portanto não comprova
+equivalência nem conclusão. Evidência: `docs/evidence/T02-FLOW-SNAPSHOT-2026-11-03.md`.
 
 ### T02 — primeira ligação do fluxo de caixa ao snapshot — 03/11/2026
 

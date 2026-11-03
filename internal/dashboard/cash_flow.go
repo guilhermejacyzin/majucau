@@ -29,6 +29,24 @@ SELECT source_id, description
  ORDER BY source_id
 `
 
+// GET /caixas includes the financial-account ID and description with each
+// movement. Use those official fields only when the optional account catalog
+// could not be normalized (for example, when its read scope is unavailable).
+// Distinct IDs and exact name prefixes keep the approved Itaú/Mercado Pago
+// selection deterministic; ambiguous or missing matches remain unavailable.
+const selectedCashFlowMovementAccountsSQL = `
+SELECT DISTINCT m.account_source_id, m.account_name
+  FROM bling_cash_movements m
+  JOIN integration_sync_batches b ON b.id = m.sync_batch_id
+  JOIN integration_connections c ON c.id = b.connection_id
+ WHERE c.provider = 'BLING' AND b.resource = 'caixas'
+   AND b.correlation_id = $1 AND b.status IN ('SUCCESS', 'PARTIAL')
+   AND b.data_stage = 'NORMALIZED'
+   AND NULLIF(BTRIM(m.account_source_id), '') IS NOT NULL
+   AND NULLIF(BTRIM(m.account_name), '') IS NOT NULL
+ ORDER BY m.account_source_id, m.account_name
+`
+
 // Bling documents the prepared Flow of Cash report as a projection from
 // receivables and payables, but does not expose a public API route for that
 // report. This query reads the normalized official API snapshots to reproduce
@@ -106,7 +124,8 @@ WITH daily AS (
      AND terms.sync_batch_id = (SELECT forms.batch_id FROM daily forms WHERE forms.resource = 'formas-pagamentos' LIMIT 1)
    WHERE d.resource = 'contas.pagar'
      AND p.source_system = 'BLING' AND p.source_entity = 'bling.conta_pagar'
-     AND p.status IN ('OPEN', 'PARTIALLY_PAID') AND p.open_balance <> 0
+     AND p.open_balance <> 0
+     AND UPPER(p.status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
      AND p.due_date >= $2::date AND p.due_date <= $3::date
 )
 SELECT kind, flow_date, direction, amount, source_status,
@@ -168,7 +187,9 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 			}
 		}
 		if !accountSelected {
-			partial = true
+			if candidate.accountID == "" {
+				partial = true
+			}
 			continue
 		}
 		amount, err := domain.ParseMoney(candidate.amount)
@@ -177,9 +198,12 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 		}
 		flowDate := candidate.flowDate
 		if candidate.kind == "MOVEMENT" {
-			if candidate.sourceStatus != "R" {
+			if candidate.sourceStatus != "R" && candidate.sourceStatus != "" {
 				partial = true
 				continue
+			}
+			if candidate.sourceStatus == "" {
+				partial = true
 			}
 		} else if candidate.kind == "RECEIVABLE" {
 			if (candidate.financialStatus != "OPEN" && candidate.financialStatus != "PARTIALLY_PAID") || !candidate.destinationKnown || candidate.destination.Int16 != int16(financial.BlingDestinationReceivablePayable) || !candidate.feeRateKnown || !candidate.fixedFeeKnown || !candidate.settlementKnown || !candidate.businessDaysKnown || !candidate.useBusinessDays.Valid || candidate.useBusinessDays.Bool {
@@ -191,13 +215,15 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 				FeeRateKnown: candidate.feeRateKnown, FixedFeeKnown: candidate.fixedFeeKnown,
 				SettlementKnown: candidate.settlementKnown, BusinessDaysKnown: candidate.businessDaysKnown,
 			}
-			terms.FeeRate, err = domain.ParseMoney(candidate.feeRate)
+			terms.FeeRate, err = parseCashFlowMoney(candidate.feeRate)
 			if err != nil {
-				return nil, fmt.Errorf("cash-flow payment fee is invalid")
+				partial = true
+				continue
 			}
-			terms.FixedFee, err = domain.ParseMoney(candidate.fixedFee)
+			terms.FixedFee, err = parseCashFlowMoney(candidate.fixedFee)
 			if err != nil {
-				return nil, fmt.Errorf("cash-flow fixed fee is invalid")
+				partial = true
+				continue
 			}
 			terms.SettlementDays = int(candidate.settlementDays.Int32)
 			amount, err = financial.BlingNetReceivableValue(amount, terms)
@@ -281,12 +307,40 @@ func selectedCashFlowAccountIDs(ctx context.Context, tx pgx.Tx, correlationID st
 	if err != nil {
 		return nil, false, err
 	}
+	ids, anyCatalogRows, err := selectedCashFlowAccountIDsFromRows(rows)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(ids) == 2 {
+		return ids, true, nil
+	}
+	if anyCatalogRows {
+		return nil, false, nil
+	}
+
+	rows, err = tx.Query(ctx, selectedCashFlowMovementAccountsSQL, correlationID)
+	if err != nil {
+		return nil, false, err
+	}
+	ids, _, err = selectedCashFlowAccountIDsFromRows(rows)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(ids) != 2 {
+		return nil, false, nil
+	}
+	return ids, true, nil
+}
+
+func selectedCashFlowAccountIDsFromRows(rows pgx.Rows) ([]string, bool, error) {
 	defer rows.Close()
 	var itau, mercadoPago []string
+	anyRows := false
 	for rows.Next() {
+		anyRows = true
 		var id, description string
 		if err := rows.Scan(&id, &description); err != nil {
-			return nil, false, err
+			return nil, anyRows, err
 		}
 		name := normalizeCashFlowAccountName(description)
 		if strings.HasPrefix(name, "itau") {
@@ -297,18 +351,35 @@ func selectedCashFlowAccountIDs(ctx context.Context, tx pgx.Tx, correlationID st
 		}
 	}
 	if err := rows.Err(); err != nil {
-		return nil, false, err
+		return nil, anyRows, err
 	}
 	if len(itau) != 1 || len(mercadoPago) != 1 {
-		return nil, false, nil
+		return nil, anyRows, nil
 	}
-	return []string{itau[0], mercadoPago[0]}, true, nil
+	return []string{itau[0], mercadoPago[0]}, anyRows, nil
 }
 
 func normalizeCashFlowAccountName(value string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
 	value = strings.NewReplacer("á", "a", "à", "a", "â", "a", "ã", "a", "é", "e", "ê", "e", "í", "i", "ó", "o", "ô", "o", "õ", "o", "ú", "u", "ü", "u", "ç", "c").Replace(value)
 	return strings.Join(strings.Fields(value), " ")
+}
+
+// PostgreSQL returns the source's NUMERIC(20,8) percentage with all eight
+// fractional places, including insignificant trailing zeros. The exact-money
+// helper accepts up to four places, so strip only insignificant zeros before
+// parsing; a meaningful fifth-through-eighth decimal remains unsupported and
+// the affected forecast row is skipped as partial by the caller.
+func parseCashFlowMoney(value string) (domain.Money, error) {
+	value = strings.TrimSpace(value)
+	if separator := strings.IndexByte(value, '.'); separator >= 0 {
+		fraction := strings.TrimRight(value[separator+1:], "0")
+		value = value[:separator]
+		if fraction != "" {
+			value += "." + fraction
+		}
+	}
+	return domain.ParseMoney(value)
 }
 
 func scanCashFlowCandidate(rows pgx.Rows) (cashFlowCandidate, error) {

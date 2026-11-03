@@ -1,5 +1,10 @@
 # T02 — sincronização e falhas encontradas (03/11/2026)
 
+> **Estado histórico:** este registro descreve a sincronização até 05:26 BRT,
+> antes da correção que ligou os valores do snapshot à T02. O estado atual e os
+> valores reais apresentados pelo serviço estão em
+> [`T02-FLOW-SNAPSHOT-2026-11-03.md`](./T02-FLOW-SNAPSHOT-2026-11-03.md).
+
 ## Pedido
 
 Fazer a tela 02 Fluxo de Caixa apresentar a projeção baseada no mesmo relatório
@@ -112,12 +117,10 @@ publicou como Parcial. A renovação reativa de token ficou coberta pelo teste
 automatizado; o token desta retomada não precisou ser renovado porque ainda
 estava válido.
 
-A T02 e a T01 continuam sem a nova série projetada porque a lista de contas
-financeiras foi bloqueada pelo escopo do aplicativo Bling. Sem essa lista, o
-Majucau não pode confirmar quais contas correspondem a Itaú e Mercado Pago.
-Não é seguro contornar o 403 nem inferir essas contas. Próximo passo: adicionar
-ao aplicativo Bling o escopo estritamente de leitura de Contas Financeiras,
-autorizar novamente no Bling e repetir a carga. Depois, conferir os valores da
-mesma janela e filtros do relatório Fluxo de Caixa. As telas e regras
-financeiras não foram alteradas.
+Às 05:26, a T02 e a T01 ainda estavam sem a nova série projetada porque a lista
+de contas financeiras foi bloqueada pelo escopo do aplicativo Bling. A solução
+posterior aproveitou os IDs e nomes de conta enviados junto aos lançamentos de
+`GET /caixas`, sem alterar permissões no Bling. O bloqueio 403 continua
+registrado, mas não impede a composição parcial atual. Ver o estado vigente no
+arquivo de evidência indicado no início deste registro.
 

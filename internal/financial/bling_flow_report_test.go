@@ -48,6 +48,41 @@ func TestValidateBlingCashFlowReportRejectsBrokenContinuity(t *testing.T) {
 	}
 }
 
+func TestBlingCashFlowReportFromDailyBalancesUsesBlingWeeklyPeriods(t *testing.T) {
+	start := time.Date(2026, time.November, 2, 0, 0, 0, 0, time.UTC)
+	daily, err := DailyProjection(start, mustFlowMoney(t, "100.00"), []Movement{
+		{Date: start, Inflows: mustFlowMoney(t, "10.00"), Outflows: mustFlowMoney(t, "2.00")},
+		{Date: start.AddDate(0, 0, 7), Inflows: mustFlowMoney(t, "5.00"), Outflows: mustFlowMoney(t, "1.00")},
+	})
+	if err != nil {
+		t.Fatalf("DailyProjection() error = %v", err)
+	}
+	periods, summary, err := BlingCashFlowReportFromDailyBalances(daily[:9])
+	if err != nil {
+		t.Fatalf("BlingCashFlowReportFromDailyBalances() error = %v", err)
+	}
+	if len(periods) != 2 || periods[0].From.Format("2006-01-02") != "2026-11-02" || periods[0].Through.Format("2006-01-02") != "2026-11-07" || periods[1].From.Format("2006-01-02") != "2026-11-08" || periods[1].Through.Format("2006-01-02") != "2026-11-10" {
+		t.Fatalf("period boundaries do not match the Bling weekly report: %+v", periods)
+	}
+	if periods[0].Outflows.String() != "-2.0000" || periods[1].Outflows.String() != "-1.0000" || summary.Inflows.String() != "15.0000" || summary.Outflows.String() != "-3.0000" || summary.ClosingBalance.String() != "112.0000" {
+		t.Fatalf("signed values or summary are incorrect: periods=%+v summary=%+v", periods, summary)
+	}
+}
+
+func TestBlingCashFlowReportFromDailyBalancesRejectsMissingOpeningBalance(t *testing.T) {
+	start := time.Date(2026, time.November, 2, 0, 0, 0, 0, time.UTC)
+	daily, err := DailyProjection(start, mustFlowMoney(t, "100.00"), []Movement{
+		{Date: start, Outflows: mustFlowMoney(t, "5.00")},
+	})
+	if err != nil {
+		t.Fatalf("DailyProjection() error = %v", err)
+	}
+	daily[0].ClosingBalance = mustFlowMoney(t, "94.00")
+	if _, _, err := BlingCashFlowReportFromDailyBalances(daily[:1]); !errors.Is(err, ErrInvalidBlingCashFlowReport) {
+		t.Fatalf("invalid daily balance should fail closed, got %v", err)
+	}
+}
+
 func referenceBlingCashFlowPeriods(t *testing.T) []BlingCashFlowReportPeriod {
 	t.Helper()
 	local, err := time.LoadLocation("America/Sao_Paulo")

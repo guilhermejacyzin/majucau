@@ -114,6 +114,95 @@ func CompareBlingCashFlowReport(reference, projection []BlingCashFlowReportPerio
 	return nil
 }
 
+// BlingCashFlowReportFromDailyBalances groups the approved daily projection
+// into the Sunday-through-Saturday periods used by the Bling report. The first
+// and last periods may be shorter when the requested date range starts or ends
+// mid-week. This function only formats an already-computed projection; it
+// does not choose an opening balance or invent movements.
+func BlingCashFlowReportFromDailyBalances(rows []DailyBalance) ([]BlingCashFlowReportPeriod, BlingCashFlowReportSummary, error) {
+	if len(rows) == 0 || len(rows) > 61 {
+		return nil, BlingCashFlowReportSummary{}, ErrInvalidBlingCashFlowReport
+	}
+	periods := make([]BlingCashFlowReportPeriod, 0, (len(rows)+6)/7)
+	var current BlingCashFlowReportPeriod
+	for i, row := range rows {
+		date := reportDateOnly(row.Date)
+		if row.Date.IsZero() {
+			return nil, BlingCashFlowReportSummary{}, ErrInvalidBlingCashFlowReport
+		}
+		if i > 0 {
+			previous := rows[i-1]
+			if !date.Equal(reportDateOnly(previous.Date).AddDate(0, 0, 1)) || row.OpeningBalance.Compare(previous.ClosingBalance) != 0 {
+				return nil, BlingCashFlowReportSummary{}, ErrInvalidBlingCashFlowReport
+			}
+		}
+		if current.From.IsZero() {
+			current = BlingCashFlowReportPeriod{From: date, OpeningBalance: row.OpeningBalance}
+		}
+		if row.Inflows.IsNegative() || row.Outflows.IsNegative() {
+			return nil, BlingCashFlowReportSummary{}, ErrInvalidBlingCashFlowReport
+		}
+		expectedClosing, err := row.OpeningBalance.Add(row.Inflows)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+		expectedClosing, err = expectedClosing.Sub(row.Outflows)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+		expectedClosing, err = expectedClosing.Add(row.Adjustments)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+		if expectedClosing.Compare(row.ClosingBalance) != 0 {
+			return nil, BlingCashFlowReportSummary{}, ErrInvalidBlingCashFlowReport
+		}
+		current.Through = date
+		current.Inflows, err = current.Inflows.Add(row.Inflows)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+		negativeOutflow, err := domain.ZeroMoney().Sub(row.Outflows)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+		current.Outflows, err = current.Outflows.Add(negativeOutflow)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+		current.Adjustments, err = current.Adjustments.Add(row.Adjustments)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+		current.ClosingBalance = row.ClosingBalance
+		if date.Weekday() == time.Saturday || i == len(rows)-1 {
+			periods = append(periods, current)
+			current = BlingCashFlowReportPeriod{}
+		}
+	}
+	var summary BlingCashFlowReportSummary
+	for _, period := range periods {
+		var err error
+		summary.Inflows, err = summary.Inflows.Add(period.Inflows)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+		summary.Outflows, err = summary.Outflows.Add(period.Outflows)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+		summary.Adjustments, err = summary.Adjustments.Add(period.Adjustments)
+		if err != nil {
+			return nil, BlingCashFlowReportSummary{}, err
+		}
+	}
+	summary.ClosingBalance = periods[len(periods)-1].ClosingBalance
+	if err := ValidateBlingCashFlowReport(periods, summary); err != nil {
+		return nil, BlingCashFlowReportSummary{}, err
+	}
+	return periods, summary, nil
+}
+
 func validateReportPeriods(periods []BlingCashFlowReportPeriod) error {
 	if len(periods) == 0 {
 		return ErrInvalidBlingCashFlowReport

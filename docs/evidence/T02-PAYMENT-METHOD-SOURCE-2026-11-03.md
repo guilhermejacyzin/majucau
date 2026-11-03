@@ -143,6 +143,23 @@ para comparar e ele não preenche cards/gráfico da T02. Permanecem pendentes a
 composição real, saldo inicial separado via Caixas e Bancos, semana crítica,
 ligação do snapshot à tela e conferência com a atualização real do Bling.
 
+## Agrupamento do resultado diário para o relatório semanal — 03/11/2026
+
+Foi acrescentada a função `BlingCashFlowReportFromDailyBalances`, que agrupa a
+projeção diária em períodos de domingo a sábado, conforme a captura de
+referência. As pontas do intervalo podem ser semanas parciais. A função conserva
+entrada positiva, converte saída para sinal negativo e confere a conta diária,
+a continuidade entre dias, os limites do período e os totais antes de devolver
+os períodos.
+
+Os testes cobrem o primeiro período parcial (segunda a sábado), a semana
+seguinte, os sinais, o saldo de fechamento e a recusa de saldo inconsistente.
+`go test ./internal/financial`, `go vet ./internal/financial` e `git diff
+--check` passaram. Ainda é somente uma etapa de composição: a projeção não está
+alimentada pelas consultas do banco/API, não tem o saldo inicial oficial e não
+está no snapshot nem na T02. Não deve ser apresentada como resultado do Bling
+até a comparação real passar.
+
 ## Cálculo Bling implementado no domínio — 03/11/2026
 
 Foi acrescentado um primeiro componente reutilizável para reproduzir as

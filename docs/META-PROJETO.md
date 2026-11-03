@@ -6,8 +6,19 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 10% após o cálculo de taxa/prazo e a conferência automática da saída por período, ainda sem série projetada ou ligação à tela. Na CI [#41570346870](https://github.com/guilhermejacyzin/majucau/actions/runs/41570346870), migrações, PostgreSQL, backlog, testes, build e segurança passaram, mas o smoke do serviço worker no Windows falhou em `WORKER_SERVICE_WAIT_FOR_RUNNING`; o diagnóstico posterior viu o serviço `Running`, então essa falha intermitente ainda precisa ser revalidada. Os testes Go locais do cálculo de taxa e do conferidor da referência passaram. Ainda faltam ligar uma série de fluxo de caixa composta por APIs oficiais ao protótipo, sincronizar dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 12% após o cálculo de taxa/prazo, conferidor de períodos e agrupador semanal da série diária. O agrupador também não alimenta o banco nem a tela. A CI [#41576163643](https://github.com/guilhermejacyzin/majucau/actions/runs/41576163643) está em andamento; backlog e PostgreSQL passaram, Windows continua verificando. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
+
+### T02 — agrupamento semanal do fluxo — 03/11/2026
+
+Foi implementado um conversor da projeção diária para os períodos de domingo a
+sábado do relatório do Bling, incluindo semanas parciais no início/fim do
+intervalo, saídas negativas e validação da conta diária e continuidade do
+saldo. Os testes unitários e `go vet` passaram. BK-062 avança de 10% para 12%;
+o projeto permanece em 12,1% concluído / 87,9% restante pela média arredondada
+do backlog. A T02 continua sem série real no snapshot e sem valores no gráfico:
+falta alimentar a composição com dados oficiais, resolver o saldo inicial e
+validar com o relatório real. Nenhuma tela ou regra financeira foi alterada.
 
 ### Decisão de fonte da T02 — 03/11/2026
 

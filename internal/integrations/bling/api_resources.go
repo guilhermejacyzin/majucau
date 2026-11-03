@@ -70,6 +70,16 @@ func (c *BlingAPIClient) GetFinancialCategory(ctx context.Context, id int64) (js
 	return payload, err
 }
 
+// GetPaymentMethod reads one payment-method configuration from Bling. The
+// returned detail remains RAW so projection rules can validate the documented
+// destination, fees, term, and business-day fields before using them.
+func (c *BlingAPIClient) GetPaymentMethod(ctx context.Context, id int64) (json.RawMessage, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("%w: payment method ID must be positive", ErrBlingAPIConfiguration)
+	}
+	return c.getDataRecord(ctx, "formas-pagamentos/"+strconv.FormatInt(id, 10))
+}
+
 const maxFinancialCategoryHierarchyDepth = 32
 
 // FinancialCategoryNode is one bounded, read-only category record. Payload
@@ -144,6 +154,13 @@ func (c *BlingAPIClient) WalkFinancialCategoryHierarchy(ctx context.Context, id 
 // pages are terminal.
 func (c *BlingAPIClient) ListFinancialCategories(ctx context.Context, page, limit int) (BlingReceivablesPage, error) {
 	return c.listFinancialResource(ctx, "categorias/receitas-despesas", ReceivablesFilter{Page: page, Limit: limit})
+}
+
+// ListPaymentMethods reads one bounded page of payment-method identities.
+// Fee, term, destination and business-day configuration is returned by the
+// individual detail endpoint and is hydrated by PaymentMethodsAPISyncService.
+func (c *BlingAPIClient) ListPaymentMethods(ctx context.Context, page, limit int) (BlingReceivablesPage, error) {
+	return c.listFinancialResource(ctx, "formas-pagamentos", ReceivablesFilter{Page: page, Limit: limit})
 }
 
 // CashMovementsFilter contains documented date/page/category parameters and a

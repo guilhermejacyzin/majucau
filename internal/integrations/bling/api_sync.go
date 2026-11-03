@@ -523,6 +523,8 @@ func blingAPINormalizationFailureCode(err error) string {
 		return "BLING_CONTACT_DETAIL_SCHEMA_MISMATCH"
 	case errors.Is(err, errBlingCategoryDetailSchemaMismatch):
 		return "BLING_CATEGORY_DETAIL_SCHEMA_MISMATCH"
+	case errors.Is(err, errBlingPaymentMethodSchemaMismatch):
+		return "BLING_PAYMENT_METHOD_DETAIL_SCHEMA_MISMATCH"
 	case errors.Is(err, ErrBlingFinancialCategoryScopeInsufficient):
 		return "BLING_CATEGORY_SCOPE_INSUFFICIENT"
 	case errors.Is(err, ErrBlingAPIScopeInsufficient):

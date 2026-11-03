@@ -210,3 +210,14 @@ composição por recursos da API precisa ser comprovada contra o Fluxo de Caixa 
 Bling antes de alimentar T02 e T01. A tela e as regras aprovadas não foram
 alteradas. BK-062 permanece em 5%; o projeto permanece em 12,1% concluído / 87,9%
 restante.
+
+### Preparação técnica da fonte de formas de pagamento — 03/11/2026
+
+Foi acrescentada ao código uma leitura diária e independente dos detalhes das
+formas de pagamento do Bling, preservados como RAW. Eles podem explicar destino,
+taxas e prazo usados pelo relatório Fluxo de Caixa, mas ainda não são usados
+para calcular valores. A etapa não bloqueia a leitura de Contas a Pagar, Contas
+a Receber ou Caixas e Bancos. `go test ./internal/integrations/bling` passou
+localmente. A T02 continua sem projeção publicada e BK-062 fica em 5% até haver
+cálculo conectado, conferência com o relatório real e resultados visíveis.
+Evidência: [fonte de configuração das formas de pagamento](./evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md).

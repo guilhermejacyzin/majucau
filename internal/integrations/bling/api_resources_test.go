@@ -31,6 +31,8 @@ func TestGetPayableAndBorderoReadBoundedRawDetails(t *testing.T) {
 			_, _ = w.Write([]byte(`{"data":{"id":456,"pagamentos":[{"valorPago":12.34}]}}`))
 		case "/Api/v3/categorias/receitas-despesas/9":
 			_, _ = w.Write([]byte(`{"data":{"id":9,"descricao":"CAPEX"}}`))
+		case "/Api/v3/formas-pagamentos/11":
+			_, _ = w.Write([]byte(`{"data":{"id":11,"descricao":"Cartao","destino":1,"taxas":{"aliquota":2.5,"valor":1.25,"prazo":30},"utilizaDiasUteis":true}}`))
 		case "/Api/v3/caixas/789":
 			_, _ = w.Write([]byte(`{"data":{"id":789,"categoria":{"id":9},"valor":18.25}}`))
 		default:
@@ -62,6 +64,31 @@ func TestGetPayableAndBorderoReadBoundedRawDetails(t *testing.T) {
 	movement, err := client.GetCashMovement(context.Background(), 789)
 	if err != nil || !strings.Contains(string(movement), `"categoria":{"id":9}`) {
 		t.Fatalf("movement = %s, err = %v", movement, err)
+	}
+	method, err := client.GetPaymentMethod(context.Background(), 11)
+	if err != nil || !strings.Contains(string(method), `"destino":1`) || !strings.Contains(string(method), `"prazo":30`) {
+		t.Fatalf("payment method = %s, err = %v", method, err)
+	}
+}
+
+func TestListPaymentMethodsUsesBoundedPagination(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/Api/v3/formas-pagamentos" {
+			t.Fatalf("request = %s %s", r.Method, r.URL.Path)
+		}
+		if r.URL.Query().Get("pagina") != "2" || r.URL.Query().Get("limite") != "10" {
+			t.Fatalf("query = %s", r.URL.RawQuery)
+		}
+		_, _ = w.Write([]byte(`{"data":[{"id":11,"descricao":"Cartao"}],"pagination":{"page":2,"limit":10,"hasNext":false}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := client.ListPaymentMethods(context.Background(), 2, 10)
+	if err != nil || len(page.Records) != 1 || page.HasNext || !page.HasNextKnown {
+		t.Fatalf("page = %+v, err = %v", page, err)
 	}
 }
 

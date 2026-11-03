@@ -33,6 +33,7 @@ func TestBlingAPINormalizationFailureCodeDoesNotExposeErrorText(t *testing.T) {
 		{name: "payable detail schema", err: errors.Join(errBlingPayableDetailSchemaMismatch, ErrBlingAPISchemaMismatch), want: "BLING_PAYABLE_DETAIL_SCHEMA_MISMATCH"},
 		{name: "contact detail schema", err: errors.Join(errBlingContactDetailSchemaMismatch, ErrBlingAPISchemaMismatch), want: "BLING_CONTACT_DETAIL_SCHEMA_MISMATCH"},
 		{name: "category detail schema", err: errors.Join(errBlingCategoryDetailSchemaMismatch, ErrBlingAPISchemaMismatch), want: "BLING_CATEGORY_DETAIL_SCHEMA_MISMATCH"},
+		{name: "payment method detail schema", err: errors.Join(errBlingPaymentMethodSchemaMismatch, ErrBlingAPISchemaMismatch), want: "BLING_PAYMENT_METHOD_DETAIL_SCHEMA_MISMATCH"},
 		{name: "schema", err: ErrBlingAPISchemaMismatch, want: "BLING_API_SCHEMA_MISMATCH"},
 		{name: "missing detail", err: &BlingAPIError{StatusCode: http.StatusNotFound, Code: "provider detail"}, want: "BLING_API_RECORD_NOT_FOUND"},
 		{name: "rejected request", err: &BlingAPIError{StatusCode: http.StatusBadRequest, Code: "provider detail"}, want: "BLING_API_REQUEST_REJECTED"},
@@ -49,6 +50,43 @@ func TestBlingAPINormalizationFailureCodeDoesNotExposeErrorText(t *testing.T) {
 				t.Fatalf("normalization failure code = %q, want %q", got, test.want)
 			}
 		})
+	}
+}
+
+func TestPreparePaymentMethodPageKeepsRawListAndDetailAndCachesWithinPage(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if r.Method != http.MethodGet || r.URL.Path != "/formas-pagamentos/11" {
+			t.Fatalf("request = %s %s", r.Method, r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"data":{"id":11,"destino":1,"taxas":{"aliquota":2.5,"valor":1.25,"prazo":30}}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "test-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	batchID := pgtype.UUID{Bytes: [16]byte{1}, Valid: true}
+	prepare := preparePaymentMethodAPISnapshotPage(client)
+	prepared, err := prepare(context.Background(), batchID, []json.RawMessage{
+		json.RawMessage(`{"id":11,"descricao":"Cartao"}`),
+		json.RawMessage(`{"id":11,"descricao":"Cartao"}`),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 || len(prepared) != 2 {
+		t.Fatalf("calls=%d prepared=%d, want one detail read and two preserved list rows", calls, len(prepared))
+	}
+	for _, row := range prepared {
+		var decoded preparedPaymentMethodAPIRecord
+		if err := json.Unmarshal(row, &decoded); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(decoded.List), `"id":11`) || !strings.Contains(string(decoded.Detail), `"destino":1`) {
+			t.Fatalf("prepared row lost raw list/detail: %s", row)
+		}
 	}
 }
 

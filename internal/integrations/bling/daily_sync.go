@@ -28,8 +28,8 @@ var (
 // SyncDaily runs a full Bling refresh for the scheduled São Paulo business
 // date. A PostgreSQL session lock prevents parallel worker instances from
 // processing the same daily load, and the batch correlation ID lets a restart
-// skip a load whose receivables, payables, and cash movements all finished
-// successfully.
+// skip a load whose receivables, payables, cash movements, and raw
+// payment-method configuration all finished successfully.
 func (s *BlingOAuthService) SyncDaily(ctx context.Context, scheduledAt time.Time) (result BlingRawSyncResult, skipped bool, returnErr error) {
 	correlationID, err := dailyBlingCorrelationID(scheduledAt)
 	if err != nil {
@@ -64,7 +64,7 @@ func (s *BlingOAuthService) SyncDaily(ctx context.Context, scheduledAt time.Time
 	if completed {
 		return BlingRawSyncResult{Status: "SUCCESS"}, true, nil
 	}
-	result, err = s.sync(ctx, ReceivablesFilter{}, &correlationID, true, &cashMovementFilter)
+	result, err = s.sync(ctx, ReceivablesFilter{}, &correlationID, true, &cashMovementFilter, true)
 	return result, false, err
 }
 
@@ -90,8 +90,9 @@ func dailyBlingSyncCompleted(ctx context.Context, connection *pgxpool.Conn, corr
 		SELECT
 			EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $2 AND status IN ('SUCCESS', 'PARTIAL') AND data_stage = 'NORMALIZED')
 		AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $3 AND status IN ('SUCCESS', 'PARTIAL') AND data_stage = 'NORMALIZED')
-		AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $4 AND status IN ('SUCCESS', 'PARTIAL') AND data_stage = 'NORMALIZED')`,
-		correlation, ReceivablesAPIResource, PayablesAPIResource, CashMovementsAPIResource,
+		AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $4 AND status IN ('SUCCESS', 'PARTIAL') AND data_stage = 'NORMALIZED')
+		AND EXISTS (SELECT 1 FROM integration_sync_batches WHERE correlation_id = $1 AND resource = $5 AND status = 'SUCCESS' AND data_stage = 'RAW_ONLY')`,
+		correlation, ReceivablesAPIResource, PayablesAPIResource, CashMovementsAPIResource, PaymentMethodsAPIResource,
 	).Scan(&completed)
 	return completed, err
 }

@@ -8,8 +8,8 @@ import (
 func TestRunIndependentBlingSyncStepsAttemptsRemainingSourcesAfterFailure(t *testing.T) {
 	wantFailure := errors.New("source unavailable")
 	var result BlingRawSyncResult
-	attempted := make([]string, 0, 3)
-	steps := buildBlingSyncSteps(&result, blingDateFilterDue, true,
+	attempted := make([]string, 0, 4)
+	steps := buildBlingSyncSteps(&result, blingDateFilterDue, true, true,
 		func() (APISyncResult, error) {
 			attempted = append(attempted, "cash_movements")
 			return APISyncResult{Status: "SUCCESS", RecordsRead: 12}, nil
@@ -22,17 +22,21 @@ func TestRunIndependentBlingSyncStepsAttemptsRemainingSourcesAfterFailure(t *tes
 			attempted = append(attempted, "payables")
 			return APISyncResult{Status: "FAILED"}, wantFailure
 		},
+		func() (APISyncResult, error) {
+			attempted = append(attempted, "payment_methods")
+			return APISyncResult{Status: "SUCCESS", RecordsRead: 3}, nil
+		},
 	)
 	failures := runIndependentBlingSyncSteps(steps...)
 
-	if len(attempted) != 3 || attempted[0] != "cash_movements" || attempted[1] != "receivables" || attempted[2] != "payables" {
-		t.Fatalf("attempted sources = %v, want all three in order", attempted)
+	if len(attempted) != 4 || attempted[0] != "cash_movements" || attempted[1] != "receivables" || attempted[2] != "payables" || attempted[3] != "payment_methods" {
+		t.Fatalf("attempted sources = %v, want all four in order", attempted)
 	}
 	if len(failures) != 1 || !errors.Is(failures[0], wantFailure) {
 		t.Fatalf("failures = %v, want the payable error", failures)
 	}
-	if result.Receivables.Status != "SUCCESS" || result.Payables.Status != "FAILED" || result.CashMovements.Status != "SUCCESS" || result.CashMovements.RecordsRead != 12 {
-		t.Fatalf("results were not retained independently: receivables=%+v payables=%+v cash=%+v", result.Receivables, result.Payables, result.CashMovements)
+	if result.Receivables.Status != "SUCCESS" || result.Payables.Status != "FAILED" || result.CashMovements.Status != "SUCCESS" || result.CashMovements.RecordsRead != 12 || result.PaymentMethods.Status != "SUCCESS" {
+		t.Fatalf("results were not retained independently: receivables=%+v payables=%+v cash=%+v methods=%+v", result.Receivables, result.Payables, result.CashMovements, result.PaymentMethods)
 	}
 
 	result, err := finishBlingRawSyncResult(result, failures)
@@ -51,7 +55,7 @@ func TestBuildBlingSyncStepsKeepsManualDateFilterScope(t *testing.T) {
 		}
 	}
 
-	steps := buildBlingSyncSteps(&result, blingDateFilterReceived, false, nil, makeRun("receivables"), makeRun("payables"))
+	steps := buildBlingSyncSteps(&result, blingDateFilterReceived, false, false, nil, makeRun("receivables"), makeRun("payables"), nil)
 	if len(steps) != 1 {
 		t.Fatalf("received-date sync has %d steps, want only receivables", len(steps))
 	}

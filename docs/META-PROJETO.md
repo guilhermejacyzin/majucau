@@ -341,12 +341,13 @@ O progresso geral do backlog permanece **12,1% concluído / 87,9% restante** at�
 
 A T02 é a tela do relatório **Fluxo de Caixa**. A captura enviada é a referência
 para reproduzir e conferir o resultado; o saldo bancário oficial permanece em
-**Caixas e Bancos**. Corrigida a ponte Wails que descartava as duas métricas
-parciais de entradas/saídas de 30 dias calculadas pelo worker. Elas agora podem
-chegar à interface com estado parcial. Isso não conclui a T02: faltam a série
-completa, semana crítica, projeções de saldo e comparação integral com o
-relatório. O backlog geral permanece 12,1% concluído / 87,9% restante até nova
-avaliação dos critérios oficiais. Ver
+**Caixas e Bancos**. Correção da nota anterior: as métricas simples de
+vencimento a pagar/receber em 30 dias **não são consumidas pelos cards da T02**,
+porque não substituem o resultado consolidado do relatório Fluxo de Caixa. O
+desenho dos cards não mudou. Isso não conclui a T02: faltam a série completa,
+semana crítica, projeções de saldo e comparação integral com o relatório. O
+backlog geral permanece 12,1% concluído / 87,9% restante até nova avaliação dos
+critérios oficiais. Ver
 [evidência T02](./evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md).
 
 Na conferência da ajuda oficial em 03/11, confirmei por que os totais de T03 e
@@ -358,3 +359,10 @@ somente então alimentar a série da T02 e o consolidado da T01. O Bling não
 documenta uma rota pública específica para ler o relatório. Não alterei telas
 nem regra financeira. Detalhes e fontes estão em
 [evidência do Fluxo de Caixa](./evidence/BLING-CASH-FLOW-REPORT-READING-2026-11-02.md).
+
+Em seguida, foi adicionada uma leitura diária RAW das configurações detalhadas
+das formas de pagamento (destino, taxa e prazo), independente das leituras de
+Contas a Pagar, Contas a Receber e Caixas e Bancos. Essa preparação não calcula
+projeções nem altera regra ou tela; serve para montar e conferir a composição
+com o relatório Bling. Os testes Go passaram; CI PostgreSQL e conferência real
+continuam pendentes. Ver [evidência da fonte](./evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md).

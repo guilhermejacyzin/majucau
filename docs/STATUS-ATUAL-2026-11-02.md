@@ -1,11 +1,12 @@
 # Status atual do Majucau — 03/11/2026
 
-## Atualização mais recente — T02 exibe números reais na tela — 03/11/2026, 06:07 BRT
+## Situação atual — T02 apresenta valores parciais do Bling — 03/11/2026
 
-O serviço local entrega aos cards aprovados da T02: **Entradas 30 dias:
-R$ 69.994,12 (Parcial)** e **Saídas 30 dias: -R$ 263.930,47 (Parcial)**.
-O fluxo diário contém 61 datas, hoje até D+60. A saída segue negativa no valor
-interno. A T01 reutiliza o mesmo snapshot.
+O último snapshot de dados conferido nos registros do projeto entrega aos cards
+aprovados da T02: **Entradas 30 dias: R$ 69.994,12 (Parcial)** e **Saídas 30
+dias: -R$ 262.136,32 (Parcial)**. A saída segue negativa por representar
+pagamentos. A série contém 61 datas, da data da carga até D+60. A T01 reutiliza
+o mesmo snapshot.
 
 As causas corrigidas foram: a tela escolhia a execução diária anterior; o
 catálogo separado de contas responde 403, embora o endpoint de movimentos
@@ -17,18 +18,18 @@ listados com situação vazia entram em valor Parcial; situações não reconhec
 continuam fora da soma. Nada foi alterado no desenho aprovado nem nas regras
 financeiras.
 
-O worker foi compilado e consultado por IPC; a consulta confirmou os valores e
-as 61 datas. Também corrigi a camada Wails, que recebia o snapshot do worker,
-mas descartava `cash_flow` antes de entregá-lo à tela. O novo executável Wails
-foi aberto e conferido visualmente: os dois cards aparecem com aviso Parcial e
-o gráfico exibe a série. Isso confirma a ligação técnica, mas não é aceite
-financeiro/homologação. Ainda não está comprovado que a composição por APIs
-equivale ao relatório pronto: ainda falta comparar a mesma janela/opções, obter
-saldo inicial/float e concluir indicadores derivados. O serviço retorna
-`PARTIAL` deliberadamente.
+O worker e o protótipo foram atualizados e conferidos visualmente; os cards
+aparecem com aviso Parcial e o gráfico mostra a série. Uma comparação com a
+captura do relatório do Bling confere 5 de 5 faixas de saída e 4 de 5 faixas de
+entrada; há uma diferença de R$ 0,01 em uma faixa. A primeira faixa não é
+completa porque a carga começou um dia depois do início exibido no relatório.
+O saldo inicial/float não está comprovado, então saldo atual projetado, menor
+saldo e semana crítica não podem ser considerados homologados. A composição
+continua `PARTIAL`.
 
-BK-062 está em 25% (75% restante); projeto em 12,2% (87,8% restante).
-Detalhes e próximos passos: [evidência T02](./evidence/T02-FLOW-SNAPSHOT-2026-11-03.md).
+BK-062 está em **30%** (70% restante); o projeto está em **12,3%** (87,7%
+restante). Detalhes: [evidência T02](./evidence/T02-FLOW-SNAPSHOT-2026-11-03.md)
+e [reconciliação semanal](./evidence/T02-BLING-REPORT-WEEKLY-SERIES-2026-11-03.md).
 
 ## CI anterior do commit `eff46fe` — 03/11/2026
 

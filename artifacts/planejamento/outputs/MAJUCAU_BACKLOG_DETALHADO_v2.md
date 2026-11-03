@@ -2085,14 +2085,16 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Objetivo:** Apresentar a posição e os próximos compromissos.
 
-**O que fazer:** Construir cartões, gráfico combinado, semana crítica e alertas.
+**O que fazer:** Construir cartões, gráfico combinado, semana crítica e alertas, usando o resultado do Fluxo de Caixa do Bling. Não ligar os cards de vencimento da T03/T04 diretamente à T02.
 
 **Como fazer:**
 
-1. Distinguir realizado, previsto e projetado com legendas
-2. Conectar detalhes, reserva, saldo transferível e períodos
-3. Mostrar posição da fonte e indisponibilidade de cálculos parciais
-4. Identificar a origem e data do caixa consolidado e distinguir o valor transferível do Itaú para aplicação; recebíveis futuros permanecem previstos.
+1. Reproduzir na consulta os filtros do relatório de referência: período, contas financeiras e opções de float/pagamentos/recebimentos.
+2. Ler as contas a pagar/receber e as configurações da forma de pagamento por recursos oficiais de leitura; respeitar destino, taxas, prazo e dias úteis aplicáveis ao recebimento.
+3. Montar a série diária e os agrupamentos necessários, mantendo entrada/saída com o sinal correto; não aplicar taxa da forma de recebimento às saídas de contas a pagar.
+4. Comparar contas, datas, totais semanais e saldo acumulado com o mesmo relatório real do Bling. Não publicar resultado confirmado enquanto houver divergência ou filtro sem equivalência comprovada.
+5. Só então ligar a série, menores saldos, semana crítica e demais resultados à T02 e fazer T01 consumir esses mesmos resultados. Saldo bancário por instituição continua vindo de fonte própria de Caixas e Bancos, não do saldo projetado.
+6. Exibir posição da fonte, data e estado parcial/indisponível quando a carga não estiver completa; manter detalhes, reserva, saldo transferível e períodos conforme as regras já aprovadas.
 
 **Critério de aceite:** Valores, folgas, datas e gráfico conferem com o motor e as fontes; a tela permanece somente para consulta e sem botão de exportação conforme decisão de 01/11/2026.
 

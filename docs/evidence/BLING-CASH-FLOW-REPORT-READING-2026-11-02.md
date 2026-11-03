@@ -89,6 +89,27 @@ nem usada para cadastrar valores fixos no Majucau. Fontes oficiais:
 <https://ajuda.bling.com.br/hc/pt-br/articles/360035872974-Como-controlar-as-taxas-que-pago-sobre-algumas-formas-de-pagamento-no-Bling>
 e <https://developer.bling.com.br/referencia>.
 
+### Regras operacionais relevantes para reproduzir a projeção — 03/11/2026
+
+A documentação detalha que uma forma de pagamento pode descontar taxa
+percentual, taxa fixa ou as duas; prazo e uso de dias úteis podem alterar a data
+prevista. O Fluxo de Caixa mostra o valor líquido previsto do recebível. A opção
+“Enviar para” também importa: registros encaminhados para Contas a Receber/Pagar
+podem compor a previsão; registros enviados diretamente para Caixa não oferecem
+essa previsão pelo relatório. A ajuda alerta que a taxa configurada na forma de
+pagamento não é aplicada automaticamente à saída de Contas a Pagar; valores de
+juros/taxas de saída são informados na baixa. Fontes oficiais:
+<https://ajuda.bling.com.br/hc/pt-br/articles/360035872974-Como-controlar-as-taxas-que-pago-sobre-algumas-formas-de-pagamento-no-Bling>
+e <https://ajuda.bling.com.br/hc/pt-br/articles/360038306714-Como-gerar-um-relat%C3%B3rio-de-futuras-entradas-e-sa%C3%ADdas-de-valores>.
+
+Por isso, “ler o relatório” significa reproduzir o resultado dele a partir dos
+dados oficiais e das configurações que o Bling aplica — não copiar a imagem nem
+somar os cards de T03/T04. A captura enviada mostra períodos agregados por
+semana e filtros ativos, mas não traz a série diária necessária para recortar
+as janelas móveis da T02. O efeito do float bancário e a seleção exata das
+contas ainda precisam ser comparados usando o mesmo relatório da conta. Até
+essa comparação, a série permanece não confirmada.
+
 Ainda falta confirmar o caminho automático e somente de leitura que entrega o
 resultado do relatório. A OpenAPI pública consultada não lista uma rota
 específica para esse relatório. A composição por Contas a Pagar/Receber,

@@ -348,3 +348,13 @@ completa, semana crítica, projeções de saldo e comparação integral com o
 relatório. O backlog geral permanece 12,1% concluído / 87,9% restante até nova
 avaliação dos critérios oficiais. Ver
 [evidência T02](./evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md).
+
+Na conferência da ajuda oficial em 03/11, confirmei por que os totais de T03 e
+T04 não podem ser ligados diretamente à T02: o relatório considera taxa,
+prazo, dias úteis e destino da forma de pagamento, além do filtro de contas e
+do float selecionado. O próximo passo é implementar essa composição usando os
+contratos reais da API e provar que ela bate com o relatório de referência;
+somente então alimentar a série da T02 e o consolidado da T01. O Bling não
+documenta uma rota pública específica para ler o relatório. Não alterei telas
+nem regra financeira. Detalhes e fontes estão em
+[evidência do Fluxo de Caixa](./evidence/BLING-CASH-FLOW-REPORT-READING-2026-11-02.md).

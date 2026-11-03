@@ -46,6 +46,18 @@ Fluxo de Caixa. A captura não é uma fonte contínua nem informa toda a série
 diária. A T02 continua em 5% e a média geral permanece em 12,1% concluída / 87,9%
 restante. Evidência: `docs/evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md`.
 
+### Investigação de fonte automática do relatório — 03/11/2026
+
+Conferi também a página oficial do Bling MCP. Ela descreve consultas feitas por
+assistentes e montagem de panoramas financeiros sob demanda, mas não oferece na
+documentação um contrato de dados ou agendamento para o worker do Majucau. Como
+também cita ferramentas de criação/atualização, não será usado como origem
+financeira canônica de produção. A T02 continua seguindo a regra aprovada: o
+resultado vem do relatório Fluxo de Caixa; somente os saldos por conta vêm de
+Caixas e Bancos. Ainda falta demonstrar uma ingestão oficial que reproduza o
+relatório e comparar o resultado com a referência antes de liberar os valores.
+Detalhes: `docs/evidence/BLING-CASH-FLOW-REPORT-READING-2026-11-02.md`.
+
 ### Correção de fontes do fluxo e avisos da Visão Executiva — 02/11/2026
 
 A responsável esclareceu que o resultado da T02 vem do relatório **Fluxo de

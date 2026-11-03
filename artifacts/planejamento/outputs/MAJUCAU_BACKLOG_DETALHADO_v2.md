@@ -2081,7 +2081,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-062 — Implementar T02 Fluxo de Caixa
 
-**Situação:** Em andamento. **Evolução:** 5% (estimativa; movimentos realizados de `/caixas` foram normalizados, mas a revisão confirmou que essa API e os totais de vencimentos de Contas a Receber/Pagar não substituem o relatório Fluxo de Caixa definido como fonte da T02. A interface não apresenta vencimentos de 30 dias como resultado do relatório. Falta uma fonte automática validada para o relatório, além de saldos por banco, projeção D0–D+60, gráfico, semana crítica e conferência real). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 5% (estimativa; movimentos realizados de `/caixas` foram normalizados, mas a revisão confirmou que essa API e os totais de vencimentos de Contas a Receber/Pagar não substituem o relatório Fluxo de Caixa definido como fonte da T02. A interface não apresenta vencimentos de 30 dias como resultado do relatório. A página oficial do Bling MCP descreve consultas sob demanda para assistentes, mas não documenta contrato/agenda para o worker do Majucau; não será tratado como origem financeira canônica. Falta uma fonte automática oficial validada para o relatório, além de saldos por banco, projeção D0–D+60, gráfico, semana crítica e conferência real. Evidência: `docs/evidence/BLING-CASH-FLOW-REPORT-READING-2026-11-02.md`). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Apresentar a posição e os próximos compromissos.
 

@@ -40,6 +40,34 @@ série diária completa.
   dessas semanas.
 - Nenhum valor da captura foi copiado para a base de dados do produto.
 
+## Verificação adicional das opções automáticas — 02/11/2026
+
+A página oficial do Bling sobre o MCP Server informa que um assistente conectado
+pode consultar contas a pagar/receber e montar panoramas financeiros sob demanda.
+Ela descreve conexão de assistente por OAuth e consultas em linguagem natural;
+não documenta um contrato de resposta próprio para o relatório Fluxo de Caixa,
+nem um mecanismo de execução diária para um aplicativo financeiro como o
+Majucau. A própria página também lista ferramentas que criam e atualizam dados,
+portanto não é uma fonte somente de leitura por definição. Não vamos usar uma
+resposta gerada por assistente como valor financeiro canônico nem ligar esse MCP
+ao worker de produção sem contrato, escopo somente leitura e avaliação de
+segurança específicos. Referência: <https://developer.bling.com.br/mcp-server>.
+
+Na documentação pública consultada, `GET /caixas` é o recurso de lançamentos de
+Caixas e Bancos, enquanto Contas a Pagar e Contas a Receber são recursos
+separados. Isso permite sincronizar movimentos e títulos, mas, por si só, não
+prova que a soma reproduza as opções do relatório exibido (duas contas,
+float bancário, prazo da forma de recebimento e pagamentos/recebimentos).
+Referências: <https://developer.bling.com.br/referencia> e
+<https://developer.bling.com.br/changelogs>.
+
+Conclusão operacional: a T02 deve refletir o relatório Fluxo de Caixa que a
+responsável indicou. A equipe pode investigar se o resultado é reproduzível a
+partir de recursos oficiais, mas precisa comparar todas as faixas e saldos com
+um relatório de referência antes de publicar como confirmado. Se não houver
+contrato oficial ou equivalência demonstrada, a integração permanece pendente;
+não se inventa endpoint nem se troca silenciosamente a fonte.
+
 ## Próxima etapa técnica
 
 Implementar e validar a ingestão do resultado de Fluxo de Caixa do Bling,

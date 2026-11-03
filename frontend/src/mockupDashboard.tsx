@@ -1,6 +1,6 @@
 import { Tooltip } from './components/Tooltip'
 import type { TooltipId } from './tooltips'
-import type { DashboardBankBalance, DashboardMetric, DashboardPayableRow, DashboardReceivableRow, DashboardSnapshot } from './bootstrap'
+import type { DashboardBankBalance, DashboardCashFlowPeriod, DashboardMetric, DashboardPayableRow, DashboardReceivableRow, DashboardSnapshot } from './bootstrap'
 import { formatBRL } from './money'
 import sidebarReference from './assets/images/mocap-sidebar.png'
 
@@ -159,8 +159,23 @@ function EmptyRightPanel({ title, subtitle }: { title: string; subtitle: string 
   return <section className="mocap-panel mocap-right-empty"><div className="mocap-panel-heading"><div><Icon icon="pie" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div><div className="mocap-right-grid"><div><Icon icon="calendar" /><strong>Período</strong><EmptyValue /></div><div><Icon icon="warning" /><strong>Status</strong><span>Sem dados confirmados</span></div><div><Icon icon="chart" /><strong>Regra</strong><span>Aguardando fonte oficial</span></div><div><Icon icon="refresh" /><strong>Atualização</strong><EmptyValue /></div></div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled>Ver detalhes <span>→</span></button></Tooltip></section>
 }
 
-function EmptyCriticalPanel({ title, subtitle }: { title: string; subtitle: string }) {
-  return <section className="mocap-panel mocap-critical-panel"><div className="mocap-panel-heading"><div><Icon icon="clock" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div><div className="mocap-critical-grid"><div><Icon icon="calendar" /><span>Período</span><strong>—</strong></div><div><Icon icon="trend" /><span>Saídas</span><strong>—</strong></div><div><Icon icon="trend" /><span>Entradas</span><strong>—</strong></div><div><Icon icon="money" /><span>Reserva mínima</span><strong>—</strong></div></div><div className="mocap-critical-warning"><Icon icon="warning" />Posição de caixa da semana: <b>SEM DADOS</b></div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled>Ver detalhes <span>→</span></button></Tooltip></section>
+function formatCashFlowPeriod(period?: DashboardCashFlowPeriod): string {
+  if (!period) return '—'
+  const label = (date: string) => {
+    const [, month, day] = date.split('-')
+    return `${day}/${month}`
+  }
+  return `${label(period.from)}–${label(period.through)}`
+}
+
+function criticalWeekMetric(metric?: DashboardMetric): string {
+  if (!metric?.value || metric.state === 'UNAVAILABLE') return '—'
+  return `${formatBRL(metric.value)}${metric.state === 'PARTIAL' ? ' · Parcial' : ''}`
+}
+
+function EmptyCriticalPanel({ title, subtitle, cashFlow }: { title: string; subtitle: string; cashFlow?: DashboardSnapshot['cash_flow'] }) {
+  const week = cashFlow?.critical_week
+  return <section className="mocap-panel mocap-critical-panel"><div className="mocap-panel-heading"><div><Icon icon="clock" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div><div className="mocap-critical-grid"><div><Icon icon="calendar" /><span>Período</span><strong>{formatCashFlowPeriod(week)}</strong></div><div><Icon icon="trend" /><span>Saídas</span><strong>{criticalWeekMetric(week?.outflows)}</strong></div><div><Icon icon="trend" /><span>Entradas</span><strong>{criticalWeekMetric(week?.inflows)}</strong></div><div><Icon icon="money" /><span>Reserva mínima</span><strong>—</strong></div></div><div className="mocap-critical-warning"><Icon icon="warning" />Posição de caixa da semana: <b>SEM DADOS</b></div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled>Ver detalhes <span>→</span></button></Tooltip></section>
 }
 
 function EmptyCalculationPanel({ title, subtitle }: { title: string; subtitle: string }) {
@@ -290,7 +305,7 @@ export function MockupDashboard({ screen, snapshot, onNavigate }: { screen: Mock
   const payableRows = screen === 'payables' ? (snapshot?.payable_rows ?? []).map(payableTableRow) : []
   const tableRows = screen === 'receivables' ? receivableRows : screen === 'payables' ? payableRows : []
   const middleLeft = config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} rows={config.tableRows ?? tableRows} emptyMessage={config.tableEmptyMessage} /> : config.chart ? <EmptyChart title={config.middleTitle} cashFlow={snapshot?.cash_flow} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
-  const middleRight = config.layout === 'market' ? <EmptyRiskPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'critical' ? <EmptyCriticalPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'calculation' ? <EmptyRulesPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'forecast' ? <EmptyMetadataPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} emptyMessage={config.distributionEmptyMessage} items={config.distributionItems} bankBalances={screen === 'executive' ? snapshot?.bank_balances : undefined} />
+  const middleRight = config.layout === 'market' ? <EmptyRiskPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'critical' ? <EmptyCriticalPanel title={config.rightTitle} subtitle={config.rightSubtitle} cashFlow={snapshot?.cash_flow} /> : config.layout === 'calculation' ? <EmptyRulesPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'forecast' ? <EmptyMetadataPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} emptyMessage={config.distributionEmptyMessage} items={config.distributionItems} bankBalances={screen === 'executive' ? snapshot?.bank_balances : undefined} />
   const lower = screen === 'dre' ? <section className="mocap-lower-cards mocap-dre-lower-cards" aria-label="Indicadores e composição da DRE">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}<DreDerivedIndicators /><CapexIndicators snapshot={snapshot} /></section> : config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} screen={screen} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} detailScreen={screen === 'executive' ? executiveCardTarget(card.label) : undefined} onNavigate={screen === 'executive' ? onNavigate : undefined} />)}</section>
   return <div className="mocap-page"><MocapHeader config={config} snapshot={snapshot} /><section className="mocap-top-cards">{cards.map((card) => <MocapCard key={card.label} card={card} hideAction={config.hideCardActions} detailScreen={screen === 'executive' ? executiveCardTarget(card.label) : undefined} onNavigate={screen === 'executive' ? onNavigate : undefined} />)}</section><section className={`mocap-middle ${config.layout ? `layout-${config.layout}` : ''}`}>{screen === 'executive' && config.chart ? <EmptyChart title={config.middleTitle} onNavigate={onNavigate} cashFlow={snapshot?.cash_flow} /> : middleLeft}{screen === 'executive' && !config.layout ? <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} onNavigate={onNavigate} /> : middleRight}</section>{lower}{config.layout !== 'market' && config.alerts.length > 0 && <AlertPanel messages={config.alerts} screen={screen} onNavigate={onNavigate} title={config.alertsTitle} subtitles={config.alertSubtitles} hideActions={config.hideCardActions} />}</div>
 }

@@ -298,7 +298,38 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	if err != nil {
 		return nil, err
 	}
+	flow.CriticalWeek, err = selectCriticalCashFlowWeek(flow.Periods)
+	if err != nil {
+		return nil, err
+	}
 	return flow, nil
+}
+
+// selectCriticalCashFlowWeek returns the report period with the greatest
+// absolute outflow, matching the approved T02 description. Partial values
+// remain partial; unavailable weeks are not considered.
+func selectCriticalCashFlowWeek(periods []application.DashboardCashFlowPeriod) (*application.DashboardCashFlowPeriod, error) {
+	var selected *application.DashboardCashFlowPeriod
+	var greatestOutflow domain.Money
+	for index := range periods {
+		metric := periods[index].Outflows
+		if metric.State == "UNAVAILABLE" || metric.Value == "" {
+			continue
+		}
+		outflow, err := domain.ParseMoney(metric.Value)
+		if err != nil {
+			return nil, fmt.Errorf("cash-flow report contains invalid weekly outflow")
+		}
+		outflow, err = outflow.AbsExact()
+		if err != nil {
+			return nil, err
+		}
+		if selected == nil || outflow.Compare(greatestOutflow) > 0 {
+			selected = &periods[index]
+			greatestOutflow = outflow
+		}
+	}
+	return selected, nil
 }
 
 // groupCashFlowReportWeeks follows the Bling report's week boundaries: the

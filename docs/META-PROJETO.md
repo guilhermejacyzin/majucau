@@ -1,5 +1,23 @@
 # Meta do Majucau
 
+### T02 — quadro Semana Crítica ligado aos dados semanais — 03/11/2026, 07:30 BRT
+
+Corrigi uma falha visível na T02: o gráfico semanal recebia dados da API, mas
+o quadro “Semana Crítica” permanecia todo em traços. Agora ele apresenta o
+período de maior saída semanal e as entradas/saídas dessa mesma semana a partir
+da composição do relatório Bling. Valores incompletos seguem com aviso “Parcial”.
+O quadro não calcula saldo, reserva mínima ou posição de caixa sem uma fonte
+confirmada. O desenho e as regras financeiras não mudaram. A T01 segue usando a
+mesma composição.
+
+Passaram `go test ./internal/dashboard -count=1`, TypeScript, ESLint, os 70
+testes frontend e o build Vite de produção, em cópia isolada dentro de
+`artifacts/verification/frontend-tests-20261103`. Ainda faltam build Wails,
+permissão de leitura de Contas Financeiras no Bling, carga diária das 09:30 e
+homologação do resultado completo. BK-062 permanece em 30% / 70% restante; a
+média do projeto permanece em 12,3% / 87,7% restante. Evidência:
+[`T02-CRITICAL-WEEK-DISPLAY-2026-11-03.md`](evidence/T02-CRITICAL-WEEK-DISPLAY-2026-11-03.md).
+
 ### T02 — teste real da conexão Bling — 03/11/2026, 07:17 BRT
 
 Regra reafirmada: a T02 deve mostrar o resultado do relatório **Fluxo de Caixa

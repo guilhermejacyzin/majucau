@@ -152,6 +152,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
         periods: [
           { from: '2026-11-03', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' } },
         ],
+        critical_week: { from: '2026-11-03', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' } },
       },
     }
 
@@ -159,7 +160,13 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('1.250,00')
     expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('-R$ 800,00')
     expect(screen.getByRole('img', { name: 'Entradas e saídas semanais do fluxo de caixa Bling' })).toBeInTheDocument()
-    expect(screen.getByText('03/11–07/11')).toBeInTheDocument()
+    expect(screen.getAllByText('03/11–07/11')).toHaveLength(2)
+    const criticalWeek = screen.getByRole('heading', { name: 'SEMANA CRÍTICA' }).closest('section')
+    expect(criticalWeek).toHaveTextContent('03/11–07/11')
+    expect(criticalWeek).toHaveTextContent('-R$ 800,00 · Parcial')
+    expect(criticalWeek).toHaveTextContent('R$ 1.250,00 · Parcial')
+    expect(screen.getByText('Reserva mínima').parentElement).toHaveTextContent('—')
+    expect(criticalWeek).toHaveTextContent('Posição de caixa da semana: SEM DADOS')
 
     rerender(<MockupDashboard screen="executive" snapshot={snapshot} />)
     expect(screen.getByRole('img', { name: 'Entradas e saídas semanais do fluxo de caixa Bling' })).toBeInTheDocument()

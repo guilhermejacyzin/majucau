@@ -270,6 +270,7 @@ type DashboardCashFlow struct {
 	OutflowsNext30Days DashboardMetric           `json:"outflows_next_30_days"`
 	Days               []DashboardCashFlowDay    `json:"days,omitempty"`
 	Periods            []DashboardCashFlowPeriod `json:"periods,omitempty"`
+	CriticalWeek       *DashboardCashFlowPeriod  `json:"critical_week,omitempty"`
 }
 
 // DashboardSnapshot contains only metrics that are already normalized in the

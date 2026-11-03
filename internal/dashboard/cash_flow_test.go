@@ -44,3 +44,32 @@ func TestGroupCashFlowReportWeeksRejectsInvalidMoney(t *testing.T) {
 		t.Fatal("invalid API amount must not be published in a report bucket")
 	}
 }
+
+func TestSelectCriticalCashFlowWeekUsesLargestOutflowAndPreservesPartialState(t *testing.T) {
+	periods := []application.DashboardCashFlowPeriod{
+		{From: "2026-11-03", Through: "2026-11-07", Inflows: dashboardFlowMetric("1250.00", true), Outflows: dashboardFlowMetric("-800.00", true)},
+		{From: "2026-11-08", Through: "2026-11-14", Inflows: dashboardFlowMetric("900.00", true), Outflows: dashboardFlowMetric("-152735.18", true)},
+		{From: "2026-11-15", Through: "2026-11-21", Inflows: application.DashboardMetric{State: "UNAVAILABLE"}, Outflows: application.DashboardMetric{State: "UNAVAILABLE"}},
+	}
+	got, err := selectCriticalCashFlowWeek(periods)
+	if err != nil {
+		t.Fatalf("selectCriticalCashFlowWeek() error = %v", err)
+	}
+	if got == nil || got.From != "2026-11-08" || got.Through != "2026-11-14" || got.Outflows.Value != "-152735.18" || got.Outflows.State != "PARTIAL" || got.Inflows.Value != "900.00" {
+		t.Fatalf("critical week = %+v, want largest partial outflow week", got)
+	}
+}
+
+func TestSelectCriticalCashFlowWeekKeepsFirstWeekOnTieAndRejectsInvalidValue(t *testing.T) {
+	periods := []application.DashboardCashFlowPeriod{
+		{From: "2026-11-03", Through: "2026-11-07", Outflows: dashboardFlowMetric("-20.00", true)},
+		{From: "2026-11-08", Through: "2026-11-14", Outflows: dashboardFlowMetric("20.00", true)},
+	}
+	got, err := selectCriticalCashFlowWeek(periods)
+	if err != nil || got == nil || got.From != "2026-11-03" {
+		t.Fatalf("critical week tie = %+v, %v; want first period", got, err)
+	}
+	if _, err := selectCriticalCashFlowWeek([]application.DashboardCashFlowPeriod{{Outflows: dashboardFlowMetric("bad", true)}}); err == nil {
+		t.Fatal("invalid weekly outflow must not be published as the critical week")
+	}
+}

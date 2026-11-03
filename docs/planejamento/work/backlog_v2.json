@@ -1980,14 +1980,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "Atualizado em 03/11: cálculo de taxa líquida/prazo, conferidor e agrupador de série diária em períodos domingo-sábado implementados e testados com a referência semanal. Divergência de período, continuidade, conta diária ou soma é recusada. A captura é somente oráculo de teste; não é dado de produção. Ainda falta compor a série por APIs oficiais, comparar resultados reais, obter saldo inicial e ligar snapshot à tela. Evidência: docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md.",
+    "evidence": "Atualizado em 03/11: cálculo de taxa líquida/prazo, leitura tipada do destino da forma de pagamento, conferidor e agrupador da série diária em períodos domingo-sábado implementados. Só destino conhecido 1 (Contas a Receber/Pagar) é elegível para previsão; destinos 2/3 ou ausentes não são presumidos. Testes focados, go vet e CI #41576972828 passaram. A captura é somente oráculo de teste; não é dado de produção. Ainda falta compor a série por APIs oficiais, comparar resultado real, obter saldo inicial e ligar snapshot à tela. Evidência: docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md.",
     "weight": 1,
     "dependencies": [
       "BK-061",
       "BK-028",
       "BK-012"
     ],
-    "progress": 0.12
+    "progress": 0.13
   },
   {
     "key": "historicalcost",

@@ -34,6 +34,7 @@ type paymentMethodFeeConfig struct {
 
 type paymentMethodDetailConfig struct {
 	ID              int64                   `json:"id"`
+	Destination     *int                    `json:"destino"`
 	Fees            *paymentMethodFeeConfig `json:"taxas"`
 	UseBusinessDays *bool                   `json:"utilizaDiasUteis"`
 }
@@ -51,6 +52,13 @@ func parseBlingPaymentMethodTerms(record json.RawMessage, expectedID int64) (fin
 		return financial.BlingPaymentMethodTerms{}, errBlingPaymentMethodSchemaMismatch
 	}
 	terms := financial.BlingPaymentMethodTerms{}
+	if detail.Destination != nil {
+		if *detail.Destination < int(financial.BlingDestinationReceivablePayable) || *detail.Destination > int(financial.BlingDestinationCashAndBanks) {
+			return financial.BlingPaymentMethodTerms{}, errBlingPaymentMethodSchemaMismatch
+		}
+		terms.Destination = financial.BlingPaymentDestination(*detail.Destination)
+		terms.DestinationKnown = true
+	}
 	if detail.Fees != nil {
 		var err error
 		terms.FeeRate, err = optionalPaymentMethodMoney(detail.Fees.Rate)
@@ -106,9 +114,8 @@ func optionalPaymentMethodDays(raw json.RawMessage) (int, error) {
 }
 
 // PaymentMethodsAPISyncService records a read-only RAW snapshot of the Bling
-// payment-method configuration. It deliberately does not calculate fees or
-// projected receipt dates; those fields need a separately validated mapping
-// against the actual Bling cash-flow report before they can feed T02.
+// payment-method configuration. Its parsed destination, fee, term, and
+// business-day fields are inputs to the separately validated T02 composition.
 type PaymentMethodsAPISyncService struct{ *apiResourceSyncService }
 
 func NewPaymentMethodsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *PaymentMethodsAPISyncService {

@@ -193,3 +193,32 @@ comparar os períodos com a referência real.
 
 Referência oficial para a fórmula e as datas:
 <https://ajuda.bling.com.br/hc/pt-br/articles/360035872974-Como-controlar-as-taxas-que-pago-sobre-algumas-formas-de-pagamento-no-Bling>.
+
+## Destino da forma de pagamento — 03/11/2026
+
+A especificação oficial atual de `GET /formas-pagamentos/{idFormaPagamento}`
+documenta `destino` como: `1` Conta a receber/pagar, `2` Ficha financeira e `3`
+Caixa e bancos. A ajuda do Bling explica que Conta a receber/pagar alimenta a
+previsão futura do relatório, enquanto lançamento direto em Caixa não gera a
+previsão de contas. Portanto, só o destino `1` é elegível para compor a série
+futura do relatório; `2` e `3` não entram nessa parte da projeção. Destino ausente
+fica desconhecido e não é presumido.
+
+O parser agora conserva o destino tipado e oferece um predicado que só autoriza
+previsão quando o campo é conhecido e igual a `1`. Foram cobertos os três valores
+documentados, a ausência do campo e a recusa de enumeração inválida. Os testes
+focados passaram com os caches Go centralizados em `artifacts/cache`; `go vet`
+e `git diff --check` também passaram. A CI do commit anterior concluiu verde.
+
+**Limite atual:** este campo ainda não é consumido por um leitor de títulos nem
+pela T02. O cálculo de forma de pagamento não está ligado à série do banco, ao
+saldo inicial, ao float ou ao gráfico; ainda não há comparação real da série
+inteira com o relatório. Esta etapa aumenta a fidelidade da futura composição,
+mas não significa que a T02 já exiba resultado.
+
+Referências oficiais consultadas em 03/11/2026:
+
+- [Referência da API do Bling](https://developer.bling.com.br/referencia) —
+  schema `FormasPagamentosDadosDTO.destino`.
+- [Como cadastrar uma forma de pagamento](https://ajuda.bling.com.br/hc/pt-br/articles/360035630474-Como-cadastrar-uma-forma-de-pagamento-no-Bling) — enumera os destinos.
+- [Como controlar taxas e prazos das formas de pagamento](https://ajuda.bling.com.br/hc/pt-br/articles/360035872974-Como-controlar-as-taxas-que-pago-sobre-algumas-formas-de-pagamento-no-Bling) — distingue Conta a Receber/Pagar de lançamento direto em Caixa e explica a previsão no fluxo.

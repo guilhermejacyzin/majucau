@@ -16,6 +16,18 @@ type BusinessCalendar interface {
 	IsBusinessDay(time.Time) bool
 }
 
+// BlingPaymentDestination mirrors the read-only destination enum documented
+// for the Bling payment-method API. Only receivable/payable destinations can
+// contribute a future account to the cash-flow report.
+type BlingPaymentDestination uint8
+
+const (
+	BlingDestinationUnknown           BlingPaymentDestination = 0
+	BlingDestinationReceivablePayable BlingPaymentDestination = 1
+	BlingDestinationCustomerLedger    BlingPaymentDestination = 2
+	BlingDestinationCashAndBanks      BlingPaymentDestination = 3
+)
+
 // BlingPaymentMethodTerms contains the read-only settings that affect an open
 // receivable in the Bling cash-flow report. FeeRate is expressed as percent
 // (for example, 2.5 means 2.5%), and FixedFee is charged per receivable parcel.
@@ -23,11 +35,20 @@ type BlingPaymentMethodTerms struct {
 	FeeRate           domain.Money
 	FixedFee          domain.Money
 	SettlementDays    int
+	Destination       BlingPaymentDestination
 	UseBusinessDays   bool
 	FeeRateKnown      bool
 	FixedFeeKnown     bool
 	SettlementKnown   bool
 	BusinessDaysKnown bool
+	DestinationKnown  bool
+}
+
+// ContributesToBlingCashFlowForecast reports whether the documented payment
+// method destination is the accounts-receivable/payable destination used by
+// the Bling cash-flow report. Unknown values fail closed.
+func (t BlingPaymentMethodTerms) ContributesToBlingCashFlowForecast() bool {
+	return t.DestinationKnown && t.Destination == BlingDestinationReceivablePayable
 }
 
 // BlingNetReceivableValue applies the configured rate and fixed fee to one

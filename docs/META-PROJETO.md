@@ -6,7 +6,7 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 12% após o cálculo de taxa/prazo, conferidor de períodos e agrupador semanal da série diária. O agrupador também não alimenta o banco nem a tela. A CI [#41576163643](https://github.com/guilhermejacyzin/majucau/actions/runs/41576163643) está em andamento; backlog e PostgreSQL passaram, Windows continua verificando. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 13% após parser de taxa/prazo/destino, conferidor de períodos e agrupador semanal. A série ainda não alimenta o banco nem a T02. A CI [#41576972828](https://github.com/guilhermejacyzin/majucau/actions/runs/41576972828) concluiu verde. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
 ### T02 — agrupamento semanal do fluxo — 03/11/2026
@@ -19,6 +19,18 @@ o projeto permanece em 12,1% concluído / 87,9% restante pela média arredondada
 do backlog. A T02 continua sem série real no snapshot e sem valores no gráfico:
 falta alimentar a composição com dados oficiais, resolver o saldo inicial e
 validar com o relatório real. Nenhuma tela ou regra financeira foi alterada.
+
+### T02 — destino de forma de pagamento — 03/11/2026
+
+A API oficial documenta destinos 1 (Contas a Receber/Pagar), 2 (Ficha
+Financeira) e 3 (Caixa e Bancos). O parser agora mantém o destino tipado. A
+projeção futura só aceita destino conhecido 1; os outros dois destinos e
+configuração ausente não são presumidos. Os testes focados e `go vet` passaram;
+a CI do commit anterior concluiu verde. BK-062 avança de 12% para 13%; o projeto
+continua 12,1% / 87,9%. Ainda falta ligar essa regra aos títulos, compor e
+conferir o resultado real do relatório, obter o saldo inicial oficial e integrar
+os dados à T02 sem alterar seu desenho. Evidência:
+`docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.
 
 ### Decisão de fonte da T02 — 03/11/2026
 

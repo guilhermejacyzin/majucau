@@ -35,7 +35,7 @@ Neste momento:
 4. Fazer a atualização completa caber no tempo e nos limites da API sem deixar títulos de fora.
 5. Ligar e conferir os dados nas telas de origem; depois conferir T01, que deve reunir esses mesmos resultados.
 6. Obter uma fonte oficial de saldo atual para cada conta bancária; não inferir o saldo somando movimentos.
-7. Configurar as pastas do Drive e validar os arquivos externos.
+7. A leitura do arquivo Nuvem no Drive está bloqueada pela falta da credencial protegida da conta técnica. O worker tentou recuperar a execução diária de 09:30, mas falhou antes de ler pastas ou arquivos (`GOOGLE_DRIVE_FOLDERS_NOT_CONFIGURED`, 0 pastas/arquivos lidos). Os IDs estão em um manifesto local, porém, por segurança, o worker só aceita os IDs junto da chave técnica em um pacote DPAPI. Próximo passo: provisionar essa conta de leitura e repetir a sincronização. Ver [evidência da tentativa](./evidence/BLING-RECEIVABLE-NORMALIZATION-2026-11-02.md#rechecagem-do-drive--02112026).
 8. Conferir DRE e CAPEX conforme as regras contábeis já aprovadas. Fluxo de caixa não é igual à DRE.
 
 ## Meta e estimativa
@@ -112,7 +112,7 @@ A captura anterior da prévia `127.0.0.1:4179` mostrava um valor geral sem perí
 
 O código local agora prepara a normalização diária das contas recebidas do Bling. Cada conta mantém seu vínculo com o dado original, não é classificada automaticamente como B2B/B2C e só passa a valer no painel depois da publicação de um snapshot completo. A T01 e a tela de origem usam o mesmo conjunto publicado. A composição Bling + Nuvem segue a regra aprovada de comparar nome do cliente e valor bruto, ignorando a data; se o arquivo diário da Nuvem não estiver atualizado, o total combinado fica marcado como **Parcial**.
 
-**Ainda não está rodando no protótipo:** falta aplicar a migration 000018 e as permissões, validar no PostgreSQL/CI, iniciar o worker novo e conferir os números reais nas telas. Gisele avisou que o arquivo externo de recebimentos futuros foi atualizado. A tentativa de abrir a pasta nesta execução foi interrompida pelo controle do navegador antes de ler o conteúdo; portanto, ainda não confirmei o formato, as colunas nem a importação.
+**Ainda não está rodando no protótipo:** falta aplicar a migration 000018 e as permissões, validar no PostgreSQL/CI, iniciar o worker novo e conferir os números reais nas telas. Gisele avisou que o arquivo externo de recebimentos futuros foi atualizado. A tentativa diária do worker falhou antes de ler o Drive porque a credencial técnica ainda não foi provisionada; os logs registram 0 pastas e 0 arquivos lidos. O arquivo, portanto, não foi importado. O próximo passo é provisionar a conta técnica de leitura no cofre DPAPI; depois, validar o normalizador contra PostgreSQL/CI, atualizar o protótipo, importar os dados reais e conferir o mesmo resultado em T03 e T01.
 
 O projeto continua em **12,1% concluído / 87,9% restante** e não está homologado. Evidência da preparação e dos passos pendentes: [normalização de Contas a Receber](./evidence/BLING-RECEIVABLE-NORMALIZATION-2026-11-02.md).
 

@@ -14,7 +14,9 @@
 ## Limites e verificações
 
 - Esta alteração no código **não comprova que os dados reais foram atualizados no protótipo**. A sincronização só pode ser considerada confirmada depois que o worker executar com a migration 000018, publicar um lote `NORMALIZED` e as telas de origem e T01 mostrarem o mesmo resultado.
-- Gisele informou que atualizou o arquivo de recebimentos futuros na pasta autorizada do Drive. Ainda não foi possível ler essa aba nesta execução: o controle do navegador encerrou a tentativa por não conseguir confirmar com segurança a URL atual. O arquivo e suas colunas não foram inspecionados nem importados nesta etapa.
+- Gisele informou que atualizou o arquivo de recebimentos futuros na pasta autorizada do Drive. A verificação do worker em 02/11 confirmou que ele tentou recuperar a execução diária das 09:30, mas terminou antes de consultar o Drive: `GOOGLE_DRIVE_FOLDERS_NOT_CONFIGURED`, `folders_read=0` e `files_read=0`. Portanto, o arquivo atualizado e suas colunas não foram inspecionados nem importados.
+- A causa foi confirmada no cofre local: o manifesto com os três IDs das pastas existe em `artifacts/retained/google-drive-folder-ids.json`, mas a integração exige que esses IDs sejam gravados junto com a chave de uma conta técnica Google em um único pacote protegido por DPAPI. O worker não lê esse manifesto desprotegido. O cofre atual não contém a credencial `google-drive-service-account`; não encontrei nem li a chave da conta técnica.
+- O requisito de segurança aprovado é uma conta técnica separada da conta humana `financeiro@majucau.com.br`, com acesso Leitor apenas às três pastas autorizadas. Senha, cookie ou sessão do Chrome não substituem essa credencial e não devem ser copiados para o worker.
 - Permanecem necessários: aplicar a migração ao PostgreSQL isolado do protótipo, aplicar e conferir os privilégios exatos, rodar o teste PostgreSQL específico, publicar o novo worker, sincronizar Bling e Nuvem Pago, reconciliar contagens e somas agregadas e verificar as telas.
 - Nenhuma tela, regra contábil, cálculo de DRE ou classificação B2B/B2C foi alterada.
 
@@ -22,8 +24,13 @@
 
 1. `sqlc generate` e confirmar árvore gerada sem divergências.
 2. `go test ./internal/integrations/bling ./internal/dashboard`.
-3. Aplicar todas as migrations no banco PostgreSQL descartável da CI e executar `privileges/verify_runtime.sql`.
-4. Executar teste de integração do normalizador de receber em `majucau_test`.
-5. Só então atualizar o protótipo conectado e validar o resultado real.
+3. Obter a chave JSON da conta técnica de leitura do Drive e garantir que o e-mail técnico tenha acesso Leitor somente às três pastas aprovadas. Não enviar a chave pelo chat nem armazená-la no Git.
+4. Provisionar a chave e os IDs juntos pelo comando `majucau-worker provision-google-drive`/Named Pipe; confirmar o provisionamento sem imprimir a chave.
+5. Aplicar todas as migrations no banco PostgreSQL descartável da CI e executar `privileges/verify_runtime.sql`; executar o teste de integração do normalizador em `majucau_test`.
+6. Reiniciar o worker para recuperar a atualização diária das 09:30, importar o arquivo atualizado e reconciliar registros/somas agregadas nas telas T03 e T01.
 
 Até essas verificações e a conferência visual ocorrerem, o projeto continua **não homologado** e o percentual geral não aumenta por esta implementação isolada.
+
+## Rechecagem do Drive — 02/11/2026
+
+O log `artifacts/retained/postgresql-dev/worker.stderr.log` mostra que o worker ativo iniciou o agendamento diário e tentou recuperar a execução das 09:30. A tentativa registrou `status=FAILED`, `folders_read=0`, `files_read=0` e `GOOGLE_DRIVE_FOLDERS_NOT_CONFIGURED`. Isso prova que a atualização ainda não chegou ao Majucau; não prova ausência do arquivo no Drive. Não houve acesso ao conteúdo do Drive nesta verificação.

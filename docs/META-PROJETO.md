@@ -9,6 +9,22 @@
 - **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 25%: os dados parciais da API oficial atravessam worker, Wails e chegam aos cards/gráfico aprovados da T02. Após corrigir o formato da mensagem, a CI 41607450718 passou nas verificações de backlog, Windows e PostgreSQL. Ainda faltam comparar com o relatório Bling no mesmo período, completar saldo de abertura/float e homologar. A integração e o protótipo continuam sem homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
+### T02 — contrato público do saldo por conta — 03/11/2026
+
+Conferi o esquema OpenAPI oficial atual. `GET /caixas` retorna lançamentos; o
+campo `saldo` é somente a marca `S`/`N` de ajuste após o lançamento. A lista e o
+detalhe de `GET /contas-contabeis` retornam identidade/configuração da conta,
+sem saldo inicial nem saldo atual. A Central de Ajuda confirma que o saldo
+inicial é definido no cadastro e que o controle de movimentações bancárias no
+Bling é interno, sem integração bancária automática.
+
+Isso confirma por que os cards de saldo continuam sem valor comprovado. Não
+alterei o desenho nem inventei posição bancária. Próxima verificação: procurar
+nos lançamentos da API um registro explícito de saldo inicial ou ajuste que
+permita reconstruir as contas aprovadas, sem mudar o início CAPEX de
+01/01/2026. BK-062 permanece em 25% e o projeto em 12,2% até a comparação e a
+homologação. Evidência: `docs/evidence/T02-BLING-SALDO-SCHEMA-2026-11-03.md`.
+
 ### T02 — correção de título cancelado e comparação com o relatório — 03/11/2026, 06:30 BRT
 
 Corrigi um valor excedente confirmado: a API do Bling grava o status cancelado como código `5`, enquanto os filtros de projeção só reconheciam palavras como `CANCELLED`. Um título de **R$ 1.794,15** era somado como saída. Agora esse código é excluído do fluxo e dos totais de contas a pagar por período. A regressão PostgreSQL reproduz esse título e confirma que ele não entra na série nem no total aberto de 90 dias.

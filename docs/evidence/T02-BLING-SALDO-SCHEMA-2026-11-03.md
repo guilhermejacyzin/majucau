@@ -4,6 +4,32 @@
 **Fonte consultada:** especificação OpenAPI oficial da API Bling e Central de Ajuda oficial, conferida novamente em 03/11/2026.
 **Escopo:** somente leitura; sem mudança de tela, regra financeira ou configuração da conta.
 
+## Estado local adicional — 03/11/2026
+
+Consulta sanitizada ao último lote normalizado de `caixas` no PostgreSQL isolado
+do Majucau:
+
+- estado do lote: **Parcial**; 31.032 movimentos lidos entre 01/01/2026 e
+  30/10/2026;
+- 9 contas distintas estão identificadas nos movimentos; nenhum movimento está
+  sem ID de conta;
+- `origin_type` está ausente nos 31.032 movimentos;
+- 29.333 registros RAW contêm a propriedade `origem`; nas respostas guardadas,
+  esse objeto contém a chave `id`, mas não contém a chave `tipo`.
+
+Foram consultadas somente contagens, datas mínima/máxima e nomes de chaves JSON.
+Nenhum nome de cliente, valor ou ID financeiro foi exibido ou gravado. A carga
+confirma que o normalizador espera `origem.tipo`, mas essa propriedade não está
+presente no RAW recebido. Não se deve preencher o tipo usando inferências.
+
+A responsável autorizou a leitura das Contas Financeiras e a consulta do
+histórico completo para validar saldos. As permissões ainda não foram aplicadas
+no cadastro do app nem houve nova autorização OAuth. Próximo fluxo: aplicar
+somente leitura, reautorizar, sincronizar catálogo e histórico completo,
+identificar as duas contas aprovadas e reconciliar abertura/ajustes antes de
+calcular qualquer saldo. A permissão de catálogo, sozinha, não fornece saldo
+monetário.
+
 ## Revalidação do OpenAPI publicado — 03/11/2026
 
 Conferi novamente o arquivo OpenAPI servido pela própria página de referência:

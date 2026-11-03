@@ -1,5 +1,48 @@
 # Meta do Majucau
 
+### T02 — ponto de parada e próximos passos — 03/11/2026
+
+Pare a investigação a pedido da responsável. O estado atual do protótipo e do
+PostgreSQL isolado foi consultado somente para leitura; não alterei código,
+dados, telas ou regras financeiras. O último commit já enviado antes desta
+conferência era `7dda9a3` e a branch estava sincronizada com o GitHub.
+
+Na última carga normalizada de `caixas`, o Bling retornou 31.032 movimentos,
+de 01/01/2026 a 30/10/2026, em estado **Parcial**. Há 9 contas financeiras
+distintas associadas e nenhuma linha sem ID de conta. O campo normalizado
+`origin_type` está vazio nos 31.032 movimentos. Na cópia RAW, 29.333 registros
+tinham `origem`, mas esse objeto continha somente a chave `id`; a chave `tipo`
+não veio. Não consultamos nem registramos nomes de clientes, valores ou IDs
+financeiros. Isso indica uma diferença entre o contrato publicado e a forma
+recebida nesta carga; a correção precisa respeitar o dado real, sem classificar
+por aproximação.
+
+A responsável autorizou consulta somente de leitura às Contas Financeiras e
+autorizou consultar o histórico completo para validar saldos. Essas permissões
+ainda precisam ser aplicadas no aplicativo Bling e o Majucau precisa ser
+autorizado novamente. Não foi possível aplicar a permissão nesta execução. A
+fonte pública consultada não apresenta saldo monetário atual; portanto, nenhum
+saldo de Itaú ou Mercado Pago deve ser calculado ou exibido como confirmado sem
+histórico de abertura reconciliado.
+
+**Próximos passos, nesta ordem:**
+
+1. aplicar somente a permissão de leitura de Contas Financeiras e reautorizar o
+   Majucau no Bling;
+2. sincronizar o catálogo para identificar Itaú e Mercado Pago e consultar o
+   histórico completo aprovado;
+3. validar se o histórico inclui a abertura/ajustes necessários e reconciliar
+   o resultado por conta com o relatório Fluxo de Caixa do Bling;
+4. investigar por que `origem.tipo` não veio na carga RAW e ajustar o
+   normalizador somente quando a forma real estiver comprovada;
+5. atualizar T02 e T01 com os resultados validados, mantendo avisos de parcial
+   quando houver dados faltantes.
+
+BK-062 continua em **30%** (70% restante) e o projeto em **12,3%** (87,7%
+restante); esta auditoria identifica causas, mas não conclui integração nem
+homologação. Evidência sanitizada:
+[`T02-BLING-SALDO-SCHEMA-2026-11-03.md`](evidence/T02-BLING-SALDO-SCHEMA-2026-11-03.md).
+
 ### T02 — auditoria do contrato de movimentos e origem — 03/11/2026
 
 Conferi o OpenAPI oficial atual da API Bling. `GET /caixas` fornece a origem do

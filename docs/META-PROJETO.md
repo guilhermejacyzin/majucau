@@ -46,6 +46,18 @@ Fluxo de Caixa. A captura não é uma fonte contínua nem informa toda a série
 diária. A T02 continua em 5% e a média geral permanece em 12,1% concluída / 87,9%
 restante. Evidência: `docs/evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md`.
 
+### Contrato público de saldo bancário — 02/11/2026
+
+Na especificação OpenAPI atual, `GET /caixas` lista lançamentos; o campo
+`saldo` é uma marcação `S`/`N` de ajuste após o lançamento, não o saldo
+bancário. `GET /contas-contabeis` lista contas por ID, descrição, tipo e alias,
+sem valor de saldo. Também não encontrei rota documentada para o relatório
+Fluxo de Caixa. Assim, a API consultada não fornece ainda uma fonte confirmada
+para o saldo bancário atual nem para o relatório. Não vou calcular o saldo
+somando movimentos parciais nem preencher a T02 com vencimentos. Próxima
+investigação: identificar fontes oficiais para os dois resultados e validá-las
+contra o Bling. Evidência: `docs/evidence/BLING-CASH-FLOW-REPORT-READING-2026-11-02.md`.
+
 ### Investigação de fonte automática do relatório — 03/11/2026
 
 Conferi também a página oficial do Bling MCP. Ela descreve consultas feitas por

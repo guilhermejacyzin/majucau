@@ -68,6 +68,27 @@ um relatório de referência antes de publicar como confirmado. Se não houver
 contrato oficial ou equivalência demonstrada, a integração permanece pendente;
 não se inventa endpoint nem se troca silenciosamente a fonte.
 
+## Contrato público atual de caixas e bancos — 02/11/2026
+
+Conferi a especificação OpenAPI publicada na página oficial da referência. Os
+recursos de caixa/financeiro encontrados incluem `GET /caixas` (lista de
+lançamentos), `GET /contas-contabeis` (lista contas financeiras), `GET
+/contas/receber` e `GET /contas/pagar`. A especificação consultada não contém
+rotas identificadas como relatório ou fluxo de caixa.
+
+O item de `GET /caixas` inclui lançamento, valor, data, conta financeira e o
+campo `saldo`. A descrição oficial desse campo é uma marcação `S`/`N` para
+indicar se existe ajuste de saldo após o lançamento; ele não é o valor de saldo
+da conta. Já a resposta de `GET /contas-contabeis` informa ID, descrição, tipo e
+alias da conta financeira, sem valor de saldo. Portanto, os endpoints públicos
+consultados não comprovam uma fonte para o saldo bancário atual do Itaú ou do
+Mercado Pago. A tela continua mostrando esse resultado como indisponível até
+uma fonte compatível ser encontrada; não se deve somar o histórico parcial de
+movimentos como se fosse o saldo.
+
+Referência oficial: <https://developer.bling.com.br/referencia> (especificação
+OpenAPI e contratos dos recursos).
+
 ## Próxima etapa técnica
 
 Implementar e validar a ingestão do resultado de Fluxo de Caixa do Bling,

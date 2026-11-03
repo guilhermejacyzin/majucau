@@ -241,21 +241,24 @@ regra financeira foi alterado nesta rechecagem.
 
 ## Contas financeiras incluídas na atualização diária — 03/11/2026
 
-A API oficial também possui o recurso de consulta de Contas Financeiras. Foi
-acrescentada a leitura paginada de `GET /contas-contabeis` à atualização diária,
-com páginas brutas versionadas e retomáveis no mesmo mecanismo seguro já usado
-pelas outras fontes. A conclusão diária agora exige esse retrato RAW junto dos
-retratos já exigidos; se a leitura falhar, as demais fontes continuam sendo
-tentadas e o lote permanece incompleto para poder ser retomado.
+#### Normalização dos IDs das contas — 03/11/2026
 
-Essa etapa identifica as contas por seus registros no Bling, mas não calcula
-saldo, não lê saldo de abertura e não muda projeções. Os dados ainda não foram
-normalizados nem ligados à T02. Para completar o resultado equivalente ao
-relatório ainda faltam consumir as contas e formas de pagamento nos títulos,
-reproduzir os períodos/valores do relatório, validar o float e a data/saldo de
-abertura e ligar a série existente ao snapshot da T02. O saldo bancário continua
-separado e não recebe valor de projeção.
+O retrato da API agora também valida e normaliza `id` + `descricao` para uma
+tabela consultável, preservando o vínculo com a resposta original. Essa ligação
+permite reconhecer Itaú e Mercado Pago quando um título ou movimento traz o ID
+da conta. A atualização diária exige que essa normalização termine; um lote só
+RAW não é considerado concluído. A gravação é idempotente por conexão + ID da
+conta e permanece na mesma publicação transacional do snapshot.
 
-Verificação local: testes do conector Bling, domínio financeiro e código SQLC
-passaram. A verificação completa do repositório e a CI deste commit precisam
-terminar antes de considerar esta entrega publicada.
+Isso é metadado de conta, não saldo. Não lê saldo atual ou de abertura e não
+altera projeções ou telas. Ainda falta compor a série do relatório com as fontes
+oficiais, validar datas/valores contra o Fluxo de Caixa do Bling, obter o saldo
+bancário em Caixa e Bancos e ligar a série já composta ao snapshot da T02. O
+saldo bancário segue separado do projetado.
+
+Verificações desta etapa: testes unitários para identidade válida e respostas
+inválidas, teste de integração PostgreSQL preparado para exigir o estágio
+`NORMALIZED`, `go vet`, geração SQLC, limites de dependências Go e checksum da
+migration. Os testes Go locais passaram. O teste PostgreSQL foi pulado aqui
+porque `MAJUCAU_TEST_DATABASE_URL` não está configurada; a CI precisa executá-lo
+antes de considerar esta entrega validada no repositório remoto.

@@ -85,6 +85,18 @@ type BlingCashMovement struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
+// Read-only Bling account identities used to match report-selected accounts; contains no balance or movement.
+type BlingFinancialAccountIdentity struct {
+	ID           pgtype.UUID        `json:"id"`
+	ConnectionID pgtype.UUID        `json:"connection_id"`
+	SyncBatchID  pgtype.UUID        `json:"sync_batch_id"`
+	SourceID     string             `json:"source_id"`
+	Description  string             `json:"description"`
+	RawRecordID  pgtype.UUID        `json:"raw_record_id"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
 // Typed read-only Bling payment-method settings used to reproduce the official cash-flow report; *_known flags distinguish source values from stored zero defaults.
 type BlingPaymentMethodTerm struct {
 	ID                pgtype.UUID        `json:"id"`

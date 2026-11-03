@@ -62,6 +62,7 @@ BEGIN
       'public.raw_records',
       'public.bling_cash_movements',
       'public.bling_payment_method_terms',
+      'public.bling_financial_account_identities',
       'public.receivable_sync_snapshot_rows',
       'public.payable_sync_snapshot_rows',
       'public.receipts',
@@ -87,6 +88,7 @@ BEGIN
       'public.sync_cursors',
       'public.bling_cash_movements',
       'public.bling_payment_method_terms',
+      'public.bling_financial_account_identities',
       'public.receivable_sync_snapshot_rows',
       'public.raw_records',
       'public.payable_sync_snapshot_rows',
@@ -105,6 +107,7 @@ BEGIN
       'public.google_drive_source_validation_runs',
       'public.bling_cash_movements',
       'public.bling_payment_method_terms',
+      'public.bling_financial_account_identities',
       'public.payables',
       'public.receipts',
       'public.receivables'

@@ -112,6 +112,13 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 		VALUES ($1, $2, 'SUCCESS', clock_timestamp(), $3, 'RAW_ONLY')`, connection.ID, FinancialAccountsAPIResource, correlation); err != nil {
 		t.Fatalf("seed completed %s batch: %v", FinancialAccountsAPIResource, err)
 	}
+	result, skipped, err = service.SyncDaily(ctx, scheduledAt)
+	if err == nil || skipped || result.Status == "SUCCESS" {
+		t.Fatalf("RAW-only financial-account identities were accepted as complete: result=%+v skipped=%v error=%v", result, skipped, err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE correlation_id = $1 AND resource = $2`, correlation, FinancialAccountsAPIResource); err != nil {
+		t.Fatalf("mark financial-account fixture as normalized: %v", err)
+	}
 	for attempt := 0; attempt < 2; attempt++ {
 		result, skipped, err = service.SyncDaily(ctx, scheduledAt)
 		if err != nil || !skipped || result.Status != "SUCCESS" {

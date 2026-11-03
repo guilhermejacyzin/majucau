@@ -26,6 +26,7 @@ GRANT SELECT ON TABLE
   raw_records,
   bling_cash_movements,
   bling_payment_method_terms,
+  bling_financial_account_identities,
   receivable_sync_snapshot_rows,
   payable_sync_snapshot_rows,
   receipts,
@@ -47,7 +48,8 @@ GRANT INSERT, UPDATE ON TABLE
   receivables,
   payables,
   bling_cash_movements,
-  bling_payment_method_terms
+  bling_payment_method_terms,
+  bling_financial_account_identities
 TO majucau_runtime;
 GRANT INSERT ON TABLE
   raw_records,

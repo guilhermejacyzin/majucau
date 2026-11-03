@@ -1980,14 +1980,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "Atualizado em 03/11: cálculo de taxa líquida/prazo, leitura tipada do destino da forma de pagamento, conferidor e agrupador da série diária em períodos domingo-sábado implementados. Só destino conhecido 1 (Contas a Receber/Pagar) é elegível para previsão; destinos 2/3 ou ausentes não são presumidos. Testes focados, go vet e CI #41578030443 passaram. A rechecagem do protótipo confirma métricas parciais de receber/pagar na T01, porém a série da T02 continua vazia. A captura é somente oráculo de teste; não é dado de produção. Ainda falta compor a série por APIs oficiais, comparar resultado real, obter saldo inicial e ligar snapshot à tela. Evidência: docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md.",
+    "evidence": "Atualizado em 03/11: cálculo de taxa líquida/prazo, leitura tipada do destino da forma de pagamento, conferidor e agrupador da série diária em períodos domingo-sábado implementados. Só destino conhecido 1 (Contas a Receber/Pagar) é elegível para previsão; destinos 2/3 ou ausentes não são presumidos. IDs e descrições das contas financeiras agora são normalizados com evidência RAW, e a carga diária exige esta etapa. Testes Go locais e checks passaram; integração PostgreSQL local foi pulada porque não há MAJUCAU_TEST_DATABASE_URL. A rechecagem do protótipo confirma métricas parciais de receber/pagar na T01, porém a série da T02 continua vazia. A captura é somente oráculo de teste; não é dado de produção. Ainda falta compor a série por APIs oficiais, comparar resultado real, obter saldo inicial e ligar snapshot à tela. Evidência: docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md.",
     "weight": 1,
     "dependencies": [
       "BK-061",
       "BK-028",
       "BK-012"
     ],
-    "progress": 0.13
+    "progress": 0.15
   },
   {
     "key": "historicalcost",

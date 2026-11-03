@@ -9,9 +9,9 @@ Atualização de 19/10/2026: implementação e testes locais agora cobrem valida
 
 **Atualização de escopo — 31/10/2026:** T05 — Conciliação foi retirada como tela independente. BK-055 fica no catálogo para registrar a decisão, com situação “Fora do escopo”, e não entra na evolução geral; são 126 tarefas ativas. A média das estimativas atuais dessas 126 tarefas é 11,9% concluída (88,1% restante). As regras internas de correspondência permanecem.
 
-**Atualização do andamento — 03/11/2026:** o catálogo mantém 126 tarefas ativas: 7 concluídas, 23 em andamento e 96 não iniciadas. BK-025 permanece em 80%. BK-058 e BK-059 estão em 5% cada após a implementação parcial do sinal negativo para saídas a pagar; BK-062 está em 15% após também persistir os termos tipados das formas de pagamento no lote diário. Restam 95% em BK-058/BK-059 e 85% em BK-062; faltam composição/ligação da série, saldo inicial, comparação com dados reais e conferência das telas. A CI #41578030443 passou. A média estimada continua **12,1% concluída e 87,9% restante**; não significa homologação.
+**Atualização do andamento — 03/11/2026:** o catálogo mantém 126 tarefas ativas: 7 concluídas, 23 em andamento e 96 não iniciadas. BK-025 permanece em 80%. BK-058 e BK-059 estão em 5% cada após a implementação parcial do sinal negativo para saídas a pagar; BK-062 está em 15% após também persistir os termos tipados das formas de pagamento no lote diário. Restam 95% em BK-058/BK-059 e 85% em BK-062; faltam composição/ligação da série, saldo inicial, comparação com dados reais e conferência das telas. A CI #41578030443 passou. A média estimada continua **12,2% concluída e 87,8% restante**; não significa homologação.
 - O backlog tem 126 tarefas: 7 concluídas, 23 em andamento e 96 não iniciadas. BK-055 está fora do escopo e não entra na contagem ativa.
-- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,1%; restam 87,9%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
+- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,2%; restam 87,8%. É uma estimativa do backlog, não uma medição de esforço nem prova de prontidão.
 
 Adendo aprovado em 04/10/2026, registrado no `G0-DECISION-REGISTER.md`: o Majucau calculará sua própria DRE com regras contábeis aprovadas; a DRE pronta do Bling deixa de ser tratada como resultado final. Este adendo substitui os trechos conflitantes abaixo. Princípios para estoque, produção e CPV/CMV foram recebidos e organizados em `docs/DRE-ACCOUNTING-POLICY-v1.md`; o mapeamento por conta/operação, os critérios específicos da empresa e os dados de origem continuam pendentes de validação contábil.
 
@@ -435,7 +435,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 ### Estado atualizado do backlog — 02/11/2026
 
 - O backlog tem 126 tarefas: 7 concluídas, 23 em andamento e 96 não iniciadas. BK-055 permanece no catálogo como fora do escopo e não entra na contagem ativa. BK-058 e BK-059 estão em 5% cada; BK-062 continua em 5%.
-- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,1%; restam 87,9%. BK-025 está em 80% (20% restante); proteção e checks obrigatórios da branch ainda dependem de uma pessoa administradora.
+- Pela média simples do rastreador, soma dos percentuais das tarefas ativas ÷ 126 = 12,2%; restam 87,8%. BK-025 está em 80% (20% restante); proteção e checks obrigatórios da branch ainda dependem de uma pessoa administradora.
 
 ## 00 Descoberta e decisões
 

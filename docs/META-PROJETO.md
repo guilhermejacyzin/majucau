@@ -6,7 +6,7 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 15% após persistência tipada das regras das formas de pagamento. A série ainda não alimenta o banco nem a T02. A CI anterior [#41580354208](https://github.com/guilhermejacyzin/majucau/actions/runs/41580354208) concluiu verde; esta mudança aguarda validação. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 15% após persistência tipada das regras das formas de pagamento. A série ainda não alimenta o banco nem a T02. A CI anterior [#41580354208](https://github.com/guilhermejacyzin/majucau/actions/runs/41580354208) concluiu verde; esta mudança aguarda validação. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
 ### T02 — persistência das condições das formas de pagamento — 03/11/2026
@@ -17,7 +17,7 @@ como completa após normalizar os dados; isso evita descartar taxa, prazo,
 destino e configuração de dias úteis que influenciam o relatório de Fluxo de
 Caixa. Os campos ausentes continuam marcados como desconhecidos. Os testes Go
 direcionados passaram. BK-062 avança de 13% para 15%; a média do projeto mantém
-12,1% concluídos e 87,9% restantes após arredondamento. A série de caixa ainda
+12,2% concluídos e 87,8% restantes após arredondamento. A série de caixa ainda
 não é composta nem aparece na T02; saldo inicial, dias úteis/feriados,
 comparação com o relatório atualizado e ligação visual continuam pendentes.
 Evidência: `docs/evidence/T02-PAYMENT-METHOD-NORMALIZATION-2026-11-03.md`.
@@ -40,6 +40,23 @@ em 12,1% concluído (87,9% restante). A CI e a atualização do protótipo ainda
 precisam concluir.
 
 Evidência: `docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.
+
+### T02 — ligação entre ID e nome da conta — 03/11/2026
+
+Avanço local: a resposta de contas do Bling agora é validada e guardada de
+forma tipada (ID + descrição), ligada à resposta original. A atualização diária
+passa a exigir que essa fonte esteja normalizada; receber só a resposta bruta
+não basta para encerrar o processo. Isso prepara a seleção das contas Itaú e
+Mercado Pago usada no relatório Fluxo de Caixa. Não é saldo e ainda não alimenta
+a série ou a tela 02.
+
+Verificações locais: testes Go do conector Bling e do cálculo financeiro,
+`go vet`, geração SQLC, limites Go, checksum da migration e `git diff --check`
+passaram. O teste que exige PostgreSQL foi incluído, mas não rodou aqui porque
+`MAJUCAU_TEST_DATABASE_URL` não está configurada. Esta migration ainda não foi
+aplicada ao protótipo e esta alteração ainda precisa ser publicada e validada na
+CI. BK-062 segue em 15%; o projeto segue em 12,2% concluído / 87,8% restante,
+pois ainda não há série composta e visível.
 
 ### T02 — agrupamento semanal do fluxo — 03/11/2026
 

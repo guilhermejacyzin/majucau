@@ -221,3 +221,9 @@ a Receber ou Caixas e Bancos. `go test ./internal/integrations/bling` passou
 localmente. A T02 continua sem projeção publicada e BK-062 fica em 5% até haver
 cálculo conectado, conferência com o relatório real e resultados visíveis.
 Evidência: [fonte de configuração das formas de pagamento](./evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md).
+
+### Continuação — ligação das contas financeiras — 03/11/2026
+
+Para reproduzir o mesmo relatório por API oficial, a T02 precisa reconhecer quais contas foram selecionadas no Bling. Acrescentei a normalização do ID e do nome da conta, com vínculo à resposta de origem e atualização idempotente. A carga diária agora exige essa etapa normalizada para ser considerada concluída. Isso prepara a correspondência de Itaú/Mercado Pago; não cria saldo nem preenche a projeção.
+
+`go test ./internal/integrations/bling ./internal/financial ./database/gen`, `go vet ./internal/integrations/bling`, `scripts/verify-go-boundaries.ps1`, `scripts/verify-migrations.ps1` e `git diff --check` passaram. A integração PostgreSQL foi pulada localmente por falta de `MAJUCAU_TEST_DATABASE_URL`. Ainda falta aplicar a migration ao protótipo, compor e conferir a série via API, ligá-la ao snapshot/T02 e validar no app. A tela aprovada e as regras financeiras permanecem intactas. BK-062 segue em 15%; o projeto segue em 12,2% concluído / 87,8% restante. Evidência: [T02 e relatório Fluxo de Caixa](./evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md).

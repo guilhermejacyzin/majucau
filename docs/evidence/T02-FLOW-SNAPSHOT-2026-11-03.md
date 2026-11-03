@@ -134,8 +134,12 @@ homologação dos valores contra o relatório de referência.
 - O cliente IPC local confirmou a resposta do worker, sem imprimir dados de
   clientes. A tela atualizada também foi conferida pelo estado de acessibilidade
   do protótipo.
-- CI 41587012467 — passou em todos os trabalhos: governança, testes Go,
-  integração PostgreSQL, frontend, build desktop e smoke Windows do serviço.
+- CI 41587012467 — passou em todos os trabalhos da etapa anterior: governança,
+  testes Go, integração PostgreSQL, frontend, build desktop e smoke Windows do
+  serviço. Não incluiu a correção Wails descrita acima.
+- A CI 41606565666 do commit `eff46fe` falhou no verificador de mensagem; os
+  trabalhos de produto ficaram pulados. A mensagem está sendo corrigida para
+  repetir a CI; até lá, a correção tem apenas validação local.
 - A CI anterior 41586134294 havia encontrado o identificador do serviço de teste
   ainda aberto durante a limpeza; o smoke foi corrigido e a nova CI confirmou a
   remoção segura.

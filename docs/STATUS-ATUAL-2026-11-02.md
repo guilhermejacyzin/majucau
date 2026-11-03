@@ -30,6 +30,14 @@ saldo inicial/float e concluir indicadores derivados. O serviço retorna
 BK-062 está em 25% (75% restante); projeto em 12,2% (87,8% restante).
 Detalhes e próximos passos: [evidência T02](./evidence/T02-FLOW-SNAPSHOT-2026-11-03.md).
 
+## CI do commit `eff46fe` — 03/11/2026
+
+A execução [41606565666](https://github.com/guilhermejacyzin/majucau/actions/runs/41606565666)
+falhou no verificador dos campos da mensagem do commit. Os trabalhos de produto
+para Windows e PostgreSQL foram pulados; portanto, essa execução não validou a
+correção. Os testes Go/frontend e o build Wails passaram localmente. A mensagem
+está sendo corrigida e a CI será repetida.
+
 > **Nota de leitura:** o conteúdo abaixo desta atualização preserva o histórico
 > das demais frentes e diagnósticos anteriores. Quando ele disser que T02 não
 > tem valores, que o catálogo de contas precisa ser liberado ou que não há série,

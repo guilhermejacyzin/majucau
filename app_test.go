@@ -104,6 +104,19 @@ func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
 	if got.CashFlow == nil || got.CashFlow.InflowsNext30Days != input.CashFlow.InflowsNext30Days || got.CashFlow.OutflowsNext30Days != input.CashFlow.OutflowsNext30Days || len(got.CashFlow.Days) != 1 || got.CashFlow.Days[0] != input.CashFlow.Days[0] {
 		t.Fatalf("cash-flow report composition was lost in Wails mapping: got %+v, want %+v", got.CashFlow, input.CashFlow)
 	}
+
+	encoded, err := json.Marshal(got)
+	if err != nil {
+		t.Fatalf("marshal Wails dashboard snapshot: %v", err)
+	}
+	var payload map[string]json.RawMessage
+	if err := json.Unmarshal(encoded, &payload); err != nil {
+		t.Fatalf("decode Wails dashboard snapshot: %v", err)
+	}
+	var serializedFlow application.DashboardCashFlow
+	if raw, ok := payload["cash_flow"]; !ok || json.Unmarshal(raw, &serializedFlow) != nil || serializedFlow.InflowsNext30Days != input.CashFlow.InflowsNext30Days || len(serializedFlow.Days) != 1 {
+		t.Fatalf("cash_flow JSON contract was not preserved: %s", encoded)
+	}
 }
 
 func TestDecodeDashboardSnapshotLimitsBytesAndRejectsTrailingJSON(t *testing.T) {

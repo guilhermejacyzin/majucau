@@ -16,13 +16,17 @@ O DTO das contas financeiras não tem saldo inicial nem saldo atual. Portanto, o
 
 ## O que a Central de Ajuda confirma
 
-Ao cadastrar uma conta financeira, o Bling pede um saldo inicial e uma data de início. A ajuda também informa que não existe integração automática de movimentações bancárias para essas contas: o controle é interno ao ERP. Fonte: [Como cadastrar contas financeiras no Bling](https://ajuda.bling.com.br/hc/pt-br/articles/34491885650839-Como-cadastrar-contas-financeiras-no-Bling).
+Ao cadastrar uma conta financeira, o Bling pede um saldo inicial e uma data de início. Ajustar o saldo cria um registro de histórico dentro do Bling; isso não altera o saldo real do banco. O próprio Bling descreve suas contas como controle interno e informa que elas não sincronizam automaticamente os movimentos bancários. Fontes oficiais: [Como cadastrar contas financeiras no Bling](https://ajuda.bling.com.br/hc/pt-br/articles/34491885650839-Como-cadastrar-contas-financeiras-no-Bling) e [Como ajustar o registro de saldo da conta](https://ajuda.bling.com.br/hc/pt-br/articles/29903710138263-Como-ajustar-o-registro-de-saldo-da-conta-no-Bling).
+
+O Bling também explica que o relatório Fluxo de Caixa projeta entradas e saídas futuras a partir de contas a pagar e a receber e considera as condições da forma de pagamento para calcular o valor líquido esperado: [Relatórios do Bling](https://ajuda.bling.com.br/hc/pt-br/articles/10448301650455-Relat%C3%B3rios-do-Bling) e [controle de taxas e previsão de recebíveis](https://ajuda.bling.com.br/hc/pt-br/articles/360035872974-Como-controlar-as-taxas-que-pago-sobre-algumas-formas-de-pagamento-no-Bling).
 
 ## Efeito na T02
 
 O fluxo da T02 consegue usar os lançamentos e títulos da API para compor entradas e saídas futuras. A API pública consultada, porém, não entrega o saldo atual pronto nem o saldo inicial usado pelo relatório. O histórico sincronizado pela T02 começa em 01/01/2026 para atender ao histórico aprovado de CAPEX; ele não comprova, sozinho, o saldo de abertura anterior a essa data.
 
 Na implementação atual, `readStreamSummary` define `cash_balance` como `UNAVAILABLE` e não popula `bank_balances`. O contrato desses campos já existe, mas não há um cálculo de saldo por conta conectado à leitura de `GET /caixas`. Somar somente os movimentos desde 01/01/2026 produziria a variação líquida daquele período, não o saldo atual, a menos que o saldo de abertura dessa data também fosse comprovado.
+
+Também consultei a tabela normalizada local sem ler nem exibir valores, nomes ou IDs: havia 31.032 movimentos entre 01/01/2026 e 30/10/2026; o campo `origin_type` estava vazio em todos. Isso não prova que não existam saldos iniciais ou ajustes no Bling, mas mostra que o histórico já sincronizado não permite identificá-los por esse campo. A próxima conferência precisa verificar o início efetivo de cada conta e se a API fornece os respectivos registros de abertura/ajuste; não se deve somar o histórico desde 01/01/2026 como se fosse o saldo atual.
 
 Assim, continuam indisponíveis o saldo atual do Itaú, o saldo atual do Mercado Pago, o menor saldo e o saldo projetado. A permissão de leitura aprovada para Contas Financeiras permitirá identificar as contas no catálogo, mas não supre, por si só, o saldo inicial/atual ausente no contrato documentado. Não usei o saldo do relatório como saldo bancário nem estimei valores. A composição da T02 segue Parcial e BK-062 permanece em 30% até demonstrar posição por conta e equivalência com o relatório.
 
@@ -31,5 +35,5 @@ Assim, continuam indisponíveis o saldo atual do Itaú, o saldo atual do Mercado
 Depois de a permissão ser aplicada e o Majucau ser autorizado novamente:
 
 1. sincronizar o catálogo para identificar as contas Itaú e Mercado Pago;
-2. verificar, por evidência da API e do relatório do Bling, se há movimento de abertura utilizável antes de 01/01/2026;
+2. verificar, por evidência da API e do relatório do Bling, a data de início e o saldo inicial de cada conta e se os registros de abertura/ajuste aparecem em `GET /caixas`;
 3. somente se a abertura estiver comprovada, calcular e reconciliar o saldo por conta; caso contrário, manter os saldos indisponíveis até existir uma fonte aprovada que os forneça.

@@ -28,8 +28,8 @@ Majucau. Não houve mudança de tela aprovada ou regra financeira.
 O commit `de536bd` está no GitHub. A CI completa `41625219772` terminou com
 sucesso: passaram a verificação de backlog, os testes e validações Windows, a
 compilação do app/worker/instalador e as verificações PostgreSQL, incluindo
-criação e restauração de backup. O commit documental mais recente `2900a9c`
-também passou nas checagens de mensagem e backlog; por conter apenas
+criação e restauração de backup. Os commits documentais `2900a9c` e `a07a703`
+passaram nas checagens de mensagem e backlog; por conterem apenas
 documentação, os trabalhos de produto foram pulados. Evidência:
 [`T02-RUNTIME-REFRESH-2026-11-03.md`](evidence/T02-RUNTIME-REFRESH-2026-11-03.md).
 
@@ -42,8 +42,11 @@ lançamento, não como valor monetário. O cadastro `GET /contas-contabeis` traz
 identidade/configuração, também sem saldo atual ou inicial. Assim, habilitar a
 permissão aprovada permite identificar as contas Itaú e Mercado Pago, mas o
 valor atual ainda depende de provar uma composição com saldo de abertura ou
-localizar uma fonte oficial adicional. Atualizei a evidência para distinguir a
-listagem do detalhe e evitar tratar o indicador `saldo` como dinheiro. Fonte:
+localizar uma fonte oficial adicional. A leitura agregada da tabela local
+encontrou 31.032 movimentos (01/01/2026–30/10/2026), todos sem `origin_type`;
+isso não comprova ausência de ajustes no Bling, mas o histórico local não os
+identifica por esse campo. Atualizei a evidência para distinguir a listagem do
+detalhe e evitar tratar o indicador `saldo` como dinheiro. Fonte:
 [Referência oficial da API Bling](https://developer.bling.com.br/referencia).
 
 ### T02 — auditoria do saldo por banco — 03/11/2026, 07:50 BRT

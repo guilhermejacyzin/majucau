@@ -2087,6 +2087,8 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 **Atualização técnica adicional — 03/11/2026:** a captura do OpenAPI confirmou os campos `formaPagamento.id`, `portador.id` e `contaContabil.id` nos contratos de receber/pagar aplicáveis. IDs de forma e de conta agora são guardados separadamente como referências opcionais para a composição futura; não entram em cálculo ainda. Migration `000019` e código SQL gerado incluídos. Testes focais do Bling, `go vet`, limites de arquitetura e checksums passaram localmente. A CI do commit anterior falhou somente no smoke de ciclo de vida do serviço Windows (`WORKER_SERVICE_WAIT_FOR_RUNNING`), embora o diagnóstico tenha visto o serviço em `Running`; essa falha não foi atribuída a esta mudança e ainda precisa ser revalidada. A T02 continua 5% até mostrar e conferir resultados reais. Evidência: `docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.
 
+**Decisão de fonte — 03/11/2026:** a responsável escolheu somente API oficial direta; o relatório CSV/XLS no Drive não foi aprovado. A OpenAPI consultada não lista endpoint do relatório pronto e a sessão Chrome permaneceu indisponível para leitura. A composição pelas APIs oficiais ainda requer confirmação funcional antes de calcular; até lá T02 permanece pendente, sem números estimados. Evidência: `docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.
+
 **Objetivo:** Apresentar a posição e os próximos compromissos.
 
 **O que fazer:** Construir cartões, gráfico combinado, semana crítica e alertas, usando o resultado do Fluxo de Caixa do Bling. Não ligar os cards de vencimento da T03/T04 diretamente à T02.

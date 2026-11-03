@@ -1,5 +1,21 @@
 # Meta do Majucau
 
+### T02 — teste real da conexão Bling — 03/11/2026, 07:17 BRT
+
+Regra reafirmada: a T02 deve mostrar o resultado do relatório **Fluxo de Caixa
+do Bling**, reproduzido com dados obtidos diretamente pela API oficial. Os
+totais simples das telas T03/T04 não substituem esse resultado. A tela T01 deve
+reutilizar o mesmo resultado da T02.
+
+O worker executou o teste de conexão pela API oficial e recebeu uma linha de
+`GET /contas/receber` (`pagina=1`, `limite=1`). Isso confirma que a autorização
+salva permite uma leitura real, mas não é a sincronização diária completa nem
+confirma os valores da T02. Às 07:17, o protótipo ainda mostrava a última carga
+de 05:25; a atualização diária das 09:30 ainda era futura. A T02 continua
+parcial até a publicação da carga completa e comparação com o relatório. Não
+houve alteração de regra financeira ou tela. Evidência:
+[`T02-BLING-API-CONNECTION-TEST-2026-11-03.md`](evidence/T02-BLING-API-CONNECTION-TEST-2026-11-03.md).
+
 ## Meta ativa no Codex — atualização de 03/11/2026
 
 - **Objetivo:** entregar um protótipo funcional e homologável até **30/11/2026**.

@@ -28,11 +28,12 @@ foi estimado.
   de `artifacts/verification/majucau-wails-20261103`.
 - Compilação Windows do worker (`go build ./cmd/worker`) e do instalador
   auxiliar (`go build ./cmd/installer-helper`) — passou na mesma cópia.
-- CI do commit documental `4a4eabf` — o verificador do backlog passou; a etapa
-  de checagem da mensagem falhou porque os campos obrigatórios precisam estar
-  no corpo, não no título. Por essa falha, os jobs Windows e PostgreSQL foram
-  pulados. A próxima mensagem foi ajustada para deixar os campos no corpo; a
-  CI desse novo commit ainda precisa terminar.
+- CI do commit `1d01742` — o verificador do backlog passou; a etapa de checagem
+  da mensagem falhou e os jobs Windows e PostgreSQL foram pulados. A inspeção
+  local confirmou que os campos ficaram no título multilinha e o corpo do
+  commit estava vazio. Portanto, a tentativa anterior de corrigir a mensagem
+  não funcionou. O próximo commit deve usar um título curto e colocar os campos
+  obrigatórios no corpo.
 
 Os comandos frontend foram executados na cópia isolada
 `artifacts/verification/frontend-tests-20261103`, porque o `frontend/node_modules`
@@ -46,7 +47,9 @@ completa ainda não foi executada após esta mudança.
 
 O dado continua Parcial até completar a permissão somente de leitura de Contas
 Financeiras, executar a sincronização diária das 09:30 e comparar todas as
-faixas e saldos com o relatório Fluxo de Caixa do Bling. A permissão não foi
-alterada nesta execução: o controle do navegador não conseguiu confirmar a
-página de cadastro ativa. O quadro não confirma saldo inicial, float ou
-reserva.
+faixas e saldos com o relatório Fluxo de Caixa do Bling. Em 03/11/2026, a
+responsável aprovou habilitar somente leitura para Contas Financeiras. A
+permissão ainda não foi alterada: esta sessão não tem controle operacional da
+tela de cadastro do aplicativo Bling para aplicar a mudança. Depois de habilitar
+a permissão, será necessário autorizar o Majucau novamente e conferir a carga.
+O quadro não confirma saldo inicial, float ou reserva.

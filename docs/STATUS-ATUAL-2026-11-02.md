@@ -100,6 +100,21 @@ lista um endpoint de relatório de Fluxo de Caixa. Portanto, não marquei a
 integração do relatório como concluída nem usei os números da imagem como se
 fossem atualização automática. Evidência: [leitura visual do relatório](./evidence/BLING-CASH-FLOW-REPORT-READING-2026-11-02.md).
 
+### Correção parcial das projeções de 30 dias — 03/11/2026
+
+Os cards da T02 “Entradas 30 dias” e “Saídas 30 dias” agora recebem seus
+componentes previstos do retrato diário já normalizado: títulos a receber do
+Bling mais recebimentos futuros do Nuvem Pago sem duplicidade; títulos em aberto
+do Bling para pagar, com sinal negativo. A janela inclui a data-base e termina
+antes do 30º dia seguinte. Na interface, ambos aparecem como **Parcial · A
+receber/A pagar**, pois ainda não representam todo o relatório de Fluxo de Caixa
+que a usuária mostrou.
+
+O gráfico, a semana crítica, o menor saldo projetado e o saldo atual por banco
+continuam sem cálculo completo. Não inferi saldo bancário a partir dos
+movimentos. A T02 ainda não está pronta nem homologada. Ver [evidência dos
+componentes de 30 dias e verificações](./evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md).
+
 Relatório técnico completo, com evidências e limitações: [auditoria do caminho dos dados do Bling](./evidence/BLING-DATA-PROJECTION-AUDIT-2026-11-02.md).
 
 ## Ajustes adicionais de conteúdo solicitados
@@ -135,6 +150,27 @@ A captura anterior da prévia `127.0.0.1:4179` mostrava um valor geral sem perí
 **Verificações:** `go test ./internal/dashboard` passou; `npm run build` passou em `artifacts/verification/frontend-live`. A prévia estática recebeu o frontend atualizado. O progresso geral permanece **12,1% concluído / 87,9% restante**.
 
 **Próximo passo:** reiniciar o protótipo conectado com o worker atualizado, conferir Contas a Pagar em 90 dias e implementar/validar a normalização de Contas a Receber.
+
+### T02 — correção da entrega dos componentes de 30 dias — 03/11/2026
+
+A tela 02 deve reproduzir o relatório **Fluxo de Caixa** do Bling. O relatório
+mostrado pela responsável é a referência do resultado e da apresentação que
+precisam ser conferidos. O saldo atual continua vindo de **Caixas e Bancos**;
+contas a pagar/receber são fontes para compor partes das entradas e saídas,
+mas não substituem o fluxo completo.
+
+Foi encontrada e corrigida a causa da tela não receber as novas métricas de 30
+dias: o cálculo existia no worker, mas os campos não estavam incluídos na
+resposta Wails enviada à interface. A resposta agora leva os campos de entrada
+e saída e há um teste de regressão para essa passagem. Os cartões continuam
+marcados como parciais até a série, semana crítica e saldos projetados serem
+reconstruídos e comparados com o relatório. O saldo bancário não será inferido
+de movimentos.
+
+**Verificação local:** `go test -count=1 . ./internal/dashboard
+./internal/application` passou. A validação PostgreSQL e a atualização/abertura
+do executável Wails ainda precisam ocorrer para confirmar os valores na
+instância conectada. Evidência: [T02 componentes e ponte Wails](./evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md).
 
 ### Continuação — preparação da integração de Contas a Receber
 

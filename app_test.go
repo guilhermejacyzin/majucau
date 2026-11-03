@@ -80,6 +80,20 @@ func TestGetDashboardSnapshotRejectsNonStreamingClient(t *testing.T) {
 	}
 }
 
+func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
+	input := application.DashboardSnapshot{
+		ReceivablesDueNext30Days: application.DashboardMetric{Value: "123.45", State: "PARTIAL"},
+		PayablesDueNext30Days:    application.DashboardMetric{Value: "-67.89", State: "PARTIAL"},
+	}
+	got := wailsDashboardSnapshot(input)
+	if got.ReceivablesDueNext30Days.Value != input.ReceivablesDueNext30Days.Value || got.ReceivablesDueNext30Days.State != input.ReceivablesDueNext30Days.State {
+		t.Fatalf("receivables due in 30 days were lost in Wails mapping: got %+v", got.ReceivablesDueNext30Days)
+	}
+	if got.PayablesDueNext30Days.Value != input.PayablesDueNext30Days.Value || got.PayablesDueNext30Days.State != input.PayablesDueNext30Days.State {
+		t.Fatalf("payables due in 30 days were lost in Wails mapping: got %+v", got.PayablesDueNext30Days)
+	}
+}
+
 func TestDecodeDashboardSnapshotLimitsBytesAndRejectsTrailingJSON(t *testing.T) {
 	valid := `{"data_state":"CONFIRMED"}`
 	got, tooLarge, err := decodeDashboardSnapshot(strings.NewReader(valid), int64(len(valid)))

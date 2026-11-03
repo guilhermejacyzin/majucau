@@ -98,6 +98,33 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(screen.getByText('SALDO ATUAL').closest('article')).toHaveTextContent('4.500,00')
   })
 
+  it('mostra na T02 somente os totais Bling dos próximos 30 dias', () => {
+    const unavailable = { state: 'UNAVAILABLE' as const }
+    const snapshot: DashboardSnapshot = {
+      as_of: '2026-11-02T12:00:00Z',
+      data_state: 'PARTIAL',
+      receivables: unavailable,
+      future_b2c: unavailable,
+      receipts_month: unavailable,
+      receivables_overdue: unavailable,
+      receivables_due_next_90_days: { value: '999.00', state: 'CONFIRMED', source_system: 'BLING' },
+      receivables_due_next_30_days: { value: '125.00', state: 'CONFIRMED', source_system: 'BLING + NUVEM_PAGO' },
+      payables: unavailable,
+      payables_due_today: unavailable,
+      payables_overdue: unavailable,
+      payables_due_next_7_days: unavailable,
+      payables_due_next_90_days: { value: '-800.00', state: 'CONFIRMED', source_system: 'BLING' },
+      payables_due_next_30_days: { value: '-80.00', state: 'PARTIAL', source_system: 'BLING' },
+      payments_month: unavailable,
+    }
+    render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
+
+    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('125,00')
+    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('Parcial · A receber')
+    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('80,00')
+    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('Parcial · A pagar')
+  })
+
   it('identifica como parcial o valor incompleto sem mudar a identificação dos demais cards', () => {
     const unavailable = { state: 'UNAVAILABLE' as const }
     const snapshot: DashboardSnapshot = {

@@ -129,8 +129,8 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read summary with current Nuvem and no normalized Bling: %v", err)
 	}
-	if snapshot.Receivables.State != "PARTIAL" || snapshot.Receivables.Value != "97" || snapshot.Receivables.Count != 1 || snapshot.ReceivablesDueNext90Days.State != "PARTIAL" || snapshot.ReceivablesDueNext90Days.Value != "97" || snapshot.ReceivablesDueNext90Days.Count != 1 {
-		t.Fatalf("current Nuvem subtotal must be visible as partial until Bling completes: total=%+v due90=%+v", snapshot.Receivables, snapshot.ReceivablesDueNext90Days)
+	if snapshot.Receivables.State != "PARTIAL" || snapshot.Receivables.Value != "97" || snapshot.Receivables.Count != 1 || snapshot.ReceivablesDueNext90Days.State != "PARTIAL" || snapshot.ReceivablesDueNext90Days.Value != "97" || snapshot.ReceivablesDueNext90Days.Count != 1 || snapshot.ReceivablesDueNext30Days.State != "PARTIAL" || snapshot.ReceivablesDueNext30Days.Value != "97" || snapshot.ReceivablesDueNext30Days.Count != 1 {
+		t.Fatalf("current Nuvem subtotal must be visible as partial until Bling completes: total=%+v due90=%+v due30=%+v", snapshot.Receivables, snapshot.ReceivablesDueNext90Days, snapshot.ReceivablesDueNext30Days)
 	}
 	for _, resource := range []string{"contas.receber", "contas.pagar"} {
 		if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE connection_id = $1::uuid AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID); err != nil {
@@ -167,6 +167,9 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.ReceivablesDueNext90Days.Value != "147" || snapshot.ReceivablesDueNext90Days.Count != 2 {
 		t.Fatalf("next 90 day receivables should pair one Bling/Nuvem match by name and gross value without using date, while retaining a different value: %+v", snapshot.ReceivablesDueNext90Days)
+	}
+	if snapshot.ReceivablesDueNext30Days.Value != "147" || snapshot.ReceivablesDueNext30Days.Count != 2 {
+		t.Fatalf("next 30 day receivables should use the same approved one-to-one cross-source matching: %+v", snapshot.ReceivablesDueNext30Days)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil || snapshot.Receivables.State != "CONFIRMED" || snapshot.ReceivablesDueNext90Days.State != "CONFIRMED" {
@@ -245,6 +248,9 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.PayablesDueNext90Days.State != "CONFIRMED" || snapshot.PayablesDueNext90Days.Value != "-310" || snapshot.PayablesDueNext90Days.Count != 5 {
 		t.Fatalf("next 90 day payables = %+v, want -R$ 310 across five open titles including today", snapshot.PayablesDueNext90Days)
+	}
+	if snapshot.PayablesDueNext30Days.State != "CONFIRMED" || snapshot.PayablesDueNext30Days.Value != "-310" || snapshot.PayablesDueNext30Days.Count != 5 {
+		t.Fatalf("next 30 day payables = %+v, want -R$ 310 across five open titles including today", snapshot.PayablesDueNext30Days)
 	}
 	if snapshot.PayablesDueToday.State != "CONFIRMED" || snapshot.PayablesDueToday.Value != "-220" || snapshot.PayablesDueToday.Count != 2 {
 		t.Fatalf("today's aging should ignore canceled titles and retain current and legacy outflows: %+v, want -R$ 220 from 2 rows", snapshot.PayablesDueToday)

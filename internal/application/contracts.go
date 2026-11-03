@@ -258,11 +258,13 @@ type DashboardSnapshot struct {
 	ReceiptsMonth            DashboardMetric          `json:"receipts_month"`
 	ReceivablesOverdue       DashboardMetric          `json:"receivables_overdue"`
 	ReceivablesDueNext90Days DashboardMetric          `json:"receivables_due_next_90_days"`
+	ReceivablesDueNext30Days DashboardMetric          `json:"receivables_due_next_30_days"`
 	Payables                 DashboardMetric          `json:"payables"`
 	PayablesDueToday         DashboardMetric          `json:"payables_due_today"`
 	PayablesOverdue          DashboardMetric          `json:"payables_overdue"`
 	PayablesDueNext7Days     DashboardMetric          `json:"payables_due_next_7_days"`
 	PayablesDueNext90Days    DashboardMetric          `json:"payables_due_next_90_days"`
+	PayablesDueNext30Days    DashboardMetric          `json:"payables_due_next_30_days"`
 	CashBalance              DashboardMetric          `json:"cash_balance"`
 	BankBalances             []DashboardBankBalance   `json:"bank_balances,omitempty"`
 	PaymentsMonth            DashboardMetric          `json:"payments_month"`

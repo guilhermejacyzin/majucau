@@ -54,11 +54,13 @@ type WailsDashboardSnapshot struct {
 	ReceiptsMonth            application.DashboardMetric          `json:"receipts_month"`
 	ReceivablesOverdue       application.DashboardMetric          `json:"receivables_overdue"`
 	ReceivablesDueNext90Days application.DashboardMetric          `json:"receivables_due_next_90_days"`
+	ReceivablesDueNext30Days application.DashboardMetric          `json:"receivables_due_next_30_days"`
 	Payables                 application.DashboardMetric          `json:"payables"`
 	PayablesDueToday         application.DashboardMetric          `json:"payables_due_today"`
 	PayablesOverdue          application.DashboardMetric          `json:"payables_overdue"`
 	PayablesDueNext7Days     application.DashboardMetric          `json:"payables_due_next_7_days"`
 	PayablesDueNext90Days    application.DashboardMetric          `json:"payables_due_next_90_days"`
+	PayablesDueNext30Days    application.DashboardMetric          `json:"payables_due_next_30_days"`
 	CashBalance              application.DashboardMetric          `json:"cash_balance"`
 	BankBalances             []application.DashboardBankBalance   `json:"bank_balances,omitempty"`
 	PaymentsMonth            application.DashboardMetric          `json:"payments_month"`
@@ -128,11 +130,13 @@ func wailsDashboardSnapshot(value application.DashboardSnapshot) WailsDashboardS
 		ReceiptsMonth:            value.ReceiptsMonth,
 		ReceivablesOverdue:       value.ReceivablesOverdue,
 		ReceivablesDueNext90Days: value.ReceivablesDueNext90Days,
+		ReceivablesDueNext30Days: value.ReceivablesDueNext30Days,
 		Payables:                 value.Payables,
 		PayablesDueToday:         value.PayablesDueToday,
 		PayablesOverdue:          value.PayablesOverdue,
 		PayablesDueNext7Days:     value.PayablesDueNext7Days,
 		PayablesDueNext90Days:    value.PayablesDueNext90Days,
+		PayablesDueNext30Days:    value.PayablesDueNext30Days,
 		CashBalance:              value.CashBalance,
 		BankBalances:             value.BankBalances,
 		PaymentsMonth:            value.PaymentsMonth,

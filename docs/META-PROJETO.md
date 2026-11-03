@@ -1,6 +1,6 @@
 # Meta do Majucau
 
-## Meta ativa no Codex — atualização de 02/11/2026
+## Meta ativa no Codex — atualização de 03/11/2026
 
 - **Objetivo:** entregar um protótipo funcional e homologável até **30/11/2026**.
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
@@ -8,6 +8,25 @@
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
 - **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. A suíte PostgreSQL isolada passou localmente e a CI [#41535352924](https://github.com/guilhermejacyzin/majucau/actions/runs/41535352924) passou em Windows e PostgreSQL, incluindo migrations, integrações, build e pacote. A CI do ajuste posterior de movimentos parciais apontou apenas que o modelo `sqlc` gerado precisava ser incluído; corrigi isso no commit `8ffcff1` e a CI [#41545653326](https://github.com/guilhermejacyzin/majucau/actions/runs/41545653326) está em execução. Ainda faltam atualizar o protótipo, sincronizar os dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
+
+### Progresso T02: componentes de 30 dias — 03/11/2026
+
+Preparei no worker duas métricas de vencimento para a T02, separadas das janelas
+de 90 dias: títulos previstos a receber (com Nuvem Pago deduplicado pela regra
+aprovada) e títulos previstos a pagar (com sinal negativo). A interface passou a
+mostrar esses componentes nos cards existentes com a indicação **Parcial · A
+receber/A pagar**. Eles não são apresentados como se fossem o relatório
+completo do Fluxo de Caixa.
+
+Os testes Go focados, `go vet`, os 19 testes direcionados do frontend,
+`tsc --noEmit` e `vite build` passaram em ambiente isolado. A consulta de
+integração PostgreSQL não foi executada localmente porque
+`MAJUCAU_TEST_DATABASE_URL` não está configurada. A mudança ainda não foi
+aplicada ao executável Wails nem comparada com o relatório real; a T02 continua
+incompleta e BK-062 permanece em 5%, assim como o progresso geral segue em
+12,1% concluído / 87,9% restante. Faltam a série do gráfico, o saldo oficial por
+banco, semana crítica, menores saldos 30/60 e comparação completa com a fonte
+aprovada. Evidência: `docs/evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md`.
 
 ### Correção de fontes do fluxo e avisos da Visão Executiva — 02/11/2026
 
@@ -254,3 +273,14 @@ Uma consulta somente de leitura ao banco isolado confirmou 15 cargas Bling de Co
 Antes de avançar para a pasta 03, foi concluída a validação da importação de recebimentos futuros da pasta 02. A cópia local do CSV foi validada e importada no banco isolado do protótipo; T03 e T01 agora refletem o mesmo resultado **Parcial**. A migration 000018 e os privilégios foram aplicados/verificados no banco local. A igualdade do arquivo do Drive e da cópia local ainda não foi demonstrada por hash, pois o Drive bloqueou o download nesta sessão; a rotina automática diária do Drive também segue pendente de credencial técnica. Não alterei o desenho aprovado nem regra financeira e não iniciei a pasta 03.
 
 O progresso geral do backlog permanece **12,1% concluído / 87,9% restante** até que os pesos e critérios oficiais das tarefas sejam reavaliados. Evidência atualizada: [status de 02/11](./STATUS-ATUAL-2026-11-02.md) e [normalização de recebíveis](./evidence/BLING-RECEIVABLE-NORMALIZATION-2026-11-02.md).
+### Atualização T02 — 03/11/2026
+
+A T02 é a tela do relatório **Fluxo de Caixa**. A captura enviada é a referência
+para reproduzir e conferir o resultado; o saldo bancário oficial permanece em
+**Caixas e Bancos**. Corrigida a ponte Wails que descartava as duas métricas
+parciais de entradas/saídas de 30 dias calculadas pelo worker. Elas agora podem
+chegar à interface com estado parcial. Isso não conclui a T02: faltam a série
+completa, semana crítica, projeções de saldo e comparação integral com o
+relatório. O backlog geral permanece 12,1% concluído / 87,9% restante até nova
+avaliação dos critérios oficiais. Ver
+[evidência T02](./evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md).

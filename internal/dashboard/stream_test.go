@@ -216,7 +216,7 @@ func TestWriteDashboardSnapshotHidesBlingDataUntilTodaysScheduledLoadCompletes(t
 	asOf := time.Date(2026, 9, 21, 13, 0, 0, 0, time.UTC)
 	values := dashboardSummaryValues()
 	values[19], values[20], values[22] = nil, nil, nil
-	values[30] = true // The same-day Nuvem import is not complete either.
+	values[34] = true // The same-day Nuvem import is not complete either.
 	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
 	reader := &Reader{db: &scriptedDashboardDB{tx: tx}, now: func() time.Time { return asOf }}
 	var output bytes.Buffer
@@ -259,11 +259,13 @@ func TestReadStreamSummaryKeepsEmptySourcesUnavailableInsteadOfZero(t *testing.T
 		{name: "receipts this month", metric: snapshot.ReceiptsMonth},
 		{name: "receivables overdue", metric: snapshot.ReceivablesOverdue},
 		{name: "receivables due next 90 days", metric: snapshot.ReceivablesDueNext90Days},
+		{name: "receivables due next 30 days", metric: snapshot.ReceivablesDueNext30Days},
 		{name: "payables", metric: snapshot.Payables},
 		{name: "payables due today", metric: snapshot.PayablesDueToday},
 		{name: "payables overdue", metric: snapshot.PayablesOverdue},
 		{name: "payables due next 7 days", metric: snapshot.PayablesDueNext7Days},
 		{name: "payables due next 90 days", metric: snapshot.PayablesDueNext90Days},
+		{name: "payables due next 30 days", metric: snapshot.PayablesDueNext30Days},
 		{name: "payments this month", metric: snapshot.PaymentsMonth},
 	}
 	for _, item := range metrics {
@@ -281,11 +283,14 @@ func TestReadStreamSummaryShowsOnlyFreshNuvemReceivablesAsPartial(t *testing.T) 
 	values[0], values[1] = "999999.0000", int64(900)   // stale mixed total
 	values[2], values[3] = "148970.0400", int64(635)   // current Nuvem future subtotal
 	values[26], values[27] = "999999.0000", int64(900) // stale blended 90-day total
-	values[30] = false                                 // successful, normalized Nuvem import today
-	values[31], values[32] = "900000.0000", int64(200) // stale Bling total, ignored
-	values[33], values[34] = "0.0000", int64(0)
-	values[35], values[36] = "800000.0000", int64(100) // stale Bling 90-day subtotal, ignored
-	values[37], values[38] = "148970.0400", int64(635)
+	values[28], values[29] = "999999.0000", int64(900) // stale blended 30-day total
+	values[34] = false                                 // successful, normalized Nuvem import today
+	values[35], values[36] = "900000.0000", int64(200) // stale Bling total, ignored
+	values[37], values[38] = "0.0000", int64(0)
+	values[39], values[40] = "800000.0000", int64(100) // stale Bling 90-day subtotal, ignored
+	values[41], values[42] = "148970.0400", int64(635)
+	values[43], values[44] = "700000.0000", int64(100) // stale Bling 30-day subtotal, ignored
+	values[45], values[46] = "148970.0400", int64(635)
 	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
 	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
 	if err != nil {
@@ -297,6 +302,7 @@ func TestReadStreamSummaryShowsOnlyFreshNuvemReceivablesAsPartial(t *testing.T) 
 	}{
 		{name: "receivables", metric: snapshot.Receivables},
 		{name: "receivables due next 90 days", metric: snapshot.ReceivablesDueNext90Days},
+		{name: "receivables due next 30 days", metric: snapshot.ReceivablesDueNext30Days},
 	} {
 		if item.metric.State != "PARTIAL" || item.metric.Value != "148970.0400" || item.metric.Count != 635 {
 			t.Errorf("%s = %+v, want only the current Nuvem subtotal marked partial", item.name, item.metric)
@@ -309,7 +315,7 @@ func TestReadStreamSummaryConfirmsZeroAfterSuccessfulNormalizedBlingAndNuvemLoad
 	asOf := time.Date(2026, 10, 19, 16, 0, 0, 0, time.UTC)
 	values := emptyDashboardSummaryValues()
 	values[18], values[19], values[20], values[22] = finishedAt, finishedAt, finishedAt, finishedAt
-	values[30] = false            // Same-day Nuvem import completed successfully.
+	values[34] = false            // Same-day Nuvem import completed successfully.
 	values[len(values)-1] = false // Bling receivables import is not partial.
 	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
 	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
@@ -325,9 +331,11 @@ func TestReadStreamSummaryConfirmsZeroAfterSuccessfulNormalizedBlingAndNuvemLoad
 	}{
 		{name: "receivables", metric: snapshot.Receivables},
 		{name: "receivables due next 90 days", metric: snapshot.ReceivablesDueNext90Days},
+		{name: "receivables due next 30 days", metric: snapshot.ReceivablesDueNext30Days},
 		{name: "receipts this month", metric: snapshot.ReceiptsMonth},
 		{name: "payables", metric: snapshot.Payables},
 		{name: "payables due next 90 days", metric: snapshot.PayablesDueNext90Days},
+		{name: "payables due next 30 days", metric: snapshot.PayablesDueNext30Days},
 		{name: "payables due today", metric: snapshot.PayablesDueToday},
 		{name: "payables overdue", metric: snapshot.PayablesOverdue},
 		{name: "payables due next 7 days", metric: snapshot.PayablesDueNext7Days},
@@ -494,8 +502,8 @@ func dashboardSummaryValues() []any {
 		"-80.0000", int64(2), "-10.0000", int64(1), "-4.0000", int64(1),
 		"30.0000", int64(1), int64(2), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
 		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false, time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false,
-		"-35.0000", int64(2), "40.0000", int64(1), "-75.0000", int64(3), false,
-		"100.0000", int64(2), "5.0000", int64(1), "40.0000", int64(1), "40.0000", int64(1), false,
+		"-35.0000", int64(2), "40.0000", int64(1), "40.0000", int64(1), "-75.0000", int64(3), "-40.0000", int64(2), false,
+		"100.0000", int64(2), "5.0000", int64(1), "40.0000", int64(1), "40.0000", int64(1), "5.0000", int64(1), "40.0000", int64(1), false,
 	}
 }
 
@@ -505,8 +513,8 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), int64(0), nil, nil, nil, false, nil, false,
-		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), true,
-		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), false,
+		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), true,
+		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), false,
 	}
 }
 

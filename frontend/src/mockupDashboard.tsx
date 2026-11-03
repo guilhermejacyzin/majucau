@@ -92,8 +92,6 @@ function payableTableRow(row: DashboardPayableRow): string[] {
 function metricForCard(screen: MockupScreenKey, label: string, snapshot?: DashboardSnapshot): DashboardMetric | undefined {
   if (!snapshot) return undefined
   if ((screen === 'executive' || screen === 'cashflow') && label === 'SALDO ATUAL') return snapshot.cash_balance
-  if (screen === 'cashflow' && label === 'ENTRADAS 30 DIAS') return snapshot.receivables_due_next_30_days
-  if (screen === 'cashflow' && label === 'SAÍDAS 30 DIAS') return snapshot.payables_due_next_30_days
   if (screen === 'executive' && label === 'A RECEBER') return snapshot.receivables_due_next_90_days
   if (screen === 'executive' && label === 'A PAGAR') return snapshot.payables_due_next_90_days
   if (screen === 'receivables' && label === 'TOTAL A RECEBER') return snapshot.receivables
@@ -111,12 +109,6 @@ function metricForCard(screen: MockupScreenKey, label: string, snapshot?: Dashbo
 function withSnapshot(screen: MockupScreenKey, card: Card, snapshot?: DashboardSnapshot): Card {
   const metric = metricForCard(screen, card.label, snapshot)
   if (metric?.state === 'UNAVAILABLE' || !metric?.value) return card
-  if (screen === 'cashflow' && card.label === 'ENTRADAS 30 DIAS') {
-    return { ...card, value: metric.value, supporting: 'Parcial · A receber' }
-  }
-  if (screen === 'cashflow' && card.label === 'SAÍDAS 30 DIAS') {
-    return { ...card, value: metric.value, supporting: 'Parcial · A pagar' }
-  }
   return {
     ...card,
     value: metric.value,

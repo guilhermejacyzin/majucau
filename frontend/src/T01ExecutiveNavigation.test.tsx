@@ -98,7 +98,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(screen.getByText('SALDO ATUAL').closest('article')).toHaveTextContent('4.500,00')
   })
 
-  it('mostra na T02 somente os totais Bling dos próximos 30 dias', () => {
+  it('não substitui os valores do Fluxo de Caixa por totais de Contas a Receber/Pagar', () => {
     const unavailable = { state: 'UNAVAILABLE' as const }
     const snapshot: DashboardSnapshot = {
       as_of: '2026-11-02T12:00:00Z',
@@ -119,10 +119,12 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     }
     render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
 
-    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('125,00')
-    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('Parcial · A receber')
-    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('80,00')
-    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('Parcial · A pagar')
+    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('—')
+    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('—')
+    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('Realizado + previsto')
+    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('Compromissos e pagamentos')
+    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).not.toHaveTextContent('125,00')
+    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).not.toHaveTextContent('80,00')
   })
 
   it('identifica como parcial o valor incompleto sem mudar a identificação dos demais cards', () => {

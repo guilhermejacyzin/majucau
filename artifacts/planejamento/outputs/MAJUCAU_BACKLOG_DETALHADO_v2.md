@@ -2081,7 +2081,7 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 
 ### BK-062 — Implementar T02 Fluxo de Caixa
 
-**Situação:** Em andamento. **Evolução:** 5% (estimativa; além de normalizar movimentos realizados do Bling, o backend agora prepara os componentes de vencimentos a receber/a pagar em 30 dias e a interface os identifica como parciais. Ainda não está aplicado ao protótipo nem conferido com o relatório do Bling. Saldos por banco, projeção D0–D+60, gráfico, semana crítica, demais detalhes e conferência real ainda faltam). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
+**Situação:** Em andamento. **Evolução:** 5% (estimativa; movimentos realizados de `/caixas` foram normalizados, mas a revisão confirmou que essa API e os totais de vencimentos de Contas a Receber/Pagar não substituem o relatório Fluxo de Caixa definido como fonte da T02. A interface não apresenta vencimentos de 30 dias como resultado do relatório. Falta uma fonte automática validada para o relatório, além de saldos por banco, projeção D0–D+60, gráfico, semana crítica e conferência real). **Tipo:** Desenvolvimento. **Responsável sugerido:** Engenharia.
 
 **Objetivo:** Apresentar a posição e os próximos compromissos.
 

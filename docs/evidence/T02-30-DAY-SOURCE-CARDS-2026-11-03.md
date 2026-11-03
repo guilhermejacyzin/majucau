@@ -50,3 +50,22 @@ incluído neste documento.
 
 Esta é uma ligação parcial dos componentes previstos de 30 dias. Não conclui a
 T02, não prova os totais do relatório completo e não homologa o protótipo.
+
+## Correção da fonte na interface — 03/11/2026
+
+Na revisão seguinte, foi confirmado que a interface ainda consumia essas duas
+métricas como valor dos cards T02. Isso contradiz a regra registrada para a
+tela: **Entradas 30 dias** e **Saídas 30 dias** devem refletir o relatório
+Fluxo de Caixa do Bling; as telas de Contas a Receber/Pagar não substituem esse
+relatório. A ligação foi removida da interface e a regressão frontend foi
+ajustada para garantir que os valores de vencimentos 30 dias não apareçam na
+T02. O desenho dos cards não foi alterado. Os campos calculados no backend
+continuam pertencendo às métricas de vencimento e não são uma fonte validada
+para o Fluxo de Caixa.
+
+A captura de referência contém totais semanais, insuficientes para extrair
+automaticamente cada dia da janela móvel. A documentação pública consultada
+lista recursos de Caixa e Bancos e de Contas a Pagar/Receber, mas não um endpoint
+documentado para o relatório Fluxo de Caixa. Portanto, os cards permanecem sem
+valor até existir uma fonte automática aprovada e validada; não se usa a imagem
+nem uma soma de outras telas como dado atual. A T02 permanece incompleta.

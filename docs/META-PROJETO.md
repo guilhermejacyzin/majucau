@@ -6,10 +6,10 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. A suíte PostgreSQL isolada passou localmente e a CI [#41535352924](https://github.com/guilhermejacyzin/majucau/actions/runs/41535352924) passou em Windows e PostgreSQL, incluindo migrations, integrações, build e pacote. A CI do ajuste posterior de movimentos parciais apontou apenas que o modelo `sqlc` gerado precisava ser incluído; corrigi isso no commit `8ffcff1` e a CI [#41545653326](https://github.com/guilhermejacyzin/majucau/actions/runs/41545653326) está em execução. Ainda faltam atualizar o protótipo, sincronizar os dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. A suíte PostgreSQL isolada passou localmente e a CI [#41535352924](https://github.com/guilhermejacyzin/majucau/actions/runs/41535352924) passou em Windows e PostgreSQL, incluindo migrations, integrações, build e pacote. A CI do ajuste posterior de movimentos parciais apontou apenas que o modelo `sqlc` gerado precisava ser incluído; corrigi isso no commit `8ffcff1` e a CI [#41545653326](https://github.com/guilhermejacyzin/majucau/actions/runs/41545653326) está em execução. Ainda faltam obter e ligar o resultado do relatório Fluxo de Caixa do Bling, atualizar o protótipo, sincronizar os dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
-### Progresso T02: componentes de 30 dias — 03/11/2026
+### Histórico — componentes de vencimento na T02 — 03/11/2026 (corrigido abaixo)
 
 Preparei no worker duas métricas de vencimento para a T02, separadas das janelas
 de 90 dias: títulos previstos a receber (com Nuvem Pago deduplicado pela regra
@@ -24,9 +24,27 @@ integração PostgreSQL não foi executada localmente porque
 `MAJUCAU_TEST_DATABASE_URL` não está configurada. A mudança ainda não foi
 aplicada ao executável Wails nem comparada com o relatório real; a T02 continua
 incompleta e BK-062 permanece em 5%, assim como o progresso geral segue em
-12,1% concluído / 87,9% restante. Faltam a série do gráfico, o saldo oficial por
+12,1% concluído / 87,9% restante. A ligação desses valores aos cards foi
+retirada na revisão posterior porque vencimentos não substituem o relatório.
+Faltam a fonte automática do relatório, a série do gráfico, o saldo oficial por
 banco, semana crítica, menores saldos 30/60 e comparação completa com a fonte
 aprovada. Evidência: `docs/evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md`.
+
+### Correção da fonte dos cards T02 — 03/11/2026
+
+Na revisão do código, encontrei que a interface ainda ligava “Entradas 30 dias”
+ao total de vencimentos a receber e “Saídas 30 dias” ao total de vencimentos a
+pagar. Essa ligação não cumpre a regra aprovada: os dois cards devem refletir o
+relatório Fluxo de Caixa do Bling, e Caixas e Bancos fornece somente os saldos
+por instituição. Retirei essa associação da interface; enquanto o resultado
+oficial do relatório não estiver disponível, esses cards permanecem sem valor,
+em vez de exibir totais de outras telas como substitutos. Os indicadores de
+Contas a Receber/Pagar continuam disponíveis em suas telas próprias.
+
+A referência pública da API consultada não documenta um endpoint do relatório
+Fluxo de Caixa. A captura não é uma fonte contínua nem informa toda a série
+diária. A T02 continua em 5% e a média geral permanece em 12,1% concluída / 87,9%
+restante. Evidência: `docs/evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md`.
 
 ### Correção de fontes do fluxo e avisos da Visão Executiva — 02/11/2026
 

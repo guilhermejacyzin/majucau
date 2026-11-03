@@ -100,15 +100,12 @@ lista um endpoint de relatório de Fluxo de Caixa. Portanto, não marquei a
 integração do relatório como concluída nem usei os números da imagem como se
 fossem atualização automática. Evidência: [leitura visual do relatório](./evidence/BLING-CASH-FLOW-REPORT-READING-2026-11-02.md).
 
-### Correção parcial das projeções de 30 dias — 03/11/2026
+### Histórico — projeções provisórias de 30 dias — 03/11/2026 (corrigidas abaixo)
 
-Os cards da T02 “Entradas 30 dias” e “Saídas 30 dias” agora recebem seus
-componentes previstos do retrato diário já normalizado: títulos a receber do
-Bling mais recebimentos futuros do Nuvem Pago sem duplicidade; títulos em aberto
-do Bling para pagar, com sinal negativo. A janela inclui a data-base e termina
-antes do 30º dia seguinte. Na interface, ambos aparecem como **Parcial · A
-receber/A pagar**, pois ainda não representam todo o relatório de Fluxo de Caixa
-que a usuária mostrou.
+Naquela implementação provisória, os cards receberam vencimentos de Contas a
+Receber/Pagar. A revisão posterior confirmou que isso não respeita a fonte
+aprovada da T02 e removeu a ligação. Este trecho é histórico; a correção vigente
+está registrada na seção “Correção da fonte dos valores T02” abaixo.
 
 O gráfico, a semana crítica, o menor saldo projetado e o saldo atual por banco
 continuam sem cálculo completo. Não inferi saldo bancário a partir dos
@@ -151,26 +148,36 @@ A captura anterior da prévia `127.0.0.1:4179` mostrava um valor geral sem perí
 
 **Próximo passo:** reiniciar o protótipo conectado com o worker atualizado, conferir Contas a Pagar em 90 dias e implementar/validar a normalização de Contas a Receber.
 
-### T02 — correção da entrega dos componentes de 30 dias — 03/11/2026
+### Histórico — ponte dos componentes de 30 dias da T02 — 03/11/2026 (corrigida abaixo)
 
 A tela 02 deve reproduzir o relatório **Fluxo de Caixa** do Bling. O relatório
 mostrado pela responsável é a referência do resultado e da apresentação que
 precisam ser conferidos. O saldo atual continua vindo de **Caixas e Bancos**;
-contas a pagar/receber são fontes para compor partes das entradas e saídas,
-mas não substituem o fluxo completo.
+contas a pagar/receber não substituem o resultado desse relatório.
 
-Foi encontrada e corrigida a causa da tela não receber as novas métricas de 30
-dias: o cálculo existia no worker, mas os campos não estavam incluídos na
-resposta Wails enviada à interface. A resposta agora leva os campos de entrada
-e saída e há um teste de regressão para essa passagem. Os cartões continuam
-marcados como parciais até a série, semana crítica e saldos projetados serem
-reconstruídos e comparados com o relatório. O saldo bancário não será inferido
-de movimentos.
+Naquele momento, a ponte Wails passou a transportar as métricas de vencimento
+de 30 dias até a interface. Depois, foi identificada e removida a ligação que
+usava esses valores nos cards do Fluxo de Caixa, pois eles não substituem o
+relatório aprovado. A correção vigente está na seção abaixo.
 
 **Verificação local:** `go test -count=1 . ./internal/dashboard
 ./internal/application` passou. A validação PostgreSQL e a atualização/abertura
 do executável Wails ainda precisam ocorrer para confirmar os valores na
 instância conectada. Evidência: [T02 componentes e ponte Wails](./evidence/T02-30-DAY-SOURCE-CARDS-2026-11-03.md).
+
+### Correção da fonte dos valores T02 — 03/11/2026
+
+A T02 deve refletir o relatório **Fluxo de Caixa** do Bling. Os cards “Entradas
+30 dias” e “Saídas 30 dias” estavam ligados aos totais de vencimentos nas telas
+de Contas a Receber e Contas a Pagar; removi essa ligação. Enquanto a fonte
+oficial do relatório não estiver conectada, os cards mostram “—”, preservando
+seu desenho e os dados próprios nas telas de origem. **Caixas e Bancos continua
+sendo a fonte somente dos saldos por instituição.**
+
+A referência pública da API consultada não documenta um endpoint do relatório
+Fluxo de Caixa, então a integração automática ainda não foi resolvida. A T02
+continua em 5%; o projeto permanece em 12,1% concluído e 87,9% restante. Não
+houve mudança de regra financeira aprovada, e a tela não está homologada.
 
 ### Continuação — preparação da integração de Contas a Receber
 

@@ -315,6 +315,81 @@ func TestAPIResourceSyncKeepsFailureAuditAndCommitsCursorWithRAW(t *testing.T) {
 	}
 }
 
+func TestRawHistoryAllowsARecurringPayloadHash(t *testing.T) {
+	dsn := os.Getenv("MAJUCAU_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("set MAJUCAU_TEST_DATABASE_URL to run the PostgreSQL RAW history integration test")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("create PostgreSQL pool: %v", err)
+	}
+	defer pool.Close()
+	var databaseName string
+	if err := pool.QueryRow(ctx, `SELECT current_database()`).Scan(&databaseName); err != nil {
+		t.Fatalf("identify PostgreSQL database: %v", err)
+	}
+	if databaseName != "majucau_test" {
+		t.Skip("RAW history integration test only runs against the dedicated majucau_test database")
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO integration_connections(provider,status,external_account_id) VALUES('BLING','CONNECTED','raw-history-ci') ON CONFLICT(provider) DO NOTHING`); err != nil {
+		t.Fatalf("prepare Bling connection: %v", err)
+	}
+	connection, err := database.New(pool).GetIntegrationConnectionByProvider(ctx, "BLING")
+	if err != nil || !connection.ID.Valid {
+		t.Fatalf("load Bling connection: %v", err)
+	}
+	runID := strconv.FormatInt(time.Now().UnixNano(), 10)
+	resource := "ci.bling.raw_history." + runID
+	sourceEntity := "ci.bling.raw_history.page." + runID
+	payloadA := []byte(`{"page":"version-a"}`)
+	payloadB := []byte(`{"page":"version-b"}`)
+	hashABytes := sha256.Sum256(payloadA)
+	hashA := hex.EncodeToString(hashABytes[:])
+	hashBBytes := sha256.Sum256(payloadB)
+	hashB := hex.EncodeToString(hashBBytes[:])
+	writeVersion := func(payload []byte, hash string) {
+		batch, err := database.New(pool).InsertIntegrationSyncBatch(ctx, database.InsertIntegrationSyncBatchParams{ConnectionID: connection.ID, Resource: resource, DataStage: "RAW_ONLY"})
+		if err != nil {
+			t.Fatalf("create RAW version batch: %v", err)
+		}
+		tx, err := pool.Begin(ctx)
+		if err != nil {
+			t.Fatalf("begin RAW version transaction: %v", err)
+		}
+		if _, _, err := persistResourcePageWithHash(ctx, database.New(tx), connection.ID, batch.ID, 1, sourceEntity, payload, hash); err != nil {
+			_ = tx.Rollback(ctx)
+			t.Fatalf("persist RAW version %s: %v", hash, err)
+		}
+		if err := tx.Commit(ctx); err != nil {
+			t.Fatalf("commit RAW version %s: %v", hash, err)
+		}
+		status := "SUCCESS"
+		if err := database.New(pool).FinishIntegrationSyncBatch(ctx, database.FinishIntegrationSyncBatchParams{ID: batch.ID, Status: status, RecordsRead: 1, RecordsCreated: 1, RecordsUpdated: 0, RecordsFailed: 0, RetryCount: 0}); err != nil {
+			t.Fatalf("finish RAW version batch: %v", err)
+		}
+	}
+	writeVersion(payloadA, hashA)
+	writeVersion(payloadB, hashB)
+	writeVersion(payloadA, hashA)
+	var total, current int
+	if err := pool.QueryRow(ctx, `SELECT count(*),count(*) FILTER(WHERE is_current) FROM raw_records WHERE connection_id=$1 AND source_system='BLING' AND source_entity=$2 AND source_id='pagina:1'`, connection.ID, sourceEntity).Scan(&total, &current); err != nil {
+		t.Fatalf("count recurring RAW history versions: %v", err)
+	}
+	if total != 3 || current != 1 {
+		t.Fatalf("RAW history total/current = %d/%d, want 3/1", total, current)
+	}
+	var currentHash string
+	if err := pool.QueryRow(ctx, `SELECT payload_hash FROM raw_records WHERE connection_id=$1 AND source_system='BLING' AND source_entity=$2 AND source_id='pagina:1' AND is_current`, connection.ID, sourceEntity).Scan(&currentHash); err != nil {
+		t.Fatalf("read current RAW version: %v", err)
+	}
+	if currentHash != hashA {
+		t.Fatalf("current RAW hash = %q, want recurring hash %q", currentHash, hashA)
+	}
+}
+
 func TestAPIResourceSyncSerializesConcurrentRunsForSameResource(t *testing.T) {
 	dsn := os.Getenv("MAJUCAU_TEST_DATABASE_URL")
 	if dsn == "" {

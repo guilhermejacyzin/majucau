@@ -9,6 +9,28 @@
 - **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 20% com uma primeira composição parcial das entradas/saídas por API oficial, ligação ao snapshot e exibição no gráfico existente. A CI 41587012467 passou em todos os trabalhos, incluindo PostgreSQL, frontend, build desktop e smoke Windows. Ainda faltam sincronizar dados reais, comprovar equivalência com o relatório Bling e obter saldo de abertura/float. A integração e o protótipo continuam sem homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
+### T02 — reprodução do relatório de Fluxo de Caixa Bling — atualização 04:15 BRT
+
+O pedido em andamento é exibir na tela 02 a projeção equivalente ao relatório
+Fluxo de Caixa do Bling, lida pelas APIs oficiais. Corrigi dois defeitos que
+impediam a atualização de publicar: o histórico RAW agora aceita que um conteúdo
+antigo volte a ocorrer como nova versão imutável, e a consulta de leitura após
+`UNION ALL` usa a ordenação válida. A migration 000022 e o teste de recorrência
+RAW foram adicionados; a reprodução local da inserção passou e foi revertida
+para não deixar dados de teste no banco real de desenvolvimento.
+
+Uma sincronização real continua em andamento. Contas a Receber foi normalizada;
+Caixas e Bancos está Parcial por situações não informadas pelo Bling; Contas a
+Pagar segue em preparação de detalhes (página 31/102 às 04:15 BRT). Contas
+financeiras e formas de pagamento ainda não terminaram nessa execução. Por isso
+a T02 ainda não tem série nova confirmada no snapshot. Não alterei tela nem regra
+financeira. Evidência: `docs/evidence/T02-BLING-CASHFLOW-SYNC-2026-11-03.md`.
+
+**Progresso não muda:** BK-062 continua em 20% (80% restante); projeto em 12,2%
+(87,8% restante). Esses percentuais não sobem até existir uma atualização
+completa, valores visíveis na T02 e comparação com o relatório Bling usando o
+mesmo período e as mesmas opções.
+
 ### T02 — primeira ligação do fluxo de caixa ao snapshot — 03/11/2026
 
 O snapshot agora compõe uma série diária limitada a 61 datas (hoje até D+60)

@@ -1,5 +1,26 @@
 # Meta do Majucau
 
+### T02 — worker e protótipo atualizados — 03/11/2026, 08:06 BRT
+
+Encontrei o motivo de o quadro “Semana Crítica” ainda não aparecer: o worker
+ativo era anterior ao commit que o adicionou ao snapshot. Compilei e abri a
+versão atual do protótipo em uma pasta isolada, atualizei o worker e confirmei
+que a nova janela abriu normalmente. O worker voltou a consultar o PostgreSQL
+Majucau isolado, com estado de saúde `OK`.
+
+Leitura do snapshot local, sem nomes de clientes: entradas de 30 dias
+**R$ 69.994,12 — Parcial**; saídas **-R$ 262.136,32 — Parcial**; 61 dias em 9
+semanas. A semana com maior saída é 15–21/11/2026, com entradas R$ 37.383,21 e
+saídas -R$ 152.735,18. A última sincronização do Bling continua em 05:25 BRT;
+atualizar o executável não executou nova sincronização. Os valores ainda não
+estão homologados contra o relatório completo. Evidência:
+[`T02-RUNTIME-REFRESH-2026-11-03.md`](evidence/T02-RUNTIME-REFRESH-2026-11-03.md).
+
+T02 continua em 30% e o projeto em 12,3%; o refresh do executável não conclui a
+tarefa. Ainda falta comparar o relatório completo, aplicar o escopo de leitura
+de Contas Financeiras já autorizado e reautorizar o Majucau. Não houve mudança
+de tela aprovada ou regra financeira.
+
 ### T02 — contrato oficial de saldo conferido — 03/11/2026, 07:51 BRT
 
 Conferi diretamente o OpenAPI publicado do Bling. A listagem `GET /caixas`

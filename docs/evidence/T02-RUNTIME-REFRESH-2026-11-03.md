@@ -35,6 +35,9 @@ captura visual do conteúdo não foi feita nesta conferência.
 - `npm run build` — passou.
 - Build desktop Wails 2.13.0 — passou.
 - Build do worker Windows — passou.
+- CI `41625219772` — passou integralmente: backlog, Windows, PostgreSQL,
+  build do instalador e pacote portátil, verificações de segurança, e criação
+  e restauração de backup.
 - Leitura read-only via Named Pipe confirmou métricas, estados e período da
   semana crítica, sem imprimir nomes de clientes nem conteúdo RAW.
 

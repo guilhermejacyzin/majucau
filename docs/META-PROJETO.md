@@ -25,9 +25,12 @@ online. A etapa requer que a responsável habilite a leitura de Contas
 Financeiras no cadastro do aplicativo, salve e depois autorize novamente o
 Majucau. Não houve mudança de tela aprovada ou regra financeira.
 
-O commit `de536bd` está no GitHub. A verificação de mensagem e o validador do
-backlog passaram; os trabalhos Windows e PostgreSQL da CI ainda estavam em
-execução na última consulta. Evidência:
+O commit `de536bd` está no GitHub. A CI completa `41625219772` terminou com
+sucesso: passaram a verificação de backlog, os testes e validações Windows, a
+compilação do app/worker/instalador e as verificações PostgreSQL, incluindo
+criação e restauração de backup. O commit documental mais recente `2900a9c`
+também passou nas checagens de mensagem e backlog; por conter apenas
+documentação, os trabalhos de produto foram pulados. Evidência:
 [`T02-RUNTIME-REFRESH-2026-11-03.md`](evidence/T02-RUNTIME-REFRESH-2026-11-03.md).
 
 ### T02 — contrato oficial de saldo conferido — 03/11/2026, 07:51 BRT

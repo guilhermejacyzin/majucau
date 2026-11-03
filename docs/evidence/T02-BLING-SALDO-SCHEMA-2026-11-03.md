@@ -1,18 +1,18 @@
 # T02 — verificação do contrato oficial de saldo do Bling
 
 **Data da conferência:** 03/11/2026  
-**Fonte consultada:** especificação OpenAPI oficial da API Bling e Central de Ajuda oficial.  
+**Fonte consultada:** especificação OpenAPI oficial da API Bling e Central de Ajuda oficial, conferida novamente em 03/11/2026.
 **Escopo:** somente leitura; sem mudança de tela, regra financeira ou configuração da conta.
 
 ## O que a API pública retorna
 
 O contrato atual da referência oficial contém:
 
-- `GET /caixas`: lista de lançamentos com data, valor, situação, descrição, origem e conta financeira;
-- `GET /caixas/{idCaixa}`: detalhe de um lançamento;
+- `GET /caixas`: lista de lançamentos com data, valor, situação, descrição, origem e conta financeira. O contrato da lista não inclui um campo de saldo. Se não houver datas na consulta, a API limita a resposta ao mês atual; o Majucau informa 01/01/2026 como data inicial para buscar o histórico aprovado de CAPEX;
+- `GET /caixas/{idCaixa}`: detalhe de um lançamento. Esse detalhe tem `saldo` (`S`/`N`), descrito como indicador de ajuste do saldo após o lançamento; não é um valor de saldo atual nem de saldo inicial;
 - `GET /contas-contabeis` e `GET /contas-contabeis/{idContaContabil}`: identidade e configuração da conta (`id`, `descricao`, `tipo` e `aliasIntegracao`).
 
-No lançamento, o campo `saldo` é uma marcação `S`/`N` que indica se houve ajuste de saldo após aquele lançamento. **Não é o valor do saldo bancário.** O DTO das contas financeiras também não tem saldo inicial nem saldo atual. A página oficial lista esses contratos em [Referência da API Bling](https://developer.bling.com.br/referencia).
+O DTO das contas financeiras não tem saldo inicial nem saldo atual. Portanto, o escopo Contas Financeiras desbloqueia a identidade/configuração das contas, mas a referência pública não define um campo de valor de saldo para esse recurso. A página oficial lista esses contratos em [Referência da API Bling](https://developer.bling.com.br/referencia).
 
 ## O que a Central de Ajuda confirma
 

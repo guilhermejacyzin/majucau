@@ -1,5 +1,18 @@
 # Meta do Majucau
 
+### T02 — contrato oficial de saldo conferido — 03/11/2026, 07:51 BRT
+
+Conferi diretamente o OpenAPI publicado do Bling. A listagem `GET /caixas`
+traz lançamentos e dados da conta, sem um campo de saldo. O detalhe
+`GET /caixas/{idCaixa}` tem `saldo` como indicador `S`/`N` de ajuste após o
+lançamento, não como valor monetário. O cadastro `GET /contas-contabeis` traz
+identidade/configuração, também sem saldo atual ou inicial. Assim, habilitar a
+permissão aprovada permite identificar as contas Itaú e Mercado Pago, mas o
+valor atual ainda depende de provar uma composição com saldo de abertura ou
+localizar uma fonte oficial adicional. Atualizei a evidência para distinguir a
+listagem do detalhe e evitar tratar o indicador `saldo` como dinheiro. Fonte:
+[Referência oficial da API Bling](https://developer.bling.com.br/referencia).
+
 ### T02 — auditoria do saldo por banco — 03/11/2026, 07:50 BRT
 
 Encontrei uma lacuna concreta no caminho do saldo: o resumo do painel envia

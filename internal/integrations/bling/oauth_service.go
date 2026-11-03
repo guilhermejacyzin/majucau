@@ -406,6 +406,57 @@ func (s *BlingOAuthService) ensureAccessTokenLocked(ctx context.Context) (blingS
 	return bundle, nil
 }
 
+// refreshAccessTokenAfterUnauthorized refreshes only after a safe read has
+// received 401. The stored bundle is rechecked under the credential lock so
+// concurrent callers reuse a token already refreshed by another request.
+func (s *BlingOAuthService) refreshAccessTokenAfterUnauthorized(ctx context.Context, rejectedAccessToken string) (string, error) {
+	if s == nil || s.repo == nil || s.credentials == nil || s.credentials.store == nil {
+		return "", ErrBlingOAuthConfiguration
+	}
+	s.credentials.mu.Lock()
+	defer s.credentials.mu.Unlock()
+
+	connection, err := s.repo.Connection(ctx)
+	if err != nil {
+		return "", ErrBlingOAuthConfiguration
+	}
+	clientID, _, err := connectionOAuthConfig(connection)
+	if err != nil {
+		return "", err
+	}
+	bundle, err := loadBlingSecret(ctx, s.credentials.store)
+	if err != nil {
+		return "", err
+	}
+	if bundle.AccessToken == "" || bundle.RefreshToken == "" ||
+		(bundle.RefreshTokenExpiresUnix > 0 && bundle.RefreshTokenExpiresUnix <= s.now().Unix()) {
+		return "", ErrBlingOAuthNotConnected
+	}
+	if bundle.AccessToken != rejectedAccessToken {
+		return bundle.AccessToken, nil
+	}
+	oauthClient, err := NewBlingOAuthClient(s.httpClient, "")
+	if err != nil {
+		return "", err
+	}
+	refreshed, err := oauthClient.RefreshAccessToken(ctx, clientID, bundle.ClientSecret, bundle.RefreshToken)
+	if err != nil {
+		_ = s.repo.RecordTestFailure(ctx, "BLING_REFRESH_FAILED")
+		return "", err
+	}
+	bundle = updateBundleWithToken(bundle, refreshed, s.now())
+	encoded, err := json.Marshal(bundle)
+	if err != nil || s.credentials.store.Put(ctx, BlingCredentialSecretRef, encoded) != nil {
+		_ = s.repo.RecordTestFailure(ctx, "BLING_TOKEN_STORE_FAILED")
+		return "", ErrBlingOAuthStorage
+	}
+	if err := s.repo.CompleteOAuth(ctx, splitScopes(bundle.Scope), tokenExpiry(s.now(), refreshed.ExpiresIn), refreshExpiry(s.now(), bundle.RefreshToken)); err != nil {
+		_ = s.repo.RecordTestFailure(ctx, "BLING_TOKEN_METADATA_FAILED")
+		return "", ErrBlingOAuthStorage
+	}
+	return bundle.AccessToken, nil
+}
+
 // Disconnect revokes the local authorization state without deleting imported
 // financial data. The client secret remains protected so the user can
 // reconnect later; access and refresh tokens are removed from the vault.
@@ -499,6 +550,7 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 	if err != nil {
 		return BlingRawSyncResult{}, err
 	}
+	client.SetUnauthorizedTokenRefresh(s.refreshAccessTokenAfterUnauthorized)
 	notApplicable := APISyncResult{Status: "NOT_APPLICABLE"}
 	result := BlingRawSyncResult{Receivables: notApplicable, Payables: notApplicable, CashMovements: notApplicable, PaymentMethods: notApplicable, FinancialAccounts: notApplicable}
 	var cashSync, receivablesSync, payablesSync, paymentMethodsSync, financialAccountsSync func() (APISyncResult, error)

@@ -111,13 +111,23 @@ func (e *BlingAPIError) Unwrap() error {
 }
 
 type BlingAPIClient struct {
-	baseURL          *url.URL
-	httpClient       HTTPDoer
-	accessToken      string
-	maxResponseBytes int64
-	maxAttempts      int
-	wait             func(context.Context, time.Duration) error
-	random           func() float64
+	baseURL            *url.URL
+	httpClient         HTTPDoer
+	accessToken        string
+	refreshAccessToken func(context.Context, string) (string, error)
+	maxResponseBytes   int64
+	maxAttempts        int
+	wait               func(context.Context, time.Duration) error
+	random             func() float64
+}
+
+// SetUnauthorizedTokenRefresh installs a worker-side OAuth refresh callback.
+// It is invoked only after a read request receives HTTP 401; the rejected GET
+// is retried once with the newly protected access token.
+func (c *BlingAPIClient) SetUnauthorizedTokenRefresh(refresh func(context.Context, string) (string, error)) {
+	if c != nil {
+		c.refreshAccessToken = refresh
+	}
 }
 
 // NewBlingAPIClient builds a read-only Bling v3 client. The production URL is
@@ -342,6 +352,19 @@ func (c *BlingAPIClient) doFinancialResourceRequestWithoutPageLimit(req *http.Re
 
 func (c *BlingAPIClient) doFinancialResourceRequestWithLimit(req *http.Request, filter ReceivablesFilter, requestedLimitKnown bool) (BlingReceivablesPage, error) {
 	return withBlingReadRetry(req.Context(), req.Method, c.maxAttempts, c.wait, c.random, func() (BlingReceivablesPage, error) {
+		page, err := c.doFinancialResourceAttempt(req, filter, requestedLimitKnown)
+		if !errors.Is(err, ErrBlingAPIUnauthorized) || c.refreshAccessToken == nil {
+			return page, err
+		}
+		refreshedToken, refreshErr := c.refreshAccessToken(req.Context(), c.accessToken)
+		if refreshErr != nil {
+			return BlingReceivablesPage{}, errors.Join(ErrBlingAPIUnauthorized, refreshErr)
+		}
+		if strings.TrimSpace(refreshedToken) == "" || refreshedToken == c.accessToken {
+			return BlingReceivablesPage{}, ErrBlingAPIUnauthorized
+		}
+		c.accessToken = refreshedToken
+		req.Header.Set("Authorization", "Bearer "+refreshedToken)
 		return c.doFinancialResourceAttempt(req, filter, requestedLimitKnown)
 	})
 }

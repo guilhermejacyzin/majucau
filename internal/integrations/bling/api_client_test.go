@@ -80,6 +80,42 @@ func TestListReceivablesKeepsRawRecordsAndBuildsReadOnlyRequest(t *testing.T) {
 	}
 }
 
+func TestListReceivablesRefreshesExpiredAccessTokenOnce(t *testing.T) {
+	var calls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if calls == 1 {
+			if got := r.Header.Get("Authorization"); got != "Bearer expired-token" {
+				t.Errorf("first authorization = %q, want expired token", got)
+			}
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer refreshed-token" {
+			t.Errorf("retry authorization = %q, want refreshed token", got)
+		}
+		_, _ = io.WriteString(w, `{"data":[]}`)
+	}))
+	defer server.Close()
+
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "expired-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	refreshCalls := 0
+	client.SetUnauthorizedTokenRefresh(func(context.Context, string) (string, error) {
+		refreshCalls++
+		return "refreshed-token", nil
+	})
+	page, err := client.ListReceivables(context.Background(), ReceivablesFilter{Page: 1, Limit: 1})
+	if err != nil {
+		t.Fatalf("ListReceivables() after token refresh = %v", err)
+	}
+	if len(page.Records) != 0 || calls != 2 || refreshCalls != 1 {
+		t.Fatalf("records=%d requests=%d refreshes=%d, want 0/2/1", len(page.Records), calls, refreshCalls)
+	}
+}
+
 func TestListReceivablesInfersCompletionFromDocumentedPageSize(t *testing.T) {
 	for _, test := range []struct {
 		name        string

@@ -222,3 +222,19 @@ Referências oficiais consultadas em 03/11/2026:
   schema `FormasPagamentosDadosDTO.destino`.
 - [Como cadastrar uma forma de pagamento](https://ajuda.bling.com.br/hc/pt-br/articles/360035630474-Como-cadastrar-uma-forma-de-pagamento-no-Bling) — enumera os destinos.
 - [Como controlar taxas e prazos das formas de pagamento](https://ajuda.bling.com.br/hc/pt-br/articles/360035872974-Como-controlar-as-taxas-que-pago-sobre-algumas-formas-de-pagamento-no-Bling) — distingue Conta a Receber/Pagar de lançamento direto em Caixa e explica a previsão no fluxo.
+
+## Rechecagem do protótipo em execução — 03/11/2026
+
+Li a árvore de acessibilidade da janela Wails do protótipo. A Visão Executiva
+mostra dados de Contas a Receber e Contas a Pagar com indicação `Parcial ·
+Bling`; o saldo atual continua indisponível. O gráfico está em “Sem série
+confirmada” e “Sem dados confirmados”. Não copiei os valores financeiros para
+este documento.
+
+Conclusão: a sincronização já alimenta algumas métricas do painel, mas a T02
+ainda não recebe uma série de fluxo de caixa. A T02 deve exibir o mesmo
+resultado do relatório Fluxo de Caixa, reproduzido pelas APIs oficiais e
+validado contra o relatório com as contas e opções aprovadas. Os totais simples
+das telas de receber e pagar não substituem essa série; o saldo bancário segue
+separado e só pode vir da fonte aprovada de Caixa e Bancos. Nenhum desenho ou
+regra financeira foi alterado nesta rechecagem.

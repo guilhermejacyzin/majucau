@@ -6,7 +6,7 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 13% após parser de taxa/prazo/destino, conferidor de períodos e agrupador semanal. A série ainda não alimenta o banco nem a T02. A CI [#41576972828](https://github.com/guilhermejacyzin/majucau/actions/runs/41576972828) concluiu verde. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 13% após parser de taxa/prazo/destino, conferidor de períodos e agrupador semanal. A série ainda não alimenta o banco nem a T02. A CI [#41578030443](https://github.com/guilhermejacyzin/majucau/actions/runs/41578030443) concluiu verde. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
 ### T02 — agrupamento semanal do fluxo — 03/11/2026
@@ -31,6 +31,18 @@ continua 12,1% / 87,9%. Ainda falta ligar essa regra aos títulos, compor e
 conferir o resultado real do relatório, obter o saldo inicial oficial e integrar
 os dados à T02 sem alterar seu desenho. Evidência:
 `docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.
+
+### T02 — rechecagem em execução — 03/11/2026
+
+Na janela atual do protótipo, a Visão Executiva recebeu dados de Contas a
+Receber e Contas a Pagar do Bling, ambos indicados como parciais. O saldo
+bancário permaneceu indisponível e o gráfico do fluxo continuou sem série
+confirmada. Isso comprova que há dados Bling chegando a outras métricas, mas
+não comprova a composição do relatório Fluxo de Caixa. A T02 precisa apresentar
+esse mesmo resultado, reproduzido pelas APIs oficiais e conferido contra o
+relatório com as opções aprovadas; não deve substituir o resultado por totais
+simples de receber/pagar. Nenhuma tela ou regra financeira foi alterada.
+Evidência: `docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.
 
 ### Decisão de fonte da T02 — 03/11/2026
 

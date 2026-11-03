@@ -93,3 +93,31 @@ endpoint de relatório. Campos sem confirmação mantêm o estado Parcial.
 
 Referência conferida: https://developer.bling.com.br/referencia
 
+## Resultado da retomada e bloqueio restante (03/11/2026, 05:26 BRT)
+
+A nova leitura terminou e publicou os recursos independentes com estes estados:
+
+- Contas a Receber: **SUCCESS**, 14.913 registros.
+- Contas a Pagar: **PARTIAL**, 10.198 registros; registros sem categoria
+  confirmada permanecem parciais (`BLING_CATEGORY_INCOMPLETE`).
+- Caixas e Bancos: **PARTIAL**, 31.032 movimentos; faltou situação confirmada
+  em parte das linhas (`BLING_CASH_MOVEMENT_STATUS_MISSING`).
+- Formas de Pagamento: **SUCCESS**, 53 registros.
+- Contas Financeiras: **FAILED**; uma consulta direta de diagnóstico, sem
+  persistir dados, confirmou HTTP 403 e `ErrBlingAPIScopeInsufficient` para
+  `GET /contas-contabeis`.
+
+O lote de pagamentos passou da página 66, onde a execução anterior parava, e
+publicou como Parcial. A renovação reativa de token ficou coberta pelo teste
+automatizado; o token desta retomada não precisou ser renovado porque ainda
+estava válido.
+
+A T02 e a T01 continuam sem a nova série projetada porque a lista de contas
+financeiras foi bloqueada pelo escopo do aplicativo Bling. Sem essa lista, o
+Majucau não pode confirmar quais contas correspondem a Itaú e Mercado Pago.
+Não é seguro contornar o 403 nem inferir essas contas. Próximo passo: adicionar
+ao aplicativo Bling o escopo estritamente de leitura de Contas Financeiras,
+autorizar novamente no Bling e repetir a carga. Depois, conferir os valores da
+mesma janela e filtros do relatório Fluxo de Caixa. As telas e regras
+financeiras não foram alteradas.
+

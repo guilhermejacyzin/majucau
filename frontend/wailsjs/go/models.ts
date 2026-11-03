@@ -302,6 +302,20 @@ export namespace application {
 		    return a;
 		}
 	}
+	export class DashboardBankBalance {
+	    account: string;
+	    value: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardBankBalance(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.account = source["account"];
+	        this.value = source["value"];
+	    }
+	}
 	export class DashboardMetric {
 	    value?: string;
 	    count?: number;
@@ -637,9 +651,14 @@ export namespace main {
 	    future_b2c: application.DashboardMetric;
 	    receipts_month: application.DashboardMetric;
 	    receivables_overdue: application.DashboardMetric;
+	    receivables_due_next_90_days: application.DashboardMetric;
 	    payables: application.DashboardMetric;
 	    payables_due_today: application.DashboardMetric;
 	    payables_overdue: application.DashboardMetric;
+	    payables_due_next_7_days: application.DashboardMetric;
+	    payables_due_next_90_days: application.DashboardMetric;
+	    cash_balance: application.DashboardMetric;
+	    bank_balances?: application.DashboardBankBalance[];
 	    payments_month: application.DashboardMetric;
 	    capex_paid_month?: application.DashboardMetric;
 	    capex_accumulated?: application.DashboardMetric;
@@ -661,9 +680,14 @@ export namespace main {
 	        this.future_b2c = this.convertValues(source["future_b2c"], application.DashboardMetric);
 	        this.receipts_month = this.convertValues(source["receipts_month"], application.DashboardMetric);
 	        this.receivables_overdue = this.convertValues(source["receivables_overdue"], application.DashboardMetric);
+	        this.receivables_due_next_90_days = this.convertValues(source["receivables_due_next_90_days"], application.DashboardMetric);
 	        this.payables = this.convertValues(source["payables"], application.DashboardMetric);
 	        this.payables_due_today = this.convertValues(source["payables_due_today"], application.DashboardMetric);
 	        this.payables_overdue = this.convertValues(source["payables_overdue"], application.DashboardMetric);
+	        this.payables_due_next_7_days = this.convertValues(source["payables_due_next_7_days"], application.DashboardMetric);
+	        this.payables_due_next_90_days = this.convertValues(source["payables_due_next_90_days"], application.DashboardMetric);
+	        this.cash_balance = this.convertValues(source["cash_balance"], application.DashboardMetric);
+	        this.bank_balances = this.convertValues(source["bank_balances"], application.DashboardBankBalance);
 	        this.payments_month = this.convertValues(source["payments_month"], application.DashboardMetric);
 	        this.capex_paid_month = this.convertValues(source["capex_paid_month"], application.DashboardMetric);
 	        this.capex_accumulated = this.convertValues(source["capex_accumulated"], application.DashboardMetric);

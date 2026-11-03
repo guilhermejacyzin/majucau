@@ -42,5 +42,14 @@ As imagens desta tabela são referências históricas; a tela T05 foi retirada d
 exata de T1; os dois últimos são cópias exatas de T11. Permanecem preservados
 com seus nomes originais. T8 é a referência de Calculadora de Aplicação citada
 no inventário visual. A imagem executiva original de 2026-08 continua arquivada
-separadamente no baseline acima. Este registro preserva as fontes existentes;
-não muda nenhuma tela nem cria uma nova decisão de aprovação.
+separadamente no baseline acima. As imagens desta lista continuam preservadas
+como referências originais; as alterações aprovadas depois, em 02/11/2026, não
+foram aplicadas diretamente a esses arquivos históricos.
+
+## Capturas atuais do protótipo
+
+As mudanças de conteúdo aprovadas em 02/11/2026 e as capturas da implementação
+atual estão separadas em `docs/evidence/SCREEN-CONTENT-UPDATES-2026-11-02.md` e
+`docs/evidence/current-screens-2026-11-02/`. Essas capturas são do protótipo e
+não devem ser confundidas com as imagens de aprovação nem com dados financeiros
+reais.

@@ -22,6 +22,7 @@ export type BootstrapState = {
 export type DashboardMetric = { value?: string; count?: number; state: 'CONFIRMED' | 'PROJECTED' | 'PARTIAL' | 'UNAVAILABLE'; source_system?: string }
 export type DashboardReceivableRow = { customer?: string; origin: string; due_date?: string; gross_value?: string; net_value?: string; status: string }
 export type DashboardPayableRow = { supplier?: string; document?: string; due_date: string; value: string; category?: string; status: string }
+export type DashboardBankBalance = { account: string; value: string }
 export type DashboardSnapshot = {
   as_of: string
   last_bling_sync_at?: string
@@ -30,10 +31,14 @@ export type DashboardSnapshot = {
   future_b2c: DashboardMetric
   receipts_month: DashboardMetric
   receivables_overdue: DashboardMetric
+  receivables_due_next_90_days?: DashboardMetric
   payables: DashboardMetric
   payables_due_today: DashboardMetric
   payables_overdue: DashboardMetric
   payables_due_next_7_days: DashboardMetric
+  payables_due_next_90_days?: DashboardMetric
+  cash_balance?: DashboardMetric
+  bank_balances?: DashboardBankBalance[]
   payments_month: DashboardMetric
   capex_paid_month?: DashboardMetric
   capex_accumulated?: DashboardMetric
@@ -183,10 +188,16 @@ function isDashboardPayableRow(value: unknown): value is DashboardPayableRow {
   return typeof row.due_date === 'string' && typeof row.value === 'string' && typeof row.status === 'string' && (row.supplier === undefined || typeof row.supplier === 'string') && (row.document === undefined || typeof row.document === 'string') && (row.category === undefined || typeof row.category === 'string')
 }
 
+function isDashboardBankBalance(value: unknown): value is DashboardBankBalance {
+  if (!value || typeof value !== 'object') return false
+  const balance = value as Partial<DashboardBankBalance>
+  return typeof balance.account === 'string' && balance.account.length <= 4096 && typeof balance.value === 'string' && balance.value.length <= 4096
+}
+
 function isDashboardSnapshot(value: unknown): value is DashboardSnapshot {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<DashboardSnapshot>
-  return typeof candidate.as_of === 'string' && (candidate.last_bling_sync_at === undefined || typeof candidate.last_bling_sync_at === 'string') && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payables_due_next_7_days) && isDashboardMetric(candidate.payments_month) && (candidate.capex_paid_month === undefined || isDashboardMetric(candidate.capex_paid_month)) && (candidate.capex_accumulated === undefined || isDashboardMetric(candidate.capex_accumulated)) && (candidate.receivable_rows === undefined || (Array.isArray(candidate.receivable_rows) && candidate.receivable_rows.every(isDashboardReceivableRow))) && (candidate.payable_rows === undefined || (Array.isArray(candidate.payable_rows) && candidate.payable_rows.every(isDashboardPayableRow)))
+  return typeof candidate.as_of === 'string' && (candidate.last_bling_sync_at === undefined || typeof candidate.last_bling_sync_at === 'string') && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && (candidate.receivables_due_next_90_days === undefined || isDashboardMetric(candidate.receivables_due_next_90_days)) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payables_due_next_7_days) && (candidate.payables_due_next_90_days === undefined || isDashboardMetric(candidate.payables_due_next_90_days)) && (candidate.cash_balance === undefined || isDashboardMetric(candidate.cash_balance)) && (candidate.bank_balances === undefined || (Array.isArray(candidate.bank_balances) && candidate.bank_balances.length <= 50 && candidate.bank_balances.every(isDashboardBankBalance))) && isDashboardMetric(candidate.payments_month) && (candidate.capex_paid_month === undefined || isDashboardMetric(candidate.capex_paid_month)) && (candidate.capex_accumulated === undefined || isDashboardMetric(candidate.capex_accumulated)) && (candidate.receivable_rows === undefined || (Array.isArray(candidate.receivable_rows) && candidate.receivable_rows.every(isDashboardReceivableRow))) && (candidate.payable_rows === undefined || (Array.isArray(candidate.payable_rows) && candidate.payable_rows.every(isDashboardPayableRow)))
 }
 
 export function createDashboardSnapshotAdapter(source: DashboardSnapshotSource = readWailsDashboardSnapshot): DashboardSnapshotAdapter {

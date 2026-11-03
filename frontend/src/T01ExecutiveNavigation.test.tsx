@@ -17,16 +17,99 @@ const cardRoutes = [
 ] as const satisfies ReadonlyArray<readonly [string, MockupScreenKey]>
 
 describe('atalhos da Visão Executiva para as telas de origem', () => {
+  it('não exibe na tela Estoque os cards ou alerta de envelhecimento/validade removidos', () => {
+    render(<MockupDashboard screen="inventory" />)
+
+    expect(screen.getByText('ESTOQUE FÍSICO')).toBeInTheDocument()
+    expect(screen.getByText('GIRO')).toBeInTheDocument()
+    expect(screen.getByText('Saldo e cobertura')).toBeInTheDocument()
+    expect(screen.queryByText('Saldo, cobertura e validade')).not.toBeInTheDocument()
+    expect(screen.queryByText('ENVELHECENDO')).not.toBeInTheDocument()
+    expect(screen.queryByText('VALIDADE', { exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByText('Lotes com validade próxima')).not.toBeInTheDocument()
+  })
+
+  it('retira da tela Produção os dois avisos apontados e mantém os demais', () => {
+    render(<MockupDashboard screen="production" />)
+
+    expect(screen.getByText('Ordens em atraso')).toBeInTheDocument()
+    expect(screen.getByText('BOM versionada impacta a necessidade de insumos')).toBeInTheDocument()
+    expect(screen.queryByText('Lotes com perda acima do esperado')).not.toBeInTheDocument()
+    expect(screen.queryByText('Separar plano realizado e obrigatório')).not.toBeInTheDocument()
+  })
+
+  it('organiza os alertas de Compras em uma coluna para não sobrepor textos', () => {
+    render(<MockupDashboard screen="purchases" />)
+
+    const alerts = screen.getByRole('heading', { name: 'ALERTAS IMPORTANTES' }).closest('section')
+    const grid = alerts?.querySelector('.mocap-alert-grid-purchases')
+    expect(grid).not.toBeNull()
+    expect(within(alerts as HTMLElement).getByText('Preço do cacau em queda')).toBeInTheDocument()
+    expect(within(alerts as HTMLElement).getByText('Risco climático elevado')).toBeInTheDocument()
+    expect(within(alerts as HTMLElement).getByText('Cobertura de manteiga de cacau inferior a 20 dias')).toBeInTheDocument()
+    expect(within(alerts as HTMLElement).getByText('Fornecedores com lead time acima da média')).toBeInTheDocument()
+  })
+
+  it('remove toda a seção de alertas da tela Contas a Receber', () => {
+    render(<MockupDashboard screen="receivables" />)
+
+    expect(screen.getByText('TOTAL A RECEBER')).toBeInTheDocument()
+    expect(screen.getByText('RECEBIDO NO MÊS')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'RECEBÍVEIS' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'ALERTAS IMPORTANTES' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Recebimentos em atraso')).not.toBeInTheDocument()
+    expect(screen.queryByText('Matches ambíguos aguardando análise')).not.toBeInTheDocument()
+    expect(screen.queryByText('Transações sem ID Bling')).not.toBeInTheDocument()
+    expect(screen.queryByText('Regras de match ativas')).not.toBeInTheDocument()
+  })
+
+  it('remove os três alertas genéricos da tela Fluxo de Caixa e mantém o da reserva', () => {
+    render(<MockupDashboard screen="cashflow" />)
+
+    expect(screen.queryByText('Saídas previstas sem categoria')).not.toBeInTheDocument()
+    expect(screen.queryByText('Recebimentos em atraso')).not.toBeInTheDocument()
+    expect(screen.queryByText('Conciliação pendente')).not.toBeInTheDocument()
+    expect(screen.getByText('Saldo projetado abaixo da reserva mínima')).toBeInTheDocument()
+  })
+
+  it('liga o saldo atual e não reaproveita contas a receber/pagar no fluxo de caixa', () => {
+    const unavailable = { state: 'UNAVAILABLE' as const }
+    const snapshot: DashboardSnapshot = {
+      as_of: '2026-11-02T12:00:00Z',
+      data_state: 'PARTIAL',
+      receivables: unavailable,
+      future_b2c: unavailable,
+      receipts_month: unavailable,
+      receivables_overdue: unavailable,
+      receivables_due_next_90_days: { value: '1250.00', count: 4, state: 'CONFIRMED', source_system: 'BLING' },
+      payables: unavailable,
+      payables_due_today: unavailable,
+      payables_overdue: unavailable,
+      payables_due_next_7_days: unavailable,
+      payables_due_next_90_days: { value: '-800.00', count: 3, state: 'PARTIAL', source_system: 'BLING' },
+      cash_balance: { value: '4500.00', count: 2, state: 'CONFIRMED', source_system: 'BLING' },
+      payments_month: unavailable,
+    }
+    const { rerender } = render(<MockupDashboard screen="executive" snapshot={snapshot} />)
+    expect(screen.getByText('SALDO ATUAL').closest('article')).toHaveTextContent('4.500,00')
+    rerender(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
+    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).not.toHaveTextContent('1.250,00')
+    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).not.toHaveTextContent('-800,00')
+    expect(screen.getByText('SALDO ATUAL').closest('article')).toHaveTextContent('4.500,00')
+  })
+
   it('identifica como parcial o valor incompleto sem mudar a identificação dos demais cards', () => {
     const unavailable = { state: 'UNAVAILABLE' as const }
     const snapshot: DashboardSnapshot = {
       as_of: '2026-11-01T12:00:00Z',
       data_state: 'PARTIAL',
-      receivables: { value: '125.00', state: 'PARTIAL', source_system: 'BLING + NUVEM_PAGO' },
+      receivables: { value: '900.00', state: 'PARTIAL', source_system: 'BLING + NUVEM_PAGO' },
+      receivables_due_next_90_days: { value: '125.00', state: 'PARTIAL', source_system: 'BLING + NUVEM_PAGO' },
       future_b2c: unavailable,
       receipts_month: unavailable,
       receivables_overdue: unavailable,
-      payables: { value: '-80.00', state: 'CONFIRMED', source_system: 'BLING' },
+      payables: { value: '-500.00', state: 'CONFIRMED', source_system: 'BLING' },
+      payables_due_next_90_days: { value: '-80.00', state: 'CONFIRMED', source_system: 'BLING' },
       payables_due_today: unavailable,
       payables_overdue: unavailable,
       payables_due_next_7_days: unavailable,
@@ -37,9 +120,12 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     const receivables = screen.getByText('A RECEBER').closest('article')
     const payables = screen.getByText('A PAGAR').closest('article')
     expect(receivables).toHaveTextContent('125,00')
+    expect(receivables).not.toHaveTextContent('900,00')
     expect(within(receivables as HTMLElement).getByText('Parcial · B2C + B2B')).toBeInTheDocument()
     expect(within(payables as HTMLElement).getByText('Bling')).toBeInTheDocument()
     expect(payables?.textContent).toContain('-')
+    expect(payables).toHaveTextContent('80,00')
+    expect(payables).not.toHaveTextContent('500,00')
     expect(within(payables as HTMLElement).queryByText(/Parcial/)).not.toBeInTheDocument()
   })
 
@@ -71,16 +157,17 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(onNavigate).toHaveBeenLastCalledWith('cashflow')
   })
 
-  it('cada alerta abre a tela que já apresenta aquele resultado', async () => {
+  it('mantém o alerta aprovado e não mostra avisos de fonte/conciliação removidos', async () => {
     const user = userEvent.setup()
     const onNavigate = vi.fn()
     render(<MockupDashboard screen="executive" onNavigate={onNavigate} />)
 
     const alerts = [
       ['Saldo projetado abaixo da reserva mínima', /Ver fluxo/, 'cashflow'],
-      ['Obrigações vencidas aguardando fonte Bling', /Ver pagar/, 'payables'],
-      ['Recebimentos em atraso aguardando conciliação', /Ver receber/, 'receivables'],
     ] as const
+
+    expect(screen.queryByText('Obrigações vencidas aguardando fonte Bling')).not.toBeInTheDocument()
+    expect(screen.queryByText('Recebimentos em atraso aguardando conciliação')).not.toBeInTheDocument()
 
     for (const [message, buttonName, target] of alerts) {
       const alert = screen.getByText(message).closest('article')

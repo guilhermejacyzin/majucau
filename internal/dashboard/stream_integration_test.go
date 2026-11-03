@@ -53,7 +53,7 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		`CREATE TEMP TABLE payables (id uuid, source_entity text, open_balance numeric, due_date date, status text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payable_sync_snapshot_rows (sync_batch_id uuid, payable_id uuid) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payments (id uuid, source_system text, payment_date date, amount numeric) ON COMMIT DROP`,
-		`CREATE TEMP TABLE bling_cash_movements (id uuid, sync_batch_id uuid, direction text, source_status text, movement_date date, amount numeric) ON COMMIT DROP`,
+		`CREATE TEMP TABLE bling_cash_movements (id uuid, sync_batch_id uuid, account_source_id text, account_name text, direction text, source_status text, movement_date date, amount numeric) ON COMMIT DROP`,
 	} {
 		if _, err := tx.Exec(ctx, statement); err != nil {
 			t.Fatalf("create isolated dashboard fixture table: %v", err)
@@ -123,11 +123,11 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		t.Fatalf("mark cash source with missing statuses partial: %v", err)
 	}
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO bling_cash_movements (id, sync_batch_id, direction, source_status, movement_date, amount) VALUES
-		('00000000-0000-4000-8000-000000000031', $1::uuid, 'INFLOW', 'R', '2026-10-10', 100.00),
-		('00000000-0000-4000-8000-000000000032', $1::uuid, 'OUTFLOW', 'R', '2026-10-11', 25.00),
-		('00000000-0000-4000-8000-000000000033', $1::uuid, 'INFLOW', '', '2026-10-12', 20.00),
-		('00000000-0000-4000-8000-000000000034', $1::uuid, 'OUTFLOW', '', '2026-10-13', 5.00)`, cashBatchID); err != nil {
+		INSERT INTO bling_cash_movements (id, sync_batch_id, account_source_id, account_name, direction, source_status, movement_date, amount) VALUES
+		('00000000-0000-4000-8000-000000000031', $1::uuid, '1', 'Itaú', 'INFLOW', 'R', '2026-10-10', 100.00),
+		('00000000-0000-4000-8000-000000000032', $1::uuid, '1', 'Itaú', 'OUTFLOW', 'R', '2026-10-11', 25.00),
+		('00000000-0000-4000-8000-000000000033', $1::uuid, '2', 'Mercado Pago', 'INFLOW', '', '2026-10-12', 20.00),
+		('00000000-0000-4000-8000-000000000034', $1::uuid, '2', 'Mercado Pago', 'OUTFLOW', '', '2026-10-13', 5.00)`, cashBatchID); err != nil {
 		t.Fatalf("seed cash movements including entries with missing source status: %v", err)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
@@ -139,6 +139,9 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.ReceiptsMonth.Value != "120.00" || snapshot.PaymentsMonth.Value != "-30.00" {
 		t.Fatalf("cash flow should include listed movements, with inflows positive and outflows negative: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
+	}
+	if snapshot.CashBalance.State != "UNAVAILABLE" || snapshot.CashBalance.Value != "" {
+		t.Fatalf("current bank balance must remain unavailable until Bling provides an official balance, not be inferred from movements: %+v", snapshot.CashBalance)
 	}
 	currentPayableID := "00000000-0000-4000-8000-000000000011"
 	stalePayableID := "00000000-0000-4000-8000-000000000012"
@@ -183,6 +186,9 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.PayablesDueNext7Days.State != "CONFIRMED" || snapshot.PayablesDueNext7Days.Value != "-40" || snapshot.PayablesDueNext7Days.Count != 2 {
 		t.Fatalf("upcoming payables should include only open outflows due on days 1–7 from the current snapshot: %+v, want -R$ 40 from 2 rows", snapshot.PayablesDueNext7Days)
+	}
+	if snapshot.PayablesDueNext90Days.State != "CONFIRMED" || snapshot.PayablesDueNext90Days.Value != "-310" || snapshot.PayablesDueNext90Days.Count != 5 {
+		t.Fatalf("next 90 day payables = %+v, want -R$ 310 across five open titles including today", snapshot.PayablesDueNext90Days)
 	}
 	if snapshot.PayablesDueToday.State != "CONFIRMED" || snapshot.PayablesDueToday.Value != "-220" || snapshot.PayablesDueToday.Count != 2 {
 		t.Fatalf("today's aging should ignore canceled titles and retain current and legacy outflows: %+v, want -R$ 220 from 2 rows", snapshot.PayablesDueToday)

@@ -116,23 +116,18 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	monthStart := time.Date(businessDate.Year(), businessDate.Month(), 1, 0, 0, 0, 0, time.UTC)
 	monthEnd := monthStart.AddDate(0, 1, 0)
 	var (
-		receivablesValue, futureValue, receiptsMonthValue, receivablesOverdueValue                                  string
-		payablesValue, payablesTodayValue, payablesOverdueValue, payablesDueNext7DaysValue, paymentsMonthValue      string
-		receivablesCount, futureCount, receiptsTotalCount, receiptsMonthCount                                       int64
-		receivablesOverdueCount, payablesCount, payablesTodayCount, payablesOverdueCount, payablesDueNext7DaysCount int64
-		paymentsTotalCount, paymentsMonthCount                                                                      int64
-		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt                      pgtype.Timestamptz
-		dailyPayablesPartial, dailyCashMovementsPartial                                                             bool
+		receivablesValue, futureValue, receiptsMonthValue, receivablesOverdueValue, receivablesDueNext90DaysValue                                                              string
+		payablesValue, payablesTodayValue, payablesOverdueValue, payablesDueNext7DaysValue, payablesDueNext90DaysValue, paymentsMonthValue                                     string
+		receivablesCount, futureCount, receiptsTotalCount, receiptsMonthCount                                                                                                  int64
+		receivablesOverdueCount, receivablesDueNext90DaysCount, payablesCount, payablesTodayCount, payablesOverdueCount, payablesDueNext7DaysCount, payablesDueNext90DaysCount int64
+		paymentsTotalCount, paymentsMonthCount                                                                                                                                 int64
+		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt                                                                                 pgtype.Timestamptz
+		dailyPayablesPartial, dailyCashMovementsPartial                                                                                                                        bool
 	)
-	schedule, err := scheduler.NewSaoPaulo0930()
+	dailyCorrelationID, err := dailyBlingCorrelationID(asOf)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
 	}
-	latestScheduledRun, err := schedule.LatestRunAtOrBefore(asOf)
-	if err != nil {
-		return application.DashboardSnapshot{}, err
-	}
-	dailyCorrelationID := scheduler.DailyRunCorrelationID(scheduler.BlingDailyRunScope, latestScheduledRun)
 	err = tx.QueryRow(ctx, dashboardStreamSummarySQL,
 		businessDate.Format("2006-01-02"),
 		monthStart.Format("2006-01-02"),
@@ -155,6 +150,10 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&dailyCashMovementsPartial,
 		&payablesDueNext7DaysValue,
 		&payablesDueNext7DaysCount,
+		&receivablesDueNext90DaysValue,
+		&receivablesDueNext90DaysCount,
+		&payablesDueNext90DaysValue,
+		&payablesDueNext90DaysCount,
 	)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
@@ -172,19 +171,34 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		lastBlingSyncTime = &value
 	}
 	return application.DashboardSnapshot{
-		AsOf:                 asOf,
-		LastBlingSyncAt:      lastBlingSyncTime,
-		DataState:            state,
-		Receivables:          metricForSourceRun(receivablesValue, receivablesCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
-		FutureB2C:            metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
-		ReceiptsMonth:        metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
-		ReceivablesOverdue:   metricForSourceRun(receivablesOverdueValue, receivablesOverdueCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
-		Payables:             metricForSourceRun(payablesValue, payablesCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
-		PayablesDueToday:     metricForSourceRun(payablesTodayValue, payablesTodayCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
-		PayablesOverdue:      metricForSourceRun(payablesOverdueValue, payablesOverdueCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
-		PayablesDueNext7Days: metricForSourceRun(payablesDueNext7DaysValue, payablesDueNext7DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
-		PaymentsMonth:        metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
+		AsOf:                     asOf,
+		LastBlingSyncAt:          lastBlingSyncTime,
+		DataState:                state,
+		Receivables:              metricForSourceRun(receivablesValue, receivablesCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
+		FutureB2C:                metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
+		ReceiptsMonth:            metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
+		ReceivablesOverdue:       metricForSourceRun(receivablesOverdueValue, receivablesOverdueCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
+		ReceivablesDueNext90Days: metricForSourceRun(receivablesDueNext90DaysValue, receivablesDueNext90DaysCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
+		Payables:                 metricForSourceRun(payablesValue, payablesCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
+		PayablesDueToday:         metricForSourceRun(payablesTodayValue, payablesTodayCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
+		PayablesOverdue:          metricForSourceRun(payablesOverdueValue, payablesOverdueCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
+		PayablesDueNext7Days:     metricForSourceRun(payablesDueNext7DaysValue, payablesDueNext7DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
+		PayablesDueNext90Days:    metricForSourceRun(payablesDueNext90DaysValue, payablesDueNext90DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
+		CashBalance:              application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
+		PaymentsMonth:            metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
 	}, nil
+}
+
+func dailyBlingCorrelationID(asOf time.Time) (string, error) {
+	schedule, err := scheduler.NewSaoPaulo0930()
+	if err != nil {
+		return "", err
+	}
+	runAt, err := schedule.LatestRunAtOrBefore(asOf)
+	if err != nil {
+		return "", err
+	}
+	return scheduler.DailyRunCorrelationID(scheduler.BlingDailyRunScope, runAt).String(), nil
 }
 
 func completedBy(syncAt pgtype.Timestamptz, asOf time.Time) bool {
@@ -349,6 +363,16 @@ WITH eligible_receivables AS (
     COUNT(id) FILTER (
       WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND due_date < $1::date
     ) AS overdue_count
+    ,COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (
+      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
+        AND due_date >= $1::date AND due_date < ($1::date + 90)
+        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+    ), 0)::text AS due_next_90_days_value,
+    COUNT(id) FILTER (
+      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
+        AND due_date >= $1::date AND due_date < ($1::date + 90)
+        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+    ) AS due_next_90_days_count
   FROM eligible_receivables
 ), cash_snapshot AS (
   SELECT b.id AS sync_batch_id, b.status
@@ -413,6 +437,14 @@ WITH eligible_receivables AS (
       WHERE due_date > $1::date AND due_date < ($1::date + 8)
         AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ) AS due_next_7_days_count
+    ,COALESCE(SUM(open_balance) FILTER (
+      WHERE due_date >= $1::date AND due_date < ($1::date + 90)
+        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+    ), 0)::text AS due_next_90_days_value,
+    COUNT(id) FILTER (
+      WHERE due_date >= $1::date AND due_date < ($1::date + 90)
+        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+    ) AS due_next_90_days_count
   FROM payables pw
   WHERE pw.open_balance <> 0
     AND (pw.source_entity <> 'bling.conta_pagar' OR EXISTS (
@@ -464,7 +496,9 @@ SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        current_daily_bling_sync.payables_partial,
        current_daily_bling_sync.cash_movements_finished_at,
        current_daily_bling_sync.cash_movements_partial,
-       p.due_next_7_days_value, p.due_next_7_days_count
+       p.due_next_7_days_value, p.due_next_7_days_count,
+       r.due_next_90_days_value, r.due_next_90_days_count,
+       p.due_next_90_days_value, p.due_next_90_days_count
 FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync CROSS JOIN current_daily_bling_sync
 `
 

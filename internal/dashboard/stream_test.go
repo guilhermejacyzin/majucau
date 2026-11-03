@@ -164,7 +164,7 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 		t.Fatalf("stream output is not valid snapshot JSON: %v", err)
 	}
 	wantLastSync := time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC)
-	if !snapshot.AsOf.Equal(asOf) || snapshot.DataState != "PARTIAL" || snapshot.Receivables.Value != "100.0000" || snapshot.PayablesDueNext7Days.Value != "-35.0000" || snapshot.PayablesDueNext7Days.Count != 2 || snapshot.LastBlingSyncAt == nil || !snapshot.LastBlingSyncAt.Equal(wantLastSync) {
+	if !snapshot.AsOf.Equal(asOf) || snapshot.DataState != "PARTIAL" || snapshot.Receivables.Value != "100.0000" || snapshot.ReceivablesDueNext90Days.Value != "40.0000" || snapshot.PayablesDueNext7Days.Value != "-35.0000" || snapshot.PayablesDueNext7Days.Count != 2 || snapshot.PayablesDueNext90Days.Value != "-75.0000" || snapshot.PayablesDueNext90Days.Count != 3 || snapshot.LastBlingSyncAt == nil || !snapshot.LastBlingSyncAt.Equal(wantLastSync) {
 		t.Fatalf("unexpected snapshot summary: %+v", snapshot)
 	}
 	if len(snapshot.ReceivableRows) != 1 || snapshot.ReceivableRows[0].Customer != "Cliente" || len(snapshot.PayableRows) != 1 || snapshot.PayableRows[0].Supplier != "Fornecedor" {
@@ -257,10 +257,12 @@ func TestReadStreamSummaryKeepsEmptySourcesUnavailableInsteadOfZero(t *testing.T
 		{name: "future B2C", metric: snapshot.FutureB2C},
 		{name: "receipts this month", metric: snapshot.ReceiptsMonth},
 		{name: "receivables overdue", metric: snapshot.ReceivablesOverdue},
+		{name: "receivables due next 90 days", metric: snapshot.ReceivablesDueNext90Days},
 		{name: "payables", metric: snapshot.Payables},
 		{name: "payables due today", metric: snapshot.PayablesDueToday},
 		{name: "payables overdue", metric: snapshot.PayablesOverdue},
 		{name: "payables due next 7 days", metric: snapshot.PayablesDueNext7Days},
+		{name: "payables due next 90 days", metric: snapshot.PayablesDueNext90Days},
 		{name: "payments this month", metric: snapshot.PaymentsMonth},
 	}
 	for _, item := range metrics {
@@ -288,8 +290,10 @@ func TestReadStreamSummaryConfirmsZeroAfterSuccessfulNormalizedDailyBlingLoad(t 
 		metric application.DashboardMetric
 	}{
 		{name: "receivables", metric: snapshot.Receivables},
+		{name: "receivables due next 90 days", metric: snapshot.ReceivablesDueNext90Days},
 		{name: "receipts this month", metric: snapshot.ReceiptsMonth},
 		{name: "payables", metric: snapshot.Payables},
+		{name: "payables due next 90 days", metric: snapshot.PayablesDueNext90Days},
 		{name: "payables due today", metric: snapshot.PayablesDueToday},
 		{name: "payables overdue", metric: snapshot.PayablesOverdue},
 		{name: "payables due next 7 days", metric: snapshot.PayablesDueNext7Days},
@@ -456,7 +460,7 @@ func dashboardSummaryValues() []any {
 		"-80.0000", int64(2), "-10.0000", int64(1), "-4.0000", int64(1),
 		"30.0000", int64(1), int64(2), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
 		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false, time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false,
-		"-35.0000", int64(2),
+		"-35.0000", int64(2), "40.0000", int64(1), "-75.0000", int64(3),
 	}
 }
 
@@ -466,7 +470,7 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), int64(0), nil, nil, nil, false, nil, false,
-		"0.0000", int64(0),
+		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
 	}
 }
 
@@ -480,5 +484,5 @@ func expectedDailyCorrelation(t *testing.T, asOf time.Time) any {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return scheduler.DailyRunCorrelationID(scheduler.BlingDailyRunScope, scheduledAt)
+	return scheduler.DailyRunCorrelationID(scheduler.BlingDailyRunScope, scheduledAt).String()
 }

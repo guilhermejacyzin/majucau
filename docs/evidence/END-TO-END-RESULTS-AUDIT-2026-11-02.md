@@ -132,6 +132,25 @@ Nenhum desses passos permite mostrar um número presumido. O resultado só pode
 ser confirmado depois da cadeia inteira **fonte → RAW → normalizado → cálculo →
 snapshot → tela** estar conectada e reconciliada.
 
+## Correção de entendimento após captura do relatório — 02/11/2026
+
+A responsável confirmou a origem: os resultados e a projeção da T02 são os do
+relatório **Fluxo de Caixa** do Bling. Somente saldos por instituição vêm de
+**Caixas e Bancos**. Assim, os cards “Entradas 30 dias”/“Saídas 30 dias” não
+podem apontar para os totais das telas de Contas a Receber/Pagar. Essa ligação
+foi retirada. Também foram removidos da T01 os avisos genéricos “Obrigações
+vencidas aguardando fonte Bling” e “Recebimentos em atraso aguardando
+conciliação”, conforme solicitado.
+
+A imagem enviada mostra o relatório de 02/11/2026 a 09/12/2026, duas contas,
+float e prazo de recebimento ativados, R$ 76.600,30 de receitas,
+-R$ 281.052,64 de despesas e -R$ 129.988,98 de saldo final projetado. O
+detalhamento é semanal, logo não permite derivar todas as datas do filtro móvel
+de 30 dias. A API pública consultada não lista um endpoint de relatório de
+Fluxo de Caixa. A captura não é uma fonte de atualização contínua; a ligação
+automática ao relatório permanece aberta. Valores e opções completos estão em
+`BLING-CASH-FLOW-REPORT-READING-2026-11-02.md`.
+
 ## Atualização após a auditoria — normalização mensal de Caixa/Bancos
 
 Em 02/11/2026, foi implementada uma parte do caminho apontado acima: a carga
@@ -162,3 +181,16 @@ passou em Windows e PostgreSQL. O protótipo aberto continuava usando binários
 anteriores, e a migration/sincronização reais ainda não tinham sido executadas.
 Portanto, a correção passou nos gates de código, mas os valores reais nas telas
 ainda não foram comprovados.
+
+## Atualização posterior — janela de 90 dias da T01 — 02/11/2026
+
+A responsável aprovou que A Receber e A Pagar na T01 exibam vencimentos dos
+próximos 90 dias. O snapshot agora contém métricas específicas para essa janela
+e a T01 as utiliza; o card Menor Saldo 30/60 não foi alterado. A captura antiga
+da prévia mostrava o total geral de Contas a Pagar, não o total desse período.
+
+Após reiniciar o worker, o snapshot ativo confirmou 418 títulos a pagar na
+janela, como parcial. Contas a Receber permanece indisponível porque ainda não
+há linhas normalizadas. O frontend não consulta diretamente a API no card.
+Continuam pendentes a normalização do Receber, comparação com o Bling e
+conferência visual. Verificação detalhada: `EXECUTIVE-RECEIVABLES-PAYABLES-90-DAYS-2026-11-02.md`.

@@ -9,6 +9,53 @@
 - **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. A suíte PostgreSQL isolada passou localmente e a CI [#41535352924](https://github.com/guilhermejacyzin/majucau/actions/runs/41535352924) passou em Windows e PostgreSQL, incluindo migrations, integrações, build e pacote. A CI do ajuste posterior de movimentos parciais apontou apenas que o modelo `sqlc` gerado precisava ser incluído; corrigi isso no commit `8ffcff1` e a CI [#41545653326](https://github.com/guilhermejacyzin/majucau/actions/runs/41545653326) está em execução. Ainda faltam atualizar o protótipo, sincronizar os dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
+### Correção de fontes do fluxo e avisos da Visão Executiva — 02/11/2026
+
+A responsável esclareceu que o resultado da T02 vem do relatório **Fluxo de
+Caixa** do Bling; somente os saldos por banco vêm de **Caixas e Bancos**.
+Corrigi a interface para não preencher “Entradas 30 dias”/“Saídas 30 dias” com
+os totais de Contas a Receber/Pagar. Também retirei da T01 os avisos
+“Obrigações vencidas aguardando fonte Bling” e “Recebimentos em atraso
+aguardando conciliação”, solicitados como desnecessários. Não alterei o desenho
+dos cards nem as regras financeiras.
+
+A captura do relatório foi transcrita como evidência: 02/11–09/12/2026, duas
+contas, float e prazo de recebimento ativados, receitas de R$ 76.600,30,
+despesas de -R$ 281.052,64 e saldo final projetado de -R$ 129.988,98. Ela só
+mostra valores semanais, não a série diária para alimentar janelas móveis. A
+referência pública da API consultada não lista um recurso de relatório de Fluxo
+de Caixa; portanto, a ligação automática desse resultado ainda não está
+concluída. Não inseri os números da imagem como valores permanentes. Evidência:
+`docs/evidence/BLING-CASH-FLOW-REPORT-READING-2026-11-02.md`.
+
+O percentual geral permanece em **12,1% concluído / 87,9% restante**; essa
+correção visual e de ligação não conclui BK-062 nem valida o fluxo real. Próximo
+passo: implementar a ingestão autorizada do resultado do relatório, ligar a T02
+e fazer a T01 consumir os mesmos dados; comparar a série com o Bling antes de
+marcar a tarefa concluída.
+
+### Atualização de avisos das telas Estoque, Produção e Compras — 02/11/2026
+
+Atendendo às capturas mais recentes, retirei da T09 os cards “Envelhecendo” e
+“Validade” e o alerta “Lotes com validade próxima”. Na T10, retirei “Lotes com
+perda acima do esperado” e “Separar plano realizado e obrigatório”. A T02
+também não mostra mais “Saídas previstas sem categoria”, “Recebimentos em
+atraso” e “Conciliação pendente”; permanece o aviso de saldo abaixo da reserva.
+Os cards, o restante dos avisos e as regras financeiras não foram alterados.
+
+Na T11 — Compras, mantive os quatro avisos para a responsável decidir depois de
+entender. Eles não são erros reais: são mensagens-modelo com “Sem dados
+confirmados”. Significados simples e dados necessários estão no registro de
+conteúdo das telas. Para que o texto possa ser lido, organizei os cartões em
+uma coluna dentro da área de alertas. As imagens aprovadas originais em
+`docs/source/` foram preservadas como referência; não foram sobrescritas por
+imagens de protótipo diferentes.
+
+Os testes frontend e o build TypeScript/Vite passaram numa cópia isolada em
+`artifacts/verification`. O executável Wails aberto não foi substituído ou
+reiniciado ainda. O percentual geral continua 12,1%/87,9%; essas correções
+visuais não concluem as telas nem a homologação.
+
 ### Atualização técnica — transação longa na sincronização Bling (02/11/2026, 20:39)
 
 Confirmei que a carga antiga de Contas a Pagar permanecia aguardando o Bling dentro de uma transação PostgreSQL havia aproximadamente 42 minutos. O último lote publicado continuava com o código antigo `BLING_PAYABLE_OPEN_BALANCE_NEGATIVE`; isso é diferente do saldo bancário: Contas a Pagar deve mesmo ser negativa no fluxo de caixa.
@@ -176,3 +223,19 @@ Próximo passo da BK-041: salvar no Majucau o Client Secret do aplicativo Bling,
 - A CI utiliza respostas de teste. Isso comprova o código e o banco, não a autenticação nem os dados reais da conta Bling; portanto, a sincronização real e a homologação continuam pendentes. BK-041 fica em 80% (20% restante) e a estimativa do projeto permanece em 11,8% concluído (88,2% restante).
 - Nenhuma tela aprovada ou regra financeira mudou. A regra aprovada do CAPEX acumulado continua começando em 01/01/2026 e o CAPEX permanece fora do lucro da DRE.
 - Evidência: `docs/evidence/BLING-PAYABLE-API-NORMALIZATION-2026-10-26.md`; [CI #40273517345](https://github.com/guilhermejacyzin/majucau/actions/runs/40273517345).
+
+### Cards de vencimento em 90 dias na T01 — 02/11/2026
+
+A responsável confirmou que os cards existentes **A RECEBER** e **A PAGAR** devem mostrar os títulos com vencimento nos próximos 90 dias. A janela começa hoje e termina antes da data de hoje + 90 dias. O card existente **MENOR SALDO 30 / 60 DIAS** permanece como está; não foram criadas faixas nem cards novos. A pagar continua como saída negativa.
+
+O snapshot e a ligação da T01 agora usam métricas específicas de vencimento em 90 dias, em vez dos totais gerais. O SQL calcula soma e quantidade. A validação confirma a métrica de Contas a Pagar. Contas a Receber continua sem número confirmado enquanto os registros recebidos da API estiverem apenas em RAW e não forem normalizados na fonte consultada pelo painel.
+
+`go test ./internal/dashboard` e o build TypeScript/Vite isolado passaram. O valor visto na captura da prévia antiga `127.0.0.1:4179` não deve ser interpretado como total de 90 dias. A prévia é estática; o app conectado está em `http://localhost:34115/`. A atualização do app conectado depende de reiniciar o worker com o código novo e depois completar a normalização de Contas a Receber.
+
+O backlog permanece em **12,1% concluído / 87,9% restante**. Esse ajuste não conclui homologação real nem o projeto.
+
+### Conferência do protótipo conectado após reinício — 02/11/2026
+
+O worker foi recompilado e o app Wails foi reaberto com o contrato de 90 dias. A leitura sanitizada do snapshot ativo confirmou **418 contas a pagar** na janela, estado **Parcial**. Não registrei o valor financeiro em arquivo. Contas a Receber continua **Indisponível**, com zero linhas normalizadas para consulta; não mostrei zero como se fosse saldo confirmado. A prévia 4179 foi recompilada, mas continua estática e não representa os dados desse worker.
+
+Próximo passo: concluir o normalizador de Contas a Receber e reconciliar suas linhas com o Bling; depois fazer a conferência visual no app Wails. O projeto permanece em 12,1% concluído / 87,9% restante.

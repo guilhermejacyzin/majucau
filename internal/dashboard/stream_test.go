@@ -37,13 +37,24 @@ type scriptedDashboardTx struct {
 	committed   bool
 }
 
-func (tx *scriptedDashboardTx) QueryRow(_ context.Context, _ string, args ...any) pgx.Row {
+func (tx *scriptedDashboardTx) QueryRow(_ context.Context, query string, args ...any) pgx.Row {
+	if strings.Contains(query, "HAVING COUNT(DISTINCT b.resource) = 3") {
+		asOf, ok := args[0].(time.Time)
+		if !ok {
+			return scriptedDashboardSummaryRow{values: []any{nil}}
+		}
+		correlationID, err := dailyBlingCorrelationID(asOf)
+		if err != nil {
+			return scriptedDashboardSummaryRow{values: []any{nil}}
+		}
+		return scriptedDashboardSummaryRow{values: []any{correlationID}}
+	}
 	tx.summaryArgs = append([]any(nil), args...)
 	return tx.summary
 }
 
 func (tx *scriptedDashboardTx) Query(_ context.Context, query string, args ...any) (pgx.Rows, error) {
-	if strings.Contains(query, "bling_financial_account_identities") {
+	if strings.Contains(query, "bling_financial_account_identities") || strings.Contains(query, "SELECT DISTINCT m.account_source_id, m.account_name") {
 		// The first streaming query resolves the two configured Bling bank
 		// identities. The fixture has no accounts, so the flow is unavailable.
 		return &emptyDashboardRows{}, nil
@@ -82,19 +93,19 @@ func (row scriptedDashboardSummaryRow) Scan(dest ...any) error {
 		case *string:
 			converted, ok := value.(string)
 			if !ok {
-				return pgx.ErrNoRows
+				return fmt.Errorf("scripted summary column %d has type %T, want string", index, value)
 			}
 			*target = converted
 		case *int64:
 			converted, ok := value.(int64)
 			if !ok {
-				return pgx.ErrNoRows
+				return fmt.Errorf("scripted summary column %d has type %T, want int64", index, value)
 			}
 			*target = converted
 		case *bool:
 			converted, ok := value.(bool)
 			if !ok {
-				return pgx.ErrNoRows
+				return fmt.Errorf("scripted summary column %d has type %T, want bool", index, value)
 			}
 			*target = converted
 		case *pgtype.Timestamptz:
@@ -104,11 +115,11 @@ func (row scriptedDashboardSummaryRow) Scan(dest ...any) error {
 			}
 			converted, ok := value.(time.Time)
 			if !ok {
-				return pgx.ErrNoRows
+				return fmt.Errorf("scripted summary column %d has type %T, want time.Time", index, value)
 			}
 			*target = pgtype.Timestamptz{Time: converted, Valid: true}
 		default:
-			return pgx.ErrNoRows
+			return fmt.Errorf("scripted summary column %d has unsupported target %T", index, dest[index])
 		}
 	}
 	return nil

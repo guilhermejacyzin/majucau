@@ -62,6 +62,7 @@ type WailsDashboardSnapshot struct {
 	PayablesDueNext90Days    application.DashboardMetric          `json:"payables_due_next_90_days"`
 	PayablesDueNext30Days    application.DashboardMetric          `json:"payables_due_next_30_days"`
 	CashBalance              application.DashboardMetric          `json:"cash_balance"`
+	CashFlow                 *application.DashboardCashFlow       `json:"cash_flow,omitempty"`
 	BankBalances             []application.DashboardBankBalance   `json:"bank_balances,omitempty"`
 	PaymentsMonth            application.DashboardMetric          `json:"payments_month"`
 	CapexPaidMonth           *application.DashboardMetric         `json:"capex_paid_month,omitempty"`
@@ -138,6 +139,7 @@ func wailsDashboardSnapshot(value application.DashboardSnapshot) WailsDashboardS
 		PayablesDueNext90Days:    value.PayablesDueNext90Days,
 		PayablesDueNext30Days:    value.PayablesDueNext30Days,
 		CashBalance:              value.CashBalance,
+		CashFlow:                 value.CashFlow,
 		BankBalances:             value.BankBalances,
 		PaymentsMonth:            value.PaymentsMonth,
 		CapexPaidMonth:           value.CapexPaidMonth,

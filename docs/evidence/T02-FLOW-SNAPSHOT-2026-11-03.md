@@ -1,6 +1,6 @@
 # T02 — valores da API do Bling ligados à série — 03/11/2026
 
-## Atualização às 05:38 BRT
+## Atualização às 05:49 BRT
 
 A tela agora recebe números do snapshot diário mais recente do Bling. A leitura
 do serviço local, após atualizar o worker, retornou para os próximos 30 dias:
@@ -105,33 +105,48 @@ inicial e sem a regra/entrada oficial necessária. O saldo atual continua
 indisponível até vir da fonte aprovada de Caixa e Bancos; não é inferido dos
 movimentos.
 
+## Ligação confirmada até a tela — 03/11/2026, 05:49 BRT
+
+O teste de regressão encontrou a fronteira exata que fazia o protótipo ficar
+vazio: `WailsDashboardSnapshot` não tinha o campo `cash_flow`. O worker enviava
+os valores via IPC, mas o DTO desktop os eliminava. Apliquei o campo e o
+mapeamento em `app.go` e acrescentei um teste em `app_test.go` verificando os
+dois cards, o estado Parcial e uma data da série.
+
+Depois da compilação Wails e da abertura da nova versão, conferi a tela T02:
+Entradas **R$ 69.994,12 — Parcial**, Saídas **-R$ 263.930,47 — Parcial** e a
+série com o rótulo **Parcial · fonte: Bling**. A T01 também mostra a mesma série
+como parcial. Isso confirma a passagem de dados até a apresentação; não é
+homologação dos valores contra o relatório de referência.
+
 ## Verificações desta etapa
 
-- `go test ./internal/...` — passou localmente.
+- `go test . ./internal/dashboard -count=1` — passou localmente após atualizar
+  a camada simulada para o resolvedor de correlação do lote mais recente.
 - `go vet ./internal/dashboard ./internal/financial` — passou.
 - `git diff --check` — passou.
-- Build TypeScript/Vite e ESLint — passaram numa cópia isolada em
-  `artifacts/verification`.
+- Build TypeScript/Vite — passou em staging isolado dentro de `artifacts/`.
 - Testes frontend — 70 testes passaram.
 - A cópia de verificação frontend foi mantida em `artifacts/verification/`
   porque a revisão automática bloqueou a exclusão solicitada após a validação.
   O local e o motivo estão listados em
   `docs/evidence/OUTPUT-RETIDO-MANUAL-2026-11-03.md`.
-- A captura visual automatizada desta sessão expirou; a resposta do worker foi
-  confirmada pelo cliente IPC local, sem imprimir dados de clientes.
+- O cliente IPC local confirmou a resposta do worker, sem imprimir dados de
+  clientes. A tela atualizada também foi conferida pelo estado de acessibilidade
+  do protótipo.
 - CI 41587012467 — passou em todos os trabalhos: governança, testes Go,
   integração PostgreSQL, frontend, build desktop e smoke Windows do serviço.
 - A CI anterior 41586134294 havia encontrado o identificador do serviço de teste
   ainda aberto durante a limpeza; o smoke foi corrigido e a nova CI confirmou a
   remoção segura.
-- O executável Wails aberto permaneceu intacto. Apenas o worker de dados local
-  foi reiniciado com a compilação atualizada.
+- O executável Wails atualizado está aberto em `artifacts/cache/dev/`; o worker
+  de dados que já estava sincronizado permaneceu ativo.
 
 ## Próxima sequência
 
-1. Conferir os valores com o relatório Bling usando a mesma janela, contas
-   Itaú/Mercado Pago, float, prazo e opção de incluir pagamentos/recebimentos.
-2. Reexecutar a sincronização diária depois da conferência e verificar se a
-   composição por API mantém os mesmos valores.
-3. Só depois completar os indicadores que dependem do saldo inicial e liberar
-   a T02/T01 como homologadas.
+1. Comparar os mesmos dias/agrupamentos do relatório Bling com a API oficial,
+   usando Itaú/Mercado Pago, float, prazo e pagamentos/recebimentos ativos.
+2. Reexecutar a sincronização após a comparação e validar se os totais continuam
+   consistentes.
+3. Só depois completar indicadores que dependem do saldo inicial e considerar
+   a T02/T01 para homologação.

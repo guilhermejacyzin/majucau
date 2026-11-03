@@ -84,6 +84,15 @@ func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
 	input := application.DashboardSnapshot{
 		ReceivablesDueNext30Days: application.DashboardMetric{Value: "123.45", State: "PARTIAL"},
 		PayablesDueNext30Days:    application.DashboardMetric{Value: "-67.89", State: "PARTIAL"},
+		CashFlow: &application.DashboardCashFlow{
+			InflowsNext30Days:  application.DashboardMetric{Value: "69994.1200", State: "PARTIAL", SourceSystem: "BLING"},
+			OutflowsNext30Days: application.DashboardMetric{Value: "-263930.4700", State: "PARTIAL", SourceSystem: "BLING"},
+			Days: []application.DashboardCashFlowDay{{
+				Date:     "2026-11-03",
+				Inflows:  application.DashboardMetric{Value: "110.00", State: "PARTIAL", SourceSystem: "BLING"},
+				Outflows: application.DashboardMetric{Value: "-25.00", State: "PARTIAL", SourceSystem: "BLING"},
+			}},
+		},
 	}
 	got := wailsDashboardSnapshot(input)
 	if got.ReceivablesDueNext30Days.Value != input.ReceivablesDueNext30Days.Value || got.ReceivablesDueNext30Days.State != input.ReceivablesDueNext30Days.State {
@@ -91,6 +100,9 @@ func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
 	}
 	if got.PayablesDueNext30Days.Value != input.PayablesDueNext30Days.Value || got.PayablesDueNext30Days.State != input.PayablesDueNext30Days.State {
 		t.Fatalf("payables due in 30 days were lost in Wails mapping: got %+v", got.PayablesDueNext30Days)
+	}
+	if got.CashFlow == nil || got.CashFlow.InflowsNext30Days != input.CashFlow.InflowsNext30Days || got.CashFlow.OutflowsNext30Days != input.CashFlow.OutflowsNext30Days || len(got.CashFlow.Days) != 1 || got.CashFlow.Days[0] != input.CashFlow.Days[0] {
+		t.Fatalf("cash-flow report composition was lost in Wails mapping: got %+v, want %+v", got.CashFlow, input.CashFlow)
 	}
 }
 

@@ -1,9 +1,9 @@
 # Status atual do Majucau — 03/11/2026
 
-## Atualização mais recente — T02 recebe números reais da API — 03/11/2026, 05:38 BRT
+## Atualização mais recente — T02 exibe números reais na tela — 03/11/2026, 05:49 BRT
 
-O serviço local agora entrega para os cards aprovados da T02: **Entradas 30
-dias: R$ 69.994,12 (Parcial)** e **Saídas 30 dias: R$ 263.930,47 (Parcial)**.
+O serviço local entrega aos cards aprovados da T02: **Entradas 30 dias:
+R$ 69.994,12 (Parcial)** e **Saídas 30 dias: -R$ 263.930,47 (Parcial)**.
 O fluxo diário contém 61 datas, hoje até D+60. A saída segue negativa no valor
 interno. A T01 reutiliza o mesmo snapshot.
 
@@ -17,16 +17,17 @@ listados com situação vazia entram em valor Parcial; situações não reconhec
 continuam fora da soma. Nada foi alterado no desenho aprovado nem nas regras
 financeiras.
 
-O worker foi compilado e reiniciado, preservando a janela Wails. A consulta
-IPC real confirmou os valores e o período; a interface busca o snapshot a cada
-60 segundos. A captura visual automatizada expirou, então esta etapa não está
-visualmente homologada. Também não está comprovado que a composição por APIs
+O worker foi compilado e consultado por IPC; a consulta confirmou os valores e
+as 61 datas. Também corrigi a camada Wails, que recebia o snapshot do worker,
+mas descartava `cash_flow` antes de entregá-lo à tela. O novo executável Wails
+foi aberto e conferido visualmente: os dois cards aparecem com aviso Parcial e
+o gráfico exibe a série. Isso confirma a ligação técnica, mas não é aceite
+financeiro/homologação. Ainda não está comprovado que a composição por APIs
 equivale ao relatório pronto: ainda falta comparar a mesma janela/opções, obter
 saldo inicial/float e concluir indicadores derivados. O serviço retorna
 `PARTIAL` deliberadamente.
 
-BK-062 permanece em 20% (80% restante); projeto em 12,2% (87,8% restante).
-Não subi os percentuais porque a comparação com o relatório ainda não aconteceu.
+BK-062 está em 25% (75% restante); projeto em 12,2% (87,8% restante).
 Detalhes e próximos passos: [evidência T02](./evidence/T02-FLOW-SNAPSHOT-2026-11-03.md).
 
 > **Nota de leitura:** o conteúdo abaixo desta atualização preserva o histórico

@@ -125,7 +125,7 @@ WITH daily AS (
    WHERE d.resource = 'contas.pagar'
      AND p.source_system = 'BLING' AND p.source_entity = 'bling.conta_pagar'
      AND p.open_balance <> 0
-     AND UPPER(p.status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+     AND UPPER(p.status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
      AND p.due_date >= $2::date AND p.due_date <= $3::date
 )
 SELECT kind, flow_date, direction, amount, source_status,

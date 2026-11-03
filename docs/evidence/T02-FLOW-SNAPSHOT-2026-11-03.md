@@ -1,5 +1,25 @@
 # T02 — valores da API do Bling ligados à série — 03/11/2026
 
+## Correção posterior — situação cancelada e reconferência — 06:30 BRT
+
+A API normaliza a situação do título cancelado como o texto numérico `5`. A consulta da T02 antes excluía cancelamentos por nome (`CANCELLED`, `CANCELED`, etc.) e, por isso, incluía um título com saldo restante de R$ 1.794,15. Incluí `5` na lista de situações excluídas do fluxo de caixa e dos vencimentos por período. A mesma regra agora mantém esse título fora dos resultados previstos.
+
+Após recompilar e reiniciar o worker, conferi a janela T02 do protótipo: **Entradas 30 dias R$ 69.994,12 (Parcial)** e **Saídas 30 dias -R$ 262.136,32 (Parcial)**. Antes da correção, as saídas eram -R$ 263.930,47. A regressão PostgreSQL cobre um título cancelado com código `5`, valor R$ 1.794,15 e vencimento dentro da série; ele não aumenta as saídas diárias nem o total de contas a pagar em 90 dias.
+
+Comparação por faixa, usando a captura do relatório de 02/11 com Itaú e Mercado Pago:
+
+| Faixa | Entradas API | Entradas Bling | Saídas API | Saídas Bling |
+|---|---:|---:|---:|---:|
+| 08–14/11 | R$ 12.362,61 | R$ 12.362,61 | -R$ 18.020,38 | -R$ 18.020,38 |
+| 15–21/11 | R$ 37.383,21 | R$ 37.383,22 | -R$ 152.735,18 | -R$ 152.735,18 |
+| 22–28/11 | R$ 9.722,56 | R$ 9.722,56 | -R$ 22.264,52 | -R$ 22.264,52 |
+| 29/11–05/12 | R$ 7.124,43 | R$ 7.124,43 | -R$ 57.445,14 | -R$ 57.445,14 |
+| 06–09/12 | R$ 1.606,17 | R$ 1.606,17 | -R$ 5.104,29 | -R$ 5.104,29 |
+
+Quatro faixas de entrada e todas as cinco faixas de saída disponíveis conferem. A diferença de R$ 0,01 na entrada de 15–21/11 permanece sem causa identificada. A faixa inicial 02–07/11 inclui 02/11, mas a carga API disponível começa em 03/11, portanto não é uma comparação completa. O relatório mostra saldo inicial de R$ 74.463,36; a API/histórico local disponível não oferece comprovação suficiente para reproduzi-lo. O protótipo mantém o estado `PARTIAL` e não calcula saldo projetado, menor saldo ou semana crítica.
+
+Verificação: `go test ./internal/dashboard -count=1` executou com PostgreSQL local, incluindo a regressão do código `5`; `go vet ./internal/dashboard` passou. O worker atualizado está rodando no protótipo aberto. BK-062 permanece em 25% e o projeto em 12,2%; esses percentuais não mudaram porque falta fechar a diferença de centavo, a primeira faixa e o saldo inicial/float.
+
 ## Atualização às 06:07 BRT
 
 A tela agora recebe números do snapshot diário mais recente do Bling. A leitura

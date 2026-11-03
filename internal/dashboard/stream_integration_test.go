@@ -285,11 +285,36 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `UPDATE payables SET connection_id = $1::uuid, source_system = 'BLING', source_id = id::text, source_payment_method_id = 9, source_financial_account_id = 2 WHERE source_entity = 'bling.conta_pagar' AND status = 'OPEN'`, connectionID); err != nil {
 		t.Fatalf("link payable flow candidates to selected bank account: %v", err)
 	}
+	cancelledCodeFiveID := "00000000-0000-4000-8000-000000000022"
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO payables (id, connection_id, source_system, source_entity, source_id, source_payment_method_id, source_financial_account_id, open_balance, due_date, status)
+		VALUES ($1::uuid, $2::uuid, 'BLING', 'bling.conta_pagar', 'cancelled-code-5', 9, 2, -1794.15, $3::date + 20, '5')`, cancelledCodeFiveID, connectionID, businessDate); err != nil {
+		t.Fatalf("seed canceled Bling payable with numeric status: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO payable_sync_snapshot_rows (sync_batch_id, payable_id) VALUES ($1::uuid, $2::uuid)`, payableBatchID, cancelledCodeFiveID); err != nil {
+		t.Fatalf("add canceled payable to current snapshot: %v", err)
+	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil {
 		t.Fatalf("read summary with normalized cash-flow sources: %v", err)
 	}
+	if snapshot.PayablesDueNext90Days.Value != "-310" || snapshot.PayablesDueNext90Days.Count != 5 {
+		t.Fatalf("numeric status 5 must be excluded from next-90-day open payables: %+v", snapshot.PayablesDueNext90Days)
+	}
+	if snapshot.PayablesDueNext30Days.Value != "-310" || snapshot.PayablesDueNext30Days.Count != 5 {
+		t.Fatalf("numeric status 5 must be excluded from next-30-day open payables: %+v", snapshot.PayablesDueNext30Days)
+	}
 	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.InflowsNext30Days.Value != "150.0000" || snapshot.CashFlow.OutflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.OutflowsNext30Days.Value != "-290.0000" || len(snapshot.CashFlow.Days) != 61 {
 		t.Fatalf("cash-flow series should show the visible API composition as partial over 61 bounded dates: %+v", snapshot.CashFlow)
+	}
+	var canceledFlowDay *application.DashboardCashFlowDay
+	for index := range snapshot.CashFlow.Days {
+		if snapshot.CashFlow.Days[index].Date == "2026-11-08" {
+			canceledFlowDay = &snapshot.CashFlow.Days[index]
+			break
+		}
+	}
+	if canceledFlowDay == nil || canceledFlowDay.Outflows.Value != "0.0000" {
+		t.Fatalf("numeric status 5 must exclude canceled R$ 1,794.15 from the Bling cash-flow series: day=%+v", canceledFlowDay)
 	}
 }

@@ -1980,7 +1980,7 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "03/11: corrigido repasse Wails; T02/T01 exibem série e valores reais parciais. Entradas 30D R$ 69.994,12; saídas -R$ 263.930,47. Testes Go/frontend e build Wails passaram localmente. A CI 41607450718 passou em Windows e PostgreSQL; a primeira tentativa falhou apenas no padrão da mensagem e foi corrigida. Próximo: comparar com o relatório nas mesmas datas/contas/opções, validar abertura/float e homologar. Evidência: docs/evidence/T02-FLOW-SNAPSHOT-2026-11-03.md.",
+    "evidence": "03/11: corrigido repasse Wails; T02/T01 exibem série e valores reais parciais. Incluído status cancelado Bling 5 nos filtros: remove R$ 1.794,15 indevidos da projeção. T02 atualiza para entradas 30D R$ 69.994,12 e saídas -R$ 262.136,32, ainda Parcial. PostgreSQL e go vet do dashboard passaram. Comparação: 5/5 faixas de saída disponíveis exatas; 4/5 entradas exatas e uma com R$ 0,01; falta a faixa de 02/11 pois a carga começa em 03/11, e saldo inicial/float ainda não comprovados. Mantém 25%. Próximo: resolver centavo, completar histórico inicial/float e homologar. Evidência: docs/evidence/T02-CASH-FLOW-STATUS5-2026-11-03.md.",
     "weight": 1,
     "dependencies": [
       "BK-061",

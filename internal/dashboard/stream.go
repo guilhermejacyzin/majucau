@@ -513,7 +513,7 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
     FROM eligible_receivables
    WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
      AND effective_due_date >= $1::date AND effective_due_date < ($1::date + 90)
-     AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+     AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
 ), due90_ranked AS (
   SELECT candidate.*,
          row_number() OVER (
@@ -591,43 +591,43 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
     COUNT(id) AS total_count,
     COALESCE(SUM(open_balance) FILTER (
       WHERE due_date = $1::date
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ), 0)::text AS today_value,
     COUNT(id) FILTER (
       WHERE due_date = $1::date
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ) AS today_count,
     COALESCE(SUM(open_balance) FILTER (
       WHERE open_balance <> 0 AND due_date < $1::date
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ), 0)::text AS overdue_value,
     COUNT(id) FILTER (
       WHERE open_balance <> 0 AND due_date < $1::date
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ) AS overdue_count,
     COALESCE(SUM(open_balance) FILTER (
       WHERE due_date > $1::date AND due_date < ($1::date + 8)
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ), 0)::text AS due_next_7_days_value,
     COUNT(id) FILTER (
       WHERE due_date > $1::date AND due_date < ($1::date + 8)
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ) AS due_next_7_days_count
     ,COALESCE(SUM(open_balance) FILTER (
       WHERE due_date >= $1::date AND due_date < ($1::date + 90)
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ), 0)::text AS due_next_90_days_value,
     COUNT(id) FILTER (
       WHERE due_date >= $1::date AND due_date < ($1::date + 90)
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ) AS due_next_90_days_count,
     COALESCE(SUM(open_balance) FILTER (
       WHERE due_date >= $1::date AND due_date < ($1::date + 30)
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ), 0)::text AS due_next_30_days_value,
     COUNT(id) FILTER (
       WHERE due_date >= $1::date AND due_date < ($1::date + 30)
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+        AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
     ) AS due_next_30_days_count
   FROM payables pw
   WHERE pw.open_balance <> 0

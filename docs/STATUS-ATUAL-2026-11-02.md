@@ -192,3 +192,21 @@ O projeto continua em **12,1% concluído / 87,9% restante** e não está homolog
 Reiniciei o app Wails e o worker com o snapshot de 90 dias. A consulta sanitizada do worker ativo confirmou 418 títulos de Contas a Pagar na janela, com estado **Parcial**. Contas a Receber está **Indisponível** porque ainda não há linhas normalizadas; não exibi zero como valor confirmado. O total geral que aparecia na imagem da prévia não corresponde à métrica de 90 dias.
 
 A aba estática `127.0.0.1:4179` continua sem conexão com o banco. O app local conectado permanece em `http://localhost:34115/`. Falta conferir visualmente no app e normalizar Contas a Receber. O projeto não está pronto para homologação. Meta geral: 12,1% concluído / 87,9% restante.
+
+### Rechecagem do painel conectado — 03/11/2026
+
+Li a árvore de acessibilidade da janela Majucau em execução, sem registrar
+valores financeiros individuais. A Visão Executiva mostrou dados atuais de
+Contas a Receber e Contas a Pagar, com indicação **Parcial** em Contas a Pagar.
+Isso confirma que o Bling já está alimentando parte do protótipo. O saldo
+bancário, o gráfico de projeção e os menores saldos continuam indisponíveis.
+
+A causa da projeção vazia está no código: o contrato `DashboardSnapshot` ainda
+não tem campos para entradas/saídas projetadas, série diária, menor saldo ou
+semana crítica; `EmptyChart` continua sendo um placeholder. A T02 não pode
+mostrar como resultado do relatório os totais simples das telas a pagar/receber.
+A API pública consultada não documenta uma rota específica do relatório; a
+composição por recursos da API precisa ser comprovada contra o Fluxo de Caixa do
+Bling antes de alimentar T02 e T01. A tela e as regras aprovadas não foram
+alteradas. BK-062 permanece em 5%; o projeto permanece em 12,1% concluído / 87,9%
+restante.

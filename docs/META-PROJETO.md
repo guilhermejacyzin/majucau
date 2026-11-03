@@ -9,6 +9,28 @@
 - **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. A suíte PostgreSQL isolada passou localmente e a CI [#41535352924](https://github.com/guilhermejacyzin/majucau/actions/runs/41535352924) passou em Windows e PostgreSQL, incluindo migrations, integrações, build e pacote. A CI do ajuste posterior de movimentos parciais apontou apenas que o modelo `sqlc` gerado precisava ser incluído; corrigi isso no commit `8ffcff1` e a CI [#41545653326](https://github.com/guilhermejacyzin/majucau/actions/runs/41545653326) está em execução. Ainda faltam obter e ligar o resultado do relatório Fluxo de Caixa do Bling, atualizar o protótipo, sincronizar os dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
+### Rechecagem do painel conectado — 03/11/2026
+
+Li a árvore de acessibilidade da janela Majucau em execução, sem copiar valores
+financeiros para a documentação. A Visão Executiva mostrou resultados atuais de
+Contas a Receber e Contas a Pagar, com a indicação de parcial no segundo. Isso
+confirma que o Bling já está alimentando parte do protótipo. O saldo bancário e
+a projeção de caixa continuaram indisponíveis.
+
+A causa técnica da projeção vazia está no contrato do painel: `DashboardSnapshot`
+não tem métricas para entradas/saídas projetadas, série diária, menor saldo ou
+semana crítica. O gráfico `EmptyChart` é ainda um placeholder fixo. Portanto,
+os dados de A Receber/A Pagar que aparecem na T01 não são automaticamente o
+resultado do relatório Fluxo de Caixa. A T02 precisa receber o resultado do
+relatório Bling (ou uma reprodução da API validada contra ele), e a T01 deve
+reutilizar o mesmo resultado. A tela aprovada não foi alterada.
+
+O Chrome não autorizou nesta sessão a leitura do conteúdo da aba do relatório
+Bling. Não houve tentativa de contornar a política. A evidência já enviada pela
+responsável continua sendo a referência visual. BK-062 permanece em 5% e o
+projeto em 12,1%; esta constatação esclarece a causa, mas ainda não liga nem
+homologa a projeção.
+
 ### Histórico — componentes de vencimento na T02 — 03/11/2026 (corrigido abaixo)
 
 Preparei no worker duas métricas de vencimento para a T02, separadas das janelas

@@ -28,12 +28,21 @@ de uma abertura/float comprovados. Não alterei tela aprovada, regra financeira
 ou permissão de conta. A autorização de leitura de Contas Financeiras foi dada,
 mas o escopo ainda não foi aplicado no app do Bling nem o Majucau reautorizado.
 
-**Próximo passo único da T02:** depois de habilitar leitura de Contas
-Financeiras e reautorizar, sincronizar novamente; conferir amostra RAW sem
-expor dados pessoais para descobrir por que `origem.tipo` não foi normalizado;
-então comparar, no mesmo período e com as mesmas opções, cada faixa do relatório
-de Fluxo de Caixa do Bling. BK-062 permanece em **30%** (70% restante); o
-projeto permanece em **12,3%** (87,7% restante). Evidência:
+Revalidei o OpenAPI que a referência oficial publica hoje. A lista de contas
+financeiras contém somente ID, descrição, tipo e alias de integração; a lista
+de caixas contém os lançamentos, e o campo `saldo` do detalhe é apenas um
+indicador `S`/`N` de ajuste. A permissão de leitura já aprovada ajuda a
+identificar Itaú e Mercado Pago, mas não entrega os valores atuais em reais. O
+navegador do Codex também recusou abrir o Bling por uma permissão salva; não
+contornei o bloqueio. Evidência detalhada: [contrato de saldo T02](evidence/T02-BLING-SALDO-SCHEMA-2026-11-03.md).
+
+**Próximo passo único da T02:** restaurar o acesso autorizado ao site no
+navegador do Codex; depois, aplicar a permissão de leitura aprovada e
+reautorizar o Majucau para confirmar as identidades das contas. Em seguida,
+inspecionar uma amostra RAW sem expor dados pessoais, reconciliar cada faixa
+com o mesmo período/opções do relatório e localizar uma fonte comprovada para
+o saldo de abertura. BK-062 permanece em **30%** (70% restante); o projeto
+permanece em **12,3%** (87,7% restante). Evidência:
 [`T02-BLING-SALDO-SCHEMA-2026-11-03.md`](evidence/T02-BLING-SALDO-SCHEMA-2026-11-03.md).
 
 Também corrigi a governança do pacote: a planilha de backlog mostrava BK-062

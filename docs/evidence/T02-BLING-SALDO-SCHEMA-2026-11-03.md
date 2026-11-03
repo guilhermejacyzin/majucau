@@ -4,6 +4,29 @@
 **Fonte consultada:** especificação OpenAPI oficial da API Bling e Central de Ajuda oficial, conferida novamente em 03/11/2026.
 **Escopo:** somente leitura; sem mudança de tela, regra financeira ou configuração da conta.
 
+## Revalidação do OpenAPI publicado — 03/11/2026
+
+Conferi novamente o arquivo OpenAPI servido pela própria página de referência:
+[openapi-CR5QY_N1.json](https://developer.bling.com.br/build/assets/openapi-CR5QY_N1.json).
+O resultado confirma o limite descrito abaixo:
+
+- `GET /contas-contabeis` e `GET /contas-contabeis/{idContaContabil}` devolvem
+  `id`, `descricao`, `tipo` e `aliasIntegracao`; não há campo monetário de
+  saldo na resposta;
+- `GET /caixas` devolve lançamentos com valor e conta financeira, mas a linha
+  não contém saldo da conta;
+- `GET /caixas/{idCaixa}` contém o campo `saldo` como texto `S`/`N`, descrito
+  como indicação de ajuste após o lançamento, e não como quantia;
+- a lista atual de operações não contém rota de leitura de saldo bancário.
+
+Portanto, a permissão somente de leitura de Contas Financeiras é útil para
+identificar Itaú e Mercado Pago pelo cadastro, mas não basta para mostrar o
+saldo em reais. A autorização da responsável está registrada; a permissão
+ainda não foi aplicada porque o navegador do Codex bloqueou o acesso ao site.
+Mesmo depois de aplicada, não se deve preencher saldo atual somando apenas os
+movimentos desde 01/01/2026: sem saldo de abertura comprovado nessa data, isso
+seria somente a variação daquele período.
+
 ## O que a API pública retorna
 
 O contrato atual da referência oficial contém:

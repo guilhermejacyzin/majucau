@@ -85,6 +85,26 @@ type BlingCashMovement struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
+// Typed read-only Bling payment-method settings used to reproduce the official cash-flow report; *_known flags distinguish source values from stored zero defaults.
+type BlingPaymentMethodTerm struct {
+	ID                pgtype.UUID        `json:"id"`
+	ConnectionID      pgtype.UUID        `json:"connection_id"`
+	SyncBatchID       pgtype.UUID        `json:"sync_batch_id"`
+	SourceID          string             `json:"source_id"`
+	Destination       *int16             `json:"destination"`
+	FeeRate           pgtype.Numeric     `json:"fee_rate"`
+	FeeRateKnown      bool               `json:"fee_rate_known"`
+	FixedFee          pgtype.Numeric     `json:"fixed_fee"`
+	FixedFeeKnown     bool               `json:"fixed_fee_known"`
+	SettlementDays    *int32             `json:"settlement_days"`
+	SettlementKnown   bool               `json:"settlement_known"`
+	UseBusinessDays   *bool              `json:"use_business_days"`
+	BusinessDaysKnown bool               `json:"business_days_known"`
+	RawRecordID       pgtype.UUID        `json:"raw_record_id"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+}
+
 // Temporary, bounded RAW pages for one Bling load. Pages become current RAW only in the final atomic publish transaction; stale runs are removed when a new correlation starts.
 type BlingSyncPageCheckpoint struct {
 	ConnectionID  pgtype.UUID `json:"connection_id"`

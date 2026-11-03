@@ -68,7 +68,7 @@ func TestPreparePaymentMethodPageKeepsRawListAndDetailAndCachesWithinPage(t *tes
 		t.Fatal(err)
 	}
 	batchID := pgtype.UUID{Bytes: [16]byte{1}, Valid: true}
-	prepare := preparePaymentMethodAPISnapshotPage(client)
+	prepare, _ := normalizePaymentMethodsAPISnapshotPage(client)
 	prepared, err := prepare(context.Background(), batchID, []json.RawMessage{
 		json.RawMessage(`{"id":11,"descricao":"Cartao"}`),
 		json.RawMessage(`{"id":11,"descricao":"Cartao"}`),

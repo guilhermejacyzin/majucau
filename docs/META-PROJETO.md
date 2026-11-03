@@ -6,8 +6,21 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 13% após parser de taxa/prazo/destino, conferidor de períodos e agrupador semanal. A série ainda não alimenta o banco nem a T02. A CI [#41578030443](https://github.com/guilhermejacyzin/majucau/actions/runs/41578030443) concluiu verde. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 15% após persistência tipada das regras das formas de pagamento. A série ainda não alimenta o banco nem a T02. A CI anterior [#41580354208](https://github.com/guilhermejacyzin/majucau/actions/runs/41580354208) concluiu verde; esta mudança aguarda validação. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
+
+### T02 — persistência das condições das formas de pagamento — 03/11/2026
+
+As condições das formas de pagamento agora são salvas numa tabela tipada,
+vinculadas ao lote diário e à evidência RAW. A sincronização só marca essa fonte
+como completa após normalizar os dados; isso evita descartar taxa, prazo,
+destino e configuração de dias úteis que influenciam o relatório de Fluxo de
+Caixa. Os campos ausentes continuam marcados como desconhecidos. Os testes Go
+direcionados passaram. BK-062 avança de 13% para 15%; a média do projeto mantém
+12,1% concluídos e 87,9% restantes após arredondamento. A série de caixa ainda
+não é composta nem aparece na T02; saldo inicial, dias úteis/feriados,
+comparação com o relatório atualizado e ligação visual continuam pendentes.
+Evidência: `docs/evidence/T02-PAYMENT-METHOD-NORMALIZATION-2026-11-03.md`.
 
 ### T02 — leitura de contas financeiras pela API oficial — 03/11/2026
 

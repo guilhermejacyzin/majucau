@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	database "majucau.local/financial-intelligence/database/gen"
 	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/financial"
 )
@@ -113,13 +115,12 @@ func optionalPaymentMethodDays(raw json.RawMessage) (int, error) {
 	return days, nil
 }
 
-// PaymentMethodsAPISyncService records a read-only RAW snapshot of the Bling
-// payment-method configuration. Its parsed destination, fee, term, and
-// business-day fields are inputs to the separately validated T02 composition.
+// PaymentMethodsAPISyncService records both the immutable RAW response and a
+// typed read-only snapshot of the payment-method settings used by T02.
 type PaymentMethodsAPISyncService struct{ *apiResourceSyncService }
 
 func NewPaymentMethodsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *PaymentMethodsAPISyncService {
-	preparePage := preparePaymentMethodAPISnapshotPage(client)
+	preparePage, normalizePage := normalizePaymentMethodsAPISnapshotPage(client)
 	var list func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
 	if client != nil {
 		list = func(ctx context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
@@ -127,13 +128,14 @@ func NewPaymentMethodsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient)
 		}
 	}
 	return &PaymentMethodsAPISyncService{apiResourceSyncService: &apiResourceSyncService{
-		pool:         pool,
-		client:       client,
-		maxPages:     maxBlingAPIPageReads,
-		resource:     PaymentMethodsAPIResource,
-		sourceEntity: "bling.formas_pagamentos.page",
-		list:         list,
-		preparePage:  preparePage,
+		pool:          pool,
+		client:        client,
+		maxPages:      maxBlingAPIPageReads,
+		resource:      PaymentMethodsAPIResource,
+		sourceEntity:  "bling.formas_pagamentos.page",
+		list:          list,
+		preparePage:   preparePage,
+		normalizePage: normalizePage,
 	}}
 }
 
@@ -144,11 +146,14 @@ func (s *PaymentMethodsAPISyncService) SyncWithCorrelationID(ctx context.Context
 	return s.apiResourceSyncService.sync(ctx, filter, &correlationID)
 }
 
-func preparePaymentMethodAPISnapshotPage(client *BlingAPIClient) func(context.Context, pgtype.UUID, []json.RawMessage) ([]json.RawMessage, error) {
+func normalizePaymentMethodsAPISnapshotPage(client *BlingAPIClient) (
+	func(context.Context, pgtype.UUID, []json.RawMessage) ([]json.RawMessage, error),
+	func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error,
+) {
 	detailCache := make(map[int64]json.RawMessage)
 	var cacheBatch pgtype.UUID
 
-	return func(ctx context.Context, batchID pgtype.UUID, records []json.RawMessage) ([]json.RawMessage, error) {
+	prepare := func(ctx context.Context, batchID pgtype.UUID, records []json.RawMessage) ([]json.RawMessage, error) {
 		if client == nil || !batchID.Valid {
 			return nil, fmt.Errorf("%w: payment method preparation dependencies are missing", ErrBlingAPIConfiguration)
 		}
@@ -186,4 +191,74 @@ func preparePaymentMethodAPISnapshotPage(client *BlingAPIClient) func(context.Co
 		}
 		return prepared, nil
 	}
+
+	normalize := func(ctx context.Context, queries *database.Queries, connectionID, batchID pgtype.UUID, records []json.RawMessage) error {
+		if queries == nil || !connectionID.Valid || !batchID.Valid {
+			return fmt.Errorf("%w: payment method normalizer dependencies are missing", ErrBlingAPIConfiguration)
+		}
+		for _, record := range records {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			var prepared preparedPaymentMethodAPIRecord
+			if len(record) == 0 || json.Unmarshal(record, &prepared) != nil || len(prepared.Detail) == 0 {
+				return errors.Join(errBlingPaymentMethodSchemaMismatch, ErrBlingAPISchemaMismatch)
+			}
+			var identity paymentMethodAPIIdentity
+			if json.Unmarshal(prepared.List, &identity) != nil || identity.ID <= 0 {
+				return errors.Join(errBlingPaymentMethodSchemaMismatch, ErrBlingAPISchemaMismatch)
+			}
+			terms, err := parseBlingPaymentMethodTerms(record, identity.ID)
+			if err != nil {
+				return errors.Join(errBlingPaymentMethodSchemaMismatch, err)
+			}
+			rawID, err := persistCurrentBlingEntity(ctx, queries, connectionID, batchID, "bling.forma_pagamento", strconv.FormatInt(identity.ID, 10), record)
+			if err != nil {
+				return fmt.Errorf("persist Bling payment method source: %w", err)
+			}
+			feeRate, err := knownPaymentMethodMoney(terms.FeeRate)
+			if err != nil {
+				return err
+			}
+			fixedFee, err := knownPaymentMethodMoney(terms.FixedFee)
+			if err != nil {
+				return err
+			}
+			destination := (*int16)(nil)
+			if terms.DestinationKnown {
+				value := int16(terms.Destination)
+				destination = &value
+			}
+			settlementDays := (*int32)(nil)
+			if terms.SettlementKnown {
+				value := int32(terms.SettlementDays)
+				settlementDays = &value
+			}
+			businessDays := (*bool)(nil)
+			if terms.BusinessDaysKnown {
+				value := terms.UseBusinessDays
+				businessDays = &value
+			}
+			if err := queries.UpsertBlingPaymentMethodTerms(ctx, database.UpsertBlingPaymentMethodTermsParams{
+				ConnectionID: connectionID, SyncBatchID: batchID, SourceID: strconv.FormatInt(identity.ID, 10),
+				Destination: destination, FeeRate: feeRate, FeeRateKnown: terms.FeeRateKnown,
+				FixedFee: fixedFee, FixedFeeKnown: terms.FixedFeeKnown,
+				SettlementDays: settlementDays, SettlementKnown: terms.SettlementKnown,
+				UseBusinessDays: businessDays, BusinessDaysKnown: terms.BusinessDaysKnown,
+				RawRecordID: rawID,
+			}); err != nil {
+				return fmt.Errorf("persist normalized Bling payment method terms: %w", err)
+			}
+		}
+		return nil
+	}
+	return prepare, normalize
+}
+
+func knownPaymentMethodMoney(value domain.Money) (pgtype.Numeric, error) {
+	parsed, err := numeric(value)
+	if err != nil {
+		return pgtype.Numeric{}, errBlingPaymentMethodSchemaMismatch
+	}
+	return parsed, nil
 }

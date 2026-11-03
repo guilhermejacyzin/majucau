@@ -98,6 +98,13 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 	}
 	result, skipped, err = service.SyncDaily(ctx, scheduledAt)
 	if err == nil || skipped || result.Status == "SUCCESS" {
+		t.Fatalf("RAW-only payment-method settings were accepted as complete: result=%+v skipped=%v error=%v", result, skipped, err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE correlation_id = $1 AND resource = $2`, correlation, PaymentMethodsAPIResource); err != nil {
+		t.Fatalf("mark payment-method fixture as normalized: %v", err)
+	}
+	result, skipped, err = service.SyncDaily(ctx, scheduledAt)
+	if err == nil || skipped || result.Status == "SUCCESS" {
 		t.Fatalf("missing financial-account list was accepted as complete: result=%+v skipped=%v error=%v", result, skipped, err)
 	}
 	if _, err := pool.Exec(ctx, `

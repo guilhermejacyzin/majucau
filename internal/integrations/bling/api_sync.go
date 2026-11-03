@@ -52,9 +52,9 @@ type APISyncResult struct {
 }
 
 // apiResourceSyncService stages API pages as append-only RAW evidence. The
-// full daily payable and cash-movement snapshots also normalize their approved
-// fields in the same publication transaction; other resources remain RAW_ONLY
-// until their mapping contracts are implemented and approved.
+// full daily payable, cash-movement, and payment-method snapshots also
+// normalize their approved fields in the same publication transaction; other
+// resources remain RAW_ONLY until their mapping contracts are implemented.
 type apiResourceSyncService struct {
 	pool             *pgxpool.Pool
 	client           *BlingAPIClient
@@ -220,7 +220,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		return APISyncResult{}, fmt.Errorf("remove superseded prepared Bling page checkpoints: %w", err)
 	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
-	fullDailyNormalizedSnapshot := (s.resource == ReceivablesAPIResource || s.resource == PayablesAPIResource || s.resource == CashMovementsAPIResource) && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
+	fullDailyNormalizedSnapshot := (s.resource == ReceivablesAPIResource || s.resource == PayablesAPIResource || s.resource == CashMovementsAPIResource || s.resource == PaymentMethodsAPIResource) && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
 	retryCounter := httpretry.NewCounter()
 	ctx = httpretry.WithCounter(ctx, retryCounter)
 	fail := func(code string, cause error) (APISyncResult, error) {

@@ -9,6 +9,17 @@
 - **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. Na CI [#41570346870](https://github.com/guilhermejacyzin/majucau/actions/runs/41570346870), migrações, PostgreSQL, backlog, testes, build e segurança passaram, mas o smoke do serviço worker no Windows falhou em `WORKER_SERVICE_WAIT_FOR_RUNNING`; o diagnóstico posterior viu o serviço `Running`, então essa falha intermitente ainda precisa ser revalidada. Testes Go locais e `go vet` passaram para a captura dos IDs financeiros da T02. Ainda faltam ligar uma série de fluxo de caixa comprovada ao protótipo, sincronizar dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
+### Decisão de fonte da T02 — 03/11/2026
+
+A responsável confirmou que a T02 deve reproduzir o mesmo resultado do relatório
+“Fluxo de Caixa” do Bling usando somente APIs oficiais. A API consultada não tem
+um endpoint documentado que devolva o relatório pronto. O progresso da T02 segue
+em 5% enquanto a série equivalente não for implementada e comparada com o
+relatório. A API de contas financeiras lista nomes/IDs, mas não documenta o
+saldo; a API de Caixas e Bancos retorna lançamentos. O saldo por banco permanece
+um dado separado do saldo projetado e não será preenchido por estimativa.
+Detalhes: `docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.
+
 ### Rechecagem do painel conectado — 03/11/2026
 
 Li a árvore de acessibilidade da janela Majucau em execução, sem copiar valores

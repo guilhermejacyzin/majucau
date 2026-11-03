@@ -77,18 +77,47 @@ manter o resultado pendente e corrigir o mapeamento antes de publicar valores.
 ## Decisão e checagem da API direta — 03/11/2026
 
 A responsável confirmou que a integração deve usar somente a API oficial direta,
-sem carregar um CSV/XLS do relatório pelo Drive. A especificação OpenAPI vigente
-consultada lista `GET /caixas`, `GET /contas/receber`, `GET /contas/pagar` e
-`GET /formas-pagamentos`, mas não lista rota `fluxo` ou `relatório`. Portanto,
-ela não oferece, hoje, uma resposta pronta do relatório que a T02 possa apenas
-copiar. A aba do relatório já aberta no Chrome também não ficou acessível nesta
-sessão: depois da autorização da responsável, o controle de navegador retornou
-`Browser is not available: chrome`; não houve leitura do relatório nem tentativa
-de contornar o bloqueio.
+sem carregar CSV/XLS do relatório pelo Drive. Em seguida, aprovou reproduzir o
+mesmo relatório usando os recursos oficiais. A API pública não oferece uma rota
+`fluxo`/`relatório` pronta; portanto, o Majucau deverá compor o resultado a
+partir dos dados oficiais e provar que ele coincide com o relatório do Bling
+antes de publicá-lo como confirmado.
 
-Ainda falta uma decisão funcional para seguir usando apenas a API: autorizar que
-o Majucau reproduza o mesmo resultado a partir dos recursos oficiais e o
-compare com o relatório real, ou manter a T02 pendente até o Bling disponibilizar
-uma rota oficial para o relatório pronto. Não presumir que a autorização para
-“mostrar o mesmo resultado” autoriza cálculos divergentes ou uma fonte por
-arquivo. T02 continua em 5% e não foi homologada.
+Na consulta atual da especificação OpenAPI oficial, `GET /contas-contabeis`
+retorna identidade, descrição, tipo e alias da conta financeira; não documenta
+saldo. `GET /caixas` retorna lançamentos individuais, também sem um campo de
+saldo atual por conta. A T02 deve manter o saldo bancário separado do saldo
+projetado, conforme a regra aprovada. A reconstrução de um saldo de abertura a
+partir do histórico e a cobertura histórica completa ainda precisam ser
+provadas; não presumir que somar somente os movimentos desde 01/01/2026 forneça
+o saldo atual.
+
+Configuração de referência registrada a partir da captura da responsável:
+período semanal selecionado no relatório, contas Itaú e Mercado Pago, float
+bancário ativado, prazo da forma de recebimento ativado e pagamentos/recebimentos
+incluídos. O comportamento equivalente dessas opções precisa ser validado com
+as configurações e lançamentos efetivamente retornados pela API. A captura é
+referência de conferência, não fonte de dados em produção.
+
+A leitura do relatório pelo Chrome não foi necessária nem tentada nesta decisão:
+foi escolhida a API oficial direta. T02 permanece incompleta até a composição,
+a conferência dos totais/datas contra o mesmo relatório e a ligação dos
+resultados à tela, sem substituir o saldo de Caixas e Bancos por projeção.
+
+## Referências oficiais que orientam a composição
+
+- O [artigo do Fluxo de Caixa do Bling](https://ajuda.bling.com.br/hc/pt-br/articles/360038306714-Como-gerar-um-relat%C3%B3rio-de-futuras-entradas-e-sa%C3%ADdas-de-valores)
+  descreve o relatório como a previsão futura de contas a pagar e receber.
+- O [artigo de taxas e prazos das formas de pagamento](https://ajuda.bling.com.br/hc/pt-br/articles/360035872974-Como-controlar-as-taxas-que-pago-sobre-algumas-formas-de-pagamento-no-Bling)
+  confirma que a previsão pode considerar o valor líquido, a taxa, o prazo de
+  recebimento, os dias úteis e o destino da forma de pagamento.
+- O [cadastro de contas financeiras](https://ajuda.bling.com.br/hc/pt-br/articles/34491885650839-Como-cadastrar-contas-financeiras-no-Bling)
+  informa que a conta possui uma data inicial de lançamentos e um saldo inicial.
+  Esse saldo inicial não aparece nos campos documentados de `GET /contas-contabeis`;
+  será necessário provar se a leitura completa de `/caixas` o expõe como
+  lançamento recuperável antes de calcular saldo de abertura.
+
+Essas referências confirmam quais dados precisam compor o resultado, mas não
+definem uma fórmula alternativa à do relatório. A fonte oficial do relatório
+continua sendo o padrão de comparação e a T02 só será confirmada após
+confrontar a API com ele, usando as opções já escolhidas pela responsável.

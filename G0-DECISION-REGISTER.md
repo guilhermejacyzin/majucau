@@ -385,3 +385,13 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - Quando uma ocorrência corresponder nas duas fontes, contar uma vez e usar a projeção da Nuvem Pago para valor líquido e data prevista. Para a janela de 90 dias, primeiro considerar as ocorrências que estão na janela e então remover a correspondência duplicada; a data pode diferir entre fontes sem alterar a identidade da correspondência.
 - Esta decisão substitui para o resultado de Contas a Receber a composição anterior `B2C Nuvem + B2B Bling`. Ela não autoriza classificação B2B/B2C com base no tipo de pessoa, nem altera DRE, regras fiscais ou telas aprovadas.
 - O protótipo só pode mostrar o resultado como completo depois que o Bling estiver normalizado e os dados externos reais estiverem carregados; fontes ausentes ou correspondências sem nome permanecem sem deduplicação automática.
+
+## Decisão posterior — fonte do resultado da T02 Fluxo de Caixa
+
+- **Confirmada por:** Gisele, nesta conversa Codex, em 2026-11-03 (America/Sao_Paulo).
+- A T02 deve mostrar o mesmo resultado do relatório **Fluxo de Caixa** do Bling. Usar somente as APIs oficiais do Bling; não importar o relatório por CSV/XLS nem usar o Drive como fonte desse resultado.
+- Como a API pública não documenta um endpoint que devolva o relatório pronto, o Majucau deve reproduzir sua composição com recursos oficiais e comparar valores, datas e agrupamentos com o relatório real antes de apresentar os números como confirmados.
+- A captura de referência da responsável mostra contas Itaú e Mercado Pago selecionadas, float bancário ativado, prazo da forma de recebimento ativado e pagamentos/recebimentos incluídos. Os mesmos filtros/opções precisam ser considerados na conferência.
+- O saldo bancário atual continua separado da projeção e deve vir de Caixas e Bancos. Não substituir esse saldo pelo saldo projetado nem preencher ausência de saldo inicial por estimativa.
+- Esta decisão aprova o método de fonte e validação; não altera desenho das telas, regras financeiras ou filtros já aprovados. Enquanto a composição ou o saldo de abertura não estiverem comprovados, o dado correspondente permanece pendente.
+- Evidência técnica: `docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.

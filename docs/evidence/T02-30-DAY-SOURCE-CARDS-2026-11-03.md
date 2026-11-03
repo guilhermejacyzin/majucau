@@ -64,11 +64,14 @@ continuam pertencendo às métricas de vencimento e não são uma fonte validada
 para o Fluxo de Caixa.
 
 A captura de referência contém totais semanais, insuficientes para extrair
-automaticamente cada dia da janela móvel. A documentação pública consultada
-lista recursos de Caixa e Bancos e de Contas a Pagar/Receber, mas não um endpoint
-documentado para o relatório Fluxo de Caixa. Portanto, os cards permanecem sem
-valor até existir uma fonte automática aprovada e validada; não se usa a imagem
-nem uma soma de outras telas como dado atual. A T02 permanece incompleta.
+automaticamente cada dia da janela móvel. A responsável aprovou reproduzir o
+mesmo relatório por APIs oficiais. Como não existe endpoint documentado para o
+relatório pronto, é necessário compor a série e compará-la com o relatório real
+antes de publicar valores confirmados. `GET /contas-contabeis` não documenta
+saldo por conta; `GET /caixas` traz lançamentos, sem saldo atual. Não se usa a
+imagem nem uma soma de cards de outras telas como dado vivo. A T02 permanece
+incompleta; o mapeamento aprovado e as lacunas estão em
+`T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.
 
 ## Verificação CI da correção — 03/11/2026
 

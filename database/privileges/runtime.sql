@@ -1,5 +1,7 @@
--- Execute as the schema owner after every migration.
+-- Execute as the controlled database administrator after every migration.
 -- The installer creates majucau_runtime as a non-owner LOGIN role with SCRAM.
+-- The administrator context is required to revoke PUBLIC access from routines
+-- owned by installed extensions such as pgcrypto; this script changes ACLs only.
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO majucau_runtime;
@@ -24,7 +26,6 @@ GRANT SELECT ON TABLE
   raw_records,
   bling_cash_movements,
   receivable_sync_snapshot_rows,
-  receivable_sources,
   payable_sync_snapshot_rows,
   receipts,
   receivables,

@@ -1,5 +1,19 @@
 # Status atual do Majucau — 02/11/2026
 
+## Atualização confirmada — pasta 02 do Drive
+
+Retomei a pasta `MAJUCAU_INTELLIGENCE_INPUT/02_nuvem_pago/recebimentos_futuros` antes de qualquer outra pasta. O arquivo `extrato_lancamentos_futuros_02_11_2026.csv` foi identificado no Drive; o fluxo CSV validou e importou 635 linhas no PostgreSQL isolado do protótipo, sem erros, e a interface agora mostra os recebimentos dessa fonte como **Parcial** tanto na T03 quanto na T01. O total exibido foi conferido nas duas telas; não registrei o valor financeiro neste arquivo versionado.
+
+**Importante:** o navegador do Drive não permitiu baixar o arquivo para conferir seu hash. A importação foi feita pela cópia local CSV com o mesmo nome; portanto, a igualdade entre a cópia no Drive e a cópia local não foi comprovada por hash. A importação do arquivo local está comprovada no banco; a leitura automática direta do Drive ainda não está concluída. A rotina diária do Drive segue sem credencial técnica configurada. Não processei a pasta 03.
+
+A migration 000018 foi aplicada somente ao banco local isolado `majucau_dev` (127.0.0.1:55438). O script de permissões e sua verificação passaram. Ajustei a allowlist para não dar leitura ampla à tabela de vínculos: o worker só pode ler os dois campos necessários à deduplicação. O valor fica parcial até o Bling ter uma carga de Contas a Receber normalizada e disponível para comparação. Nenhuma tela aprovada ou regra financeira foi alterada.
+
+**Próxima etapa da própria pasta 02:** fechar a leitura diária segura do Drive, atualizar a cópia pelo caminho automatizado e confirmar a conciliação sem duplicar por nome + valor bruto. A pasta 03 permanece parada até a etapa 02 ser encerrada.
+
+**Verificações concluídas:** leitura do painel com usuário normal do aplicativo (`snapshot_query_ok`); T01 e T03 conferidas visualmente; testes `go test ./internal/dashboard -count=1`; regressão PostgreSQL `TestReadStreamSummaryPostgresRequiresNormalizedDailyStages`; checagem de checksum das migrations; `verify_runtime.sql`; `git diff --check`.
+
+> As anotações abaixo registram o histórico anterior a essa importação; trechos que dizem que o CSV não foi importado ou que T03 está indisponível foram superados por esta atualização.
+
 ## Em que fase estamos
 
 Estamos na etapa de **fazer a integração do Bling transformar os dados recebidos em informações que as telas conseguem mostrar**. O protótipo abre e o Bling está conectado, mas ainda não está pronto para homologação.

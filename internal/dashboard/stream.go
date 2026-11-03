@@ -120,9 +120,11 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		payablesValue, payablesTodayValue, payablesOverdueValue, payablesDueNext7DaysValue, payablesDueNext90DaysValue, paymentsMonthValue                                     string
 		receivablesCount, futureCount, receiptsTotalCount, receiptsMonthCount                                                                                                  int64
 		receivablesOverdueCount, receivablesDueNext90DaysCount, payablesCount, payablesTodayCount, payablesOverdueCount, payablesDueNext7DaysCount, payablesDueNext90DaysCount int64
+		blingReceivablesCount, blingReceivablesOverdueCount, due90BlingCount, due90NuvemCount                                                                                  int64
 		paymentsTotalCount, paymentsMonthCount                                                                                                                                 int64
+		blingReceivablesValue, blingReceivablesOverdueValue, due90BlingValue, due90NuvemValue                                                                                  string
 		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt                                                                                 pgtype.Timestamptz
-		dailyPayablesPartial, dailyCashMovementsPartial, dailyNuvemFuturePartial                                                                                               bool
+		dailyReceivablesPartial, dailyPayablesPartial, dailyCashMovementsPartial, dailyNuvemFuturePartial                                                                      bool
 	)
 	dailyCorrelationID, err := dailyBlingCorrelationID(asOf)
 	if err != nil {
@@ -155,11 +157,21 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&payablesDueNext90DaysValue,
 		&payablesDueNext90DaysCount,
 		&dailyNuvemFuturePartial,
+		&blingReceivablesValue,
+		&blingReceivablesCount,
+		&blingReceivablesOverdueValue,
+		&blingReceivablesOverdueCount,
+		&due90BlingValue,
+		&due90BlingCount,
+		&due90NuvemValue,
+		&due90NuvemCount,
+		&dailyReceivablesPartial,
 	)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
 	}
 	receivablesFresh := completedBy(dailyReceivablesSyncAt, asOf)
+	nuvemFutureFresh := !dailyNuvemFuturePartial
 	payablesFresh := completedBy(dailyPayablesSyncAt, asOf)
 	cashMovementsFresh := completedBy(dailyCashMovementsSyncAt, asOf)
 	state := "UNAVAILABLE"
@@ -175,11 +187,11 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		AsOf:                     asOf,
 		LastBlingSyncAt:          lastBlingSyncTime,
 		DataState:                state,
-		Receivables:              metricForSourceRun(receivablesValue, receivablesCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO", dailyNuvemFuturePartial),
+		Receivables:              combinedReceivableMetric(receivablesValue, receivablesCount, blingReceivablesValue, blingReceivablesCount, futureValue, futureCount, receivablesFresh, dailyReceivablesPartial, nuvemFutureFresh),
 		FutureB2C:                metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
 		ReceiptsMonth:            metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
-		ReceivablesOverdue:       metricForSourceRun(receivablesOverdueValue, receivablesOverdueCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO", dailyNuvemFuturePartial),
-		ReceivablesDueNext90Days: metricForSourceRun(receivablesDueNext90DaysValue, receivablesDueNext90DaysCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO", dailyNuvemFuturePartial),
+		ReceivablesOverdue:       combinedReceivableMetric(receivablesOverdueValue, receivablesOverdueCount, blingReceivablesOverdueValue, blingReceivablesOverdueCount, "0.0000", 0, receivablesFresh, dailyReceivablesPartial, nuvemFutureFresh),
+		ReceivablesDueNext90Days: combinedReceivableMetric(receivablesDueNext90DaysValue, receivablesDueNext90DaysCount, due90BlingValue, due90BlingCount, due90NuvemValue, due90NuvemCount, receivablesFresh, dailyReceivablesPartial, nuvemFutureFresh),
 		Payables:                 metricForSourceRun(payablesValue, payablesCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesDueToday:         metricForSourceRun(payablesTodayValue, payablesTodayCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesOverdue:          metricForSourceRun(payablesOverdueValue, payablesOverdueCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
@@ -220,6 +232,27 @@ func metricForSourceRun(value string, count, sourceCount int64, fresh bool, sour
 		state = "CONFIRMED"
 	}
 	return metric(value, count, state, source)
+}
+
+// combinedReceivableMetric only includes sources that completed the current
+// daily import. It never mixes a current source with a stale subtotal; the
+// approved customer-name + gross-value de-duplication is used when both are current.
+func combinedReceivableMetric(combinedValue string, combinedCount int64, blingValue string, blingCount int64, nuvemValue string, nuvemCount int64, blingFresh, blingPartial, nuvemFresh bool) application.DashboardMetric {
+	const source = "BLING + NUVEM_PAGO"
+	if !blingFresh && !nuvemFresh {
+		return application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: source}
+	}
+	if blingFresh && nuvemFresh {
+		state := "CONFIRMED"
+		if blingPartial {
+			state = "PARTIAL"
+		}
+		return metric(combinedValue, combinedCount, state, source)
+	}
+	if blingFresh {
+		return metric(blingValue, blingCount, "PARTIAL", source)
+	}
+	return metric(nuvemValue, nuvemCount, "PARTIAL", source)
 }
 
 func metric(value string, count int64, state, source string) application.DashboardMetric {
@@ -406,6 +439,8 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
   SELECT
     COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)), 0)::text AS total_value,
     COUNT(id) AS total_count,
+    COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE source_system = 'BLING'), 0)::text AS bling_value,
+    COUNT(id) FILTER (WHERE source_system = 'BLING') AS bling_count,
     COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (
       WHERE source_system = 'NUVEM_PAGO' AND business_type = 'B2C' AND status = 'PROJECTED'
     ), 0)::text AS future_value,
@@ -418,6 +453,12 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
     COUNT(id) FILTER (
       WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND effective_due_date < $1::date
     ) AS overdue_count
+    ,COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (
+      WHERE source_system = 'BLING' AND COALESCE(open_balance, net_amount, gross_amount) > 0 AND effective_due_date < $1::date
+    ), 0)::text AS bling_overdue_value,
+    COUNT(id) FILTER (
+      WHERE source_system = 'BLING' AND COALESCE(open_balance, net_amount, gross_amount) > 0 AND effective_due_date < $1::date
+    ) AS bling_overdue_count
   FROM deduplicated_receivables
 ), due90_candidates AS (
   SELECT *
@@ -449,7 +490,11 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
    WHERE nuvem.source_system = 'NUVEM_PAGO'
 ), due90 AS (
   SELECT COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)), 0)::text AS value,
-         COUNT(id) AS count
+         COUNT(id) AS count,
+         COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE source_system = 'BLING'), 0)::text AS bling_value,
+         COUNT(id) FILTER (WHERE source_system = 'BLING') AS bling_count,
+         COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE source_system = 'NUVEM_PAGO'), 0)::text AS nuvem_value,
+         COUNT(id) FILTER (WHERE source_system = 'NUVEM_PAGO') AS nuvem_count
     FROM due90_deduplicated
 ), cash_snapshot AS (
   SELECT b.id AS sync_batch_id, b.status
@@ -551,7 +596,8 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
      AND b.status IN ('SUCCESS', 'PARTIAL')
 ), current_daily_bling_sync AS (
   SELECT
-    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.receber' AND b.status = 'SUCCESS' AND b.data_stage = 'NORMALIZED') AS receivables_finished_at,
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.receber' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS receivables_finished_at,
+    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.receber' AND b.data_stage = 'NORMALIZED'), false) AS receivables_partial,
     MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS payables_finished_at,
     COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.pagar' AND b.data_stage = 'NORMALIZED'), false) AS payables_partial,
     MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS cash_movements_finished_at,
@@ -566,10 +612,14 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
          AND nuvem.status = 'SUCCESS'
          AND nuvem.data_stage = 'NORMALIZED'
     ) AS nuvem_future_partial
-    FROM integration_sync_batches b
-    JOIN integration_connections c ON c.id = b.connection_id
-   WHERE c.provider = 'BLING'
-     AND b.correlation_id = $4
+    FROM (SELECT 1) seed
+    LEFT JOIN (
+      SELECT b.*
+        FROM integration_sync_batches b
+        JOIN integration_connections c ON c.id = b.connection_id
+       WHERE c.provider = 'BLING'
+         AND b.correlation_id = $4
+    ) b ON true
 )
 SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        rc.month_value, rc.month_count, rc.total_count,
@@ -586,7 +636,10 @@ SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        p.due_next_7_days_value, p.due_next_7_days_count,
        due90.value, due90.count,
        p.due_next_90_days_value, p.due_next_90_days_count,
-       current_daily_bling_sync.nuvem_future_partial
+       current_daily_bling_sync.nuvem_future_partial,
+       r.bling_value, r.bling_count, r.bling_overdue_value, r.bling_overdue_count,
+       due90.bling_value, due90.bling_count, due90.nuvem_value, due90.nuvem_count,
+       current_daily_bling_sync.receivables_partial
 FROM r CROSS JOIN due90 CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync CROSS JOIN current_daily_bling_sync
 `
 

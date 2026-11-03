@@ -109,28 +109,45 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 			t.Errorf("%s after successful RAW-only sync = %+v, want unavailable", item.name, item.metric)
 		}
 	}
+	nuvemConnectionID := "00000000-0000-4000-8000-000000000046"
+	nuvemRawID := "00000000-0000-4000-8000-000000000042"
+	nuvemReceivableID := "00000000-0000-4000-8000-000000000044"
+	if _, err := tx.Exec(ctx, `INSERT INTO integration_connections (id, provider) VALUES ($1::uuid, 'NUVEM_PAGO')`, nuvemConnectionID); err != nil {
+		t.Fatalf("seed isolated Nuvem Pago connection: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO integration_sync_batches (connection_id, resource, started_at, finished_at, status, data_stage) VALUES ($1::uuid, 'nuvem_pago_recebimentos_futuros_csv_v1', $2, $2, 'SUCCESS', 'NORMALIZED')`, nuvemConnectionID, asOf); err != nil {
+		t.Fatalf("seed same-day successful Nuvem Pago load: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO raw_records (id, payload) VALUES ($1::uuid, '{"customer_name":" jose   cliente "}'::jsonb)`, nuvemRawID); err != nil {
+		t.Fatalf("seed Nuvem customer name in RAW fixture: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO receivables (id, source_system, source_entity, source_id, business_type, customer_id, raw_record_id, status, open_balance, net_amount, gross_amount, due_date, expected_receipt_date)
+		VALUES ($1::uuid, 'NUVEM_PAGO', 'nuvem_pago_recebimentos_futuros_csv_v1', 'nuvem-1', 'B2C', NULL, $2::uuid, 'PROJECTED', NULL, 97, 100, NULL, $3::date + 20)`, nuvemReceivableID, nuvemRawID, asOf.Format("2006-01-02")); err != nil {
+		t.Fatalf("seed current Nuvem future receivable: %v", err)
+	}
+	snapshot, err = readStreamSummary(ctx, tx, asOf)
+	if err != nil {
+		t.Fatalf("read summary with current Nuvem and no normalized Bling: %v", err)
+	}
+	if snapshot.Receivables.State != "PARTIAL" || snapshot.Receivables.Value != "97" || snapshot.Receivables.Count != 1 || snapshot.ReceivablesDueNext90Days.State != "PARTIAL" || snapshot.ReceivablesDueNext90Days.Value != "97" || snapshot.ReceivablesDueNext90Days.Count != 1 {
+		t.Fatalf("current Nuvem subtotal must be visible as partial until Bling completes: total=%+v due90=%+v", snapshot.Receivables, snapshot.ReceivablesDueNext90Days)
+	}
 	for _, resource := range []string{"contas.receber", "contas.pagar"} {
 		if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE connection_id = $1::uuid AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID); err != nil {
 			t.Fatalf("mark %s normalized: %v", resource, err)
 		}
 	}
 	blingCustomerID := "00000000-0000-4000-8000-000000000041"
-	nuvemRawID := "00000000-0000-4000-8000-000000000042"
 	blingReceivableID := "00000000-0000-4000-8000-000000000043"
-	nuvemReceivableID := "00000000-0000-4000-8000-000000000044"
 	independentReceivableID := "00000000-0000-4000-8000-000000000045"
 	if _, err := tx.Exec(ctx, `INSERT INTO contacts (id, name) VALUES ($1::uuid, 'José Cliente')`, blingCustomerID); err != nil {
 		t.Fatalf("seed normalized Bling customer name: %v", err)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO raw_records (id, payload) VALUES ($1::uuid, '{"customer_name":" jose   cliente "}'::jsonb)`, nuvemRawID); err != nil {
-		t.Fatalf("seed Nuvem customer name in RAW fixture: %v", err)
-	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO receivables (id, source_system, source_entity, source_id, business_type, customer_id, raw_record_id, status, open_balance, net_amount, gross_amount, due_date, expected_receipt_date) VALUES
-		  ($1::uuid, 'BLING', 'bling.conta_receber', 'bling-1', 'B2C', $2::uuid, NULL, '1', 100, NULL, 100, $4::date + 25, NULL),
-		  ($3::uuid, 'NUVEM_PAGO', 'nuvem_pago_recebimentos_futuros_csv_v1', 'nuvem-1', 'B2C', NULL, $5::uuid, 'PROJECTED', NULL, 97, 100, NULL, $4::date + 20),
-		  ($6::uuid, 'BLING', 'bling.conta_receber', 'bling-2', 'B2C', $2::uuid, NULL, '1', 50, NULL, 50, $4::date + 10, NULL)`,
-		blingReceivableID, blingCustomerID, nuvemReceivableID, asOf.Format("2006-01-02"), nuvemRawID, independentReceivableID); err != nil {
+		  ($1::uuid, 'BLING', 'bling.conta_receber', 'bling-1', 'B2C', $2::uuid, NULL, '1', 100, NULL, 100, $3::date + 25, NULL),
+		  ($4::uuid, 'BLING', 'bling.conta_receber', 'bling-2', 'B2C', $2::uuid, NULL, '1', 50, NULL, 50, $3::date + 10, NULL)`,
+		blingReceivableID, blingCustomerID, asOf.Format("2006-01-02"), independentReceivableID); err != nil {
 		t.Fatalf("seed cross-source matching and separate receivables: %v", err)
 	}
 	for _, receivableID := range []string{blingReceivableID, independentReceivableID} {
@@ -142,21 +159,14 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("readStreamSummary() failed against PostgreSQL with normalized account batches: %v", err)
 	}
-	if snapshot.Receivables.State != "PARTIAL" || snapshot.Payables.State != "CONFIRMED" {
-		t.Fatalf("receivables should remain partial until a same-day Nuvem Pago load succeeds: receivables=%+v payables=%+v", snapshot.Receivables, snapshot.Payables)
+	if snapshot.Receivables.State != "CONFIRMED" || snapshot.Payables.State != "CONFIRMED" {
+		t.Fatalf("current Bling and Nuvem sources should confirm receivables: receivables=%+v payables=%+v", snapshot.Receivables, snapshot.Payables)
 	}
 	if snapshot.ReceiptsMonth.State != "UNAVAILABLE" || snapshot.PaymentsMonth.State != "UNAVAILABLE" {
 		t.Fatalf("cash movement metrics should remain unavailable until caixas is normalized: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
 	if snapshot.ReceivablesDueNext90Days.Value != "147" || snapshot.ReceivablesDueNext90Days.Count != 2 {
 		t.Fatalf("next 90 day receivables should pair one Bling/Nuvem match by name and gross value without using date, while retaining a different value: %+v", snapshot.ReceivablesDueNext90Days)
-	}
-	nuvemConnectionID := "00000000-0000-4000-8000-000000000046"
-	if _, err := tx.Exec(ctx, `INSERT INTO integration_connections (id, provider) VALUES ($1::uuid, 'NUVEM_PAGO')`, nuvemConnectionID); err != nil {
-		t.Fatalf("seed isolated Nuvem Pago connection: %v", err)
-	}
-	if _, err := tx.Exec(ctx, `INSERT INTO integration_sync_batches (connection_id, resource, started_at, finished_at, status, data_stage) VALUES ($1::uuid, 'nuvem_pago_recebimentos_futuros_csv_v1', $2, $2, 'SUCCESS', 'NORMALIZED')`, nuvemConnectionID, asOf); err != nil {
-		t.Fatalf("seed same-day successful Nuvem Pago load: %v", err)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil || snapshot.Receivables.State != "CONFIRMED" || snapshot.ReceivablesDueNext90Days.State != "CONFIRMED" {

@@ -1,5 +1,17 @@
 # Normalização de Contas a Receber do Bling — 02/11/2026
 
+## Atualização posterior — importação da pasta 02
+
+Em 02/11, a pasta `MAJUCAU_INTELLIGENCE_INPUT/02_nuvem_pago/recebimentos_futuros` foi retomada e processada antes da pasta 03. O arquivo visível no Drive chama-se `extrato_lancamentos_futuros_02_11_2026.csv`. A cópia local correspondente foi validada com 635 registros válidos (zero linhas com erro) e importada no banco isolado: 635 criados, zero atualizados, zero falhos e zero ignorados. Não gravamos dados de clientes nem valores financeiros nesta evidência.
+
+Após aplicar a migration 000018 no PostgreSQL de desenvolvimento, o snapshot do worker passou a responder. O mesmo total **Parcial** foi conferido visualmente na T03 e na T01, sem alterar o layout aprovado. A parte Bling segue sem lote NORMALIZED para Contas a Receber, então a exibição parcial é esperada; não alegamos que o total combinado esteja completo.
+
+**Limite de origem:** o Drive mostrou o arquivo e o aviso de upload concluído, mas bloqueou o download nesta sessão. Por isso não foi possível comparar o hash do objeto no Drive com a cópia local importada. A carga 635/0/0/0 comprova a importação da cópia local CSV, não uma leitura automatizada do Drive. A integração diária do Drive continua pendente de credencial técnica e configuração das pastas. Não processamos a pasta 03.
+
+**Permissões:** a verificação real `database/privileges/verify_runtime.sql` passou no PostgreSQL local. Corrigi a allowlist para remover leitura ampla da tabela `receivable_sources`; o runtime conserva somente leitura das colunas de chave aprovadas. A execução do script ACL exige o administrador controlado devido às rotinas da extensão pgcrypto; isso foi documentado no README do banco.
+
+**Verificações realizadas:** consulta do worker `snapshot_query_ok`; T01 e T03 abertas no protótipo conectado e conferidas; `go test ./internal/dashboard -count=1`; teste PostgreSQL focalizado; checksum da migration; verificação de privilégios; `git diff --check`.
+
 ## O que foi preparado
 
 - O lote diário completo de `/contas/receber` agora tem uma etapa própria para converter linhas RAW em `receivables`, contatos e vínculos de origem.

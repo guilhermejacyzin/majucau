@@ -1,4 +1,4 @@
--- Run as the disposable PostgreSQL schema owner after runtime.sql.
+-- Run as the controlled database administrator after runtime.sql.
 -- This script validates privileges only and cannot change business data.
 DO $verify_runtime_privileges$
 DECLARE

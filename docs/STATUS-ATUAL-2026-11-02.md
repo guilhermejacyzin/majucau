@@ -1,5 +1,18 @@
 # Status atual do Majucau — 02/11/2026
 
+## Retomada da etapa 02 — conferência atual
+
+Voltei à pasta `02_nuvem_pago/recebimentos_futuros`; a pasta 03 continua sem ser processada.
+
+- No Drive, confirmei que está presente `extrato_lancamentos_futuros_02_11_2026.csv`. A prévia mostra o extrato de recebimentos futuros. O navegador informa que não consegue baixar esse arquivo nesta sessão.
+- Na cópia local de mesmo nome, conferi o formato CSV separado por ponto e vírgula: 635 linhas de dados, 14 campos, todas classificadas como `Entrada`/`Venda`, com datas e valores reconhecíveis e sem ID de transação repetido. Não expus nomes nem valores neste registro.
+- A importação anterior de 635 linhas foi feita usando a cópia local. Como não baixei o objeto do Drive, não há hash comparável e não posso afirmar que as duas cópias são idênticas.
+- Na instância aberta do protótipo, a T01 agora mostra o card **A RECEBER** preenchido com a indicação **B2C + B2B**. Isso substitui a anotação histórica abaixo que dizia que esse card continuava vazio. A T01 não mostra a decomposição por fonte; nesta conferência não consegui abrir a T03 para validar linhas e total nela.
+- A regra aprovada no código para cruzar recebíveis do Bling e Nuvem Pago é nome normalizado do cliente + valor bruto, sem usar data; ocorrências iguais são pareadas uma a uma. A leitura atual da T01, sozinha, não comprova quantos pares foram encontrados.
+- O status versionado anterior ainda indica que a leitura diária direta do Drive não tem a credencial técnica configurada. Assim, a atualização automática das 09:30 continua pendente, mesmo com o arquivo visível na conta pelo navegador.
+
+**Para fechar a etapa 02, nesta ordem:** (1) obter uma cópia legível do arquivo exato do Drive e conferir a identidade da cópia importada; (2) garantir uma carga atual normalizada de Contas a Receber do Bling; (3) conferir o cruzamento por nome + valor e o total na T03; (4) confirmar que a T01 reflete o mesmo total; (5) concluir e validar a rotina diária do Drive. Só então a pasta 02 estará encerrada e poderemos começar a 03.
+
 ## Atualização confirmada — pasta 02 do Drive
 
 Retomei a pasta `MAJUCAU_INTELLIGENCE_INPUT/02_nuvem_pago/recebimentos_futuros` antes de qualquer outra pasta. O arquivo `extrato_lancamentos_futuros_02_11_2026.csv` foi identificado no Drive; o fluxo CSV validou e importou 635 linhas no PostgreSQL isolado do protótipo, sem erros, e a interface agora mostra os recebimentos dessa fonte como **Parcial** tanto na T03 quanto na T01. O total exibido foi conferido nas duas telas; não registrei o valor financeiro neste arquivo versionado.

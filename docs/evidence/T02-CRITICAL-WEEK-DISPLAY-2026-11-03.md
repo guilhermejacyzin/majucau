@@ -28,6 +28,11 @@ foi estimado.
   de `artifacts/verification/majucau-wails-20261103`.
 - Compilação Windows do worker (`go build ./cmd/worker`) e do instalador
   auxiliar (`go build ./cmd/installer-helper`) — passou na mesma cópia.
+- CI do commit documental `4a4eabf` — o verificador do backlog passou; a etapa
+  de checagem da mensagem falhou porque os campos obrigatórios precisam estar
+  no corpo, não no título. Por essa falha, os jobs Windows e PostgreSQL foram
+  pulados. A próxima mensagem foi ajustada para deixar os campos no corpo; a
+  CI desse novo commit ainda precisa terminar.
 
 Os comandos frontend foram executados na cópia isolada
 `artifacts/verification/frontend-tests-20261103`, porque o `frontend/node_modules`

@@ -1980,14 +1980,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "Atualizado em 02/11: backend normaliza /caixas, com entradas positivas e saídas negativas; a carga independe de falha em Contas a Pagar. Falta CI PostgreSQL, aplicação da migration e conferência real na tela. Evidência: docs/evidence/BLING-CASH-MOVEMENTS-NORMALIZATION-2026-11-02.md.",
+    "evidence": "Atualizado em 03/11: implementados e testados cálculo de taxa líquida por parcela e prazo da forma de pagamento; dias úteis exigem calendário com feriados e valores ausentes continuam desconhecidos. O componente ainda não alimenta a série nem a tela. Evidência: docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md.",
     "weight": 1,
     "dependencies": [
       "BK-061",
       "BK-028",
       "BK-012"
     ],
-    "progress": 0.05
+    "progress": 0.08
   },
   {
     "key": "historicalcost",

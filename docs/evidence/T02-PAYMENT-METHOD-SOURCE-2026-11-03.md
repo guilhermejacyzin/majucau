@@ -121,3 +121,37 @@ Essas referências confirmam quais dados precisam compor o resultado, mas não
 definem uma fórmula alternativa à do relatório. A fonte oficial do relatório
 continua sendo o padrão de comparação e a T02 só será confirmada após
 confrontar a API com ele, usando as opções já escolhidas pela responsável.
+
+## Cálculo Bling implementado no domínio — 03/11/2026
+
+Foi acrescentado um primeiro componente reutilizável para reproduzir as
+configurações de recebimento do relatório:
+
+- detalhes RAW da forma de pagamento agora podem ser normalizados em
+  taxa percentual, taxa fixa, prazo e indicação de dias úteis;
+- a taxa é calculada por parcela, somando percentual e valor fixo, arredondando
+  para centavos e subtraindo do valor bruto;
+- prazo em dias corridos é somado ao vencimento;
+- prazo em dias úteis exige um calendário explícito, que também avança a data
+  final para o próximo dia útil.
+- valor ausente no detalhe RAW continua marcado como desconhecido; o cálculo
+  rejeita taxa, prazo ou indicação de dias úteis ausentes, em vez de assumir
+  zero ou dia corrido.
+
+O calendário é obrigatório quando a forma usa dias úteis porque a ajuda do Bling
+manda avançar a data quando ela cai em fim de semana ou feriado. Não se usa um
+calendário de segunda a sexta como substituto silencioso. O exemplo oficial
+(`R$ 166,66`, alíquota `0,25%`, taxa fixa `R$ 1,99`) foi codificado como caso de
+referência: taxa `R$ 2,41`, líquido `R$ 164,25`. O exemplo de prazo de 30 dias
+corridos também foi coberto.
+
+**Limite atual:** este componente ainda não foi conectado aos títulos recebidos
+nem às consultas da T02; portanto ainda não gera valores na tela e não prova a
+equivalência com o relatório real. Faltam integrar o leitor dos detalhes RAW,
+confirmar o float por conta, definir um calendário oficial compatível com o
+Bling, montar a série com os títulos e movimentos elegíveis, disponibilizar a
+série no snapshot, ligar os cards/gráfico existentes sem mudar o desenho e
+comparar os períodos com a referência real.
+
+Referência oficial para a fórmula e as datas:
+<https://ajuda.bling.com.br/hc/pt-br/articles/360035872974-Como-controlar-as-taxas-que-pago-sobre-algumas-formas-de-pagamento-no-Bling>.

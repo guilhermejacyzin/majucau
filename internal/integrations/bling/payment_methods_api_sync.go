@@ -8,6 +8,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"majucau.local/financial-intelligence/internal/domain"
+	"majucau.local/financial-intelligence/internal/financial"
 )
 
 const PaymentMethodsAPIResource = "formas-pagamentos"
@@ -21,6 +24,85 @@ type paymentMethodAPIIdentity struct {
 type preparedPaymentMethodAPIRecord struct {
 	List   json.RawMessage `json:"list"`
 	Detail json.RawMessage `json:"detail"`
+}
+
+type paymentMethodFeeConfig struct {
+	Rate          json.RawMessage `json:"aliquota"`
+	Fixed         json.RawMessage `json:"valor"`
+	SettlementDay json.RawMessage `json:"prazo"`
+}
+
+type paymentMethodDetailConfig struct {
+	ID              int64                   `json:"id"`
+	Fees            *paymentMethodFeeConfig `json:"taxas"`
+	UseBusinessDays *bool                   `json:"utilizaDiasUteis"`
+}
+
+// parseBlingPaymentMethodTerms turns the read-only detail captured in the RAW
+// sync into explicit calculation inputs. It does not write back to Bling or
+// infer missing values from a similarly named payment method.
+func parseBlingPaymentMethodTerms(record json.RawMessage, expectedID int64) (financial.BlingPaymentMethodTerms, error) {
+	var prepared preparedPaymentMethodAPIRecord
+	if expectedID <= 0 || len(record) == 0 || json.Unmarshal(record, &prepared) != nil || len(prepared.Detail) == 0 {
+		return financial.BlingPaymentMethodTerms{}, errBlingPaymentMethodSchemaMismatch
+	}
+	var detail paymentMethodDetailConfig
+	if json.Unmarshal(prepared.Detail, &detail) != nil || detail.ID != expectedID || detail.ID <= 0 {
+		return financial.BlingPaymentMethodTerms{}, errBlingPaymentMethodSchemaMismatch
+	}
+	terms := financial.BlingPaymentMethodTerms{}
+	if detail.Fees != nil {
+		var err error
+		terms.FeeRate, err = optionalPaymentMethodMoney(detail.Fees.Rate)
+		if err != nil {
+			return financial.BlingPaymentMethodTerms{}, errBlingPaymentMethodSchemaMismatch
+		}
+		terms.FeeRateKnown = len(detail.Fees.Rate) > 0 && string(detail.Fees.Rate) != "null"
+		terms.FixedFee, err = optionalPaymentMethodMoney(detail.Fees.Fixed)
+		if err != nil {
+			return financial.BlingPaymentMethodTerms{}, errBlingPaymentMethodSchemaMismatch
+		}
+		terms.FixedFeeKnown = len(detail.Fees.Fixed) > 0 && string(detail.Fees.Fixed) != "null"
+		terms.SettlementDays, err = optionalPaymentMethodDays(detail.Fees.SettlementDay)
+		if err != nil {
+			return financial.BlingPaymentMethodTerms{}, errBlingPaymentMethodSchemaMismatch
+		}
+		terms.SettlementKnown = len(detail.Fees.SettlementDay) > 0 && string(detail.Fees.SettlementDay) != "null"
+	}
+	if detail.UseBusinessDays != nil {
+		terms.UseBusinessDays = *detail.UseBusinessDays
+		terms.BusinessDaysKnown = true
+	}
+	if terms.FeeRate.IsNegative() || terms.FixedFee.IsNegative() {
+		return financial.BlingPaymentMethodTerms{}, errBlingPaymentMethodSchemaMismatch
+	}
+	return terms, nil
+}
+
+func optionalPaymentMethodMoney(raw json.RawMessage) (domain.Money, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return domain.ZeroMoney(), nil
+	}
+	textValue, err := decodeAPIStringOrNumber(raw)
+	if err != nil {
+		return domain.Money{}, errBlingPaymentMethodSchemaMismatch
+	}
+	value, err := domain.ParseMoney(textValue)
+	if err != nil || value.IsNegative() {
+		return domain.Money{}, errBlingPaymentMethodSchemaMismatch
+	}
+	return value, nil
+}
+
+func optionalPaymentMethodDays(raw json.RawMessage) (int, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return 0, nil
+	}
+	var days int
+	if json.Unmarshal(raw, &days) != nil || days < 0 || days > 3650 {
+		return 0, errBlingPaymentMethodSchemaMismatch
+	}
+	return days, nil
 }
 
 // PaymentMethodsAPISyncService records a read-only RAW snapshot of the Bling

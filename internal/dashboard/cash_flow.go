@@ -29,7 +29,10 @@ SELECT source_id, description
  ORDER BY source_id
 `
 
-// This query only reads normalized Bling API snapshots. It returns individual
+// Bling documents the prepared Flow of Cash report as a projection from
+// receivables and payables, but does not expose a public API route for that
+// report. This query reads the normalized official API snapshots to reproduce
+// its inputs; it returns individual
 // candidates so the domain can apply payment-method terms without buffering a
 // transaction history in memory. Missing or unsupported fields are retained as
 // candidates and make the resulting metric partial instead of silently zero.

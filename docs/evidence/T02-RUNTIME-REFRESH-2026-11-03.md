@@ -51,5 +51,11 @@ Os valores continuam `PARTIAL`; não estão homologados contra o relatório
 completo do Bling. A última carga continua sendo às 05:25 BRT. O escopo de
 leitura de Contas Financeiras foi autorizado pela responsável, mas ainda não
 foi alterado no cadastro do aplicativo Bling nem houve nova autorização OAuth.
+Embora a responsável tenha autorizado esse escopo somente de leitura, não foi
+possível alterar permissões de uma conta online pela interface de controle
+disponível nesta execução. Próximo passo operacional: a responsável habilita
+somente a consulta a Contas Financeiras no cadastro do aplicativo Bling, salva
+a configuração e autoriza novamente o Majucau. Depois disso, é preciso fazer
+uma nova carga e comparar os dados com o relatório Fluxo de Caixa do Bling.
 O saldo atual por banco continua sem fonte confirmada. Nenhuma tela aprovada ou
 regra financeira foi alterada.

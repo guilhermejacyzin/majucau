@@ -50,16 +50,19 @@ movimentos.
   porque a revisão automática bloqueou a exclusão solicitada após a validação.
   O local e o motivo estão listados em
   `docs/evidence/OUTPUT-RETIDO-MANUAL-2026-11-03.md`.
-- `TestReadStreamSummaryPostgresRequiresNormalizedDailyStages` — pulado;
-  `MAJUCAU_TEST_DATABASE_URL` não está configurada neste ambiente. A CI/PostgreSQL
-  ainda precisa validar o SQL da composição.
+- `TestReadStreamSummaryPostgresRequiresNormalizedDailyStages` — pulado
+  localmente; `MAJUCAU_TEST_DATABASE_URL` não está configurada neste ambiente.
+- CI 41586134294 — verificadores do backlog/commit, testes Go e integração
+  PostgreSQL passaram. O Windows também passou por testes Go, vet e frontend,
+  mas falhou no smoke de limpeza do serviço de teste. A causa foi o teste manter
+  aberto o identificador do serviço antes de removê-lo; o script de verificação
+  agora fecha esse identificador. Aguardar nova CI para confirmar o ajuste.
 - Nenhuma chamada nova à conta Bling foi iniciada e o executável Wails aberto
   não foi substituído nesta etapa.
 
 ## Próxima sequência
 
-1. Deixar a CI executar a integração PostgreSQL com linhas de conta/títulos de
-   teste.
+1. Aguardar nova CI confirmar o smoke de serviço corrigido.
 2. Atualizar o executável do protótipo, sem concorrer com o worker ativo.
 3. Conferir com a responsável o mesmo período, contas Itaú/Mercado Pago,
    float, prazo e opção de incluir pagamentos/recebimentos no relatório Bling.

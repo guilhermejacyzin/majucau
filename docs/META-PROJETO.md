@@ -6,7 +6,7 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — avança para 20% com uma primeira composição parcial das entradas/saídas por API oficial, ligação ao snapshot e exibição no gráfico existente. Ainda faltam validar o SQL com PostgreSQL, sincronizar dados reais, comprovar equivalência com o relatório Bling e obter o saldo de abertura/float. A integração e o protótipo continuam sem homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 20% com uma primeira composição parcial das entradas/saídas por API oficial, ligação ao snapshot e exibição no gráfico existente. A CI passou pelos testes PostgreSQL, Go e frontend; o smoke Windows de remoção do serviço temporário falhou e foi corrigido para fechar o identificador antes de remover o serviço, aguardando confirmação na nova CI. Ainda faltam sincronizar dados reais, comprovar equivalência com o relatório Bling e obter saldo de abertura/float. A integração e o protótipo continuam sem homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
 ### T02 — primeira ligação do fluxo de caixa ao snapshot — 03/11/2026
@@ -24,13 +24,14 @@ comprovados, e a API documentada não fornece saldo inicial por conta. Por isso
 não preenchemos saldo atual, menor saldo, saldo projetado nem semana crítica
 por inferência. `go test ./internal/...`, `go vet` dos pacotes alterados,
 `git diff --check`, build TypeScript/Vite, lint e 70 testes frontend passaram.
-O teste de integração PostgreSQL foi pulado localmente porque
-`MAJUCAU_TEST_DATABASE_URL` não está configurada; a CI deve validar o novo SQL.
+A CI passou pelo teste de integração PostgreSQL e pelos testes de código. O
+smoke Windows falhou ao remover o serviço temporário; corrigi o identificador
+aberto no próprio script de smoke, aguardando nova CI.
 Não foi iniciada sincronização nem alterado o executável Wails que está aberto.
 
 BK-062 avança de 15% para 20%; a estimativa geral se mantém em 12,2% concluída
 e 87,8% restante, por arredondamento da média de 126 tarefas. Próximo passo:
-validar o SQL na CI/PostgreSQL, aplicar a build ao protótipo e comparar a série
+confirmar a CI, aplicar a build ao protótipo e comparar a série
 com o Fluxo de Caixa do Bling usando as contas e opções aprovadas. Evidência:
 `docs/evidence/T02-FLOW-SNAPSHOT-2026-11-03.md`.
 

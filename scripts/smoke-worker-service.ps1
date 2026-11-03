@@ -133,6 +133,9 @@ try {
     }
     if ($expectedRegistryRights.Count -ne 0) { throw 'Faltam permissões necessárias para o serviço ler sua configuração.' }
 
+    # Release this ServiceController handle so Windows can finish deleting the service.
+    $service.Dispose()
+    $service = $null
     $remove = Invoke-HelperJson @('remove-service', '--install-dir', $installRoot)
     if ($remove.status -ne 'SERVICE_REMOVED' -or $remove.exit_code -ne 0) {
         throw "O serviço não foi removido (status=$($remove.status), etapa=$($remove.error_code), código=$($remove.exit_code))."

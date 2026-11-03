@@ -17,13 +17,15 @@ iguais.
 
 `go test ./internal/...`, `go vet ./internal/dashboard ./internal/financial`,
 `git diff --check`, build/typecheck e lint do frontend, mais 70 testes de
-interface passaram numa cópia isolada. O teste PostgreSQL foi pulado por falta
-de `MAJUCAU_TEST_DATABASE_URL`; a validação do SQL fica para a CI. A mudança ainda
-não foi instalada no executável Wails aberto nem conferida com os dados da conta
-real. BK-062 está estimado em 20%; backlog 12,2% concluído e 87,8% restante.
+interface passaram numa cópia isolada. A CI 41586134294 passou nos testes
+PostgreSQL, Go e frontend. Ela falhou depois, no smoke Windows de remoção do
+serviço temporário; corrigi o teste para fechar o identificador do serviço
+antes de removê-lo e a nova CI ainda precisa confirmar essa correção. A mudança
+ainda não foi instalada no executável Wails aberto nem conferida com os dados da
+conta real. BK-062 está estimado em 20%; backlog 12,2% concluído e 87,8% restante.
 
-**Próximo passo:** validar a consulta em PostgreSQL na CI e então atualizar o
-protótipo para conferir a série com o relatório Bling.
+**Próximo passo:** confirmar a CI e então atualizar o protótipo para conferir a
+série com o relatório Bling.
 
 ## Retomada da etapa 02 — conferência atual
 

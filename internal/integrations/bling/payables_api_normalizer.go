@@ -39,6 +39,10 @@ type payableAPIContact struct {
 	ID int64 `json:"id"`
 }
 
+type payableAPISourceReference struct {
+	ID int64 `json:"id"`
+}
+
 type payableAPIContactDetail struct {
 	ID   int64  `json:"id"`
 	Name string `json:"nome"`
@@ -55,33 +59,37 @@ type payableAPICategoryDetail struct {
 }
 
 type payableAPIDetail struct {
-	ID             int64               `json:"id"`
-	Status         int64               `json:"situacao"`
-	DueDate        string              `json:"vencimento"`
-	Amount         json.RawMessage     `json:"valor"`
-	OpenBalance    json.RawMessage     `json:"saldo"`
-	CompetenceDate *string             `json:"competencia"`
-	Document       *string             `json:"numeroDocumento"`
-	Category       *payableAPICategory `json:"categoria"`
-	Contact        *payableAPIContact  `json:"contato"`
+	ID               int64                      `json:"id"`
+	Status           int64                      `json:"situacao"`
+	DueDate          string                     `json:"vencimento"`
+	Amount           json.RawMessage            `json:"valor"`
+	OpenBalance      json.RawMessage            `json:"saldo"`
+	CompetenceDate   *string                    `json:"competencia"`
+	Document         *string                    `json:"numeroDocumento"`
+	Category         *payableAPICategory        `json:"categoria"`
+	Contact          *payableAPIContact         `json:"contato"`
+	PaymentMethod    *payableAPISourceReference `json:"formaPagamento"`
+	FinancialAccount *payableAPISourceReference `json:"portador"`
 }
 
 type normalizedPayable struct {
-	SourceID           string
-	SupplierSource     string
-	SupplierName       string
-	SupplierRawID      pgtype.UUID
-	CategoryID         int64
-	CategoryUnassigned bool
-	CategoryRawID      pgtype.UUID
-	Document           *string
-	Category           *string
-	CompetenceDate     pgtype.Date
-	DueDate            pgtype.Date
-	PaymentDate        pgtype.Date
-	OriginalAmount     pgtype.Numeric
-	OpenBalance        pgtype.Numeric
-	Status             string
+	SourceID                 string
+	SupplierSource           string
+	SupplierName             string
+	SupplierRawID            pgtype.UUID
+	CategoryID               int64
+	CategoryUnassigned       bool
+	CategoryRawID            pgtype.UUID
+	Document                 *string
+	Category                 *string
+	CompetenceDate           pgtype.Date
+	DueDate                  pgtype.Date
+	PaymentDate              pgtype.Date
+	OriginalAmount           pgtype.Numeric
+	OpenBalance              pgtype.Numeric
+	Status                   string
+	SourcePaymentMethodID    *int64
+	SourceFinancialAccountID *int64
 }
 
 // payableSchemaFieldError carries a reviewed field identifier for the batch
@@ -321,6 +329,8 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) (
 				Document: payable.Document, Category: payable.Category, CompetenceDate: payable.CompetenceDate,
 				DueDate: payable.DueDate, PaymentDate: payable.PaymentDate, OriginalAmount: payable.OriginalAmount,
 				OpenBalance: payable.OpenBalance, Status: payable.Status, RawRecordID: rawID,
+				SourcePaymentMethodID:    payable.SourcePaymentMethodID,
+				SourceFinancialAccountID: payable.SourceFinancialAccountID,
 			})
 			if err != nil {
 				return fmt.Errorf("persist normalized Bling payable: %w", err)
@@ -398,6 +408,11 @@ func parsePayableAPIDetail(payload []byte, expectedID int64) (normalizedPayable,
 		SourceID: strconv.FormatInt(detail.ID, 10), Document: document,
 		CompetenceDate: competenceDate, DueDate: dueDate,
 		OriginalAmount: amount, OpenBalance: openBalance, Status: strconv.FormatInt(detail.Status, 10),
+		SourcePaymentMethodID:    payableSourceReferenceID(detail.PaymentMethod),
+		SourceFinancialAccountID: payableSourceReferenceID(detail.FinancialAccount),
+	}
+	if (detail.PaymentMethod != nil && detail.PaymentMethod.ID < 0) || (detail.FinancialAccount != nil && detail.FinancialAccount.ID < 0) {
+		return normalizedPayable{}, payableSchemaField("BLING_PAYABLE_SOURCE_REFERENCE_INVALID")
 	}
 	if detail.Category != nil {
 		if detail.Category.ID == nil || *detail.Category.ID < 0 {
@@ -414,6 +429,14 @@ func parsePayableAPIDetail(payload []byte, expectedID int64) (normalizedPayable,
 	}
 	result.SupplierSource = strconv.FormatInt(detail.Contact.ID, 10)
 	return result, nil
+}
+
+func payableSourceReferenceID(reference *payableAPISourceReference) *int64 {
+	if reference == nil || reference.ID == 0 {
+		return nil
+	}
+	value := reference.ID
+	return &value
 }
 
 func parseRequiredAPIMoney(raw json.RawMessage) (pgtype.Numeric, error) {

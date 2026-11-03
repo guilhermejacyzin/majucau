@@ -28,15 +28,22 @@ type receivableAPIContact struct {
 	Name string `json:"nome"`
 }
 
+type receivableAPISourceReference struct {
+	ID int64 `json:"id"`
+}
+
 type receivableAPIListRecord struct {
-	ID         int64                 `json:"id"`
-	Status     int64                 `json:"situacao"`
-	DueDate    string                `json:"vencimento"`
-	IssueDate  *string               `json:"dataEmissao"`
-	Amount     json.RawMessage       `json:"valor"`
-	Document   *string               `json:"numeroDocumento"`
-	Competence *string               `json:"competencia"`
-	Contact    *receivableAPIContact `json:"contato"`
+	ID                int64                         `json:"id"`
+	Status            int64                         `json:"situacao"`
+	DueDate           string                        `json:"vencimento"`
+	IssueDate         *string                       `json:"dataEmissao"`
+	Amount            json.RawMessage               `json:"valor"`
+	Document          *string                       `json:"numeroDocumento"`
+	Competence        *string                       `json:"competencia"`
+	Contact           *receivableAPIContact         `json:"contato"`
+	PaymentMethod     *receivableAPISourceReference `json:"formaPagamento"`
+	FinancialAccount  *receivableAPISourceReference `json:"portador"`
+	AccountingAccount *receivableAPISourceReference `json:"contaContabil"`
 }
 
 type receivableAPIDetail struct {
@@ -51,6 +58,9 @@ type receivableAPIDetail struct {
 	Contact    *struct {
 		ID int64 `json:"id"`
 	} `json:"contato"`
+	PaymentMethod     *receivableAPISourceReference `json:"formaPagamento"`
+	FinancialAccount  *receivableAPISourceReference `json:"portador"`
+	AccountingAccount *receivableAPISourceReference `json:"contaContabil"`
 }
 
 type preparedReceivableAPISnapshotRecord struct {
@@ -60,17 +70,20 @@ type preparedReceivableAPISnapshotRecord struct {
 }
 
 type normalizedReceivable struct {
-	SourceID       string
-	CustomerSource string
-	CustomerName   string
-	CustomerRawID  pgtype.UUID
-	Document       *string
-	IssueDate      pgtype.Date
-	CompetenceDate pgtype.Date
-	DueDate        pgtype.Date
-	GrossAmount    pgtype.Numeric
-	OpenBalance    pgtype.Numeric
-	Status         string
+	SourceID                  string
+	CustomerSource            string
+	CustomerName              string
+	CustomerRawID             pgtype.UUID
+	Document                  *string
+	IssueDate                 pgtype.Date
+	CompetenceDate            pgtype.Date
+	DueDate                   pgtype.Date
+	GrossAmount               pgtype.Numeric
+	OpenBalance               pgtype.Numeric
+	Status                    string
+	SourcePaymentMethodID     *int64
+	SourceFinancialAccountID  *int64
+	SourceAccountingAccountID *int64
 }
 
 func normalizeReceivablesAPISnapshotPage(client *BlingAPIClient) (
@@ -230,6 +243,9 @@ func normalizeReceivablesAPISnapshotPage(client *BlingAPIClient) (
 				CompetenceDate: receivable.CompetenceDate, DueDate: receivable.DueDate,
 				GrossAmount: receivable.GrossAmount, OpenBalance: receivable.OpenBalance,
 				Status: receivable.Status, RawRecordID: rawID,
+				SourcePaymentMethodID:     receivable.SourcePaymentMethodID,
+				SourceFinancialAccountID:  receivable.SourceFinancialAccountID,
+				SourceAccountingAccountID: receivable.SourceAccountingAccountID,
 			})
 			if err != nil {
 				return fmt.Errorf("persist normalized Bling receivable: %w", err)
@@ -265,6 +281,9 @@ func parseReceivableAPIListRecord(payload []byte) (receivableAPIListRecord, erro
 	if list.Contact == nil || list.Contact.ID <= 0 {
 		return receivableAPIListRecord{}, receivableSchemaField("BLING_RECEIVABLE_CONTACT_INVALID")
 	}
+	if err := validateReceivableSourceReferences(list.PaymentMethod, list.FinancialAccount, list.AccountingAccount); err != nil {
+		return receivableAPIListRecord{}, err
+	}
 	return list, nil
 }
 
@@ -278,6 +297,9 @@ func parseReceivableAPIDetail(payload []byte, expectedID int64) (receivableAPIDe
 	}
 	if detail.Contact == nil || detail.Contact.ID <= 0 {
 		return receivableAPIDetail{}, receivableSchemaField("BLING_RECEIVABLE_CONTACT_INVALID")
+	}
+	if err := validateReceivableSourceReferences(detail.PaymentMethod, detail.FinancialAccount, detail.AccountingAccount); err != nil {
+		return receivableAPIDetail{}, err
 	}
 	if _, err := parseRequiredAPIDate(detail.DueDate); err != nil {
 		return receivableAPIDetail{}, receivableSchemaField("BLING_RECEIVABLE_DUE_DATE_INVALID")
@@ -293,8 +315,28 @@ func parseReceivableAPIDetail(payload []byte, expectedID int64) (receivableAPIDe
 	return detail, nil
 }
 
+func validateReceivableSourceReferences(references ...*receivableAPISourceReference) error {
+	for _, reference := range references {
+		if reference != nil && reference.ID < 0 {
+			return receivableSchemaField("BLING_RECEIVABLE_SOURCE_REFERENCE_INVALID")
+		}
+	}
+	return nil
+}
+
+func receivableSourceReferenceID(reference *receivableAPISourceReference) *int64 {
+	if reference == nil || reference.ID == 0 {
+		return nil
+	}
+	value := reference.ID
+	return &value
+}
+
 func normalizedReceivableFromList(list receivableAPIListRecord, base normalizedReceivable) (normalizedReceivable, error) {
 	var err error
+	base.SourcePaymentMethodID = receivableSourceReferenceID(list.PaymentMethod)
+	base.SourceFinancialAccountID = receivableSourceReferenceID(list.FinancialAccount)
+	base.SourceAccountingAccountID = receivableSourceReferenceID(list.AccountingAccount)
 	base.GrossAmount, err = parseRequiredAPIMoney(list.Amount)
 	if err != nil {
 		return normalizedReceivable{}, receivableSchemaField("BLING_RECEIVABLE_AMOUNT_INVALID")
@@ -322,6 +364,9 @@ func normalizedReceivableFromList(list receivableAPIListRecord, base normalizedR
 
 func normalizedReceivableFromDetail(detail receivableAPIDetail, base normalizedReceivable) (normalizedReceivable, error) {
 	var err error
+	base.SourcePaymentMethodID = receivableSourceReferenceID(detail.PaymentMethod)
+	base.SourceFinancialAccountID = receivableSourceReferenceID(detail.FinancialAccount)
+	base.SourceAccountingAccountID = receivableSourceReferenceID(detail.AccountingAccount)
 	base.GrossAmount, err = parseRequiredAPIMoney(detail.Amount)
 	if err != nil {
 		return normalizedReceivable{}, receivableSchemaField("BLING_RECEIVABLE_AMOUNT_INVALID")

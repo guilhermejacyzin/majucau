@@ -10,7 +10,7 @@ import (
 )
 
 func TestParsePayableAPIDetailUsesExactSourceAmountsAndDate(t *testing.T) {
-	const payload = `{"id":21,"situacao":3,"vencimento":"2026-10-31","valor":120.5000,"saldo":45.2500,"competencia":"2026-10-01","numeroDocumento":"NF-21","categoria":{"id":9},"contato":{"id":88}}`
+	const payload = `{"id":21,"situacao":3,"vencimento":"2026-10-31","valor":120.5000,"saldo":45.2500,"competencia":"2026-10-01","numeroDocumento":"NF-21","categoria":{"id":9},"contato":{"id":88},"formaPagamento":{"id":11},"portador":{"id":13}}`
 	got, err := parsePayableAPIDetail([]byte(payload), 21)
 	if err != nil {
 		t.Fatalf("parsePayableAPIDetail() error = %v", err)
@@ -35,6 +35,9 @@ func TestParsePayableAPIDetailUsesExactSourceAmountsAndDate(t *testing.T) {
 	}
 	if got.SupplierSource != "88" || got.CategoryID != 9 || got.Document == nil || *got.Document != "NF-21" {
 		t.Fatalf("optional source mapping = %+v", got)
+	}
+	if got.SourcePaymentMethodID == nil || *got.SourcePaymentMethodID != 11 || got.SourceFinancialAccountID == nil || *got.SourceFinancialAccountID != 13 {
+		t.Fatalf("cash-flow source references = %+v", got)
 	}
 	uncategorized, err := parsePayableAPIDetail([]byte(`{"id":21,"situacao":3,"vencimento":"2026-10-31","valor":120.5,"saldo":45.25,"categoria":{"id":0},"contato":{"id":88}}`), 21)
 	if err != nil || !uncategorized.CategoryUnassigned || uncategorized.CategoryID != 0 {

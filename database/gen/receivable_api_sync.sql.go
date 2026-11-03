@@ -73,11 +73,12 @@ const upsertBlingReceivable = `-- name: UpsertBlingReceivable :one
 INSERT INTO receivables (
   connection_id, source_system, source_entity, source_id, business_type,
   customer_id, external_document, issue_date, competence_date, due_date,
-  gross_amount, open_balance, currency_code, status, raw_record_id
+  gross_amount, open_balance, currency_code, status, raw_record_id,
+  source_payment_method_id, source_financial_account_id, source_accounting_account_id
 ) VALUES (
   $1, 'BLING', 'bling.conta_receber', $2, 'UNCLASSIFIED',
   $3, $4, $5, $6, $7,
-  $8, $9, 'BRL', $10, $11
+  $8, $9, 'BRL', $10, $11, $12, $13, $14
 )
 ON CONFLICT (connection_id, source_system, source_entity, source_id)
 DO UPDATE SET
@@ -92,22 +93,28 @@ DO UPDATE SET
   currency_code = EXCLUDED.currency_code,
   status = EXCLUDED.status,
   raw_record_id = EXCLUDED.raw_record_id,
+  source_payment_method_id = EXCLUDED.source_payment_method_id,
+  source_financial_account_id = EXCLUDED.source_financial_account_id,
+  source_accounting_account_id = EXCLUDED.source_accounting_account_id,
   updated_at = clock_timestamp()
 RETURNING id
 `
 
 type UpsertBlingReceivableParams struct {
-	ConnectionID     pgtype.UUID    `json:"connection_id"`
-	SourceID         string         `json:"source_id"`
-	CustomerID       pgtype.UUID    `json:"customer_id"`
-	ExternalDocument *string        `json:"external_document"`
-	IssueDate        pgtype.Date    `json:"issue_date"`
-	CompetenceDate   pgtype.Date    `json:"competence_date"`
-	DueDate          pgtype.Date    `json:"due_date"`
-	GrossAmount      pgtype.Numeric `json:"gross_amount"`
-	OpenBalance      pgtype.Numeric `json:"open_balance"`
-	Status           string         `json:"status"`
-	RawRecordID      pgtype.UUID    `json:"raw_record_id"`
+	ConnectionID              pgtype.UUID    `json:"connection_id"`
+	SourceID                  string         `json:"source_id"`
+	CustomerID                pgtype.UUID    `json:"customer_id"`
+	ExternalDocument          *string        `json:"external_document"`
+	IssueDate                 pgtype.Date    `json:"issue_date"`
+	CompetenceDate            pgtype.Date    `json:"competence_date"`
+	DueDate                   pgtype.Date    `json:"due_date"`
+	GrossAmount               pgtype.Numeric `json:"gross_amount"`
+	OpenBalance               pgtype.Numeric `json:"open_balance"`
+	Status                    string         `json:"status"`
+	RawRecordID               pgtype.UUID    `json:"raw_record_id"`
+	SourcePaymentMethodID     *int64         `json:"source_payment_method_id"`
+	SourceFinancialAccountID  *int64         `json:"source_financial_account_id"`
+	SourceAccountingAccountID *int64         `json:"source_accounting_account_id"`
 }
 
 func (q *Queries) UpsertBlingReceivable(ctx context.Context, arg UpsertBlingReceivableParams) (pgtype.UUID, error) {
@@ -123,6 +130,9 @@ func (q *Queries) UpsertBlingReceivable(ctx context.Context, arg UpsertBlingRece
 		arg.OpenBalance,
 		arg.Status,
 		arg.RawRecordID,
+		arg.SourcePaymentMethodID,
+		arg.SourceFinancialAccountID,
+		arg.SourceAccountingAccountID,
 	)
 	var id pgtype.UUID
 	err := row.Scan(&id)

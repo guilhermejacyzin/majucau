@@ -540,13 +540,15 @@ type Payable struct {
 	Penalty        pgtype.Numeric `json:"penalty"`
 	Discount       pgtype.Numeric `json:"discount"`
 	// Signed open cash outflow from a payable title; normalized negative regardless of the sign returned by Bling.
-	OpenBalance  pgtype.Numeric     `json:"open_balance"`
-	CurrencyCode string             `json:"currency_code"`
-	Status       string             `json:"status"`
-	CostCenter   *string            `json:"cost_center"`
-	RawRecordID  pgtype.UUID        `json:"raw_record_id"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	OpenBalance              pgtype.Numeric     `json:"open_balance"`
+	CurrencyCode             string             `json:"currency_code"`
+	Status                   string             `json:"status"`
+	CostCenter               *string            `json:"cost_center"`
+	RawRecordID              pgtype.UUID        `json:"raw_record_id"`
+	CreatedAt                pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                pgtype.Timestamptz `json:"updated_at"`
+	SourcePaymentMethodID    *int64             `json:"source_payment_method_id"`
+	SourceFinancialAccountID *int64             `json:"source_financial_account_id"`
 }
 
 type PayableSource struct {
@@ -663,30 +665,33 @@ type ReceiptSource struct {
 }
 
 type Receivable struct {
-	ID                  pgtype.UUID        `json:"id"`
-	ConnectionID        pgtype.UUID        `json:"connection_id"`
-	SourceSystem        string             `json:"source_system"`
-	SourceEntity        string             `json:"source_entity"`
-	SourceID            string             `json:"source_id"`
-	BusinessType        string             `json:"business_type"`
-	CustomerID          pgtype.UUID        `json:"customer_id"`
-	ExternalDocument    *string            `json:"external_document"`
-	IssueDate           pgtype.Date        `json:"issue_date"`
-	CompetenceDate      pgtype.Date        `json:"competence_date"`
-	DueDate             pgtype.Date        `json:"due_date"`
-	ExpectedReceiptDate pgtype.Date        `json:"expected_receipt_date"`
-	GrossAmount         pgtype.Numeric     `json:"gross_amount"`
-	FeeAmount           pgtype.Numeric     `json:"fee_amount"`
-	NetAmount           pgtype.Numeric     `json:"net_amount"`
-	OpenBalance         pgtype.Numeric     `json:"open_balance"`
-	CurrencyCode        string             `json:"currency_code"`
-	Status              string             `json:"status"`
-	PaymentMethod       *string            `json:"payment_method"`
-	InstallmentNumber   *int32             `json:"installment_number"`
-	InstallmentCount    *int32             `json:"installment_count"`
-	RawRecordID         pgtype.UUID        `json:"raw_record_id"`
-	CreatedAt           pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	ID                        pgtype.UUID        `json:"id"`
+	ConnectionID              pgtype.UUID        `json:"connection_id"`
+	SourceSystem              string             `json:"source_system"`
+	SourceEntity              string             `json:"source_entity"`
+	SourceID                  string             `json:"source_id"`
+	BusinessType              string             `json:"business_type"`
+	CustomerID                pgtype.UUID        `json:"customer_id"`
+	ExternalDocument          *string            `json:"external_document"`
+	IssueDate                 pgtype.Date        `json:"issue_date"`
+	CompetenceDate            pgtype.Date        `json:"competence_date"`
+	DueDate                   pgtype.Date        `json:"due_date"`
+	ExpectedReceiptDate       pgtype.Date        `json:"expected_receipt_date"`
+	GrossAmount               pgtype.Numeric     `json:"gross_amount"`
+	FeeAmount                 pgtype.Numeric     `json:"fee_amount"`
+	NetAmount                 pgtype.Numeric     `json:"net_amount"`
+	OpenBalance               pgtype.Numeric     `json:"open_balance"`
+	CurrencyCode              string             `json:"currency_code"`
+	Status                    string             `json:"status"`
+	PaymentMethod             *string            `json:"payment_method"`
+	InstallmentNumber         *int32             `json:"installment_number"`
+	InstallmentCount          *int32             `json:"installment_count"`
+	RawRecordID               pgtype.UUID        `json:"raw_record_id"`
+	CreatedAt                 pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                 pgtype.Timestamptz `json:"updated_at"`
+	SourcePaymentMethodID     *int64             `json:"source_payment_method_id"`
+	SourceFinancialAccountID  *int64             `json:"source_financial_account_id"`
+	SourceAccountingAccountID *int64             `json:"source_accounting_account_id"`
 }
 
 type ReceivableSource struct {

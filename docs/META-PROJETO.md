@@ -6,7 +6,7 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. A suíte PostgreSQL isolada passou localmente e a CI [#41535352924](https://github.com/guilhermejacyzin/majucau/actions/runs/41535352924) passou em Windows e PostgreSQL, incluindo migrations, integrações, build e pacote. A CI do ajuste posterior de movimentos parciais apontou apenas que o modelo `sqlc` gerado precisava ser incluído; corrigi isso no commit `8ffcff1` e a CI [#41545653326](https://github.com/guilhermejacyzin/majucau/actions/runs/41545653326) está em execução. Ainda faltam obter e ligar o resultado do relatório Fluxo de Caixa do Bling, atualizar o protótipo, sincronizar os dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 5%. Na CI [#41570346870](https://github.com/guilhermejacyzin/majucau/actions/runs/41570346870), migrações, PostgreSQL, backlog, testes, build e segurança passaram, mas o smoke do serviço worker no Windows falhou em `WORKER_SERVICE_WAIT_FOR_RUNNING`; o diagnóstico posterior viu o serviço `Running`, então essa falha intermitente ainda precisa ser revalidada. Testes Go locais e `go vet` passaram para a captura dos IDs financeiros da T02. Ainda faltam ligar uma série de fluxo de caixa comprovada ao protótipo, sincronizar dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
 ### Rechecagem do painel conectado — 03/11/2026
@@ -337,6 +337,19 @@ Uma consulta somente de leitura ao banco isolado confirmou 15 cargas Bling de Co
 Antes de avançar para a pasta 03, foi concluída a validação da importação de recebimentos futuros da pasta 02. A cópia local do CSV foi validada e importada no banco isolado do protótipo; T03 e T01 agora refletem o mesmo resultado **Parcial**. A migration 000018 e os privilégios foram aplicados/verificados no banco local. A igualdade do arquivo do Drive e da cópia local ainda não foi demonstrada por hash, pois o Drive bloqueou o download nesta sessão; a rotina automática diária do Drive também segue pendente de credencial técnica. Não alterei o desenho aprovado nem regra financeira e não iniciei a pasta 03.
 
 O progresso geral do backlog permanece **12,1% concluído / 87,9% restante** até que os pesos e critérios oficiais das tarefas sejam reavaliados. Evidência atualizada: [status de 02/11](./STATUS-ATUAL-2026-11-02.md) e [normalização de recebíveis](./evidence/BLING-RECEIVABLE-NORMALIZATION-2026-11-02.md).
+
+### Atualização T02 — fontes identificadas para a projeção — 03/11/2026
+
+Conferi o OpenAPI oficial atual do Bling e completei a captura dos vínculos de
+origem de cada título: forma de pagamento, conta financeira (`portador`) e, em
+receber, conta contábil. Eles agora são guardados em colunas próprias com uma
+migration nova. Isso permite relacionar os títulos às configurações de taxa,
+prazo e destino que o relatório Fluxo de Caixa considera. Nenhum valor foi
+calculado com esses campos, e a T02 ainda não mostra a série. Os testes focais,
+`go vet`, limites de arquitetura e checksums passaram localmente; a CI do commit
+anterior está vermelha somente no smoke de serviço Windows, que precisa ser
+reexecutado. O percentual não muda: BK-062 5% / 95% restante e projeto 12,1% /
+87,9% restante. Consulte [evidência técnica T02](./evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md).
 ### Atualização T02 — 03/11/2026
 
 A T02 é a tela do relatório **Fluxo de Caixa**. A captura enviada é a referência

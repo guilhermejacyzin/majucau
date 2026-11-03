@@ -5,11 +5,12 @@ SELECT upsert_bling_supplier_contact($1, $2, $3, $4)::uuid;
 INSERT INTO payables (
   connection_id, source_system, source_entity, source_id, supplier_id,
   document, category, competence_date, due_date, payment_date,
+  source_payment_method_id, source_financial_account_id,
   original_amount, open_balance, currency_code, status, raw_record_id
 ) VALUES (
   $1, 'BLING', 'bling.conta_pagar', $2, $3,
-  $4, $5, $6, $7, $8,
-  $9, $10, 'BRL', $11, $12
+  $4, $5, $6, $7, $8, $9, $10,
+  $11, $12, 'BRL', $13, $14
 )
 ON CONFLICT (connection_id, source_system, source_entity, source_id)
 DO UPDATE SET
@@ -24,6 +25,8 @@ DO UPDATE SET
   currency_code = EXCLUDED.currency_code,
   status = EXCLUDED.status,
   raw_record_id = EXCLUDED.raw_record_id,
+  source_payment_method_id = EXCLUDED.source_payment_method_id,
+  source_financial_account_id = EXCLUDED.source_financial_account_id,
   updated_at = clock_timestamp()
 RETURNING id;
 

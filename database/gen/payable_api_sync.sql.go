@@ -64,11 +64,12 @@ const upsertBlingPayable = `-- name: UpsertBlingPayable :one
 INSERT INTO payables (
   connection_id, source_system, source_entity, source_id, supplier_id,
   document, category, competence_date, due_date, payment_date,
+  source_payment_method_id, source_financial_account_id,
   original_amount, open_balance, currency_code, status, raw_record_id
 ) VALUES (
   $1, 'BLING', 'bling.conta_pagar', $2, $3,
-  $4, $5, $6, $7, $8,
-  $9, $10, 'BRL', $11, $12
+  $4, $5, $6, $7, $8, $9, $10,
+  $11, $12, 'BRL', $13, $14
 )
 ON CONFLICT (connection_id, source_system, source_entity, source_id)
 DO UPDATE SET
@@ -83,23 +84,27 @@ DO UPDATE SET
   currency_code = EXCLUDED.currency_code,
   status = EXCLUDED.status,
   raw_record_id = EXCLUDED.raw_record_id,
+  source_payment_method_id = EXCLUDED.source_payment_method_id,
+  source_financial_account_id = EXCLUDED.source_financial_account_id,
   updated_at = clock_timestamp()
 RETURNING id
 `
 
 type UpsertBlingPayableParams struct {
-	ConnectionID   pgtype.UUID    `json:"connection_id"`
-	SourceID       string         `json:"source_id"`
-	SupplierID     pgtype.UUID    `json:"supplier_id"`
-	Document       *string        `json:"document"`
-	Category       *string        `json:"category"`
-	CompetenceDate pgtype.Date    `json:"competence_date"`
-	DueDate        pgtype.Date    `json:"due_date"`
-	PaymentDate    pgtype.Date    `json:"payment_date"`
-	OriginalAmount pgtype.Numeric `json:"original_amount"`
-	OpenBalance    pgtype.Numeric `json:"open_balance"`
-	Status         string         `json:"status"`
-	RawRecordID    pgtype.UUID    `json:"raw_record_id"`
+	ConnectionID             pgtype.UUID    `json:"connection_id"`
+	SourceID                 string         `json:"source_id"`
+	SupplierID               pgtype.UUID    `json:"supplier_id"`
+	Document                 *string        `json:"document"`
+	Category                 *string        `json:"category"`
+	CompetenceDate           pgtype.Date    `json:"competence_date"`
+	DueDate                  pgtype.Date    `json:"due_date"`
+	PaymentDate              pgtype.Date    `json:"payment_date"`
+	SourcePaymentMethodID    *int64         `json:"source_payment_method_id"`
+	SourceFinancialAccountID *int64         `json:"source_financial_account_id"`
+	OriginalAmount           pgtype.Numeric `json:"original_amount"`
+	OpenBalance              pgtype.Numeric `json:"open_balance"`
+	Status                   string         `json:"status"`
+	RawRecordID              pgtype.UUID    `json:"raw_record_id"`
 }
 
 func (q *Queries) UpsertBlingPayable(ctx context.Context, arg UpsertBlingPayableParams) (pgtype.UUID, error) {
@@ -112,6 +117,8 @@ func (q *Queries) UpsertBlingPayable(ctx context.Context, arg UpsertBlingPayable
 		arg.CompetenceDate,
 		arg.DueDate,
 		arg.PaymentDate,
+		arg.SourcePaymentMethodID,
+		arg.SourceFinancialAccountID,
 		arg.OriginalAmount,
 		arg.OpenBalance,
 		arg.Status,

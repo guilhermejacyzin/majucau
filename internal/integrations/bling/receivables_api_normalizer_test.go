@@ -8,13 +8,17 @@ import (
 )
 
 func TestParseReceivableAPIListAndDetailWithoutClassifyingCustomerType(t *testing.T) {
-	listPayload := json.RawMessage(`{"id":321,"situacao":3,"vencimento":"2026-11-12","dataEmissao":"2026-10-01","valor":100.25,"contato":{"id":9,"nome":"Cliente Teste","tipo":"F"}}`)
+	listPayload := json.RawMessage(`{"id":321,"situacao":3,"vencimento":"2026-11-12","dataEmissao":"2026-10-01","valor":100.25,"contato":{"id":9,"nome":"Cliente Teste","tipo":"F"},"formaPagamento":{"id":11},"contaContabil":{"id":12},"portador":{"id":13}}`)
 	list, err := parseReceivableAPIListRecord(listPayload)
 	if err != nil {
 		t.Fatalf("parse receivable list = %v", err)
 	}
 	if list.ID != 321 || list.Status != 3 || list.Contact.ID != 9 {
 		t.Fatalf("parsed list identity/status/contact = %+v", list)
+	}
+	listNormalized, err := normalizedReceivableFromList(list, normalizedReceivable{})
+	if err != nil || listNormalized.SourcePaymentMethodID == nil || *listNormalized.SourcePaymentMethodID != 11 || listNormalized.SourceAccountingAccountID == nil || *listNormalized.SourceAccountingAccountID != 12 || listNormalized.SourceFinancialAccountID == nil || *listNormalized.SourceFinancialAccountID != 13 {
+		t.Fatalf("parsed list source references = %+v, %v", listNormalized, err)
 	}
 	amount, err := parseRequiredAPIMoney(list.Amount)
 	wantAmount := pgtype.Numeric{}
@@ -25,13 +29,17 @@ func TestParseReceivableAPIListAndDetailWithoutClassifyingCustomerType(t *testin
 		t.Fatalf("parsed receivable amount = %+v, %v", amount, err)
 	}
 
-	detailPayload := json.RawMessage(`{"id":321,"situacao":3,"vencimento":"2026-11-12","dataEmissao":"2026-10-01","competencia":"2026-10-01","numeroDocumento":"R-321","valor":100.25,"saldo":40.10,"contato":{"id":9}}`)
+	detailPayload := json.RawMessage(`{"id":321,"situacao":3,"vencimento":"2026-11-12","dataEmissao":"2026-10-01","competencia":"2026-10-01","numeroDocumento":"R-321","valor":100.25,"saldo":40.10,"contato":{"id":9},"formaPagamento":{"id":11},"contaContabil":{"id":12},"portador":{"id":13}}`)
 	detail, err := parseReceivableAPIDetail(detailPayload, 321)
 	if err != nil {
 		t.Fatalf("parse receivable detail = %v", err)
 	}
 	if detail.Status != list.Status || detail.Contact.ID != list.Contact.ID {
 		t.Fatalf("detail changed list status/contact: %+v", detail)
+	}
+	detailNormalized, err := normalizedReceivableFromDetail(detail, normalizedReceivable{})
+	if err != nil || detailNormalized.SourcePaymentMethodID == nil || *detailNormalized.SourcePaymentMethodID != 11 || detailNormalized.SourceAccountingAccountID == nil || *detailNormalized.SourceAccountingAccountID != 12 || detailNormalized.SourceFinancialAccountID == nil || *detailNormalized.SourceFinancialAccountID != 13 {
+		t.Fatalf("parsed detail source references = %+v, %v", detailNormalized, err)
 	}
 	open, err := parseRequiredAPIMoney(detail.OpenAmount)
 	wantOpen := pgtype.Numeric{}

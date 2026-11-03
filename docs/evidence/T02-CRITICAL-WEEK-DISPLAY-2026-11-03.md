@@ -34,6 +34,9 @@ foi estimado.
   commit estava vazio. Portanto, a tentativa anterior de corrigir a mensagem
   não funcionou. O próximo commit deve usar um título curto e colocar os campos
   obrigatórios no corpo.
+- CI do commit `762f809` — checagem de mensagem e verificador de backlog
+  passaram. Os jobs Windows e PostgreSQL foram pulados porque o commit alterou
+  somente documentação; essa execução não valida o produto.
 
 Os comandos frontend foram executados na cópia isolada
 `artifacts/verification/frontend-tests-20261103`, porque o `frontend/node_modules`
@@ -52,4 +55,7 @@ responsável aprovou habilitar somente leitura para Contas Financeiras. A
 permissão ainda não foi alterada: esta sessão não tem controle operacional da
 tela de cadastro do aplicativo Bling para aplicar a mudança. Depois de habilitar
 a permissão, será necessário autorizar o Majucau novamente e conferir a carga.
+O [guia oficial do cadastro de aplicativos do Bling](https://developer.bling.com.br/aplicativos)
+informa que salvar uma mudança de escopo revoga automaticamente as autorizações
+dos usuários do aplicativo. A nova autorização deve refletir os escopos salvos.
 O quadro não confirma saldo inicial, float ou reserva.

@@ -1,5 +1,25 @@
 # Meta do Majucau
 
+### T02 — permissão e CI conferidas — 03/11/2026, 07:44 BRT
+
+A responsável autorizou habilitar **somente leitura** para Contas Financeiras.
+Essa permissão ainda não foi aplicada na configuração do aplicativo Bling; por
+isso, a API segue sem acesso às contas e a T02 continua parcialmente alimentada.
+O guia oficial do Bling informa que uma alteração de escopos só vale depois de
+salvar o aplicativo e revoga automaticamente as autorizações dos usuários; em
+seguida, o Majucau precisa ser autorizado novamente. Referência:
+[Aplicativos e escopos OAuth do Bling](https://developer.bling.com.br/aplicativos).
+
+Atualizei a evidência técnica para corrigir o estado da CI: o commit `1d01742`
+falhou porque os campos obrigatórios foram colocados no título multilinha, e o
+corpo ficou vazio. O commit `762f809`, com título curto e campos no corpo,
+passou na verificação de mensagem e no validador do backlog. Como esse commit
+alterou somente documentação, os jobs Windows e PostgreSQL foram pulados; isso
+não é uma validação de produto. BK-062 segue em 30% (70% restante), e a meta do
+projeto em 12,3% (87,7% restante). Próximo: habilitar o escopo somente leitura,
+autorizar o Majucau e conferir a próxima sincronização das 09:30. A T02 não
+está homologada.
+
 ### T02 — quadro Semana Crítica ligado aos dados semanais — 03/11/2026, 07:30 BRT
 
 Corrigi uma falha visível na T02: o gráfico semanal recebia dados da API, mas

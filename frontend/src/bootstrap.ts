@@ -23,6 +23,8 @@ export type DashboardMetric = { value?: string; count?: number; state: 'CONFIRME
 export type DashboardReceivableRow = { customer?: string; origin: string; due_date?: string; gross_value?: string; net_value?: string; status: string }
 export type DashboardPayableRow = { supplier?: string; document?: string; due_date: string; value: string; category?: string; status: string }
 export type DashboardBankBalance = { account: string; value: string }
+export type DashboardCashFlowDay = { date: string; inflows: DashboardMetric; outflows: DashboardMetric }
+export type DashboardCashFlow = { inflows_next_30_days: DashboardMetric; outflows_next_30_days: DashboardMetric; days?: DashboardCashFlowDay[] }
 export type DashboardSnapshot = {
   as_of: string
   last_bling_sync_at?: string
@@ -40,6 +42,7 @@ export type DashboardSnapshot = {
   payables_due_next_90_days?: DashboardMetric
   payables_due_next_30_days?: DashboardMetric
   cash_balance?: DashboardMetric
+  cash_flow?: DashboardCashFlow
   bank_balances?: DashboardBankBalance[]
   payments_month: DashboardMetric
   capex_paid_month?: DashboardMetric
@@ -196,10 +199,16 @@ function isDashboardBankBalance(value: unknown): value is DashboardBankBalance {
   return typeof balance.account === 'string' && balance.account.length <= 4096 && typeof balance.value === 'string' && balance.value.length <= 4096
 }
 
+function isDashboardCashFlow(value: unknown): value is DashboardCashFlow {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<DashboardCashFlow>
+  return isDashboardMetric(candidate.inflows_next_30_days) && isDashboardMetric(candidate.outflows_next_30_days) && (candidate.days === undefined || (Array.isArray(candidate.days) && candidate.days.length <= 61 && candidate.days.every((day) => Boolean(day) && typeof day.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day.date) && isDashboardMetric(day.inflows) && isDashboardMetric(day.outflows))))
+}
+
 function isDashboardSnapshot(value: unknown): value is DashboardSnapshot {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<DashboardSnapshot>
-  return typeof candidate.as_of === 'string' && (candidate.last_bling_sync_at === undefined || typeof candidate.last_bling_sync_at === 'string') && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && (candidate.receivables_due_next_90_days === undefined || isDashboardMetric(candidate.receivables_due_next_90_days)) && (candidate.receivables_due_next_30_days === undefined || isDashboardMetric(candidate.receivables_due_next_30_days)) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payables_due_next_7_days) && (candidate.payables_due_next_90_days === undefined || isDashboardMetric(candidate.payables_due_next_90_days)) && (candidate.payables_due_next_30_days === undefined || isDashboardMetric(candidate.payables_due_next_30_days)) && (candidate.cash_balance === undefined || isDashboardMetric(candidate.cash_balance)) && (candidate.bank_balances === undefined || (Array.isArray(candidate.bank_balances) && candidate.bank_balances.length <= 50 && candidate.bank_balances.every(isDashboardBankBalance))) && isDashboardMetric(candidate.payments_month) && (candidate.capex_paid_month === undefined || isDashboardMetric(candidate.capex_paid_month)) && (candidate.capex_accumulated === undefined || isDashboardMetric(candidate.capex_accumulated)) && (candidate.receivable_rows === undefined || (Array.isArray(candidate.receivable_rows) && candidate.receivable_rows.every(isDashboardReceivableRow))) && (candidate.payable_rows === undefined || (Array.isArray(candidate.payable_rows) && candidate.payable_rows.every(isDashboardPayableRow)))
+  return typeof candidate.as_of === 'string' && (candidate.last_bling_sync_at === undefined || typeof candidate.last_bling_sync_at === 'string') && ['CONFIRMED', 'PARTIAL', 'UNAVAILABLE'].includes(candidate.data_state as string) && isDashboardMetric(candidate.receivables) && isDashboardMetric(candidate.future_b2c) && isDashboardMetric(candidate.receipts_month) && isDashboardMetric(candidate.receivables_overdue) && (candidate.receivables_due_next_90_days === undefined || isDashboardMetric(candidate.receivables_due_next_90_days)) && (candidate.receivables_due_next_30_days === undefined || isDashboardMetric(candidate.receivables_due_next_30_days)) && isDashboardMetric(candidate.payables) && isDashboardMetric(candidate.payables_due_today) && isDashboardMetric(candidate.payables_overdue) && isDashboardMetric(candidate.payables_due_next_7_days) && (candidate.payables_due_next_90_days === undefined || isDashboardMetric(candidate.payables_due_next_90_days)) && (candidate.payables_due_next_30_days === undefined || isDashboardMetric(candidate.payables_due_next_30_days)) && (candidate.cash_balance === undefined || isDashboardMetric(candidate.cash_balance)) && (candidate.cash_flow === undefined || isDashboardCashFlow(candidate.cash_flow)) && (candidate.bank_balances === undefined || (Array.isArray(candidate.bank_balances) && candidate.bank_balances.length <= 50 && candidate.bank_balances.every(isDashboardBankBalance))) && isDashboardMetric(candidate.payments_month) && (candidate.capex_paid_month === undefined || isDashboardMetric(candidate.capex_paid_month)) && (candidate.capex_accumulated === undefined || isDashboardMetric(candidate.capex_accumulated)) && (candidate.receivable_rows === undefined || (Array.isArray(candidate.receivable_rows) && candidate.receivable_rows.every(isDashboardReceivableRow))) && (candidate.payable_rows === undefined || (Array.isArray(candidate.payable_rows) && candidate.payable_rows.every(isDashboardPayableRow)))
 }
 
 export function createDashboardSnapshotAdapter(source: DashboardSnapshotSource = readWailsDashboardSnapshot): DashboardSnapshotAdapter {

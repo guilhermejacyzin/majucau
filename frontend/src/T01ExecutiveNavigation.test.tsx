@@ -127,6 +127,40 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).not.toHaveTextContent('80,00')
   })
 
+  it('usa a composição da API do Fluxo de Caixa na T02 e na T01 com aviso parcial', () => {
+    const unavailable = { state: 'UNAVAILABLE' as const }
+    const partial = { state: 'PARTIAL' as const, source_system: 'BLING' }
+    const snapshot: DashboardSnapshot = {
+      as_of: '2026-11-03T12:00:00Z',
+      data_state: 'PARTIAL',
+      receivables: unavailable,
+      future_b2c: unavailable,
+      receipts_month: unavailable,
+      receivables_overdue: unavailable,
+      payables: unavailable,
+      payables_due_today: unavailable,
+      payables_overdue: unavailable,
+      payables_due_next_7_days: unavailable,
+      payments_month: unavailable,
+      cash_flow: {
+        inflows_next_30_days: { ...partial, value: '1250.0000' },
+        outflows_next_30_days: { ...partial, value: '-800.0000' },
+        days: [
+          { date: '2026-11-03', inflows: { ...partial, value: '500.0000' }, outflows: { ...partial, value: '-200.0000' } },
+          { date: '2026-11-04', inflows: { ...partial, value: '750.0000' }, outflows: { ...partial, value: '-600.0000' } },
+        ],
+      },
+    }
+
+    const { rerender } = render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
+    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('1.250,00')
+    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('-R$ 800,00')
+    expect(screen.getByRole('img', { name: 'Entradas e saídas diárias previstas no fluxo de caixa Bling' })).toBeInTheDocument()
+
+    rerender(<MockupDashboard screen="executive" snapshot={snapshot} />)
+    expect(screen.getByRole('img', { name: 'Entradas e saídas diárias previstas no fluxo de caixa Bling' })).toBeInTheDocument()
+  })
+
   it('identifica como parcial o valor incompleto sem mudar a identificação dos demais cards', () => {
     const unavailable = { state: 'UNAVAILABLE' as const }
     const snapshot: DashboardSnapshot = {

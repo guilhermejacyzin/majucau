@@ -246,6 +246,21 @@ type DashboardBankBalance struct {
 	Value   string `json:"value"`
 }
 
+// DashboardCashFlowDay carries the known daily movement components of the
+// Bling cash-flow composition. It intentionally does not contain a projected
+// closing balance until the opening balance and float behavior are proven.
+type DashboardCashFlowDay struct {
+	Date     string          `json:"date"`
+	Inflows  DashboardMetric `json:"inflows"`
+	Outflows DashboardMetric `json:"outflows"`
+}
+
+type DashboardCashFlow struct {
+	InflowsNext30Days  DashboardMetric        `json:"inflows_next_30_days"`
+	OutflowsNext30Days DashboardMetric        `json:"outflows_next_30_days"`
+	Days               []DashboardCashFlowDay `json:"days,omitempty"`
+}
+
 // DashboardSnapshot contains only metrics that are already normalized in the
 // local ledger. It deliberately does not manufacture cash balances, DRE,
 // inventory or forecast values from RAW payloads.
@@ -266,6 +281,7 @@ type DashboardSnapshot struct {
 	PayablesDueNext90Days    DashboardMetric          `json:"payables_due_next_90_days"`
 	PayablesDueNext30Days    DashboardMetric          `json:"payables_due_next_30_days"`
 	CashBalance              DashboardMetric          `json:"cash_balance"`
+	CashFlow                 *DashboardCashFlow       `json:"cash_flow,omitempty"`
 	BankBalances             []DashboardBankBalance   `json:"bank_balances,omitempty"`
 	PaymentsMonth            DashboardMetric          `json:"payments_month"`
 	CapexPaidMonth           *DashboardMetric         `json:"capex_paid_month,omitempty"`

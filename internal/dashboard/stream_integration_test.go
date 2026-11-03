@@ -50,13 +50,15 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		`CREATE TEMP TABLE integration_sync_batches (id uuid DEFAULT gen_random_uuid(), connection_id uuid, resource text, started_at timestamptz, finished_at timestamptz, status text, correlation_id uuid, data_stage text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE contacts (id uuid, name text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE raw_records (id uuid, payload jsonb) ON COMMIT DROP`,
-		`CREATE TEMP TABLE receivables (id uuid, source_system text, source_entity text, source_id text, business_type text, customer_id uuid, raw_record_id uuid, status text, open_balance numeric, net_amount numeric, gross_amount numeric, due_date date, expected_receipt_date date) ON COMMIT DROP`,
+		`CREATE TEMP TABLE receivables (id uuid, connection_id uuid, source_system text, source_entity text, source_id text, business_type text, customer_id uuid, raw_record_id uuid, status text, open_balance numeric, net_amount numeric, gross_amount numeric, due_date date, expected_receipt_date date, source_payment_method_id bigint, source_financial_account_id bigint) ON COMMIT DROP`,
 		`CREATE TEMP TABLE receivable_sync_snapshot_rows (sync_batch_id uuid, receivable_id uuid) ON COMMIT DROP`,
 		`CREATE TEMP TABLE receipts (id uuid, source_system text, status text, receipt_date date, amount numeric) ON COMMIT DROP`,
-		`CREATE TEMP TABLE payables (id uuid, source_entity text, open_balance numeric, due_date date, status text) ON COMMIT DROP`,
+		`CREATE TEMP TABLE payables (id uuid, connection_id uuid, source_system text, source_entity text, source_id text, source_payment_method_id bigint, source_financial_account_id bigint, open_balance numeric, due_date date, status text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payable_sync_snapshot_rows (sync_batch_id uuid, payable_id uuid) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payments (id uuid, source_system text, payment_date date, amount numeric) ON COMMIT DROP`,
 		`CREATE TEMP TABLE bling_cash_movements (id uuid, sync_batch_id uuid, account_source_id text, account_name text, direction text, source_status text, movement_date date, amount numeric) ON COMMIT DROP`,
+		`CREATE TEMP TABLE bling_financial_account_identities (sync_batch_id uuid, source_id text, description text) ON COMMIT DROP`,
+		`CREATE TEMP TABLE bling_payment_method_terms (connection_id uuid, sync_batch_id uuid, source_id text, destination smallint, fee_rate numeric, fee_rate_known boolean, fixed_fee numeric, fixed_fee_known boolean, settlement_days integer, settlement_known boolean, use_business_days boolean, business_days_known boolean) ON COMMIT DROP`,
 	} {
 		if _, err := tx.Exec(ctx, statement); err != nil {
 			t.Fatalf("create isolated dashboard fixture table: %v", err)
@@ -66,8 +68,8 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `INSERT INTO integration_connections (id, provider) VALUES ($1::uuid, 'BLING')`, connectionID); err != nil {
 		t.Fatalf("seed isolated Bling connection: %v", err)
 	}
-	var receivableBatchID, payableBatchID, cashBatchID string
-	for _, resource := range []string{"contas.receber", "contas.pagar", "caixas"} {
+	var receivableBatchID, payableBatchID, cashBatchID, accountsBatchID, paymentMethodsBatchID string
+	for _, resource := range []string{"contas.receber", "contas.pagar", "caixas", "contas-contabeis", "formas-pagamentos"} {
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO integration_sync_batches (connection_id, resource, started_at, finished_at, status, correlation_id, data_stage)
 			VALUES ($1::uuid, $2, $3, $4, 'SUCCESS', $5, 'RAW_ONLY')`, connectionID, resource, asOf.Add(-time.Hour), asOf, correlationID); err != nil {
@@ -86,6 +88,16 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		if resource == "caixas" {
 			if err := tx.QueryRow(ctx, `SELECT id::text FROM integration_sync_batches WHERE connection_id = $1::uuid AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID).Scan(&cashBatchID); err != nil {
 				t.Fatalf("read seeded cash movement batch ID: %v", err)
+			}
+		}
+		if resource == "contas-contabeis" {
+			if err := tx.QueryRow(ctx, `SELECT id::text FROM integration_sync_batches WHERE connection_id = $1::uuid AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID).Scan(&accountsBatchID); err != nil {
+				t.Fatalf("read seeded financial-account batch ID: %v", err)
+			}
+		}
+		if resource == "formas-pagamentos" {
+			if err := tx.QueryRow(ctx, `SELECT id::text FROM integration_sync_batches WHERE connection_id = $1::uuid AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID).Scan(&paymentMethodsBatchID); err != nil {
+				t.Fatalf("read seeded payment-method batch ID: %v", err)
 			}
 		}
 	}
@@ -257,5 +269,27 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.PayablesOverdue.State != "CONFIRMED" || snapshot.PayablesOverdue.Value != "0" || snapshot.PayablesOverdue.Count != 0 {
 		t.Fatalf("overdue aging should exclude a canceled title: %+v, want confirmed zero", snapshot.PayablesOverdue)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE connection_id = $1::uuid AND resource IN ('contas-contabeis', 'formas-pagamentos') AND correlation_id = $2`, connectionID, correlationID); err != nil {
+		t.Fatalf("normalize cash-flow account and payment-method batches: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO bling_financial_account_identities (sync_batch_id, source_id, description) VALUES ($1::uuid, '1', 'Itaú'), ($1::uuid, '2', 'Mercado Pago')`, accountsBatchID); err != nil {
+		t.Fatalf("seed selected Bling cash-flow accounts: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO bling_payment_method_terms (connection_id, sync_batch_id, source_id, destination, fee_rate, fee_rate_known, fixed_fee, fixed_fee_known, settlement_days, settlement_known, use_business_days, business_days_known) VALUES ($1::uuid, $2::uuid, '9', 1, 0, true, 0, true, 0, true, false, true)`, connectionID, paymentMethodsBatchID); err != nil {
+		t.Fatalf("seed Bling payment-method terms: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE receivables SET connection_id = $1::uuid, source_payment_method_id = 9, source_financial_account_id = 1, status = CASE WHEN source_id = 'bling-2' THEN 'PARTIALLY_PAID' ELSE 'OPEN' END WHERE source_system = 'BLING' AND source_id IN ('bling-1', 'bling-2')`, connectionID); err != nil {
+		t.Fatalf("link receivable flow candidates to selected bank account: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE payables SET connection_id = $1::uuid, source_system = 'BLING', source_id = id::text, source_payment_method_id = 9, source_financial_account_id = 2 WHERE source_entity = 'bling.conta_pagar' AND status = 'OPEN'`, connectionID); err != nil {
+		t.Fatalf("link payable flow candidates to selected bank account: %v", err)
+	}
+	snapshot, err = readStreamSummary(ctx, tx, asOf)
+	if err != nil {
+		t.Fatalf("read summary with normalized cash-flow sources: %v", err)
+	}
+	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.InflowsNext30Days.Value != "150.0000" || snapshot.CashFlow.OutflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.OutflowsNext30Days.Value != "-290.0000" || len(snapshot.CashFlow.Days) != 61 {
+		t.Fatalf("cash-flow series should show the visible API composition as partial over 61 bounded dates: %+v", snapshot.CashFlow)
 	}
 }

@@ -1,4 +1,29 @@
-# Status atual do Majucau — 02/11/2026
+# Status atual do Majucau — 03/11/2026
+
+## Atualização mais recente — ligação parcial da T02 — 03/11/2026
+
+A T02 começou a receber uma composição feita com as APIs oficiais do Bling:
+movimentos de Caixa, contas a receber/pagar e configurações de formas de
+pagamento. Os cartões “Entradas 30 dias” e “Saídas 30 dias” e o gráfico existente
+agora têm ligação no código ao snapshot dessa composição; a T01 usa o mesmo
+snapshot.
+
+Os valores ficam com aviso **Parcial**, pois a composição ainda não foi
+comparada com uma atualização atual do relatório Bling. O saldo de abertura e o
+float do relatório não são fornecidos pela rota pública documentada usada pelo
+projeto; não preenchi saldo atual, saldo projetado, menor saldo ou semana crítica
+por cálculo presumido. O desenho das telas e as regras financeiras continuam
+iguais.
+
+`go test ./internal/...`, `go vet ./internal/dashboard ./internal/financial`,
+`git diff --check`, build/typecheck e lint do frontend, mais 70 testes de
+interface passaram numa cópia isolada. O teste PostgreSQL foi pulado por falta
+de `MAJUCAU_TEST_DATABASE_URL`; a validação do SQL fica para a CI. A mudança ainda
+não foi instalada no executável Wails aberto nem conferida com os dados da conta
+real. BK-062 está estimado em 20%; backlog 12,2% concluído e 87,8% restante.
+
+**Próximo passo:** validar a consulta em PostgreSQL na CI e então atualizar o
+protótipo para conferir a série com o relatório Bling.
 
 ## Retomada da etapa 02 — conferência atual
 

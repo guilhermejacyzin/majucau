@@ -130,6 +130,10 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	if err != nil {
 		return application.DashboardSnapshot{}, err
 	}
+	cashFlow, err := readBlingCashFlow(ctx, tx, businessDate, dailyCorrelationID)
+	if err != nil {
+		return application.DashboardSnapshot{}, err
+	}
 	err = tx.QueryRow(ctx, dashboardStreamSummarySQL,
 		businessDate.Format("2006-01-02"),
 		monthStart.Format("2006-01-02"),
@@ -208,6 +212,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		PayablesDueNext90Days:    metricForSourceRun(payablesDueNext90DaysValue, payablesDueNext90DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesDueNext30Days:    metricForSourceRun(payablesDueNext30DaysValue, payablesDueNext30DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		CashBalance:              application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
+		CashFlow:                 cashFlow,
 		PaymentsMonth:            metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
 	}, nil
 }

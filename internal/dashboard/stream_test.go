@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,7 +42,12 @@ func (tx *scriptedDashboardTx) QueryRow(_ context.Context, _ string, args ...any
 	return tx.summary
 }
 
-func (tx *scriptedDashboardTx) Query(_ context.Context, _ string, args ...any) (pgx.Rows, error) {
+func (tx *scriptedDashboardTx) Query(_ context.Context, query string, args ...any) (pgx.Rows, error) {
+	if strings.Contains(query, "bling_financial_account_identities") {
+		// The first streaming query resolves the two configured Bling bank
+		// identities. The fixture has no accounts, so the flow is unavailable.
+		return &emptyDashboardRows{}, nil
+	}
 	tx.queryArgs = append(tx.queryArgs, append([]any(nil), args...))
 	if len(tx.queryRows) == 0 {
 		return nil, pgx.ErrNoRows
@@ -50,6 +56,13 @@ func (tx *scriptedDashboardTx) Query(_ context.Context, _ string, args ...any) (
 	tx.queryRows = tx.queryRows[1:]
 	return rows, nil
 }
+
+type emptyDashboardRows struct{ pgx.Rows }
+
+func (*emptyDashboardRows) Close()            {}
+func (*emptyDashboardRows) Err() error        { return nil }
+func (*emptyDashboardRows) Next() bool        { return false }
+func (*emptyDashboardRows) Scan(...any) error { return pgx.ErrNoRows }
 
 func (tx *scriptedDashboardTx) Commit(context.Context) error {
 	tx.committed = true

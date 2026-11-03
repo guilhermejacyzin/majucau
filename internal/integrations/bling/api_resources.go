@@ -163,6 +163,13 @@ func (c *BlingAPIClient) ListPaymentMethods(ctx context.Context, page, limit int
 	return c.listFinancialResource(ctx, "formas-pagamentos", ReceivablesFilter{Page: page, Limit: limit})
 }
 
+// ListFinancialAccounts reads one bounded page of the financial accounts
+// configured in Bling. The response remains RAW; this endpoint documents
+// account identity and configuration, not a current bank balance.
+func (c *BlingAPIClient) ListFinancialAccounts(ctx context.Context, page, limit int) (BlingReceivablesPage, error) {
+	return c.listFinancialResource(ctx, "contas-contabeis", ReceivablesFilter{Page: page, Limit: limit})
+}
+
 // CashMovementsFilter contains documented date/page/category parameters and a
 // bounded page size. The Bling pagination guide documents `limite` for GET
 // list resources, with 100 records by default.

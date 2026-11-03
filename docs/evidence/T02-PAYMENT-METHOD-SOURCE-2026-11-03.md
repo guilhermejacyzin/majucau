@@ -238,3 +238,24 @@ validado contra o relatório com as contas e opções aprovadas. Os totais simpl
 das telas de receber e pagar não substituem essa série; o saldo bancário segue
 separado e só pode vir da fonte aprovada de Caixa e Bancos. Nenhum desenho ou
 regra financeira foi alterado nesta rechecagem.
+
+## Contas financeiras incluídas na atualização diária — 03/11/2026
+
+A API oficial também possui o recurso de consulta de Contas Financeiras. Foi
+acrescentada a leitura paginada de `GET /contas-contabeis` à atualização diária,
+com páginas brutas versionadas e retomáveis no mesmo mecanismo seguro já usado
+pelas outras fontes. A conclusão diária agora exige esse retrato RAW junto dos
+retratos já exigidos; se a leitura falhar, as demais fontes continuam sendo
+tentadas e o lote permanece incompleto para poder ser retomado.
+
+Essa etapa identifica as contas por seus registros no Bling, mas não calcula
+saldo, não lê saldo de abertura e não muda projeções. Os dados ainda não foram
+normalizados nem ligados à T02. Para completar o resultado equivalente ao
+relatório ainda faltam consumir as contas e formas de pagamento nos títulos,
+reproduzir os períodos/valores do relatório, validar o float e a data/saldo de
+abertura e ligar a série existente ao snapshot da T02. O saldo bancário continua
+separado e não recebe valor de projeção.
+
+Verificação local: testes do conector Bling, domínio financeiro e código SQLC
+passaram. A verificação completa do repositório e a CI deste commit precisam
+terminar antes de considerar esta entrega publicada.

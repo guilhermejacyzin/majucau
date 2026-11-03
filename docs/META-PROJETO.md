@@ -9,6 +9,25 @@
 - **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 13% após parser de taxa/prazo/destino, conferidor de períodos e agrupador semanal. A série ainda não alimenta o banco nem a T02. A CI [#41578030443](https://github.com/guilhermejacyzin/majucau/actions/runs/41578030443) concluiu verde. Ainda faltam compor a série pelas APIs oficiais, validar saldo inicial/float/contas com dados reais e ligar os resultados à tela. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
+### T02 — leitura de contas financeiras pela API oficial — 03/11/2026
+
+Incluí na atualização diária a consulta paginada `GET /contas-contabeis`, para
+obter do Bling a identidade das contas financeiras selecionadas. A resposta é
+guardada somente como dado bruto de origem, com a mesma proteção e retomada por
+página das demais leituras. Se essa fonte falhar, as outras fontes ainda são
+tentadas, mas a execução do dia permanece incompleta para nova tentativa.
+
+Os testes do conector, domínio financeiro e SQLC passaram localmente. Isso ainda
+não põe valores na T02: os dados de conta não são saldo, e a composição da série
+continua sem uma fonte comprovada para abertura/float. Também falta ligar contas,
+formas de pagamento e títulos à série, comparar os períodos com o relatório real
+do Bling e disponibilizar os resultados no snapshot da tela, mantendo o saldo
+bancário separado. Por isso BK-062 segue em 13% (87% restante); o projeto fica
+em 12,1% concluído (87,9% restante). A CI e a atualização do protótipo ainda
+precisam concluir.
+
+Evidência: `docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.
+
 ### T02 — agrupamento semanal do fluxo — 03/11/2026
 
 Foi implementado um conversor da projeção diária para os períodos de domingo a

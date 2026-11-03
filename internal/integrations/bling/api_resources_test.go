@@ -92,6 +92,27 @@ func TestListPaymentMethodsUsesBoundedPagination(t *testing.T) {
 	}
 }
 
+func TestListFinancialAccountsUsesOfficialBoundedEndpoint(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/Api/v3/contas-contabeis" {
+			t.Fatalf("request = %s %s", r.Method, r.URL.Path)
+		}
+		if r.URL.Query().Get("pagina") != "1" || r.URL.Query().Get("limite") != "10" {
+			t.Fatalf("query = %s", r.URL.RawQuery)
+		}
+		_, _ = w.Write([]byte(`{"data":[{"id":31,"descricao":"Itaú"},{"id":32,"descricao":"Mercado Pago"}],"pagination":{"page":1,"limit":10,"hasNext":false}}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := client.ListFinancialAccounts(context.Background(), 1, 10)
+	if err != nil || len(page.Records) != 2 || page.HasNext || !page.HasNextKnown {
+		t.Fatalf("page = %+v, err = %v", page, err)
+	}
+}
+
 func TestGetFinancialCategoryExplainsInsufficientReadScope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || r.URL.Path != "/Api/v3/categorias/receitas-despesas/9" {

@@ -47,6 +47,12 @@ instalador e ciclo do worker no Windows. Isso confirma a correção técnica e o
 gates automatizados deste commit; ainda falta comparar a série financeira com
 o relatório real do Bling antes de homologar os valores.
 
+A atualização documental seguinte foi publicada em `f19e439`, mas sua CI
+`41608825686` rejeitou a mensagem porque os campos de governança ficaram no
+assunto do commit em vez do corpo. A checagem do backlog passou; os testes de
+Windows e PostgreSQL foram pulados. O commit seguinte registra a correção no
+corpo da mensagem, conforme o verificador automático.
+
 > **Nota de leitura:** o conteúdo abaixo desta atualização preserva o histórico
 > das demais frentes e diagnósticos anteriores. Quando ele disser que T02 não
 > tem valores, que o catálogo de contas precisa ser liberado ou que não há série,

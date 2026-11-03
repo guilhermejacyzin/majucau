@@ -69,3 +69,12 @@ lista recursos de Caixa e Bancos e de Contas a Pagar/Receber, mas não um endpoi
 documentado para o relatório Fluxo de Caixa. Portanto, os cards permanecem sem
 valor até existir uma fonte automática aprovada e validada; não se usa a imagem
 nem uma soma de outras telas como dado atual. A T02 permanece incompleta.
+
+## Verificação CI da correção — 03/11/2026
+
+O commit `f2cb2be` foi enviado à branch, mas a CI acusou apenas que a mensagem
+não usou o rótulo padronizado exato `Quanto falta da tarefa`. Os testes Go/React
+de produto foram pulados pelo workflow após essa falha do verificador de
+mensagem. Localmente, a suíte frontend passou com 69 testes, o TypeScript passou
+e o build Vite passou. O commit de acompanhamento registra o rótulo correto;
+uma execução nova da CI ainda precisa confirmar o fluxo completo do push.

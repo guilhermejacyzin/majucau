@@ -34,3 +34,13 @@ Até essas verificações e a conferência visual ocorrerem, o projeto continua 
 ## Rechecagem do Drive — 02/11/2026
 
 O log `artifacts/retained/postgresql-dev/worker.stderr.log` mostra que o worker ativo iniciou o agendamento diário e tentou recuperar a execução das 09:30. A tentativa registrou `status=FAILED`, `folders_read=0`, `files_read=0` e `GOOGLE_DRIVE_FOLDERS_NOT_CONFIGURED`. Isso prova que a atualização ainda não chegou ao Majucau; não prova ausência do arquivo no Drive. Não houve acesso ao conteúdo do Drive nesta verificação.
+
+## Diagnóstico da tela T03 no banco local — 02/11/2026
+
+Uma consulta somente de leitura ao PostgreSQL isolado do protótipo encontrou 15 cargas bem-sucedidas de `contas.receber`, todas em `RAW_ONLY`; o total de fatos em `receivables` é zero e a tabela `receivable_sync_snapshot_rows` da migration 000018 ainda não existe. Isso explica por que T03 não apresenta o recebível Bling.
+
+Também encontrei que `dailyBlingSyncCompleted` exigia `NORMALIZED` para Contas a Pagar e Caixa, mas não para Contas a Receber. Assim, a execução de 02/11 podia ser marcada como concluída mesmo com Contas a Receber somente RAW, e o worker seguinte a pulava. Corrigi a condição para exigir `NORMALIZED` nas três fontes e acrescentei regressão no teste PostgreSQL. Incluí o SHA-256 da migration 000018 no manifesto.
+
+**Verificação local:** `go test ./internal/integrations/bling ./internal/dashboard ./cmd/worker -count=1` passou; `scripts/verify-migrations.ps1` passou. Os testes PostgreSQL reais ainda não foram executados localmente porque não há `MAJUCAU_TEST_DATABASE_URL`. A tentativa de preparar uma base descartável para executá-los foi bloqueada pela revisão automática; nenhum banco foi criado ou alterado. A CI remota ainda precisa confirmar a regressão.
+
+**Ainda pendente:** atualizar o worker conectado, aplicar a migration 000018 e fazer a recuperação idempotente da sincronização Bling. O resultado Bling poderá aparecer como **Parcial** enquanto a credencial de leitura do Drive não estiver provisionada e o arquivo Nuvem não tiver sido importado.

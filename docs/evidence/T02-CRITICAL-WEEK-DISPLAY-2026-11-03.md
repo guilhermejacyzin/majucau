@@ -24,16 +24,24 @@ foi estimado.
 - Suíte da interface — 70 testes passaram, incluindo exibição na T02 de período,
   entradas, saídas parciais e ausência de saldo/reserva não comprovados.
 - Build Vite de produção (`tsc && vite build`) — passou.
+- Build desktop Wails `wails build -clean -trimpath` — passou em cópia isolada
+  de `artifacts/verification/majucau-wails-20261103`.
+- Compilação Windows do worker (`go build ./cmd/worker`) e do instalador
+  auxiliar (`go build ./cmd/installer-helper`) — passou na mesma cópia.
 
 Os comandos frontend foram executados na cópia isolada
 `artifacts/verification/frontend-tests-20261103`, porque o `frontend/node_modules`
-local é um junction para uma pasta de verificação incompleta. Não apaguei nem
-substituí esse destino compartilhado. A build desktop Wails e a sincronização
-diária completa ainda não foram executadas após esta mudança.
+local é um junction para uma pasta de verificação incompleta. A build Wails e
+os binários auxiliares também foram compilados fora do checkout de trabalho;
+nenhuma dependência compartilhada foi apagada ou substituída. A versão isolada
+não foi aberta contra o banco/worker do protótipo e a sincronização diária
+completa ainda não foi executada após esta mudança.
 
 ## Limites
 
 O dado continua Parcial até completar a permissão somente de leitura de Contas
 Financeiras, executar a sincronização diária das 09:30 e comparar todas as
-faixas e saldos com o relatório Fluxo de Caixa do Bling. O quadro não confirma
-saldo inicial, float ou reserva.
+faixas e saldos com o relatório Fluxo de Caixa do Bling. A permissão não foi
+alterada nesta execução: o controle do navegador não conseguiu confirmar a
+página de cadastro ativa. O quadro não confirma saldo inicial, float ou
+reserva.

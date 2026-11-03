@@ -11,11 +11,14 @@ confirmada. O desenho e as regras financeiras não mudaram. A T01 segue usando a
 mesma composição.
 
 Passaram `go test ./internal/dashboard -count=1`, TypeScript, ESLint, os 70
-testes frontend e o build Vite de produção, em cópia isolada dentro de
-`artifacts/verification/frontend-tests-20261103`. Ainda faltam build Wails,
-permissão de leitura de Contas Financeiras no Bling, carga diária das 09:30 e
-homologação do resultado completo. BK-062 permanece em 30% / 70% restante; a
-média do projeto permanece em 12,3% / 87,7% restante. Evidência:
+testes frontend e o build Vite. Também passaram a build desktop Wails e a
+compilação Windows do worker e do instalador auxiliar, todos em cópias isoladas
+dentro de `artifacts/verification`. Ainda faltam ativar a permissão somente de
+leitura de Contas Financeiras no Bling, abrir a nova versão com o serviço real,
+executar a carga diária das 09:30 e comparar o resultado completo. A permissão
+não foi alterada: o controle do navegador não conseguiu confirmar a página do
+cadastro ativa. BK-062 permanece em 30% / 70% restante; a média do projeto
+permanece em 12,3% / 87,7% restante. Evidência:
 [`T02-CRITICAL-WEEK-DISPLAY-2026-11-03.md`](evidence/T02-CRITICAL-WEEK-DISPLAY-2026-11-03.md).
 
 ### T02 — teste real da conexão Bling — 03/11/2026, 07:17 BRT

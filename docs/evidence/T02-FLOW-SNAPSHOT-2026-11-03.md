@@ -52,20 +52,19 @@ movimentos.
   `docs/evidence/OUTPUT-RETIDO-MANUAL-2026-11-03.md`.
 - `TestReadStreamSummaryPostgresRequiresNormalizedDailyStages` — pulado
   localmente; `MAJUCAU_TEST_DATABASE_URL` não está configurada neste ambiente.
-- CI 41586134294 — verificadores do backlog/commit, testes Go e integração
-  PostgreSQL passaram. O Windows também passou por testes Go, vet e frontend,
-  mas falhou no smoke de limpeza do serviço de teste. A causa foi o teste manter
-  aberto o identificador do serviço antes de removê-lo; o script de verificação
-  agora fecha esse identificador. Aguardar nova CI para confirmar o ajuste.
+- CI 41587012467 — passou em todos os trabalhos: governança, testes Go,
+  integração PostgreSQL, frontend, build desktop e smoke Windows do serviço.
+- A CI anterior 41586134294 havia encontrado o identificador do serviço de teste
+  ainda aberto durante a limpeza; o smoke foi corrigido e a nova CI confirmou a
+  remoção segura.
 - Nenhuma chamada nova à conta Bling foi iniciada e o executável Wails aberto
   não foi substituído nesta etapa.
 
 ## Próxima sequência
 
-1. Aguardar nova CI confirmar o smoke de serviço corrigido.
-2. Atualizar o executável do protótipo, sem concorrer com o worker ativo.
-3. Conferir com a responsável o mesmo período, contas Itaú/Mercado Pago,
+1. Atualizar o executável do protótipo, sem concorrer com o worker ativo.
+2. Conferir com a responsável o mesmo período, contas Itaú/Mercado Pago,
    float, prazo e opção de incluir pagamentos/recebimentos no relatório Bling.
-4. Reexecutar a sincronização diária e comparar a série, mantendo valores
+3. Reexecutar a sincronização diária e comparar a série, mantendo valores
    parciais enquanto houver divergência ou campo não comprovado.
-5. Só depois ligar os resultados dependentes de saldo à T02/T01.
+4. Só depois ligar os resultados dependentes de saldo à T02/T01.

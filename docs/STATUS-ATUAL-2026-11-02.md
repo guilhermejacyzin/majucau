@@ -1,6 +1,6 @@
 # Status atual do Majucau — 03/11/2026
 
-## Atualização mais recente — T02 exibe números reais na tela — 03/11/2026, 05:49 BRT
+## Atualização mais recente — T02 exibe números reais na tela — 03/11/2026, 06:07 BRT
 
 O serviço local entrega aos cards aprovados da T02: **Entradas 30 dias:
 R$ 69.994,12 (Parcial)** e **Saídas 30 dias: -R$ 263.930,47 (Parcial)**.
@@ -30,13 +30,22 @@ saldo inicial/float e concluir indicadores derivados. O serviço retorna
 BK-062 está em 25% (75% restante); projeto em 12,2% (87,8% restante).
 Detalhes e próximos passos: [evidência T02](./evidence/T02-FLOW-SNAPSHOT-2026-11-03.md).
 
-## CI do commit `eff46fe` — 03/11/2026
+## CI anterior do commit `eff46fe` — 03/11/2026
 
 A execução [41606565666](https://github.com/guilhermejacyzin/majucau/actions/runs/41606565666)
 falhou no verificador dos campos da mensagem do commit. Os trabalhos de produto
 para Windows e PostgreSQL foram pulados; portanto, essa execução não validou a
 correção. Os testes Go/frontend e o build Wails passaram localmente. A mensagem
-está sendo corrigida e a CI será repetida.
+foi corrigida no commit seguinte.
+
+## CI corrigida — 03/11/2026, 06:07 BRT
+
+A execução [41607450718](https://github.com/guilhermejacyzin/majucau/actions/runs/41607450718),
+no commit `6042cb7`, passou nas verificações de backlog, Windows e PostgreSQL.
+Ela incluiu os testes Go, lint e typecheck frontend, build Wails, smoke do
+instalador e ciclo do worker no Windows. Isso confirma a correção técnica e os
+gates automatizados deste commit; ainda falta comparar a série financeira com
+o relatório real do Bling antes de homologar os valores.
 
 > **Nota de leitura:** o conteúdo abaixo desta atualização preserva o histórico
 > das demais frentes e diagnósticos anteriores. Quando ele disser que T02 não

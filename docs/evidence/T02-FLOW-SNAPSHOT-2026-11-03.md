@@ -1,6 +1,6 @@
 # T02 — valores da API do Bling ligados à série — 03/11/2026
 
-## Atualização às 05:49 BRT
+## Atualização às 06:07 BRT
 
 A tela agora recebe números do snapshot diário mais recente do Bling. A leitura
 do serviço local, após atualizar o worker, retornou para os próximos 30 dias:
@@ -123,6 +123,8 @@ homologação dos valores contra o relatório de referência.
 
 - `go test . ./internal/dashboard -count=1` — passou localmente após atualizar
   a camada simulada para o resolvedor de correlação do lote mais recente.
+- `go test . ./internal/dashboard -count=1` e `go vet . ./internal/dashboard`
+  passaram novamente após acrescentar a verificação do contrato JSON Wails.
 - `go vet ./internal/dashboard ./internal/financial` — passou.
 - `git diff --check` — passou.
 - Build TypeScript/Vite — passou em staging isolado dentro de `artifacts/`.
@@ -138,8 +140,10 @@ homologação dos valores contra o relatório de referência.
   testes Go, integração PostgreSQL, frontend, build desktop e smoke Windows do
   serviço. Não incluiu a correção Wails descrita acima.
 - A CI 41606565666 do commit `eff46fe` falhou no verificador de mensagem; os
-  trabalhos de produto ficaram pulados. A mensagem está sendo corrigida para
-  repetir a CI; até lá, a correção tem apenas validação local.
+  trabalhos de produto ficaram pulados. A mensagem foi corrigida no commit
+  `6042cb7`; a CI 41607450718 passou nos trabalhos de backlog, Windows e
+  PostgreSQL, incluindo testes Go, frontend, build Wails, smoke do instalador e
+  serviço Windows.
 - A CI anterior 41586134294 havia encontrado o identificador do serviço de teste
   ainda aberto durante a limpeza; o smoke foi corrigido e a nova CI confirmou a
   remoção segura.

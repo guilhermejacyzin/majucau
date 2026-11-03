@@ -6,10 +6,10 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 25%: os dados parciais da API oficial agora atravessam worker, Wails e chegam aos cards/gráfico aprovados da T02. Os testes Go e frontend e o build Wails passaram localmente. A CI 41606565666 falhou no verificador de mensagem do commit e pulou os trabalhos de produto; a mensagem está sendo corrigida para repetir a CI. Ainda faltam comparar com o relatório Bling no mesmo período, completar saldo de abertura/float e homologar. A integração e o protótipo continuam sem homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 25%: os dados parciais da API oficial atravessam worker, Wails e chegam aos cards/gráfico aprovados da T02. Após corrigir o formato da mensagem, a CI 41607450718 passou nas verificações de backlog, Windows e PostgreSQL. Ainda faltam comparar com o relatório Bling no mesmo período, completar saldo de abertura/float e homologar. A integração e o protótipo continuam sem homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
-### T02 — valores da API do Bling exibidos na tela — atualização 05:49 BRT
+### T02 — valores da API do Bling exibidos na tela — atualização 06:07 BRT
 
 A leitura do serviço local entrega valores reais da última carga do Bling para
 a T02: Entradas 30 dias **R$ 69.994,12 (Parcial)** e Saídas 30 dias

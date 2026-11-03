@@ -68,6 +68,36 @@ um relatório de referência antes de publicar como confirmado. Se não houver
 contrato oficial ou equivalência demonstrada, a integração permanece pendente;
 não se inventa endpoint nem se troca silenciosamente a fonte.
 
+## Como o relatório é formado — confirmação na Central de Ajuda — 02/11/2026
+
+A Central de Ajuda oficial do Bling descreve o Fluxo de Caixa como a projeção
+futura das entradas e saídas de acordo com Contas a Pagar e Contas a Receber.
+Também esclarece que o recebível previsto pode usar o valor líquido e que prazo
+e taxa da forma de pagamento afetam data e valor. A API pública já expõe esses
+componentes em recursos próprios: contas a pagar/receber, formas de pagamento
+(taxa, prazo em dias, uso de dias úteis e destino) e lançamentos de caixas e
+bancos.
+
+Isso corrige uma conclusão anterior que poderia ser entendida como “não usar
+Contas a Pagar/Receber”. Esses dados fazem parte da base do relatório Bling; os
+totais simples dessas telas, porém, não são automaticamente o resultado do
+relatório. A regra aprovada para a T02 é apresentar o resultado do Fluxo de
+Caixa do Bling. A captura enviada é a referência para identificar esse resultado
+e conferir a apresentação; ela não deve ser lida como imagem em cada atualização
+nem usada para cadastrar valores fixos no Majucau. Fontes oficiais:
+<https://ajuda.bling.com.br/hc/pt-br/articles/360038306714-Como-gerar-um-relat%C3%B3rio-de-futuras-entradas-e-sa%C3%ADdas-de-valores>,
+<https://ajuda.bling.com.br/hc/pt-br/articles/360035872974-Como-controlar-as-taxas-que-pago-sobre-algumas-formas-de-pagamento-no-Bling>
+e <https://developer.bling.com.br/referencia>.
+
+Ainda falta confirmar o caminho automático e somente de leitura que entrega o
+resultado do relatório. A OpenAPI pública consultada não lista uma rota
+específica para esse relatório. A composição por Contas a Pagar/Receber,
+formas de pagamento e movimentos é apenas uma hipótese técnica a validar: só
+poderá alimentar a T02 depois de reproduzir as opções da captura e bater os
+resultados do Bling. A especificação também não documenta o float do portador
+nem o saldo inicial por conta. Até validar essas partes, não declarar a série
+completa nem trocar silenciosamente a origem aprovada.
+
 ## Contrato público atual de caixas e bancos — 02/11/2026
 
 Conferi a especificação OpenAPI publicada na página oficial da referência. Os
@@ -91,10 +121,10 @@ OpenAPI e contratos dos recursos).
 
 ## Próxima etapa técnica
 
-Implementar e validar a ingestão do resultado de Fluxo de Caixa do Bling,
-preservando as opções de relatório que definem o resultado e a trilha de origem.
-Só então ligar as métricas e a série da T02, e fazer a T01 reutilizar esses
-mesmos resultados. A documentação pública da API consultada enumera recursos de
-Caixas e Bancos, Contas a Pagar e Contas a Receber; ela não lista um endpoint de
-relatório de Fluxo de Caixa. Portanto, não presumir uma rota nem substituir o
-resultado do relatório por uma soma parcial de outras telas.
+Investigar primeiro um caminho automático, oficial e somente de leitura para
+obter o resultado do relatório Fluxo de Caixa do Bling. Não presumir que a T02
+deva somar os componentes por conta própria. Se não houver uma rota do
+relatório, validar a composição por Contas a Pagar/Receber, formas de pagamento
+e movimentos realizados contra o relatório real, incluindo filtros, contas,
+float e prazo. Só após a equivalência ser comprovada ligar os resultados à T02;
+a T01 deverá reutilizar os mesmos resultados.

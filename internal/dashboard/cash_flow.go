@@ -294,7 +294,57 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	}
 	flow.InflowsNext30Days = dashboardFlowMetric(inflows30.String(), partial)
 	flow.OutflowsNext30Days = dashboardFlowMetric(outflows30.String(), partial)
+	flow.Periods, err = groupCashFlowReportWeeks(flow.Days, partial)
+	if err != nil {
+		return nil, err
+	}
 	return flow, nil
+}
+
+// groupCashFlowReportWeeks follows the Bling report's week boundaries: the
+// first bucket starts on the requested start date and ends on Saturday; the
+// following buckets run Sunday through Saturday. Values remain exact decimals.
+func groupCashFlowReportWeeks(days []application.DashboardCashFlowDay, partial bool) ([]application.DashboardCashFlowPeriod, error) {
+	if len(days) == 0 {
+		return nil, nil
+	}
+	periods := make([]application.DashboardCashFlowPeriod, 0, (len(days)+6)/7)
+	var current application.DashboardCashFlowPeriod
+	inflows, outflows := domain.ZeroMoney(), domain.ZeroMoney()
+	for index, day := range days {
+		date, err := time.Parse(time.DateOnly, day.Date)
+		if err != nil {
+			return nil, fmt.Errorf("invalid cash-flow report date")
+		}
+		if current.From == "" {
+			current.From = day.Date
+		}
+		current.Through = day.Date
+		inflow, err := domain.ParseMoney(day.Inflows.Value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid cash-flow report inflow")
+		}
+		outflow, err := domain.ParseMoney(day.Outflows.Value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid cash-flow report outflow")
+		}
+		inflows, err = inflows.Add(inflow)
+		if err != nil {
+			return nil, err
+		}
+		outflows, err = outflows.Add(outflow)
+		if err != nil {
+			return nil, err
+		}
+		if date.Weekday() == time.Saturday || index == len(days)-1 {
+			current.Inflows = dashboardFlowMetric(inflows.String(), partial)
+			current.Outflows = dashboardFlowMetric(outflows.String(), partial)
+			periods = append(periods, current)
+			current = application.DashboardCashFlowPeriod{}
+			inflows, outflows = domain.ZeroMoney(), domain.ZeroMoney()
+		}
+	}
+	return periods, nil
 }
 
 func dashboardDateOnly(value time.Time) time.Time {

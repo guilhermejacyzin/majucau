@@ -6,8 +6,31 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,2% concluída / 87,8% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 25%: os dados parciais da API oficial atravessam worker, Wails e chegam aos cards/gráfico aprovados da T02. Após corrigir o formato da mensagem, a CI 41607450718 passou nas verificações de backlog, Windows e PostgreSQL. Ainda faltam comparar com o relatório Bling no mesmo período, completar saldo de abertura/float e homologar. A integração e o protótipo continuam sem homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,3% concluída / 87,7% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 30%: os dados parciais da API oficial atravessam worker, Wails e chegam aos cards e ao gráfico semanal aprovados da T02. Após corrigir o formato da mensagem, a CI 41607450718 passou nas verificações de backlog, Windows e PostgreSQL. Ainda faltam comparar com o relatório Bling no mesmo período, completar saldo de abertura/float e homologar. A integração e o protótipo continuam sem homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
+
+### T02 — agrupamento no formato semanal do relatório — 03/11/2026, 07:02 BRT
+
+A série da API agora também chega agrupada por semana, no mesmo corte do
+relatório Fluxo de Caixa do Bling. Os totais são decimais exatos, preservam
+entrada positiva e saída negativa e ficam **Parciais** enquanto houver lacunas.
+T01 e T02 consomem o mesmo snapshot. A nova versão Wails abriu no protótipo e
+carregou o snapshot local; a última sincronização disponível é 05:25 BRT, antes
+da execução diária das 09:30. O gráfico da T01 foi confirmado na árvore de
+acessibilidade; a T02 usa o mesmo componente de gráfico. Não foi calculado
+saldo projetado sem saldo inicial/float comprovado.
+
+Verificações: `go test ./internal/dashboard ./ -count=1`, `npm run typecheck`,
+70 testes frontend, `npm run build` e build pela CLI Wails passaram. O teste e
+a build da interface foram realizados em cópia isolada, porque a pasta de
+dependências já aberta pelo protótipo não pôde ser substituída.
+
+BK-062 passa a **30%** (70% restante); a média estimada do backlog passa a
+**12,3%** (87,7% restante; 126 tarefas ativas). Ainda falta concluir a
+comparação do mesmo relatório: há diferença de R$ 0,01 em uma semana, a
+primeira faixa começa em 02/11 e a carga disponível começa em 03/11, e o saldo
+inicial/float não está comprovado. A série continua Parcial. Evidência:
+[`T02-BLING-REPORT-WEEKLY-SERIES-2026-11-03.md`](evidence/T02-BLING-REPORT-WEEKLY-SERIES-2026-11-03.md).
 
 ### T02 — contrato público do saldo por conta — 03/11/2026
 

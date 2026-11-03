@@ -149,16 +149,20 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
           { date: '2026-11-03', inflows: { ...partial, value: '500.0000' }, outflows: { ...partial, value: '-200.0000' } },
           { date: '2026-11-04', inflows: { ...partial, value: '750.0000' }, outflows: { ...partial, value: '-600.0000' } },
         ],
+        periods: [
+          { from: '2026-11-03', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' } },
+        ],
       },
     }
 
     const { rerender } = render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
     expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('1.250,00')
     expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('-R$ 800,00')
-    expect(screen.getByRole('img', { name: 'Entradas e saídas diárias previstas no fluxo de caixa Bling' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Entradas e saídas semanais do fluxo de caixa Bling' })).toBeInTheDocument()
+    expect(screen.getByText('03/11–07/11')).toBeInTheDocument()
 
     rerender(<MockupDashboard screen="executive" snapshot={snapshot} />)
-    expect(screen.getByRole('img', { name: 'Entradas e saídas diárias previstas no fluxo de caixa Bling' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Entradas e saídas semanais do fluxo de caixa Bling' })).toBeInTheDocument()
   })
 
   it('identifica como parcial o valor incompleto sem mudar a identificação dos demais cards', () => {

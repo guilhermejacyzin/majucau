@@ -92,6 +92,12 @@ func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
 				Inflows:  application.DashboardMetric{Value: "110.00", State: "PARTIAL", SourceSystem: "BLING"},
 				Outflows: application.DashboardMetric{Value: "-25.00", State: "PARTIAL", SourceSystem: "BLING"},
 			}},
+			Periods: []application.DashboardCashFlowPeriod{{
+				From:     "2026-11-03",
+				Through:  "2026-11-07",
+				Inflows:  application.DashboardMetric{Value: "110.00", State: "PARTIAL", SourceSystem: "BLING"},
+				Outflows: application.DashboardMetric{Value: "-25.00", State: "PARTIAL", SourceSystem: "BLING"},
+			}},
 		},
 	}
 	got := wailsDashboardSnapshot(input)
@@ -101,7 +107,7 @@ func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
 	if got.PayablesDueNext30Days.Value != input.PayablesDueNext30Days.Value || got.PayablesDueNext30Days.State != input.PayablesDueNext30Days.State {
 		t.Fatalf("payables due in 30 days were lost in Wails mapping: got %+v", got.PayablesDueNext30Days)
 	}
-	if got.CashFlow == nil || got.CashFlow.InflowsNext30Days != input.CashFlow.InflowsNext30Days || got.CashFlow.OutflowsNext30Days != input.CashFlow.OutflowsNext30Days || len(got.CashFlow.Days) != 1 || got.CashFlow.Days[0] != input.CashFlow.Days[0] {
+	if got.CashFlow == nil || got.CashFlow.InflowsNext30Days != input.CashFlow.InflowsNext30Days || got.CashFlow.OutflowsNext30Days != input.CashFlow.OutflowsNext30Days || len(got.CashFlow.Days) != 1 || got.CashFlow.Days[0] != input.CashFlow.Days[0] || len(got.CashFlow.Periods) != 1 || got.CashFlow.Periods[0] != input.CashFlow.Periods[0] {
 		t.Fatalf("cash-flow report composition was lost in Wails mapping: got %+v, want %+v", got.CashFlow, input.CashFlow)
 	}
 
@@ -114,7 +120,7 @@ func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
 		t.Fatalf("decode Wails dashboard snapshot: %v", err)
 	}
 	var serializedFlow application.DashboardCashFlow
-	if raw, ok := payload["cash_flow"]; !ok || json.Unmarshal(raw, &serializedFlow) != nil || serializedFlow.InflowsNext30Days != input.CashFlow.InflowsNext30Days || len(serializedFlow.Days) != 1 {
+	if raw, ok := payload["cash_flow"]; !ok || json.Unmarshal(raw, &serializedFlow) != nil || serializedFlow.InflowsNext30Days != input.CashFlow.InflowsNext30Days || len(serializedFlow.Days) != 1 || len(serializedFlow.Periods) != 1 || serializedFlow.Periods[0] != input.CashFlow.Periods[0] {
 		t.Fatalf("cash_flow JSON contract was not preserved: %s", encoded)
 	}
 }

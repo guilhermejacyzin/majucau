@@ -121,24 +121,28 @@ function withSnapshot(screen: MockupScreenKey, card: Card, snapshot?: DashboardS
 }
 
 function EmptyChart({ title, onNavigate, cashFlow }: { title: string; onNavigate?: (screen: MockupScreenKey) => void; cashFlow?: DashboardSnapshot['cash_flow'] }) {
-  const days = cashFlow?.days?.slice(0, 30) ?? []
+  const periods = cashFlow?.periods ?? []
   const value = (amount?: string) => {
     if (!amount) return undefined
     const parsed = Number(amount)
     return Number.isFinite(parsed) ? parsed : undefined
   }
-  const inflows = days.map((day) => value(day.inflows.value))
-  const outflows = days.map((day) => value(day.outflows.value))
+  const inflows = periods.map((period) => value(period.inflows.value))
+  const outflows = periods.map((period) => value(period.outflows.value))
   const points = [...inflows, ...outflows].filter((amount): amount is number => amount !== undefined)
   const scale = Math.max(1, ...points.map((amount) => Math.abs(amount)))
   const line = (series: Array<number | undefined>) => series.map((amount, index) => {
-    const x = days.length < 2 ? 300 : 8 + index * (584 / (days.length - 1))
+    const x = periods.length < 2 ? 300 : 8 + index * (584 / (periods.length - 1))
     const y = 82 - ((amount ?? 0) / scale) * 65
     return `${x},${y}`
   }).join(' ')
-  const hasFlow = days.length > 0 && points.length > 0
+  const dateLabel = (date: string) => {
+    const [, month, day] = date.split('-')
+    return `${day}/${month}`
+  }
+  const hasFlow = periods.length > 0 && points.length > 0
   const hasConfirmed = cashFlow?.inflows_next_30_days.state === 'CONFIRMED' && cashFlow?.outflows_next_30_days.state === 'CONFIRMED'
-  return <section className="mocap-panel mocap-chart-panel"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>{title}</h2><p>{hasFlow ? (hasConfirmed ? 'Fonte: Bling' : 'Parcial · fonte: Bling') : 'Sem série confirmada'}</p></div></div></div><div className="mocap-chart-legend"><span className="legend-green">●</span> Entradas <span className="legend-red">●</span> Saídas <span className="legend-blue">━●</span> Saldo projetado</div><div className="mocap-chart-empty"><div className="mocap-grid-lines"><i /><i /><i /><i /></div>{hasFlow ? <svg role="img" aria-label="Entradas e saídas diárias previstas no fluxo de caixa Bling" viewBox="0 0 600 165" preserveAspectRatio="none" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', overflow: 'visible' }}><polyline points={line(inflows)} fill="none" stroke="#0a9e87" strokeWidth="2" vectorEffect="non-scaling-stroke" /><polyline points={line(outflows)} fill="none" stroke="#fa3038" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg> : <span>Sem dados confirmados</span>}</div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled={!onNavigate} onClick={() => onNavigate?.('cashflow')}>Ver fluxo completo <span>→</span></button></Tooltip></section>
+  return <section className="mocap-panel mocap-chart-panel"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>{title}</h2><p>{hasFlow ? (hasConfirmed ? 'Fonte: Bling' : 'Parcial · fonte: Bling') : 'Sem série confirmada'}</p></div></div></div><div className="mocap-chart-legend"><span className="legend-green">●</span> Entradas <span className="legend-red">●</span> Saídas <span className="legend-blue">━●</span> Saldo projetado</div><div className="mocap-chart-empty"><div className="mocap-grid-lines"><i /><i /><i /><i /></div>{hasFlow ? <svg role="img" aria-label="Entradas e saídas semanais do fluxo de caixa Bling" viewBox="0 0 600 165" preserveAspectRatio="none" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', overflow: 'visible' }}><polyline points={line(inflows)} fill="none" stroke="#0a9e87" strokeWidth="2" vectorEffect="non-scaling-stroke" /><polyline points={line(outflows)} fill="none" stroke="#fa3038" strokeWidth="2" vectorEffect="non-scaling-stroke" />{periods.map((period, index) => { const x = periods.length < 2 ? 300 : 8 + index * (584 / (periods.length - 1)); return <text key={`${period.from}-${period.through}`} x={x} y="153" textAnchor="middle" fill="#17305b" fontSize="9">{dateLabel(period.from)}–{dateLabel(period.through)}</text> })}</svg> : <span>Sem dados confirmados</span>}</div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled={!onNavigate} onClick={() => onNavigate?.('cashflow')}>Ver fluxo completo <span>→</span></button></Tooltip></section>
 }
 
 function EmptyDistribution({ title, subtitle, onNavigate, emptyMessage = 'Sem dados', items, bankBalances = [] }: { title: string; subtitle: string; onNavigate?: (screen: MockupScreenKey) => void; emptyMessage?: string; items?: string[]; bankBalances?: DashboardBankBalance[] }) {

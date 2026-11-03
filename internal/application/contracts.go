@@ -255,10 +255,21 @@ type DashboardCashFlowDay struct {
 	Outflows DashboardMetric `json:"outflows"`
 }
 
+// DashboardCashFlowPeriod mirrors the weekly buckets used by the Bling
+// cash-flow report. It contains only API-composed inflows and outflows; it
+// does not infer opening or closing balances.
+type DashboardCashFlowPeriod struct {
+	From     string          `json:"from"`
+	Through  string          `json:"through"`
+	Inflows  DashboardMetric `json:"inflows"`
+	Outflows DashboardMetric `json:"outflows"`
+}
+
 type DashboardCashFlow struct {
-	InflowsNext30Days  DashboardMetric        `json:"inflows_next_30_days"`
-	OutflowsNext30Days DashboardMetric        `json:"outflows_next_30_days"`
-	Days               []DashboardCashFlowDay `json:"days,omitempty"`
+	InflowsNext30Days  DashboardMetric           `json:"inflows_next_30_days"`
+	OutflowsNext30Days DashboardMetric           `json:"outflows_next_30_days"`
+	Days               []DashboardCashFlowDay    `json:"days,omitempty"`
+	Periods            []DashboardCashFlowPeriod `json:"periods,omitempty"`
 }
 
 // DashboardSnapshot contains only metrics that are already normalized in the

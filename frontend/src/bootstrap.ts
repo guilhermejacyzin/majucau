@@ -24,7 +24,8 @@ export type DashboardReceivableRow = { customer?: string; origin: string; due_da
 export type DashboardPayableRow = { supplier?: string; document?: string; due_date: string; value: string; category?: string; status: string }
 export type DashboardBankBalance = { account: string; value: string }
 export type DashboardCashFlowDay = { date: string; inflows: DashboardMetric; outflows: DashboardMetric }
-export type DashboardCashFlow = { inflows_next_30_days: DashboardMetric; outflows_next_30_days: DashboardMetric; days?: DashboardCashFlowDay[] }
+export type DashboardCashFlowPeriod = { from: string; through: string; inflows: DashboardMetric; outflows: DashboardMetric }
+export type DashboardCashFlow = { inflows_next_30_days: DashboardMetric; outflows_next_30_days: DashboardMetric; days?: DashboardCashFlowDay[]; periods?: DashboardCashFlowPeriod[] }
 export type DashboardSnapshot = {
   as_of: string
   last_bling_sync_at?: string
@@ -202,7 +203,7 @@ function isDashboardBankBalance(value: unknown): value is DashboardBankBalance {
 function isDashboardCashFlow(value: unknown): value is DashboardCashFlow {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<DashboardCashFlow>
-  return isDashboardMetric(candidate.inflows_next_30_days) && isDashboardMetric(candidate.outflows_next_30_days) && (candidate.days === undefined || (Array.isArray(candidate.days) && candidate.days.length <= 61 && candidate.days.every((day) => Boolean(day) && typeof day.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day.date) && isDashboardMetric(day.inflows) && isDashboardMetric(day.outflows))))
+  return isDashboardMetric(candidate.inflows_next_30_days) && isDashboardMetric(candidate.outflows_next_30_days) && (candidate.days === undefined || (Array.isArray(candidate.days) && candidate.days.length <= 61 && candidate.days.every((day) => Boolean(day) && typeof day.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day.date) && isDashboardMetric(day.inflows) && isDashboardMetric(day.outflows)))) && (candidate.periods === undefined || (Array.isArray(candidate.periods) && candidate.periods.length <= 10 && candidate.periods.every((period) => Boolean(period) && typeof period.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(period.from) && typeof period.through === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(period.through) && isDashboardMetric(period.inflows) && isDashboardMetric(period.outflows))))
 }
 
 function isDashboardSnapshot(value: unknown): value is DashboardSnapshot {

@@ -70,7 +70,8 @@ type apiResourceSyncService struct {
 type ReceivablesAPISyncService struct{ *apiResourceSyncService }
 
 func NewReceivablesAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *ReceivablesAPISyncService {
-	return &ReceivablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: ReceivablesAPIResource, sourceEntity: "bling.contas_receber.page", list: client.ListReceivables}}
+	preparePage, normalizePage, partialErrorCode := normalizeReceivablesAPISnapshotPage(client)
+	return &ReceivablesAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: ReceivablesAPIResource, sourceEntity: "bling.contas_receber.page", list: client.ListReceivables, preparePage: preparePage, normalizePage: normalizePage, partialErrorCode: partialErrorCode}}
 }
 
 // SyncWithCorrelationID runs receivables as part of a stable daily operation.
@@ -219,7 +220,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		return APISyncResult{}, fmt.Errorf("remove superseded prepared Bling page checkpoints: %w", err)
 	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
-	fullDailyNormalizedSnapshot := (s.resource == PayablesAPIResource || s.resource == CashMovementsAPIResource) && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
+	fullDailyNormalizedSnapshot := (s.resource == ReceivablesAPIResource || s.resource == PayablesAPIResource || s.resource == CashMovementsAPIResource) && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
 	retryCounter := httpretry.NewCounter()
 	ctx = httpretry.WithCounter(ctx, retryCounter)
 	fail := func(code string, cause error) (APISyncResult, error) {
@@ -479,7 +480,21 @@ func blingAPINormalizationFailureCode(err error) string {
 			"BLING_CONTACT_DETAIL_NAME_INVALID",
 			"BLING_CATEGORY_DETAIL_ID_INVALID",
 			"BLING_CATEGORY_DETAIL_TYPE_INVALID",
-			"BLING_CATEGORY_DETAIL_DESCRIPTION_INVALID":
+			"BLING_CATEGORY_DETAIL_DESCRIPTION_INVALID",
+			"BLING_RECEIVABLE_LIST_ID_INVALID",
+			"BLING_RECEIVABLE_DETAIL_ID_INVALID",
+			"BLING_RECEIVABLE_DETAIL_STATUS_MISMATCH",
+			"BLING_RECEIVABLE_PREPARED_RECORD_INVALID",
+			"BLING_RECEIVABLE_STATUS_INVALID",
+			"BLING_RECEIVABLE_CONTACT_INVALID",
+			"BLING_RECEIVABLE_CUSTOMER_NAME_INVALID",
+			"BLING_RECEIVABLE_DUE_DATE_INVALID",
+			"BLING_RECEIVABLE_ISSUE_DATE_INVALID",
+			"BLING_RECEIVABLE_COMPETENCE_DATE_INVALID",
+			"BLING_RECEIVABLE_DOCUMENT_INVALID",
+			"BLING_RECEIVABLE_AMOUNT_INVALID",
+			"BLING_RECEIVABLE_OPEN_BALANCE_INVALID",
+			"BLING_RECEIVABLE_CONTACT_SOURCE_MISSING":
 			return fieldErr.code
 		}
 	}
@@ -496,6 +511,10 @@ func blingAPINormalizationFailureCode(err error) string {
 		}
 	}
 	switch {
+	case errors.Is(err, errBlingReceivableListSchemaMismatch):
+		return "BLING_RECEIVABLE_LIST_SCHEMA_MISMATCH"
+	case errors.Is(err, errBlingReceivableDetailSchemaMismatch):
+		return "BLING_RECEIVABLE_DETAIL_SCHEMA_MISMATCH"
 	case errors.Is(err, errBlingPayableListSchemaMismatch):
 		return "BLING_PAYABLE_LIST_SCHEMA_MISMATCH"
 	case errors.Is(err, errBlingPayableDetailSchemaMismatch):

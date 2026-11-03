@@ -272,11 +272,12 @@ func TestReadStreamSummaryKeepsEmptySourcesUnavailableInsteadOfZero(t *testing.T
 	}
 }
 
-func TestReadStreamSummaryConfirmsZeroAfterSuccessfulNormalizedDailyBlingLoad(t *testing.T) {
+func TestReadStreamSummaryConfirmsZeroAfterSuccessfulNormalizedBlingAndNuvemLoad(t *testing.T) {
 	finishedAt := time.Date(2026, 10, 19, 13, 15, 0, 0, time.UTC)
 	asOf := time.Date(2026, 10, 19, 16, 0, 0, 0, time.UTC)
 	values := emptyDashboardSummaryValues()
 	values[18], values[19], values[20], values[22] = finishedAt, finishedAt, finishedAt, finishedAt
+	values[len(values)-1] = false
 	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
 	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
 	if err != nil {
@@ -346,8 +347,8 @@ func TestReadStreamSummaryUsesCashMovementSyncForReceiptAndPaymentMetrics(t *tes
 	if err != nil {
 		t.Fatalf("readStreamSummary() error = %v", err)
 	}
-	if snapshot.Receivables.State != "CONFIRMED" || snapshot.Payables.State != "CONFIRMED" {
-		t.Fatalf("receivables/payables should follow their own resources: %+v / %+v", snapshot.Receivables, snapshot.Payables)
+	if snapshot.Receivables.State != "PARTIAL" || snapshot.Payables.State != "CONFIRMED" {
+		t.Fatalf("receivables should stay partial until the same-day Nuvem source succeeds, while payables follow Bling: %+v / %+v", snapshot.Receivables, snapshot.Payables)
 	}
 	if snapshot.ReceiptsMonth.State != "UNAVAILABLE" || snapshot.PaymentsMonth.State != "UNAVAILABLE" {
 		t.Fatalf("cash movement metrics must stay unavailable without a normalized caixas load: %+v / %+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
@@ -460,7 +461,7 @@ func dashboardSummaryValues() []any {
 		"-80.0000", int64(2), "-10.0000", int64(1), "-4.0000", int64(1),
 		"30.0000", int64(1), int64(2), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC),
 		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false, time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false,
-		"-35.0000", int64(2), "40.0000", int64(1), "-75.0000", int64(3),
+		"-35.0000", int64(2), "40.0000", int64(1), "-75.0000", int64(3), false,
 	}
 }
 
@@ -470,7 +471,7 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
 		"0.0000", int64(0), int64(0), nil, nil, nil, false, nil, false,
-		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0),
+		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), true,
 	}
 }
 

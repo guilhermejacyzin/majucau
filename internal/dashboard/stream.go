@@ -122,7 +122,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		receivablesOverdueCount, receivablesDueNext90DaysCount, payablesCount, payablesTodayCount, payablesOverdueCount, payablesDueNext7DaysCount, payablesDueNext90DaysCount int64
 		paymentsTotalCount, paymentsMonthCount                                                                                                                                 int64
 		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt                                                                                 pgtype.Timestamptz
-		dailyPayablesPartial, dailyCashMovementsPartial                                                                                                                        bool
+		dailyPayablesPartial, dailyCashMovementsPartial, dailyNuvemFuturePartial                                                                                               bool
 	)
 	dailyCorrelationID, err := dailyBlingCorrelationID(asOf)
 	if err != nil {
@@ -154,6 +154,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&receivablesDueNext90DaysCount,
 		&payablesDueNext90DaysValue,
 		&payablesDueNext90DaysCount,
+		&dailyNuvemFuturePartial,
 	)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
@@ -174,11 +175,11 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		AsOf:                     asOf,
 		LastBlingSyncAt:          lastBlingSyncTime,
 		DataState:                state,
-		Receivables:              metricForSourceRun(receivablesValue, receivablesCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
+		Receivables:              metricForSourceRun(receivablesValue, receivablesCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO", dailyNuvemFuturePartial),
 		FutureB2C:                metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
 		ReceiptsMonth:            metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
-		ReceivablesOverdue:       metricForSourceRun(receivablesOverdueValue, receivablesOverdueCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
-		ReceivablesDueNext90Days: metricForSourceRun(receivablesDueNext90DaysValue, receivablesDueNext90DaysCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO"),
+		ReceivablesOverdue:       metricForSourceRun(receivablesOverdueValue, receivablesOverdueCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO", dailyNuvemFuturePartial),
+		ReceivablesDueNext90Days: metricForSourceRun(receivablesDueNext90DaysValue, receivablesDueNext90DaysCount, receivablesCount, receivablesFresh, "BLING + NUVEM_PAGO", dailyNuvemFuturePartial),
 		Payables:                 metricForSourceRun(payablesValue, payablesCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesDueToday:         metricForSourceRun(payablesTodayValue, payablesTodayCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesOverdue:          metricForSourceRun(payablesOverdueValue, payablesOverdueCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
@@ -341,13 +342,67 @@ func flushDashboardOutput(dst io.Writer) error {
 	return nil
 }
 
-const dashboardStreamSummarySQL = `
-WITH eligible_receivables AS (
-  SELECT *
-    FROM receivables
-   WHERE (source_system = 'NUVEM_PAGO' AND business_type = 'B2C' AND status = 'PROJECTED')
-      OR (source_system = 'BLING' AND business_type = 'B2B')
-), r AS (
+// Cross-source receivable matches use the approved customer-name + gross-value
+// rule. Dates are intentionally excluded. Pair equal occurrences one-to-one so
+// repeated sales within either source remain separate; when sources disagree
+// on multiplicity, the larger source count is retained. Nuvem Pago is the
+// representative row for matched pairs because it carries the projected
+// settlement value/date; the Bling row is not added a second time.
+const dashboardEligibleReceivablesCTE = `
+latest_daily_receivable_snapshot AS (
+  SELECT b.id AS sync_batch_id
+    FROM integration_sync_batches b
+    JOIN integration_connections c ON c.id = b.connection_id
+   WHERE c.provider = 'BLING'
+     AND b.resource = 'contas.receber'
+     AND b.correlation_id IS NOT NULL
+     AND b.status IN ('SUCCESS', 'PARTIAL')
+     AND b.data_stage = 'NORMALIZED'
+   ORDER BY b.finished_at DESC, b.id DESC
+   LIMIT 1
+), eligible_receivables AS (
+  SELECT r.*,
+         COALESCE(NULLIF(regexp_replace(translate(lower(btrim(c.name)), 'áàâãäéèêëíìîïóòõôöúùûüçñ', 'aaaaaeeeeiiiiooooouuuucn'), '[[:space:]]+', ' ', 'g'), ''),
+                  NULLIF(regexp_replace(translate(lower(btrim(rr.payload->>'customer_name')), 'áàâãäéèêëíìîïóòõôöúùûüçñ', 'aaaaaeeeeiiiiooooouuuucn'), '[[:space:]]+', ' ', 'g'), '')) AS customer_match_name,
+         COALESCE(r.due_date, r.expected_receipt_date) AS effective_due_date
+    FROM receivables r
+    LEFT JOIN contacts c ON c.id = r.customer_id
+    LEFT JOIN raw_records rr ON rr.id = r.raw_record_id
+   WHERE (r.source_system = 'NUVEM_PAGO' AND r.business_type = 'B2C' AND r.status = 'PROJECTED')
+      OR (r.source_system = 'BLING'
+          AND (r.source_entity <> 'bling.conta_receber' OR EXISTS (
+            SELECT 1
+              FROM latest_daily_receivable_snapshot latest
+              JOIN receivable_sync_snapshot_rows membership ON membership.sync_batch_id = latest.sync_batch_id
+             WHERE membership.receivable_id = r.id
+          )))
+), ranked_receivables AS (
+  SELECT er.*,
+         row_number() OVER (
+           PARTITION BY customer_match_name, gross_amount, source_system
+           ORDER BY source_entity, source_id, id
+         ) AS source_match_ordinal
+    FROM eligible_receivables er
+), deduplicated_receivables AS (
+  SELECT bling.*
+    FROM ranked_receivables bling
+   WHERE bling.source_system = 'BLING'
+     AND (bling.customer_match_name IS NULL OR NOT EXISTS (
+       SELECT 1
+         FROM ranked_receivables nuvem
+        WHERE nuvem.source_system = 'NUVEM_PAGO'
+          AND nuvem.customer_match_name = bling.customer_match_name
+          AND nuvem.gross_amount = bling.gross_amount
+          AND nuvem.source_match_ordinal = bling.source_match_ordinal
+     ))
+  UNION ALL
+  SELECT nuvem.*
+    FROM ranked_receivables nuvem
+   WHERE nuvem.source_system = 'NUVEM_PAGO'
+)
+`
+
+const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `, r AS (
   SELECT
     COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)), 0)::text AS total_value,
     COUNT(id) AS total_count,
@@ -358,22 +413,44 @@ WITH eligible_receivables AS (
       WHERE source_system = 'NUVEM_PAGO' AND business_type = 'B2C' AND status = 'PROJECTED'
     ) AS future_count,
     COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (
-      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND due_date < $1::date
+      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND effective_due_date < $1::date
     ), 0)::text AS overdue_value,
     COUNT(id) FILTER (
-      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND due_date < $1::date
+      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND effective_due_date < $1::date
     ) AS overdue_count
-    ,COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (
-      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
-        AND due_date >= $1::date AND due_date < ($1::date + 90)
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
-    ), 0)::text AS due_next_90_days_value,
-    COUNT(id) FILTER (
-      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
-        AND due_date >= $1::date AND due_date < ($1::date + 90)
-        AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
-    ) AS due_next_90_days_count
-  FROM eligible_receivables
+  FROM deduplicated_receivables
+), due90_candidates AS (
+  SELECT *
+    FROM eligible_receivables
+   WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
+     AND effective_due_date >= $1::date AND effective_due_date < ($1::date + 90)
+     AND UPPER(status) NOT IN ('CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+), due90_ranked AS (
+  SELECT candidate.*,
+         row_number() OVER (
+           PARTITION BY customer_match_name, gross_amount, source_system
+           ORDER BY source_entity, source_id, id
+         ) AS source_match_ordinal
+    FROM due90_candidates candidate
+), due90_deduplicated AS (
+  SELECT bling.*
+    FROM due90_ranked bling
+   WHERE bling.source_system = 'BLING'
+     AND (bling.customer_match_name IS NULL OR NOT EXISTS (
+       SELECT 1 FROM due90_ranked nuvem
+        WHERE nuvem.source_system = 'NUVEM_PAGO'
+          AND nuvem.customer_match_name = bling.customer_match_name
+          AND nuvem.gross_amount = bling.gross_amount
+          AND nuvem.source_match_ordinal = bling.source_match_ordinal
+     ))
+  UNION ALL
+  SELECT nuvem.*
+    FROM due90_ranked nuvem
+   WHERE nuvem.source_system = 'NUVEM_PAGO'
+), due90 AS (
+  SELECT COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)), 0)::text AS value,
+         COUNT(id) AS count
+    FROM due90_deduplicated
 ), cash_snapshot AS (
   SELECT b.id AS sync_batch_id, b.status
     FROM integration_sync_batches b
@@ -479,6 +556,16 @@ WITH eligible_receivables AS (
     COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.pagar' AND b.data_stage = 'NORMALIZED'), false) AS payables_partial,
     MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS cash_movements_finished_at,
     COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'caixas' AND b.data_stage = 'NORMALIZED'), false) AS cash_movements_partial
+    ,NOT EXISTS (
+      SELECT 1
+        FROM integration_sync_batches nuvem
+        JOIN integration_connections nuvem_connection ON nuvem_connection.id = nuvem.connection_id
+       WHERE nuvem_connection.provider = 'NUVEM_PAGO'
+         AND nuvem.resource = 'nuvem_pago_recebimentos_futuros_csv_v1'
+         AND nuvem.started_at >= ($1::date::timestamp AT TIME ZONE 'America/Sao_Paulo')
+         AND nuvem.status = 'SUCCESS'
+         AND nuvem.data_stage = 'NORMALIZED'
+    ) AS nuvem_future_partial
     FROM integration_sync_batches b
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
@@ -497,17 +584,14 @@ SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        current_daily_bling_sync.cash_movements_finished_at,
        current_daily_bling_sync.cash_movements_partial,
        p.due_next_7_days_value, p.due_next_7_days_count,
-       r.due_next_90_days_value, r.due_next_90_days_count,
-       p.due_next_90_days_value, p.due_next_90_days_count
-FROM r CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync CROSS JOIN current_daily_bling_sync
+       due90.value, due90.count,
+       p.due_next_90_days_value, p.due_next_90_days_count,
+       current_daily_bling_sync.nuvem_future_partial
+FROM r CROSS JOIN due90 CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync CROSS JOIN current_daily_bling_sync
 `
 
 const dashboardReceivableRowsSQL = `
-WITH eligible_receivables AS (
-  SELECT * FROM receivables
-   WHERE (source_system = 'NUVEM_PAGO' AND business_type = 'B2C' AND status = 'PROJECTED')
-      OR (source_system = 'BLING' AND business_type = 'B2B')
-)
+WITH ` + dashboardEligibleReceivablesCTE + `
 SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.origin END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.due_date END,
@@ -515,14 +599,15 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.net_value END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.status END,
        limits.exceeds_limit
-  FROM (SELECT * FROM eligible_receivables
+  FROM (SELECT * FROM deduplicated_receivables
          WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
-         ORDER BY due_date NULLS LAST, source_id LIMIT 50) er
+         ORDER BY effective_due_date NULLS LAST, source_id LIMIT 50) er
   LEFT JOIN contacts c ON c.id = er.customer_id
+  LEFT JOIN raw_records rr ON rr.id = er.raw_record_id
  CROSS JOIN LATERAL (
-   SELECT COALESCE(c.name, '') AS customer,
+   SELECT COALESCE(c.name, rr.payload->>'customer_name', '') AS customer,
           CASE er.source_system WHEN 'NUVEM_PAGO' THEN 'Nuvem Pago' WHEN 'BLING' THEN 'Bling' ELSE er.source_system END AS origin,
-          COALESCE(to_char(er.due_date, 'YYYY-MM-DD'), '') AS due_date,
+          COALESCE(to_char(er.effective_due_date, 'YYYY-MM-DD'), '') AS due_date,
           COALESCE(er.gross_amount::text, '') AS gross_value,
           COALESCE(COALESCE(er.net_amount, er.gross_amount)::text, '') AS net_value,
           COALESCE(er.status, '') AS status

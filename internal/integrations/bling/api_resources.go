@@ -21,6 +21,15 @@ func (c *BlingAPIClient) GetPayable(ctx context.Context, id int64) (json.RawMess
 	return c.getDataRecord(ctx, "contas/pagar/"+strconv.FormatInt(id, 10))
 }
 
+// GetReceivable reads one account-receivable detail from Bling and preserves
+// its payload as RAW JSON. The ID is numeric so it cannot inject a path/query.
+func (c *BlingAPIClient) GetReceivable(ctx context.Context, id int64) (json.RawMessage, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("%w: receivable ID must be positive", ErrBlingAPIConfiguration)
+	}
+	return c.getDataRecord(ctx, "contas/receber/"+strconv.FormatInt(id, 10))
+}
+
 // GetContact reads one Bling contact by its numeric ID. Its response remains
 // raw and size-bounded until the caller validates the fields it needs.
 func (c *BlingAPIClient) GetContact(ctx context.Context, id int64) (json.RawMessage, error) {

@@ -23,6 +23,8 @@ func TestGetPayableAndBorderoReadBoundedRawDetails(t *testing.T) {
 			t.Fatalf("enable-jwt = %q, want 1", got)
 		}
 		switch r.URL.Path {
+		case "/Api/v3/contas/receber/321":
+			_, _ = w.Write([]byte(`{"data":{"id":321,"situacao":1,"saldo":80.00}}`))
 		case "/Api/v3/contas/pagar/123":
 			_, _ = w.Write([]byte(`{"data":{"id":123,"categoria":{"id":9}}}`))
 		case "/Api/v3/borderos/456":
@@ -41,6 +43,10 @@ func TestGetPayableAndBorderoReadBoundedRawDetails(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	receivable, err := client.GetReceivable(context.Background(), 321)
+	if err != nil || string(receivable) != `{"id":321,"situacao":1,"saldo":80.00}` {
+		t.Fatalf("receivable = %s, err = %v", receivable, err)
+	}
 	payable, err := client.GetPayable(context.Background(), 123)
 	if err != nil || string(payable) != `{"id":123,"categoria":{"id":9}}` {
 		t.Fatalf("payable = %s, err = %v", payable, err)
@@ -90,6 +96,22 @@ func TestGetPayableRejectsInvalidIDBeforeNetworkCall(t *testing.T) {
 	}
 	for _, id := range []int64{0, -1} {
 		if _, err := client.GetPayable(context.Background(), id); !errors.Is(err, ErrBlingAPIConfiguration) {
+			t.Fatalf("id %d error = %v, want configuration error", id, err)
+		}
+	}
+	if doer.calls != 0 {
+		t.Fatalf("network calls = %d, want 0", doer.calls)
+	}
+}
+
+func TestGetReceivableRejectsInvalidIDBeforeNetworkCall(t *testing.T) {
+	doer := &errorHTTPDoer{err: errors.New("network should not be called")}
+	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []int64{0, -1} {
+		if _, err := client.GetReceivable(context.Background(), id); !errors.Is(err, ErrBlingAPIConfiguration) {
 			t.Fatalf("id %d error = %v, want configuration error", id, err)
 		}
 	}

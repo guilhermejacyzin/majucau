@@ -61,6 +61,7 @@ BEGIN
       'public.sync_cursors',
       'public.raw_records',
       'public.bling_cash_movements',
+      'public.receivable_sync_snapshot_rows',
       'public.payable_sync_snapshot_rows',
       'public.receipts',
       'public.receivables',
@@ -69,7 +70,10 @@ BEGIN
       'public.contacts'
     ]::text[]);
     expected_column_select := expected_select OR
-      relation_row.qualified_name = 'public.payable_sources';
+      relation_row.qualified_name = ANY (ARRAY[
+        'public.payable_sources',
+        'public.receivable_sources'
+      ]::text[]);
     expected_insert := relation_row.qualified_name = ANY (ARRAY[
       'public.integration_connections',
       'public.integration_sync_batches',
@@ -81,8 +85,10 @@ BEGIN
       'public.google_drive_files',
       'public.sync_cursors',
       'public.bling_cash_movements',
+      'public.receivable_sync_snapshot_rows',
       'public.raw_records',
       'public.payable_sync_snapshot_rows',
+      'public.receivable_sources',
       'public.payable_sources',
       'public.payables',
       'public.receipts',
@@ -130,6 +136,13 @@ BEGIN
     RAISE EXCEPTION 'runtime lineage-key column privileges are incorrect';
   END IF;
 
+  IF NOT has_column_privilege(runtime_oid, 'public.receivable_sources', 'receivable_id', 'SELECT') OR
+     NOT has_column_privilege(runtime_oid, 'public.receivable_sources', 'raw_record_id', 'SELECT') OR
+     has_column_privilege(runtime_oid, 'public.receivable_sources', 'rule_version_id', 'SELECT') OR
+     has_column_privilege(runtime_oid, 'public.receivable_sources', 'created_at', 'SELECT') THEN
+    RAISE EXCEPTION 'runtime receivable lineage-key column privileges are incorrect';
+  END IF;
+
   FOR function_row IN
     SELECT function_entry.oid, function_entry.proowner
       FROM pg_proc AS function_entry
@@ -142,7 +155,8 @@ BEGIN
          function_row.oid = ANY (ARRAY[
            'public.retire_current_raw_record(uuid)'::regprocedure,
            'public.audit_google_drive_credential_configured(text,uuid,boolean)'::regprocedure,
-           'public.upsert_bling_supplier_contact(uuid,text,text,uuid)'::regprocedure
+           'public.upsert_bling_supplier_contact(uuid,text,text,uuid)'::regprocedure,
+           'public.upsert_bling_customer_contact(uuid,text,text,uuid)'::regprocedure
          ])
        ) THEN
       RAISE EXCEPTION 'runtime role has unexpected function privileges on %', function_row.oid::regprocedure;
@@ -197,6 +211,15 @@ BEGIN
       FROM public.payable_sources
      LIMIT 0;
     RAISE EXCEPTION 'runtime role unexpectedly read payable lineage metadata';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+
+  BEGIN
+    PERFORM rule_version_id
+      FROM public.receivable_sources
+     LIMIT 0;
+    RAISE EXCEPTION 'runtime role unexpectedly read receivable lineage metadata';
   EXCEPTION WHEN insufficient_privilege THEN
     NULL;
   END;

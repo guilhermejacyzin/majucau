@@ -22,10 +22,10 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 
 ## Invariantes financeiros protegidos
 
-- B2C futuro vem exclusivamente de fonte Nuvem/Nuvem Pago oficial.
-- B2B futuro vem exclusivamente do Bling após classificação aprovada.
-- Nunca somar B2C Nuvem + B2C Bling.
-- Total a Receber = B2C Nuvem + B2B Bling.
+- A projeção de Contas a Receber dos próximos 90 dias reúne títulos em aberto do Bling e recebimentos futuros projetados da Nuvem Pago.
+- Para impedir dupla contagem entre essas fontes, comparar nome normalizado do cliente e valor bruto exato; a data não participa da comparação.
+- Deduplicar correspondências entre fontes uma a uma. Registros repetidos dentro da mesma fonte continuam distintos; se a quantidade diferir entre fontes, preservar a maior quantidade de ocorrências.
+- Quando Bling e Nuvem Pago forem correspondências, manter uma ocorrência representativa da Nuvem Pago (valor líquido e data prevista da projeção) e não somar também o título correspondente do Bling.
 - T01 é um agregador dos resultados das telas de origem ativas T02–T17, exceto a tela T05 retirada em 2026-10-31: reaproveita os mesmos valores, filtros, períodos, cálculos e estados, sem fórmula duplicada nem consulta direta paralela ao provedor. Se uma tela de origem não tiver um dado necessário, manter esse resultado pendente/indisponível e sinalizar a responsável; a T01 só poderá buscar diretamente no Bling para esse dado após autorização explícita dela.
 - Recebimentos e pagamentos realizados usam a fonte oficial Bling.
 - O campo situacao de GET /caixas é metadado opcional da fonte: valores vazios ou novos são preservados sem classificação financeira implícita; somente a regra aprovada do painel decide sua inclusão nos totais.

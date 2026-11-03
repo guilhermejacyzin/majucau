@@ -696,6 +696,13 @@ type ReceivableSource struct {
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
+// Records the receivables included in a completed daily Bling snapshot; dashboard readers must use the latest successful NORMALIZED daily batch.
+type ReceivableSyncSnapshotRow struct {
+	SyncBatchID  pgtype.UUID        `json:"sync_batch_id"`
+	ReceivableID pgtype.UUID        `json:"receivable_id"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
 type RecordLineage struct {
 	TargetEntity  string             `json:"target_entity"`
 	TargetID      pgtype.UUID        `json:"target_id"`

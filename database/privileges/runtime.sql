@@ -23,6 +23,8 @@ GRANT SELECT ON TABLE
   sync_cursors,
   raw_records,
   bling_cash_movements,
+  receivable_sync_snapshot_rows,
+  receivable_sources,
   payable_sync_snapshot_rows,
   receipts,
   receivables,
@@ -47,7 +49,9 @@ TO majucau_runtime;
 GRANT INSERT ON TABLE
   raw_records,
   bling_sync_page_checkpoints,
+  receivable_sync_snapshot_rows,
   payable_sync_snapshot_rows,
+  receivable_sources,
   payable_sources
 TO majucau_runtime;
 -- ON CONFLICT DO NOTHING checks the unique lineage key. The worker may read
@@ -56,6 +60,10 @@ REVOKE SELECT (payable_id, raw_record_id, rule_version_id, created_at)
   ON TABLE payable_sources FROM PUBLIC, majucau_runtime;
 GRANT SELECT (payable_id, raw_record_id)
   ON TABLE payable_sources TO majucau_runtime;
+REVOKE SELECT (receivable_id, raw_record_id, rule_version_id, created_at)
+  ON TABLE receivable_sources FROM PUBLIC, majucau_runtime;
+GRANT SELECT (receivable_id, raw_record_id)
+  ON TABLE receivable_sources TO majucau_runtime;
 GRANT DELETE ON TABLE bling_sync_page_checkpoints TO majucau_runtime;
 GRANT INSERT, DELETE ON TABLE google_drive_sync_page_checkpoints TO majucau_runtime;
 GRANT INSERT, UPDATE, DELETE ON TABLE google_drive_sync_folders TO majucau_runtime;
@@ -73,6 +81,7 @@ REVOKE ALL ON ALL ROUTINES IN SCHEMA public FROM PUBLIC, majucau_runtime;
 GRANT EXECUTE ON FUNCTION retire_current_raw_record(uuid) TO majucau_runtime;
 GRANT EXECUTE ON FUNCTION audit_google_drive_credential_configured(text, uuid, boolean) TO majucau_runtime;
 GRANT EXECUTE ON FUNCTION upsert_bling_supplier_contact(uuid, text, text, uuid) TO majucau_runtime;
+GRANT EXECUTE ON FUNCTION upsert_bling_customer_contact(uuid, text, text, uuid) TO majucau_runtime;
 
 -- The schema uses UUID defaults and does not need runtime sequence access.
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC;

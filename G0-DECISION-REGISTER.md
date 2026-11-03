@@ -375,3 +375,13 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - A autorização define a arquitetura, mas não configura a conta Google nem concede acesso real. Ainda faltam habilitar a API Drive, criar a identidade técnica, compartilhar as três pastas como Leitor, registrar os IDs e implementar/homologar o adapter.
 - XLS e XLSX permanecem bloqueados até existir parser seguro e contratos de arquivo aprovados. Esta decisão não muda telas, regras financeiras ou o significado dos arquivos.
 - Detalhes e justificativa: `ADR-003-LEITURA-SEGURA-DO-GOOGLE-DRIVE.md`.
+
+## Decisão posterior — composição e duplicidade de Contas a Receber
+
+- **Confirmada por:** Gisele, nesta conversa Codex, em 2026-11-02 (America/Sao_Paulo).
+- O resultado de Contas a Receber na janela de 90 dias reúne os títulos do Bling e os recebimentos projetados da Nuvem Pago.
+- Para procurar duplicidade entre as duas fontes, comparar o nome do cliente (sem diferença de maiúsculas/minúsculas, acentos ou espaços repetidos) e o valor bruto exato. A data não participa da comparação.
+- Comparar ocorrências uma a uma entre fontes. Não colapsar títulos repetidos dentro do mesmo sistema; se as fontes tiverem quantidades diferentes para o mesmo nome e valor, conservar a maior quantidade de ocorrências.
+- Quando uma ocorrência corresponder nas duas fontes, contar uma vez e usar a projeção da Nuvem Pago para valor líquido e data prevista. Para a janela de 90 dias, primeiro considerar as ocorrências que estão na janela e então remover a correspondência duplicada; a data pode diferir entre fontes sem alterar a identidade da correspondência.
+- Esta decisão substitui para o resultado de Contas a Receber a composição anterior `B2C Nuvem + B2B Bling`. Ela não autoriza classificação B2B/B2C com base no tipo de pessoa, nem altera DRE, regras fiscais ou telas aprovadas.
+- O protótipo só pode mostrar o resultado como completo depois que o Bling estiver normalizado e os dados externos reais estiverem carregados; fontes ausentes ou correspondências sem nome permanecem sem deduplicação automática.

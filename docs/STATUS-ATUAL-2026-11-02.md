@@ -108,6 +108,14 @@ A captura anterior da prévia `127.0.0.1:4179` mostrava um valor geral sem perí
 
 **Próximo passo:** reiniciar o protótipo conectado com o worker atualizado, conferir Contas a Pagar em 90 dias e implementar/validar a normalização de Contas a Receber.
 
+### Continuação — preparação da integração de Contas a Receber
+
+O código local agora prepara a normalização diária das contas recebidas do Bling. Cada conta mantém seu vínculo com o dado original, não é classificada automaticamente como B2B/B2C e só passa a valer no painel depois da publicação de um snapshot completo. A T01 e a tela de origem usam o mesmo conjunto publicado. A composição Bling + Nuvem segue a regra aprovada de comparar nome do cliente e valor bruto, ignorando a data; se o arquivo diário da Nuvem não estiver atualizado, o total combinado fica marcado como **Parcial**.
+
+**Ainda não está rodando no protótipo:** falta aplicar a migration 000018 e as permissões, validar no PostgreSQL/CI, iniciar o worker novo e conferir os números reais nas telas. Gisele avisou que o arquivo externo de recebimentos futuros foi atualizado. A tentativa de abrir a pasta nesta execução foi interrompida pelo controle do navegador antes de ler o conteúdo; portanto, ainda não confirmei o formato, as colunas nem a importação.
+
+O projeto continua em **12,1% concluído / 87,9% restante** e não está homologado. Evidência da preparação e dos passos pendentes: [normalização de Contas a Receber](./evidence/BLING-RECEIVABLE-NORMALIZATION-2026-11-02.md).
+
 ### Verificação após atualização do worker — 02/11/2026
 
 Reiniciei o app Wails e o worker com o snapshot de 90 dias. A consulta sanitizada do worker ativo confirmou 418 títulos de Contas a Pagar na janela, com estado **Parcial**. Contas a Receber está **Indisponível** porque ainda não há linhas normalizadas; não exibi zero como valor confirmado. O total geral que aparecia na imagem da prévia não corresponde à métrica de 90 dias.

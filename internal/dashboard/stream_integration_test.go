@@ -48,7 +48,10 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	for _, statement := range []string{
 		`CREATE TEMP TABLE integration_connections (id uuid, provider text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE integration_sync_batches (id uuid DEFAULT gen_random_uuid(), connection_id uuid, resource text, started_at timestamptz, finished_at timestamptz, status text, correlation_id uuid, data_stage text) ON COMMIT DROP`,
-		`CREATE TEMP TABLE receivables (id uuid, source_system text, business_type text, status text, open_balance numeric, net_amount numeric, gross_amount numeric, due_date date) ON COMMIT DROP`,
+		`CREATE TEMP TABLE contacts (id uuid, name text) ON COMMIT DROP`,
+		`CREATE TEMP TABLE raw_records (id uuid, payload jsonb) ON COMMIT DROP`,
+		`CREATE TEMP TABLE receivables (id uuid, source_system text, source_entity text, source_id text, business_type text, customer_id uuid, raw_record_id uuid, status text, open_balance numeric, net_amount numeric, gross_amount numeric, due_date date, expected_receipt_date date) ON COMMIT DROP`,
+		`CREATE TEMP TABLE receivable_sync_snapshot_rows (sync_batch_id uuid, receivable_id uuid) ON COMMIT DROP`,
 		`CREATE TEMP TABLE receipts (id uuid, source_system text, status text, receipt_date date, amount numeric) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payables (id uuid, source_entity text, open_balance numeric, due_date date, status text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payable_sync_snapshot_rows (sync_batch_id uuid, payable_id uuid) ON COMMIT DROP`,
@@ -63,7 +66,7 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `INSERT INTO integration_connections (id, provider) VALUES ($1::uuid, 'BLING')`, connectionID); err != nil {
 		t.Fatalf("seed isolated Bling connection: %v", err)
 	}
-	var payableBatchID, cashBatchID string
+	var receivableBatchID, payableBatchID, cashBatchID string
 	for _, resource := range []string{"contas.receber", "contas.pagar", "caixas"} {
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO integration_sync_batches (connection_id, resource, started_at, finished_at, status, correlation_id, data_stage)
@@ -73,6 +76,11 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		if resource == "contas.pagar" {
 			if err := tx.QueryRow(ctx, `SELECT id::text FROM integration_sync_batches WHERE connection_id = $1::uuid AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID).Scan(&payableBatchID); err != nil {
 				t.Fatalf("read seeded payable batch ID: %v", err)
+			}
+		}
+		if resource == "contas.receber" {
+			if err := tx.QueryRow(ctx, `SELECT id::text FROM integration_sync_batches WHERE connection_id = $1::uuid AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID).Scan(&receivableBatchID); err != nil {
+				t.Fatalf("read seeded receivable batch ID: %v", err)
 			}
 		}
 		if resource == "caixas" {
@@ -106,15 +114,53 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 			t.Fatalf("mark %s normalized: %v", resource, err)
 		}
 	}
+	blingCustomerID := "00000000-0000-4000-8000-000000000041"
+	nuvemRawID := "00000000-0000-4000-8000-000000000042"
+	blingReceivableID := "00000000-0000-4000-8000-000000000043"
+	nuvemReceivableID := "00000000-0000-4000-8000-000000000044"
+	independentReceivableID := "00000000-0000-4000-8000-000000000045"
+	if _, err := tx.Exec(ctx, `INSERT INTO contacts (id, name) VALUES ($1::uuid, 'José Cliente')`, blingCustomerID); err != nil {
+		t.Fatalf("seed normalized Bling customer name: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO raw_records (id, payload) VALUES ($1::uuid, '{"customer_name":" jose   cliente "}'::jsonb)`, nuvemRawID); err != nil {
+		t.Fatalf("seed Nuvem customer name in RAW fixture: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO receivables (id, source_system, source_entity, source_id, business_type, customer_id, raw_record_id, status, open_balance, net_amount, gross_amount, due_date, expected_receipt_date) VALUES
+		  ($1::uuid, 'BLING', 'bling.conta_receber', 'bling-1', 'B2C', $2::uuid, NULL, '1', 100, NULL, 100, $4::date + 25, NULL),
+		  ($3::uuid, 'NUVEM_PAGO', 'nuvem_pago_recebimentos_futuros_csv_v1', 'nuvem-1', 'B2C', NULL, $5::uuid, 'PROJECTED', NULL, 97, 100, NULL, $4::date + 20),
+		  ($6::uuid, 'BLING', 'bling.conta_receber', 'bling-2', 'B2C', $2::uuid, NULL, '1', 50, NULL, 50, $4::date + 10, NULL)`,
+		blingReceivableID, blingCustomerID, nuvemReceivableID, asOf.Format("2006-01-02"), nuvemRawID, independentReceivableID); err != nil {
+		t.Fatalf("seed cross-source matching and separate receivables: %v", err)
+	}
+	for _, receivableID := range []string{blingReceivableID, independentReceivableID} {
+		if _, err := tx.Exec(ctx, `INSERT INTO receivable_sync_snapshot_rows (sync_batch_id, receivable_id) VALUES ($1::uuid, $2::uuid)`, receivableBatchID, receivableID); err != nil {
+			t.Fatalf("seed current receivable snapshot membership: %v", err)
+		}
+	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil {
 		t.Fatalf("readStreamSummary() failed against PostgreSQL with normalized account batches: %v", err)
 	}
-	if snapshot.Receivables.State != "CONFIRMED" || snapshot.Payables.State != "CONFIRMED" {
-		t.Fatalf("account metrics should follow normalized account batches: receivables=%+v payables=%+v", snapshot.Receivables, snapshot.Payables)
+	if snapshot.Receivables.State != "PARTIAL" || snapshot.Payables.State != "CONFIRMED" {
+		t.Fatalf("receivables should remain partial until a same-day Nuvem Pago load succeeds: receivables=%+v payables=%+v", snapshot.Receivables, snapshot.Payables)
 	}
 	if snapshot.ReceiptsMonth.State != "UNAVAILABLE" || snapshot.PaymentsMonth.State != "UNAVAILABLE" {
 		t.Fatalf("cash movement metrics should remain unavailable until caixas is normalized: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
+	}
+	if snapshot.ReceivablesDueNext90Days.Value != "147" || snapshot.ReceivablesDueNext90Days.Count != 2 {
+		t.Fatalf("next 90 day receivables should pair one Bling/Nuvem match by name and gross value without using date, while retaining a different value: %+v", snapshot.ReceivablesDueNext90Days)
+	}
+	nuvemConnectionID := "00000000-0000-4000-8000-000000000046"
+	if _, err := tx.Exec(ctx, `INSERT INTO integration_connections (id, provider) VALUES ($1::uuid, 'NUVEM_PAGO')`, nuvemConnectionID); err != nil {
+		t.Fatalf("seed isolated Nuvem Pago connection: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO integration_sync_batches (connection_id, resource, started_at, finished_at, status, data_stage) VALUES ($1::uuid, 'nuvem_pago_recebimentos_futuros_csv_v1', $2, $2, 'SUCCESS', 'NORMALIZED')`, nuvemConnectionID, asOf); err != nil {
+		t.Fatalf("seed same-day successful Nuvem Pago load: %v", err)
+	}
+	snapshot, err = readStreamSummary(ctx, tx, asOf)
+	if err != nil || snapshot.Receivables.State != "CONFIRMED" || snapshot.ReceivablesDueNext90Days.State != "CONFIRMED" {
+		t.Fatalf("same-day successful Bling and Nuvem sources should confirm receivables, snapshot=%+v err=%v", snapshot, err)
 	}
 	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE connection_id = $1::uuid AND resource = 'caixas' AND correlation_id = $2`, connectionID, correlationID); err != nil {
 		t.Fatalf("mark cash movement batch normalized: %v", err)

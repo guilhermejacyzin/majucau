@@ -1,5 +1,47 @@
 # Meta do Majucau
 
+### T02 — auditoria do contrato de movimentos e origem — 03/11/2026
+
+Conferi o OpenAPI oficial atual da API Bling. `GET /caixas` fornece a origem do
+lançamento (`origem.id` e `origem.tipo`); os tipos documentados distinguem
+movimentos de caixa, contas a receber/pagar, borderôs e estoque. A listagem
+também traz conta financeira, situação, valor, direção e data. Já o detalhe
+`GET /caixas/{idCaixa}` inclui `saldo` como indicador `S`/`N` de ajuste depois
+do lançamento — não como valor monetário. O catálogo financeiro identifica a
+conta, mas não contém saldo em dinheiro. Fonte: [Referência oficial da API
+Bling](https://developer.bling.com.br/referencia).
+
+No banco local, 31.032 movimentos de 01/01/2026 a 30/10/2026 estão sem
+`origin_type`, apesar de o contrato prever essa informação. O normalizador lê
+`origem.tipo`; portanto, isso pode significar que a API omitiu o campo nesses
+registros, ou que a forma real do dado precisa de uma amostra RAW para
+diagnóstico. Não vou tratar ausência como tipo conhecido nem reclassificar os
+lançamentos por aproximação. Essa lacuna afeta a conferência das entradas,
+saídas e ajustes do relatório do Bling.
+
+O Majucau continua reproduzindo as entradas e saídas a partir dos movimentos,
+contas a receber/pagar e condições das formas de pagamento, pela API oficial;
+não há uma rota pública documentada que entregue o relatório pronto. O resultado
+da T02 permanece **Parcial** até reconciliar a janela e as opções com o mesmo
+relatório do Bling. O saldo atual, menor saldo e semana crítica dependem também
+de uma abertura/float comprovados. Não alterei tela aprovada, regra financeira
+ou permissão de conta. A autorização de leitura de Contas Financeiras foi dada,
+mas o escopo ainda não foi aplicado no app do Bling nem o Majucau reautorizado.
+
+**Próximo passo único da T02:** depois de habilitar leitura de Contas
+Financeiras e reautorizar, sincronizar novamente; conferir amostra RAW sem
+expor dados pessoais para descobrir por que `origem.tipo` não foi normalizado;
+então comparar, no mesmo período e com as mesmas opções, cada faixa do relatório
+de Fluxo de Caixa do Bling. BK-062 permanece em **30%** (70% restante); o
+projeto permanece em **12,3%** (87,7% restante). Evidência:
+[`T02-BLING-SALDO-SCHEMA-2026-11-03.md`](evidence/T02-BLING-SALDO-SCHEMA-2026-11-03.md).
+
+Também corrigi a governança do pacote: a planilha de backlog mostrava BK-062
+em 25%, embora o JSON e a documentação já estivessem em 30%. A célula G68 foi
+atualizada para 30%; os totais calculados da planilha foram recalculados. O
+verificador do pacote tinha uma referência antiga de 11,9%; alinhei-a ao
+percentual atual de 12,3%. Nenhuma regra financeira ou tela foi alterada.
+
 ### T02 — worker e protótipo atualizados — 03/11/2026, 08:06 BRT
 
 Encontrei o motivo de o quadro “Semana Crítica” ainda não aparecer: o worker

@@ -14,8 +14,8 @@
     },
     {
       "path": "docs/META-PROJETO.md",
-      "bytes": 106792,
-      "sha256": "d2a5717cdc2742e5c999ecd12f1ff0e211e59094f8b431e25c938f21615d9ad2"
+      "bytes": 109554,
+      "sha256": "bb5454bc10d2d13ae4780d22fcc4d47b7a3c306690e95dcca4f71d152f6e8f85"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -345,7 +345,7 @@
     {
       "path": "docs/planejamento/work/verify_package.py",
       "bytes": 7636,
-      "sha256": "2a643cdcd3e60ba4a1489a99913b69fea25a301a8a011d501bf74ebcd80db61b"
+      "sha256": "5da70a1ffed8718a1fc0f859d5f495abe9490e8c24b61c347381fc18a535b9ba"
     },
     {
       "path": "docs/planejamento/work/verify_v1.py",

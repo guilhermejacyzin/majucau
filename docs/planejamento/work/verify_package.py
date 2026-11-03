@@ -93,7 +93,7 @@ for xlsx in outputs.glob('*.xlsx'):
         assert formula['Evolucao']['B11'].value.startswith('=COUNTIFS(')
         assert formula['Evolucao']['A33'].value.find('126 tarefas ativas') >= 0
         assert development_weight > 0 and development_accepted >= 0
-        assert abs(estimated_progress - 0.119) < 0.001
+        assert abs(estimated_progress - 0.123) < 0.001
         assert all(formula['Tarefas'].cell(i+6,13).data_type == 'f' for i in range(127))
         assert all(formula['Tarefas'].cell(i+6,14).data_type == 'f' for i in range(127))
         assert 'Fora do escopo' in formula['Tarefas'].cell(next(i+6 for i,t in enumerate(tasks) if t['id']=='BK-055'),14).value

@@ -14,6 +14,22 @@ O contrato atual da referência oficial contém:
 
 O DTO das contas financeiras não tem saldo inicial nem saldo atual. Portanto, o escopo Contas Financeiras desbloqueia a identidade/configuração das contas, mas a referência pública não define um campo de valor de saldo para esse recurso. A página oficial lista esses contratos em [Referência da API Bling](https://developer.bling.com.br/referencia).
 
+### Origem dos movimentos
+
+O contrato atual de `GET /caixas` também inclui `origem.id` e `origem.tipo`.
+Os tipos descritos são `caixa`, `duplicata` (contas a receber/pagar), `bordero`
+e `estoque`. A listagem inclui ainda valor, direção, data, situação e conta
+financeira. No detalhe `GET /caixas/{idCaixa}`, a propriedade adicional
+`saldo` é somente a indicação `S`/`N` de ajuste após o lançamento; não informa
+o montante do saldo.
+
+Na tabela normalizada, 31.032 movimentos entre 01/01/2026 e 30/10/2026 estão
+sem `origin_type`. O normalizador atual lê `origem.tipo`, então não se sabe
+ainda se o Bling omitiu a origem nesses lançamentos ou se a carga RAW mostra
+uma variação que precisa de tratamento. Até conferir uma amostra sanitizada da
+resposta RAW, esses registros não devem ser classificados por aproximação.
+Essa lacuna pode afetar a comparação das movimentações com o relatório pronto.
+
 ## O que a Central de Ajuda confirma
 
 Ao cadastrar uma conta financeira, o Bling pede um saldo inicial e uma data de início. Ajustar o saldo cria um registro de histórico dentro do Bling; isso não altera o saldo real do banco. O próprio Bling descreve suas contas como controle interno e informa que elas não sincronizam automaticamente os movimentos bancários. Fontes oficiais: [Como cadastrar contas financeiras no Bling](https://ajuda.bling.com.br/hc/pt-br/articles/34491885650839-Como-cadastrar-contas-financeiras-no-Bling) e [Como ajustar o registro de saldo da conta](https://ajuda.bling.com.br/hc/pt-br/articles/29903710138263-Como-ajustar-o-registro-de-saldo-da-conta-no-Bling).

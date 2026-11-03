@@ -1,5 +1,18 @@
 # Meta do Majucau
 
+### T02 — auditoria do saldo por banco — 03/11/2026, 07:50 BRT
+
+Encontrei uma lacuna concreta no caminho do saldo: o resumo do painel envia
+`cash_balance` como indisponível e não envia `bank_balances`, apesar de esses
+campos já existirem no contrato. A carga diária de movimentos usa o intervalo
+desde 01/01/2026; a soma desse período seria apenas uma variação líquida, não o
+saldo atual do Itaú e do Mercado Pago sem um saldo de abertura comprovado.
+Consultei a referência oficial da API e o registro da implementação. Não alterei
+valores nem regras financeiras para preencher a lacuna. A permissão aprovada de
+Contas Financeiras deve permitir identificar as contas, mas não fornece, por si
+só, o saldo inicial/atual. Evidência:
+[`T02-BLING-SALDO-SCHEMA-2026-11-03.md`](evidence/T02-BLING-SALDO-SCHEMA-2026-11-03.md).
+
 ### T02 — permissão e CI conferidas — 03/11/2026, 07:44 BRT
 
 A responsável autorizou habilitar **somente leitura** para Contas Financeiras.

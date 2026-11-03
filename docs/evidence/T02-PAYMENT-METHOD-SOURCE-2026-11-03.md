@@ -122,6 +122,27 @@ definem uma fórmula alternativa à do relatório. A fonte oficial do relatório
 continua sendo o padrão de comparação e a T02 só será confirmada após
 confrontar a API com ele, usando as opções já escolhidas pela responsável.
 
+## Validação automática da saída do relatório — 03/11/2026
+
+Foi implementado `ValidateBlingCashFlowReport` e `CompareBlingCashFlowReport`
+em `internal/financial/bling_flow_report.go`. O primeiro confere a conta de
+cada período, a continuidade do saldo entre períodos e a linha de totais; o
+segundo compara período, saldo inicial, entradas, saídas, ajustes e saldo final
+da série composta via API com a referência do Bling. A saída é rejeitada se
+qualquer valor divergir. As saídas mantêm sinal negativo, como no relatório.
+
+O teste dourado usa somente os valores da captura já enviada pela responsável:
+seis semanas, R$ 76.600,30 em entradas, -R$ 281.052,64 em saídas e
+-R$ 129.988,98 de saldo ao fim. Outros testes provam que divergência e quebra
+de continuidade são recusadas. A captura é um oráculo de teste, não dado em
+produção.
+
+`go test ./internal/financial` passou. Este componente permite verificar a
+equivalência da futura projeção API, mas ainda não existe uma série composta
+para comparar e ele não preenche cards/gráfico da T02. Permanecem pendentes a
+composição real, saldo inicial separado via Caixas e Bancos, semana crítica,
+ligação do snapshot à tela e conferência com a atualização real do Bling.
+
 ## Cálculo Bling implementado no domínio — 03/11/2026
 
 Foi acrescentado um primeiro componente reutilizável para reproduzir as

@@ -6,7 +6,7 @@
 - **Escopo:** concluir T02–T04 e T06–T17; a T01 deve reunir os resultados dessas telas já aprovadas.
 - **Exceção confirmada:** T05 (Conciliação) permanece removida do projeto.
 - **Regras de proteção:** preservar telas aprovadas e regras financeiras; concluir cada etapa com implementação, verificações, documentação e evidência antes de marcá-la pronta; enviar commits pequenos ao GitHub.
-- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 8% após implementar e testar o cálculo base de taxa líquida e prazo da forma de pagamento, ainda sem ligação à projeção ou à tela. Na CI [#41570346870](https://github.com/guilhermejacyzin/majucau/actions/runs/41570346870), migrações, PostgreSQL, backlog, testes, build e segurança passaram, mas o smoke do serviço worker no Windows falhou em `WORKER_SERVICE_WAIT_FOR_RUNNING`; o diagnóstico posterior viu o serviço `Running`, então essa falha intermitente ainda precisa ser revalidada. Testes Go locais e `go vet` passaram para este componente da T02. Ainda faltam ligar uma série de fluxo de caixa comprovada ao protótipo, sincronizar dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
+- **Andamento registrado:** a média estimada do backlog é 12,1% concluída / 87,9% restante (126 tarefas ativas; 7 concluídas, 23 em andamento e 96 não iniciadas). BK-058 e BK-059 — Contas a Pagar — estão cada uma em 5% pela correção parcial do sinal de saída; BK-062 — Fluxo de Caixa — está em 10% após o cálculo de taxa/prazo e a conferência automática da saída por período, ainda sem série projetada ou ligação à tela. Na CI [#41570346870](https://github.com/guilhermejacyzin/majucau/actions/runs/41570346870), migrações, PostgreSQL, backlog, testes, build e segurança passaram, mas o smoke do serviço worker no Windows falhou em `WORKER_SERVICE_WAIT_FOR_RUNNING`; o diagnóstico posterior viu o serviço `Running`, então essa falha intermitente ainda precisa ser revalidada. Os testes Go locais do cálculo de taxa e do conferidor da referência passaram. Ainda faltam ligar uma série de fluxo de caixa composta por APIs oficiais ao protótipo, sincronizar dados reais e conferi-los nas telas. T02/T04 e o projeto não estão prontos para homologação.
 - **Onde encontrar:** esta meta aparece no painel **Metas/Goals** do chat e fica registrada neste arquivo (`docs/META-PROJETO.md`).
 
 ### Decisão de fonte da T02 — 03/11/2026
@@ -14,9 +14,10 @@
 A responsável confirmou que a T02 deve reproduzir o mesmo resultado do relatório
 “Fluxo de Caixa” do Bling usando somente APIs oficiais. A API consultada não tem
 um endpoint documentado que devolva o relatório pronto. Na decisão inicial, a
-T02 estava em 5%; em 03/11/2026, o cálculo base de taxa e prazo foi implementado,
-e o percentual estimado passou para 8%, ainda sem uma série ligada nem comparada
-com o relatório. A API de contas financeiras lista nomes/IDs, mas não documenta
+T02 estava em 5%; em 03/11/2026, o cálculo base de taxa e prazo e a validação
+automática da referência semanal foram implementados, e o percentual estimado
+passou para 10%, ainda sem uma série composta via API para comparação nem ligação
+com a tela. A API de contas financeiras lista nomes/IDs, mas não documenta
 o saldo; a API de Caixas e Bancos retorna lançamentos. O saldo por banco permanece
 um dado separado do saldo projetado e não será preenchido por estimativa.
 Detalhes: `docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md`.

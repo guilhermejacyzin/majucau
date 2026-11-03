@@ -1980,14 +1980,14 @@
     "owner": "Engenharia",
     "kind": "Desenvolvimento",
     "status": "Em andamento",
-    "evidence": "Atualizado em 03/11: implementados e testados cálculo de taxa líquida por parcela e prazo da forma de pagamento; dias úteis exigem calendário com feriados e valores ausentes continuam desconhecidos. O componente ainda não alimenta a série nem a tela. Evidência: docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md.",
+    "evidence": "Atualizado em 03/11: cálculo de taxa líquida/prazo e conferidor automático de períodos do relatório implementados e testados com a referência semanal enviada; divergência de período, continuidade ou soma é recusada. A captura é somente oráculo de teste; não é dado de produção. Ainda falta compor a série por APIs oficiais, comparar resultados reais, obter saldo inicial e ligar snapshot à tela. Evidência: docs/evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md.",
     "weight": 1,
     "dependencies": [
       "BK-061",
       "BK-028",
       "BK-012"
     ],
-    "progress": 0.08
+    "progress": 0.1
   },
   {
     "key": "historicalcost",

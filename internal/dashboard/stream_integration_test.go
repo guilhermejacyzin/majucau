@@ -282,13 +282,13 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `UPDATE receivables SET connection_id = $1::uuid, source_payment_method_id = 9, source_financial_account_id = 1, status = CASE WHEN source_id = 'bling-2' THEN 'PARTIALLY_PAID' ELSE 'OPEN' END WHERE source_system = 'BLING' AND source_id IN ('bling-1', 'bling-2')`, connectionID); err != nil {
 		t.Fatalf("link receivable flow candidates to selected bank account: %v", err)
 	}
-	if _, err := tx.Exec(ctx, `UPDATE payables SET connection_id = $1::uuid, source_system = 'BLING', source_id = id::text, source_payment_method_id = 9, source_financial_account_id = 2 WHERE source_entity = 'bling.conta_pagar' AND status = 'OPEN'`, connectionID); err != nil {
+	if _, err := tx.Exec(ctx, `UPDATE payables SET connection_id = $1::uuid, source_system = 'BLING', source_id = id::text, source_payment_method_id = 9, source_financial_account_id = 1 WHERE source_entity = 'bling.conta_pagar' AND status = 'OPEN'`, connectionID); err != nil {
 		t.Fatalf("link payable flow candidates to selected bank account: %v", err)
 	}
 	cancelledCodeFiveID := "00000000-0000-4000-8000-000000000022"
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO payables (id, connection_id, source_system, source_entity, source_id, source_payment_method_id, source_financial_account_id, open_balance, due_date, status)
-		VALUES ($1::uuid, $2::uuid, 'BLING', 'bling.conta_pagar', 'cancelled-code-5', 9, 2, -1794.15, $3::date + 20, '5')`, cancelledCodeFiveID, connectionID, businessDate); err != nil {
+		VALUES ($1::uuid, $2::uuid, 'BLING', 'bling.conta_pagar', 'cancelled-code-5', 9, 1, -1794.15, $3::date + 20, '5')`, cancelledCodeFiveID, connectionID, businessDate); err != nil {
 		t.Fatalf("seed canceled Bling payable with numeric status: %v", err)
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO payable_sync_snapshot_rows (sync_batch_id, payable_id) VALUES ($1::uuid, $2::uuid)`, payableBatchID, cancelledCodeFiveID); err != nil {
@@ -306,6 +306,16 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.InflowsNext30Days.Value != "150.0000" || snapshot.CashFlow.OutflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.OutflowsNext30Days.Value != "-290.0000" || len(snapshot.CashFlow.Days) != 61 {
 		t.Fatalf("cash-flow series should show the visible API composition as partial over 61 bounded dates: %+v", snapshot.CashFlow)
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM bling_financial_account_identities WHERE sync_batch_id = $1::uuid AND source_id = '1'`, accountsBatchID); err != nil {
+		t.Fatalf("simulate an incomplete account catalog without Itaú: %v", err)
+	}
+	snapshot, err = readStreamSummary(ctx, tx, asOf)
+	if err != nil {
+		t.Fatalf("read summary with incomplete account catalog and complete movement identities: %v", err)
+	}
+	if snapshot.CashFlow == nil || len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.InflowsNext30Days.Value != "150.0000" || snapshot.CashFlow.OutflowsNext30Days.Value != "-290.0000" {
+		t.Fatalf("cash-flow graph should recover the unique Itaú series from official movement identities when the catalog is incomplete: %+v", snapshot.CashFlow)
 	}
 	var canceledFlowDay *application.DashboardCashFlowDay
 	for index := range snapshot.CashFlow.Days {

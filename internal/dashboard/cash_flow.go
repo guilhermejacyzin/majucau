@@ -30,10 +30,11 @@ SELECT source_id, description
 `
 
 // GET /caixas includes the financial-account ID and description with each
-// movement. Use those official fields only when the optional account catalog
-// could not be normalized (for example, when its read scope is unavailable).
-// Distinct IDs and exact name prefixes keep the approved Itaú/Mercado Pago
-// selection deterministic; ambiguous or missing matches remain unavailable.
+// movement. Use those official fields when the optional account catalog is
+// unavailable or incomplete. The approved report screenshot selects one
+// financial account; project only the unique Itaú account identified in the
+// approved context. Keep the separate bank-balance card and report balance
+// formulas independent; do not infer Nuvem transfers.
 const selectedCashFlowMovementAccountsSQL = `
 SELECT DISTINCT m.account_source_id, m.account_name
   FROM bling_cash_movements m
@@ -388,17 +389,18 @@ func selectedCashFlowAccountIDs(ctx context.Context, tx pgx.Tx, correlationID st
 	if err != nil {
 		return nil, false, err
 	}
-	ids, anyCatalogRows, err := selectedCashFlowAccountIDsFromRows(rows)
+	ids, _, err := selectedCashFlowAccountIDsFromRows(rows)
 	if err != nil {
 		return nil, false, err
 	}
-	if len(ids) == 2 {
+	if len(ids) == 1 {
 		return ids, true, nil
 	}
-	if anyCatalogRows {
-		return nil, false, nil
-	}
 
+	// The catalog endpoint can return a partial identity set (for example, if
+	// its read scope or normalized snapshot was incomplete). Do not let those
+	// unrelated rows block recovery from the IDs and descriptions already
+	// present in the official cash-movement snapshot.
 	rows, err = tx.Query(ctx, selectedCashFlowMovementAccountsSQL, correlationID)
 	if err != nil {
 		return nil, false, err
@@ -407,7 +409,7 @@ func selectedCashFlowAccountIDs(ctx context.Context, tx pgx.Tx, correlationID st
 	if err != nil {
 		return nil, false, err
 	}
-	if len(ids) != 2 {
+	if len(ids) != 1 {
 		return nil, false, nil
 	}
 	return ids, true, nil
@@ -415,7 +417,7 @@ func selectedCashFlowAccountIDs(ctx context.Context, tx pgx.Tx, correlationID st
 
 func selectedCashFlowAccountIDsFromRows(rows pgx.Rows) ([]string, bool, error) {
 	defer rows.Close()
-	var itau, mercadoPago []string
+	var itau []string
 	anyRows := false
 	for rows.Next() {
 		anyRows = true
@@ -427,17 +429,14 @@ func selectedCashFlowAccountIDsFromRows(rows pgx.Rows) ([]string, bool, error) {
 		if strings.HasPrefix(name, "itau") {
 			itau = append(itau, id)
 		}
-		if strings.HasPrefix(name, "mercado pago") {
-			mercadoPago = append(mercadoPago, id)
-		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, anyRows, err
 	}
-	if len(itau) != 1 || len(mercadoPago) != 1 {
+	if len(itau) != 1 {
 		return nil, anyRows, nil
 	}
-	return []string{itau[0], mercadoPago[0]}, anyRows, nil
+	return []string{itau[0]}, anyRows, nil
 }
 
 func normalizeCashFlowAccountName(value string) string {

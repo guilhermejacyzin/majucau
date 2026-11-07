@@ -256,13 +256,15 @@ type DashboardCashFlowDay struct {
 }
 
 // DashboardCashFlowPeriod mirrors the weekly buckets used by the Bling
-// cash-flow report. It contains only API-composed inflows and outflows; it
-// does not infer opening or closing balances.
+// cash-flow report. ClosingBalance is the accumulated report result, not the
+// separate current bank-balance card. It is omitted until its opening balance
+// and adjustments are sourced and validated.
 type DashboardCashFlowPeriod struct {
-	From     string          `json:"from"`
-	Through  string          `json:"through"`
-	Inflows  DashboardMetric `json:"inflows"`
-	Outflows DashboardMetric `json:"outflows"`
+	From           string           `json:"from"`
+	Through        string           `json:"through"`
+	Inflows        DashboardMetric  `json:"inflows"`
+	Outflows       DashboardMetric  `json:"outflows"`
+	ClosingBalance *DashboardMetric `json:"closing_balance,omitempty"`
 }
 
 type DashboardCashFlow struct {

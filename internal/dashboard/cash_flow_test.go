@@ -1,6 +1,8 @@
 package dashboard
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"majucau.local/financial-intelligence/internal/application"
@@ -33,6 +35,22 @@ func TestGroupCashFlowReportWeeksUsesBlingWeekBoundariesAndExactValues(t *testin
 		if period.Inflows.State != "PARTIAL" || period.Outflows.State != "PARTIAL" {
 			t.Fatalf("partial source state was lost: %+v", period)
 		}
+	}
+}
+
+func TestCashFlowPeriodOmitsUnconfirmedClosingBalance(t *testing.T) {
+	period := application.DashboardCashFlowPeriod{
+		From:     "2026-11-01",
+		Through:  "2026-11-07",
+		Inflows:  dashboardFlowMetric("1250.0000", true),
+		Outflows: dashboardFlowMetric("-800.0000", true),
+	}
+	encoded, err := json.Marshal(period)
+	if err != nil {
+		t.Fatalf("marshal cash-flow period: %v", err)
+	}
+	if strings.Contains(string(encoded), `"closing_balance"`) {
+		t.Fatalf("unconfirmed closing balance must be omitted, got %s", encoded)
 	}
 }
 

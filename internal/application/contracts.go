@@ -270,6 +270,8 @@ type DashboardCashFlowPeriod struct {
 type DashboardCashFlow struct {
 	InflowsNext30Days  DashboardMetric           `json:"inflows_next_30_days"`
 	OutflowsNext30Days DashboardMetric           `json:"outflows_next_30_days"`
+	InflowsNext60Days  DashboardMetric           `json:"inflows_next_60_days"`
+	OutflowsNext60Days DashboardMetric           `json:"outflows_next_60_days"`
 	Days               []DashboardCashFlowDay    `json:"days,omitempty"`
 	Periods            []DashboardCashFlowPeriod `json:"periods,omitempty"`
 	CriticalWeek       *DashboardCashFlowPeriod  `json:"critical_week,omitempty"`

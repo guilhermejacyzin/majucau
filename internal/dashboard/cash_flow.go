@@ -161,6 +161,8 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 		return &application.DashboardCashFlow{
 			InflowsNext30Days:  application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
 			OutflowsNext30Days: application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
+			InflowsNext60Days:  application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
+			OutflowsNext60Days: application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
 		}, nil
 	}
 	rows, err := tx.Query(ctx, cashFlowCandidatesSQL, correlationID, start.Format(time.DateOnly), end.Format(time.DateOnly))
@@ -272,8 +274,18 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	}
 	flow := &application.DashboardCashFlow{Days: make([]application.DashboardCashFlowDay, 0, len(daily))}
 	inflows30, outflows30 := domain.ZeroMoney(), domain.ZeroMoney()
+	inflows60, outflows60 := domain.ZeroMoney(), domain.ZeroMoney()
 	for index := range daily {
 		date := start.AddDate(0, 0, index)
+		if index < 60 {
+			inflows60, err = inflows60.Add(daily[index].inflows)
+			if err == nil {
+				outflows60, err = outflows60.Sub(daily[index].outflows)
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
 		if index < 30 {
 			inflows30, err = inflows30.Add(daily[index].inflows)
 			if err == nil {
@@ -295,6 +307,8 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	}
 	flow.InflowsNext30Days = dashboardFlowMetric(inflows30.String(), partial)
 	flow.OutflowsNext30Days = dashboardFlowMetric(outflows30.String(), partial)
+	flow.InflowsNext60Days = dashboardFlowMetric(inflows60.String(), partial)
+	flow.OutflowsNext60Days = dashboardFlowMetric(outflows60.String(), partial)
 	flow.Periods, err = groupCashFlowReportWeeks(flow.Days, partial)
 	if err != nil {
 		return nil, err

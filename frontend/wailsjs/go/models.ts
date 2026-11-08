@@ -316,6 +316,78 @@ export namespace application {
 	        this.value = source["value"];
 	    }
 	}
+	export class DashboardCashFlowPeriod {
+	    from: string;
+	    through: string;
+	    inflows: DashboardMetric;
+	    outflows: DashboardMetric;
+	    closing_balance?: DashboardMetric;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardCashFlowPeriod(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.from = source["from"];
+	        this.through = source["through"];
+	        this.inflows = this.convertValues(source["inflows"], DashboardMetric);
+	        this.outflows = this.convertValues(source["outflows"], DashboardMetric);
+	        this.closing_balance = this.convertValues(source["closing_balance"], DashboardMetric);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DashboardCashFlowDay {
+	    date: string;
+	    inflows: DashboardMetric;
+	    outflows: DashboardMetric;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardCashFlowDay(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.date = source["date"];
+	        this.inflows = this.convertValues(source["inflows"], DashboardMetric);
+	        this.outflows = this.convertValues(source["outflows"], DashboardMetric);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class DashboardMetric {
 	    value?: string;
 	    count?: number;
@@ -334,6 +406,51 @@ export namespace application {
 	        this.source_system = source["source_system"];
 	    }
 	}
+	export class DashboardCashFlow {
+	    inflows_next_30_days: DashboardMetric;
+	    outflows_next_30_days: DashboardMetric;
+	    inflows_next_60_days: DashboardMetric;
+	    outflows_next_60_days: DashboardMetric;
+	    days?: DashboardCashFlowDay[];
+	    periods?: DashboardCashFlowPeriod[];
+	    critical_week?: DashboardCashFlowPeriod;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardCashFlow(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.inflows_next_30_days = this.convertValues(source["inflows_next_30_days"], DashboardMetric);
+	        this.outflows_next_30_days = this.convertValues(source["outflows_next_30_days"], DashboardMetric);
+	        this.inflows_next_60_days = this.convertValues(source["inflows_next_60_days"], DashboardMetric);
+	        this.outflows_next_60_days = this.convertValues(source["outflows_next_60_days"], DashboardMetric);
+	        this.days = this.convertValues(source["days"], DashboardCashFlowDay);
+	        this.periods = this.convertValues(source["periods"], DashboardCashFlowPeriod);
+	        this.critical_week = this.convertValues(source["critical_week"], DashboardCashFlowPeriod);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	
 	export class DashboardPayableRow {
 	    supplier?: string;
 	    document?: string;
@@ -660,6 +777,7 @@ export namespace main {
 	    payables_due_next_90_days: application.DashboardMetric;
 	    payables_due_next_30_days: application.DashboardMetric;
 	    cash_balance: application.DashboardMetric;
+	    cash_flow?: application.DashboardCashFlow;
 	    bank_balances?: application.DashboardBankBalance[];
 	    payments_month: application.DashboardMetric;
 	    capex_paid_month?: application.DashboardMetric;
@@ -691,6 +809,7 @@ export namespace main {
 	        this.payables_due_next_90_days = this.convertValues(source["payables_due_next_90_days"], application.DashboardMetric);
 	        this.payables_due_next_30_days = this.convertValues(source["payables_due_next_30_days"], application.DashboardMetric);
 	        this.cash_balance = this.convertValues(source["cash_balance"], application.DashboardMetric);
+	        this.cash_flow = this.convertValues(source["cash_flow"], application.DashboardCashFlow);
 	        this.bank_balances = this.convertValues(source["bank_balances"], application.DashboardBankBalance);
 	        this.payments_month = this.convertValues(source["payments_month"], application.DashboardMetric);
 	        this.capex_paid_month = this.convertValues(source["capex_paid_month"], application.DashboardMetric);

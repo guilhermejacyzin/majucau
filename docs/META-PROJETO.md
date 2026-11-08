@@ -1,5 +1,73 @@
 # Meta do Majucau
 
+## Modo de execução e aprovação vigente
+
+O projeto avança uma tarefa por vez. Antes de iniciar, informo qual tarefa farei
+e o que será conferido. Ao concluir, valido, atualizo a documentação/backlog,
+registro e publico a entrega, abro a tela correspondente no protótipo e paro
+para Gisele visualizar e aprovar. Se houver correção, continuo na mesma tarefa.
+Só depois da aprovação inicio a próxima automaticamente. Dúvidas que possam
+mudar regra financeira, fonte, permissão ou tela aprovada são perguntadas antes
+de executar a parte dependente. Essa regra permanece vigente até Gisele alterá-la.
+O procedimento completo está em
+[`META-CICLO-APROVACAO.md`](META-CICLO-APROVACAO.md).
+
+### T02 — gráfico semanal e origem do saldo Itaú — 07/11/2026
+
+**Regra aprovada:** o resultado de entradas, saídas e saldo semanal da T02 deve
+seguir o relatório Fluxo de Caixa do Bling e suas opções; no indicador de saldo
+bancário, a única conta é o Itaú. Não somar Mercado Pago nem supor transferência
+de recebimentos da Nuvem para o Itaú. Esta regra substitui instruções antigas
+que incluíam Mercado Pago no saldo da T02. A T01 continua reutilizando o mesmo
+resultado da T02.
+
+Gisele confirmou que há dois saldos diferentes: (1) saldo bancário atual,
+restrito ao Itaú; (2) saldo acumulado representado na linha do gráfico do
+relatório Fluxo de Caixa. A tabela de referência demonstra a fórmula
+`saldo inicial + receitas + despesas (negativas) + ajuste de saldo`, e o saldo
+inicial de cada nova semana é o acumulado da semana anterior. Conferi a
+continuidade e a conta na tabela visual enviada, sem copiar valores financeiros
+da empresa para a documentação. Não se deve chamar a linha do gráfico de saldo
+Itaú nem reutilizá-la como saldo bancário atual.
+
+A documentação oficial consultada não oferece uma rota de API que retorne esse
+relatório já pronto; o caminho aprovado continua sendo reproduzir seus dados
+com as APIs oficiais e conferir os mesmos períodos/opções. O material de
+referência enviado mostra o relatório agrupado por semana, com saldo inicial,
+receitas, despesas, ajuste e saldo acumulado, e o gráfico com pontos por semana.
+Não foi possível confirmar um saldo de abertura do Itaú no contrato público da
+API. Portanto, a análise é **positiva quanto à viabilidade do gráfico e da
+variação semanal**, mas **ainda não confirma saldo Itaú real nem equivalência
+completa do relatório**.
+
+No código, o gráfico aprovado agora mostra escala em reais, pontos por semana e
+detalhes ao passar o mouse: entradas, saídas e variação percentual contra a
+semana anterior; também está preparado para mostrar o saldo acumulado do
+relatório e sua variação em reais quando a origem validada fornecer esse valor. O rótulo da linha foi
+corrigido para “Saldo acumulado”, deixando o saldo bancário Itaú como indicador
+separado. O backend ainda não envia `closing_balance`, então a linha acumulada
+não deve ser considerada concluída ou homologada.
+
+A consulta do fluxo foi ajustada para exigir somente a conta Itaú identificada
+na referência mais recente do relatório. Antes, o código exigia Itaú e Mercado
+Pago simultaneamente, o que podia deixar o resultado indisponível mesmo quando
+o relatório estava configurado com uma conta. Esse filtro corresponde ao
+relatório desta referência; a linha acumulada ainda depende de saldo inicial e
+ajustes validados. O card bancário de Itaú continua sendo um indicador separado.
+
+**Verificações locais:** `go test ./internal/dashboard -count=1`, TypeScript e
+26 testes frontend focados passaram. Acesso à página do Bling pelo navegador
+do Codex continua bloqueado pela preferência salva da sessão, apesar da
+autorização visual informada; não houve tentativa de contorno. Análise apoiada
+na referência API oficial e nas imagens do relatório fornecidas. Evidência:
+[`T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md`](evidence/T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md).
+
+BK-062 permanece em **30%** (70% restante), pois falta ligar e validar o saldo
+acumulado do relatório e o saldo bancário Itaú, e comparar a carga completa
+com o relatório. O projeto permanece em
+**12,3%** (87,7% restante); a mudança deste gráfico não conclui a T02 nem o
+projeto.
+
 ### T02 — ponto de parada e próximos passos — 03/11/2026
 
 Pare a investigação a pedido da responsável. O estado atual do protótipo e do
@@ -809,3 +877,22 @@ Contas a Pagar, Contas a Receber e Caixas e Bancos. Essa preparação não calcu
 projeções nem altera regra ou tela; serve para montar e conferir a composição
 com o relatório Bling. Os testes Go passaram; CI PostgreSQL e conferência real
 continuam pendentes. Ver [evidência da fonte](./evidence/T02-PAYMENT-METHOD-SOURCE-2026-11-03.md).
+
+### Ajuste dos cards da T02 — 07/11/2026
+
+Removi a ação “Ver detalhes” somente dos cards “Saldo atual”, “Entradas” e
+“Saídas” da T02, conforme solicitação. Os cards Entradas e Saídas continuam
+mostrando os totais de 30 e 60 dias; “Menor saldo 30 / 60 dias” permanece. O
+relatório que deve fornecer a base desse indicador é Financeiro → Fluxo de
+Caixa, no Bling. Como o relatório agrupa os resultados por semana, o card deve
+selecionar o menor valor de saldo acumulado entre os períodos dentro de cada
+janela, respeitando o saldo inicial, receitas, despesas, ajustes e as mesmas
+opções/conta do relatório. Como a abertura e os fechamentos ainda não foram
+conciliados por fonte oficial, o card continua “—”, sem estimativa. O saldo
+bancário atual segue como dado separado de Caixas e Bancos.
+
+O teste de interface passou (20 testes) e `npm run build` passou. A captura da
+janela nativa falhou nesta execução, então ainda falta a conferência visual da
+T02 pela responsável. BK-062 permanece em 30% (70% restante); o backlog geral
+permanece em 12,3% concluído / 87,7% restante. Evidência:
+[cards T02 30/60 dias](./evidence/T02-30-60-DAY-CARDS-2026-11-07.md).

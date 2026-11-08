@@ -198,7 +198,12 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		('00000000-0000-4000-8000-000000000031', $1::uuid, '1', 'Itaú', 'INFLOW', 'R', '2026-10-10', 100.00),
 		('00000000-0000-4000-8000-000000000032', $1::uuid, '1', 'Itaú', 'OUTFLOW', 'R', '2026-10-11', 25.00),
 		('00000000-0000-4000-8000-000000000033', $1::uuid, '2', 'Mercado Pago', 'INFLOW', '', '2026-10-12', 20.00),
-		('00000000-0000-4000-8000-000000000034', $1::uuid, '2', 'Mercado Pago', 'OUTFLOW', '', '2026-10-13', 5.00)`, cashBatchID); err != nil {
+		('00000000-0000-4000-8000-000000000034', $1::uuid, '2', 'Mercado Pago', 'OUTFLOW', '', '2026-10-13', 5.00),
+		('00000000-0000-4000-8000-000000000035', $1::uuid, '1', 'Itaú', 'INFLOW', 'R', $2::date + 31, 40.00),
+		('00000000-0000-4000-8000-000000000036', $1::uuid, '1', 'Itaú', 'OUTFLOW', 'R', $2::date + 31, 30.00),
+		('00000000-0000-4000-8000-000000000037', $1::uuid, '1', 'Itaú', 'INFLOW', 'R', $2::date + 59, 70.00),
+		('00000000-0000-4000-8000-000000000038', $1::uuid, '1', 'Itaú', 'OUTFLOW', 'R', $2::date + 59, 20.00),
+		('00000000-0000-4000-8000-000000000039', $1::uuid, '1', 'Itaú', 'INFLOW', 'R', $2::date + 60, 90.00)`, cashBatchID, asOf.Format("2006-01-02")); err != nil {
 		t.Fatalf("seed cash movements including entries with missing source status: %v", err)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
@@ -306,6 +311,9 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.InflowsNext30Days.Value != "150.0000" || snapshot.CashFlow.OutflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.OutflowsNext30Days.Value != "-290.0000" || len(snapshot.CashFlow.Days) != 61 {
 		t.Fatalf("cash-flow series should show the visible API composition as partial over 61 bounded dates: %+v", snapshot.CashFlow)
+	}
+	if snapshot.CashFlow.InflowsNext60Days.State != "PARTIAL" || snapshot.CashFlow.InflowsNext60Days.Value != "260.0000" || snapshot.CashFlow.OutflowsNext60Days.State != "PARTIAL" || snapshot.CashFlow.OutflowsNext60Days.Value != "-340.0000" {
+		t.Fatalf("60-day cash-flow totals should include day 30–59, preserve signs and exclude day 60: %+v", snapshot.CashFlow)
 	}
 	if _, err := tx.Exec(ctx, `DELETE FROM bling_financial_account_identities WHERE sync_batch_id = $1::uuid AND source_id = '1'`, accountsBatchID); err != nil {
 		t.Fatalf("simulate an incomplete account catalog without Itaú: %v", err)

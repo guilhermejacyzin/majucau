@@ -93,8 +93,8 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     const { rerender } = render(<MockupDashboard screen="executive" snapshot={snapshot} />)
     expect(screen.getByText('SALDO ATUAL').closest('article')).toHaveTextContent('4.500,00')
     rerender(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
-    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).not.toHaveTextContent('1.250,00')
-    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).not.toHaveTextContent('-800,00')
+    expect(screen.getByText('ENTRADAS').closest('article')).not.toHaveTextContent('1.250,00')
+    expect(screen.getByText('SAÍDAS').closest('article')).not.toHaveTextContent('-800,00')
     expect(screen.getByText('SALDO ATUAL').closest('article')).toHaveTextContent('4.500,00')
   })
 
@@ -119,15 +119,15 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     }
     render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
 
-    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('—')
-    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('—')
-    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('Realizado + previsto')
-    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('Compromissos e pagamentos')
-    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).not.toHaveTextContent('125,00')
-    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).not.toHaveTextContent('80,00')
+    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('30 dias')
+    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('60 dias')
+    expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('30 dias')
+    expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('60 dias')
+    expect(screen.getByText('ENTRADAS').closest('article')).not.toHaveTextContent('125,00')
+    expect(screen.getByText('SAÍDAS').closest('article')).not.toHaveTextContent('80,00')
   })
 
-  it('usa a composição da API do Fluxo de Caixa na T02 e na T01 com aviso parcial', () => {
+  it('mostra uma legenda curta por semana ao passar o mouse ou clicar no ponto do gráfico', async () => {
     const unavailable = { state: 'UNAVAILABLE' as const }
     const partial = { state: 'PARTIAL' as const, source_system: 'BLING' }
     const snapshot: DashboardSnapshot = {
@@ -145,31 +145,58 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
       cash_flow: {
         inflows_next_30_days: { ...partial, value: '1250.0000' },
         outflows_next_30_days: { ...partial, value: '-800.0000' },
+        inflows_next_60_days: { ...partial, value: '3250.0000' },
+        outflows_next_60_days: { ...partial, value: '-1800.0000' },
         days: [
           { date: '2026-11-03', inflows: { ...partial, value: '500.0000' }, outflows: { ...partial, value: '-200.0000' } },
           { date: '2026-11-04', inflows: { ...partial, value: '750.0000' }, outflows: { ...partial, value: '-600.0000' } },
         ],
         periods: [
-          { from: '2026-11-03', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' } },
+          { from: '2026-11-03', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' }, closing_balance: { ...partial, value: '-83776.1500' } },
+          { from: '2026-11-08', through: '2026-11-14', inflows: { ...partial, value: '1500.0000' }, outflows: { ...partial, value: '-600.0000' }, closing_balance: { ...partial, value: '-76683.2000' } },
         ],
         critical_week: { from: '2026-11-03', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' } },
       },
     }
 
+    const user = userEvent.setup()
     const { rerender } = render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
-    expect(screen.getByText('ENTRADAS 30 DIAS').closest('article')).toHaveTextContent('1.250,00')
-    expect(screen.getByText('SAÍDAS 30 DIAS').closest('article')).toHaveTextContent('-R$ 800,00')
-    expect(screen.getByRole('img', { name: 'Entradas e saídas semanais do fluxo de caixa Bling' })).toBeInTheDocument()
+    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('30 dias')
+    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('R$ 1.250,00 · Parcial')
+    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('60 dias')
+    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('R$ 3.250,00 · Parcial')
+    expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('-R$ 800,00 · Parcial')
+    expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('-R$ 1.800,00 · Parcial')
+    const flowChart = screen.getByRole('group', { name: 'Gráfico semanal de entradas, despesas e saldo do fluxo de caixa Bling' })
+    expect(flowChart).toBeInTheDocument()
+    expect(flowChart).toHaveTextContent('R$ 84 mil')
+    expect(flowChart).toHaveTextContent('-R$ 84 mil')
+    expect(flowChart).toHaveTextContent('08/11–14/11')
+    const weekPoint = screen.getByRole('button', { name: /08\/11\/2026 a 14\/11\/2026/ })
+    await user.hover(weekPoint)
+    const hoverTooltip = document.querySelector('.cash-flow-chart-tooltip') as SVGGElement
+    expect(hoverTooltip).toHaveTextContent('08/11/2026 a 14/11/2026')
+    expect(hoverTooltip).toHaveTextContent('DespesasR$ 600,00 · −25,0%')
+    await user.unhover(weekPoint)
+    await user.click(weekPoint)
+    const weekTooltip = document.querySelector('.cash-flow-chart-tooltip') as SVGGElement
+    expect(weekTooltip).toHaveTextContent('08/11/2026 a 14/11/2026')
+    expect(weekTooltip).toHaveTextContent('DespesasR$ 600,00 · −25,0%')
+    expect(weekTooltip).toHaveTextContent('ReceitasR$ 1.500,00 · +20,0%')
+    expect(weekTooltip).toHaveTextContent('Saldo-R$ 76.683,20')
     expect(screen.getAllByText('03/11–07/11')).toHaveLength(2)
     const criticalWeek = screen.getByRole('heading', { name: 'SEMANA CRÍTICA' }).closest('section')
     expect(criticalWeek).toHaveTextContent('03/11–07/11')
     expect(criticalWeek).toHaveTextContent('-R$ 800,00 · Parcial')
     expect(criticalWeek).toHaveTextContent('R$ 1.250,00 · Parcial')
-    expect(screen.getByText('Reserva mínima').parentElement).toHaveTextContent('—')
+    expect(screen.getByText('Reserva mínima').parentElement).toHaveTextContent('R$ 50.000,00')
+    for (const label of ['SALDO ATUAL', 'ENTRADAS', 'SAÍDAS']) {
+      expect(within(screen.getByText(label).closest('article') as HTMLElement).queryByRole('button', { name: /Ver detalhes/ })).not.toBeInTheDocument()
+    }
     expect(criticalWeek).toHaveTextContent('Posição de caixa da semana: SEM DADOS')
 
     rerender(<MockupDashboard screen="executive" snapshot={snapshot} />)
-    expect(screen.getByRole('img', { name: 'Entradas e saídas semanais do fluxo de caixa Bling' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Gráfico semanal de entradas, despesas e saldo do fluxo de caixa Bling' })).toBeInTheDocument()
   })
 
   it('identifica como parcial o valor incompleto sem mudar a identificação dos demais cards', () => {

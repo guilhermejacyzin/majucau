@@ -57,3 +57,12 @@ versão Wails atualizada foi reconstruída e iniciada. A captura da janela
 expirou, portanto a aprovação visual continua pendente. A prévia local Vite
 abre a T02, mas não recebe os dados armazenados pelo aplicativo Wails. A
 migration 000024 e a sincronização real não foram executadas nesta atualização.
+
+## Ajuste final dos rótulos
+
+A captura seguinte ainda mostrava apenas o início da data semanal. Removi o
+`tspan` e passei a desenhar o dia inicial e o dia final em dois elementos SVG
+`text` separados, com posições verticais explícitas. O mesmo componente atende
+Visão Executiva e Fluxo de Caixa; os testes conferem as duas linhas nas duas
+telas. O Wails foi reconstruído novamente. A captura automatizada falhou por
+tempo limite, então não declaro conferência visual concluída.

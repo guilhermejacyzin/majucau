@@ -9,9 +9,10 @@ por execução e só deve avançar o saldo usando a base aprovada do Itaú e ess
 movimentos. A migration 000024, os privilégios e a leitura do dashboard estão
 no checkout, mas ainda não foram aplicados/validados numa carga real. A captura
 mais recente também mostrou que os rótulos de data do gráfico continuavam
-cortados. A captura enviada depois confirmou que uma única linha ainda cortava
-as datas. Agora cada faixa mostra o início e o fim em duas linhas curtas, com
-acessibilidade preservada; os testes verificam o texto e a margem dentro do SVG.
+cortados mesmo após a primeira quebra de linha. Agora o dia inicial e final
+são elementos SVG separados, centralizados em linhas distintas, enquanto a
+faixa completa continua acessível. Os testes verificam as duas linhas e a
+margem inferior do SVG em T01 e T02.
 O filtro continua começando em 08/11. A suíte frontend passou com
 73 testes, o lint/build do frontend e os testes Go focados também passaram.
 A captura da janela Wails expirou, embora o aplicativo estivesse aberto; por
@@ -47,9 +48,9 @@ separado e usa somente Caixa e Bancos → Itaú.
 
 O eixo do gráfico ganhou margem inferior adicional: o SVG passou de 185 para
 210 unidades de altura. Como as datas ainda se cortavam na horizontal, cada
-faixa agora aparece em duas linhas (data inicial e final), com leitura acessível
-da faixa completa. Testes de interface verificam o conteúdo e sua margem na
-T02 e T01. A janela Wails não pôde ser capturada nesta sessão; a
+data foi dividida em dois elementos SVG curtos (início e fim), com a faixa
+completa na descrição acessível. Testes de interface verificam ambas as linhas
+em T02 e T01. A janela Wails não pôde ser capturada nesta sessão; a
 inspeção visual final na T02 permanece pendente. A migration da nova leitura
 de conciliação também ainda não está aplicada. Não declarar a tarefa aprovada
 até validar a tela T02 e a primeira sincronização real.

@@ -339,10 +339,8 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
                 <g key={`${period.from}-${period.through}`} role="button" tabIndex={0} aria-label={pointLabel} onMouseEnter={() => setHoveredPeriod(index)} onMouseLeave={() => setHoveredPeriod(undefined)} onFocus={() => setHoveredPeriod(index)} onBlur={() => setHoveredPeriod(undefined)} onClick={() => setPinnedPeriod((current) => current === index ? undefined : index)} onKeyDown={(event) => { if (event.key === 'Escape') { setPinnedPeriod(undefined); setHoveredPeriod(undefined) } else if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setPinnedPeriod((current) => current === index ? undefined : index) } }} style={{ cursor: 'pointer', outline: 'none' }}>
                   <title>{`${shortDateRange(period)} · Despesas ${expenseLabel} · Receitas ${moneyLabel(period.inflows.value)} · Saldo ${moneyLabel(period.closing_balance?.value)}`}</title>
                   <rect x={x - 13} y={plot.top} width="26" height={plot.bottom - plot.top} fill="transparent" />
-                  <text x={x} y="153" textAnchor="middle" fill="#17305b" fontSize="9" aria-label={`${dateLabel(period.from)}–${dateLabel(period.through)}`}>
-                    <tspan x={x}>{dateLabel(period.from)}</tspan>
-                    <tspan x={x} dy="12">–{dateLabel(period.through)}</tspan>
-                  </text>
+                  <text x={x} y="153" textAnchor="middle" fill="#17305b" fontSize="9" aria-hidden="true" data-axis-date="start">{dateLabel(period.from)}</text>
+                  <text x={x} y="165" textAnchor="middle" fill="#17305b" fontSize="9" aria-hidden="true" data-axis-date="end">{dateLabel(period.through)}</text>
                   {inflow !== undefined && <circle cx={x} cy={yFor(inflow)} r={selected ? 4.5 : 3.5} fill="#2877eb" />}
                   {outflow !== undefined && <circle cx={x} cy={yFor(outflow)} r={selected ? 4.5 : 3.5} fill="#fa3038" />}
                   {balance !== undefined && <circle cx={x} cy={yFor(balance)} r={selected ? 4.5 : 3.5} fill={balance < 0 ? '#d93025' : '#ff9f1a'} />}

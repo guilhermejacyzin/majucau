@@ -76,6 +76,10 @@ de um evento de navegador nem de a usuária mandar outro print.
   não comprimir nem sobrepor as semanas. A suíte de interface e o build foram
   repetidos após essa alteração; a conferência visual no aplicativo segue
   necessária.
+- Como ainda aparecia cortado, os dois dias passaram a ser textos SVG separados
+  em coordenadas verticais próprias, sem `tspan`. Os testes validam o início e o
+  fim do intervalo em ambos os usos do gráfico (T01 e T02). A compilação Wails
+  foi refeita; a captura de tela continua indisponível nesta sessão.
 
 ## Limites de validação
 

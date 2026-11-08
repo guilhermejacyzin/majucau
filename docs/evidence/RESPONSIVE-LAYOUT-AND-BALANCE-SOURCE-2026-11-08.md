@@ -79,6 +79,15 @@ e [changelog oficial sobre o filtro de conciliação](https://developer.bling.co
 - BK-062 permanece em 30%; projeto em 12,3%. Não houve conclusão nem aceite da
   responsável.
 
+## Correção posterior dos rótulos — 08/11/2026
+
+A responsável informou que a imagem ainda mostrava só o começo das datas.
+Para não depender da quebra automática de texto SVG, cada dia inicial/final
+agora é renderizado em um elemento separado e centralizado no ponto semanal.
+O gráfico compartilhado atende T01 e T02; os testes verificam as duas linhas
+em ambas. A captura da janela atualizada expirou, então a inspeção visual ainda
+está pendente.
+
 ## Rastro para auditoria
 
 - Regra e estado do saldo: `docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md`.

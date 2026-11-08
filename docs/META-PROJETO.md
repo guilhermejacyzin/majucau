@@ -8,8 +8,7 @@ uma linha por ponto. A faixa inicial pode ser parcial conforme a data de início
 escolhida; as seguintes seguem domingo a sábado. Em séries curtas, o rótulo usa
 datas completas; em séries densas, abrevia para DD/MM–DD/MM, mantendo o período
 completo no detalhe/tooltip. O rótulo foi reposicionado para não ser cortado na
-base. A conferência visual e o aceite continuam pendentes. BK-062
-segue em 30% concluído, 70% restante; projeto 12,3% concluído, 87,7% restante.
+base. Naquele registro, a conferência visual ainda pendia; Gisele depois conferiu e aprovou o gráfico em 08/11/2026. Continuam pendentes a validação dos dados e do saldo. BK-062 segue em 30% concluído, 70% restante; projeto 12,3% concluído, 87,7% restante.
 T03 só começa após aprovação da T02.
 
 Gisele esclareceu que o exemplo também exige um marcador vertical no ponto
@@ -1045,7 +1044,7 @@ conciliado do card é a abertura da primeira semana; movimentos anteriores ao
 período não são somados só no gráfico. Essa ponte foi removida após ser
 identificada como causa da divergência. A migration 000023 está aplicada ao
 banco isolado; a nova migration 000024 ainda não foi aplicada. Falta reconstruir o worker, sincronizar, comparar com Caixa e Bancos no
-mesmo período/filtros e conferir visualmente a T02. BK-062 continua em 30% (70%
+mesmo período/filtros. O gráfico já foi conferido e aprovado; a homologação numérica permanece pendente. BK-062 continua em 30% (70%
 restante) e o backlog geral em 12,3% (87,7% restante). Evidência:
 [`T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](./evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).
 
@@ -1064,8 +1063,7 @@ da janela. A adaptação foi alterada para responder à largura disponível na
 página, não somente à largura total da janela; valores e títulos podem quebrar
 linha, e a tabela conserva rolagem horizontal. A tela, os textos aprovados e as
 regras financeiras não mudam. Os builds direcionados do frontend, worker e Wails
-passaram. A versão Wails atual foi reconstruída e reaberta na T01; a inspeção
-visual final do gráfico corrigido na T02 permanece pendente.
+passaram. A versão Wails atual foi reconstruída e reaberta na T01; Gisele depois conferiu e aprovou o gráfico da T02. A sincronização e a validação do saldo permanecem pendentes.
 
 Correção importante para auditoria: o saldo-base exibido no protótipo veio do
 print enviado/aprovado por Gisele e foi guardado no banco PostgreSQL local

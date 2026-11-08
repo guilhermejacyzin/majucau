@@ -71,6 +71,11 @@ de um evento de navegador nem de a usuária mandar outro print.
   e posicionou os rótulos em y=155. Testes verificam as datas no gráfico da T02
   e que o texto fica dentro do `viewBox`; a conferência visual nativa permanece
   pendente porque a captura da janela falhou por tempo limite.
+- Em nova revisão, a responsável informou que o eixo ainda estava cortado. O
+  rótulo de cada faixa passou a ocupar duas linhas (data inicial e final) para
+  não comprimir nem sobrepor as semanas. A suíte de interface e o build foram
+  repetidos após essa alteração; a conferência visual no aplicativo segue
+  necessária.
 
 ## Limites de validação
 

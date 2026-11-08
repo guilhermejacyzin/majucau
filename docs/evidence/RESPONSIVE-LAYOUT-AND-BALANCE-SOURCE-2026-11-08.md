@@ -62,6 +62,12 @@ e [changelog oficial sobre o filtro de conciliação](https://developer.bling.co
   185 para 210 e moveu as datas para y=155, mantendo margem entre a área do
   gráfico e o fim da legenda. Um teste de interface verifica as datas na T02 e
   na T01 e confere que o texto cabe no `viewBox`.
+- A responsável confirmou que a correção ainda não aparecia corretamente na
+  tela. O eixo agora quebra cada faixa em duas linhas: dia inicial na primeira,
+  dia final na segunda. Isso reduz a largura ocupada por rótulo e evita que as
+  semanas se sobreponham ou sejam cortadas nas pontas. O texto acessível mantém
+  a faixa completa em uma única leitura. A captura visual ainda precisa ser
+  conferida na T02 aberta.
 - A suíte frontend passou com 73 testes; o lint/build do frontend, `go test ./...`
   e build do worker passaram. A versão Wails foi reconstruída e aberta na T01.
   A captura nativa da janela falhou

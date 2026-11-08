@@ -9,13 +9,16 @@ por execução e só deve avançar o saldo usando a base aprovada do Itaú e ess
 movimentos. A migration 000024, os privilégios e a leitura do dashboard estão
 no checkout, mas ainda não foram aplicados/validados numa carga real. A captura
 mais recente também mostrou que os rótulos de data do gráfico continuavam
-cortados. Ampliei a área útil do SVG e movi os rótulos para y=155; os testes
-agora verificam que os rótulos semanais existem no gráfico T02, ficam dentro
-da área desenhada e que o filtro começa em 08/11. A suíte frontend passou com
+cortados. A captura enviada depois confirmou que uma única linha ainda cortava
+as datas. Agora cada faixa mostra o início e o fim em duas linhas curtas, com
+acessibilidade preservada; os testes verificam o texto e a margem dentro do SVG.
+O filtro continua começando em 08/11. A suíte frontend passou com
 73 testes, o lint/build do frontend e os testes Go focados também passaram.
-A janela do aplicativo não pôde ser capturada nesta sessão após duas tentativas;
-por isso, a confirmação visual final do eixo na T02 ainda depende de inspeção
-na tela. A nova compilação Wails está aberta na T01. A pasta intermediária
+A captura da janela Wails expirou, embora o aplicativo estivesse aberto; por
+isso, a confirmação visual final do eixo na T02 ainda depende de inspeção na
+tela. Depois da captura enviada, compilei e iniciei outra versão Wails com os
+rótulos em duas linhas. A prévia local no navegador também está na T02, mas não
+recebe o snapshot do banco local e, por isso, aparece sem dados. A pasta intermediária
 `frontend/dist/` foi preservada porque a proteção do ambiente bloqueou a remoção;
 ela está registrada em `docs/evidence/GENERATED-OUTPUT-RETENTION-2026-11-08.md`.
 A migration 000024 ainda
@@ -43,9 +46,10 @@ vermelho, inclusive no eixo e na legenda flutuante. O saldo atual continua
 separado e usa somente Caixa e Bancos → Itaú.
 
 O eixo do gráfico ganhou margem inferior adicional: o SVG passou de 185 para
-210 unidades de altura e os rótulos foram reposicionados para y=155. Testes de
-interface verificam datas na T02 e na T01, além de confirmar que o texto cabe
-na área do SVG. A janela Wails não pôde ser capturada após duas tentativas; a
+210 unidades de altura. Como as datas ainda se cortavam na horizontal, cada
+faixa agora aparece em duas linhas (data inicial e final), com leitura acessível
+da faixa completa. Testes de interface verificam o conteúdo e sua margem na
+T02 e T01. A janela Wails não pôde ser capturada nesta sessão; a
 inspeção visual final na T02 permanece pendente. A migration da nova leitura
 de conciliação também ainda não está aplicada. Não declarar a tarefa aprovada
 até validar a tela T02 e a primeira sincronização real.

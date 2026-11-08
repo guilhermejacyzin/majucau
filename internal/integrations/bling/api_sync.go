@@ -25,6 +25,7 @@ import (
 
 const ReceivablesAPIResource = "contas.receber"
 const CashMovementsAPIResource = "caixas"
+const ReconciledCashMovementsAPIResource = "caixas.conciliadas"
 
 // Bound a full read even if the provider never returns a verifiable end marker.
 const maxBlingAPIPageReads = 1001
@@ -107,6 +108,11 @@ func (s *PayablesAPISyncService) SyncWithCorrelationID(ctx context.Context, filt
 // account and category homologation.
 type CashMovementsAPISyncService struct{ *apiResourceSyncService }
 
+// ReconciledCashMovementsAPISyncService records the IDs returned by the
+// official reconciliation filter. GET /caixas does not include reconciliation
+// state in each list item, so this is a separate complete snapshot.
+type ReconciledCashMovementsAPISyncService struct{ *apiResourceSyncService }
+
 func NewCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) *CashMovementsAPISyncService {
 	return newCashMovementsAPISyncService(pool, client, CashMovementsFilter{})
 }
@@ -123,6 +129,33 @@ func newCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient, 
 		}
 	}
 	return &CashMovementsAPISyncService{apiResourceSyncService: &apiResourceSyncService{pool: pool, client: client, maxPages: maxBlingAPIPageReads, resource: CashMovementsAPIResource, sourceEntity: "bling.caixas.page", list: list, normalizePage: normalizePage, partialErrorCode: partialErrorCode}}
+}
+
+func newReconciledCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient, dateFilter CashMovementsFilter) *ReconciledCashMovementsAPISyncService {
+	dateFilter.ReconciliationSituation = 1
+	var list func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
+	normalizePage := normalizeReconciledCashMovementSnapshotPage()
+	if client != nil {
+		list = func(ctx context.Context, filter ReceivablesFilter) (BlingReceivablesPage, error) {
+			request := dateFilter
+			request.Page = filter.Page
+			request.MaxRecords = filter.Limit
+			return client.ListCashMovements(ctx, request)
+		}
+	}
+	return &ReconciledCashMovementsAPISyncService{apiResourceSyncService: &apiResourceSyncService{
+		pool: pool, client: client, maxPages: maxBlingAPIPageReads,
+		resource:     ReconciledCashMovementsAPIResource,
+		sourceEntity: "bling.caixas.conciliadas.page", list: list,
+		normalizePage: normalizePage,
+	}}
+}
+
+func (s *ReconciledCashMovementsAPISyncService) SyncWithCorrelationID(ctx context.Context, correlationID pgtype.UUID) (APISyncResult, error) {
+	if s == nil || s.apiResourceSyncService == nil {
+		return APISyncResult{}, ErrBlingAPISyncClientRequired
+	}
+	return s.apiResourceSyncService.sync(ctx, ReceivablesFilter{}, &correlationID)
 }
 
 // SyncWithCorrelationID runs cash movements as part of the stable daily load.
@@ -220,7 +253,7 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 		return APISyncResult{}, fmt.Errorf("remove superseded prepared Bling page checkpoints: %w", err)
 	}
 	result := APISyncResult{BatchID: batch.ID.String(), Status: "RUNNING"}
-	fullDailyNormalizedSnapshot := (s.resource == ReceivablesAPIResource || s.resource == PayablesAPIResource || s.resource == CashMovementsAPIResource || s.resource == PaymentMethodsAPIResource || s.resource == FinancialAccountsAPIResource) && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
+	fullDailyNormalizedSnapshot := (s.resource == ReceivablesAPIResource || s.resource == PayablesAPIResource || s.resource == CashMovementsAPIResource || s.resource == ReconciledCashMovementsAPIResource || s.resource == PaymentMethodsAPIResource || s.resource == FinancialAccountsAPIResource) && s.normalizePage != nil && correlationID != nil && filter == (ReceivablesFilter{})
 	retryCounter := httpretry.NewCounter()
 	ctx = httpretry.WithCounter(ctx, retryCounter)
 	fail := func(code string, cause error) (APISyncResult, error) {

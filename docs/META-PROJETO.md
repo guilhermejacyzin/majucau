@@ -2,16 +2,28 @@
 
 ### Saldo atual e menor saldo Itaú — 08/11/2026
 
-O protótipo completo está aberto e conectado; na T02, entradas, saídas e gráfico
-mostram dados parciais, enquanto os dois indicadores de saldo permanecem “—”.
-Confirmei que a API oficial entrega movimentos, mas não um saldo de abertura ou
-o fechamento pronto da conta. A carga anterior também veio sem `situacao`; a
-consulta agora envia o filtro oficial de movimentos registrados (`R`) e os
-testes focados passaram. Falta uma sincronização após essa correção e uma base
-de abertura oficial para calcular o saldo bancário absoluto. Não vou tratar a
-variação dos movimentos como se fosse o saldo da conta. BK-062 permanece em
-30% (70% restante) e o projeto em 12,3% (87,7% restante), pois os saldos não
-foram validados na tela. Evidência:
+Estado real em 08/11/2026: a auditoria encontrou que `situacao=R` significa
+“registrado”, não “conciliado”. O código local agora inclui uma consulta
+separada com o filtro oficial `situacaoConciliacao=1`, grava os IDs conciliados
+por execução e só deve avançar o saldo usando a base aprovada do Itaú e esses
+movimentos. A migration 000024, os privilégios e a leitura do dashboard estão
+no checkout, mas ainda não foram aplicados/validados numa carga real. A captura
+mais recente também mostrou que os rótulos de data do gráfico continuavam
+cortados. Ampliei a área útil do SVG e movi os rótulos para y=155; os testes
+agora verificam que os rótulos semanais existem no gráfico T02, ficam dentro
+da área desenhada e que o filtro começa em 08/11. A suíte frontend passou com
+73 testes, o lint/build do frontend e os testes Go focados também passaram.
+A janela do aplicativo não pôde ser capturada nesta sessão após duas tentativas;
+por isso, a confirmação visual final do eixo na T02 ainda depende de inspeção
+na tela. A nova compilação Wails está aberta na T01. A pasta intermediária
+`frontend/dist/` foi preservada porque a proteção do ambiente bloqueou a remoção;
+ela está registrada em `docs/evidence/GENERATED-OUTPUT-RETENTION-2026-11-08.md`.
+A migration 000024 ainda
+não foi aplicada e a sincronização real não
+foi validada. Portanto, não declarar T02 concluída nem que todos os valores
+estão homologados. BK-062 permanece em 30% (70% restante) e o projeto em 12,3%
+(87,7% restante). Depois da revisão/aprovação
+da T02, a próxima tarefa será T03 — Contas a Receber. Evidência:
 [`T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).
 
 ### Correção visual e saldo semanal da T02 — 08/11/2026
@@ -30,12 +42,13 @@ despesas vermelhas e saldo laranja; resultados negativos recebem destaque
 vermelho, inclusive no eixo e na legenda flutuante. O saldo atual continua
 separado e usa somente Caixa e Bancos → Itaú.
 
-O build do frontend passou e conferi a tela T02 atualizada no protótipo: os
-itens removidos não aparecem e as entradas/saídas parciais continuam visíveis.
-A série de saldo continua sem número porque a abertura não veio confirmada no
-snapshot atual; a regra está pronta, mas a linha não deve ser inventada. O
-protótipo está aberto na T02 para aprovação. A atualização do GitHub registra
-o código e essa limitação nesta mesma tarefa.
+O eixo do gráfico ganhou margem inferior adicional: o SVG passou de 185 para
+210 unidades de altura e os rótulos foram reposicionados para y=155. Testes de
+interface verificam datas na T02 e na T01, além de confirmar que o texto cabe
+na área do SVG. A janela Wails não pôde ser capturada após duas tentativas; a
+inspeção visual final na T02 permanece pendente. A migration da nova leitura
+de conciliação também ainda não está aplicada. Não declarar a tarefa aprovada
+até validar a tela T02 e a primeira sincronização real.
 BK-062 permanece 30% concluída (70% restante); o backlog geral permanece em
 12,3% concluído (87,7% restante), pois esta correção não conclui a validação
 de equivalência dos dados da API com o relatório real. Evidência:
@@ -72,6 +85,8 @@ embora a saída já estivesse no saldo inicial do relatório. Movimentos realiza
 mantêm a data real; a janela anterior é usada somente para previsões de
 recebimento; movimentos e contas a pagar começam na data escolhida. O protótipo
 foi reiniciado pelo roteiro normal e a tela T02 foi conferida no navegador.
+Essa verificação preliminar foi superada pela captura posterior que mostrou o
+eixo inferior cortado; a conferência final do ajuste atual continua pendente.
 
 Na seleção atual de 08/11 a 30/11, despesas e os quatro períodos de receitas
 batem com a imagem do Bling, exceto receitas de 22–28/11: R$ 34.205,21 na API
@@ -999,11 +1014,42 @@ Gisele confirmou que o card **Saldo atual** deve refletir o último saldo
 conciliado do Itaú e que esse mesmo ponto deve compor o saldo acumulado do
 gráfico. O checkpoint aprovado permanece somente no banco local, fora do
 código e do Git. A projeção usa abertura + entradas + saídas negativas =
-fechamento; o fechamento de cada semana abre a seguinte. Movimentos registrados
-da API posteriores à data de referência ajustam a abertura projetada, sem
-alterar o valor conciliado mostrado no card. A migration foi aplicada ao banco
-isolado; o worker tem leitura restrita e o build/checksum passaram. Ainda falta
-sincronizar após a mudança, comparar com Caixas e Bancos e conferir visualmente
-a T02 antes da homologação. BK-062 continua em 30% (70% restante) e o backlog
-geral em 12,3% (87,7% restante). Evidência:
+fechamento; o fechamento de cada semana abre a seguinte. O mesmo saldo
+conciliado do card é a abertura da primeira semana; movimentos anteriores ao
+período não são somados só no gráfico. Essa ponte foi removida após ser
+identificada como causa da divergência. A migration 000023 está aplicada ao
+banco isolado; a nova migration 000024 ainda não foi aplicada. Falta reconstruir o worker, sincronizar, comparar com Caixa e Bancos no
+mesmo período/filtros e conferir visualmente a T02. BK-062 continua em 30% (70%
+restante) e o backlog geral em 12,3% (87,7% restante). Evidência:
 [`T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](./evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).
+
+Gisele esclareceu que queria a cópia escrita da tabela semanal do relatório,
+sem linhas extras de variação. A tabela foi reduzida às linhas de saldo inicial,
+receitas, despesas e saldo acumulado, preservando a regra aprovada sem ajuste.
+Os períodos das duas capturas diferiam (07/11–30/11 no relatório e
+08/11–06/01 no protótipo); portanto, os totais exibidos não devem ser
+comparados como se fossem a mesma consulta. A composição via API continua
+Parcial até a comparação com iguais datas e filtros.
+
+### Esclarecimento da origem do saldo e correção responsiva — 08/11/2026
+
+Gisele apontou texto e números comprimidos quando o menu lateral ocupa parte
+da janela. A adaptação foi alterada para responder à largura disponível na
+página, não somente à largura total da janela; valores e títulos podem quebrar
+linha, e a tabela conserva rolagem horizontal. A tela, os textos aprovados e as
+regras financeiras não mudam. Os builds direcionados do frontend, worker e Wails
+passaram. A versão Wails atual foi reconstruída e reaberta na T01; a inspeção
+visual final do gráfico corrigido na T02 permanece pendente.
+
+Correção importante para auditoria: o saldo-base exibido no protótipo veio do
+print enviado/aprovado por Gisele e foi guardado no banco PostgreSQL local
+isolado. Ele não foi extraído automaticamente do extrato do Bling. Embora a
+documentação oficial registre o filtro `situacaoConciliacao`, o código local
+agora inclui a consulta paginada desse filtro e o retrato dos IDs conciliados.
+A migration 000024 ainda não foi aplicada à base do protótipo e nenhuma carga
+real com a nova consulta foi validada; por isso, não se afirma que o card já se
+atualizou com o último saldo conciliado. O próximo passo é aplicar a migration,
+executar a carga diária, comparar com Caixa e Bancos e conferir a T02. BK-062
+segue em 30% e o projeto em 12,3%. Depois da aprovação da T02, a tarefa seguinte
+é T03 — Contas a Receber. Evidência:
+[`RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md`](./evidence/RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md).

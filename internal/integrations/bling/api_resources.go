@@ -174,12 +174,13 @@ func (c *BlingAPIClient) ListFinancialAccounts(ctx context.Context, page, limit 
 // bounded page size. The Bling pagination guide documents `limite` for GET
 // list resources, with 100 records by default.
 type CashMovementsFilter struct {
-	Page        int
-	MaxRecords  int
-	DateFrom    string
-	DateTo      string
-	Situation   string
-	CategoryIDs []int64
+	Page                    int
+	MaxRecords              int
+	DateFrom                string
+	DateTo                  string
+	Situation               string
+	ReconciliationSituation int
+	CategoryIDs             []int64
 }
 
 const maxCashMovementDateFilterBytes = 64
@@ -204,6 +205,9 @@ func (f CashMovementsFilter) normalized() (CashMovementsFilter, error) {
 	}
 	if f.Situation != "" && f.Situation != "R" && f.Situation != "E" {
 		return CashMovementsFilter{}, fmt.Errorf("%w: invalid cash movement situation", ErrBlingAPIConfiguration)
+	}
+	if f.ReconciliationSituation != 0 && f.ReconciliationSituation != 1 && f.ReconciliationSituation != 2 && f.ReconciliationSituation != 3 {
+		return CashMovementsFilter{}, fmt.Errorf("%w: invalid cash movement reconciliation situation", ErrBlingAPIConfiguration)
 	}
 	if len(f.CategoryIDs) > maxCashMovementCategoryIDs {
 		return CashMovementsFilter{}, fmt.Errorf("%w: category filter exceeds %d IDs", ErrBlingAPIConfiguration, maxCashMovementCategoryIDs)
@@ -265,6 +269,9 @@ func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovem
 	setOptionalQuery(query, "dataInicial", filter.DateFrom)
 	setOptionalQuery(query, "dataFinal", filter.DateTo)
 	setOptionalQuery(query, "situacao", filter.Situation)
+	if filter.ReconciliationSituation != 0 {
+		query.Set("situacaoConciliacao", strconv.Itoa(filter.ReconciliationSituation))
+	}
 	for _, categoryID := range filter.CategoryIDs {
 		query.Add("idsCategorias", strconv.FormatInt(categoryID, 10))
 	}

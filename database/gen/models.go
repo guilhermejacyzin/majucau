@@ -66,6 +66,18 @@ type AuditEvent struct {
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 }
 
+// Approved, dated opening points used to calculate subsequent balances from Bling API movements; not part of source code.
+type BlingCashBalanceCheckpoint struct {
+	ID               pgtype.UUID        `json:"id"`
+	ConnectionID     pgtype.UUID        `json:"connection_id"`
+	AccountSourceID  string             `json:"account_source_id"`
+	ReferenceDate    pgtype.Date        `json:"reference_date"`
+	ReconciledAmount pgtype.Numeric     `json:"reconciled_amount"`
+	Source           string             `json:"source"`
+	ApprovedAt       pgtype.Timestamptz `json:"approved_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
 // Current normalized read model for cash/bank movements from a completed Bling batch; signed cash impact is derived from direction, never from payable title balance.
 type BlingCashMovement struct {
 	ID              pgtype.UUID    `json:"id"`
@@ -83,6 +95,14 @@ type BlingCashMovement struct {
 	RawRecordID  pgtype.UUID        `json:"raw_record_id"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
+// Complete daily membership of GET /caixas filtered with situacaoConciliacao=1; absence from a completed snapshot means not reconciled at that snapshot time.
+type BlingCashMovementReconciledSnapshotRow struct {
+	SyncBatchID  pgtype.UUID        `json:"sync_batch_id"`
+	ConnectionID pgtype.UUID        `json:"connection_id"`
+	SourceID     string             `json:"source_id"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
 // Read-only Bling account identities used to match report-selected accounts; contains no balance or movement.

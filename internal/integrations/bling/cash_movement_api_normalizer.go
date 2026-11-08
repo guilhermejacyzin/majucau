@@ -118,6 +118,35 @@ func normalizeCashMovementAPISnapshotPage() (func(context.Context, *database.Que
 	return normalize, partialErrorCode
 }
 
+func normalizeReconciledCashMovementSnapshotPage() func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error {
+	return func(ctx context.Context, queries *database.Queries, connectionID, batchID pgtype.UUID, records []json.RawMessage) error {
+		if queries == nil || !connectionID.Valid || !batchID.Valid {
+			return fmt.Errorf("%w: reconciled cash movement normalizer dependencies are missing", ErrBlingAPIConfiguration)
+		}
+		for _, payload := range records {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			var record struct {
+				ID json.RawMessage `json:"id"`
+			}
+			if len(payload) == 0 || json.Unmarshal(payload, &record) != nil {
+				return cashMovementFieldError("BLING_CASH_RECONCILED_RECORD_INVALID")
+			}
+			sourceID, ok := parseBlingPositiveSourceID(record.ID)
+			if !ok {
+				return cashMovementFieldError("BLING_CASH_RECONCILED_ID_INVALID")
+			}
+			if err := queries.InsertBlingReconciledCashMovementSnapshotRow(ctx, database.InsertBlingReconciledCashMovementSnapshotRowParams{
+				SyncBatchID: batchID, ConnectionID: connectionID, SourceID: sourceID,
+			}); err != nil {
+				return fmt.Errorf("persist reconciled Bling cash movement membership: %w", err)
+			}
+		}
+		return nil
+	}
+}
+
 func cashMovementStatusIsKnown(value string) bool {
 	return strings.TrimSpace(value) == "R"
 }

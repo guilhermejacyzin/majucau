@@ -77,6 +77,27 @@ func TestCashFlowPeriodOmitsUnconfirmedClosingBalance(t *testing.T) {
 	}
 }
 
+func TestWeeklyBalanceCarriesReconciledOpeningThroughSelectedPeriod(t *testing.T) {
+	periods := []application.DashboardCashFlowPeriod{
+		{From: "2026-11-08", Through: "2026-11-14", Inflows: dashboardFlowMetric("200.00", true), Outflows: dashboardFlowMetric("-50.00", true)},
+		{From: "2026-11-15", Through: "2026-11-21", Inflows: dashboardFlowMetric("30.00", true), Outflows: dashboardFlowMetric("-80.00", true)},
+		{From: "2026-11-22", Through: "2026-11-28", Inflows: dashboardFlowMetric("100.00", true), Outflows: dashboardFlowMetric("-60.00", true)},
+		{From: "2026-11-29", Through: "2026-11-30", Inflows: dashboardFlowMetric("5.00", true), Outflows: dashboardFlowMetric("-45.00", true)},
+	}
+	if err := applyWeeklyCashBalances(periods, dashboardFlowMetric("1000.00", true), true); err != nil {
+		t.Fatalf("apply weekly cash balances: %v", err)
+	}
+	if periods[0].OpeningBalance == nil || periods[0].OpeningBalance.Value != "1000.0000" || periods[0].ClosingBalance == nil || periods[0].ClosingBalance.Value != "1150.0000" {
+		t.Fatalf("first week opening/closing = %+v/%+v, want 1000/1150", periods[0].OpeningBalance, periods[0].ClosingBalance)
+	}
+	if periods[1].OpeningBalance == nil || periods[1].OpeningBalance.Value != periods[0].ClosingBalance.Value {
+		t.Fatalf("second week opening = %+v, want prior closing %s", periods[1].OpeningBalance, periods[0].ClosingBalance.Value)
+	}
+	if periods[3].OpeningBalance == nil || periods[3].OpeningBalance.Value != "1140.0000" || periods[3].ClosingBalance == nil || periods[3].ClosingBalance.Value != "1100.0000" {
+		t.Fatalf("last week opening/closing = %+v/%+v, want 1140/1100", periods[3].OpeningBalance, periods[3].ClosingBalance)
+	}
+}
+
 func TestGroupCashFlowReportWeeksRejectsInvalidMoney(t *testing.T) {
 	days := []application.DashboardCashFlowDay{{
 		Date: "2026-11-03", Inflows: dashboardFlowMetric("not-money", true), Outflows: dashboardFlowMetric("0.0000", true),

@@ -68,12 +68,13 @@ type BlingOAuthTestResult struct {
 }
 
 type BlingRawSyncResult struct {
-	Status            string
-	Receivables       APISyncResult
-	Payables          APISyncResult
-	CashMovements     APISyncResult `json:"-"`
-	PaymentMethods    APISyncResult `json:"-"`
-	FinancialAccounts APISyncResult `json:"-"`
+	Status                  string
+	Receivables             APISyncResult
+	Payables                APISyncResult
+	CashMovements           APISyncResult `json:"-"`
+	ReconciledCashMovements APISyncResult `json:"-"`
+	PaymentMethods          APISyncResult `json:"-"`
+	FinancialAccounts       APISyncResult `json:"-"`
 }
 
 type blingSyncStep struct {
@@ -81,10 +82,11 @@ type blingSyncStep struct {
 	run    func() (APISyncResult, error)
 }
 
-func buildBlingSyncSteps(result *BlingRawSyncResult, dateMode string, includeCashMovements, includePaymentMethods, includeFinancialAccounts bool, cash, receivables, payables, paymentMethods, financialAccounts func() (APISyncResult, error)) []blingSyncStep {
-	steps := make([]blingSyncStep, 0, 5)
+func buildBlingSyncSteps(result *BlingRawSyncResult, dateMode string, includeCashMovements, includePaymentMethods, includeFinancialAccounts bool, cash, reconciledCash, receivables, payables, paymentMethods, financialAccounts func() (APISyncResult, error)) []blingSyncStep {
+	steps := make([]blingSyncStep, 0, 6)
 	if includeCashMovements {
 		steps = append(steps, blingSyncStep{target: &result.CashMovements, run: cash})
+		steps = append(steps, blingSyncStep{target: &result.ReconciledCashMovements, run: reconciledCash})
 	}
 	if dateMode != blingDateFilterPayment {
 		steps = append(steps, blingSyncStep{target: &result.Receivables, run: receivables})
@@ -124,9 +126,10 @@ func finishBlingRawSyncResult(result BlingRawSyncResult, failures []error) (Blin
 	completed := result.Receivables.Status == "SUCCESS" || result.Receivables.Status == "PARTIAL" ||
 		result.Payables.Status == "SUCCESS" || result.Payables.Status == "PARTIAL" ||
 		result.CashMovements.Status == "SUCCESS" || result.CashMovements.Status == "PARTIAL" ||
+		result.ReconciledCashMovements.Status == "SUCCESS" || result.ReconciledCashMovements.Status == "PARTIAL" ||
 		result.PaymentMethods.Status == "SUCCESS" || result.PaymentMethods.Status == "PARTIAL" ||
 		result.FinancialAccounts.Status == "SUCCESS" || result.FinancialAccounts.Status == "PARTIAL"
-	partial := result.Receivables.Status == "PARTIAL" || result.Payables.Status == "PARTIAL" || result.CashMovements.Status == "PARTIAL" || result.PaymentMethods.Status == "PARTIAL" || result.FinancialAccounts.Status == "PARTIAL"
+	partial := result.Receivables.Status == "PARTIAL" || result.Payables.Status == "PARTIAL" || result.CashMovements.Status == "PARTIAL" || result.ReconciledCashMovements.Status == "PARTIAL" || result.PaymentMethods.Status == "PARTIAL" || result.FinancialAccounts.Status == "PARTIAL"
 	if len(failures) > 0 {
 		if completed {
 			result.Status = "PARTIAL"
@@ -553,7 +556,7 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 	client.SetUnauthorizedTokenRefresh(s.refreshAccessTokenAfterUnauthorized)
 	notApplicable := APISyncResult{Status: "NOT_APPLICABLE"}
 	result := BlingRawSyncResult{Receivables: notApplicable, Payables: notApplicable, CashMovements: notApplicable, PaymentMethods: notApplicable, FinancialAccounts: notApplicable}
-	var cashSync, receivablesSync, payablesSync, paymentMethodsSync, financialAccountsSync func() (APISyncResult, error)
+	var cashSync, reconciledCashSync, receivablesSync, payablesSync, paymentMethodsSync, financialAccountsSync func() (APISyncResult, error)
 	// Publish realized cash movements first. The cash-flow view can then use
 	// confirmed receipts/payments even when detail hydration for a large payable
 	// snapshot takes longer; each resource still commits independently.
@@ -561,6 +564,10 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 		cashMovements := newCashMovementsAPISyncService(s.pool, client, *cashMovementFilter)
 		cashSync = func() (APISyncResult, error) {
 			return cashMovements.SyncWithCorrelationID(ctx, ReceivablesFilter{}, pgUUID(*correlationID))
+		}
+		reconciledCashMovements := newReconciledCashMovementsAPISyncService(s.pool, client, *cashMovementFilter)
+		reconciledCashSync = func() (APISyncResult, error) {
+			return reconciledCashMovements.SyncWithCorrelationID(ctx, pgUUID(*correlationID))
 		}
 	}
 	if dateMode != blingDateFilterPayment {
@@ -593,7 +600,7 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 			return payables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
 		}
 	}
-	steps := buildBlingSyncSteps(&result, dateMode, includeCashMovements, includePaymentMethods, includePaymentMethods, cashSync, receivablesSync, payablesSync, paymentMethodsSync, financialAccountsSync)
+	steps := buildBlingSyncSteps(&result, dateMode, includeCashMovements, includePaymentMethods, includePaymentMethods, cashSync, reconciledCashSync, receivablesSync, payablesSync, paymentMethodsSync, financialAccountsSync)
 	return finishBlingRawSyncResult(result, runIndependentBlingSyncSteps(steps...))
 }
 

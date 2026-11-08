@@ -59,6 +59,38 @@ SELECT checkpoint.reconciled_amount::text, checkpoint.reference_date
  LIMIT 1
 `
 
+const reconciledCashMovementDeltaSQL = `
+WITH current_reconciliation_batch AS (
+  SELECT id, connection_id
+    FROM integration_sync_batches
+   WHERE correlation_id = $1 AND resource = 'caixas.conciliadas'
+     AND status = 'SUCCESS' AND data_stage = 'NORMALIZED'
+   ORDER BY finished_at DESC NULLS LAST, id DESC LIMIT 1
+), current_movement_batch AS (
+  SELECT id, connection_id
+    FROM integration_sync_batches
+   WHERE correlation_id = $1 AND resource = 'caixas'
+     AND status IN ('SUCCESS', 'PARTIAL') AND data_stage = 'NORMALIZED'
+   ORDER BY finished_at DESC NULLS LAST, id DESC LIMIT 1
+), reconciled_movements AS (
+  SELECT m.movement_date, m.direction, m.amount
+    FROM current_reconciliation_batch reconciliation_batch
+    JOIN bling_cash_movement_reconciled_snapshot_rows membership
+      ON membership.sync_batch_id = reconciliation_batch.id
+     AND membership.connection_id = reconciliation_batch.connection_id
+    JOIN current_movement_batch movement_batch
+      ON movement_batch.connection_id = reconciliation_batch.connection_id
+    JOIN bling_cash_movements m
+      ON m.sync_batch_id = movement_batch.id
+     AND m.source_id = membership.source_id
+     AND m.account_source_id = ANY($2::text[])
+   WHERE m.movement_date > $3::date AND m.movement_date <= $4::date
+)
+SELECT EXISTS (SELECT 1 FROM current_reconciliation_batch),
+       COALESCE((SELECT SUM(CASE WHEN direction = 'INFLOW' THEN amount ELSE -amount END) FROM reconciled_movements), 0)::text,
+       (SELECT MAX(movement_date) FROM reconciled_movements)
+`
+
 // The report comparison indicates one calendar day for forecast dates while
 // the bank-float option is enabled. Registered cash movements already carry
 // their actual movement date and must not be shifted into the report window.
@@ -159,6 +191,8 @@ SELECT kind, flow_date, direction, amount, source_status,
 type approvedItauBalance struct {
 	Metric        application.DashboardMetric
 	ReferenceDate time.Time
+	BaseMetric    application.DashboardMetric
+	BaseDate      time.Time
 }
 
 type cashFlowCandidate struct {
@@ -192,9 +226,46 @@ func readLatestItauBalance(ctx context.Context, tx pgx.Tx, asOf time.Time, corre
 		}
 		return approvedItauBalance{}, err
 	}
-	// The user-approved checkpoint remains the card value. Later API movements
-	// are applied only to the graph's projected opening balance.
-	return approvedItauBalance{Metric: metric(value, 1, "PARTIAL", "BLING"), ReferenceDate: dashboardDateOnly(referenceDate)}, nil
+	base := metric(value, 1, "PARTIAL", "BLING")
+	baseDate := dashboardDateOnly(referenceDate)
+	ready, delta, latestDate, err := reconciledCashMovementDelta(ctx, tx, correlationID, accountIDs, baseDate, dashboardDateOnly(asOf))
+	if err != nil {
+		return approvedItauBalance{}, err
+	}
+	card := base
+	cardDate := baseDate
+	if ready {
+		updated, parseErr := domain.ParseMoney(base.Value)
+		if parseErr != nil {
+			return approvedItauBalance{}, fmt.Errorf("approved Itaú balance is invalid")
+		}
+		movementDelta, parseErr := domain.ParseMoney(delta)
+		if parseErr != nil {
+			return approvedItauBalance{}, fmt.Errorf("reconciled Itaú movement total is invalid")
+		}
+		updated, err = updated.Add(movementDelta)
+		if err != nil {
+			return approvedItauBalance{}, err
+		}
+		card = metric(updated.String(), 1, "PARTIAL", "BLING")
+		if latestDate.Valid {
+			cardDate = dashboardDateOnly(latestDate.Time)
+		}
+	}
+	return approvedItauBalance{Metric: card, ReferenceDate: cardDate, BaseMetric: base, BaseDate: baseDate}, nil
+}
+
+func reconciledCashMovementDelta(ctx context.Context, tx pgx.Tx, correlationID string, accountIDs []string, after, through time.Time) (bool, string, pgtype.Date, error) {
+	if len(accountIDs) == 0 || after.IsZero() || through.Before(after) {
+		return false, "0", pgtype.Date{}, nil
+	}
+	var ready bool
+	var delta string
+	var latestDate pgtype.Date
+	if err := tx.QueryRow(ctx, reconciledCashMovementDeltaSQL, correlationID, accountIDs, after.Format(time.DateOnly), through.Format(time.DateOnly)).Scan(&ready, &delta, &latestDate); err != nil {
+		return false, "0", pgtype.Date{}, err
+	}
+	return ready, delta, latestDate, nil
 }
 
 func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string, checkpoint approvedItauBalance) (*application.DashboardCashFlow, error) {
@@ -219,17 +290,17 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	// through the actual end date because recorded movements are not shifted.
 	sourceStart := start.AddDate(0, 0, -blingCashFlowEffectiveFloatDays)
 	sourceEnd := end
-	movementStart := sourceStart
-	if !checkpoint.ReferenceDate.IsZero() {
-		movementStart = checkpoint.ReferenceDate.AddDate(0, 0, 1)
-	}
+	// Cash movements in the visible window reproduce the report's inflow/outflow
+	// lines. Reconciled movements after the approved baseline but before this
+	// window advance the opening balance; the API's `situacao=R` alone only means
+	// registered, so bridge movements come from a separate reconciliation-filtered snapshot.
+	movementStart := start
 	rows, err := tx.Query(ctx, cashFlowCandidatesSQL, correlationID, sourceStart.Format(time.DateOnly), sourceEnd.Format(time.DateOnly), start.Format(time.DateOnly), movementStart.Format(time.DateOnly))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var daily [61]cashFlowDayAggregate
-	bridgeBalanceDelta := domain.ZeroMoney()
 	partial := true // Float equivalence still needs a live comparison with the selected report.
 	for rows.Next() {
 		candidate, err := scanCashFlowCandidate(rows)
@@ -315,18 +386,6 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 		flowDate = blingCashFlowReportDate(candidate.kind, flowDate)
 		day := dashboardDateOnly(flowDate)
 		if day.Before(start) {
-			if candidate.kind == "MOVEMENT" && !checkpoint.ReferenceDate.IsZero() && day.After(checkpoint.ReferenceDate) {
-				if candidate.direction == "INFLOW" {
-					bridgeBalanceDelta, err = bridgeBalanceDelta.Add(amount)
-				} else if candidate.direction == "OUTFLOW" {
-					bridgeBalanceDelta, err = bridgeBalanceDelta.Sub(amount)
-				} else {
-					partial = true
-				}
-				if err != nil {
-					return nil, err
-				}
-			}
 			continue
 		}
 		if day.After(end) {
@@ -389,17 +448,31 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	if err != nil {
 		return nil, err
 	}
-	projectedOpening := checkpoint.Metric
-	if projectedOpening.Value != "" && projectedOpening.State != "UNAVAILABLE" {
-		opening, parseErr := domain.ParseMoney(projectedOpening.Value)
-		if parseErr != nil {
-			return nil, fmt.Errorf("approved opening balance is invalid")
+	projectedOpening := checkpoint.BaseMetric
+	if projectedOpening.Value == "" || checkpoint.BaseDate.IsZero() {
+		projectedOpening = application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}
+	} else if start.After(checkpoint.BaseDate.AddDate(0, 0, 1)) {
+		ready, delta, _, deltaErr := reconciledCashMovementDelta(ctx, tx, correlationID, accountIDs, checkpoint.BaseDate, start.AddDate(0, 0, -1))
+		if deltaErr != nil {
+			return nil, deltaErr
 		}
-		opening, err = opening.Add(bridgeBalanceDelta)
-		if err != nil {
-			return nil, err
+		if !ready {
+			projectedOpening = application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}
+		} else {
+			base, parseErr := domain.ParseMoney(projectedOpening.Value)
+			if parseErr != nil {
+				return nil, fmt.Errorf("approved opening balance is invalid")
+			}
+			bridge, parseErr := domain.ParseMoney(delta)
+			if parseErr != nil {
+				return nil, fmt.Errorf("reconciled opening movement total is invalid")
+			}
+			base, err = base.Add(bridge)
+			if err != nil {
+				return nil, err
+			}
+			projectedOpening = metric(base.String(), 1, "PARTIAL", "BLING")
 		}
-		projectedOpening = metric(opening.String(), 1, "PARTIAL", "BLING")
 	}
 	if err := applyWeeklyCashBalances(flow.Periods, projectedOpening, partial); err != nil {
 		return nil, err

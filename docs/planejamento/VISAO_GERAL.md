@@ -25,14 +25,17 @@ Planejamento do sistema de gestão e análise da Majucau. A **versão 2** é a r
 
 ## Evolução registrada
 
-**T02 — saldos em branco — 08/11/2026:** o protótipo conectado exibe entradas,
-saídas e gráfico com estado parcial; saldo atual e menor saldo 30/60 ficam
-indisponíveis. A consulta de movimentos foi corrigida para pedir somente
-lançamentos registrados (`situacao=R`) e os testes direcionados passaram. Ainda
-falta executar uma nova carga e obter uma base oficial de saldo inicial. A API
-lista movimentos, mas não devolve saldo bancário absoluto pronto; portanto a
-variação líquida não será apresentada como saldo. BK-062 permanece em 30% e o
-projeto em 12,3% até a comparação real e aprovação. Ver
+**T02 — conciliação e gráfico — 08/11/2026:** a captura enviada mostrou que as
+datas do eixo inferior ainda estavam cortadas. Depois do primeiro ajuste, o
+`viewBox` do gráfico foi ampliado para 210 unidades e o rótulo movido para
+y=155. Testes cobrem as datas dentro do SVG na T02 e na T01; a captura Wails
+falhou duas vezes por tempo limite, então a conferência visual ainda está
+pendente. O código inclui
+o filtro oficial `situacaoConciliacao=1` e um retrato diário dos IDs conciliados,
+vinculado à mesma carga dos movimentos. A migration 000024 está no checkout,
+mas ainda não foi aplicada à base usada pelo protótipo. O saldo por conciliação
+e a comparação real, portanto, ainda não foram validados. BK-062 permanece em
+30% e o projeto em 12,3%. Ver
 [`T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](../evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).
 
 **Regra e análise T02 — 07/11/2026:** o saldo acumulado do gráfico é diferente
@@ -95,4 +98,6 @@ Os arquivos externos diários também incluem Excel `.XLS` e `.XLSX`. CSV, TSV, 
 **Integração diária de movimentações de caixa Bling (25/10/2026):** o worker passou a ler `/caixas` às 09:30 e publicar páginas como RAW no PostgreSQL, usando a persistência atômica por recurso, checkpoints, idempotência e limite local do adapter. A carga só conta como concluída quando Receber, Pagar e Caixa terminam. Se não houver prova do fim da paginação, a fonte fica incompleta e não substitui o último retrato. Isso não classifica CAPEX nem altera relatórios, cálculos ou telas. Os testes Go do adapter Bling e do worker passaram localmente; a integração PostgreSQL e a CI ainda precisam confirmar a mudança. A conexão real continua sem comprovação nesta etapa. Evidência: `docs/evidence/BLING-DAILY-CASH-MOVEMENTS-2026-10-25.md`.
 
 **Atualização mais recente — governança do repositório (01/11/2026):** BK-025 está em 80% (20% restante). `.github/CODEOWNERS` solicita revisão do proprietário e `CONTRIBUTING.md` explica que isso não ativa a proteção do GitHub. A branch `main`, aprovações obrigatórias e checks exigidos ainda dependem de uma conta administradora. O backlog está em 12,0% concluído (88,0% restante); a planilha oficial e o documento detalhado foram atualizados para refletir o mesmo número. Nenhuma tela ou regra financeira mudou.
-Na atualização da T02 em 08/11/2026, o último saldo conciliado do Itaú aprovado pela responsável passou a ser o ponto de partida armazenado somente no banco local. O card conserva essa referência; movimentos registrados seguintes vindos da API compõem a abertura projetada, e os fechamentos semanais acumulam entradas e saídas negativas. A migration está aplicada no banco isolado do protótipo, e o worker tem leitura restrita. Nenhum valor financeiro foi adicionado ao Git. O build e os checksums passaram; a conferência visual da T02 e a comparação com Caixas e Bancos ainda faltam. BK-062 permanece em 30% e o backlog geral em 12,3% até concluir a validação. Evidência: `docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md`.
+Na atualização da T02 em 08/11/2026, o último saldo conciliado do Itaú aprovado pela responsável é o ponto de partida pretendido e permanece no banco local isolado. O card e a abertura da primeira semana devem repetir esse valor; a base é avançada somente por movimentos conciliados. A migration 000024 ainda não foi aplicada, e não houve nova sincronização real para validar o saldo atualizado. A tabela escrita mostra saldo inicial, receitas, despesas e saldo acumulado, sem linha adicional de ajuste. Entradas e saídas continuam parciais até comparação com o relatório no mesmo período e filtros. O frontend responsivo, os testes e builds locais passaram; a janela Wails não pôde ser capturada e a conferência visual T02 continua pendente. BK-062 permanece em 30% e o backlog geral em 12,3%. Evidência: `docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md`.
+
+Na correção de 08/11/2026, o saldo-base foi esclarecido para auditoria: veio do print aprovado, não de extração automática do extrato. O código consulta o filtro oficial de conciliados e guarda os IDs por lote; a migration 000024 ainda não está aplicada e a sincronização real não ocorreu. As telas responsivas quebram os textos/valores e reduzem o gráfico em áreas estreitas. Após a captura ainda mostrar datas cortadas, o SVG passou para 210 de altura e o texto para y=155; a suíte frontend cobre essas datas e passou. A janela Wails não pôde ser capturada por tempo limite, então a confirmação visual T02 continua pendente. Evidência: `docs/evidence/RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md`.

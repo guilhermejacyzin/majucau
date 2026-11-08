@@ -409,6 +409,9 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 		if r.URL.Query().Get("dataInicial") != "2026-09-01" || r.URL.Query().Get("dataFinal") != "2026-09-30" {
 			t.Fatalf("date query = %s", r.URL.RawQuery)
 		}
+		if got := r.URL.Query().Get("situacaoConciliacao"); got != "1" {
+			t.Fatalf("reconciliation situation = %q, want 1 (reconciled)", got)
+		}
 		if got := r.Header.Get("Authorization"); got != "Bearer access-token" {
 			t.Fatalf("authorization = %q", got)
 		}
@@ -424,13 +427,27 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 	}
 
 	page, err := client.ListCashMovements(context.Background(), CashMovementsFilter{
-		Page: 2, MaxRecords: 2, DateFrom: "2026-09-01", DateTo: "2026-09-30", Situation: "R", CategoryIDs: []int64{11, 22},
+		Page: 2, MaxRecords: 2, DateFrom: "2026-09-01", DateTo: "2026-09-30", Situation: "R", ReconciliationSituation: 1, CategoryIDs: []int64{11, 22},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page.Records) != 1 || !strings.Contains(string(page.Records[0]), `"id":789`) || !page.HasNextKnown || !page.HasNext {
 		t.Fatalf("page = %+v", page)
+	}
+}
+
+func TestListCashMovementsRejectsInvalidReconciliationSituationBeforeNetworkCall(t *testing.T) {
+	doer := &errorHTTPDoer{err: errors.New("network should not be called")}
+	client, err := NewBlingAPIClient(doer, "http://127.0.0.1/Api/v3", "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.ListCashMovements(context.Background(), CashMovementsFilter{ReconciliationSituation: 4}); !errors.Is(err, ErrBlingAPIConfiguration) {
+		t.Fatalf("invalid reconciliation situation error = %v, want configuration error", err)
+	}
+	if doer.calls != 0 {
+		t.Fatalf("network calls = %d, want 0", doer.calls)
 	}
 }
 

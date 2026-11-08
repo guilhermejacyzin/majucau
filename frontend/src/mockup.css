@@ -275,3 +275,66 @@ body { background: #fff; }
 .mocap-page-cashflow .mocap-alerts-cashflow .mocap-alert button { margin-top: 3px; color: #b3261e; font-size: 9px; }
 @media (max-width: 1220px) { .mocap-page-cashflow .mocap-top-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }.mocap-page-cashflow .mocap-cashflow-table table { min-width: 1420px; table-layout: auto; }.mocap-page-cashflow .mocap-cashflow-table th:first-child { width: 132px; min-width: 132px; }.mocap-page-cashflow .mocap-cashflow-table th,.mocap-page-cashflow .mocap-cashflow-table td { white-space: nowrap; } }
 @media (max-width: 760px) { .mocap-page-cashflow { padding: 14px 9px; }.mocap-page-cashflow .mocap-top-cards { grid-template-columns: 1fr; }.mocap-page-cashflow .mocap-period-controls { flex-direction: row; flex-wrap: wrap; align-items: center; }.mocap-page-cashflow .mocap-period-controls > span { width: 100%; margin-left: 0; }.mocap-page-cashflow .mocap-cashflow-table table { min-width: 1420px; } }
+
+/* Responsive layout follows the usable content width, not the full window
+   width (the fixed navigation rail otherwise hides the narrow layout too long). */
+.main-area { min-width: 0; flex: 1 1 auto; width: auto; }
+.mocap-page { box-sizing: border-box; min-width: 0; container: mocap-page / inline-size; }
+.mocap-page *, .mocap-page *::before, .mocap-page *::after { box-sizing: border-box; }
+.mocap-header, .mocap-heading, .mocap-header-actions, .mocap-card-body, .mocap-panel-heading,
+.mocap-period-controls, .mocap-critical-grid > div { min-width: 0; }
+.mocap-heading h1, .mocap-heading p, .mocap-panel-heading h2, .mocap-panel-heading p,
+.mocap-card-label, .mocap-card-support, .mocap-empty-value, .mocap-critical-grid strong { overflow-wrap: anywhere; }
+.mocap-period-values b { white-space: normal; overflow-wrap: anywhere; }
+.mocap-card { min-width: 0; }
+.mocap-critical-grid > div { grid-template-columns: minmax(22px,28px) minmax(0,1fr); }
+.mocap-critical-grid strong { grid-column: 2; }
+.mocap-page-cashflow .mocap-cashflow-table table { min-width: 860px; }
+
+@container mocap-page (max-width: 1220px) {
+  .mocap-top-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .mocap-lower-cards { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .mocap-dre-lower-cards { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .mocap-middle { grid-template-columns: minmax(0,1fr); }
+  .mocap-market-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .mocap-market-lower { grid-template-columns: minmax(0,1fr); }
+  .mocap-alert-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .mocap-header { display: block; }
+  .mocap-header-actions { justify-content: flex-end; flex-wrap: wrap; margin-top: 14px; }
+  .mocap-sync { white-space: normal; }
+}
+
+@container mocap-page (max-width: 760px) {
+  .mocap-page, .mocap-page-cashflow { padding: 14px 9px; }
+  .mocap-top-cards, .mocap-lower-cards, .mocap-dre-lower-cards,
+  .mocap-alert-grid, .mocap-market-grid, .mocap-right-grid,
+  .mocap-critical-grid, .mocap-rules-grid { grid-template-columns: minmax(0,1fr); }
+  .mocap-card { min-height: 96px; gap: 9px; padding: 11px 10px; }
+  .mocap-card-icon { width: 42px; height: 42px; flex-basis: 42px; }
+  .mocap-card-icon .mocap-icon { width: 23px; height: 23px; }
+  .mocap-card-label { font-size: 11px; }
+  .mocap-empty-value { font-size: 20px; }
+  .mocap-card-support { font-size: 11px; }
+  .mocap-period-values b { font-size: 15px; line-height: 1.25; }
+  .mocap-header-actions { justify-content: flex-start; align-items: stretch; }
+  .mocap-sync { width: 100%; }
+  .mocap-period-controls { align-items: stretch; flex-direction: column; gap: 8px; }
+  .mocap-period-controls label { flex-wrap: wrap; }
+  .mocap-period-controls input { max-width: 100%; }
+  .mocap-page-cashflow .mocap-chart-panel { min-height: 320px; padding: 11px; }
+  .mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend { justify-content: flex-start; flex-wrap: wrap; gap: 6px 12px; }
+  .mocap-page-cashflow .mocap-chart-panel .mocap-chart-empty { height: 185px; margin-inline: 0; }
+  .mocap-page-cashflow .mocap-cashflow-table .mocap-table-scroll { max-width: 100%; overflow: auto; }
+}
+
+/* On tablet-sized windows the sidebar itself consumes enough width to make
+   dashboard cards cramped. Move navigation above the page before that happens. */
+@media (max-width: 1013px) {
+  .app-shell { display: block; }
+  .mocap-sidebar { width: 100%; min-height: 0; max-height: 180px; overflow: hidden; padding: 8px 12px; }
+  .mocap-people { width: 100%; height: 76px; margin: 0 0 5px; background-size: auto 115px; background-position: center 32%; }
+  .mocap-nav { display: flex; flex-flow: row wrap; max-height: 72px; overflow: auto; gap: 3px; }
+  .mocap-nav-section { display: none; }
+  .mocap-nav-item { width: auto; min-height: 32px; flex: 0 0 auto; padding: 5px 8px; font-size: 12px; }
+  .main-area { width: 100%; }
+}

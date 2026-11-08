@@ -25,6 +25,7 @@ GRANT SELECT ON TABLE
   sync_cursors,
   raw_records,
   bling_cash_movements,
+  bling_cash_movement_reconciled_snapshot_rows,
   bling_cash_balance_checkpoints,
   bling_payment_method_terms,
   bling_financial_account_identities,
@@ -55,6 +56,7 @@ TO majucau_runtime;
 GRANT INSERT ON TABLE
   raw_records,
   bling_sync_page_checkpoints,
+  bling_cash_movement_reconciled_snapshot_rows,
   receivable_sync_snapshot_rows,
   payable_sync_snapshot_rows,
   receivable_sources,

@@ -94,3 +94,7 @@ financeiro real foi gravado neste arquivo ou em outros arquivos do Git.
 
 Fontes oficiais: [referência OpenAPI do Bling](https://developer.bling.com.br/referencia),
 [changelog do filtro de conciliação](https://developer.bling.com.br/changelogs).
+
+## Atualização de apresentação do gráfico — 08/11/2026
+
+As notas antigas sobre duas linhas de datas foram substituídas: um ponto representa uma faixa semanal e recebe um único intervalo em uma linha; em séries densas usa-se DD/MM–DD/MM, mantendo a data completa no detalhe. A semana sob o ponteiro recebe uma linha vertical alinhada às séries. Tooltip identifica Despesas, Receitas e Saldo. Gisele confirmou que a apresentação ficou correta; esse aceite não homologa o saldo nem a sincronização.

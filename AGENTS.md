@@ -2,6 +2,14 @@
 
 Estas regras valem para todo o futuro repositório. Instruções mais específicas podem existir em subdiretórios, mas não podem enfraquecer invariantes financeiros, segurança ou gates deste arquivo sem aprovação registrada.
 
+## Análise obrigatória antes de toda tarefa
+
+- Antes de alterar qualquer coisa, analisar detalhadamente o pedido, decisões anteriores, telas aprovadas, regras protegidas, documentação, código e fontes dos dados relevantes.
+- Identificar o esperado, o observado, a causa sustentada por evidências, os impactos e o que permanece incerto. Explicar em linguagem simples; não concordar automaticamente nem apresentar inferência como fato.
+- Se uma dúvida puder mudar regra financeira, fonte de dados, permissão, escopo ou tela aprovada, parar somente a parte dependente e perguntar antes de implementá-la. Analisar não autoriza mudanças protegidas.
+- Concluir a tarefa autorizada de ponta a ponta: implementar, validar de forma proporcional, atualizar documentação/evidências/backlog, publicar no Git conforme o ciclo vigente e abrir a tela alterada para revisão.
+- Distinguir o que foi comprovado, inferido e ainda não validado. Não declarar conferência visual, integração, homologação ou conclusão sem evidência correspondente.
+
 ## Produto e plataforma
 
 - A interface aprovada é React + TypeScript + Vite dentro do aplicativo Wails v2 para Windows 10/11 x64.

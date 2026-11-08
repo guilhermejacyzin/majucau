@@ -81,13 +81,15 @@ e [changelog oficial sobre o filtro de conciliação](https://developer.bling.co
 
 ## Correção posterior dos rótulos — 08/11/2026
 
-A referência atualizada do Bling mostra, para cada semana, a data inicial
-completa seguida de “a” na primeira linha e a data final completa na segunda.
-O eixo do gráfico foi ajustado para mostrar DD/MM/AAAA nas duas linhas e recebeu
-mais espaço inferior, com 285 px no desktop e 250 px em telas menores. O mesmo
-componente atende T01 e T02. Os testes verificam os rótulos completos e que a
-segunda linha termina dentro do SVG. A captura visual da janela Wails expirou;
-o aceite visual ainda precisa ocorrer no protótipo reaberto.
+A interpretação anterior estava incorreta: cada ponto representa uma faixa
+semanal e deve ter um único rótulo de intervalo em uma linha, não dois rótulos
+que possam parecer dias separados. A faixa inicial pode ser parcial se o início
+selecionado cair no meio da semana. A legenda usa `DD/MM/AAAA a DD/MM/AAAA` em
+séries curtas e abrevia para `DD/MM–DD/MM` quando a densidade exigir, enquanto
+o detalhe/tooltip conserva as datas completas. O texto foi subido no eixo para
+evitar corte na base. Gisele confirmou “deu certo” para o marcador semanal em
+08/11/2026. Esse aceite cobre apenas a apresentação; os dados e o restante de
+T02 continuam sem homologação.
 
 ## Rastro para auditoria
 

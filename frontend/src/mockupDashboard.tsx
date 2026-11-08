@@ -271,7 +271,7 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
   const balances = periods.map((period) => value(period.closing_balance?.value))
   const points = [...inflows, ...plottedOutflows, ...balances].filter((amount): amount is number => amount !== undefined)
   const scale = Math.max(1, ...points.map((amount) => Math.abs(amount)))
-  const plot = { left: 76, right: 640, top: 12, bottom: 125 }
+  const plot = { left: 76, right: 640, top: 12, bottom: 165 }
   const xFor = (index: number) => periods.length < 2 ? (plot.left + plot.right) / 2 : plot.left + index * ((plot.right - plot.left) / (periods.length - 1))
   const yFor = (amount: number) => plot.top + ((scale - amount) / (scale * 2)) * (plot.bottom - plot.top)
   const line = (series: Array<number | undefined>) => series.map((amount, index) => {
@@ -290,6 +290,10 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
     const [year, month, day] = date.split('-')
     return `${day}/${month}/${year}`
   }
+  const compactDateLabel = (date: string) => {
+    const [, month, day] = date.split('-')
+    return `${day}/${month}`
+  }
   const moneyLabel = (amount?: string) => amount ? formatBRL(amount) : '—'
   const absoluteMoneyLabel = (amount?: string) => moneyLabel(amount?.startsWith('-') ? amount.slice(1) : amount)
   const shortVariation = (current?: string, previous?: string, magnitude = false) => current && previous
@@ -301,6 +305,10 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
   const hasBalanceSeries = balances.every((amount) => amount !== undefined)
   const activePeriod = hoveredPeriod ?? pinnedPeriod
   const shortDateRange = (period: DashboardCashFlowPeriod) => `${fullDateLabel(period.from)} a ${fullDateLabel(period.through)}`
+  const axisDateRange = (period: DashboardCashFlowPeriod) => periods.length > 6
+    ? `${compactDateLabel(period.from)}–${compactDateLabel(period.through)}`
+    : shortDateRange(period)
+  const axisDateFontSize = periods.length > 9 ? '7' : periods.length > 6 ? '8' : '9'
   const popupPosition = (index: number) => {
     const x = xFor(index)
     const yValues = [inflows[index], plottedOutflows[index], balances[index]].filter((amount): amount is number => amount !== undefined)
@@ -321,6 +329,7 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
             <polyline points={line(inflows)} fill="none" stroke="#2877eb" strokeWidth="2" vectorEffect="non-scaling-stroke" />
             <polyline points={line(plottedOutflows)} fill="none" stroke="#fa3038" strokeWidth="2" vectorEffect="non-scaling-stroke" />
             {hasBalanceSeries && <polyline points={line(balances)} fill="none" stroke="#ff9f1a" strokeWidth="2" vectorEffect="non-scaling-stroke" />}
+            {activePeriod !== undefined && <line className="cash-flow-chart-crosshair" x1={xFor(activePeriod)} x2={xFor(activePeriod)} y1={plot.top} y2={plot.bottom} stroke="#888" strokeWidth="1" pointerEvents="none" aria-hidden="true" />}
             {periods.map((period, index) => {
               const x = xFor(index)
               const inflow = inflows[index]
@@ -335,8 +344,7 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
                 <g key={`${period.from}-${period.through}`} role="button" tabIndex={0} aria-label={pointLabel} onMouseEnter={() => setHoveredPeriod(index)} onMouseLeave={() => setHoveredPeriod(undefined)} onFocus={() => setHoveredPeriod(index)} onBlur={() => setHoveredPeriod(undefined)} onClick={() => setPinnedPeriod((current) => current === index ? undefined : index)} onKeyDown={(event) => { if (event.key === 'Escape') { setPinnedPeriod(undefined); setHoveredPeriod(undefined) } else if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setPinnedPeriod((current) => current === index ? undefined : index) } }} style={{ cursor: 'pointer', outline: 'none' }}>
                   <title>{`${shortDateRange(period)} · Despesas ${expenseLabel} · Receitas ${moneyLabel(period.inflows.value)} · Saldo ${moneyLabel(period.closing_balance?.value)}`}</title>
                   <rect x={x - 13} y={plot.top} width="26" height={plot.bottom - plot.top} fill="transparent" />
-                  <text x={x} y="164" textAnchor="middle" fill="#17305b" fontSize="9" aria-hidden="true" data-axis-date="start">{fullDateLabel(period.from)} a</text>
-                  <text x={x} y="183" textAnchor="middle" fill="#17305b" fontSize="9" aria-hidden="true" data-axis-date="end">{fullDateLabel(period.through)}</text>
+                  <text x={x} y="176" textAnchor="middle" fill="#17305b" fontSize={axisDateFontSize} aria-hidden="true" data-axis-date="week">{axisDateRange(period)}</text>
                   {inflow !== undefined && <circle cx={x} cy={yFor(inflow)} r={selected ? 4.5 : 3.5} fill="#2877eb" />}
                   {outflow !== undefined && <circle cx={x} cy={yFor(outflow)} r={selected ? 4.5 : 3.5} fill="#fa3038" />}
                   {balance !== undefined && <circle cx={x} cy={yFor(balance)} r={selected ? 4.5 : 3.5} fill={balance < 0 ? '#d93025' : '#ff9f1a'} />}

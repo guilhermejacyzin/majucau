@@ -65,3 +65,35 @@ A captura seguinte ainda mostrava apenas o início da data semanal. Removi o
 Visão Executiva e Fluxo de Caixa; os testes conferem as duas linhas nas duas
 telas. O Wails foi reconstruído novamente. A captura automatizada falhou por
 tempo limite, então não declaro conferência visual concluída.
+
+## Correção da interpretação semanal — 08/11/2026
+
+A responsável apontou que o eixo parecia mostrar dias individuais. A causa foi
+a apresentação anterior: início e fim da faixa foram desenhados em linhas ou
+elementos separados, embora cada ponto represente um período semanal. A regra
+correta é um ponto por faixa semanal e um único rótulo de intervalo abaixo
+dele, no formato `DD/MM/AAAA a DD/MM/AAAA` quando houver espaço; em séries
+densas o eixo pode abreviar para `DD/MM–DD/MM`, mantendo as datas completas
+no detalhe/tooltip. O rótulo fica acima da margem inferior do gráfico. A
+primeira faixa pode ter menos de sete dias se o período
+selecionado começar no meio da semana; isso reproduz os limites do relatório,
+não uma série diária.
+
+O componente compartilhado de T01/T02 agora renderiza um único elemento de
+texto por período, e os testes verificam quantidade, conteúdo e posição. O
+agrupamento continua semanal: a primeira faixa começa na data selecionada e
+termina no sábado; as seguintes seguem domingo a sábado. A aprovação visual
+continua pendente até Gisele conferir o protótipo reaberto.
+
+Na sequência, Gisele esclareceu que a linha amarela do print é o marcador
+vertical da semana sob o ponteiro, que deve cruzar a área do gráfico e alinhar
+com os três pontos daquela faixa. O tooltip já lista Despesas, Receitas e
+Saldo; o marcador vertical foi acrescentado atrás dos pontos e antes da caixa
+de detalhes. A validação automatizada verifica posição, altura e presença do
+tooltip. A captura nativa continua sem funcionar, portanto a conferência visual
+e o aceite ficam pendentes no protótipo reaberto.
+
+**Aceite da correção:** em 08/11/2026, Gisele respondeu “Ok, deu certo!” após
+conferir a linha de acompanhamento. Este aceite é somente da apresentação
+semanal e do marcador vertical; não homologa os valores da API, o saldo bancário
+nem conclui BK-062/T02.

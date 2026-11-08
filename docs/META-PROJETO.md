@@ -2,13 +2,24 @@
 
 ### Correção do eixo inferior do gráfico — 08/11/2026
 
-A captura de referência do Bling mostra cada faixa semanal em duas linhas:
-data inicial completa, “a”, e data final completa. O gráfico compartilhado
-agora apresenta os mesmos rótulos DD/MM/AAAA e ganhou altura para manter ambas
-as linhas visíveis também em janelas menores. A captura nativa do Wails expirou;
-apesar dos testes automatizados, falta confirmar o visual na tela aberta e obter
-o aceite da responsável. BK-062 segue em 30% concluído, 70% restante; projeto
-12,3% concluído, 87,7% restante. T03 só começa após aprovação da T02.
+A análise corrigiu uma interpretação anterior: o gráfico é semanal e cada
+ponto representa uma faixa, não um dia. Deve haver um rótulo de intervalo em
+uma linha por ponto. A faixa inicial pode ser parcial conforme a data de início
+escolhida; as seguintes seguem domingo a sábado. Em séries curtas, o rótulo usa
+datas completas; em séries densas, abrevia para DD/MM–DD/MM, mantendo o período
+completo no detalhe/tooltip. O rótulo foi reposicionado para não ser cortado na
+base. A conferência visual e o aceite continuam pendentes. BK-062
+segue em 30% concluído, 70% restante; projeto 12,3% concluído, 87,7% restante.
+T03 só começa após aprovação da T02.
+
+Gisele esclareceu que o exemplo também exige um marcador vertical no ponto
+selecionado pelo ponteiro. A T02 agora mostra essa linha de referência da
+parte superior à inferior da área do gráfico, alinhada com as séries, enquanto
+mantém o tooltip rotulado (Despesas, Receitas, Saldo). Testes focados passaram;
+a responsável confirmou “Ok, deu certo!” em 08/11/2026. Esse aceite cobre o
+comportamento visual semanal e a linha vertical; não homologa os valores nem o
+saldo. BK-062 continua em 30% concluído (70% restante), e o projeto em 12,3%
+concluído (87,7% restante). T03 aguarda o fim da T02.
 
 ### Saldo atual e menor saldo Itaú — 08/11/2026
 

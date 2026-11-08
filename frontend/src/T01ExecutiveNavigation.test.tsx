@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import type { DashboardSnapshot } from './bootstrap'
+import type { DashboardCashFlowPeriod, DashboardSnapshot } from './bootstrap'
 import { MockupDashboard, type MockupScreenKey } from './mockupDashboard'
 
 const cardRoutes = [
@@ -176,16 +176,22 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(weeklyTable).not.toHaveTextContent('−25,0%')
     expect(weeklyTable).not.toHaveTextContent('+20,0%')
     const cashFlowChart = screen.getByRole('group', { name: 'Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling' })
-    const cashFlowStartDate = cashFlowChart.querySelector('text[data-axis-date="start"]')
-    const cashFlowEndDate = cashFlowChart.querySelector('text[data-axis-date="end"]')
-    expect(cashFlowStartDate).toHaveTextContent('08/11/2026 a')
-    expect(cashFlowEndDate).toHaveTextContent('14/11/2026')
-    expect(cashFlowStartDate).toHaveAttribute('y', '164')
-    expect(cashFlowEndDate).toHaveAttribute('y', '183')
-    expect(cashFlowStartDate).toHaveAttribute('font-size', '9')
-    expect(cashFlowEndDate).toHaveAttribute('font-size', '9')
+    const cashFlowWeekLabels = cashFlowChart.querySelectorAll('text[data-axis-date="week"]')
+    expect(cashFlowWeekLabels).toHaveLength(1)
+    expect(cashFlowChart.querySelectorAll('tspan[data-axis-date], text[data-axis-date="day"]')).toHaveLength(0)
+    expect(cashFlowWeekLabels[0]?.textContent).not.toMatch(/[\r\n]/)
+    expect(cashFlowWeekLabels[0]).toHaveTextContent('08/11/2026 a 14/11/2026')
+    expect(cashFlowWeekLabels[0]).toHaveAttribute('y', '176')
+    expect(cashFlowWeekLabels[0]).toHaveAttribute('font-size', '9')
     const chartViewBoxHeight = Number(cashFlowChart.getAttribute('viewBox')?.split(' ')[3])
-    expect(Number(cashFlowEndDate?.getAttribute('y')) + 4).toBeLessThan(chartViewBoxHeight)
+    expect(Number(cashFlowWeekLabels[0]?.getAttribute('y')) + 4).toBeLessThan(chartViewBoxHeight)
+    expect(cashFlowChart.querySelector('.cash-flow-chart-crosshair')).not.toBeInTheDocument()
+    fireEvent.mouseEnter(cashFlowChart.querySelector('g[role="button"][aria-label^="08/11/2026 a 14/11/2026"]') as Element)
+    const crosshair = cashFlowChart.querySelector('.cash-flow-chart-crosshair')
+    expect(crosshair).toHaveAttribute('x1', crosshair?.getAttribute('x2'))
+    expect(crosshair).toHaveAttribute('y1', '12')
+    expect(crosshair).toHaveAttribute('y2', '165')
+    expect(cashFlowChart.querySelector('.cash-flow-chart-tooltip')).toBeInTheDocument()
     const criticalWeek = screen.getByRole('heading', { name: 'SEMANA CRÍTICA' }).closest('section')
     expect(criticalWeek).toHaveTextContent('08/11–14/11')
     expect(criticalWeek).toHaveTextContent('-R$ 600,00 · Parcial')
@@ -199,10 +205,29 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     rerender(<MockupDashboard screen="executive" snapshot={snapshot} />)
     const executiveChart = screen.getByRole('group', { name: 'Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling' })
     expect(executiveChart).toBeInTheDocument()
-    expect(executiveChart.querySelector('text[data-axis-date="start"]')).toHaveTextContent('07/11/2026 a')
-    expect(executiveChart.querySelector('text[data-axis-date="end"]')).toHaveTextContent('07/11/2026')
-    expect(executiveChart.querySelectorAll('text[data-axis-date="start"]')).toHaveLength(2)
-    expect(executiveChart.querySelectorAll('text[data-axis-date="end"]')).toHaveLength(2)
+    const executiveWeekLabels = executiveChart.querySelectorAll('text[data-axis-date="week"]')
+    expect(executiveWeekLabels).toHaveLength(2)
+    expect(executiveWeekLabels[0]?.textContent).not.toMatch(/[\r\n]/)
+    expect(executiveWeekLabels[0]).toHaveTextContent('07/11/2026 a 07/11/2026')
+
+    const densePeriods: DashboardCashFlowPeriod[] = Array.from({ length: 10 }, (_, index) => {
+      const from = new Date(Date.UTC(2026, 10, 8 + index * 7))
+      const through = new Date(Date.UTC(2026, 10, 14 + index * 7))
+      return {
+        from: from.toISOString().slice(0, 10),
+        through: through.toISOString().slice(0, 10),
+        inflows: { ...partial, value: '1500.0000' },
+        outflows: { ...partial, value: '-600.0000' },
+        closing_balance: { ...partial, value: '-76683.2000' },
+      }
+    })
+    rerender(<MockupDashboard screen="executive" snapshot={{ ...snapshot, cash_flow: { ...snapshot.cash_flow!, periods: densePeriods } }} />)
+    const denseChart = screen.getByRole('group', { name: 'Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling' })
+    const denseLabels = denseChart.querySelectorAll('text[data-axis-date="week"]')
+    expect(denseLabels).toHaveLength(10)
+    expect(denseLabels[0]).toHaveTextContent('08/11–14/11')
+    expect(denseLabels[0]?.textContent).not.toMatch(/[\r\n]/)
+    expect(denseChart.querySelector('g[aria-label*="08/11/2026 a 14/11/2026"] title')).toHaveTextContent('08/11/2026 a 14/11/2026')
   })
 
   it('filtra a tabela e a semana crítica pelo período escolhido sem recalcular com ponto flutuante', () => {

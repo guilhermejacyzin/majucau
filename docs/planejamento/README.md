@@ -61,3 +61,5 @@ O comando sobrescreve a planilha v2 em `../../artifacts/planejamento/outputs/` e
 `prepare_tracker_v1.py` é um registro histórico da transformação inicial e dependia do gerador v0 daquela etapa, posteriormente substituído. Não faz parte do procedimento atual de regeneração. O gerador v1 final foi preservado em `build_tracker_v1.mjs`; `prepare_tracker_v2.py` produz o gerador v2 a partir dele.
 
 A preparação para GitHub ajustou links para caminhos relativos e substituiu caminhos pessoais por `sources/private`. Não alterou os arquivos XLSX nem as regras do backlog.
+
+**Correção vigente do gráfico T02 — 08/11/2026:** cada ponto corresponde a uma faixa semanal, com um único rótulo horizontal do intervalo; faixa inicial pode ser parcial conforme a data escolhida. Para séries densas, o eixo usa DD/MM–DD/MM e o detalhe mantém as datas completas. A semana sob o ponteiro recebe uma linha vertical de referência e tooltip identificado para Despesas, Receitas e Saldo. Gisele confirmou que a apresentação ficou correta. Isso não homologa os dados do relatório, a sincronização real, o saldo nem conclui BK-062. Ver `docs/evidence/T02-FLOW-GRAPH-ALERT-2026-11-08.md`.

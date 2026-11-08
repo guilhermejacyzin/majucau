@@ -108,3 +108,5 @@ menores) para evitar o corte da segunda linha. Testes automatizados cobrem o
 conteúdo e os limites do SVG; a captura visual da janela Wails expirou, então
 falta aprovação visual no protótipo. Evidência:
 `docs/evidence/RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md`.
+
+**Correção vigente do eixo T02 — 08/11/2026:** substituir as notas anteriores sobre rótulos em duas linhas: cada faixa semanal tem um ponto e um rótulo de intervalo em uma linha; semanas densas usam DD/MM–DD/MM, com período completo no tooltip. A linha vertical acompanha a semana apontada e o tooltip mostra Despesas, Receitas e Saldo. Gisele confirmou a apresentação. Não representa homologação dos números nem conclusão da T02.

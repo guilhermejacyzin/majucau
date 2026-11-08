@@ -63,9 +63,12 @@ cada período com o mesmo filtro, conta e opções do relatório.
 
 ## Alteração visual da T02
 
-- O conteúdo semanal principal agora é uma tabela, sem o gráfico grande nesta
-  tela.
+- O conteúdo semanal principal tem tabela e gráfico, ambos no período escolhido;
+  a semana crítica fica abaixo dos dois.
 - Reduzi fontes, cartões, margens e alturas dos painéis somente na T02.
+- A tabela preserva os valores em uma linha; quando o período tem muitas
+  semanas, usa rolagem horizontal em vez de quebrar valores em pedaços. Valores
+  negativos da tabela e da semana crítica ficam vermelhos.
 - A tabela mostra valores semanais de receitas e despesas, variação percentual
   frente à semana anterior, total do período e as linhas de saldo inicial,
   ajustes e saldo acumulado.
@@ -82,7 +85,9 @@ cada período com o mesmo filtro, conta e opções do relatório.
 - `npm run typecheck` — aprovado.
 - `npm test -- --run` — 73 testes aprovados.
 - `npm run build` — aprovado.
-- O protótipo recompilado foi conferido visualmente e mantido aberto na T02. A
+- O protótipo estava parado e a URL local não respondia; isso deixou a aba antiga
+  sem atualizar. Reiniciei pelo roteiro normal, abri o protótipo e conferi a T02
+  com tabela, gráfico e semana crítica abaixo. A
   data mínima acompanha Brasília; ao mudar apenas o fim, a data inicial fica
   preservada. A comparação de 07/11 não pode ser repetida agora porque já é
   passado e o seletor não permite retornar.

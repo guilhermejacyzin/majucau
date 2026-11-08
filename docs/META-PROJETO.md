@@ -14,15 +14,16 @@ O procedimento completo está em
 
 ### T02 — tabela semanal compacta e correção das datas — 08/11/2026
 
-A tela T02 foi reorganizada para apresentar o Fluxo de Caixa somente em tabela
-por semana, como no relatório do Bling. O gráfico foi removido da T02. Reduzi
-os textos, cartões, espaços e altura dos painéis somente nessa tela. A seleção
-de datas começa no dia atual de
+A tela T02 foi reorganizada para apresentar o Fluxo de Caixa em tabela e gráfico
+semanal. A semana crítica aparece abaixo dos dois. Reduzi os textos, cartões,
+espaços e altura dos painéis somente nessa tela. A seleção de datas começa no
+dia atual de
 Brasília e vai até a data disponível; a tabela e a semana crítica acompanham
-o período escolhido. A semana crítica fica abaixo da tabela e acompanha as
-datas escolhidas. A tabela mantém entradas e saídas, acrescenta variação semanal
+o período escolhido. Tabela, gráfico e semana crítica acompanham as datas
+escolhidas. A tabela mantém entradas e saídas, acrescenta variação semanal
 percentual e deixa saldo inicial, ajustes e acumulado como “—” enquanto a fonte
-oficial desses saldos não estiver comprovada.
+oficial desses saldos não estiver comprovada. Valores negativos aparecem em
+vermelho, sem mudar os valores calculados.
 
 A comparação com a imagem do relatório encontrou e corrigiu uma duplicidade de
 R$ 25.000,00: um título vencido antes do período estava sendo somado de novo,

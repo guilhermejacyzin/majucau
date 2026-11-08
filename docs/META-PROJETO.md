@@ -896,3 +896,12 @@ janela nativa falhou nesta execução, então ainda falta a conferência visual 
 T02 pela responsável. BK-062 permanece em 30% (70% restante); o backlog geral
 permanece em 12,3% concluído / 87,7% restante. Evidência:
 [cards T02 30/60 dias](./evidence/T02-30-60-DAY-CARDS-2026-11-07.md).
+
+### Correção da conferência visual T02 — 07/11/2026
+
+Depois do registro acima, Gisele enviou uma captura da tela T02 aberta no
+protótipo. A captura confirma a retirada de “Ver detalhes” dos cards Saldo
+atual, Entradas e Saídas; os valores de Entradas e Saídas aparecem em 30 e 60
+dias; o card Menor saldo permanece sem valor confirmado. Essa evidência
+substitui a pendência de conferência visual registrada anteriormente. Ainda
+aguardo a aprovação explícita da responsável para avançar para a próxima tarefa.

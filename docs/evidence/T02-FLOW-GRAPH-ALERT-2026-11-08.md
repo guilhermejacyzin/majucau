@@ -48,15 +48,14 @@ sincronização real também permanecem pendentes. Ver também
 
 ## Ajuste adicional após nova conferência da responsável
 
-A responsável informou que as datas ainda apareciam cortadas. A causa era a
-largura dos rótulos em uma única linha para muitas semanas no mesmo gráfico.
-Cada faixa agora é apresentada em duas linhas curtas (data inicial e final),
-com a faixa completa mantida como nome acessível. A suíte confirma o texto,
-duas linhas e a distância da borda inferior do `viewBox`. O build passou; a
-versão Wails atualizada foi reconstruída e iniciada. A captura da janela
-expirou, portanto a aprovação visual continua pendente. A prévia local Vite
-abre a T02, mas não recebe os dados armazenados pelo aplicativo Wails. A
-migration 000024 e a sincronização real não foram executadas nesta atualização.
+A responsável informou que as datas ainda apareciam cortadas. A captura de
+referência mostra o padrão exato: data inicial DD/MM/AAAA com “a” na primeira
+linha e data final DD/MM/AAAA na segunda. O SVG agora exibe essa faixa completa,
+com margem inferior adicional para impedir o corte da segunda linha. A suíte
+confirma o texto, as duas linhas e o limite inferior do `viewBox`. O build Wails
+foi reconstruído e uma nova janela foi aberta; a captura da janela expirou,
+portanto a conferência visual e o aceite continuam pendentes. A migration
+000024 e a sincronização real não foram executadas nesta atualização.
 
 ## Ajuste final dos rótulos
 

@@ -1,5 +1,15 @@
 # Meta do Majucau
 
+### Correção do eixo inferior do gráfico — 08/11/2026
+
+A captura de referência do Bling mostra cada faixa semanal em duas linhas:
+data inicial completa, “a”, e data final completa. O gráfico compartilhado
+agora apresenta os mesmos rótulos DD/MM/AAAA e ganhou altura para manter ambas
+as linhas visíveis também em janelas menores. A captura nativa do Wails expirou;
+apesar dos testes automatizados, falta confirmar o visual na tela aberta e obter
+o aceite da responsável. BK-062 segue em 30% concluído, 70% restante; projeto
+12,3% concluído, 87,7% restante. T03 só começa após aprovação da T02.
+
 ### Saldo atual e menor saldo Itaú — 08/11/2026
 
 Estado real em 08/11/2026: a auditoria encontrou que `situacao=R` significa

@@ -62,12 +62,12 @@ e [changelog oficial sobre o filtro de conciliação](https://developer.bling.co
   185 para 210 e moveu as datas para y=155, mantendo margem entre a área do
   gráfico e o fim da legenda. Um teste de interface verifica as datas na T02 e
   na T01 e confere que o texto cabe no `viewBox`.
-- A responsável confirmou que a correção ainda não aparecia corretamente na
-  tela. O eixo agora quebra cada faixa em duas linhas: dia inicial na primeira,
-  dia final na segunda. Isso reduz a largura ocupada por rótulo e evita que as
-  semanas se sobreponham ou sejam cortadas nas pontas. O texto acessível mantém
-  a faixa completa em uma única leitura. A captura visual ainda precisa ser
-  conferida na T02 aberta.
+- A captura de 08/11 mostrou só a data inicial; a data final não aparecia.
+  A correção aumenta a área do gráfico de 235 para 270 px no desktop e de 185
+  para 220 px em tela pequena. O `viewBox` vai de 210 para 230 unidades; as
+  linhas de início e fim ficam em y=158 e y=178, com fonte 10. Isso dá mais
+  espaço ao eixo inferior. A captura nativa da janela ainda falhou, então não
+  declaro a inspeção visual concluída.
 - A suíte frontend passou com 73 testes; o lint/build do frontend, `go test ./...`
   e build do worker passaram. A versão Wails foi reconstruída e aberta na T01.
   A captura nativa da janela falhou
@@ -81,12 +81,13 @@ e [changelog oficial sobre o filtro de conciliação](https://developer.bling.co
 
 ## Correção posterior dos rótulos — 08/11/2026
 
-A responsável informou que a imagem ainda mostrava só o começo das datas.
-Para não depender da quebra automática de texto SVG, cada dia inicial/final
-agora é renderizado em um elemento separado e centralizado no ponto semanal.
-O gráfico compartilhado atende T01 e T02; os testes verificam as duas linhas
-em ambas. A captura da janela atualizada expirou, então a inspeção visual ainda
-está pendente.
+A referência atualizada do Bling mostra, para cada semana, a data inicial
+completa seguida de “a” na primeira linha e a data final completa na segunda.
+O eixo do gráfico foi ajustado para mostrar DD/MM/AAAA nas duas linhas e recebeu
+mais espaço inferior, com 285 px no desktop e 250 px em telas menores. O mesmo
+componente atende T01 e T02. Os testes verificam os rótulos completos e que a
+segunda linha termina dentro do SVG. A captura visual da janela Wails expirou;
+o aceite visual ainda precisa ocorrer no protótipo reaberto.
 
 ## Rastro para auditoria
 

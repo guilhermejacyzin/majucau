@@ -26,11 +26,11 @@ Planejamento do sistema de gestão e análise da Majucau. A **versão 2** é a r
 ## Evolução registrada
 
 **T02 — conciliação e gráfico — 08/11/2026:** a captura enviada mostrou que as
-datas do eixo inferior ainda estavam cortadas. Depois do primeiro ajuste, o
-`viewBox` do gráfico foi ampliado para 210 unidades e o rótulo movido para
-y=155. Testes cobrem as datas dentro do SVG na T02 e na T01; a captura Wails
-falhou duas vezes por tempo limite, então a conferência visual ainda está
-pendente. O código inclui
+datas do eixo inferior ainda estavam cortadas. O eixo agora mostra cada semana
+no padrão do Bling: data inicial completa + “a” e data final completa abaixo,
+com altura adicional para a segunda linha. Testes cobrem os rótulos na T02 e na
+T01; a captura Wails falhou por tempo limite, então a conferência visual ainda
+está pendente. O código inclui
 o filtro oficial `situacaoConciliacao=1` e um retrato diário dos IDs conciliados,
 vinculado à mesma carga dos movimentos. A migration 000024 está no checkout,
 mas ainda não foi aplicada à base usada pelo protótipo. O saldo por conciliação
@@ -100,4 +100,11 @@ Os arquivos externos diários também incluem Excel `.XLS` e `.XLSX`. CSV, TSV, 
 **Atualização mais recente — governança do repositório (01/11/2026):** BK-025 está em 80% (20% restante). `.github/CODEOWNERS` solicita revisão do proprietário e `CONTRIBUTING.md` explica que isso não ativa a proteção do GitHub. A branch `main`, aprovações obrigatórias e checks exigidos ainda dependem de uma conta administradora. O backlog está em 12,0% concluído (88,0% restante); a planilha oficial e o documento detalhado foram atualizados para refletir o mesmo número. Nenhuma tela ou regra financeira mudou.
 Na atualização da T02 em 08/11/2026, o último saldo conciliado do Itaú aprovado pela responsável é o ponto de partida pretendido e permanece no banco local isolado. O card e a abertura da primeira semana devem repetir esse valor; a base é avançada somente por movimentos conciliados. A migration 000024 ainda não foi aplicada, e não houve nova sincronização real para validar o saldo atualizado. A tabela escrita mostra saldo inicial, receitas, despesas e saldo acumulado, sem linha adicional de ajuste. Entradas e saídas continuam parciais até comparação com o relatório no mesmo período e filtros. O frontend responsivo, os testes e builds locais passaram; a janela Wails não pôde ser capturada e a conferência visual T02 continua pendente. BK-062 permanece em 30% e o backlog geral em 12,3%. Evidência: `docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md`.
 
-Na correção de 08/11/2026, o saldo-base foi esclarecido para auditoria: veio do print aprovado, não de extração automática do extrato. O código consulta o filtro oficial de conciliados e guarda os IDs por lote; a migration 000024 ainda não está aplicada e a sincronização real não ocorreu. As telas responsivas quebram os textos/valores e reduzem o gráfico em áreas estreitas. Após a captura ainda mostrar datas cortadas, o SVG passou para 210 de altura e o texto para y=155; a suíte frontend cobre essas datas e passou. A janela Wails não pôde ser capturada por tempo limite, então a confirmação visual T02 continua pendente. Evidência: `docs/evidence/RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md`.
+Na correção de 08/11/2026, o saldo-base foi esclarecido para auditoria: veio do print aprovado, não de extração automática do extrato. O código consulta o filtro oficial de conciliados e guarda os IDs por lote; a migration 000024 ainda não está aplicada e a sincronização real não ocorreu. As telas responsivas quebram os textos/valores e reduzem o gráfico em áreas estreitas. O eixo segue o exemplo do Bling, com cada semana em duas linhas de datas completas, e mais espaço abaixo dos rótulos para que a data final não seja cortada. A suíte frontend cobre o eixo; a janela Wails não pôde ser capturada por tempo limite, então a confirmação visual T02 continua pendente. Evidência: `docs/evidence/RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md`.
+Atualização de 08/11/2026: conforme o exemplo mais recente do Bling, o eixo
+semanal agora mostra data inicial completa + “a” e data final completa na linha
+seguinte. O gráfico ganhou espaço inferior (285 px desktop, 250 px telas
+menores) para evitar o corte da segunda linha. Testes automatizados cobrem o
+conteúdo e os limites do SVG; a captura visual da janela Wails expirou, então
+falta aprovação visual no protótipo. Evidência:
+`docs/evidence/RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md`.

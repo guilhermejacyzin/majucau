@@ -271,7 +271,7 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
   const balances = periods.map((period) => value(period.closing_balance?.value))
   const points = [...inflows, ...plottedOutflows, ...balances].filter((amount): amount is number => amount !== undefined)
   const scale = Math.max(1, ...points.map((amount) => Math.abs(amount)))
-  const plot = { left: 76, right: 660, top: 12, bottom: 125 }
+  const plot = { left: 76, right: 640, top: 12, bottom: 125 }
   const xFor = (index: number) => periods.length < 2 ? (plot.left + plot.right) / 2 : plot.left + index * ((plot.right - plot.left) / (periods.length - 1))
   const yFor = (amount: number) => plot.top + ((scale - amount) / (scale * 2)) * (plot.bottom - plot.top)
   const line = (series: Array<number | undefined>) => series.map((amount, index) => {
@@ -285,10 +285,6 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
     if (magnitude >= 1_000_000) return `${sign}R$ ${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(magnitude / 1_000_000)} mi`
     if (magnitude >= 1_000) return `${sign}R$ ${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(magnitude / 1_000)} mil`
     return formatBRL(amount.toFixed(2))
-  }
-  const dateLabel = (date: string) => {
-    const [, month, day] = date.split('-')
-    return `${day}/${month}`
   }
   const fullDateLabel = (date: string) => {
     const [year, month, day] = date.split('-')
@@ -317,7 +313,7 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
       <div className="mocap-chart-legend"><span className="legend-blue">●</span> Entradas <span className="legend-red">●</span> Saídas <span className="legend-orange">━●</span> Saldo <span>Variação semanal</span></div>
       <div className="mocap-chart-empty">
         {hasFlow ? (
-          <svg role="group" aria-label="Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling" viewBox="0 0 680 210" preserveAspectRatio="none" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', overflow: 'visible' }}>
+          <svg role="group" aria-label="Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling" viewBox="0 0 680 220" preserveAspectRatio="none" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', overflow: 'visible' }}>
             {yTicks.map((tick) => {
               const y = yFor(tick)
               return <g key={tick}><line x1={plot.left} x2={plot.right} y1={y} y2={y} stroke={tick === 0 ? '#d8e5ef' : '#e7eff6'} strokeWidth={tick === 0 ? 2 : 1} /><text x={plot.left - 8} y={y + 4} textAnchor="end" fill={tick < 0 ? '#d93025' : '#4564b0'} fontSize="10">{axisLabel(tick)}</text></g>
@@ -339,8 +335,8 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
                 <g key={`${period.from}-${period.through}`} role="button" tabIndex={0} aria-label={pointLabel} onMouseEnter={() => setHoveredPeriod(index)} onMouseLeave={() => setHoveredPeriod(undefined)} onFocus={() => setHoveredPeriod(index)} onBlur={() => setHoveredPeriod(undefined)} onClick={() => setPinnedPeriod((current) => current === index ? undefined : index)} onKeyDown={(event) => { if (event.key === 'Escape') { setPinnedPeriod(undefined); setHoveredPeriod(undefined) } else if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setPinnedPeriod((current) => current === index ? undefined : index) } }} style={{ cursor: 'pointer', outline: 'none' }}>
                   <title>{`${shortDateRange(period)} · Despesas ${expenseLabel} · Receitas ${moneyLabel(period.inflows.value)} · Saldo ${moneyLabel(period.closing_balance?.value)}`}</title>
                   <rect x={x - 13} y={plot.top} width="26" height={plot.bottom - plot.top} fill="transparent" />
-                  <text x={x} y="153" textAnchor="middle" fill="#17305b" fontSize="9" aria-hidden="true" data-axis-date="start">{dateLabel(period.from)}</text>
-                  <text x={x} y="165" textAnchor="middle" fill="#17305b" fontSize="9" aria-hidden="true" data-axis-date="end">{dateLabel(period.through)}</text>
+                  <text x={x} y="164" textAnchor="middle" fill="#17305b" fontSize="9" aria-hidden="true" data-axis-date="start">{fullDateLabel(period.from)} a</text>
+                  <text x={x} y="183" textAnchor="middle" fill="#17305b" fontSize="9" aria-hidden="true" data-axis-date="end">{fullDateLabel(period.through)}</text>
                   {inflow !== undefined && <circle cx={x} cy={yFor(inflow)} r={selected ? 4.5 : 3.5} fill="#2877eb" />}
                   {outflow !== undefined && <circle cx={x} cy={yFor(outflow)} r={selected ? 4.5 : 3.5} fill="#fa3038" />}
                   {balance !== undefined && <circle cx={x} cy={yFor(balance)} r={selected ? 4.5 : 3.5} fill={balance < 0 ? '#d93025' : '#ff9f1a'} />}

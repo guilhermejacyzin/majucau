@@ -1,5 +1,32 @@
 # Meta do Majucau
 
+### Correção visual e saldo semanal da T02 — 08/11/2026
+
+Na T02, retirei o link “Ver fluxo completo” do gráfico e, do quadro Semana
+Crítica, os itens riscados “Posição de caixa da semana: SEM DADOS” e “Ver
+detalhes”. O gráfico voltou à altura maior usada antes da redução (235 px de
+área de desenho; painel com altura mínima de 400 px). O alerta existente da
+T02 ficou compacto e vermelho; demais alertas não foram alterados.
+
+A tabela não exibe mais a linha “Ajuste de saldo”. O saldo semanal é calculado
+com precisão decimal como saldo inicial + receitas − despesas; o saldo final
+de cada semana inicia a seguinte. Se faltar saldo inicial confirmado, o saldo
+permanece indisponível em vez de estimado. No gráfico, receitas são azuis,
+despesas vermelhas e saldo laranja; resultados negativos recebem destaque
+vermelho, inclusive no eixo e na legenda flutuante. O saldo atual continua
+separado e usa somente Caixa e Bancos → Itaú.
+
+O build do frontend passou e conferi a tela T02 atualizada no protótipo: os
+itens removidos não aparecem e as entradas/saídas parciais continuam visíveis.
+A série de saldo continua sem número porque a abertura não veio confirmada no
+snapshot atual; a regra está pronta, mas a linha não deve ser inventada. O
+protótipo está aberto na T02 para aprovação. A atualização do GitHub registra
+o código e essa limitação nesta mesma tarefa.
+BK-062 permanece 30% concluída (70% restante); o backlog geral permanece em
+12,3% concluído (87,7% restante), pois esta correção não conclui a validação
+de equivalência dos dados da API com o relatório real. Evidência:
+[`T02-FLOW-GRAPH-ALERT-2026-11-08.md`](evidence/T02-FLOW-GRAPH-ALERT-2026-11-08.md).
+
 ## Modo de execução e aprovação vigente
 
 O projeto avança uma tarefa por vez. Antes de iniciar, informo qual tarefa farei

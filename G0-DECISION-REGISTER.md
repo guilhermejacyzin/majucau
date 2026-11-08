@@ -404,3 +404,10 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - O gráfico deve seguir o exemplo do Bling: pontos semanais com tooltip dos valores de entradas, saídas e saldo acumulado do relatório; acrescentar variação percentual em relação à semana anterior para entradas e saídas. A sequência do saldo acumulado só pode ser exibida depois de confirmar o saldo inicial e os ajustes usados pelo próprio relatório.
 - Esta atualização substitui a orientação antiga de somar o saldo do Mercado Pago ao saldo da T02. Não altera as demais telas aprovadas nem as regras financeiras fora da T02.
 - **Ajuste de cards confirmado por Gisele em 2026-11-07:** manter os cards “Saldo atual” e “Menor saldo 30 / 60 dias”; os cards de entradas e saídas mostram, cada um, os valores dos próximos 30 e 60 dias em texto menor. Remover “Ver detalhes” dos cards “Saldo atual”, “Entradas” e “Saídas”. O card de menor saldo depende da abertura/base e da série diária confirmadas; não mostrar saldo presumido.
+
+## Atualização da fórmula e apresentação da T02 — 2026-11-08
+
+- Gisele confirmou que o saldo resultante mostrado na tabela e no gráfico deve obedecer somente a **saldo inicial + receitas − despesas**. Não exibir nem somar ajuste de saldo na fórmula da série semanal da T02. A saída recebida da API pode estar negativa; nesse caso o cálculo usa o módulo da saída para subtraí-la uma única vez.
+- O saldo final de cada semana passa a ser o saldo inicial da semana seguinte. Se faltar abertura confirmada ou qualquer entrada/saída necessária, manter o saldo resultante indisponível; não preencher com zero nem pular uma semana desconhecida.
+- Na T02, o gráfico segue a legenda do relatório de referência: receitas em azul, despesas em vermelho e saldo resultante em laranja. Valores negativos ficam destacados em vermelho. O saldo bancário atual continua sendo um card separado, com origem exclusiva em Caixa e Bancos → Itaú.
+- Aprovação registrada a partir das instruções explícitas de Gisele em 2026-11-08; essa regra substitui a referência anterior a ajuste de saldo para a série T02. Não altera fórmulas de outros módulos.

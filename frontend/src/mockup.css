@@ -184,7 +184,7 @@ body { background: #fff; }
 .mocap-cashflow-table-note { margin: 0 0 4px; color: #6b7fae; font-size: 11px; }
 .mocap-panel { min-width: 0; min-height: 400px; padding: 18px 17px 13px; border: 1px solid var(--mocap-border); border-radius: 9px; background: #fff; }
 .mocap-panel-heading > div { display: flex; align-items: flex-start; gap: 12px; }.mocap-panel-heading > div > .mocap-icon { width: 34px; height: 34px; color: var(--mocap-teal); }.mocap-panel-heading h2 { margin: 2px 0 2px; color: var(--mocap-navy); font-size: 18px; line-height: 1.1; }.mocap-panel-heading p { margin: 0; color: #4564b0; font-size: 15px; }
-.mocap-chart-legend { display: flex; gap: 16px; align-items: center; justify-content: center; margin-top: 24px; color: #3154a1; font-size: 13px; }.legend-green { color: #0a9e87; font-size: 24px; vertical-align: -2px; }.legend-red { color: #fa3038; font-size: 24px; vertical-align: -2px; }.legend-blue { color: #1f70ee; font-size: 24px; vertical-align: -2px; }
+.mocap-chart-legend { display: flex; gap: 16px; align-items: center; justify-content: center; margin-top: 24px; color: #3154a1; font-size: 13px; }.legend-green { color: #0a9e87; font-size: 24px; vertical-align: -2px; }.legend-red { color: #fa3038; font-size: 24px; vertical-align: -2px; }.legend-blue { color: #1f70ee; font-size: 24px; vertical-align: -2px; }.legend-orange { color: #ff9f1a; font-size: 24px; vertical-align: -2px; }
 .mocap-chart-empty { position: relative; height: 235px; display: grid; place-items: center; margin: 6px 10px 4px; overflow: hidden; color: #8da0c6; font-size: 13px; }
 .mocap-chart-panel > .mocap-link,.mocap-distribution > .mocap-link,.mocap-table-panel > .mocap-link,.mocap-right-empty > .mocap-link { display: block; margin: 0 auto; }
 .mocap-donut-wrap { display: flex; align-items: center; gap: 23px; min-height: 286px; padding: 16px 14px; }.mocap-donut { width: 230px; height: 230px; flex: 0 0 230px; display: grid; place-items: center; border: 27px solid #d6e4ed; border-right-color: #a4d7e2; border-bottom-color: #7bb9e8; border-radius: 50%; color: #677fae; font-size: 13px; }.mocap-legend-list { display: grid; gap: 17px; width: 100%; color: #1d3d91; font-size: 13px; }.mocap-legend-list span { display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 8px; }.mocap-legend-list b { font-size: 13px; }.tone-dot { width: 14px; height: 14px; display: inline-block; border-radius: 50%; }.dot-teal { background: #0c8b88; }.dot-blue { background: #2877eb; }.dot-orange { background: #ffb334; }.dot-purple { background: #8b41dd; }
@@ -232,10 +232,10 @@ body { background: #fff; }
 .mocap-page-cashflow .mocap-period-controls > span { font-size: 10px; }
 .mocap-page-cashflow .mocap-middle { grid-template-columns: minmax(0,1fr); gap: 8px; margin-bottom: 10px; }
 .mocap-page-cashflow .mocap-cashflow-visuals { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; min-width: 0; }
-.mocap-page-cashflow .mocap-chart-panel { min-height: 0; padding: 11px 13px 9px; }
+.mocap-page-cashflow .mocap-chart-panel { min-height: 400px; padding: 13px 15px 12px; }
 .mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend { gap: 12px; margin-top: 10px; font-size: 10px; }
-.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-green,.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-red,.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-blue { font-size: 18px; }
-.mocap-page-cashflow .mocap-chart-panel .mocap-chart-empty { height: 170px; margin-top: 4px; }
+.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-green,.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-red,.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-blue,.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-orange { font-size: 18px; }
+.mocap-page-cashflow .mocap-chart-panel .mocap-chart-empty { height: 235px; margin-top: 8px; }
 .mocap-page-cashflow .mocap-negative-value { color: #d93025 !important; }
 .mocap-page-cashflow .mocap-panel { min-height: 0; padding: 12px 13px 10px; border-radius: 7px; }
 .mocap-page-cashflow .mocap-panel-heading > div { gap: 8px; }
@@ -251,7 +251,7 @@ body { background: #fff; }
 .mocap-page-cashflow .mocap-cashflow-table thead th:first-child { position: sticky; left: 0; z-index: 3; }
 .mocap-page-cashflow .mocap-cashflow-table tbody th { position: sticky; left: 0; z-index: 1; padding: 6px 7px; background: #eef2f6; }
 .mocap-page-cashflow .mocap-cashflow-table td { padding: 6px 7px; border: 1px solid #e0e7ef; text-align: right; font-size: 10px; white-space: nowrap; }
-.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(2),.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(4),.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(7) { font-weight: 700; }
+.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(2),.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(4),.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(6) { font-weight: 700; }
 .mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(3),.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(5) { color: #667b9b; font-size: 9px; }
 .mocap-page-cashflow .mocap-cashflow-table-note { margin: 0; font-size: 9px; }
 .mocap-page-cashflow .mocap-critical-panel { min-height: 0; }
@@ -262,5 +262,16 @@ body { background: #fff; }
 .mocap-page-cashflow .mocap-critical-grid strong { font-size: 12px; }
 .mocap-page-cashflow .mocap-critical-warning { min-height: 36px; padding: 6px 8px; font-size: 10px; }
 .mocap-page-cashflow .mocap-critical-warning .mocap-icon { width: 19px; height: 19px; }
+.mocap-page-cashflow .mocap-alerts-cashflow { display: inline-block; max-width: 100%; padding: 5px 7px; border-color: #ffc4c7; border-radius: 7px; background: #fff; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alerts-heading { gap: 5px; margin-bottom: 4px; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alerts-heading .mocap-icon { width: 16px; height: 16px; color: #d93025; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alerts-heading h2 { color: #d93025; font-size: 10px; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alert-grid { grid-template-columns: minmax(0, max-content); gap: 0; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alert { width: max-content; max-width: 100%; min-height: 0; gap: 6px; padding: 5px 7px; border-color: #ffc4c7; background: #fff3f3; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alert-icon { width: 21px; height: 21px; flex-basis: 21px; color: #d93025; background: #ffe1e3; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alert-icon .mocap-icon { width: 13px; height: 13px; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alert strong { color: #b3261e; font-size: 9px; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alert span { margin-top: 2px; color: #9f221d; font-size: 9px; }
+.mocap-page-cashflow .mocap-alerts-cashflow .mocap-alert button { margin-top: 3px; color: #b3261e; font-size: 9px; }
 @media (max-width: 1220px) { .mocap-page-cashflow .mocap-top-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }.mocap-page-cashflow .mocap-cashflow-table table { min-width: 1420px; table-layout: auto; }.mocap-page-cashflow .mocap-cashflow-table th:first-child { width: 132px; min-width: 132px; }.mocap-page-cashflow .mocap-cashflow-table th,.mocap-page-cashflow .mocap-cashflow-table td { white-space: nowrap; } }
 @media (max-width: 760px) { .mocap-page-cashflow { padding: 14px 9px; }.mocap-page-cashflow .mocap-top-cards { grid-template-columns: 1fr; }.mocap-page-cashflow .mocap-period-controls { flex-direction: row; flex-wrap: wrap; align-items: center; }.mocap-page-cashflow .mocap-period-controls > span { width: 100%; margin-left: 0; }.mocap-page-cashflow .mocap-cashflow-table table { min-width: 1420px; } }

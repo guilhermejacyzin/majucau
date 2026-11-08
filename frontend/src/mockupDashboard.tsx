@@ -116,23 +116,53 @@ function sumCashFlowMetrics(metrics: DashboardMetric[]): DashboardMetric {
   return { value, state: metrics.some((metric) => metric.state === 'PARTIAL') ? 'PARTIAL' : 'CONFIRMED', source_system: 'BLING' }
 }
 
+function calculateClosingBalance(opening: DashboardMetric | undefined, inflows: DashboardMetric, outflows: DashboardMetric): DashboardMetric {
+  const parseUnits = (value?: string) => {
+    const match = /^(-?)(\d{1,15})(?:\.(\d{1,4}))?$/.exec(value ?? '')
+    if (!match) return undefined
+    const amount = BigInt(match[2]) * 10_000n + BigInt((match[3] ?? '').padEnd(4, '0'))
+    return match[1] ? -amount : amount
+  }
+  const openingUnits = parseUnits(opening?.value)
+  const inflowUnits = parseUnits(inflows.value)
+  const outflowUnits = parseUnits(outflows.value)
+  if (openingUnits === undefined || inflowUnits === undefined || outflowUnits === undefined || opening?.state === 'UNAVAILABLE' || inflows.state === 'UNAVAILABLE' || outflows.state === 'UNAVAILABLE') {
+    return { state: 'UNAVAILABLE', source_system: 'BLING' }
+  }
+  const expenseUnits = outflowUnits < 0n ? -outflowUnits : outflowUnits
+  const closingUnits = openingUnits + inflowUnits - expenseUnits
+  const absolute = closingUnits < 0n ? -closingUnits : closingUnits
+  return {
+    value: `${closingUnits < 0n ? '-' : ''}${absolute / 10_000n}.${(absolute % 10_000n).toString().padStart(4, '0')}`,
+    state: [opening, inflows, outflows].some((metric) => metric?.state === 'PARTIAL') ? 'PARTIAL' : 'CONFIRMED',
+    source_system: 'BLING',
+  }
+}
+
 function groupSelectedCashFlowDays(cashFlow: DashboardSnapshot['cash_flow'], from: string, through: string): DashboardCashFlowPeriod[] {
   if (!cashFlow?.days || !from || !through || from > through) return []
   const selected = cashFlow.days.filter((day) => day.date >= from && day.date <= through)
   const result: DashboardCashFlowPeriod[] = []
   let days: typeof selected = []
+  let previousClosing: DashboardMetric | undefined
   const publishWeek = () => {
     if (days.length === 0) return
     const start = days[0].date
     const end = days[days.length - 1].date
     const sourcePeriod = cashFlow.periods?.find((period) => period.from === start && period.through === end)
+    const inflows = sumCashFlowMetrics(days.map((day) => day.inflows))
+    const outflows = sumCashFlowMetrics(days.map((day) => day.outflows))
+    const opening = result.length > 0 ? previousClosing : sourcePeriod?.opening_balance
+    const closing = calculateClosingBalance(opening, inflows, outflows)
     result.push({
       from: start,
       through: end,
-      inflows: sumCashFlowMetrics(days.map((day) => day.inflows)),
-      outflows: sumCashFlowMetrics(days.map((day) => day.outflows)),
-      ...(sourcePeriod?.closing_balance ? { closing_balance: sourcePeriod.closing_balance } : {}),
+      inflows,
+      outflows,
+      ...(opening ? { opening_balance: opening } : {}),
+      closing_balance: closing,
     })
+    previousClosing = closing.state === 'UNAVAILABLE' ? undefined : closing
     days = []
   }
   for (let index = 0; index < selected.length; index += 1) {
@@ -173,7 +203,6 @@ function CashFlowWeeklyTable({ periods }: { periods: DashboardCashFlowPeriod[] }
     { label: 'Variação das receitas', metrics: periods.map((period, index) => variationText(period.inflows.value, periods[index - 1]?.inflows.value)), total: '—' },
     { label: 'Despesas', metrics: periods.map((period) => period.outflows), total: sumCashFlowMetrics(periods.map((period) => period.outflows)) },
     { label: 'Variação das despesas', metrics: periods.map((period, index) => variationText(period.outflows.value, periods[index - 1]?.outflows.value, true)), total: '—' },
-    { label: 'Ajuste de saldo', metrics: periods.map((period) => period.balance_adjustments ?? notAvailable), total: periods.every((period) => period.balance_adjustments?.value && period.balance_adjustments.state !== 'UNAVAILABLE') ? sumCashFlowMetrics(periods.map((period) => period.balance_adjustments ?? notAvailable)) : notAvailable },
     { label: 'Saldo acumulado', metrics: periods.map((period) => period.closing_balance ?? notAvailable), total: periods[periods.length - 1]?.closing_balance ?? notAvailable },
   ]
   const metricText = (metric?: DashboardMetric | string) => typeof metric === 'string' ? metric : !metric?.value || metric.state === 'UNAVAILABLE' ? '—' : `${formatBRL(metric.value)}${metric.state === 'PARTIAL' ? ' · Parcial' : ''}`
@@ -185,7 +214,7 @@ function CashFlowWeeklyTable({ periods }: { periods: DashboardCashFlowPeriod[] }
     const [year, month, day] = value.split('-')
     return `${day}/${month}/${year}`
   }
-  return <section className="mocap-panel mocap-cashflow-table" aria-label="Tabela semanal do fluxo de caixa"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>FLUXO DE CAIXA POR SEMANA</h2><p>Entradas e saídas da API do Bling, agrupadas no período selecionado</p></div></div></div><div className="mocap-table-scroll"><table><thead><tr><th>Período</th>{periods.map((period) => <th key={`${period.from}-${period.through}`}>{dateLabel(period.from)} a<br />{dateLabel(period.through)}</th>)}<th>Total</th></tr></thead><tbody>{rows.map((row) => <tr key={row.label}><th scope="row">{row.label}</th>{row.metrics.map((metric, index) => <td key={`${row.label}-${periods[index]?.from ?? index}`} className={isNegative(metric) ? 'mocap-negative-value' : undefined}>{metricText(metric)}</td>)}<td className={isNegative(row.total) ? 'mocap-negative-value' : undefined}>{metricText(row.total)}</td></tr>)}</tbody></table></div><p className="mocap-cashflow-table-note">Se houver mais semanas, use a barra inferior para vê-las. Saldos e ajustes sem confirmação oficial permanecem como “—”.</p></section>
+  return <section className="mocap-panel mocap-cashflow-table" aria-label="Tabela semanal do fluxo de caixa"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>FLUXO DE CAIXA POR SEMANA</h2><p>Entradas e saídas da API do Bling, agrupadas no período selecionado</p></div></div></div><div className="mocap-table-scroll"><table><thead><tr><th>Período</th>{periods.map((period) => <th key={`${period.from}-${period.through}`}>{dateLabel(period.from)} a<br />{dateLabel(period.through)}</th>)}<th>Total</th></tr></thead><tbody>{rows.map((row) => <tr key={row.label}><th scope="row">{row.label}</th>{row.metrics.map((metric, index) => <td key={`${row.label}-${periods[index]?.from ?? index}`} className={isNegative(metric) ? 'mocap-negative-value' : undefined}>{metricText(metric)}</td>)}<td className={isNegative(row.total) ? 'mocap-negative-value' : undefined}>{metricText(row.total)}</td></tr>)}</tbody></table></div><p className="mocap-cashflow-table-note">Se houver mais semanas, use a barra inferior para vê-las. Saldos sem confirmação oficial permanecem como “—”. O saldo final é calculado por saldo inicial + receitas − despesas.</p></section>
 }
 
 function metricForCard(screen: MockupScreenKey, label: string, snapshot?: DashboardSnapshot): DashboardMetric | undefined {
@@ -279,7 +308,63 @@ function EmptyChart({ title, onNavigate, cashFlow, rangeLabel }: { title: string
     const y = yValues.length > 0 ? yFor(yValues[0]) : plot.top
     return { x: Math.max(plot.left, Math.min(plot.right - 202, x + 10)), y: Math.max(plot.top + 2, Math.min(plot.bottom - 84, y - 14)) }
   }
-  return <section className="mocap-panel mocap-chart-panel"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>{title}</h2><p>{hasFlow ? (hasConfirmed ? 'Fonte: Bling' : 'Parcial · fonte: Bling') : 'Sem série confirmada'}{rangeLabel ? ` · ${rangeLabel}` : ''}</p></div></div></div><div className="mocap-chart-legend"><span className="legend-green">●</span> Entradas <span className="legend-red">●</span> Saídas <span className="legend-blue">━●</span> Saldo acumulado <span>Variação semanal</span></div><div className="mocap-chart-empty">{hasFlow ? <svg role="group" aria-label="Gráfico semanal de entradas, despesas e saldo do fluxo de caixa Bling" viewBox="0 0 680 165" preserveAspectRatio="none" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', overflow: 'visible' }}>{yTicks.map((tick) => { const y = yFor(tick); return <g key={tick}><line x1={plot.left} x2={plot.right} y1={y} y2={y} stroke={tick === 0 ? '#d8e5ef' : '#e7eff6'} strokeWidth={tick === 0 ? 2 : 1} /><text x={plot.left - 8} y={y + 4} textAnchor="end" fill="#4564b0" fontSize="10">{axisLabel(tick)}</text></g> })}<polyline points={line(inflows)} fill="none" stroke="#0a9e87" strokeWidth="2" vectorEffect="non-scaling-stroke" /><polyline points={line(plottedOutflows)} fill="none" stroke="#fa3038" strokeWidth="2" vectorEffect="non-scaling-stroke" />{hasBalanceSeries && <polyline points={line(balances)} fill="none" stroke="#2877eb" strokeWidth="2" vectorEffect="non-scaling-stroke" />}{periods.map((period, index) => { const x = xFor(index); const inflow = inflows[index]; const outflow = plottedOutflows[index]; const balance = balances[index]; const inflowVariation = shortVariation(period.inflows.value, periods[index - 1]?.inflows.value); const outflowVariation = shortVariation(period.outflows.value, periods[index - 1]?.outflows.value, true); const selected = activePeriod === index; const expenseLabel = absoluteMoneyLabel(period.outflows.value); return <g key={`${period.from}-${period.through}`} role="button" tabIndex={0} aria-label={`${shortDateRange(period)}: Despesas ${expenseLabel}${outflowVariation ? `, ${outflowVariation}` : ''}; Receitas ${moneyLabel(period.inflows.value)}${inflowVariation ? `, ${inflowVariation}` : ''}; Saldo ${moneyLabel(period.closing_balance?.value)}`} onMouseEnter={() => setHoveredPeriod(index)} onMouseLeave={() => setHoveredPeriod(undefined)} onFocus={() => setHoveredPeriod(index)} onBlur={() => setHoveredPeriod(undefined)} onClick={() => setPinnedPeriod((current) => current === index ? undefined : index)} onKeyDown={(event) => { if (event.key === 'Escape') { setPinnedPeriod(undefined); setHoveredPeriod(undefined) } else if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setPinnedPeriod((current) => current === index ? undefined : index) } }} style={{ cursor: 'pointer', outline: 'none' }}><title>{`${shortDateRange(period)} · Despesas ${expenseLabel} · Receitas ${moneyLabel(period.inflows.value)} · Saldo ${moneyLabel(period.closing_balance?.value)}`}</title><rect x={x - 13} y={plot.top} width="26" height={plot.bottom - plot.top} fill="transparent" /><text x={x} y="153" textAnchor="middle" fill="#17305b" fontSize="9">{dateLabel(period.from)}–{dateLabel(period.through)}</text>{inflow !== undefined && <circle cx={x} cy={yFor(inflow)} r={selected ? 4.5 : 3.5} fill="#0a9e87" />}{outflow !== undefined && <circle cx={x} cy={yFor(outflow)} r={selected ? 4.5 : 3.5} fill="#fa3038" />}{balance !== undefined && <circle cx={x} cy={yFor(balance)} r={selected ? 4.5 : 3.5} fill="#2877eb" />}</g>})}{activePeriod !== undefined && periods[activePeriod] && (() => { const period = periods[activePeriod]; const position = popupPosition(activePeriod); const expenseText = absoluteMoneyLabel(period.outflows.value); const incomeVariation = shortVariation(period.inflows.value, periods[activePeriod - 1]?.inflows.value); const expenseVariation = shortVariation(period.outflows.value, periods[activePeriod - 1]?.outflows.value, true); return <g className="cash-flow-chart-tooltip" pointerEvents="none" aria-hidden="true" transform={`translate(${position.x} ${position.y})`}><rect width="202" height="82" rx="2" fill="#fff" stroke="#c8c8c8" /><rect width="202" height="21" fill="#ededed" /><text x="7" y="14" fill="#555" fontSize="10" fontWeight="700">{shortDateRange(period)}</text><line x1="0" x2="202" y1="42" y2="42" stroke="#ddd" /><line x1="0" x2="202" y1="62" y2="62" stroke="#ddd" /><rect x="8" y="28" width="9" height="9" fill="#fa3038" /><text x="23" y="37" fill="#222" fontSize="10">Despesas</text><text x="194" y="37" textAnchor="end" fill="#222" fontSize="10">{expenseText}{expenseVariation ? ` · ${expenseVariation}` : ''}</text><rect x="8" y="48" width="9" height="9" fill="#2877eb" /><text x="23" y="57" fill="#222" fontSize="10">Receitas</text><text x="194" y="57" textAnchor="end" fill="#222" fontSize="10">{moneyLabel(period.inflows.value)}{incomeVariation ? ` · ${incomeVariation}` : ''}</text><rect x="8" y="68" width="9" height="9" fill="#ff9f1a" /><text x="23" y="77" fill="#222" fontSize="10">Saldo</text><text x="194" y="77" textAnchor="end" fill="#222" fontSize="10">{moneyLabel(period.closing_balance?.value)}</text></g> })()}</svg> : <span>Sem dados confirmados</span>}</div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled={!onNavigate} onClick={() => onNavigate?.('cashflow')}>Ver fluxo completo <span>→</span></button></Tooltip></section>
+  return (
+    <section className="mocap-panel mocap-chart-panel">
+      <div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>{title}</h2><p>{hasFlow ? (hasConfirmed ? 'Fonte: Bling' : 'Parcial · fonte: Bling') : 'Sem série confirmada'}{rangeLabel ? ` · ${rangeLabel}` : ''}</p></div></div></div>
+      <div className="mocap-chart-legend"><span className="legend-blue">●</span> Entradas <span className="legend-red">●</span> Saídas <span className="legend-orange">━●</span> Saldo <span>Variação semanal</span></div>
+      <div className="mocap-chart-empty">
+        {hasFlow ? (
+          <svg role="group" aria-label="Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling" viewBox="0 0 680 165" preserveAspectRatio="none" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', overflow: 'visible' }}>
+            {yTicks.map((tick) => {
+              const y = yFor(tick)
+              return <g key={tick}><line x1={plot.left} x2={plot.right} y1={y} y2={y} stroke={tick === 0 ? '#d8e5ef' : '#e7eff6'} strokeWidth={tick === 0 ? 2 : 1} /><text x={plot.left - 8} y={y + 4} textAnchor="end" fill={tick < 0 ? '#d93025' : '#4564b0'} fontSize="10">{axisLabel(tick)}</text></g>
+            })}
+            <polyline points={line(inflows)} fill="none" stroke="#2877eb" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            <polyline points={line(plottedOutflows)} fill="none" stroke="#fa3038" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            {hasBalanceSeries && <polyline points={line(balances)} fill="none" stroke="#ff9f1a" strokeWidth="2" vectorEffect="non-scaling-stroke" />}
+            {periods.map((period, index) => {
+              const x = xFor(index)
+              const inflow = inflows[index]
+              const outflow = plottedOutflows[index]
+              const balance = balances[index]
+              const inflowVariation = shortVariation(period.inflows.value, periods[index - 1]?.inflows.value)
+              const outflowVariation = shortVariation(period.outflows.value, periods[index - 1]?.outflows.value, true)
+              const selected = activePeriod === index
+              const expenseLabel = absoluteMoneyLabel(period.outflows.value)
+              const pointLabel = `${shortDateRange(period)}: Despesas ${expenseLabel}${outflowVariation ? `, ${outflowVariation}` : ''}; Receitas ${moneyLabel(period.inflows.value)}${inflowVariation ? `, ${inflowVariation}` : ''}; Saldo ${moneyLabel(period.closing_balance?.value)}`
+              return (
+                <g key={`${period.from}-${period.through}`} role="button" tabIndex={0} aria-label={pointLabel} onMouseEnter={() => setHoveredPeriod(index)} onMouseLeave={() => setHoveredPeriod(undefined)} onFocus={() => setHoveredPeriod(index)} onBlur={() => setHoveredPeriod(undefined)} onClick={() => setPinnedPeriod((current) => current === index ? undefined : index)} onKeyDown={(event) => { if (event.key === 'Escape') { setPinnedPeriod(undefined); setHoveredPeriod(undefined) } else if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setPinnedPeriod((current) => current === index ? undefined : index) } }} style={{ cursor: 'pointer', outline: 'none' }}>
+                  <title>{`${shortDateRange(period)} · Despesas ${expenseLabel} · Receitas ${moneyLabel(period.inflows.value)} · Saldo ${moneyLabel(period.closing_balance?.value)}`}</title>
+                  <rect x={x - 13} y={plot.top} width="26" height={plot.bottom - plot.top} fill="transparent" />
+                  <text x={x} y="153" textAnchor="middle" fill="#17305b" fontSize="9">{dateLabel(period.from)}–{dateLabel(period.through)}</text>
+                  {inflow !== undefined && <circle cx={x} cy={yFor(inflow)} r={selected ? 4.5 : 3.5} fill="#2877eb" />}
+                  {outflow !== undefined && <circle cx={x} cy={yFor(outflow)} r={selected ? 4.5 : 3.5} fill="#fa3038" />}
+                  {balance !== undefined && <circle cx={x} cy={yFor(balance)} r={selected ? 4.5 : 3.5} fill={balance < 0 ? '#d93025' : '#ff9f1a'} />}
+                </g>
+              )
+            })}
+            {activePeriod !== undefined && periods[activePeriod] && (() => {
+              const period = periods[activePeriod]
+              const position = popupPosition(activePeriod)
+              const expenseText = absoluteMoneyLabel(period.outflows.value)
+              const incomeVariation = shortVariation(period.inflows.value, periods[activePeriod - 1]?.inflows.value)
+              const expenseVariation = shortVariation(period.outflows.value, periods[activePeriod - 1]?.outflows.value, true)
+              const closingBalanceValue = value(period.closing_balance?.value)
+              return (
+                <g className="cash-flow-chart-tooltip" pointerEvents="none" aria-hidden="true" transform={`translate(${position.x} ${position.y})`}>
+                  <rect width="202" height="82" rx="2" fill="#fff" stroke="#c8c8c8" /><rect width="202" height="21" fill="#ededed" />
+                  <text x="7" y="14" fill="#555" fontSize="10" fontWeight="700">{shortDateRange(period)}</text><line x1="0" x2="202" y1="42" y2="42" stroke="#ddd" /><line x1="0" x2="202" y1="62" y2="62" stroke="#ddd" />
+                  <rect x="8" y="28" width="9" height="9" fill="#fa3038" /><text x="23" y="37" fill="#222" fontSize="10">Despesas</text><text x="194" y="37" textAnchor="end" fill="#d93025" fontSize="10">{expenseText}{expenseVariation ? ` · ${expenseVariation}` : ''}</text>
+                  <rect x="8" y="48" width="9" height="9" fill="#2877eb" /><text x="23" y="57" fill="#222" fontSize="10">Receitas</text><text x="194" y="57" textAnchor="end" fill={value(period.inflows.value) !== undefined && value(period.inflows.value)! < 0 ? '#d93025' : '#222'} fontSize="10">{moneyLabel(period.inflows.value)}{incomeVariation ? ` · ${incomeVariation}` : ''}</text>
+                  <rect x="8" y="68" width="9" height="9" fill={closingBalanceValue !== undefined && closingBalanceValue < 0 ? '#d93025' : '#ff9f1a'} /><text x="23" y="77" fill="#222" fontSize="10">Saldo</text><text x="194" y="77" textAnchor="end" fill={closingBalanceValue !== undefined && closingBalanceValue < 0 ? '#d93025' : '#222'} fontSize="10">{moneyLabel(period.closing_balance?.value)}</text>
+                </g>
+              )
+            })()}
+          </svg>
+        ) : <span>Sem dados confirmados</span>}
+      </div>
+    </section>
+  )
 }
 
 function EmptyDistribution({ title, subtitle, onNavigate, emptyMessage = 'Sem dados', items, bankBalances = [] }: { title: string; subtitle: string; onNavigate?: (screen: MockupScreenKey) => void; emptyMessage?: string; items?: string[]; bankBalances?: DashboardBankBalance[] }) {
@@ -312,7 +397,7 @@ function criticalWeekMetric(metric?: DashboardMetric): string {
 
 function EmptyCriticalPanel({ title, subtitle, cashFlow }: { title: string; subtitle: string; cashFlow?: DashboardSnapshot['cash_flow'] }) {
   const week = cashFlow?.critical_week
-  return <section className="mocap-panel mocap-critical-panel"><div className="mocap-panel-heading"><div><Icon icon="clock" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div><div className="mocap-critical-grid"><div><Icon icon="calendar" /><span>Período</span><strong>{formatCashFlowPeriod(week)}</strong></div><div><Icon icon="trend" /><span>Saídas</span><strong className={week?.outflows.value && /^\s*[−-]/.test(week.outflows.value) ? 'mocap-negative-value' : undefined}>{criticalWeekMetric(week?.outflows)}</strong></div><div><Icon icon="trend" /><span>Entradas</span><strong>{criticalWeekMetric(week?.inflows)}</strong></div><div><Icon icon="money" /><span>Reserva mínima</span><strong>{formatBRL(APPROVED_MINIMUM_RESERVE)}</strong></div></div><div className="mocap-critical-warning"><Icon icon="warning" />Posição de caixa da semana: <b>SEM DADOS</b></div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled>Ver detalhes <span>→</span></button></Tooltip></section>
+  return <section className="mocap-panel mocap-critical-panel"><div className="mocap-panel-heading"><div><Icon icon="clock" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div><div className="mocap-critical-grid"><div><Icon icon="calendar" /><span>Período</span><strong>{formatCashFlowPeriod(week)}</strong></div><div><Icon icon="trend" /><span>Saídas</span><strong className={week?.outflows.value && /^\s*[−-]/.test(week.outflows.value) ? 'mocap-negative-value' : undefined}>{criticalWeekMetric(week?.outflows)}</strong></div><div><Icon icon="trend" /><span>Entradas</span><strong className={week?.inflows.value && /^\s*[−-]/.test(week.inflows.value) ? 'mocap-negative-value' : undefined}>{criticalWeekMetric(week?.inflows)}</strong></div><div><Icon icon="money" /><span>Reserva mínima</span><strong>{formatBRL(APPROVED_MINIMUM_RESERVE)}</strong></div></div></section>
 }
 
 function EmptyCalculationPanel({ title, subtitle }: { title: string; subtitle: string }) {
@@ -426,7 +511,7 @@ function executiveCardTarget(label: string): MockupScreenKey | undefined {
 }
 
 function AlertPanel({ messages, screen, onNavigate, title = 'ALERTAS IMPORTANTES', subtitles = [], hideActions = false }: { messages: string[]; screen: MockupScreenKey; onNavigate?: (screen: MockupScreenKey) => void; title?: string; subtitles?: string[]; hideActions?: boolean }) {
-  return <section className="mocap-alerts"><div className="mocap-alerts-heading"><Icon icon="warning" /><h2>{title}</h2></div><div className={`mocap-alert-grid ${screen === 'purchases' ? 'mocap-alert-grid-purchases' : ''}`}>{messages.map((message, index) => {
+  return <section className={`mocap-alerts${screen === 'cashflow' ? ' mocap-alerts-cashflow' : ''}`}><div className="mocap-alerts-heading"><Icon icon="warning" /><h2>{title}</h2></div><div className={`mocap-alert-grid ${screen === 'purchases' ? 'mocap-alert-grid-purchases' : ''}`}>{messages.map((message, index) => {
     const action = screen === 'executive' ? executiveAlertAction(message) : index === 0 ? { screen: 'integrations' as const, label: 'Ir para Integrações' } : undefined
     return <article key={message} className={`mocap-alert alert-${index % 4}`}><div className="mocap-alert-icon"><Icon icon={index === 0 ? 'warning' : index === 1 ? 'document' : index === 2 ? 'clock' : 'refresh'} /></div><div><strong>{message}</strong><span>{subtitles[index] ?? 'Sem dados confirmados'}</span>{!hideActions && <Tooltip id={screen === 'executive' ? 'metric.details' : 'notice.integrations'}><button type="button" disabled={!onNavigate || !action} aria-label={action ? `${action.label}: ${message}` : undefined} onClick={action && onNavigate ? () => onNavigate(action.screen) : undefined}>{action?.label ?? 'Ver detalhes'} <span>→</span></button></Tooltip>}</div></article>
   })}</div></section>

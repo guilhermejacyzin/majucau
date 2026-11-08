@@ -260,11 +260,13 @@ type DashboardCashFlowDay struct {
 // separate current bank-balance card. It is omitted until its opening balance
 // and adjustments are sourced and validated.
 type DashboardCashFlowPeriod struct {
-	From           string           `json:"from"`
-	Through        string           `json:"through"`
-	Inflows        DashboardMetric  `json:"inflows"`
-	Outflows       DashboardMetric  `json:"outflows"`
-	ClosingBalance *DashboardMetric `json:"closing_balance,omitempty"`
+	From               string           `json:"from"`
+	Through            string           `json:"through"`
+	Inflows            DashboardMetric  `json:"inflows"`
+	Outflows           DashboardMetric  `json:"outflows"`
+	OpeningBalance     *DashboardMetric `json:"opening_balance,omitempty"`
+	BalanceAdjustments *DashboardMetric `json:"balance_adjustments,omitempty"`
+	ClosingBalance     *DashboardMetric `json:"closing_balance,omitempty"`
 }
 
 type DashboardCashFlow struct {

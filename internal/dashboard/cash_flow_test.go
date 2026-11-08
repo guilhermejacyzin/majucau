@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	"majucau.local/financial-intelligence/internal/application"
 )
@@ -35,6 +36,28 @@ func TestGroupCashFlowReportWeeksUsesBlingWeekBoundariesAndExactValues(t *testin
 		if period.Inflows.State != "PARTIAL" || period.Outflows.State != "PARTIAL" {
 			t.Fatalf("partial source state was lost: %+v", period)
 		}
+	}
+}
+
+func TestApplyBlingCashFlowFloatMovesSourceToNextCalendarDay(t *testing.T) {
+	source := time.Date(2026, time.November, 21, 0, 0, 0, 0, time.UTC)
+	got := applyBlingCashFlowFloat(source)
+	want := time.Date(2026, time.November, 22, 0, 0, 0, 0, time.UTC)
+	if !got.Equal(want) {
+		t.Fatalf("applyBlingCashFlowFloat(%s) = %s, want %s", source.Format(time.DateOnly), got.Format(time.DateOnly), want.Format(time.DateOnly))
+	}
+}
+
+func TestRecordedCashMovementKeepsItsActualDateWhileForecastUsesFloat(t *testing.T) {
+	source := time.Date(2026, time.November, 6, 0, 0, 0, 0, time.UTC)
+	recorded := blingCashFlowReportDate("MOVEMENT", source)
+	if !recorded.Equal(source) {
+		t.Fatalf("recorded movement date = %s, want actual date %s", recorded.Format(time.DateOnly), source.Format(time.DateOnly))
+	}
+	wantForecast := time.Date(2026, time.November, 7, 0, 0, 0, 0, time.UTC)
+	forecast := blingCashFlowReportDate("PAYABLE", source)
+	if !forecast.Equal(wantForecast) {
+		t.Fatalf("forecast date = %s, want effective float date %s", forecast.Format(time.DateOnly), wantForecast.Format(time.DateOnly))
 	}
 }
 

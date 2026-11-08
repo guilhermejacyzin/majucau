@@ -321,6 +321,8 @@ export namespace application {
 	    through: string;
 	    inflows: DashboardMetric;
 	    outflows: DashboardMetric;
+	    opening_balance?: DashboardMetric;
+	    balance_adjustments?: DashboardMetric;
 	    closing_balance?: DashboardMetric;
 	
 	    static createFrom(source: any = {}) {
@@ -333,6 +335,8 @@ export namespace application {
 	        this.through = source["through"];
 	        this.inflows = this.convertValues(source["inflows"], DashboardMetric);
 	        this.outflows = this.convertValues(source["outflows"], DashboardMetric);
+	        this.opening_balance = this.convertValues(source["opening_balance"], DashboardMetric);
+	        this.balance_adjustments = this.convertValues(source["balance_adjustments"], DashboardMetric);
 	        this.closing_balance = this.convertValues(source["closing_balance"], DashboardMetric);
 	    }
 	

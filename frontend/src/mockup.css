@@ -169,6 +169,19 @@ body { background: #fff; }
 .mocap-minimum-values { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; margin-top: 7px; }.mocap-minimum-values > div { display: grid; gap: 3px; min-width: 0; }.mocap-minimum-values strong { color: var(--mocap-navy); font-size: 11px; }.mocap-minimum-values b { color: var(--mocap-navy); font-size: 17px; line-height: 1; }.mocap-minimum-values span,.mocap-minimum-values small { color: #4564b0; font-size: 9px; white-space: nowrap; }.mocap-minimum-values small { color: #0b998b; }
 .tone-green .mocap-card-icon { color: #059d86; background: #dbf5ee; }.tone-blue .mocap-card-icon { color: #0869ef; background: #e0f3fb; }.tone-orange .mocap-card-icon { color: #fa8a00; background: #fff1e1; }.tone-red .mocap-card-icon { color: #ed3039; background: #ffe5e6; }.tone-purple .mocap-card-icon { color: #7938df; background: #f0e8ff; }
 .mocap-middle { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(360px,.85fr); gap: 10px; margin-bottom: 15px; }
+.mocap-period-controls { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; padding: 10px 16px; border: 1px solid var(--mocap-border); border-radius: 8px; background: #fff; color: var(--mocap-navy); }
+.mocap-period-controls h2 { margin: 0; font-size: 14px; white-space: nowrap; }
+.mocap-period-controls label { display: flex; align-items: center; gap: 7px; color: #4564b0; font-size: 12px; }
+.mocap-period-controls input { min-height: 34px; padding: 5px 8px; border: 1px solid #dce9f5; border-radius: 5px; color: var(--mocap-navy); font: inherit; }
+.mocap-period-controls > span { margin-left: auto; color: #4564b0; font-size: 12px; }
+.mocap-cashflow-table { margin-bottom: 15px; }
+.mocap-cashflow-table .mocap-table-scroll { margin-top: 14px; }
+.mocap-cashflow-table table { min-width: 760px; }
+.mocap-cashflow-table th:first-child { min-width: 145px; }
+.mocap-cashflow-table tbody th { padding: 10px 8px; border: 1px solid #dce9f5; background: #f2f7fc; text-align: left; white-space: nowrap; }
+.mocap-cashflow-table tbody tr:nth-child(2),.mocap-cashflow-table tbody tr:nth-child(3),.mocap-cashflow-table tbody tr:nth-child(5) { font-weight: 800; }
+.mocap-cashflow-table td { padding: 10px 8px; white-space: nowrap; }
+.mocap-cashflow-table-note { margin: 0 0 4px; color: #6b7fae; font-size: 11px; }
 .mocap-panel { min-width: 0; min-height: 400px; padding: 18px 17px 13px; border: 1px solid var(--mocap-border); border-radius: 9px; background: #fff; }
 .mocap-panel-heading > div { display: flex; align-items: flex-start; gap: 12px; }.mocap-panel-heading > div > .mocap-icon { width: 34px; height: 34px; color: var(--mocap-teal); }.mocap-panel-heading h2 { margin: 2px 0 2px; color: var(--mocap-navy); font-size: 18px; line-height: 1.1; }.mocap-panel-heading p { margin: 0; color: #4564b0; font-size: 15px; }
 .mocap-chart-legend { display: flex; gap: 16px; align-items: center; justify-content: center; margin-top: 24px; color: #3154a1; font-size: 13px; }.legend-green { color: #0a9e87; font-size: 24px; vertical-align: -2px; }.legend-red { color: #fa3038; font-size: 24px; vertical-align: -2px; }.legend-blue { color: #1f70ee; font-size: 24px; vertical-align: -2px; }
@@ -184,7 +197,7 @@ body { background: #fff; }
 .mocap-page button:disabled { cursor: not-allowed; opacity: .82; }.mocap-page .tooltip { display: inline-flex; }.mocap-page .tooltip > button:focus-visible,.mocap-page .tooltip > span:focus-visible { outline: 2px solid #1eb8d0; outline-offset: 3px; }
 .mocap-market-lower > .mocap-alerts .mocap-alert-grid-purchases { grid-template-columns: minmax(0,1fr); }
 @media (max-width: 1220px) { .mocap-header { display: block; }.mocap-header-actions { justify-content: flex-end; margin-top: 17px; }.mocap-middle { grid-template-columns: 1fr; }.mocap-top-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }.mocap-lower-cards { grid-template-columns: repeat(3,minmax(0,1fr)); }.mocap-dre-lower-cards { grid-template-columns: repeat(3,minmax(0,1fr)); }.mocap-alert-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-@media (max-width: 760px) { .app-shell { display: block; }.mocap-sidebar { width: 100%; min-height: auto; max-height: 235px; overflow: hidden; }.mocap-people { height: 120px; background-size: 1000px auto; }.mocap-nav { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); max-height: 98px; overflow: auto; }.mocap-nav-section { display: none; }.mocap-nav-item { min-height: 34px; font-size: 12px; }.main-area { width: 100%; }.mocap-page { padding: 17px 12px; }.mocap-top-cards,.mocap-lower-cards,.mocap-alert-grid { grid-template-columns: 1fr; }.mocap-header-actions { align-items: stretch; flex-wrap: wrap; }.mocap-sync { width: 100%; }.mocap-donut-wrap { flex-direction: column; }.mocap-donut { width: 180px; height: 180px; flex-basis: 180px; }.mocap-right-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .app-shell { display: block; }.mocap-sidebar { width: 100%; min-height: auto; max-height: 235px; overflow: hidden; }.mocap-people { height: 120px; background-size: 1000px auto; }.mocap-nav { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); max-height: 98px; overflow: auto; }.mocap-nav-section { display: none; }.mocap-nav-item { min-height: 34px; font-size: 12px; }.main-area { width: 100%; }.mocap-page { padding: 17px 12px; }.mocap-top-cards,.mocap-lower-cards,.mocap-alert-grid { grid-template-columns: 1fr; }.mocap-header-actions { align-items: stretch; flex-wrap: wrap; }.mocap-sync { width: 100%; }.mocap-donut-wrap { flex-direction: column; }.mocap-donut { width: 180px; height: 180px; flex-basis: 180px; }.mocap-right-grid { grid-template-columns: 1fr; }.mocap-period-controls { align-items: stretch; flex-direction: column; gap: 8px; }.mocap-period-controls > span { margin-left: 0; } }
 
 /* Variações que existem nos mocaps específicos, mantendo a mesma linguagem visual. */
 .mocap-critical-panel,.mocap-calculation-panel,.mocap-rules-panel,.mocap-market-panel,.mocap-risk-panel,.mocap-metadata-panel { min-height: 400px; }
@@ -197,3 +210,51 @@ body { background: #fff; }
 .mocap-impact-panel,.mocap-purchase-panel { min-height: 215px; margin-bottom: 15px; }.mocap-impact-panel .mocap-table-scroll,.mocap-purchase-panel .mocap-table-scroll { margin-top: 17px; }.mocap-purchase-panel .mocap-panel-heading { display: flex; justify-content: space-between; gap: 15px; }.mocap-table-actions { display: flex; gap: 7px; align-items: flex-start; }.mocap-table-actions button { height: 37px; padding: 0 10px; border: 1px solid #a8dce8; border-radius: 7px; color: #0873bd; background: #fff; font-size: 11px; white-space: nowrap; }.mocap-table-actions button:last-child { border-color: #087f83; color: #fff; background: #087f83; }.mocap-market-lower { display: grid; grid-template-columns: 1.2fr 1fr 1.15fr; gap: 10px; margin-bottom: 15px; }.mocap-market-lower > .mocap-panel { min-height: 300px; }.mocap-market-lower > .mocap-alerts { min-height: 300px; }.mocap-market-lower .mocap-chart-empty { height: 155px; }.mocap-market-lower .mocap-donut-wrap { min-height: 200px; padding: 8px; }.mocap-market-lower .mocap-donut { width: 145px; height: 145px; flex-basis: 145px; border-width: 18px; }.mocap-market-lower .mocap-legend-list { gap: 8px; font-size: 10px; }
 @media (max-width: 1220px) { .mocap-market-grid { grid-template-columns: repeat(2,1fr); }.mocap-market-lower { grid-template-columns: 1fr; }.mocap-purchase-panel .mocap-panel-heading { display: block; }.mocap-table-actions { margin-top: 12px; flex-wrap: wrap; } }
 @media (max-width: 760px) { .mocap-critical-grid,.mocap-rules-grid { grid-template-columns: 1fr; }.mocap-market-grid { grid-template-columns: 1fr; }.mocap-risk-gauge { flex-direction: column; align-items: flex-start; }.mocap-market-lower { grid-template-columns: 1fr; } }
+
+/* T02: relatório compacto em tabela, seguindo a leitura semanal do Bling. */
+.mocap-page-cashflow { padding: 20px 18px 22px; }
+.mocap-page-cashflow .mocap-header { margin-bottom: 16px; }
+.mocap-page-cashflow .mocap-number { font-size: 40px; }
+.mocap-page-cashflow .mocap-heading h1 { font-size: 26px; }
+.mocap-page-cashflow .mocap-heading p { font-size: 14px; }
+.mocap-page-cashflow .mocap-top-cards { gap: 9px; margin-bottom: 10px; }
+.mocap-page-cashflow .mocap-card { min-height: 112px; gap: 9px; padding: 12px 11px; }
+.mocap-page-cashflow .mocap-card-icon { width: 46px; height: 46px; flex-basis: 46px; }
+.mocap-page-cashflow .mocap-card-icon .mocap-icon { width: 25px; height: 25px; }
+.mocap-page-cashflow .mocap-card-label { font-size: 10px; }
+.mocap-page-cashflow .mocap-empty-value { margin-top: 3px; font-size: 19px; }
+.mocap-page-cashflow .mocap-card-support { margin-top: 4px; font-size: 10px; }
+.mocap-page-cashflow .mocap-card-period-line { font-size: 10px; }
+.mocap-page-cashflow .mocap-period-controls { gap: 11px; margin-bottom: 9px; padding: 8px 11px; }
+.mocap-page-cashflow .mocap-period-controls h2 { font-size: 12px; }
+.mocap-page-cashflow .mocap-period-controls label { font-size: 10px; }
+.mocap-page-cashflow .mocap-period-controls input { min-height: 29px; font-size: 11px; }
+.mocap-page-cashflow .mocap-period-controls > span { font-size: 10px; }
+.mocap-page-cashflow .mocap-middle { grid-template-columns: minmax(0,1fr); gap: 8px; margin-bottom: 10px; }
+.mocap-page-cashflow .mocap-panel { min-height: 0; padding: 12px 13px 10px; border-radius: 7px; }
+.mocap-page-cashflow .mocap-panel-heading > div { gap: 8px; }
+.mocap-page-cashflow .mocap-panel-heading > div > .mocap-icon { width: 25px; height: 25px; }
+.mocap-page-cashflow .mocap-panel-heading h2 { font-size: 13px; }
+.mocap-page-cashflow .mocap-panel-heading p { font-size: 10px; }
+.mocap-page-cashflow .mocap-cashflow-table { margin-bottom: 0; }
+.mocap-page-cashflow .mocap-cashflow-table .mocap-table-scroll { max-height: 360px; margin: 9px 0 7px; overflow: auto; }
+.mocap-page-cashflow .mocap-cashflow-table table { width: 100%; min-width: 860px; border-collapse: collapse; color: #17305b; font-size: 10px; }
+.mocap-page-cashflow .mocap-cashflow-table thead { position: sticky; top: 0; z-index: 2; }
+.mocap-page-cashflow .mocap-cashflow-table th { padding: 6px 7px; border: 1px solid #dce5ee; background: #eef2f6; text-align: right; font-size: 9px; line-height: 1.2; white-space: nowrap; }
+.mocap-page-cashflow .mocap-cashflow-table th:first-child { min-width: 132px; text-align: left; }
+.mocap-page-cashflow .mocap-cashflow-table thead th:first-child { position: sticky; left: 0; z-index: 3; }
+.mocap-page-cashflow .mocap-cashflow-table tbody th { position: sticky; left: 0; z-index: 1; padding: 6px 7px; background: #eef2f6; }
+.mocap-page-cashflow .mocap-cashflow-table td { padding: 6px 7px; border: 1px solid #e0e7ef; text-align: right; font-size: 10px; white-space: nowrap; }
+.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(2),.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(4),.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(7) { font-weight: 700; }
+.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(3),.mocap-page-cashflow .mocap-cashflow-table tbody tr:nth-child(5) { color: #667b9b; font-size: 9px; }
+.mocap-page-cashflow .mocap-cashflow-table-note { margin: 0; font-size: 9px; }
+.mocap-page-cashflow .mocap-critical-panel { min-height: 0; }
+.mocap-page-cashflow .mocap-critical-grid { gap: 6px; margin: 10px 0 8px; }
+.mocap-page-cashflow .mocap-critical-grid > div { grid-template-columns: 28px 1fr; min-height: 54px; padding: 6px; }
+.mocap-page-cashflow .mocap-critical-grid .mocap-icon { width: 22px; height: 22px; }
+.mocap-page-cashflow .mocap-critical-grid span { font-size: 9px; }
+.mocap-page-cashflow .mocap-critical-grid strong { font-size: 12px; }
+.mocap-page-cashflow .mocap-critical-warning { min-height: 36px; padding: 6px 8px; font-size: 10px; }
+.mocap-page-cashflow .mocap-critical-warning .mocap-icon { width: 19px; height: 19px; }
+@media (max-width: 1220px) { .mocap-page-cashflow .mocap-top-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }.mocap-page-cashflow .mocap-cashflow-table table { min-width: 570px; table-layout: fixed; }.mocap-page-cashflow .mocap-cashflow-table th:first-child { width: 110px; min-width: 110px; }.mocap-page-cashflow .mocap-cashflow-table th,.mocap-page-cashflow .mocap-cashflow-table td { white-space: normal; overflow-wrap: anywhere; } }
+@media (max-width: 760px) { .mocap-page-cashflow { padding: 14px 9px; }.mocap-page-cashflow .mocap-top-cards { grid-template-columns: 1fr; }.mocap-page-cashflow .mocap-period-controls { flex-direction: row; flex-wrap: wrap; align-items: center; }.mocap-page-cashflow .mocap-period-controls > span { width: 100%; margin-left: 0; }.mocap-page-cashflow .mocap-cashflow-table table { min-width: 760px; } }

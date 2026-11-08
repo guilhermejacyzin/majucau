@@ -24,7 +24,7 @@ export type DashboardReceivableRow = { customer?: string; origin: string; due_da
 export type DashboardPayableRow = { supplier?: string; document?: string; due_date: string; value: string; category?: string; status: string }
 export type DashboardBankBalance = { account: string; value: string }
 export type DashboardCashFlowDay = { date: string; inflows: DashboardMetric; outflows: DashboardMetric }
-export type DashboardCashFlowPeriod = { from: string; through: string; inflows: DashboardMetric; outflows: DashboardMetric; closing_balance?: DashboardMetric }
+export type DashboardCashFlowPeriod = { from: string; through: string; inflows: DashboardMetric; outflows: DashboardMetric; opening_balance?: DashboardMetric; balance_adjustments?: DashboardMetric; closing_balance?: DashboardMetric }
 export type DashboardCashFlow = { inflows_next_30_days: DashboardMetric; outflows_next_30_days: DashboardMetric; inflows_next_60_days: DashboardMetric; outflows_next_60_days: DashboardMetric; days?: DashboardCashFlowDay[]; periods?: DashboardCashFlowPeriod[]; critical_week?: DashboardCashFlowPeriod }
 export type DashboardSnapshot = {
   as_of: string
@@ -203,7 +203,7 @@ function isDashboardBankBalance(value: unknown): value is DashboardBankBalance {
 function isDashboardCashFlowPeriod(value: unknown): value is DashboardCashFlowPeriod {
   if (!value || typeof value !== 'object') return false
   const period = value as Partial<DashboardCashFlowPeriod>
-  return typeof period.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(period.from) && typeof period.through === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(period.through) && isDashboardMetric(period.inflows) && isDashboardMetric(period.outflows) && (period.closing_balance === undefined || isDashboardMetric(period.closing_balance))
+  return typeof period.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(period.from) && typeof period.through === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(period.through) && isDashboardMetric(period.inflows) && isDashboardMetric(period.outflows) && (period.opening_balance === undefined || isDashboardMetric(period.opening_balance)) && (period.balance_adjustments === undefined || isDashboardMetric(period.balance_adjustments)) && (period.closing_balance === undefined || isDashboardMetric(period.closing_balance))
 }
 
 function isDashboardCashFlow(value: unknown): value is DashboardCashFlow {

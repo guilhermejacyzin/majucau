@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { DashboardSnapshot } from './bootstrap'
@@ -127,11 +127,11 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(screen.getByText('SAÍDAS').closest('article')).not.toHaveTextContent('80,00')
   })
 
-  it('mostra uma legenda curta por semana ao passar o mouse ou clicar no ponto do gráfico', async () => {
+  it('mostra o relatório semanal em tabela e preserva o gráfico agregado da visão executiva', () => {
     const unavailable = { state: 'UNAVAILABLE' as const }
     const partial = { state: 'PARTIAL' as const, source_system: 'BLING' }
     const snapshot: DashboardSnapshot = {
-      as_of: '2026-11-03T12:00:00Z',
+      as_of: '2026-11-07T12:00:00Z',
       data_state: 'PARTIAL',
       receivables: unavailable,
       future_b2c: unavailable,
@@ -148,18 +148,19 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
         inflows_next_60_days: { ...partial, value: '3250.0000' },
         outflows_next_60_days: { ...partial, value: '-1800.0000' },
         days: [
-          { date: '2026-11-03', inflows: { ...partial, value: '500.0000' }, outflows: { ...partial, value: '-200.0000' } },
-          { date: '2026-11-04', inflows: { ...partial, value: '750.0000' }, outflows: { ...partial, value: '-600.0000' } },
+          ...['2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06'].map((date) => ({ date, inflows: { ...partial, value: '0.0000' }, outflows: { ...partial, value: '0.0000' } })),
+          { date: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' } },
+          { date: '2026-11-08', inflows: { ...partial, value: '1500.0000' }, outflows: { ...partial, value: '-600.0000' } },
+          ...['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14'].map((date) => ({ date, inflows: { ...partial, value: '0.0000' }, outflows: { ...partial, value: '0.0000' } })),
         ],
         periods: [
-          { from: '2026-11-03', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' }, closing_balance: { ...partial, value: '-83776.1500' } },
+          { from: '2026-11-07', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' }, closing_balance: { ...partial, value: '-83776.1500' } },
           { from: '2026-11-08', through: '2026-11-14', inflows: { ...partial, value: '1500.0000' }, outflows: { ...partial, value: '-600.0000' }, closing_balance: { ...partial, value: '-76683.2000' } },
         ],
-        critical_week: { from: '2026-11-03', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' } },
+        critical_week: { from: '2026-11-07', through: '2026-11-07', inflows: { ...partial, value: '1250.0000' }, outflows: { ...partial, value: '-800.0000' } },
       },
     }
 
-    const user = userEvent.setup()
     const { rerender } = render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
     expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('30 dias')
     expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('R$ 1.250,00 · Parcial')
@@ -167,26 +168,17 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('R$ 3.250,00 · Parcial')
     expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('-R$ 800,00 · Parcial')
     expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('-R$ 1.800,00 · Parcial')
-    const flowChart = screen.getByRole('group', { name: 'Gráfico semanal de entradas, despesas e saldo do fluxo de caixa Bling' })
-    expect(flowChart).toBeInTheDocument()
-    expect(flowChart).toHaveTextContent('R$ 84 mil')
-    expect(flowChart).toHaveTextContent('-R$ 84 mil')
-    expect(flowChart).toHaveTextContent('08/11–14/11')
-    const weekPoint = screen.getByRole('button', { name: /08\/11\/2026 a 14\/11\/2026/ })
-    await user.hover(weekPoint)
-    const hoverTooltip = document.querySelector('.cash-flow-chart-tooltip') as SVGGElement
-    expect(hoverTooltip).toHaveTextContent('08/11/2026 a 14/11/2026')
-    expect(hoverTooltip).toHaveTextContent('DespesasR$ 600,00 · −25,0%')
-    await user.unhover(weekPoint)
-    await user.click(weekPoint)
-    const weekTooltip = document.querySelector('.cash-flow-chart-tooltip') as SVGGElement
-    expect(weekTooltip).toHaveTextContent('08/11/2026 a 14/11/2026')
-    expect(weekTooltip).toHaveTextContent('DespesasR$ 600,00 · −25,0%')
-    expect(weekTooltip).toHaveTextContent('ReceitasR$ 1.500,00 · +20,0%')
-    expect(weekTooltip).toHaveTextContent('Saldo-R$ 76.683,20')
-    expect(screen.getAllByText('03/11–07/11')).toHaveLength(2)
+    const weeklyTable = screen.getByRole('region', { name: 'Tabela semanal do fluxo de caixa' })
+    expect(weeklyTable).toHaveTextContent(/07\/11\/2026 a\s*07\/11\/2026/)
+    expect(weeklyTable).toHaveTextContent(/08\/11\/2026 a\s*14\/11\/2026/)
+    expect(weeklyTable).toHaveTextContent('R$ 1.250,00 · Parcial')
+    expect(weeklyTable).toHaveTextContent('R$ 1.500,00 · Parcial')
+    expect(weeklyTable).toHaveTextContent('−25,0%')
+    expect(weeklyTable).toHaveTextContent('+20,0%')
+    expect(screen.queryByRole('group', { name: 'Gráfico semanal de entradas, despesas e saldo do fluxo de caixa Bling' })).not.toBeInTheDocument()
+    expect(screen.getAllByText('07/11–07/11')).toHaveLength(1)
     const criticalWeek = screen.getByRole('heading', { name: 'SEMANA CRÍTICA' }).closest('section')
-    expect(criticalWeek).toHaveTextContent('03/11–07/11')
+    expect(criticalWeek).toHaveTextContent('07/11–07/11')
     expect(criticalWeek).toHaveTextContent('-R$ 800,00 · Parcial')
     expect(criticalWeek).toHaveTextContent('R$ 1.250,00 · Parcial')
     expect(screen.getByText('Reserva mínima').parentElement).toHaveTextContent('R$ 50.000,00')
@@ -197,6 +189,59 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
 
     rerender(<MockupDashboard screen="executive" snapshot={snapshot} />)
     expect(screen.getByRole('group', { name: 'Gráfico semanal de entradas, despesas e saldo do fluxo de caixa Bling' })).toBeInTheDocument()
+  })
+
+  it('filtra a tabela e a semana crítica pelo período escolhido sem recalcular com ponto flutuante', () => {
+    const unavailable = { state: 'UNAVAILABLE' as const }
+    const partial = { state: 'PARTIAL' as const, source_system: 'BLING' }
+    const days = Array.from({ length: 8 }, (_, index) => {
+      const date = new Date(Date.UTC(2026, 10, 7 + index)).toISOString().slice(0, 10)
+      const inflows = date === '2026-11-08' ? '1.2000' : date === '2026-11-13' ? '2.3000' : '0.0000'
+      const outflows = date === '2026-11-10' ? '-0.0500' : date === '2026-11-08' ? '-0.2000' : '0.0000'
+      return { date, inflows: { ...partial, value: inflows }, outflows: { ...partial, value: outflows } }
+    })
+    const snapshot: DashboardSnapshot = {
+      as_of: '2026-11-07T12:00:00Z',
+      data_state: 'PARTIAL',
+      receivables: unavailable,
+      future_b2c: unavailable,
+      receipts_month: unavailable,
+      receivables_overdue: unavailable,
+      payables: unavailable,
+      payables_due_today: unavailable,
+      payables_overdue: unavailable,
+      payables_due_next_7_days: unavailable,
+      payments_month: unavailable,
+      cash_flow: {
+        inflows_next_30_days: unavailable,
+        outflows_next_30_days: unavailable,
+        inflows_next_60_days: unavailable,
+        outflows_next_60_days: unavailable,
+        days,
+      },
+    }
+    render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
+
+    expect(screen.getByRole('heading', { name: 'FLUXO DE CAIXA POR SEMANA' })).toBeInTheDocument()
+    expect(screen.queryByText('RECEBIDO NO MÊS')).not.toBeInTheDocument()
+    expect(screen.queryByText('SALDO TRANSFERÍVEL')).not.toBeInTheDocument()
+    const from = screen.getByLabelText('Data inicial do fluxo de caixa')
+    const through = screen.getByLabelText('Data final do fluxo de caixa')
+    expect(from).toHaveAttribute('min', '2026-11-07')
+    fireEvent.change(through, { target: { value: '2026-11-14' } })
+    expect(from).toHaveValue('2026-11-07')
+    expect(through).toHaveValue('2026-11-14')
+    fireEvent.change(from, { target: { value: '2026-11-08' } })
+    expect(through).toHaveValue('2026-11-14')
+
+    const weekly = screen.getByRole('region', { name: 'Tabela semanal do fluxo de caixa' })
+    expect(weekly).toHaveTextContent(/08\/11\/2026 a\s*14\/11\/2026/)
+    expect(weekly).toHaveTextContent('R$ 3,50 · Parcial')
+    expect(weekly).toHaveTextContent('-R$ 0,25 · Parcial')
+    expect(weekly).toHaveTextContent('Saldo inicial')
+    expect(weekly).toHaveTextContent('Ajuste de saldo')
+    expect(weekly).toHaveTextContent('Saldo acumulado')
+    expect(screen.getByRole('heading', { name: 'SEMANA CRÍTICA' }).closest('section')).toHaveTextContent('08/11–14/11')
   })
 
   it('identifica como parcial o valor incompleto sem mudar a identificação dos demais cards', () => {

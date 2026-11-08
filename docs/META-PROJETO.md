@@ -12,6 +12,49 @@ de executar a parte dependente. Essa regra permanece vigente até Gisele alterá
 O procedimento completo está em
 [`META-CICLO-APROVACAO.md`](META-CICLO-APROVACAO.md).
 
+### T02 — tabela semanal compacta e correção das datas — 08/11/2026
+
+A tela T02 foi reorganizada para apresentar o Fluxo de Caixa em tabela por
+semana, como no relatório do Bling. Reduzi os textos, cartões, espaços e altura
+dos painéis somente nessa tela. A seleção de datas começa no dia atual de
+Brasília e vai até a data disponível; a tabela e a semana crítica acompanham
+o período escolhido. A tabela mantém entradas e saídas, acrescenta variação
+semanal percentual e deixa saldo inicial, ajustes e acumulado como “—” enquanto
+a fonte oficial desses saldos não estiver comprovada.
+
+A comparação com a imagem do relatório encontrou e corrigiu uma duplicidade de
+R$ 25.000,00: um título vencido antes do período estava sendo somado de novo,
+embora a saída já estivesse no saldo inicial do relatório. Movimentos realizados
+mantêm a data real; a janela anterior é usada somente para previsões de
+recebimento; movimentos e contas a pagar começam na data escolhida. O protótipo
+foi reiniciado pelo roteiro normal e a tela T02 foi conferida no navegador.
+
+Na seleção atual de 08/11 a 30/11, despesas e os quatro períodos de receitas
+batem com a imagem do Bling, exceto receitas de 22–28/11: R$ 34.205,21 na API
+contra R$ 34.205,22 no relatório (R$ 0,01 de diferença). A soma de despesas
+08–30/11 bate em -R$ 205.817,20; a soma de receitas fica R$ 0,01 abaixo. O dia
+07/11 não pode mais ser reconsultado pela tela, pois o filtro aprovado começa
+na data atual de Brasília. Não inventei ajuste para fechar o centavo.
+
+A previsão permanece “Parcial”: a API pública não fornece a configuração de
+float salva para a conta Itaú, nem confirma sua aplicação geral à projeção.
+A ajuda do Bling explica float no retorno de boletos, mas não confirma a
+quantidade configurada no Itaú. Portanto, o dia observado na comparação não é
+tratado como configuração oficial.
+
+O filtro de período serve para comparar a T02 com o relatório em mesmas datas.
+Quando a tabela tiver os mesmos resultados, a T01 deve reutilizar esses valores
+do snapshot da T02. Isso evita uma segunda consulta ou fórmula independente e
+mantém o resumo executivo consistente com a tela detalhada. Não significa que
+a T01 copie a interface do Bling ou some dados por conta própria.
+
+**Conferência ainda em andamento:** a tabela e o ajuste do filtro de período
+estão visíveis na T02 para aprovação. O centavo de diferença nas receitas
+22–28/11 e os valores oficiais de saldo inicial, ajustes e acumulado ainda
+precisam de confirmação; a configuração de float também não foi comprovada.
+BK-062 permanece em 30% (70% restante) e o projeto em 12,3% (87,7% restante).
+Evidência: [`T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md`](evidence/T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md).
+
 ### T02 — gráfico semanal e origem do saldo Itaú — 07/11/2026
 
 **Regra aprovada:** o resultado de entradas, saídas e saldo semanal da T02 deve

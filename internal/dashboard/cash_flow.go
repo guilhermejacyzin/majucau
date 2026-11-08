@@ -48,6 +48,12 @@ SELECT DISTINCT m.account_source_id, m.account_name
  ORDER BY m.account_source_id, m.account_name
 `
 
+// The report comparison indicates one calendar day for forecast dates while
+// the bank-float option is enabled. Registered cash movements already carry
+// their actual movement date and must not be shifted into the report window.
+// Keep forecasts PARTIAL until the account's saved float setting is verified.
+const blingCashFlowEffectiveFloatDays = 1
+
 // Bling documents the prepared Flow of Cash report as a projection from
 // receivables and payables, but does not expose a public API route for that
 // report. This query reads the normalized official API snapshots to reproduce
@@ -88,7 +94,7 @@ WITH daily AS (
     FROM daily d
     JOIN bling_cash_movements m ON m.sync_batch_id = d.batch_id
    WHERE d.resource = 'caixas'
-     AND m.movement_date >= $2::date AND m.movement_date <= $3::date
+     AND m.movement_date >= $4::date AND m.movement_date <= $3::date
   UNION ALL
   SELECT 'RECEIVABLE', r.due_date, 'INFLOW', COALESCE(r.open_balance, r.gross_amount)::text,
          ''::text, r.source_financial_account_id::text,
@@ -127,7 +133,7 @@ WITH daily AS (
      AND p.source_system = 'BLING' AND p.source_entity = 'bling.conta_pagar'
      AND p.open_balance <> 0
      AND UPPER(p.status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
-     AND p.due_date >= $2::date AND p.due_date <= $3::date
+     AND p.due_date >= $4::date AND p.due_date <= $3::date
 )
 SELECT kind, flow_date, direction, amount, source_status,
        COALESCE(account_source_id, ''), financial_status,
@@ -165,7 +171,12 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 			OutflowsNext60Days: application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
 		}, nil
 	}
-	rows, err := tx.Query(ctx, cashFlowCandidatesSQL, correlationID, start.Format(time.DateOnly), end.Format(time.DateOnly))
+	// Query one day before the visible window to include forecast rows that can
+	// appear on D after the report's effective float is applied. Keep the query
+	// through the actual end date because recorded movements are not shifted.
+	sourceStart := start.AddDate(0, 0, -blingCashFlowEffectiveFloatDays)
+	sourceEnd := end
+	rows, err := tx.Query(ctx, cashFlowCandidatesSQL, correlationID, sourceStart.Format(time.DateOnly), sourceEnd.Format(time.DateOnly), start.Format(time.DateOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -252,6 +263,10 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 			partial = true
 			continue
 		}
+		// The cash-movement API already records the realized date. The observed
+		// bank float applies only to forecasted receipts/payables, after receipt
+		// settlement terms; never move a registered movement into another day.
+		flowDate = blingCashFlowReportDate(candidate.kind, flowDate)
 		day := dashboardDateOnly(flowDate)
 		if day.Before(start) || day.After(end) {
 			continue
@@ -396,6 +411,17 @@ func groupCashFlowReportWeeks(days []application.DashboardCashFlowDay, partial b
 func dashboardDateOnly(value time.Time) time.Time {
 	year, month, day := value.Date()
 	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+}
+
+func applyBlingCashFlowFloat(sourceDate time.Time) time.Time {
+	return sourceDate.AddDate(0, 0, blingCashFlowEffectiveFloatDays)
+}
+
+func blingCashFlowReportDate(kind string, sourceDate time.Time) time.Time {
+	if kind == "MOVEMENT" {
+		return sourceDate
+	}
+	return applyBlingCashFlowFloat(sourceDate)
 }
 
 func selectedCashFlowAccountIDs(ctx context.Context, tx pgx.Tx, correlationID string) ([]string, bool, error) {

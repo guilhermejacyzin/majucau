@@ -299,6 +299,15 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `INSERT INTO payable_sync_snapshot_rows (sync_batch_id, payable_id) VALUES ($1::uuid, $2::uuid)`, payableBatchID, cancelledCodeFiveID); err != nil {
 		t.Fatalf("add canceled payable to current snapshot: %v", err)
 	}
+	pastDuePayableID := "00000000-0000-4000-8000-000000000023"
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO payables (id, connection_id, source_system, source_entity, source_id, source_payment_method_id, source_financial_account_id, open_balance, due_date, status)
+		VALUES ($1::uuid, $2::uuid, 'BLING', 'bling.conta_pagar', 'past-due-before-window', 9, 1, -25.00, $3::date - 1, 'OPEN')`, pastDuePayableID, connectionID, businessDate); err != nil {
+		t.Fatalf("seed open payable from before the selected cash-flow period: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO payable_sync_snapshot_rows (sync_batch_id, payable_id) VALUES ($1::uuid, $2::uuid)`, payableBatchID, pastDuePayableID); err != nil {
+		t.Fatalf("add past-due payable to current snapshot: %v", err)
+	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil {
 		t.Fatalf("read summary with normalized cash-flow sources: %v", err)

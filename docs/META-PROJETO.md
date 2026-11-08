@@ -1,5 +1,25 @@
 # Meta do Majucau
 
+### Saldo atual e menor saldo Itaú — 08/11/2026
+
+Registrei a orientação: o card Saldo atual deve mostrar o fechamento mais
+recente de Caixa e Bancos → Itaú; não usar o valor de uma imagem como dado
+fixo. A API oficial lista lançamentos, não a linha “Saldo em [data]”. A
+sincronização envia uma data inicial explícita porque, sem ela, a API começa no
+primeiro dia do mês atual. O saldo reconstruído pelos lançamentos fica
+identificado como Parcial até ser comparado com o fechamento exibido no
+relatório. Os cards de menor saldo em 30 e 60 dias também ficam parciais enquanto
+a base não for validada.
+
+O navegador do Codex recusou a leitura da aba do relatório por uma permissão
+salva; o serviço local também não está disponível neste ambiente para fazer uma
+sincronização real. Assim, ainda não confirmei o valor nem abri a tela atualizada
+do protótipo. Não usei o saldo da captura como substituto. A atividade técnica
+da tarefa está em aproximadamente 50%; ainda falta sincronizar, comparar o
+fechamento real, conferir os cards na T02 e aguardar a aprovação visual. BK-062
+permanece em 30% e o projeto em 12,3% até haver essa validação. Evidência:
+[`T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).
+
 ### Correção visual e saldo semanal da T02 — 08/11/2026
 
 Na T02, retirei o link “Ver fluxo completo” do gráfico e, do quadro Semana

@@ -216,8 +216,8 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if snapshot.ReceiptsMonth.Value != "120.00" || snapshot.PaymentsMonth.Value != "-30.00" {
 		t.Fatalf("cash flow should include listed movements, with inflows positive and outflows negative: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
-	if snapshot.CashBalance.State != "UNAVAILABLE" || snapshot.CashBalance.Value != "" {
-		t.Fatalf("current bank balance must remain unavailable until Bling provides an official balance, not be inferred from movements: %+v", snapshot.CashBalance)
+	if snapshot.CashBalance.State != "PARTIAL" || snapshot.CashBalance.Value != "75.0000" {
+		t.Fatalf("current Itaú balance should be reconstructed from registered movements and remain partial until compared with the report: %+v", snapshot.CashBalance)
 	}
 	currentPayableID := "00000000-0000-4000-8000-000000000011"
 	stalePayableID := "00000000-0000-4000-8000-000000000012"

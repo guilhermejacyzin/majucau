@@ -255,6 +255,15 @@ type DashboardCashFlowDay struct {
 	Outflows DashboardMetric `json:"outflows"`
 }
 
+// DashboardMinimumBalance is the lowest daily closing balance within a
+// forward-looking horizon, calculated from the latest Itaú balance and the
+// API-derived daily inflows/outflows.
+type DashboardMinimumBalance struct {
+	Balance  DashboardMetric `json:"balance"`
+	Date     string          `json:"date,omitempty"`
+	Headroom DashboardMetric `json:"headroom"`
+}
+
 // DashboardCashFlowPeriod mirrors the weekly buckets used by the Bling
 // cash-flow report. ClosingBalance is the accumulated report result, not the
 // separate current bank-balance card. It is omitted until its opening balance
@@ -270,13 +279,15 @@ type DashboardCashFlowPeriod struct {
 }
 
 type DashboardCashFlow struct {
-	InflowsNext30Days  DashboardMetric           `json:"inflows_next_30_days"`
-	OutflowsNext30Days DashboardMetric           `json:"outflows_next_30_days"`
-	InflowsNext60Days  DashboardMetric           `json:"inflows_next_60_days"`
-	OutflowsNext60Days DashboardMetric           `json:"outflows_next_60_days"`
-	Days               []DashboardCashFlowDay    `json:"days,omitempty"`
-	Periods            []DashboardCashFlowPeriod `json:"periods,omitempty"`
-	CriticalWeek       *DashboardCashFlowPeriod  `json:"critical_week,omitempty"`
+	InflowsNext30Days    DashboardMetric           `json:"inflows_next_30_days"`
+	OutflowsNext30Days   DashboardMetric           `json:"outflows_next_30_days"`
+	InflowsNext60Days    DashboardMetric           `json:"inflows_next_60_days"`
+	OutflowsNext60Days   DashboardMetric           `json:"outflows_next_60_days"`
+	Days                 []DashboardCashFlowDay    `json:"days,omitempty"`
+	Periods              []DashboardCashFlowPeriod `json:"periods,omitempty"`
+	CriticalWeek         *DashboardCashFlowPeriod  `json:"critical_week,omitempty"`
+	MinimumBalance30Days *DashboardMinimumBalance  `json:"minimum_balance_30_days,omitempty"`
+	MinimumBalance60Days *DashboardMinimumBalance  `json:"minimum_balance_60_days,omitempty"`
 }
 
 // DashboardSnapshot contains only metrics that are already normalized in the

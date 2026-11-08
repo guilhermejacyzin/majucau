@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	dailyBlingLockClass   int32 = 0x4D414A55
-	dailyBlingLockKey     int32 = 0x424C494E
-	capexHistoryStartDate       = "2026-01-01"
+	dailyBlingLockClass          int32 = 0x4D414A55
+	dailyBlingLockKey            int32 = 0x424C494E
+	approvedCashHistoryStartDate       = "2026-01-01"
 )
 
 var (
@@ -77,7 +77,11 @@ func dailyCashMovementHistoryFilter(scheduledAt time.Time) (CashMovementsFilter,
 		return CashMovementsFilter{}, errors.Join(ErrBlingDailyScheduleInvalid, err)
 	}
 	dateTo := scheduledAt.In(location).Format("2006-01-02")
-	filter := CashMovementsFilter{DateFrom: capexHistoryStartDate, DateTo: dateTo}
+	// Bling defaults dataInicial to the first day of the current month. Keep an
+	// explicit project history boundary so the API does not silently return only
+	// the current month. The reconstructed bank balance stays PARTIAL until its
+	// opening history is confirmed against the latest closing balance in Bling.
+	filter := CashMovementsFilter{DateFrom: approvedCashHistoryStartDate, DateTo: dateTo}
 	if _, err := filter.normalized(); err != nil {
 		return CashMovementsFilter{}, errors.Join(ErrBlingDailyScheduleInvalid, err)
 	}

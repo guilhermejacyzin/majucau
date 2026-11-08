@@ -40,7 +40,7 @@ export function MockupSidebar({ screen, onNavigate }: { screen: string; onNaviga
   return <aside className="mocap-sidebar"><div className="mocap-people" style={{ backgroundImage: `url(${sidebarReference})` }} aria-hidden="true" /><nav aria-label="Navegação principal" className="mocap-nav">{navItems.map((item, index) => <span key={`${item.label}-${index}`} className="mocap-nav-wrap">{item.section && <span className="mocap-nav-section">{item.section}</span>}<Tooltip id={item.tooltip}><button type="button" className={`mocap-nav-item ${screen === item.key ? 'active' : ''}`} onClick={() => onNavigate(item.key)} aria-current={screen === item.key ? 'page' : undefined} aria-label={item.label === 'Importações / Integrações' ? 'Integrações' : undefined}><Icon icon={item.icon} /><span>{item.label}</span></button></Tooltip></span>)}</nav></aside>
 }
 
-type Card = { label: string; icon: MockupIcon; tone: 'green' | 'blue' | 'orange' | 'red' | 'purple'; supporting?: string; action?: string; variant?: 'minimum-balance' | 'period-comparison'; value?: string; displayValue?: string; periodValues?: Array<{ label: string; metric?: DashboardMetric }> }
+type Card = { label: string; icon: MockupIcon; tone: 'green' | 'blue' | 'orange' | 'red' | 'purple'; supporting?: string; action?: string; variant?: 'minimum-balance' | 'period-comparison'; value?: string; displayValue?: string; periodValues?: Array<{ label: string; metric?: DashboardMetric }>; minimumValues?: Array<{ label: string; metric?: DashboardMetric; date?: string; headroom?: DashboardMetric }> }
 
 // Approved by D-003-A and recorded in DATA-DICTIONARY-v1.md.
 const APPROVED_MINIMUM_RESERVE = '50000.00'
@@ -80,7 +80,8 @@ function MocapHeader({ config, snapshot }: { config: ScreenConfig; snapshot?: Da
 function MocapCard({ card, detailScreen, onNavigate, hideAction = false }: { card: Card; detailScreen?: MockupScreenKey; onNavigate?: (screen: MockupScreenKey) => void; hideAction?: boolean }) {
   const formatPeriodMetric = (metric?: DashboardMetric) => !metric?.value || metric.state === 'UNAVAILABLE' ? '—' : `${formatBRL(metric.value)}${metric.state === 'PARTIAL' ? ' · Parcial' : ''}`
   const negative = (value?: string) => /^\s*[−-]/.test(value ?? '')
-  return <article className={`mocap-card tone-${card.tone} ${card.variant ? `variant-${card.variant}` : ''}`}><div className="mocap-card-icon"><Icon icon={card.icon} /></div><div className="mocap-card-body"><Tooltip id="metric.details"><span className="mocap-card-label">{card.label}</span></Tooltip>{card.variant === 'minimum-balance' ? <div className="mocap-minimum-values"><div><strong>30 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div><div><strong>60 dias</strong><b>—</b><span>Em: —</span><small>Folga: —</small></div></div> : card.variant === 'period-comparison' ? <div className="mocap-period-values">{card.periodValues?.map((period) => <div key={period.label}><span>{period.label}</span><b className={negative(period.metric?.value) ? 'mocap-negative-value' : undefined}>{formatPeriodMetric(period.metric)}</b></div>)}</div> : <><span className={`mocap-empty-value${negative(card.value) || negative(card.displayValue) ? ' mocap-negative-value' : ''}`}>{card.displayValue ?? (card.value ? formatBRL(card.value) : '—')}</span>{card.supporting && <span className="mocap-card-support">{card.supporting}</span>}</>}{!hideAction && <Tooltip id="metric.details"><button type="button" className="mocap-card-action" aria-label={detailScreen ? `Ver detalhes: ${card.label}` : undefined} disabled={Boolean(detailScreen) && !onNavigate} onClick={detailScreen && onNavigate ? () => onNavigate(detailScreen) : undefined}>Ver detalhes <span>⌄</span></button></Tooltip>}</div></article>
+  const formatBalanceDate = (value?: string) => value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit' }).format(new Date(`${value}T12:00:00.000Z`)) : '—'
+  return <article className={`mocap-card tone-${card.tone} ${card.variant ? `variant-${card.variant}` : ''}`}><div className="mocap-card-icon"><Icon icon={card.icon} /></div><div className="mocap-card-body"><Tooltip id="metric.details"><span className="mocap-card-label">{card.label}</span></Tooltip>{card.variant === 'minimum-balance' ? <div className="mocap-minimum-values">{(card.minimumValues ?? [{ label: '30 dias' }, { label: '60 dias' }]).map((item) => <div key={item.label}><strong>{item.label}</strong><b className={negative(item.metric?.value) ? 'mocap-negative-value' : undefined}>{formatPeriodMetric(item.metric)}</b><span>Em: {formatBalanceDate(item.date)}</span><small className={negative(item.headroom?.value) ? 'mocap-negative-value' : undefined}>Folga: {formatPeriodMetric(item.headroom)}</small></div>)}</div> : card.variant === 'period-comparison' ? <div className="mocap-period-values">{card.periodValues?.map((period) => <div key={period.label}><span>{period.label}</span><b className={negative(period.metric?.value) ? 'mocap-negative-value' : undefined}>{formatPeriodMetric(period.metric)}</b></div>)}</div> : <><span className={`mocap-empty-value${negative(card.value) || negative(card.displayValue) ? ' mocap-negative-value' : ''}`}>{card.displayValue ?? (card.value ? formatBRL(card.value) : '—')}</span>{card.supporting && <span className="mocap-card-support">{card.supporting}</span>}</>}{!hideAction && <Tooltip id="metric.details"><button type="button" className="mocap-card-action" aria-label={detailScreen ? `Ver detalhes: ${card.label}` : undefined} disabled={Boolean(detailScreen) && !onNavigate} onClick={detailScreen && onNavigate ? () => onNavigate(detailScreen) : undefined}>Ver detalhes <span>⌄</span></button></Tooltip>}</div></article>
 }
 
 function displayMoney(value?: string): string {
@@ -236,6 +237,13 @@ function metricForCard(screen: MockupScreenKey, label: string, snapshot?: Dashbo
 }
 
 function withSnapshot(screen: MockupScreenKey, card: Card, snapshot?: DashboardSnapshot): Card {
+  if ((screen === 'cashflow' || screen === 'executive') && card.variant === 'minimum-balance') {
+    const cashFlow = snapshot?.cash_flow
+    return { ...card, minimumValues: [
+      { label: '30 dias', metric: cashFlow?.minimum_balance_30_days?.balance, date: cashFlow?.minimum_balance_30_days?.date, headroom: cashFlow?.minimum_balance_30_days?.headroom },
+      { label: '60 dias', metric: cashFlow?.minimum_balance_60_days?.balance, date: cashFlow?.minimum_balance_60_days?.date, headroom: cashFlow?.minimum_balance_60_days?.headroom },
+    ] }
+  }
   if (screen === 'cashflow' && card.variant === 'period-comparison') {
     const metrics = card.label === 'ENTRADAS'
       ? [snapshot?.cash_flow?.inflows_next_30_days, snapshot?.cash_flow?.inflows_next_60_days]
@@ -248,7 +256,7 @@ function withSnapshot(screen: MockupScreenKey, card: Card, snapshot?: DashboardS
     ...card,
     value: metric.value,
     supporting: metric.state === 'PARTIAL'
-      ? `Parcial${card.label === 'SALDO ATUAL' ? ' · Lançamentos Bling' : card.supporting ? ` · ${card.supporting}` : ''}`
+      ? `Parcial${card.label === 'SALDO ATUAL' ? '' : card.supporting ? ` · ${card.supporting}` : ''}`
       : card.supporting,
   }
 }

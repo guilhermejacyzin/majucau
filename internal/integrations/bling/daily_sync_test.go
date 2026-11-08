@@ -38,7 +38,7 @@ func TestDailyBlingCorrelationIDRequiresTheApprovedSchedule(t *testing.T) {
 	}
 }
 
-func TestDailyCashMovementHistoryFilterUsesApprovedCapexPeriod(t *testing.T) {
+func TestDailyCashMovementHistoryFilterUsesExplicitStartAndRunDate(t *testing.T) {
 	local := time.FixedZone("Brasilia", -3*60*60)
 	filter, err := dailyCashMovementHistoryFilter(time.Date(2026, 10, 18, 9, 30, 0, 0, local))
 	if err != nil {

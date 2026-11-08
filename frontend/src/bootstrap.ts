@@ -25,7 +25,8 @@ export type DashboardPayableRow = { supplier?: string; document?: string; due_da
 export type DashboardBankBalance = { account: string; value: string }
 export type DashboardCashFlowDay = { date: string; inflows: DashboardMetric; outflows: DashboardMetric }
 export type DashboardCashFlowPeriod = { from: string; through: string; inflows: DashboardMetric; outflows: DashboardMetric; opening_balance?: DashboardMetric; balance_adjustments?: DashboardMetric; closing_balance?: DashboardMetric }
-export type DashboardCashFlow = { inflows_next_30_days: DashboardMetric; outflows_next_30_days: DashboardMetric; inflows_next_60_days: DashboardMetric; outflows_next_60_days: DashboardMetric; days?: DashboardCashFlowDay[]; periods?: DashboardCashFlowPeriod[]; critical_week?: DashboardCashFlowPeriod }
+export type DashboardMinimumBalance = { balance: DashboardMetric; date?: string; headroom: DashboardMetric }
+export type DashboardCashFlow = { inflows_next_30_days: DashboardMetric; outflows_next_30_days: DashboardMetric; inflows_next_60_days: DashboardMetric; outflows_next_60_days: DashboardMetric; days?: DashboardCashFlowDay[]; periods?: DashboardCashFlowPeriod[]; critical_week?: DashboardCashFlowPeriod; minimum_balance_30_days?: DashboardMinimumBalance; minimum_balance_60_days?: DashboardMinimumBalance }
 export type DashboardSnapshot = {
   as_of: string
   last_bling_sync_at?: string
@@ -209,7 +210,8 @@ function isDashboardCashFlowPeriod(value: unknown): value is DashboardCashFlowPe
 function isDashboardCashFlow(value: unknown): value is DashboardCashFlow {
   if (!value || typeof value !== 'object') return false
   const candidate = value as Partial<DashboardCashFlow>
-  return isDashboardMetric(candidate.inflows_next_30_days) && isDashboardMetric(candidate.outflows_next_30_days) && isDashboardMetric(candidate.inflows_next_60_days) && isDashboardMetric(candidate.outflows_next_60_days) && (candidate.days === undefined || (Array.isArray(candidate.days) && candidate.days.length <= 61 && candidate.days.every((day) => Boolean(day) && typeof day.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day.date) && isDashboardMetric(day.inflows) && isDashboardMetric(day.outflows)))) && (candidate.periods === undefined || (Array.isArray(candidate.periods) && candidate.periods.length <= 10 && candidate.periods.every(isDashboardCashFlowPeriod))) && (candidate.critical_week === undefined || isDashboardCashFlowPeriod(candidate.critical_week))
+  const isMinimum = (item: unknown): item is DashboardMinimumBalance => Boolean(item) && typeof item === 'object' && isDashboardMetric((item as DashboardMinimumBalance).balance) && ((item as DashboardMinimumBalance).date === undefined || /^\d{4}-\d{2}-\d{2}$/.test((item as DashboardMinimumBalance).date ?? '')) && isDashboardMetric((item as DashboardMinimumBalance).headroom)
+  return isDashboardMetric(candidate.inflows_next_30_days) && isDashboardMetric(candidate.outflows_next_30_days) && isDashboardMetric(candidate.inflows_next_60_days) && isDashboardMetric(candidate.outflows_next_60_days) && (candidate.days === undefined || (Array.isArray(candidate.days) && candidate.days.length <= 61 && candidate.days.every((day) => Boolean(day) && typeof day.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day.date) && isDashboardMetric(day.inflows) && isDashboardMetric(day.outflows)))) && (candidate.periods === undefined || (Array.isArray(candidate.periods) && candidate.periods.length <= 10 && candidate.periods.every(isDashboardCashFlowPeriod))) && (candidate.critical_week === undefined || isDashboardCashFlowPeriod(candidate.critical_week)) && (candidate.minimum_balance_30_days === undefined || isMinimum(candidate.minimum_balance_30_days)) && (candidate.minimum_balance_60_days === undefined || isMinimum(candidate.minimum_balance_60_days))
 }
 
 function isDashboardSnapshot(value: unknown): value is DashboardSnapshot {

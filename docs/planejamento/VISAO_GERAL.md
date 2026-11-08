@@ -25,6 +25,31 @@ Planejamento do sistema de gestão e análise da Majucau. A **versão 2** é a r
 
 ## Evolução registrada
 
+**T02 — saldos em branco — 08/11/2026:** o protótipo conectado exibe entradas,
+saídas e gráfico com estado parcial; saldo atual e menor saldo 30/60 ficam
+indisponíveis. A consulta de movimentos foi corrigida para pedir somente
+lançamentos registrados (`situacao=R`) e os testes direcionados passaram. Ainda
+falta executar uma nova carga e obter uma base oficial de saldo inicial. A API
+lista movimentos, mas não devolve saldo bancário absoluto pronto; portanto a
+variação líquida não será apresentada como saldo. BK-062 permanece em 30% e o
+projeto em 12,3% até a comparação real e aprovação. Ver
+[`T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](../evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).
+
+**Regra e análise T02 — 07/11/2026:** o saldo acumulado do gráfico é diferente
+do card de saldo bancário atual. Pela tabela de referência, o cálculo semanal é
+saldo inicial + receitas + despesas (com valores negativos) + ajustes; o saldo
+inicial da próxima semana repete o fechamento anterior. A linha segue as
+contas/opções escolhidas no relatório Bling; a captura mais recente tem uma
+conta selecionada, identificada no contexto aprovado como Itaú. O card de saldo
+bancário atual também usa somente Itaú, mas é um indicador separado, sem somar
+Mercado Pago nem inferir transferências da Nuvem. O
+gráfico foi atualizado para pontos por semana, tooltip com valores e variações
+percentuais de entradas e saídas; o backend ainda não fornece abertura/ajustes
+confirmados para mostrar o saldo acumulado. O filtro foi corrigido para exigir
+uma conta Itaú, não Itaú e Mercado Pago simultaneamente. BK-062 fica em 30%, projeto em
+12,3%; falta conferir todos os períodos reais e completar a fonte do saldo.
+Evidência: `docs/evidence/T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md`.
+
 O backlog contém 127 tarefas, de BK-000 a BK-126. Os números **2,4% por quantidade** e **0% de desenvolvimento** pertencem à revisão de 13/09/2026 e são históricos. Na revisão de 11/10/2026, a matriz de requisitos tinha 51 itens: 1 verificado, 4 documentados, 26 parciais, 11 bloqueados e 9 não iniciados. A auditoria tarefa a tarefa segue em andamento.
 
 Na planilha, uma tarefa pontua 100% somente quando está concluída e possui evidência de aceite. Os pesos iniciais são iguais a 1. O acompanhamento não é sincronizado automaticamente com commits, issues ou projetos do GitHub.
@@ -70,3 +95,4 @@ Os arquivos externos diários também incluem Excel `.XLS` e `.XLSX`. CSV, TSV, 
 **Integração diária de movimentações de caixa Bling (25/10/2026):** o worker passou a ler `/caixas` às 09:30 e publicar páginas como RAW no PostgreSQL, usando a persistência atômica por recurso, checkpoints, idempotência e limite local do adapter. A carga só conta como concluída quando Receber, Pagar e Caixa terminam. Se não houver prova do fim da paginação, a fonte fica incompleta e não substitui o último retrato. Isso não classifica CAPEX nem altera relatórios, cálculos ou telas. Os testes Go do adapter Bling e do worker passaram localmente; a integração PostgreSQL e a CI ainda precisam confirmar a mudança. A conexão real continua sem comprovação nesta etapa. Evidência: `docs/evidence/BLING-DAILY-CASH-MOVEMENTS-2026-10-25.md`.
 
 **Atualização mais recente — governança do repositório (01/11/2026):** BK-025 está em 80% (20% restante). `.github/CODEOWNERS` solicita revisão do proprietário e `CONTRIBUTING.md` explica que isso não ativa a proteção do GitHub. A branch `main`, aprovações obrigatórias e checks exigidos ainda dependem de uma conta administradora. O backlog está em 12,0% concluído (88,0% restante); a planilha oficial e o documento detalhado foram atualizados para refletir o mesmo número. Nenhuma tela ou regra financeira mudou.
+Na atualização da T02 em 08/11/2026, o último saldo conciliado do Itaú aprovado pela responsável passou a ser o ponto de partida armazenado somente no banco local. O card conserva essa referência; movimentos registrados seguintes vindos da API compõem a abertura projetada, e os fechamentos semanais acumulam entradas e saídas negativas. A migration está aplicada no banco isolado do protótipo, e o worker tem leitura restrita. Nenhum valor financeiro foi adicionado ao Git. O build e os checksums passaram; a conferência visual da T02 e a comparação com Caixas e Bancos ainda faltam. BK-062 permanece em 30% e o backlog geral em 12,3% até concluir a validação. Evidência: `docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md`.

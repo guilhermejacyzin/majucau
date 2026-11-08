@@ -178,6 +178,7 @@ type CashMovementsFilter struct {
 	MaxRecords  int
 	DateFrom    string
 	DateTo      string
+	Situation   string
 	CategoryIDs []int64
 }
 
@@ -200,6 +201,9 @@ func (f CashMovementsFilter) normalized() (CashMovementsFilter, error) {
 	}
 	if hasDateFrom && hasDateTo && dateFrom.After(dateTo) {
 		return CashMovementsFilter{}, fmt.Errorf("%w: cash movement start date is after end date", ErrBlingAPIConfiguration)
+	}
+	if f.Situation != "" && f.Situation != "R" && f.Situation != "E" {
+		return CashMovementsFilter{}, fmt.Errorf("%w: invalid cash movement situation", ErrBlingAPIConfiguration)
 	}
 	if len(f.CategoryIDs) > maxCashMovementCategoryIDs {
 		return CashMovementsFilter{}, fmt.Errorf("%w: category filter exceeds %d IDs", ErrBlingAPIConfiguration, maxCashMovementCategoryIDs)
@@ -260,6 +264,7 @@ func (c *BlingAPIClient) ListCashMovements(ctx context.Context, filter CashMovem
 	query.Set("limite", strconv.Itoa(filter.MaxRecords))
 	setOptionalQuery(query, "dataInicial", filter.DateFrom)
 	setOptionalQuery(query, "dataFinal", filter.DateTo)
+	setOptionalQuery(query, "situacao", filter.Situation)
 	for _, categoryID := range filter.CategoryIDs {
 		query.Add("idsCategorias", strconv.FormatInt(categoryID, 10))
 	}

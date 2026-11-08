@@ -81,7 +81,8 @@ func dailyCashMovementHistoryFilter(scheduledAt time.Time) (CashMovementsFilter,
 	// explicit project history boundary so the API does not silently return only
 	// the current month. The reconstructed bank balance stays PARTIAL until its
 	// opening history is confirmed against the latest closing balance in Bling.
-	filter := CashMovementsFilter{DateFrom: approvedCashHistoryStartDate, DateTo: dateTo}
+	// Match the approved Caixa e Bancos view, which uses registered movements.
+	filter := CashMovementsFilter{DateFrom: approvedCashHistoryStartDate, DateTo: dateTo, Situation: "R"}
 	if _, err := filter.normalized(); err != nil {
 		return CashMovementsFilter{}, errors.Join(ErrBlingDailyScheduleInvalid, err)
 	}

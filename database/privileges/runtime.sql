@@ -25,6 +25,7 @@ GRANT SELECT ON TABLE
   sync_cursors,
   raw_records,
   bling_cash_movements,
+  bling_cash_balance_checkpoints,
   bling_payment_method_terms,
   bling_financial_account_identities,
   receivable_sync_snapshot_rows,

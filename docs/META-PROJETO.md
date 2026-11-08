@@ -2,22 +2,16 @@
 
 ### Saldo atual e menor saldo Itaú — 08/11/2026
 
-Registrei a orientação: o card Saldo atual deve mostrar o fechamento mais
-recente de Caixa e Bancos → Itaú; não usar o valor de uma imagem como dado
-fixo. A API oficial lista lançamentos, não a linha “Saldo em [data]”. A
-sincronização envia uma data inicial explícita porque, sem ela, a API começa no
-primeiro dia do mês atual. O saldo reconstruído pelos lançamentos fica
-identificado como Parcial até ser comparado com o fechamento exibido no
-relatório. Os cards de menor saldo em 30 e 60 dias também ficam parciais enquanto
-a base não for validada.
-
-O navegador do Codex recusou a leitura da aba do relatório por uma permissão
-salva; o serviço local também não está disponível neste ambiente para fazer uma
-sincronização real. Assim, ainda não confirmei o valor nem abri a tela atualizada
-do protótipo. Não usei o saldo da captura como substituto. A atividade técnica
-da tarefa está em aproximadamente 50%; ainda falta sincronizar, comparar o
-fechamento real, conferir os cards na T02 e aguardar a aprovação visual. BK-062
-permanece em 30% e o projeto em 12,3% até haver essa validação. Evidência:
+O protótipo completo está aberto e conectado; na T02, entradas, saídas e gráfico
+mostram dados parciais, enquanto os dois indicadores de saldo permanecem “—”.
+Confirmei que a API oficial entrega movimentos, mas não um saldo de abertura ou
+o fechamento pronto da conta. A carga anterior também veio sem `situacao`; a
+consulta agora envia o filtro oficial de movimentos registrados (`R`) e os
+testes focados passaram. Falta uma sincronização após essa correção e uma base
+de abertura oficial para calcular o saldo bancário absoluto. Não vou tratar a
+variação dos movimentos como se fosse o saldo da conta. BK-062 permanece em
+30% (70% restante) e o projeto em 12,3% (87,7% restante), pois os saldos não
+foram validados na tela. Evidência:
 [`T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).
 
 ### Correção visual e saldo semanal da T02 — 08/11/2026
@@ -998,3 +992,18 @@ atual, Entradas e Saídas; os valores de Entradas e Saídas aparecem em 30 e 60
 dias; o card Menor saldo permanece sem valor confirmado. Essa evidência
 substitui a pendência de conferência visual registrada anteriormente. Ainda
 aguardo a aprovação explícita da responsável para avançar para a próxima tarefa.
+
+### T02 — saldo conciliado alimenta o gráfico semanal — 08/11/2026
+
+Gisele confirmou que o card **Saldo atual** deve refletir o último saldo
+conciliado do Itaú e que esse mesmo ponto deve compor o saldo acumulado do
+gráfico. O checkpoint aprovado permanece somente no banco local, fora do
+código e do Git. A projeção usa abertura + entradas + saídas negativas =
+fechamento; o fechamento de cada semana abre a seguinte. Movimentos registrados
+da API posteriores à data de referência ajustam a abertura projetada, sem
+alterar o valor conciliado mostrado no card. A migration foi aplicada ao banco
+isolado; o worker tem leitura restrita e o build/checksum passaram. Ainda falta
+sincronizar após a mudança, comparar com Caixas e Bancos e conferir visualmente
+a T02 antes da homologação. BK-062 continua em 30% (70% restante) e o backlog
+geral em 12,3% (87,7% restante). Evidência:
+[`T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](./evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).

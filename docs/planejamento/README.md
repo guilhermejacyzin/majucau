@@ -4,6 +4,10 @@
 
 Atualização de escopo em 31/10/2026: a tela independente T05 — Conciliação foi retirada. A documentação v2 foi atualizada para registrar essa decisão; a imagem aprovada original segue apenas no arquivo histórico. Regras internas de correspondência continuam no escopo.
 
+Atualização T02 em 07/11/2026: o saldo acumulado do gráfico segue o cálculo do relatório Bling e é diferente do card de saldo bancário, que usa somente Itaú. A análise, a fórmula conferida na referência, o código preparado, os testes e as pendências estão em [`T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md`](../evidence/T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md).
+
+Atualização T02 em 08/11/2026: o ponto de partida aprovado do Itaú fica somente no banco local isolado. O card mostra esse último saldo conciliado; movimentos registrados posteriores recebidos pela API ajustam a abertura projetada, e cada semana calcula saldo de abertura + entradas + saídas negativas = saldo de fechamento. O fechamento de cada semana inicia a próxima. A migration está aplicada e o worker tem leitura, sem permissão de gravação, para a tabela do checkpoint. O valor não existe no código ou Git. Os indicadores permanecem parciais até uma carga atualizada e comparação com Caixas e Bancos; falta conferir a T02 visualmente no protótipo. Evidência em [`T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](../evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).
+
 - [Backlog detalhado](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md).
 - [Análise e decisões](../../artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md).
 - [Planilha de evolução](../../artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx).

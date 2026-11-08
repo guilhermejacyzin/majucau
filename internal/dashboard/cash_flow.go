@@ -48,22 +48,15 @@ SELECT DISTINCT m.account_source_id, m.account_name
  ORDER BY m.account_source_id, m.account_name
 `
 
-// The API provides the registered movement ledger, not a ready-made current
-// balance. Load the full history and reproduce the last daily closing balance
-// for the unique Itaú account selected by the approved screen.
-const currentItauBalanceSQL = `
-SELECT COALESCE(SUM(CASE WHEN direction = 'INFLOW' THEN amount ELSE -amount END)
-                FILTER (WHERE source_status = 'R'), 0)::text,
-       COUNT(*) FILTER (WHERE source_status = 'R'),
-       COUNT(*) FILTER (WHERE source_status <> 'R')
-  FROM bling_cash_movements m
-  JOIN integration_sync_batches b ON b.id = m.sync_batch_id
-  JOIN integration_connections c ON c.id = b.connection_id
- WHERE c.provider = 'BLING' AND b.resource = 'caixas'
-   AND b.correlation_id = $1 AND b.status IN ('SUCCESS', 'PARTIAL')
-   AND b.data_stage = 'NORMALIZED'
-   AND m.account_source_id = ANY($2::text[])
-   AND m.movement_date <= $3::date
+const latestApprovedItauBalanceCheckpointSQL = `
+SELECT checkpoint.reconciled_amount::text, checkpoint.reference_date
+  FROM bling_cash_balance_checkpoints checkpoint
+  JOIN integration_connections connection ON connection.id = checkpoint.connection_id
+ WHERE connection.provider = 'BLING'
+   AND checkpoint.account_source_id = ANY($1::text[])
+   AND checkpoint.reference_date <= $2::date
+ ORDER BY checkpoint.reference_date DESC, checkpoint.created_at DESC
+ LIMIT 1
 `
 
 // The report comparison indicates one calendar day for forecast dates while
@@ -112,7 +105,7 @@ WITH daily AS (
     FROM daily d
     JOIN bling_cash_movements m ON m.sync_batch_id = d.batch_id
    WHERE d.resource = 'caixas'
-     AND m.movement_date >= $4::date AND m.movement_date <= $3::date
+     AND m.movement_date >= $5::date AND m.movement_date <= $3::date
   UNION ALL
   SELECT 'RECEIVABLE', r.due_date, 'INFLOW', COALESCE(r.open_balance, r.gross_amount)::text,
          ''::text, r.source_financial_account_id::text,
@@ -163,6 +156,11 @@ SELECT kind, flow_date, direction, amount, source_status,
  ORDER BY flow_date, kind
 `
 
+type approvedItauBalance struct {
+	Metric        application.DashboardMetric
+	ReferenceDate time.Time
+}
+
 type cashFlowCandidate struct {
 	kind, direction, amount, sourceStatus, accountID, financialStatus string
 	methodID, feeRate, fixedFee                                       string
@@ -175,40 +173,31 @@ type cashFlowCandidate struct {
 }
 
 type cashFlowDayAggregate struct {
-	inflows, outflows             domain.Money
-	actualInflows, actualOutflows domain.Money
+	inflows, outflows domain.Money
 }
 
-func readLatestItauBalance(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string, fresh, partial bool) (application.DashboardMetric, error) {
-	if !fresh {
-		return application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}, nil
-	}
+func readLatestItauBalance(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string) (approvedItauBalance, error) {
 	accountIDs, accountsReady, err := selectedCashFlowAccountIDs(ctx, tx, correlationID)
 	if err != nil {
-		return application.DashboardMetric{}, err
+		return approvedItauBalance{}, err
 	}
 	if !accountsReady {
-		return application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}, nil
+		return approvedItauBalance{Metric: application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}}, nil
 	}
 	var value string
-	var registeredCount, otherCount int64
-	if err := tx.QueryRow(ctx, currentItauBalanceSQL, correlationID, accountIDs, domain.BusinessDate(asOf).Format(time.DateOnly)).Scan(&value, &registeredCount, &otherCount); err != nil {
-		return application.DashboardMetric{}, err
+	var referenceDate time.Time
+	if err := tx.QueryRow(ctx, latestApprovedItauBalanceCheckpointSQL, accountIDs, dashboardDateOnly(asOf).Format(time.DateOnly)).Scan(&value, &referenceDate); err != nil {
+		if err == pgx.ErrNoRows {
+			return approvedItauBalance{Metric: application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}}, nil
+		}
+		return approvedItauBalance{}, err
 	}
-	if registeredCount == 0 {
-		return application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}, nil
-	}
-	if otherCount > 0 {
-		partial = true
-	}
-	// This is reconstructed from movement rows. The official list API does not
-	// return the report's closing-balance line or an opening balance, so keep the
-	// value visible as PARTIAL until a full-history comparison confirms it.
-	state := "PARTIAL"
-	return metric(value, registeredCount, state, "BLING"), nil
+	// The user-approved checkpoint remains the card value. Later API movements
+	// are applied only to the graph's projected opening balance.
+	return approvedItauBalance{Metric: metric(value, 1, "PARTIAL", "BLING"), ReferenceDate: dashboardDateOnly(referenceDate)}, nil
 }
 
-func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string, currentBalance application.DashboardMetric) (*application.DashboardCashFlow, error) {
+func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string, checkpoint approvedItauBalance) (*application.DashboardCashFlow, error) {
 	start := domain.BusinessDate(asOf)
 	end := start.AddDate(0, 0, 60)
 	accountIDs, accountsReady, err := selectedCashFlowAccountIDs(ctx, tx, correlationID)
@@ -230,12 +219,17 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	// through the actual end date because recorded movements are not shifted.
 	sourceStart := start.AddDate(0, 0, -blingCashFlowEffectiveFloatDays)
 	sourceEnd := end
-	rows, err := tx.Query(ctx, cashFlowCandidatesSQL, correlationID, sourceStart.Format(time.DateOnly), sourceEnd.Format(time.DateOnly), start.Format(time.DateOnly))
+	movementStart := sourceStart
+	if !checkpoint.ReferenceDate.IsZero() {
+		movementStart = checkpoint.ReferenceDate.AddDate(0, 0, 1)
+	}
+	rows, err := tx.Query(ctx, cashFlowCandidatesSQL, correlationID, sourceStart.Format(time.DateOnly), sourceEnd.Format(time.DateOnly), start.Format(time.DateOnly), movementStart.Format(time.DateOnly))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var daily [61]cashFlowDayAggregate
+	bridgeBalanceDelta := domain.ZeroMoney()
 	partial := true // Float equivalence still needs a live comparison with the selected report.
 	for rows.Next() {
 		candidate, err := scanCashFlowCandidate(rows)
@@ -320,20 +314,29 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 		// settlement terms; never move a registered movement into another day.
 		flowDate = blingCashFlowReportDate(candidate.kind, flowDate)
 		day := dashboardDateOnly(flowDate)
-		if day.Before(start) || day.After(end) {
+		if day.Before(start) {
+			if candidate.kind == "MOVEMENT" && !checkpoint.ReferenceDate.IsZero() && day.After(checkpoint.ReferenceDate) {
+				if candidate.direction == "INFLOW" {
+					bridgeBalanceDelta, err = bridgeBalanceDelta.Add(amount)
+				} else if candidate.direction == "OUTFLOW" {
+					bridgeBalanceDelta, err = bridgeBalanceDelta.Sub(amount)
+				} else {
+					partial = true
+				}
+				if err != nil {
+					return nil, err
+				}
+			}
+			continue
+		}
+		if day.After(end) {
 			continue
 		}
 		index := int(day.Sub(start) / (24 * time.Hour))
 		if candidate.direction == "INFLOW" {
 			daily[index].inflows, err = daily[index].inflows.Add(amount)
-			if candidate.kind == "MOVEMENT" && err == nil {
-				daily[index].actualInflows, err = daily[index].actualInflows.Add(amount)
-			}
 		} else if candidate.direction == "OUTFLOW" {
 			daily[index].outflows, err = daily[index].outflows.Add(amount)
-			if candidate.kind == "MOVEMENT" && err == nil {
-				daily[index].actualOutflows, err = daily[index].actualOutflows.Add(amount)
-			}
 		} else {
 			partial = true
 			continue
@@ -386,24 +389,76 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	if err != nil {
 		return nil, err
 	}
+	projectedOpening := checkpoint.Metric
+	if projectedOpening.Value != "" && projectedOpening.State != "UNAVAILABLE" {
+		opening, parseErr := domain.ParseMoney(projectedOpening.Value)
+		if parseErr != nil {
+			return nil, fmt.Errorf("approved opening balance is invalid")
+		}
+		opening, err = opening.Add(bridgeBalanceDelta)
+		if err != nil {
+			return nil, err
+		}
+		projectedOpening = metric(opening.String(), 1, "PARTIAL", "BLING")
+	}
+	if err := applyWeeklyCashBalances(flow.Periods, projectedOpening, partial); err != nil {
+		return nil, err
+	}
 	flow.CriticalWeek, err = selectCriticalCashFlowWeek(flow.Periods)
 	if err != nil {
 		return nil, err
 	}
-	flow.MinimumBalance30Days, flow.MinimumBalance60Days, err = minimumCashFlowBalances(daily[:], start, currentBalance, partial)
+	flow.MinimumBalance30Days, flow.MinimumBalance60Days, err = minimumCashFlowBalances(daily[:], start, projectedOpening, partial)
 	if err != nil {
 		return nil, err
 	}
 	return flow, nil
 }
 
+func applyWeeklyCashBalances(periods []application.DashboardCashFlowPeriod, opening application.DashboardMetric, partial bool) error {
+	if opening.State == "UNAVAILABLE" || opening.Value == "" {
+		return nil
+	}
+	balance, err := domain.ParseMoney(opening.Value)
+	if err != nil {
+		return fmt.Errorf("approved opening balance is invalid")
+	}
+	state := "PROJECTED"
+	if partial || opening.State == "PARTIAL" {
+		state = "PARTIAL"
+	}
+	for index := range periods {
+		period := &periods[index]
+		inflow, err := domain.ParseMoney(period.Inflows.Value)
+		if err != nil {
+			return fmt.Errorf("cash-flow period contains invalid inflows")
+		}
+		outflow, err := domain.ParseMoney(period.Outflows.Value)
+		if err != nil {
+			return fmt.Errorf("cash-flow period contains invalid outflows")
+		}
+		period.OpeningBalance = ptrMetric(metric(balance.String(), 1, state, "BLING"))
+		balance, err = balance.Add(inflow)
+		if err == nil {
+			balance, err = balance.Add(outflow)
+		}
+		if err != nil {
+			return err
+		}
+		period.ClosingBalance = ptrMetric(metric(balance.String(), 1, state, "BLING"))
+	}
+	return nil
+}
+
+func ptrMetric(value application.DashboardMetric) *application.DashboardMetric { return &value }
+
 const approvedCashReserve = "50000.00"
 
-func minimumCashFlowBalances(days []cashFlowDayAggregate, start time.Time, currentBalance application.DashboardMetric, partial bool) (*application.DashboardMinimumBalance, *application.DashboardMinimumBalance, error) {
-	if currentBalance.State == "UNAVAILABLE" || currentBalance.Value == "" || len(days) < 60 {
+func minimumCashFlowBalances(days []cashFlowDayAggregate, start time.Time, projectionOpening application.DashboardMetric, partial bool) (*application.DashboardMinimumBalance, *application.DashboardMinimumBalance, error) {
+	if projectionOpening.State == "UNAVAILABLE" || projectionOpening.Value == "" || len(days) < 60 {
 		return unavailableMinimumBalance(), unavailableMinimumBalance(), nil
 	}
-	opening, err := domain.ParseMoney(currentBalance.Value)
+	opening, err := domain.ParseMoney(projectionOpening.Value)
 	if err != nil {
 		return nil, nil, fmt.Errorf("current account balance is invalid")
 	}
@@ -417,16 +472,6 @@ func minimumCashFlowBalances(days []cashFlowDayAggregate, start time.Time, curre
 		var minimumDate time.Time
 		for index := 0; index < horizon; index++ {
 			inflow, outflow := days[index].inflows, days[index].outflows
-			if index == 0 {
-				// Current balance already includes today's registered movements.
-				inflow, err = inflow.Sub(days[index].actualInflows)
-				if err == nil {
-					outflow, err = outflow.Sub(days[index].actualOutflows)
-				}
-				if err != nil {
-					return nil, err
-				}
-			}
 			balance, err = balance.Add(inflow)
 			if err == nil {
 				balance, err = balance.Sub(outflow)
@@ -444,7 +489,7 @@ func minimumCashFlowBalances(days []cashFlowDayAggregate, start time.Time, curre
 			return nil, err
 		}
 		state := "PROJECTED"
-		if partial || currentBalance.State == "PARTIAL" {
+		if partial || projectionOpening.State == "PARTIAL" {
 			state = "PARTIAL"
 		}
 		return &application.DashboardMinimumBalance{

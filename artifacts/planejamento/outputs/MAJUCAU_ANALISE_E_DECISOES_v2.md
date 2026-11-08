@@ -4,6 +4,10 @@
 
 **Atualização de interface — 01/11/2026:** o protótipo não mostra `Exportar` em nenhuma tela nem disponibiliza arquivos durante a finalização atual. T11 — Compras não mostra `Gerar pedidos`. As exportações aprovadas anteriormente ficam adiadas para depois da finalização; cards, desenho restante e regras financeiras permanecem protegidos. Consulte `G0-DECISION-REGISTER.md`.
 
+**Regra T02 — 07/11/2026:** separar o saldo bancário atual, cuja única conta é Itaú, do saldo acumulado desenhado pelo relatório Fluxo de Caixa. A linha do gráfico segue `saldo inicial + receitas + despesas negativas + ajuste`; cada semana começa no saldo acumulado da semana anterior e acompanha a conta selecionada no relatório. Se o filtro do relatório estiver só em Itaú, a trajetória calculada corresponde a essa conta, sem substituir o card de saldo atual. Evidência: `docs/evidence/T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md`.
+
+**T02 — 08/11/2026:** os dois cards de saldo continuam indisponíveis no protótipo conectado. A API oficial fornece movimentos, não o saldo absoluto pronto; a consulta agora pede `situacao=R` e foi validada por testes direcionados. A próxima carga ainda precisa ocorrer, e o saldo de abertura precisa de fonte oficial antes de preencher os cards. A regra visual e financeira não mudou. Evidência: `docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md`.
+
 Esta revisão corrige a interpretação que tratava regras já definidas e responsabilidades técnicas como perguntas de negócio. O fechamento registrado aqui é o de 13/09/2026. A confirmação de “somente atualizar o backlog” valia para aquela rodada. Decisões aprovadas depois e evidências atuais estão listadas a seguir e prevalecem em caso de conflito, sem alterar telas ou regras que continuam aprovadas.
 
 Registro histórico de 13/09/2026: 70 tarefas revisadas; 3 levantamentos concluídos, 2,4% por quantidade e 0% de desenvolvimento. Naquela data não havia implementação nem testes reais do produto. Esse registro não representa o estado atual.

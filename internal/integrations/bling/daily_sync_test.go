@@ -44,8 +44,8 @@ func TestDailyCashMovementHistoryFilterUsesExplicitStartAndRunDate(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if filter.DateFrom != "2026-01-01" || filter.DateTo != "2026-10-18" {
-		t.Fatalf("cash movement history = %q..%q, want 2026-01-01..2026-10-18", filter.DateFrom, filter.DateTo)
+	if filter.DateFrom != "2026-01-01" || filter.DateTo != "2026-10-18" || filter.Situation != "R" {
+		t.Fatalf("cash movement history = %q..%q, situation %q; want 2026-01-01..2026-10-18 and registered movements", filter.DateFrom, filter.DateTo, filter.Situation)
 	}
 }
 

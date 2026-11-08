@@ -316,6 +316,40 @@ export namespace application {
 	        this.value = source["value"];
 	    }
 	}
+	export class DashboardMinimumBalance {
+	    balance: DashboardMetric;
+	    date?: string;
+	    headroom: DashboardMetric;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardMinimumBalance(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.balance = this.convertValues(source["balance"], DashboardMetric);
+	        this.date = source["date"];
+	        this.headroom = this.convertValues(source["headroom"], DashboardMetric);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class DashboardCashFlowPeriod {
 	    from: string;
 	    through: string;
@@ -410,40 +444,6 @@ export namespace application {
 	        this.source_system = source["source_system"];
 	    }
 	}
-	export class DashboardMinimumBalance {
-	    balance: DashboardMetric;
-	    date?: string;
-	    headroom: DashboardMetric;
-
-	    static createFrom(source: any = {}) {
-	        return new DashboardMinimumBalance(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.balance = this.convertValues(source["balance"], DashboardMetric);
-	        this.date = source["date"];
-	        this.headroom = this.convertValues(source["headroom"], DashboardMetric);
-	    }
-
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-	        }
-	        return new classs(a);
-	    }
-	    return a;
-	}
-	}
 	export class DashboardCashFlow {
 	    inflows_next_30_days: DashboardMetric;
 	    outflows_next_30_days: DashboardMetric;
@@ -490,6 +490,7 @@ export namespace application {
 		    return a;
 		}
 	}
+	
 	
 	
 	

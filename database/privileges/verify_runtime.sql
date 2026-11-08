@@ -61,6 +61,7 @@ BEGIN
       'public.sync_cursors',
       'public.raw_records',
       'public.bling_cash_movements',
+      'public.bling_cash_balance_checkpoints',
       'public.bling_payment_method_terms',
       'public.bling_financial_account_identities',
       'public.receivable_sync_snapshot_rows',

@@ -2,7 +2,7 @@
 
 Aplicativo Wails de inteligência financeira para Windows 10/11 x64. A implementação atual usa banco local; a direção aprovada para consulta em mais de um local é hospedagem privada centralizada conforme `ADR-002-HOSPEDAGEM-PRIVADA-CENTRALIZADA.md`. O produto consolida tesouraria, recebíveis, obrigações, projeções, resultado e alertas em uma interface executiva, preservando a origem e a rastreabilidade de cada valor.
 
-> **Estado atual:** G0 aprovado em 2026-08-16; fundação G1 em implementação. Este repositório ainda não representa um release aprovado para produção.
+> **Estado atual — 08/11/2026:** protótipo em desenvolvimento, sem homologação de produção. Backlog estimado em 12,3% concluído / 87,7% restante; BK-062 (T02 — Fluxo de Caixa) em 30%. Entradas, saídas e gráfico exibem dados parciais; saldo atual e menores saldos 30/60 seguem indisponíveis porque a API oficial lista movimentos, mas não fornece saldo de abertura/fechamento pronto. A consulta agora filtra movimentos registrados (`situacao=R`); falta reexecutar a sincronização e confirmar uma base oficial para o saldo absoluto. Veja [`docs/META-PROJETO.md`](docs/META-PROJETO.md) e [`docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md`](docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md).
 
 ## O que o produto entrega
 
@@ -194,6 +194,7 @@ Builds G1 são deliberadamente não assinados. O G7 exige certificado Authentico
 - [docs/evidence/BLING-RAW-SOURCES-2026-09-20.md](docs/evidence/BLING-RAW-SOURCES-2026-09-20.md) — recursos `contas/receber` e `contas/pagar` preservados em RAW idempotente.
 - [docs/evidence/BLING-SYNC-2026-09-20.md](docs/evidence/BLING-SYNC-2026-09-20.md) — contrato IPC de sincronização filtrada, cursor transacional e limites do gate.
 - [docs/evidence/BUILD-ARTIFACTS-2026-09-20.md](docs/evidence/BUILD-ARTIFACTS-2026-09-20.md) — build Windows x64 validado e caches/outputs consolidados em `artifacts/`.
+- [docs/evidence/T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md](docs/evidence/T02-BLING-WEEKLY-REPORT-AND-ITAU-BALANCE-2026-11-07.md) — diferença entre saldo acumulado do gráfico e saldo bancário Itaú; fórmula semanal, variação, verificações e pendências.
 
 ## Distribuição
 

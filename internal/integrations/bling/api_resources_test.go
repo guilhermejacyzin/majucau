@@ -399,6 +399,9 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 		if r.URL.Query().Get("pagina") != "2" || r.URL.Query().Get("limite") != "2" {
 			t.Fatalf("pagination query = %s", r.URL.RawQuery)
 		}
+		if got := r.URL.Query().Get("situacao"); got != "R" {
+			t.Fatalf("situation = %q, want R (registered)", got)
+		}
 		categoryIDs := r.URL.Query()["idsCategorias"]
 		if len(categoryIDs) != 2 || categoryIDs[0] != "11" || categoryIDs[1] != "22" {
 			t.Fatalf("category IDs = %v, want repeated idsCategorias=11&idsCategorias=22", categoryIDs)
@@ -421,7 +424,7 @@ func TestListCashMovementsBuildsBoundedReadOnlyPageRequest(t *testing.T) {
 	}
 
 	page, err := client.ListCashMovements(context.Background(), CashMovementsFilter{
-		Page: 2, MaxRecords: 2, DateFrom: "2026-09-01", DateTo: "2026-09-30", CategoryIDs: []int64{11, 22},
+		Page: 2, MaxRecords: 2, DateFrom: "2026-09-01", DateTo: "2026-09-30", Situation: "R", CategoryIDs: []int64{11, 22},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -547,6 +550,7 @@ func TestListCashMovementsRejectsInvalidDatesBeforeNetworkCall(t *testing.T) {
 		{name: "invalid end month", filter: CashMovementsFilter{DateTo: "2026-13-01"}},
 		{name: "non-canonical date", filter: CashMovementsFilter{DateFrom: "2026-9-01"}},
 		{name: "reversed period", filter: CashMovementsFilter{DateFrom: "2026-10-01", DateTo: "2026-09-30"}},
+		{name: "invalid situation", filter: CashMovementsFilter{Situation: "X"}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

@@ -182,7 +182,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	nuvemFutureFresh := !dailyNuvemFuturePartial
 	payablesFresh := completedBy(dailyPayablesSyncAt, asOf)
 	cashMovementsFresh := completedBy(dailyCashMovementsSyncAt, asOf)
-	cashBalance, err := readLatestItauBalance(ctx, tx, businessDate, dailyCorrelationID, cashMovementsFresh, dailyCashMovementsPartial)
+	cashBalance, err := readLatestItauBalance(ctx, tx, businessDate, dailyCorrelationID)
 	if err != nil {
 		return application.DashboardSnapshot{}, err
 	}
@@ -215,7 +215,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		PayablesDueNext7Days:     metricForSourceRun(payablesDueNext7DaysValue, payablesDueNext7DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesDueNext90Days:    metricForSourceRun(payablesDueNext90DaysValue, payablesDueNext90DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		PayablesDueNext30Days:    metricForSourceRun(payablesDueNext30DaysValue, payablesDueNext30DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
-		CashBalance:              cashBalance,
+		CashBalance:              cashBalance.Metric,
 		CashFlow:                 cashFlow,
 		PaymentsMonth:            metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
 	}, nil

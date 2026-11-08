@@ -1,52 +1,58 @@
-# T02 — último saldo diário do Itaú
+# T02 — saldo conciliado do Itaú como base do gráfico
 
-## Pedido registrado
+## Regra aprovada
 
-O card **Saldo atual** deve receber o último fechamento que aparece em Caixa e
-Bancos para a conta Itaú. O card **Menor saldo 30 / 60 dias** deve usar essa
-posição como ponto de partida e a série diária aprovada da T02. O número visto
-em uma captura serve apenas para conferência; não será gravado como valor fixo.
+- O card **Saldo atual** mostra o saldo da conta Itaú no último dia conciliado.
+- O mesmo saldo, com a data de referência, inicia a projeção semanal da T02.
+- Para cada semana: **saldo de abertura + entradas + saídas** (saídas têm sinal
+  negativo) = saldo de fechamento. O fechamento de uma semana abre a seguinte.
+- Movimentos registrados recebidos pela API posteriores à data do saldo-base
+  podem compor a abertura projetada do primeiro período. O card continua
+  mostrando somente o último fechamento conciliado aprovado.
+- O valor do print aprovado é armazenado somente no banco local isolado. Ele
+  não é incluído em código, documentação versionada, exemplos ou Git.
+- Até o worker localizar um fechamento conciliado mais recente e a comparação
+  com Caixa e Bancos ser concluída, os indicadores permanecem **Parcial**.
 
-## O que a API oficial fornece
+## Evidência técnica
 
-- `GET /caixas` devolve lançamentos paginados, com data, valor, débito/crédito,
-  situação e conta financeira. Não devolve a linha de fechamento diário do
-  relatório.
-- Sem `dataInicial`, `GET /caixas` consulta por padrão desde o primeiro dia do
-  mês atual. O sincronizador precisa enviar uma data inicial explícita.
-- `GET /caixas/{idCaixa}` tem o campo `saldo`, mas a documentação o define como
-  indicador `S`/`N` de ajuste após o lançamento; esse campo não contém o saldo
-  bancário.
-- O catálogo de contas financeiras identifica as contas, mas não traz o saldo.
+A documentação oficial de `GET /caixas` lista movimentos, datas, valores,
+contas e filtros de situação. A resposta não inclui o saldo de fechamento por
+dia. A rota `GET /caixas/{idCaixa}` tem um campo `saldo` que representa se o
+movimento ajusta o saldo, não o total bancário da conta. Portanto, a aplicação
+usa um ponto de partida aprovado e não chama a variação dos movimentos de saldo
+bancário.
 
 Fonte: [referência oficial da API Bling](https://developer.bling.com.br/referencia),
-OpenAPI v3, seção “Caixas e Bancos”.
+seções “Caixas e Bancos”.
 
-## Implementação local
+## Implementação desta etapa
 
-- O sincronizador envia `dataInicial=2026-01-01` e `dataFinal` do dia da
-  execução. A data inicial fica explícita para evitar o padrão de mês atual.
-- A leitura seleciona somente a conta identificada como Itaú e lançamentos
-  registrados (`R`). O saldo de movimentos é calculado com créditos positivos
-  e débitos negativos, em precisão decimal.
-- Como a API não entrega o saldo de abertura nem o fechamento do relatório, o
-  valor reconstruído fica como **Parcial** até ser comparado com a última linha
-  “Saldo em [data]” do relatório. O print recebido mostrou R$ 62.548,33 em
-  06/11/2026; esse é apenas um ponto de conferência, não uma entrada do sistema.
-- Os menores saldos de 30 e 60 dias também permanecem parciais enquanto a base
-  atual não for validada.
+- A migration `000023_bling_balance_checkpoints` cria armazenamento local
+  separado para pontos de saldo aprovados, com conta, data e valor.
+- O worker recebe somente permissão de leitura nessa tabela. O ponto aprovado
+  é provisionado localmente, fora do repositório. A migration foi aplicada ao
+  PostgreSQL isolado do protótipo e a permissão de leitura foi verificada; a
+  permissão de gravação do worker foi confirmada como negada.
+- O card lê o checkpoint mais recente da conta identificada como Itaú.
+- A série do gráfico começa pelo checkpoint e soma movimentos registrados da
+  API entre a data do checkpoint e o primeiro período exibido; em seguida
+  acumula entradas e saídas negativas semana a semana. Como o modelo normalizado
+  não confirma a situação de conciliação de cada movimento, a projeção continua
+  marcada como **Parcial** e não atualiza o card por conta própria.
+- Os cards de menor saldo de 30/60 dias partem da mesma projeção. A reserva
+  mínima aprovada permanece R$ 50.000.
 
-## Limite desta execução
+## Limites e próximo passo
 
-O navegador recusou a leitura automatizada do relatório por uma permissão salva
-do próprio navegador do Codex. O serviço local do Majucau também não está
-disponível neste ambiente para executar uma sincronização real. Portanto, ainda
-não há confirmação de que o valor reconstruído coincide com o último saldo do
-relatório, nem conferência visual da tela atualizada.
+A API continua sendo a origem dos movimentos seguintes. O valor do card só
+avança quando houver um novo fechamento conciliado aprovado/identificado; não
+se presume que um movimento registrado seja conciliado. O build do
+worker/dashboard passou, a checagem de checksum das migrations passou e a T01
+foi aberta com os dados do protótipo. A sincronização posterior à mudança e a
+comparação com Caixas e Bancos ainda precisam ser concluídas. A tentativa de
+captura/navegação até a T02 falhou nesta sessão; sua conferência visual e a
+homologação continuam pendentes.
 
-## Próximo passo da mesma tarefa
-
-Executar a sincronização real do histórico do Itaú, comparar o saldo calculado
-com o fechamento mais recente do relatório e só então confirmar a exibição nos
-dois cards. Se a comparação não bater, investigar abertura/ajustes ou histórico
-anterior ao início configurado; manter os valores como parciais até resolver.
+Andamento preservado: BK-062 em 30% (70% restante); backlog geral em 12,3%
+concluído (87,7% restante). Esses percentuais não significam homologação.

@@ -35,12 +35,12 @@ total ficaram visíveis sem rolagem horizontal na largura testada.
 
 ### Causa identificada e correção
 
-A tabela de Caixa e Bancos enviada pela responsável mostra uma entrada de
-R$ 151,23 em 05/11, o saldo de R$ 87.548,33 ao fim de 05/11, uma saída de
-R$ 25.000,00 em 06/11 e o saldo de R$ 62.548,33 ao fim de 06/11. No relatório
-Fluxo de Caixa iniciado em 07/11, R$ 62.548,33 já aparece como saldo inicial;
-portanto, os movimentos anteriores não podem ser somados novamente às
-despesas/receitas de 07/11.
+A tabela de Caixa e Bancos enviada pela responsável mostra uma entrada em
+05/11, o saldo de fechamento desse dia, uma saída em 06/11 e o fechamento
+conciliado de 06/11. No relatório Fluxo de Caixa iniciado em 07/11, esse mesmo
+fechamento aparece como saldo inicial; portanto, os movimentos anteriores não
+podem ser somados novamente às despesas/receitas do período. O valor numérico
+foi removido deste registro e permanece somente no banco local isolado.
 
 A implementação anterior aplicava um deslocamento de um dia a todo tipo de
 registro. A correção preserva a data de movimentos realizados, usa a janela do

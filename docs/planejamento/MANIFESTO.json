@@ -13,9 +13,34 @@
       "sha256": "5b866449ca4c225206692f18c52b3bb643e0b8a641c4db3d4714c0545ecc1350"
     },
     {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_ANALISE_E_DECISOES_v2.md",
+      "bytes": 77197,
+      "sha256": "fe0e511b7951e6e57e7d24e4bc5903c50a72f013b6f9077552b2564335a8a1e8"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_DETALHADO_v2.md",
+      "bytes": 388605,
+      "sha256": "b5fcf54b13e5c4a056fdab919dc79c2ff327bf8bca2553c8d68b4325df4d90e6"
+    },
+    {
+      "path": "artifacts/planejamento/outputs/MAJUCAU_BACKLOG_E_EVOLUCAO_v2.xlsx",
+      "bytes": 56092,
+      "sha256": "91766eaf2747140ada06c6383bae1a7ff5144b003c446f2ceb1be18705fc0d32"
+    },
+    {
+      "path": "docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md",
+      "bytes": 3309,
+      "sha256": "83a3ef079b1d6a777de725ee9d12973e7c2c9c5d04fd6a51e4e32679873e04f4"
+    },
+    {
+      "path": "docs/META-CICLO-APROVACAO.md",
+      "bytes": 1493,
+      "sha256": "50743bbe97c37939bb1156b514ac5205b62011d32c51bca0eaf2c696b11fc15b"
+    },
+    {
       "path": "docs/META-PROJETO.md",
-      "bytes": 112665,
-      "sha256": "ef6404d74816a4964e385242ba642874233cb1e1fe2ee0c65b995c469df4a36a"
+      "bytes": 125378,
+      "sha256": "2ddb251e52b2cc5810b8b80befed3a7e4ce28c736a38a1f260b596b245fcc71d"
     },
     {
       "path": "docs/planejamento/FONTES.md",
@@ -24,8 +49,8 @@
     },
     {
       "path": "docs/planejamento/README.md",
-      "bytes": 4762,
-      "sha256": "54a7bd3dd87894bafd72bfa1484b5ea625f0bed4c6833b671092c80049f2ae30"
+      "bytes": 5948,
+      "sha256": "97c7c44e6711246c92dc3afe9ac70c77544abad8217bd0d17e131862c45dac98"
     },
     {
       "path": "docs/planejamento/RELATORIOS-CATALOGO-RASCUNHO-2026-10-04.md",
@@ -34,8 +59,8 @@
     },
     {
       "path": "docs/planejamento/VISAO_GERAL.md",
-      "bytes": 16291,
-      "sha256": "3eb267cf1e1505e621d4bef9168a395427d5ba3590b1879075195a0a89b7f37e"
+      "bytes": 18867,
+      "sha256": "f8cf54427535a544d34e9c412acad01c66be27bb56aac464c89c523aeb744928"
     },
     {
       "path": "docs/planejamento/work/assemble_deliverables.py",
@@ -54,8 +79,8 @@
     },
     {
       "path": "docs/planejamento/work/backlog_v2.json",
-      "bytes": 201683,
-      "sha256": "68e733ba5b65ea8af83d67b164c74557449fbdfa8f82d14598cc95d924d57517"
+      "bytes": 207794,
+      "sha256": "bc66e3ef30c4ae69aeb5eb886eb227ae0e77adfab54817c28403805d85df4c12"
     },
     {
       "path": "docs/planejamento/work/build_backlog.py",
@@ -358,9 +383,29 @@
       "sha256": "7cd9b54f9c56a4e749fb20fce072b284f3856d2f6661ab90cd06a8f67a01e85f"
     },
     {
+      "path": "internal/integrations/bling/api_resources.go",
+      "bytes": 16211,
+      "sha256": "f07d24cfa677f49cf2a51c8ab49b0cc1be0c62dd461a591e3dac145c023e19dc"
+    },
+    {
+      "path": "internal/integrations/bling/api_resources_test.go",
+      "bytes": 22310,
+      "sha256": "f730c5d8209d937d5c6f3d6eecafb80dc485733212d70088eef414186bfb558e"
+    },
+    {
+      "path": "internal/integrations/bling/daily_sync.go",
+      "bytes": 6331,
+      "sha256": "4a73f7601e910692824f4793f694fcf5b2d507c368610ad240a3e9de2aec627b"
+    },
+    {
+      "path": "internal/integrations/bling/daily_sync_test.go",
+      "bytes": 1954,
+      "sha256": "721db229550cace246f5d5085aa387c7c32db9e7e1d977a707e4eda37ecdfe2f"
+    },
+    {
       "path": "README.md",
-      "bytes": 15110,
-      "sha256": "76deb566f013527fbd0758f2c02950ad5c6bc4ffb6cace59d0f1498b03e72c81"
+      "bytes": 15943,
+      "sha256": "3e805c03f80850a5fd56140da46c06bf5255235427acdec47876a59746cf9626"
     },
     {
       "path": "tools/exportar_planejamento.py",

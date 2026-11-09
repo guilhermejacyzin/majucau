@@ -1,5 +1,19 @@
 # Arquivos do planejamento
 
+**Estado T02 — 09/11/2026:** a T01 agora usa a série de fechamento semanal
+calculada pela T02, que corrige a linha de saldo que faltava na Visão Executiva.
+As entradas vêm de Contas a Receber pelo líquido; as saídas, de Contas a Pagar;
+o gráfico não usa o relatório pronto de Fluxo de Caixa. O rótulo visual
+“Parcial” foi retirado a pedido da responsável, mas os estados de completude
+continuam registrados internamente. O snapshot atual dessas duas fontes ainda
+está incompleto e a captura visual do protótipo expirou; a T02 ainda precisa de
+conferência de todas as semanas e aprovação. T03 aguarda a aprovação da T02.
+Consulte o [status atualizado](../STATUS-ATUAL-2026-11-09.md) e a [visão
+geral](VISAO_GERAL.md). O gráfico aprovado em 08/11 trata apenas da
+apresentação; as observações antigas abaixo são históricas quando divergirem
+deste estado. A evidência da correção está em
+[`T02-EXECUTIVE-WEEKLY-BALANCE-WIRING-2026-11-09.md`](../evidence/T02-EXECUTIVE-WEEKLY-BALANCE-WIRING-2026-11-09.md).
+
 **Atualização vigente do gráfico T02 — 08/11/2026:** gráfico semanal conferido e aprovado por Gisele. Cada ponto representa uma semana; o eixo mostra um intervalo por ponto, abreviado em séries densas, e a semana selecionada ganha uma linha vertical com tooltip de Despesas, Receitas e Saldo. A aprovação é visual; sincronização e saldo ainda não estão homologados. Ver [evidência de responsividade e origem do saldo](../evidence/RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md).
 
 ## Referência vigente: v2

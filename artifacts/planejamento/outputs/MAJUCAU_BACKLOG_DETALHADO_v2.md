@@ -1,5 +1,17 @@
 # Majucau — backlog de ponta a ponta, versão 2
 
+**Estado atual T02 — 09/11/2026, 05:40 BRT:** corrigida a ligação da série de
+saldo semanal calculada pela T02 com a Visão Executiva T01. A falha era a T01
+consumir períodos sem abertura/fechamento, embora a T02 já os calculasse. O
+texto “Parcial” foi removido da apresentação; o estado de completude permanece
+interno. O snapshot tem Contas a Receber e Contas a Pagar em PARTIAL, portanto
+os números ainda precisam de conferência semanal e não estão homologados. A
+captura visual da janela Wails expirou duas vezes nesta atualização; não foi
+declarada nova aprovação visual. BK-062 permanece em 30% até a homologação; a
+T03 aguarda aprovação da T02. A verificação do backlog informa 126 tarefas
+ativas, 7 concluídas, 23 em andamento e 96 não iniciadas: 12,3% concluído e
+87,7% restante. Consulte `docs/STATUS-ATUAL-2026-11-09.md`.
+
 **Correção T02 — receita líquida zerada, 09/11/2026 02:33 BRT:** causa confirmada na carga real: a API salvou os recebíveis, mas o lote expirou durante os detalhes de Contas a Pagar antes de atualizar as taxas das formas de pagamento. A consulta exigia que recebíveis e taxas estivessem na mesma execução; sem a tabela de taxas, convertia o líquido ausente em R$ 0,00. Para 22–28/11, 146 títulos somam R$ 45.482,22 brutos e R$ 43.790,66 líquidos conforme a configuração oficial válida anterior, igual ao relatório mostrado por Gisele. A consulta agora usa a última configuração oficial de taxas bem-sucedida da mesma conta; sincroniza taxas/contas antes dos detalhes longos de pagar. Testes focados de dashboard/PostgreSQL, Bling e worker passaram. Falta reabrir a build atualizada e conferir o número em tela; o lote novo de pagar e as demais semanas seguem pendentes. T02 não está aprovada; T03 aguarda. Percentuais mantidos como estimativa histórica: T02 70% restante e projeto 87,7% restante. Evidência: `docs/evidence/T02-RECEIVABLE-NET-VALUE-ROOT-CAUSE-2026-11-09.md`.
 
 **Estado atual T02 — 09/11/2026, 02:03 BRT:** o protótipo nativo está aberto na T03 e a árvore acessível mostra “Sem dados confirmados”. A leitura API completou Contas a Receber (15.155 registros) e movimentos conciliados (3.162). Contas a Pagar leu 104 páginas/10.301 registros, e preparava a página 5/104; o lote seguia RUNNING, sem publicação final. Movimentos gerais ficaram PARTIAL por `BLING_CASH_MOVEMENT_STATUS_MISSING`. O prazo completo foi ajustado localmente para 2h com base no ritmo observado; a build atual ainda precisa ser validada/aplicada e a carga completa precisa terminar. T02 não está homologada, conferência semanal pendente, T03 aguarda aprovação. Percentuais antigos (BK-062 30%, projeto 12,3%) não foram recalculados e são históricos. Evidência: `docs/evidence/T02-FULL-REFRESH-TIMEOUT-2026-11-09.md`.
@@ -2100,6 +2112,17 @@ Além do aceite específico: regras vigentes e capacidades aplicadas no backend,
 **Regras e verificações vinculadas:** F-01
 
 ### BK-062 — Implementar T02 Fluxo de Caixa
+
+**Correção T01/T02 — 09/11/2026:** T01 agora recebe a mesma série semanal
+calculada que a T02, incluindo abertura e saldo de fechamento. A linha de saldo
+antes faltava na T01 porque ela passava períodos crus sem esses campos. O
+frontend deixou de acrescentar o texto “Parcial” aos valores e ao título de
+origem; o estado real de completude continua disponível internamente. Isto
+corrige a apresentação, não homologa a atualização financeira: o retrato
+consultado ainda informa Contas a Receber PARTIAL (14.526 registros) e Contas a
+Pagar PARTIAL (1.273). Nenhuma mudança na regra de negócio. BK-062 fica em 30%
+até a leitura integral, comparação semana a semana e aprovação. Ver
+`docs/STATUS-ATUAL-2026-11-09.md`.
 
 **Atualização de dados — 08/11/2026:** o saldo aprovado do Itaú continua sendo a base local; o código agora consulta `situacaoConciliacao=1` e guarda IDs conciliados por carga. A migration 000024 ainda não foi aplicada e não houve sincronização real com essa leitura. A T02 apresenta a projeção como parcial até comparação com o mesmo relatório, período e filtros. BK-062 segue em 30%. Evidência: `docs/evidence/T02-LAST-ITAU-BALANCE-API-2026-11-08.md`.
 

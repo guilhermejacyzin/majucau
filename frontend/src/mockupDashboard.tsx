@@ -86,7 +86,7 @@ function MocapHeader({ config, snapshot, onRefresh }: { config: ScreenConfig; sn
 }
 
 function MocapCard({ card, detailScreen, onNavigate, hideAction = false }: { card: Card; detailScreen?: MockupScreenKey; onNavigate?: (screen: MockupScreenKey) => void; hideAction?: boolean }) {
-  const formatPeriodMetric = (metric?: DashboardMetric) => !metric?.value || metric.state === 'UNAVAILABLE' ? '—' : `${formatBRL(metric.value)}${metric.state === 'PARTIAL' ? ' · Parcial' : ''}`
+  const formatPeriodMetric = (metric?: DashboardMetric) => !metric?.value || metric.state === 'UNAVAILABLE' ? '—' : formatBRL(metric.value)
   const negative = (value?: string) => /^\s*[−-]/.test(value ?? '')
   const formatBalanceDate = (value?: string) => value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit' }).format(new Date(`${value}T12:00:00.000Z`)) : '—'
   return <article className={`mocap-card tone-${card.tone} ${card.variant ? `variant-${card.variant}` : ''}`}><div className="mocap-card-icon"><Icon icon={card.icon} /></div><div className="mocap-card-body"><Tooltip id="metric.details"><span className="mocap-card-label">{card.label}</span></Tooltip>{card.variant === 'minimum-balance' ? <div className="mocap-minimum-values">{(card.minimumValues ?? [{ label: '30 dias' }, { label: '60 dias' }]).map((item) => <div key={item.label}><strong>{item.label}</strong><b className={negative(item.metric?.value) ? 'mocap-negative-value' : undefined}>{formatPeriodMetric(item.metric)}</b><span>Em: {formatBalanceDate(item.date)}</span><small className={negative(item.headroom?.value) ? 'mocap-negative-value' : undefined}>Folga: {formatPeriodMetric(item.headroom)}</small></div>)}</div> : card.variant === 'period-comparison' ? <div className="mocap-period-values">{card.periodValues?.map((period) => <div key={period.label}><span>{period.label}</span><b className={negative(period.metric?.value) ? 'mocap-negative-value' : undefined}>{formatPeriodMetric(period.metric)}</b></div>)}</div> : <><span className={`mocap-empty-value${negative(card.value) || negative(card.displayValue) ? ' mocap-negative-value' : ''}`}>{card.displayValue ?? (card.value ? formatBRL(card.value) : '—')}</span>{card.supporting && <span className="mocap-card-support">{card.supporting}</span>}</>}{!hideAction && <Tooltip id="metric.details"><button type="button" className="mocap-card-action" aria-label={detailScreen ? `Ver detalhes: ${card.label}` : undefined} disabled={Boolean(detailScreen) && !onNavigate} onClick={detailScreen && onNavigate ? () => onNavigate(detailScreen) : undefined}>Ver detalhes <span>⌄</span></button></Tooltip>}</div></article>
@@ -219,7 +219,7 @@ function CashFlowWeeklyTable({ periods }: { periods: DashboardCashFlowPeriod[] }
     { label: 'Despesas', metrics: periods.map((period) => period.outflows), total: sumCashFlowMetrics(periods.map((period) => period.outflows)) },
     { label: 'Saldo acumulado', metrics: periods.map((period) => period.closing_balance ?? notAvailable), total: periods[periods.length - 1]?.closing_balance ?? notAvailable },
   ]
-  const metricText = (metric?: DashboardMetric | string) => typeof metric === 'string' ? metric : !metric?.value || metric.state === 'UNAVAILABLE' ? '—' : `${formatBRL(metric.value)}${metric.state === 'PARTIAL' ? ' · Parcial' : ''}`
+  const metricText = (metric?: DashboardMetric | string) => typeof metric === 'string' ? metric : !metric?.value || metric.state === 'UNAVAILABLE' ? '—' : formatBRL(metric.value)
   const isNegative = (metric?: DashboardMetric | string) => {
     const value = typeof metric === 'string' ? metric : metric?.value
     return /^\s*[−-]/.test(value ?? '')
@@ -268,9 +268,7 @@ function withSnapshot(screen: MockupScreenKey, card: Card, snapshot?: DashboardS
   return {
     ...card,
     value: metric.value,
-    supporting: metric.state === 'PARTIAL'
-      ? `Parcial${card.label === 'SALDO ATUAL' ? '' : card.supporting ? ` · ${card.supporting}` : ''}`
-      : card.supporting,
+    supporting: card.supporting,
   }
 }
 
@@ -318,7 +316,6 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
     ? formatPercentVariation(current, previous, magnitude)?.replace(' vs. semana anterior', '')
     : undefined
   const hasFlow = periods.length > 0 && points.length > 0
-  const hasConfirmed = cashFlow?.inflows_next_30_days.state === 'CONFIRMED' && cashFlow?.outflows_next_30_days.state === 'CONFIRMED'
   const yTicks = [scale, scale / 2, 0, -scale / 2, -scale]
   const hasBalanceSeries = balances.every((amount) => amount !== undefined)
   const activePeriod = hoveredPeriod ?? pinnedPeriod
@@ -335,7 +332,7 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
   }
   return (
     <section className="mocap-panel mocap-chart-panel">
-      <div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>{title}</h2><p>{hasFlow ? (hasConfirmed ? 'Fonte: Bling' : 'Parcial · fonte: Bling') : 'Sem série confirmada'}{rangeLabel ? ` · ${rangeLabel}` : ''}</p></div></div></div>
+      <div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>{title}</h2><p>{hasFlow ? 'Fonte: Contas a Receber e Contas a Pagar' : 'Sem série confirmada'}{rangeLabel ? ` · ${rangeLabel}` : ''}</p></div></div></div>
       <div className="mocap-chart-legend"><span className="legend-blue">●</span> Entradas <span className="legend-red">●</span> Saídas <span className="legend-orange">━●</span> Saldo <span>Variação semanal</span></div>
       <div className="mocap-chart-empty">
         {hasFlow ? (
@@ -418,7 +415,7 @@ function formatCashFlowPeriod(period?: DashboardCashFlowPeriod): string {
 
 function criticalWeekMetric(metric?: DashboardMetric): string {
   if (!metric?.value || metric.state === 'UNAVAILABLE') return '—'
-  return `${formatBRL(metric.value)}${metric.state === 'PARTIAL' ? ' · Parcial' : ''}`
+  return formatBRL(metric.value)
 }
 
 function EmptyCriticalPanel({ title, subtitle, cashFlow }: { title: string; subtitle: string; cashFlow?: DashboardSnapshot['cash_flow'] }) {
@@ -566,7 +563,7 @@ export function MockupDashboard({ screen, snapshot, onNavigate, onRefresh }: { s
     if (current === undefined) return selected
     return best === undefined || (current < 0n ? -current : current) > (best < 0n ? -best : best) ? period : selected
   }, undefined)
-  const cashFlowView = rawCashFlow ? { ...rawCashFlow, periods: screen === 'cashflow' ? selectedPeriods : rawCashFlow.periods ?? [], critical_week: screen === 'cashflow' ? selectedCriticalWeek : rawCashFlow.critical_week } : undefined
+  const cashFlowView = rawCashFlow ? { ...rawCashFlow, periods: selectedPeriods, critical_week: selectedCriticalWeek } : undefined
   const cards = config.cards.map((card) => withSnapshot(screen, card, snapshot))
   const lowerCards = config.lower
     .filter((card) => screen !== 'dre' || card.label !== 'UNMAPPED')

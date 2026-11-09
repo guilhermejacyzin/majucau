@@ -1,51 +1,58 @@
-# Status da T02 — 09/11/2026, 04:59 BRT
+# Status da T02 — 09/11/2026, 05:40 BRT
 
-## Atualização verificada — 09/11/2026, 04:59 BRT
+## Correção aplicada no protótipo — 09/11/2026, 05:40 BRT
 
 O protótipo Wails real está aberto na janela `Majucau Financial Intelligence`.
-Na conferência da Visão Executiva, os indicadores e o gráfico aparecem vazios.
-Não considero a T02 concluída nem os dados atuais homologados.
+A tela Visão Executiva foi atualizada ao vivo e agora mostra a linha laranja de
+saldo semanal, calculada com o último saldo Itaú conciliado e os mesmos valores
+semanais de Contas a Receber (líquido) e Contas a Pagar. A origem do erro era
+específica: a T01 usava os períodos crus do servidor, que não traziam abertura
+e fechamento, enquanto a T02 já montava os períodos calculados. A T01 agora usa
+a mesma série calculada que a T02.
 
-Uma nova leitura manual da API está ativa com a correlação
-`e08c578a-8ff0-436f-b7a7-40ac8b49bf90`. O estado no banco isolado do projeto,
-consultado às 04:58 BRT, é:
+Às 05:40 BRT, o processo do protótipo real foi encontrado em execução. A
+ferramenta de captura da janela falhou duas vezes por tempo esgotado, então não
+foi possível fazer uma nova conferência visual nesta atualização. O conteúdo
+anteriormente observado pela árvore de acessibilidade confirmou os valores
+abaixo; isso não substitui a conferência visual da responsável.
 
-- Contas a Receber: `SUCCESS`, 15.157 registros.
-- Movimentos conciliados: `SUCCESS`, 3.162 registros.
-- Formas de pagamento: `SUCCESS`, 53 registros.
-- Movimentos gerais: `PARTIAL`, 31.927 registros; falta um campo de situação
-  que a API não retornou (`BLING_CASH_MOVEMENT_STATUS_MISSING`).
-- Contas a Pagar: `RUNNING`, 30 de 104 páginas de detalhe preparadas (3.000
-  registros preparados); ainda não publicou os registros normalizados.
-- Contas contábeis: `FAILED`, sem registros (`BLING_API_READ_FAILED`).
+Valores visíveis depois da correção:
 
-O motivo observado para o painel vazio é a carga de Contas a Pagar ainda não
-ter sido publicada. O resumo financeiro exige a mesma leitura diária completa
-de Contas a Pagar, Contas a Receber e Caixa; não mistura retratos de execuções
-diferentes. Por isso a interface não tem uma série atual confirmada para
-mostrar enquanto essa execução permanece em andamento.
+- Saldo base: R$ 62.548,33.
+- Semana 09–14/11: entradas R$ 34.355,71; saídas R$ 9.486,24; fechamento
+  calculado R$ 87.417,80.
+- Semana 22–28/11: entradas líquidas R$ 43.790,66; saídas R$ 25.275,71;
+  fechamento calculado R$ 1.287,90.
 
-A tentativa `contas.pagar` anterior terminou `FAILED` após HTTP 401; a correção
-para renovar a sessão em leituras GET de detalhe está no commit `c916117`. A
-execução em andamento é a primeira verificação real dessa correção. Ela ainda
-não provou que a carga termina nem que os valores semanais batem. Não reiniciar
-nem duplicar essa leitura enquanto a execução estiver ativa.
+A consulta direta do snapshot confirmou 9 períodos e 61 dias, sem dias com
+entrada ou saída ausente. O rótulo “Parcial” foi retirado da apresentação da
+T02, conforme orientação da responsável. O estado de completude continua
+preservado internamente para diagnóstico. A tela informa que as entradas e
+saídas vêm das telas de Contas a Receber e Contas a Pagar. O saldo final é
+calculado por saldo inicial + receitas − despesas.
 
-### Próximas ações da T02
+**Correção de diagnóstico:** o registro anterior dizia que a carga em andamento
+era a causa da tela vazia. Isso estava errado. Já existia um retrato normalizado
+com valores; a falha era a T01 não reutilizar o fechamento semanal calculado.
+Uma carga completa ainda é necessária para atualizar e homologar todas as
+semanas. O snapshot atualmente lido tem Contas a Receber `PARTIAL` (14.526
+registros) e Contas a Pagar `PARTIAL` (1.273 registros); portanto os valores da
+série foram exibidos, mas a série toda ainda não está homologada.
 
-1. Acompanhar a execução atual até um estado terminal.
-2. Se ela falhar, usar o código de erro sanitizado e os checkpoints para corrigir
-   a causa e repetir a leitura com segurança.
-3. Se publicar, conferir no protótipo as semanas selecionadas: entradas líquidas
-   de Contas a Receber, saídas de Contas a Pagar e saldo acumulado a partir do
-   último saldo conciliado do Itaú.
-4. Só declarar T02 pronta depois de conferir valores e apresentação da série no
-   protótipo e receber a aprovação visual/numérica da responsável.
-5. T03 continua aguardando a aprovação da T02.
+### O que falta para a aprovação da T02
 
-As decisões financeiras e de tela aprovadas não foram alteradas nesta
-verificação. Esta atualização descreve o estado real no momento da consulta;
-ela não é uma declaração de que a T02 foi corrigida ou homologada.
+1. Concluir uma nova leitura completa de Contas a Receber e Contas a Pagar e
+   confirmar a publicação dos dois relatórios.
+2. Conferir todas as semanas que a responsável selecionar contra os respectivos
+   relatórios, usando valor líquido em Contas a Receber e valor de Contas a
+   Pagar.
+3. Confirmar que o saldo inicial continua sendo o último saldo conciliado do
+   Itaú e que cada fechamento segue a fórmula exibida.
+4. A responsável revisar a tela aberta e aprovar os números e a apresentação.
+5. T03 começa somente depois da aprovação da T02.
+
+A tela foi corrigida; a T02 inteira ainda não foi homologada.
+Evidência técnica desta correção: [`T02-EXECUTIVE-WEEKLY-BALANCE-WIRING-2026-11-09.md`](evidence/T02-EXECUTIVE-WEEKLY-BALANCE-WIRING-2026-11-09.md).
 
 ## Carga da T02 interrompida por HTTP 401 em leitura de detalhes — 09/11/2026, 03:44 BRT
 

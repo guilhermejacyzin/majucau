@@ -23,7 +23,7 @@ Planejamento do sistema de gestão e análise da Majucau. A **versão 2** é a r
 - A tela independente T05 — Conciliação foi retirada em 31/10/2026. As regras internas de correspondência e controle permanecem necessárias para validar dados de outras telas; não haverá uma página substituta.
 - O fechamento funcional vigente está registrado na v2. Regras antigas substituídas nas v0/v1 são histórico.
 
-## Regra financeira vigente da T02 — 08/11/2026
+## Regra financeira vigente da T02 — atualização 09/11/2026
 
 Gisele determinou que a T02 não use mais o relatório “Fluxo de Caixa” do
 Bling. Receitas devem vir diretamente dos títulos abertos em Contas a Receber;
@@ -36,9 +36,22 @@ de copiar o relatório de Fluxo de Caixa; ver
 [`G0-DECISION-REGISTER.md`](../../G0-DECISION-REGISTER.md) e
 [`evidência técnica da T02`](../evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).
 
+**Correção do saldo semanal — 09/11/2026:** a série de fechamentos semanais
+calculada para a T02 agora também alimenta a Visão Executiva (T01). Antes, T01
+recebia somente os períodos crus e por isso a linha laranja ficava ausente,
+embora a T02 já calculasse os fechamentos. Fórmula: saldo inicial + entradas
+líquidas de Contas a Receber − saídas de Contas a Pagar; o fechamento passa a
+ser a abertura da semana seguinte. O texto visual “Parcial” foi removido, mas
+os estados incompletos continuam sendo guardados para controle interno. O
+snapshot consultado ainda tem Receber e Pagar em estado PARTIAL; valores e
+semanas não estão homologados. A janela Wails foi localizada em execução, mas
+a captura visual falhou nesta atualização. A T02 permanece em andamento e T03
+aguarda sua aprovação. Situação e números: [status atual da T02](../STATUS-ATUAL-2026-11-09.md).
+Evidência da causa e da alteração: [ligação do saldo semanal da T02/T01](../evidence/T02-EXECUTIVE-WEEKLY-BALANCE-WIRING-2026-11-09.md).
+
 ## Evolução registrada
 
-**T02 — conciliação e gráfico — 08/11/2026:** a captura enviada mostrou que as
+**T02 — gráfico aprovado — 08/11/2026:** a captura enviada mostrou que as
 datas do eixo inferior ainda estavam cortadas. O eixo agora mostra cada semana
 no padrão do Bling: data inicial completa + “a” e data final completa abaixo,
 com altura adicional para a segunda linha. Testes cobrem os rótulos na T02 e na

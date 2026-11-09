@@ -86,6 +86,17 @@ func TestNamedPipeHealthRoundTripAndCancellation(t *testing.T) {
 	}
 }
 
+func TestNamedPipeMethodTimeoutOverridesShortDefault(t *testing.T) {
+	cfg := DefaultNamedPipeConfig()
+	cfg.MethodTimeouts = map[Method]time.Duration{MethodBlingRefresh: 10 * time.Minute}
+	if got := requestTimeoutFor(cfg, MethodBlingRefresh); got != 10*time.Minute {
+		t.Fatalf("refresh timeout = %s, want 10m", got)
+	}
+	if got := requestTimeoutFor(cfg, MethodHealth); got != 10*time.Second {
+		t.Fatalf("health timeout = %s, want default 10s", got)
+	}
+}
+
 func TestNamedPipePassesAuthenticatedCallerSIDToHandler(t *testing.T) {
 	name := fmt.Sprintf(`\\.\pipe\Majucau-caller-sid-%d`, time.Now().UnixNano())
 	server, err := NewNamedPipeServer(NamedPipeConfig{Name: name, IOTimeout: time.Second})

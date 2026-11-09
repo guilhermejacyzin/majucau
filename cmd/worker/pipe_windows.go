@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"time"
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
@@ -16,6 +17,10 @@ import (
 
 func runWorkerPipe(ctx context.Context, handler ipc.Handler) (returnErr error) {
 	cfg := ipc.DefaultNamedPipeConfig()
+	// A full Bling refresh performs several paginated read-only requests. Its
+	// request lifetime must match the desktop's ten-minute deadline rather than
+	// the short default used for ordinary local IPC calls.
+	cfg.MethodTimeouts = map[ipc.Method]time.Duration{ipc.MethodBlingRefresh: 10 * time.Minute}
 	if usesWindowsServiceExecution(ctx) {
 		serviceSID, err := lookupInstalledServiceSID()
 		if err != nil {

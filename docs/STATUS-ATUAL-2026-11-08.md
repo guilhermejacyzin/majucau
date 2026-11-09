@@ -12,7 +12,7 @@
 
 **Validação local:** `go test ./... -count=1`, `go build ./cmd/...` e `git diff --check` passaram. Testes PostgreSQL de integração foram ignorados porque `MAJUCAU_TEST_DATABASE_URL` não foi configurada.
 
-**Protótipo atualizado:** em 08/11 às 23:02, encerrei normalmente a execução anterior e reabri o app pelo roteiro oficial. O worker novo e a janela Majucau iniciaram; o servidor local da interface respondeu HTTP 200. A captura visual automática da janela falhou, então ainda não confirmei pela tela quais valores aparecem. Também não executei uma nova sincronização do Bling nesta etapa.
+**Protótipo real — conferência de 09/11:** a janela nativa foi reaberta pelo roteiro oficial. A árvore da tela confirma a T01 com dados, última sincronização em 08/11 às 23:58, entradas e saídas semanais e saldos. A captura visual automatizada falhou; a navegação para T02 não foi possível nesta sessão. A página antiga do navegador recusava conexão, embora o app Wails nativo estivesse aberto.
 
 **Ainda não comprovado:** não afirmar que R$ 43.790,66 já aparece na tela. A etapa só fecha depois de confirmar o snapshot sincronizado e comparar a mesma semana e os mesmos filtros. O ajuste depende das taxas da forma de pagamento presentes na mesma carga; se alguma não estiver configurada ou sincronizada, não deve exibir o valor bruto como se fosse líquido.
 
@@ -34,12 +34,17 @@ executada com o Bling real e conferida contra Contas a Receber (líquido),
 Contas a Pagar e saldo conciliado do Itaú. Portanto, a ação está implementada
 e verificada localmente, mas a T02 não está homologada e não se afirma que os
 valores reais já estejam atualizados na tela.
+
+**Correção adicional:** o worker limitava a chamada IPC completa a dez
+segundos, embora o botão aguardasse dez minutos. O timeout agora é de dez
+minutos exclusivamente para a sincronização completa; demais chamadas mantêm
+dez segundos. `scripts/verify.ps1` passou novamente após essa última mudança.
 Evidência: [`T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md`](evidence/T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md).
 
 ## Sequência imediata
 
 1. **Concluído:** reconstruir/reabrir o protótipo com o código atualizado. A janela Majucau e a página local estão abertas.
-2. Executar Atualizar e confirmar que a nova sincronização termina sem erro. A tela observada ainda mostra a última sincronização de 08/11/2026 às 23:16; portanto, os valores exibidos são o retrato anterior e não comprovam que a nova carga ocorreu.
+2. Confirmar a conclusão da carga manual oficial iniciada em 09/11. Até haver resposta do worker e novo horário de atualização, os números da T01 continuam sendo o retrato de 08/11 às 23:58 e não comprovam uma nova carga.
 3. Conferir que a T02 mostra R$ 43.790,66 líquidos de entradas na semana 22/11–28/11 e R$ 25.275,71 de saídas, usando os mesmos filtros das telas Bling.
 4. Se a soma não bater, decompor diferenças por quantidade de títulos, vencimento, status, taxa e valor líquido por registro; não ajustar por palpite.
 5. Registrar resultado real, hash/ID de sincronização sem dados secretos, aguardar a aprovação da T02 e só então avançar para T03.

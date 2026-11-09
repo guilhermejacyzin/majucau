@@ -10,16 +10,20 @@ reler o snapshot. O botão indica andamento, evita repetição simultânea e mos
 aviso verdadeiro quando alguma etapa falha. O caminho respeita os dados
 sensíveis no worker e não muda desenho nem regra financeira.
 
-Foram incluídos testes no app/IPC/worker e na interface. `scripts/verify.ps1`
-passou localmente em 08/11/2026, incluindo os 75 testes de interface e o build
-de produção. Isso confirma a implementação, não a sincronização com a conta
+Foram incluídos testes no app/IPC/worker e na interface. A auditoria também
+corrigiu o limite IPC do worker: dez minutos somente para `bling.refresh`,
+mantendo dez segundos nos demais métodos. `scripts/verify.ps1` passou após essa
+correção, incluindo os 75 testes de interface e o build de produção. Isso
+confirma a implementação, não a sincronização com a conta
 real: ainda é preciso executar Atualizar no protótipo e comparar as telas Bling
 na mesma semana. Portanto, os números reais ainda não estão homologados.
 BK-062 continua em conferência (30% estimado) e o projeto segue em 12,3%
-estimado. A publicação foi feita e o protótipo foi reaberto; a tela ainda
-mostra o retrato anterior, com última sincronização às 23:16 de 08/11/2026.
-Falta executar a nova carga e conferir os valores com Gisele. T03 só começa
-após aprovação de T02. Evidência:
+estimado. Em 09/11/2026, a janela nativa real foi reaberta. Ela mostra a T01
+com dados e última sincronização às 23:58 de 08/11, ainda sem comprovar uma
+carga nova. Uma execução oficial de leitura está em andamento; não há novo
+resultado validado ainda. A página local antiga do navegador recusava conexão,
+mas o app nativo abriu pelo roteiro oficial. T03 só começa após aprovação de
+T02. Evidência:
 [`T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md`](evidence/T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md).
 
 ### Regra vigente T02 — títulos das telas de origem — 08/11/2026

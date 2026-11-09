@@ -15,7 +15,9 @@ bloqueio PostgreSQL da carga diária: recebíveis, pagamentos, movimentos de
 Caixa e Bancos, movimentos conciliados, formas de pagamento e contas
 financeiras. Cada carga manual recebe um identificador novo e espera a carga
 agendada quando necessário; ela não é descartada porque a sincronização das
-09:30 já ocorreu. O timeout da chamada manual é de até dez minutos.
+09:30 já ocorreu. O timeout da chamada manual é de até dez minutos. O worker
+também concede até dez minutos no IPC exclusivamente ao método `bling.refresh`;
+os demais comandos mantêm o limite padrão de dez segundos. Um teste cobre ambos.
 
 O payload IPC não carrega filtros nem dados sensíveis. Os tokens continuam no
 cofre protegido usado pelo worker. A interface indica andamento, evita cliques
@@ -30,11 +32,11 @@ foram alterados.
 Testes adicionados para: encaminhar o método IPC dedicado e payload vazio;
 aceitar a operação no worker; rejeitar conteúdo inesperado; chamar o refresh
 completo no botão, reler o snapshot ao concluir e informar a falha sem reler
-dados.
+dados; aplicar timeout de dez minutos somente ao método de carga completa.
 
-**Resultado local — 08/11/2026:** `scripts/verify.ps1` concluiu com sucesso. Passaram os testes Go, `go vet`, verificação de vulnerabilidades alcançáveis, checksums de migrations, geração determinística de sqlc, busca local de segredos, validação do instalador, lint, TypeScript, os 75 testes de interface, build de produção e `npm audit` (0 vulnerabilidades). A varredura apontou uma vulnerabilidade em módulo requerido, mas não alcançável pelo código importado. `git diff --check` também passou.
+**Resultado local — 08/11/2026:** `scripts/verify.ps1` concluiu com sucesso após as alterações do botão e do prazo IPC. Passaram os testes Go, `go vet`, verificação de vulnerabilidades alcançáveis, checksums de migrations, geração determinística de sqlc, busca local de segredos, validação do instalador, lint, TypeScript, os 75 testes de interface, build de produção e `npm audit` (0 vulnerabilidades). A varredura apontou uma vulnerabilidade em módulo requerido, mas não alcançável pelo código importado. `git diff --check` também passou.
 
-**Conferência do protótipo — 08/11/2026:** após publicar a build, a janela e a rota local do Majucau foram abertas. A T01 apresentou o snapshot anterior, com última sincronização às 23:16; isso não comprova uma nova carga. A ação de Atualizar ainda precisa ser executada e o retorno observado antes de declarar a correção operacional.
+**Conferência do protótipo — 09/11/2026:** a janela nativa real foi iniciada pelo roteiro oficial. A T01 apresentou dados e última sincronização às 23:58 de 08/11; isso não comprova uma nova carga. Uma carga oficial manual foi iniciada para validar o retorno real. A página antiga do navegador recusava conexão, então a janela nativa foi usada. A navegação automática para T02 e a captura visual falharam nesta sessão; não se declara T02 homologada.
 
 ## Limites
 

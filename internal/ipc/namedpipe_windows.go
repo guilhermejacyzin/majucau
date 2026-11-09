@@ -26,6 +26,14 @@ type NamedPipeConfig struct {
 	AllowedClientSIDs []string
 	ServiceSID        string
 	IOTimeout         time.Duration
+	MethodTimeouts    map[Method]time.Duration
+}
+
+func requestTimeoutFor(config NamedPipeConfig, method Method) time.Duration {
+	if methodTimeout, ok := config.MethodTimeouts[method]; ok && methodTimeout > config.IOTimeout {
+		return methodTimeout
+	}
+	return config.IOTimeout
 }
 
 func DefaultNamedPipeConfig() NamedPipeConfig {
@@ -195,7 +203,7 @@ func (s *NamedPipeServer) handleConnection(ctx context.Context, pipe *serverPipe
 		defer wipeSensitiveBytes(frame.payload)
 		defer wipeSensitiveBytes(request.Payload)
 	}
-	requestCtx, cancel := context.WithTimeout(ctx, s.config.IOTimeout)
+	requestCtx, cancel := context.WithTimeout(ctx, requestTimeoutFor(s.config, request.Method))
 	defer cancel()
 	requestCtx = WithCallerWindowsSID(requestCtx, callerSID)
 	// The pipe is opened for overlapped I/O so this disconnect watcher can read

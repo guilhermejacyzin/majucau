@@ -38,8 +38,8 @@ Evidência: [`T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md`](evidence/T02-UPDA
 
 ## Sequência imediata
 
-1. Reconstruir/reabrir o protótipo com o código do botão atualizado.
-2. Clicar em Atualizar e confirmar que a execução nova termina sem erro.
+1. **Concluído:** reconstruir/reabrir o protótipo com o código atualizado. A janela Majucau e a página local estão abertas.
+2. Executar Atualizar e confirmar que a nova sincronização termina sem erro. A tela observada ainda mostra a última sincronização de 08/11/2026 às 23:16; portanto, os valores exibidos são o retrato anterior e não comprovam que a nova carga ocorreu.
 3. Conferir que a T02 mostra R$ 43.790,66 líquidos de entradas na semana 22/11–28/11 e R$ 25.275,71 de saídas, usando os mesmos filtros das telas Bling.
 4. Se a soma não bater, decompor diferenças por quantidade de títulos, vencimento, status, taxa e valor líquido por registro; não ajustar por palpite.
 5. Registrar resultado real, hash/ID de sincronização sem dados secretos, aguardar a aprovação da T02 e só então avançar para T03.

@@ -34,6 +34,8 @@ dados.
 
 **Resultado local — 08/11/2026:** `scripts/verify.ps1` concluiu com sucesso. Passaram os testes Go, `go vet`, verificação de vulnerabilidades alcançáveis, checksums de migrations, geração determinística de sqlc, busca local de segredos, validação do instalador, lint, TypeScript, os 75 testes de interface, build de produção e `npm audit` (0 vulnerabilidades). A varredura apontou uma vulnerabilidade em módulo requerido, mas não alcançável pelo código importado. `git diff --check` também passou.
 
+**Conferência do protótipo — 08/11/2026:** após publicar a build, a janela e a rota local do Majucau foram abertas. A T01 apresentou o snapshot anterior, com última sincronização às 23:16; isso não comprova uma nova carga. A ação de Atualizar ainda precisa ser executada e o retorno observado antes de declarar a correção operacional.
+
 ## Limites
 
 O código e testes automatizados não provam a execução da nova sincronização na

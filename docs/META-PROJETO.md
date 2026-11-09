@@ -16,8 +16,10 @@ de produção. Isso confirma a implementação, não a sincronização com a con
 real: ainda é preciso executar Atualizar no protótipo e comparar as telas Bling
 na mesma semana. Portanto, os números reais ainda não estão homologados.
 BK-062 continua em conferência (30% estimado) e o projeto segue em 12,3%
-estimado. Depois da publicação, a próxima etapa é conferir o protótipo com
-Gisele; T03 só começa após aprovação de T02. Evidência:
+estimado. A publicação foi feita e o protótipo foi reaberto; a tela ainda
+mostra o retrato anterior, com última sincronização às 23:16 de 08/11/2026.
+Falta executar a nova carga e conferir os valores com Gisele. T03 só começa
+após aprovação de T02. Evidência:
 [`T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md`](evidence/T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md).
 
 ### Regra vigente T02 — títulos das telas de origem — 08/11/2026

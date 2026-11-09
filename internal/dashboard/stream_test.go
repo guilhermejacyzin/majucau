@@ -38,6 +38,12 @@ type scriptedDashboardTx struct {
 }
 
 func (tx *scriptedDashboardTx) QueryRow(_ context.Context, query string, args ...any) pgx.Row {
+	if strings.Contains(query, "SELECT checkpoint.connection_id::text") {
+		// Most scripted dashboard cases do not seed an approved opening-balance
+		// checkpoint. Exercise the production no-checkpoint path without treating
+		// the query as the dashboard summary row.
+		return scriptedDashboardErrorRow{err: pgx.ErrNoRows}
+	}
 	if strings.Contains(query, "HAVING COUNT(DISTINCT b.resource) = 3") {
 		asOf, ok := args[0].(time.Time)
 		if !ok {
@@ -52,6 +58,10 @@ func (tx *scriptedDashboardTx) QueryRow(_ context.Context, query string, args ..
 	tx.summaryArgs = append([]any(nil), args...)
 	return tx.summary
 }
+
+type scriptedDashboardErrorRow struct{ err error }
+
+func (row scriptedDashboardErrorRow) Scan(...any) error { return row.err }
 
 func (tx *scriptedDashboardTx) Query(_ context.Context, query string, args ...any) (pgx.Rows, error) {
 	if strings.Contains(query, "WITH daily AS (") || strings.Contains(query, "SELECT kind, flow_date, direction, amount") {

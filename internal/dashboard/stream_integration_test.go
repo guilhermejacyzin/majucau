@@ -56,7 +56,9 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		`CREATE TEMP TABLE payables (id uuid, connection_id uuid, source_system text, source_entity text, source_id text, source_payment_method_id bigint, source_financial_account_id bigint, open_balance numeric, due_date date, status text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payable_sync_snapshot_rows (sync_batch_id uuid, payable_id uuid) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payments (id uuid, source_system text, payment_date date, amount numeric) ON COMMIT DROP`,
-		`CREATE TEMP TABLE bling_cash_movements (id uuid, sync_batch_id uuid, account_source_id text, account_name text, direction text, source_status text, movement_date date, amount numeric) ON COMMIT DROP`,
+		`CREATE TEMP TABLE bling_cash_movements (id uuid, sync_batch_id uuid, source_id text, account_source_id text, account_name text, direction text, source_status text, movement_date date, amount numeric) ON COMMIT DROP`,
+		`CREATE TEMP TABLE bling_cash_balance_checkpoints (id uuid DEFAULT gen_random_uuid(), connection_id uuid, account_source_id text, reference_date date, reconciled_amount numeric, source text, created_at timestamptz DEFAULT clock_timestamp()) ON COMMIT DROP`,
+		`CREATE TEMP TABLE bling_cash_movement_reconciled_snapshot_rows (sync_batch_id uuid, connection_id uuid, source_id text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE bling_financial_account_identities (sync_batch_id uuid, source_id text, description text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE bling_payment_method_terms (connection_id uuid, sync_batch_id uuid, source_id text, destination smallint, fee_rate numeric, fee_rate_known boolean, fixed_fee numeric, fixed_fee_known boolean, settlement_days integer, settlement_known boolean, use_business_days boolean, business_days_known boolean) ON COMMIT DROP`,
 	} {
@@ -68,8 +70,8 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `INSERT INTO integration_connections (id, provider) VALUES ($1::uuid, 'BLING')`, connectionID); err != nil {
 		t.Fatalf("seed isolated Bling connection: %v", err)
 	}
-	var receivableBatchID, payableBatchID, cashBatchID, accountsBatchID, paymentMethodsBatchID string
-	for _, resource := range []string{"contas.receber", "contas.pagar", "caixas", "contas-contabeis", "formas-pagamentos"} {
+	var receivableBatchID, payableBatchID, cashBatchID, reconciledCashBatchID, accountsBatchID, paymentMethodsBatchID string
+	for _, resource := range []string{"contas.receber", "contas.pagar", "caixas", "caixas.conciliadas", "contas-contabeis", "formas-pagamentos"} {
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO integration_sync_batches (connection_id, resource, started_at, finished_at, status, correlation_id, data_stage)
 			VALUES ($1::uuid, $2, $3, $4, 'SUCCESS', $5, 'RAW_ONLY')`, connectionID, resource, asOf.Add(-time.Hour), asOf, correlationID); err != nil {
@@ -88,6 +90,11 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		if resource == "caixas" {
 			if err := tx.QueryRow(ctx, `SELECT id::text FROM integration_sync_batches WHERE connection_id = $1::uuid AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID).Scan(&cashBatchID); err != nil {
 				t.Fatalf("read seeded cash movement batch ID: %v", err)
+			}
+		}
+		if resource == "caixas.conciliadas" {
+			if err := tx.QueryRow(ctx, `SELECT id::text FROM integration_sync_batches WHERE connection_id = $1::uuid AND resource = $2 AND correlation_id = $3`, connectionID, resource, correlationID).Scan(&reconciledCashBatchID); err != nil {
+				t.Fatalf("read seeded reconciled cash movement batch ID: %v", err)
 			}
 		}
 		if resource == "contas-contabeis" {
@@ -205,16 +212,16 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		t.Fatalf("mark cash source with missing statuses partial: %v", err)
 	}
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO bling_cash_movements (id, sync_batch_id, account_source_id, account_name, direction, source_status, movement_date, amount) VALUES
-		('00000000-0000-4000-8000-000000000031', $1::uuid, '1', 'Itaú', 'INFLOW', 'R', '2026-10-10', 100.00),
-		('00000000-0000-4000-8000-000000000032', $1::uuid, '1', 'Itaú', 'OUTFLOW', 'R', '2026-10-11', 25.00),
-		('00000000-0000-4000-8000-000000000033', $1::uuid, '2', 'Mercado Pago', 'INFLOW', '', '2026-10-12', 20.00),
-		('00000000-0000-4000-8000-000000000034', $1::uuid, '2', 'Mercado Pago', 'OUTFLOW', '', '2026-10-13', 5.00),
-		('00000000-0000-4000-8000-000000000035', $1::uuid, '1', 'Itaú', 'INFLOW', 'R', $2::date + 31, 40.00),
-		('00000000-0000-4000-8000-000000000036', $1::uuid, '1', 'Itaú', 'OUTFLOW', 'R', $2::date + 31, 30.00),
-		('00000000-0000-4000-8000-000000000037', $1::uuid, '1', 'Itaú', 'INFLOW', 'R', $2::date + 59, 70.00),
-		('00000000-0000-4000-8000-000000000038', $1::uuid, '1', 'Itaú', 'OUTFLOW', 'R', $2::date + 59, 20.00),
-		('00000000-0000-4000-8000-000000000039', $1::uuid, '1', 'Itaú', 'INFLOW', 'R', $2::date + 60, 90.00)`, cashBatchID, asOf.Format("2006-01-02")); err != nil {
+		INSERT INTO bling_cash_movements (id, sync_batch_id, source_id, account_source_id, account_name, direction, source_status, movement_date, amount) VALUES
+		('00000000-0000-4000-8000-000000000031', $1::uuid, '31', '1', 'Itaú', 'INFLOW', 'R', '2026-10-10', 100.00),
+		('00000000-0000-4000-8000-000000000032', $1::uuid, '32', '1', 'Itaú', 'OUTFLOW', 'R', '2026-10-11', 25.00),
+		('00000000-0000-4000-8000-000000000033', $1::uuid, '33', '2', 'Mercado Pago', 'INFLOW', '', '2026-10-12', 20.00),
+		('00000000-0000-4000-8000-000000000034', $1::uuid, '34', '2', 'Mercado Pago', 'OUTFLOW', '', '2026-10-13', 5.00),
+		('00000000-0000-4000-8000-000000000035', $1::uuid, '35', '1', 'Itaú', 'INFLOW', 'R', $2::date + 31, 40.00),
+		('00000000-0000-4000-8000-000000000036', $1::uuid, '36', '1', 'Itaú', 'OUTFLOW', 'R', $2::date + 31, 30.00),
+		('00000000-0000-4000-8000-000000000037', $1::uuid, '37', '1', 'Itaú', 'INFLOW', 'R', $2::date + 59, 70.00),
+		('00000000-0000-4000-8000-000000000038', $1::uuid, '38', '1', 'Itaú', 'OUTFLOW', 'R', $2::date + 59, 20.00),
+		('00000000-0000-4000-8000-000000000039', $1::uuid, '39', '1', 'Itaú', 'INFLOW', 'R', $2::date + 60, 90.00)`, cashBatchID, asOf.Format("2006-01-02")); err != nil {
 		t.Fatalf("seed cash movements including entries with missing source status: %v", err)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
@@ -229,6 +236,32 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.CashBalance.State != "UNAVAILABLE" || snapshot.CashBalance.Value != "" {
 		t.Fatalf("current Itaú balance must stay unavailable without a verified opening balance; movement net must not be mislabeled as an account balance: %+v", snapshot.CashBalance)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO bling_cash_balance_checkpoints (connection_id, account_source_id, reference_date, reconciled_amount, source) VALUES ($1::uuid, '1', '2026-10-10', 1000, 'USER_APPROVED_BLING_SCREENSHOT')`, connectionID); err != nil {
+		t.Fatalf("seed approved Itaú balance checkpoint: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE id = $1::uuid`, reconciledCashBatchID); err != nil {
+		t.Fatalf("normalize empty reconciled cash snapshot: %v", err)
+	}
+	snapshot, err = readStreamSummary(ctx, tx, asOf)
+	if err != nil {
+		t.Fatalf("read summary with approved checkpoint and complete empty reconciliation: %v", err)
+	}
+	if snapshot.CashBalance.State != "CONFIRMED" || snapshot.CashBalance.Value != "1000.0000" {
+		t.Fatalf("saldo atual must display the exact user-approved checkpoint even when no Itaú movement is returned: %+v", snapshot.CashBalance)
+	}
+	if len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.Periods[0].ClosingBalance == nil {
+		t.Fatalf("a complete reconciled snapshot should enable the projected weekly closing balance: %+v", snapshot.CashFlow)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO bling_cash_movement_reconciled_snapshot_rows (sync_batch_id, connection_id, source_id) VALUES ($1::uuid, $2::uuid, '32')`, reconciledCashBatchID, connectionID); err != nil {
+		t.Fatalf("seed reconciled Itaú outflow membership: %v", err)
+	}
+	snapshot, err = readStreamSummary(ctx, tx, asOf)
+	if err != nil {
+		t.Fatalf("read summary with a newly reconciled Itaú movement: %v", err)
+	}
+	if snapshot.CashBalance.State != "CONFIRMED" || snapshot.CashBalance.Value != "975.0000" {
+		t.Fatalf("saldo atual must equal the approved checkpoint plus the signed reconciled Itaú delta: %+v", snapshot.CashBalance)
 	}
 	currentPayableID := "00000000-0000-4000-8000-000000000011"
 	stalePayableID := "00000000-0000-4000-8000-000000000012"
@@ -353,11 +386,11 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if snapshot.PayablesDueNext30Days.Value != "-380" || snapshot.PayablesDueNext30Days.Count != 6 {
 		t.Fatalf("30-day payables must include the open title assigned to another bank and exclude numeric status 5: %+v", snapshot.PayablesDueNext30Days)
 	}
-	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext30Days.Value != "248.3500" || snapshot.CashFlow.OutflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" || len(snapshot.CashFlow.Days) != 61 {
-		t.Fatalf("cash-flow series should use the net amounts directly from Bling Contas a Receber, include all accounts, and preserve AP totals across 61 bounded dates: %+v", snapshot.CashFlow)
+	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext30Days.Value != "250.0000" || snapshot.CashFlow.OutflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" || len(snapshot.CashFlow.Days) != 61 || snapshot.CashFlow.Days[0].Date != "2026-10-19" {
+		t.Fatalf("cash-flow series should start on the Sao Paulo business date, use current liquid amounts directly from Bling Contas a Receber, include all accounts, and preserve AP totals across 61 bounded dates: %+v", snapshot.CashFlow)
 	}
-	if snapshot.CashFlow.InflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext60Days.Value != "358.3500" || snapshot.CashFlow.OutflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext60Days.Value != "-410.0000" {
-		t.Fatalf("60-day cash-flow totals should include day 30–59, preserve signs and exclude day 60: %+v", snapshot.CashFlow)
+	if snapshot.CashFlow.InflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext60Days.Value != "250.0000" || snapshot.CashFlow.OutflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext60Days.Value != "-360.0000" {
+		t.Fatalf("60-day cash-flow totals should use the same Sao Paulo start date, preserve signs, and exclude day 60: %+v", snapshot.CashFlow)
 	}
 	if _, err := tx.Exec(ctx, `DELETE FROM bling_financial_account_identities WHERE sync_batch_id = $1::uuid AND source_id = '1'`, accountsBatchID); err != nil {
 		t.Fatalf("simulate an incomplete account catalog without Itaú: %v", err)
@@ -366,7 +399,7 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read summary with incomplete account catalog and complete movement identities: %v", err)
 	}
-	if snapshot.CashFlow == nil || len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.InflowsNext30Days.Value != "248.3500" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" {
+	if snapshot.CashFlow == nil || len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.InflowsNext30Days.Value != "250.0000" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" || snapshot.CashFlow.Days[0].Date != "2026-10-19" {
 		t.Fatalf("cash-flow graph should retain all AR/AP titles when the account catalog is incomplete: %+v", snapshot.CashFlow)
 	}
 }

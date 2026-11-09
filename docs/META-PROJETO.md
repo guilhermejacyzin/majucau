@@ -1,5 +1,32 @@
 # Meta do Majucau
 
+### Correção T02 — deslocamento de um dia no fluxo — 09/11/2026
+
+Identifiquei e corrigi a causa concreta que fazia o fluxo começar no dia
+anterior. A leitura já recebia a data comercial de São Paulo normalizada como
+meia-noite UTC e a convertia novamente para São Paulo; isso mudava a data para
+21h do dia anterior. Agora a T02 preserva a data comercial já calculada. Um
+teste PostgreSQL reproduz a data de negócio e confirma que a primeira linha do
+fluxo começa em 19/10, sem incluir 18/10. A checagem também confirma a mesma
+origem para as faixas de 30 e 60 dias.
+
+No mesmo trabalho, apliquei a migration 000024 e os privilégios no banco
+isolado do protótipo; a verificação de privilégios passou. Ajustei o teste de
+integração para refletir os dados que ele próprio configura: a forma de
+pagamento selecionada nessa etapa tem taxa zero, portanto não deve descontar
+taxa de outro título do cenário. Os testes do pacote e o teste PostgreSQL
+passaram.
+
+**Limite desta entrega:** o protótipo nativo foi reconstruído e reaberto com o
+código novo; a janela está ativa, mas abre na tela inicial. A captura de tela
+para conferir visualmente a T02 expirou, então não afirmo que a tela foi
+conferida. Também não houve confirmação de uma nova sincronização real do
+Bling. O último saldo-base aprovado continua sendo R$ 62.548,33 em 06/11; a
+API só pode atualizá-lo com movimentos do Itaú que apareçam em uma execução
+normalizada de conciliação. A T02 não está homologada e a T03 ainda não começou.
+
+Evidência: [`T02-BUSINESS-DATE-SHIFT-2026-11-09.md`](evidence/T02-BUSINESS-DATE-SHIFT-2026-11-09.md).
+
 ### Estado atualizado — comando “Atualizar” ligado à carga oficial — 08/11/2026
 
 A ação do cabeçalho agora solicita uma sincronização completa e somente de

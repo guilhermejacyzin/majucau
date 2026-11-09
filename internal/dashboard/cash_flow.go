@@ -3,7 +3,6 @@ package dashboard
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,43 +12,14 @@ import (
 	"majucau.local/financial-intelligence/internal/domain"
 )
 
-const selectedCashFlowAccountsSQL = `
-SELECT source_id, description
-  FROM bling_financial_account_identities
- WHERE sync_batch_id = (
-   SELECT b.id
-     FROM integration_sync_batches b
-     JOIN integration_connections c ON c.id = b.connection_id
-    WHERE c.provider = 'BLING' AND b.resource = 'contas-contabeis'
-      AND b.correlation_id = $1 AND b.status IN ('SUCCESS', 'PARTIAL')
-      AND b.data_stage = 'NORMALIZED'
-    ORDER BY b.finished_at DESC, b.id DESC LIMIT 1
- )
- ORDER BY source_id
-`
-
-// Use movement identities only as a fallback to identify Itaú for the balance
-// card. These rows are not an input to T02 revenue or expense totals.
-const selectedCashFlowMovementAccountsSQL = `
-SELECT DISTINCT m.account_source_id, m.account_name
-  FROM bling_cash_movements m
-  JOIN integration_sync_batches b ON b.id = m.sync_batch_id
-  JOIN integration_connections c ON c.id = b.connection_id
- WHERE c.provider = 'BLING' AND b.resource = 'caixas'
-   AND b.correlation_id = $1 AND b.status IN ('SUCCESS', 'PARTIAL')
-   AND b.data_stage = 'NORMALIZED'
-   AND NULLIF(BTRIM(m.account_source_id), '') IS NOT NULL
-   AND NULLIF(BTRIM(m.account_name), '') IS NOT NULL
- ORDER BY m.account_source_id, m.account_name
-`
-
 const latestApprovedItauBalanceCheckpointSQL = `
-SELECT checkpoint.reconciled_amount::text, checkpoint.reference_date
+SELECT checkpoint.connection_id::text, checkpoint.account_source_id,
+       checkpoint.reconciled_amount::text, checkpoint.reference_date
   FROM bling_cash_balance_checkpoints checkpoint
   JOIN integration_connections connection ON connection.id = checkpoint.connection_id
  WHERE connection.provider = 'BLING'
-   AND checkpoint.account_source_id = ANY($1::text[])
-   AND checkpoint.reference_date <= $2::date
+   AND checkpoint.source = 'USER_APPROVED_BLING_SCREENSHOT'
+   AND checkpoint.reference_date <= $1::date
  ORDER BY checkpoint.reference_date DESC, checkpoint.created_at DESC
  LIMIT 1
 `
@@ -58,13 +28,13 @@ const reconciledCashMovementDeltaSQL = `
 WITH current_reconciliation_batch AS (
   SELECT id, connection_id
     FROM integration_sync_batches
-   WHERE correlation_id = $1 AND resource = 'caixas.conciliadas'
+   WHERE correlation_id = $1 AND connection_id = $5::uuid AND resource = 'caixas.conciliadas'
      AND status = 'SUCCESS' AND data_stage = 'NORMALIZED'
    ORDER BY finished_at DESC NULLS LAST, id DESC LIMIT 1
 ), current_movement_batch AS (
   SELECT id, connection_id
     FROM integration_sync_batches
-   WHERE correlation_id = $1 AND resource = 'caixas'
+   WHERE correlation_id = $1 AND connection_id = $5::uuid AND resource = 'caixas'
      AND status IN ('SUCCESS', 'PARTIAL') AND data_stage = 'NORMALIZED'
    ORDER BY finished_at DESC NULLS LAST, id DESC LIMIT 1
 ), reconciled_movements AS (
@@ -78,7 +48,7 @@ WITH current_reconciliation_batch AS (
     JOIN bling_cash_movements m
       ON m.sync_batch_id = movement_batch.id
      AND m.source_id = membership.source_id
-     AND m.account_source_id = ANY($2::text[])
+     AND m.account_source_id = $2::text
    WHERE m.movement_date > $3::date AND m.movement_date <= $4::date
 )
 SELECT EXISTS (SELECT 1 FROM current_reconciliation_batch),
@@ -153,6 +123,7 @@ SELECT kind, flow_date, direction, amount, source_status,
 
 type approvedItauBalance struct {
 	Metric        application.DashboardMetric
+	Projection    application.DashboardMetric
 	ReferenceDate time.Time
 	BaseMetric    application.DashboardMetric
 	BaseDate      time.Time
@@ -174,52 +145,52 @@ type cashFlowDayAggregate struct {
 }
 
 func readLatestItauBalance(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string) (approvedItauBalance, error) {
-	accountIDs, accountsReady, err := selectedCashFlowAccountIDs(ctx, tx, correlationID)
-	if err != nil {
-		return approvedItauBalance{}, err
-	}
-	if !accountsReady {
-		return approvedItauBalance{Metric: application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}}, nil
-	}
-	var value string
+	var connectionID, accountID, value string
 	var referenceDate time.Time
-	if err := tx.QueryRow(ctx, latestApprovedItauBalanceCheckpointSQL, accountIDs, dashboardDateOnly(asOf).Format(time.DateOnly)).Scan(&value, &referenceDate); err != nil {
+	if err := tx.QueryRow(ctx, latestApprovedItauBalanceCheckpointSQL, dashboardDateOnly(asOf).Format(time.DateOnly)).Scan(&connectionID, &accountID, &value, &referenceDate); err != nil {
 		if err == pgx.ErrNoRows {
 			return approvedItauBalance{Metric: application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}}, nil
 		}
 		return approvedItauBalance{}, err
 	}
-	base := metric(value, 1, "PARTIAL", "BLING")
+	base := metric(value, 1, "CONFIRMED", "BLING")
 	baseDate := dashboardDateOnly(referenceDate)
-	ready, delta, latestDate, err := reconciledCashMovementDelta(ctx, tx, correlationID, accountIDs, baseDate, dashboardDateOnly(asOf))
+	ready, delta, latestDate, err := reconciledCashMovementDelta(ctx, tx, correlationID, connectionID, accountID, baseDate, dashboardDateOnly(asOf))
 	if err != nil {
 		return approvedItauBalance{}, err
 	}
-	card := base
-	cardDate := baseDate
-	if ready {
-		updated, parseErr := domain.ParseMoney(base.Value)
-		if parseErr != nil {
-			return approvedItauBalance{}, fmt.Errorf("approved Itaú balance is invalid")
-		}
-		movementDelta, parseErr := domain.ParseMoney(delta)
-		if parseErr != nil {
-			return approvedItauBalance{}, fmt.Errorf("reconciled Itaú movement total is invalid")
-		}
-		updated, err = updated.Add(movementDelta)
-		if err != nil {
-			return approvedItauBalance{}, err
-		}
-		card = metric(updated.String(), 1, "PARTIAL", "BLING")
-		if latestDate.Valid {
-			cardDate = dashboardDateOnly(latestDate.Time)
-		}
+	result := approvedItauBalance{
+		Metric:        base,
+		Projection:    application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
+		ReferenceDate: baseDate,
+		BaseMetric:    base,
+		BaseDate:      baseDate,
 	}
-	return approvedItauBalance{Metric: card, ReferenceDate: cardDate, BaseMetric: base, BaseDate: baseDate}, nil
+	if !ready {
+		return result, nil
+	}
+	updated, parseErr := domain.ParseMoney(base.Value)
+	if parseErr != nil {
+		return approvedItauBalance{}, fmt.Errorf("approved Itaú balance is invalid")
+	}
+	movementDelta, parseErr := domain.ParseMoney(delta)
+	if parseErr != nil {
+		return approvedItauBalance{}, fmt.Errorf("reconciled Itaú movement total is invalid")
+	}
+	updated, err = updated.Add(movementDelta)
+	if err != nil {
+		return approvedItauBalance{}, err
+	}
+	result.Metric = metric(updated.String(), 1, "CONFIRMED", "BLING")
+	result.Projection = result.Metric
+	if latestDate.Valid {
+		result.ReferenceDate = dashboardDateOnly(latestDate.Time)
+	}
+	return result, nil
 }
 
-func reconciledCashMovementDelta(ctx context.Context, tx pgx.Tx, correlationID string, accountIDs []string, after, through time.Time) (bool, string, pgtype.Date, error) {
-	if len(accountIDs) == 0 || after.IsZero() || through.Before(after) {
+func reconciledCashMovementDelta(ctx context.Context, tx pgx.Tx, correlationID, connectionID, accountID string, after, through time.Time) (bool, string, pgtype.Date, error) {
+	if connectionID == "" || accountID == "" || after.IsZero() || through.Before(after) {
 		return false, "0", pgtype.Date{}, nil
 	}
 	var snapshotTableExists bool
@@ -234,14 +205,17 @@ func reconciledCashMovementDelta(ctx context.Context, tx pgx.Tx, correlationID s
 	var ready bool
 	var delta string
 	var latestDate pgtype.Date
-	if err := tx.QueryRow(ctx, reconciledCashMovementDeltaSQL, correlationID, accountIDs, after.Format(time.DateOnly), through.Format(time.DateOnly)).Scan(&ready, &delta, &latestDate); err != nil {
+	if err := tx.QueryRow(ctx, reconciledCashMovementDeltaSQL, correlationID, accountID, after.Format(time.DateOnly), through.Format(time.DateOnly), connectionID).Scan(&ready, &delta, &latestDate); err != nil {
 		return false, "0", pgtype.Date{}, err
 	}
 	return ready, delta, latestDate, nil
 }
 
 func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string, itauBalance approvedItauBalance) (*application.DashboardCashFlow, error) {
-	start := domain.BusinessDate(asOf)
+	// readStreamSummary passes a date-only business date represented at UTC
+	// midnight. Convert only to date here; converting that normalized value to
+	// Sao Paulo again shifts it to the previous calendar day (21:00 BRT).
+	start := dashboardDateOnly(asOf)
 	end := start.AddDate(0, 0, 60)
 	rows, err := tx.Query(ctx, cashFlowCandidatesSQL, correlationID, start.Format(time.DateOnly), end.Format(time.DateOnly), start.Format(time.DateOnly))
 	if err != nil {
@@ -333,7 +307,7 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	if err != nil {
 		return nil, err
 	}
-	projectedOpening := itauBalance.Metric
+	projectedOpening := itauBalance.Projection
 	if projectedOpening.Value == "" || itauBalance.ReferenceDate.IsZero() {
 		projectedOpening = application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}
 	}
@@ -528,67 +502,6 @@ func groupCashFlowReportWeeks(days []application.DashboardCashFlowDay, partial b
 func dashboardDateOnly(value time.Time) time.Time {
 	year, month, day := value.Date()
 	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
-}
-
-func selectedCashFlowAccountIDs(ctx context.Context, tx pgx.Tx, correlationID string) ([]string, bool, error) {
-	rows, err := tx.Query(ctx, selectedCashFlowAccountsSQL, correlationID)
-	if err != nil {
-		return nil, false, err
-	}
-	ids, _, err := selectedCashFlowAccountIDsFromRows(rows)
-	if err != nil {
-		return nil, false, err
-	}
-	if len(ids) == 1 {
-		return ids, true, nil
-	}
-
-	// The catalog endpoint can return a partial identity set (for example, if
-	// its read scope or normalized snapshot was incomplete). Do not let those
-	// unrelated rows block recovery from the IDs and descriptions already
-	// present in the official cash-movement snapshot.
-	rows, err = tx.Query(ctx, selectedCashFlowMovementAccountsSQL, correlationID)
-	if err != nil {
-		return nil, false, err
-	}
-	ids, _, err = selectedCashFlowAccountIDsFromRows(rows)
-	if err != nil {
-		return nil, false, err
-	}
-	if len(ids) != 1 {
-		return nil, false, nil
-	}
-	return ids, true, nil
-}
-
-func selectedCashFlowAccountIDsFromRows(rows pgx.Rows) ([]string, bool, error) {
-	defer rows.Close()
-	var itau []string
-	anyRows := false
-	for rows.Next() {
-		anyRows = true
-		var id, description string
-		if err := rows.Scan(&id, &description); err != nil {
-			return nil, anyRows, err
-		}
-		name := normalizeCashFlowAccountName(description)
-		if strings.HasPrefix(name, "itau") {
-			itau = append(itau, id)
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, anyRows, err
-	}
-	if len(itau) != 1 {
-		return nil, anyRows, nil
-	}
-	return []string{itau[0]}, anyRows, nil
-}
-
-func normalizeCashFlowAccountName(value string) string {
-	value = strings.ToLower(strings.TrimSpace(value))
-	value = strings.NewReplacer("á", "a", "à", "a", "â", "a", "ã", "a", "é", "e", "ê", "e", "í", "i", "ó", "o", "ô", "o", "õ", "o", "ú", "u", "ü", "u", "ç", "c").Replace(value)
-	return strings.Join(strings.Fields(value), " ")
 }
 
 func scanCashFlowCandidate(rows pgx.Rows) (cashFlowCandidate, error) {

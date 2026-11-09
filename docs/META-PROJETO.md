@@ -1,5 +1,24 @@
 # Meta do Majucau
 
+### Auditoria da diferença nas despesas semanais da T02 — 08/11/2026
+
+Abri a T02 do protótipo web: ela está sem snapshot e não mostra dados. Na janela
+Wails, confirmei que 22/11–28/11 mostra -R$ 27.012,27; -R$ 101.721,05 pertence
+à faixa seguinte, 29/11–05/12. O relatório salvo do Bling para 08/11–30/11
+mostra 29–30/11 como período parcial; os R$ 1.068,87 nessa faixa são receitas,
+não despesas. Uma captura anterior tem a semana completa em -R$ 57.445,14, mas
+usa duas contas financeiras e não serve como comparação final sem confirmar
+filtros idênticos.
+
+A auditoria está documentada em
+[`T02-OUTFLOW-MISMATCH-AUDIT-2026-11-08.md`](evidence/T02-OUTFLOW-MISMATCH-AUDIT-2026-11-08.md).
+O código soma movimentos de caixa e títulos em aberto sem uma identidade
+comum para deduplicar entre fontes; isso é um risco, não a causa comprovada
+desta diferença. Não alterei valores nem regras financeiras. Falta comparar
+29/11–05/12 com os mesmos filtros e decompor cada parcela por origem antes de
+corrigir. T02 segue em validação; gráfico visual aprovado. BK-062 permanece em
+30% (70% restante) e o projeto em 12,3% (87,7% restante).
+
 ### Correção do eixo inferior do gráfico — 08/11/2026
 
 A análise corrigiu uma interpretação anterior: o gráfico é semanal e cada

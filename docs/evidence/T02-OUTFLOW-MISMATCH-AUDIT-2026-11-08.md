@@ -41,6 +41,30 @@ não identifica a causa.
 
 ## Auditoria do caminho no código
 
+### Correção do escopo das contas — esclarecimento da responsável em 08/11/2026
+
+Gisele confirmou que o relatório de referência foi consultado com **Itaú e
+Nuvem Pago** selecionados. Essa é a seleção que deve ser reproduzida nas
+entradas e saídas do Fluxo de Caixa. O card de saldo bancário continua sendo um
+resultado separado, limitado ao Itaú.
+
+Encontrei no código a causa comprovada de uma parte da divergência: tanto
+`readLatestItauBalance` quanto `readBlingCashFlow` chamam
+`selectedCashFlowAccountIDs`; essa função descarta todas as contas cujo nome não
+começa com “Itaú”. Portanto, apesar da regra do relatório de usar Itaú + Nuvem
+Pago, o gráfico e os cards de fluxo calculados pelo serviço atualmente ignoram
+a conta Nuvem Pago. Isso pode alterar receitas e despesas, conforme os títulos
+e movimentos existentes nela. É um erro de implementação, diferente da soma
+das telas T03/T04.
+
+A correção precisa separar dois conjuntos: contas do relatório (Itaú + Nuvem
+Pago) para entradas/saídas do fluxo; Itaú somente para o card de saldo atual.
+Também não se pode usar o saldo inicial Itaú como abertura da série agregada
+das duas contas. A linha de saldo do gráfico só pode ser publicada quando a
+abertura combinada das duas contas estiver comprovada. Até essa validação, não
+se deve apresentar um saldo combinado inventado ou reaproveitar o saldo do
+card Itaú como se fosse o do relatório.
+
 `internal/dashboard/cash_flow.go` monta a série com três grupos de origem:
 
 1. movimentos de `Caixas e Bancos`;
@@ -71,10 +95,15 @@ série parcial.
 - Os registros salvos não provam a causa da diferença para 29/11–05/12. A
   hipótese de dupla contagem entre movimento e título continua sem prova de
   linha a linha.
+- A divergência de escopo de contas está comprovada no código: o relatório
+  escolhido pela responsável usa Itaú + Nuvem Pago, enquanto o serviço reduz
+  o fluxo a Itaú. Isso explica por que a composição local pode divergir, mas
+  ainda não quantifica quanto dos R$ 101.721,05 vem da conta Nuvem Pago.
 - A próxima auditoria numérica precisa comparar exatamente 29/11–05/12 com as
-  mesmas contas e opções, e decompor os R$ 101.721,05 por tipo de origem, data,
-  identificador e saldo do título. Só então se corrige a causa demonstrada,
-  preservando as regras financeiras aprovadas.
+  mesmas opções e contas, e decompor os R$ 101.721,05 por conta, tipo de origem,
+  data, identificador e saldo do título. Corrigir o filtro do fluxo para usar
+  Itaú + Nuvem Pago; manter o card de saldo limitado ao Itaú. Só depois validar
+  a abertura combinada da linha de saldo, preservando as regras aprovadas.
 
 **Situação:** auditoria de tela e código concluída; causa numérica da semana
 29/11–05/12 ainda não comprovada. Nenhum número foi ajustado. T02 permanece em

@@ -1,5 +1,20 @@
 # Meta do Majucau
 
+### Escopo das contas na comparação do Fluxo de Caixa — 08/11/2026
+
+Gisele confirmou que o relatório de referência usa Itaú e Nuvem Pago. A T02
+deve reproduzir as entradas e saídas das duas contas; o card de saldo bancário
+continua usando somente Itaú. A auditoria encontrou que o código ainda filtra
+o gráfico para Itaú, então a implementação pode excluir movimentos e títulos
+da conta Nuvem Pago. A abertura do saldo acumulado do gráfico também não pode
+ser calculada com o saldo Itaú sozinho; precisa de uma base combinada
+comprovada. Registro técnico em
+[`T02-OUTFLOW-MISMATCH-AUDIT-2026-11-08.md`](evidence/T02-OUTFLOW-MISMATCH-AUDIT-2026-11-08.md).
+Próximo passo: separar no código a seleção das contas do gráfico e do card,
+depois validar os mesmos dias/contas/opções do relatório e decompor cada valor
+por origem. Até essa validação, T02 não está homologada. BK-062: 30% concluído
+(70% restante); projeto: 12,3% concluído (87,7% restante).
+
 ### Auditoria da diferença nas despesas semanais da T02 — 08/11/2026
 
 Abri a T02 do protótipo web: ela está sem snapshot e não mostra dados. Na janela

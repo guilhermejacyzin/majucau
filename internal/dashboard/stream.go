@@ -439,7 +439,7 @@ func flushDashboardOutput(dst io.Writer) error {
 // settlement value/date; the Bling row is not added a second time.
 const dashboardEligibleReceivablesCTE = `
 latest_daily_receivable_snapshot AS (
-  SELECT b.id AS sync_batch_id
+  SELECT b.id AS sync_batch_id, b.connection_id, b.correlation_id
     FROM integration_sync_batches b
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
@@ -449,12 +449,47 @@ latest_daily_receivable_snapshot AS (
      AND b.data_stage = 'NORMALIZED'
    ORDER BY b.finished_at DESC, b.id DESC
    LIMIT 1
+), latest_payment_method_snapshot AS (
+  SELECT b.id AS sync_batch_id, b.connection_id
+    FROM integration_sync_batches b
+    JOIN integration_connections c ON c.id = b.connection_id
+   WHERE c.provider = 'BLING'
+     AND b.resource = 'formas-pagamentos'
+     AND b.correlation_id = (SELECT correlation_id FROM latest_daily_receivable_snapshot)
+     AND b.connection_id = (SELECT connection_id FROM latest_daily_receivable_snapshot)
+     AND b.status IN ('SUCCESS', 'PARTIAL')
+     AND b.data_stage = 'NORMALIZED'
+   ORDER BY b.finished_at DESC, b.id DESC
+   LIMIT 1
 ), eligible_receivables AS (
   SELECT r.*,
+         CASE
+           WHEN r.source_system = 'NUVEM_PAGO' THEN r.net_amount
+           WHEN r.source_system = 'BLING'
+            AND terms.fee_rate_known
+            AND terms.fixed_fee_known
+            AND r.gross_amount IS NOT NULL
+            AND COALESCE(r.open_balance, r.gross_amount) >= 0
+           THEN GREATEST(
+             COALESCE(r.open_balance, r.gross_amount)
+             - ROUND(
+                 COALESCE(r.open_balance, r.gross_amount) * terms.fee_rate / 100
+                 + terms.fixed_fee, 2
+               ),
+             0
+           )
+           ELSE NULL
+         END AS liquid_amount,
          COALESCE(NULLIF(regexp_replace(translate(lower(btrim(c.name)), 'áàâãäéèêëíìîïóòõôöúùûüçñ', 'aaaaaeeeeiiiiooooouuuucn'), '[[:space:]]+', ' ', 'g'), ''),
                   NULLIF(regexp_replace(translate(lower(btrim(rr.payload->>'customer_name')), 'áàâãäéèêëíìîïóòõôöúùûüçñ', 'aaaaaeeeeiiiiooooouuuucn'), '[[:space:]]+', ' ', 'g'), '')) AS customer_match_name,
          COALESCE(r.due_date, r.expected_receipt_date) AS effective_due_date
     FROM receivables r
+    LEFT JOIN latest_payment_method_snapshot payment_batch
+      ON payment_batch.connection_id = r.connection_id
+    LEFT JOIN bling_payment_method_terms terms
+      ON terms.connection_id = r.connection_id
+     AND terms.source_id = r.source_payment_method_id::text
+     AND terms.sync_batch_id = payment_batch.sync_batch_id
     LEFT JOIN contacts c ON c.id = r.customer_id
     LEFT JOIN raw_records rr ON rr.id = r.raw_record_id
    WHERE (r.source_system = 'NUVEM_PAGO' AND r.business_type = 'B2C' AND r.status = 'PROJECTED')
@@ -493,33 +528,33 @@ latest_daily_receivable_snapshot AS (
 
 const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `, r AS (
   SELECT
-    COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)), 0)::text AS total_value,
+    COALESCE(SUM(liquid_amount), 0)::text AS total_value,
     COUNT(id) AS total_count,
-    COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE source_system = 'BLING'), 0)::text AS bling_value,
+    COALESCE(SUM(liquid_amount) FILTER (WHERE source_system = 'BLING'), 0)::text AS bling_value,
     COUNT(id) FILTER (WHERE source_system = 'BLING') AS bling_count,
-    COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (
+    COALESCE(SUM(liquid_amount) FILTER (
       WHERE source_system = 'NUVEM_PAGO' AND business_type = 'B2C' AND status = 'PROJECTED'
     ), 0)::text AS future_value,
     COUNT(id) FILTER (
       WHERE source_system = 'NUVEM_PAGO' AND business_type = 'B2C' AND status = 'PROJECTED'
     ) AS future_count,
-    COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (
-      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND effective_due_date < $1::date
+    COALESCE(SUM(liquid_amount) FILTER (
+      WHERE COALESCE(open_balance, gross_amount) > 0 AND effective_due_date < $1::date
     ), 0)::text AS overdue_value,
     COUNT(id) FILTER (
-      WHERE COALESCE(open_balance, net_amount, gross_amount) > 0 AND effective_due_date < $1::date
+      WHERE COALESCE(open_balance, gross_amount) > 0 AND effective_due_date < $1::date
     ) AS overdue_count
-    ,COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (
-      WHERE source_system = 'BLING' AND COALESCE(open_balance, net_amount, gross_amount) > 0 AND effective_due_date < $1::date
+    ,COALESCE(SUM(liquid_amount) FILTER (
+      WHERE source_system = 'BLING' AND COALESCE(open_balance, gross_amount) > 0 AND effective_due_date < $1::date
     ), 0)::text AS bling_overdue_value,
     COUNT(id) FILTER (
-      WHERE source_system = 'BLING' AND COALESCE(open_balance, net_amount, gross_amount) > 0 AND effective_due_date < $1::date
+      WHERE source_system = 'BLING' AND COALESCE(open_balance, gross_amount) > 0 AND effective_due_date < $1::date
     ) AS bling_overdue_count
   FROM deduplicated_receivables
 ), due90_candidates AS (
   SELECT *
     FROM eligible_receivables
-   WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
+   WHERE COALESCE(open_balance, liquid_amount) > 0
      AND effective_due_date >= $1::date AND effective_due_date < ($1::date + 90)
      AND UPPER(status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
 ), due90_ranked AS (
@@ -545,17 +580,17 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
     FROM due90_ranked nuvem
    WHERE nuvem.source_system = 'NUVEM_PAGO'
 ), due90 AS (
-  SELECT COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)), 0)::text AS value,
+  SELECT COALESCE(SUM(liquid_amount), 0)::text AS value,
          COUNT(id) AS count,
-         COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE source_system = 'BLING'), 0)::text AS bling_value,
+         COALESCE(SUM(liquid_amount) FILTER (WHERE source_system = 'BLING'), 0)::text AS bling_value,
          COUNT(id) FILTER (WHERE source_system = 'BLING') AS bling_count,
-         COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE source_system = 'NUVEM_PAGO'), 0)::text AS nuvem_value,
+         COALESCE(SUM(liquid_amount) FILTER (WHERE source_system = 'NUVEM_PAGO'), 0)::text AS nuvem_value,
          COUNT(id) FILTER (WHERE source_system = 'NUVEM_PAGO') AS nuvem_count,
-         COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE effective_due_date < ($1::date + 30)), 0)::text AS due30_value,
+         COALESCE(SUM(liquid_amount) FILTER (WHERE effective_due_date < ($1::date + 30)), 0)::text AS due30_value,
          COUNT(id) FILTER (WHERE effective_due_date < ($1::date + 30)) AS due30_count,
-         COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE source_system = 'BLING' AND effective_due_date < ($1::date + 30)), 0)::text AS due30_bling_value,
+         COALESCE(SUM(liquid_amount) FILTER (WHERE source_system = 'BLING' AND effective_due_date < ($1::date + 30)), 0)::text AS due30_bling_value,
          COUNT(id) FILTER (WHERE source_system = 'BLING' AND effective_due_date < ($1::date + 30)) AS due30_bling_count,
-         COALESCE(SUM(COALESCE(open_balance, net_amount, gross_amount)) FILTER (WHERE source_system = 'NUVEM_PAGO' AND effective_due_date < ($1::date + 30)), 0)::text AS due30_nuvem_value,
+         COALESCE(SUM(liquid_amount) FILTER (WHERE source_system = 'NUVEM_PAGO' AND effective_due_date < ($1::date + 30)), 0)::text AS due30_nuvem_value,
          COUNT(id) FILTER (WHERE source_system = 'NUVEM_PAGO' AND effective_due_date < ($1::date + 30)) AS due30_nuvem_count
     FROM due90_deduplicated
 ), cash_snapshot AS (
@@ -726,7 +761,7 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.status END,
        limits.exceeds_limit
   FROM (SELECT * FROM deduplicated_receivables
-         WHERE COALESCE(open_balance, net_amount, gross_amount) > 0
+         WHERE COALESCE(open_balance, liquid_amount) > 0
          ORDER BY effective_due_date NULLS LAST, source_id LIMIT 50) er
   LEFT JOIN contacts c ON c.id = er.customer_id
   LEFT JOIN raw_records rr ON rr.id = er.raw_record_id
@@ -735,7 +770,7 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
           CASE er.source_system WHEN 'NUVEM_PAGO' THEN 'Nuvem Pago' WHEN 'BLING' THEN 'Bling' ELSE er.source_system END AS origin,
           COALESCE(to_char(er.effective_due_date, 'YYYY-MM-DD'), '') AS due_date,
           COALESCE(er.gross_amount::text, '') AS gross_value,
-          COALESCE(COALESCE(er.net_amount, er.gross_amount)::text, '') AS net_value,
+          COALESCE(er.liquid_amount::text, '') AS net_value,
           COALESCE(er.status, '') AS status
  ) AS row_data
  CROSS JOIN LATERAL (

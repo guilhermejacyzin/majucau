@@ -149,6 +149,14 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 			t.Fatalf("mark %s normalized: %v", resource, err)
 		}
 	}
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE connection_id = $1::uuid AND resource = 'formas-pagamentos' AND correlation_id = $2`, connectionID, correlationID); err != nil {
+		t.Fatalf("normalize payment-method batch for liquid receivable fixture: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO bling_payment_method_terms (connection_id, sync_batch_id, source_id, destination, fee_rate, fee_rate_known, fixed_fee, fixed_fee_known, settlement_days, settlement_known, use_business_days, business_days_known) VALUES
+		($1::uuid, $2::uuid, '9', 1, 0, true, 0, true, 0, true, false, true),
+		($1::uuid, $2::uuid, '10', 1, 2.59, true, 0.35, true, 0, true, false, true)`, connectionID, paymentMethodsBatchID); err != nil {
+		t.Fatalf("seed Bling payment-method net values: %v", err)
+	}
 	blingCustomerID := "00000000-0000-4000-8000-000000000041"
 	blingReceivableID := "00000000-0000-4000-8000-000000000043"
 	independentReceivableID := "00000000-0000-4000-8000-000000000045"
@@ -167,6 +175,9 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 			t.Fatalf("seed current receivable snapshot membership: %v", err)
 		}
 	}
+	if _, err := tx.Exec(ctx, `UPDATE receivables SET connection_id = $1::uuid, source_payment_method_id = CASE WHEN source_id = 'bling-2' THEN 10 ELSE 9 END WHERE source_system = 'BLING' AND source_id IN ('bling-1', 'bling-2')`, connectionID); err != nil {
+		t.Fatalf("attach payment methods to receivable fixture: %v", err)
+	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil {
 		t.Fatalf("readStreamSummary() failed against PostgreSQL with normalized account batches: %v", err)
@@ -177,10 +188,10 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if snapshot.ReceiptsMonth.State != "UNAVAILABLE" || snapshot.PaymentsMonth.State != "UNAVAILABLE" {
 		t.Fatalf("cash movement metrics should remain unavailable until caixas is normalized: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
-	if snapshot.ReceivablesDueNext90Days.Value != "147" || snapshot.ReceivablesDueNext90Days.Count != 2 {
-		t.Fatalf("next 90 day receivables should pair one Bling/Nuvem match by name and gross value without using date, while retaining a different value: %+v", snapshot.ReceivablesDueNext90Days)
+	if snapshot.ReceivablesDueNext90Days.Value != "145.35" || snapshot.ReceivablesDueNext90Days.Count != 2 {
+		t.Fatalf("next 90 day receivables should pair one Bling/Nuvem match and calculate the other Bling title's liquid value: %+v", snapshot.ReceivablesDueNext90Days)
 	}
-	if snapshot.ReceivablesDueNext30Days.Value != "147" || snapshot.ReceivablesDueNext30Days.Count != 2 {
+	if snapshot.ReceivablesDueNext30Days.Value != "145.35" || snapshot.ReceivablesDueNext30Days.Count != 2 {
 		t.Fatalf("next 30 day receivables should use the same approved one-to-one cross-source matching: %+v", snapshot.ReceivablesDueNext30Days)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
@@ -281,9 +292,6 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `INSERT INTO bling_financial_account_identities (sync_batch_id, source_id, description) VALUES ($1::uuid, '1', 'Itaú'), ($1::uuid, '2', 'Nuvem Pago')`, accountsBatchID); err != nil {
 		t.Fatalf("seed selected Bling cash-flow accounts: %v", err)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO bling_payment_method_terms (connection_id, sync_batch_id, source_id, destination, fee_rate, fee_rate_known, fixed_fee, fixed_fee_known, settlement_days, settlement_known, use_business_days, business_days_known) VALUES ($1::uuid, $2::uuid, '9', 1, 0, true, 0, true, 0, true, false, true)`, connectionID, paymentMethodsBatchID); err != nil {
-		t.Fatalf("seed Bling payment-method terms: %v", err)
-	}
 	if _, err := tx.Exec(ctx, `UPDATE receivables SET connection_id = $1::uuid, source_payment_method_id = 9, source_financial_account_id = 1, status = CASE WHEN source_id = 'bling-2' THEN 'PARTIALLY_PAID' ELSE 'OPEN' END WHERE source_system = 'BLING' AND source_id IN ('bling-1', 'bling-2')`, connectionID); err != nil {
 		t.Fatalf("link receivable flow candidates to selected bank account: %v", err)
 	}
@@ -345,10 +353,10 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if snapshot.PayablesDueNext30Days.Value != "-380" || snapshot.PayablesDueNext30Days.Count != 6 {
 		t.Fatalf("30-day payables must include the open title assigned to another bank and exclude numeric status 5: %+v", snapshot.PayablesDueNext30Days)
 	}
-	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext30Days.Value != "247.0000" || snapshot.CashFlow.OutflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" || len(snapshot.CashFlow.Days) != 61 {
-		t.Fatalf("cash-flow series should use net receivable values, deduplicate approved cross-source matches, and preserve AP totals across 61 bounded dates: %+v", snapshot.CashFlow)
+	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext30Days.Value != "248.3500" || snapshot.CashFlow.OutflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" || len(snapshot.CashFlow.Days) != 61 {
+		t.Fatalf("cash-flow series should use the net amounts directly from Bling Contas a Receber, include all accounts, and preserve AP totals across 61 bounded dates: %+v", snapshot.CashFlow)
 	}
-	if snapshot.CashFlow.InflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext60Days.Value != "357.0000" || snapshot.CashFlow.OutflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext60Days.Value != "-410.0000" {
+	if snapshot.CashFlow.InflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext60Days.Value != "358.3500" || snapshot.CashFlow.OutflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext60Days.Value != "-410.0000" {
 		t.Fatalf("60-day cash-flow totals should include day 30–59, preserve signs and exclude day 60: %+v", snapshot.CashFlow)
 	}
 	if _, err := tx.Exec(ctx, `DELETE FROM bling_financial_account_identities WHERE sync_batch_id = $1::uuid AND source_id = '1'`, accountsBatchID); err != nil {
@@ -358,7 +366,7 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read summary with incomplete account catalog and complete movement identities: %v", err)
 	}
-	if snapshot.CashFlow == nil || len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.InflowsNext30Days.Value != "247.0000" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" {
+	if snapshot.CashFlow == nil || len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.InflowsNext30Days.Value != "248.3500" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" {
 		t.Fatalf("cash-flow graph should retain all AR/AP titles when the account catalog is incomplete: %+v", snapshot.CashFlow)
 	}
 }

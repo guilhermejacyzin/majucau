@@ -90,10 +90,11 @@ const reconciledCashMovementSnapshotExistsSQL = `
 SELECT to_regclass('public.bling_cash_movement_reconciled_snapshot_rows') IS NOT NULL
 `
 
-// T02 mirrors Contas a Receber's displayed net value and Contas a Pagar's open
-// balance, grouped by due date. The shared receivable CTE applies the approved
-// cross-source duplicate matching. Do not source values from the prepared Flow
-// of Cash report or recalculate payment fees/settlement terms here.
+// T02 mirrors the Bling Contas a Receber/Contas a Pagar reports, grouped by due
+// date. Receivables use the displayed liquid value calculated from the
+// same-run official payment-method terms. Do not add the external Nuvem file to
+// T02: the Bling receivables report already includes Nuvem Pago payment methods.
+// Do not source values from Bling's prepared Flow of Cash report.
 const cashFlowCandidatesSQL = `
 WITH ` + dashboardEligibleReceivablesCTE + `, daily AS (
   SELECT DISTINCT ON (b.resource) b.resource, b.id AS batch_id, b.status
@@ -110,7 +111,7 @@ WITH ` + dashboardEligibleReceivablesCTE + `, daily AS (
    WHERE d.resource = 'contas.pagar'
 ), candidates AS (
   SELECT 'RECEIVABLE'::text AS kind, r.effective_due_date AS flow_date, 'INFLOW'::text AS direction,
-         COALESCE(r.net_amount, r.gross_amount)::text AS amount,
+         COALESCE(r.liquid_amount, 0)::text AS amount,
          ''::text AS source_status, r.source_financial_account_id::text AS account_source_id,
          r.status AS financial_status, COALESCE(r.source_payment_method_id::text, '') AS payment_method_id,
          NULL::text AS fee_rate, NULL::text AS fixed_fee, NULL::integer AS settlement_days,
@@ -118,12 +119,12 @@ WITH ` + dashboardEligibleReceivablesCTE + `, daily AS (
          false AS fee_rate_known, false AS fixed_fee_known, false AS settlement_known,
          false AS business_days_known, false AS destination_known,
          COALESCE((SELECT status FROM daily WHERE resource = 'contas.receber'), 'SUCCESS') AS batch_status
-    FROM deduplicated_receivables r
-   WHERE COALESCE(r.open_balance, r.net_amount, r.gross_amount, 0) > 0
-     AND (
-       (r.source_system = 'BLING' AND r.source_entity = 'bling.conta_receber' AND r.status IN ('OPEN', 'PARTIALLY_PAID'))
-       OR (r.source_system = 'NUVEM_PAGO' AND r.business_type = 'B2C' AND r.status = 'PROJECTED')
-     )
+    FROM eligible_receivables r
+   WHERE COALESCE(r.open_balance, r.gross_amount, 0) > 0
+     AND r.liquid_amount > 0
+     AND r.source_system = 'BLING'
+     AND r.source_entity = 'bling.conta_receber'
+     AND r.status IN ('OPEN', 'PARTIALLY_PAID')
      AND r.effective_due_date >= $2::date AND r.effective_due_date <= $3::date
   UNION ALL
   SELECT 'PAYABLE', p.due_date, 'OUTFLOW', abs(p.open_balance)::text,

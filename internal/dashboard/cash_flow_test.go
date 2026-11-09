@@ -54,6 +54,32 @@ func TestCashFlowPeriodOmitsUnconfirmedClosingBalance(t *testing.T) {
 	}
 }
 
+func TestT02ReceivablesUseLiquidAmountsAndOfficialPaymentMethodTerms(t *testing.T) {
+	for _, fragment := range []string{
+		"latest_payment_method_snapshot AS",
+		"terms.fee_rate_known",
+		"terms.fixed_fee_known",
+		"ROUND(",
+		"AS liquid_amount",
+	} {
+		if !strings.Contains(dashboardEligibleReceivablesCTE, fragment) {
+			t.Fatalf("shared receivables query is missing liquid-value rule %q", fragment)
+		}
+	}
+	if !strings.Contains(cashFlowCandidatesSQL, "r.liquid_amount") {
+		t.Fatal("T02 weekly receipts must consume the shared liquid amount")
+	}
+	if !strings.Contains(cashFlowCandidatesSQL, "FROM eligible_receivables r") || !strings.Contains(cashFlowCandidatesSQL, "r.source_system = 'BLING'") || !strings.Contains(cashFlowCandidatesSQL, "r.source_entity = 'bling.conta_receber'") {
+		t.Fatal("T02 receipts must come directly from the current Bling Contas a Receber snapshot")
+	}
+	if strings.Contains(cashFlowCandidatesSQL, "FROM deduplicated_receivables r") || strings.Contains(cashFlowCandidatesSQL, "OR (r.source_system = 'NUVEM_PAGO'") {
+		t.Fatal("T02 must not drop Bling report rows through cross-source matching or add the external Nuvem file a second time")
+	}
+	if strings.Contains(cashFlowCandidatesSQL, "COALESCE(r.open_balance, r.net_amount, r.gross_amount") || strings.Contains(cashFlowCandidatesSQL, "COALESCE(r.net_amount, r.gross_amount)") {
+		t.Fatal("T02 weekly receipts must not substitute gross/open balance for the liquid value")
+	}
+}
+
 func TestWeeklyBalanceCarriesReconciledOpeningThroughSelectedPeriod(t *testing.T) {
 	periods := []application.DashboardCashFlowPeriod{
 		{From: "2026-11-08", Through: "2026-11-14", Inflows: dashboardFlowMetric("200.00", true), Outflows: dashboardFlowMetric("-50.00", true)},

@@ -1,94 +1,32 @@
-# T02 — fontes de receitas, despesas e saldo — 08/11/2026
+# T02 — origem e conferência das receitas e despesas — 08/11/2026
 
-## Decisão confirmada
+## Regra aprovada
 
-Gisele determinou que a T02 não use os valores do relatório “Fluxo de Caixa” do
-Bling. A tela deve montar as linhas a partir das telas de origem:
+- A T02 não usa o relatório preparado “Fluxo de Caixa” do Bling.
+- **Receitas:** títulos em aberto do relatório **Contas a Receber do Bling**, agrupados pela data de vencimento e usando o valor líquido mostrado na coluna “Líquido”. A lista do Bling já contém títulos cuja forma de pagamento é Nuvem Pago; portanto o arquivo externo de recebimentos futuros não deve ser somado outra vez na T02.
+- **Despesas:** títulos em aberto do relatório **Contas a Pagar do Bling**, agrupados pela data de vencimento e usando o saldo em aberto como saída.
+- Incluir todas as contas financeiras que aparecem nos relatórios; não filtrar títulos pelo banco associado. O saldo bancário é uma medida separada e parte do último saldo conciliado do Itaú.
+- Abertura + receitas líquidas − despesas = fechamento semanal. O fechamento de uma semana abre a semana seguinte. Sem prazo de liquidação nem float. Sem rótulo “Parcial” nos totais.
 
-- **Receitas:** Contas a Receber, títulos em aberto incluídos no período, pelo
-  valor líquido mostrado na coluna “Líquido”. Se a origem não fornecer líquido,
-  usar o mesmo fallback da tela de recebíveis (valor bruto).
-- **Despesas:** Contas a Pagar, títulos em aberto incluídos no período.
-- **Saldo atual e saldo inicial projetado:** último saldo conciliado do Itaú.
-- Todas as contas financeiras dentro de Contas a Receber/Pagar entram nos títulos;
-  a conta associada ao título não restringe a soma. Somente o saldo permanece
-  restrito ao Itaú.
+## Referência visual de 22/11/2026 a 28/11/2026
 
-A fórmula semanal aprovada é saldo inicial + receitas − despesas. O saldo final
-semanal inicia a semana seguinte. A série não deve adicionar movimentos da tela
-Caixas e Bancos às linhas de receita/despesa da T02.
+As capturas da responsável mostram “Todas as contas financeiras” e títulos “Em aberto”. Contas a Pagar: 14 títulos, total de **R$ 25.275,71**. Contas a Receber: 146 títulos, **R$ 45.482,22 bruto**, taxas de **R$ 1.691,56** e **R$ 43.790,66 líquido**. O resultado de receita da semana deve reconciliar com o líquido da lista para o mesmo intervalo e filtros.
 
-## Evidência de referência fornecida
+O próprio Bling descreve o líquido como valor total menos as taxas da forma de pagamento e documenta a taxa percentual, fixa e arredondamento. A API de Contas a Receber não retorna a coluna “Líquido”; para reproduzi-la, o app usa as configurações oficiais da forma de pagamento obtidas na mesma carga diária. Se as taxas necessárias não forem conhecidas, não deve substituir o resultado por bruto.
 
-As capturas enviadas mostram Contas a Pagar e Contas a Receber para o período
-22/11/2026–28/11/2026, com “Todas as contas financeiras” e títulos “Em aberto”.
-A captura de Contas a Pagar mostra 14 títulos e total de **R$ 25.275,71**. A de
-Contas a Receber mostra 146 títulos: **R$ 45.482,22 bruto** e **R$ 43.790,66
-líquido**. Para a entrada da T02, a referência correta é **R$ 43.790,66**,
-antes de conferir como o conjunto deduplicado das fontes locais se reconcilia
-com os 146 títulos exibidos.
+## Auditoria e causa encontrada
 
-Os números da T02 devem coincidir com os títulos e valores apresentados nas
-telas de origem. Para recebimentos, usar o valor **líquido** por título da tela
-Contas a Receber (com o mesmo fallback para bruto quando não houver líquido);
-para pagamentos, usar o saldo em aberto de Contas a Pagar. As datas são as datas
-de vencimento e a soma não recalcula tarifas nem prazos de liquidação. Não exibir
-o marcador “Parcial” nesses totais. Aplicar a regra aprovada de correspondência
-entre Nuvem Pago e Bling para não contar duas vezes a mesma venda.
+A tela apresentava receita semanal diferente por dois motivos de composição:
 
-## Mudança técnica nesta revisão
+1. A consulta aplicava a deduplicação entre Bling e o arquivo externo da Nuvem Pago. Isso podia remover uma linha do Bling, embora o relatório de Contas a Receber já contenha os recebimentos Nuvem Pago.
+2. A consulta usava `open_balance` sem descontar as taxas da forma de pagamento, apresentando valor bruto onde a referência exige líquido.
 
-- A consulta de fluxo usa títulos normalizados de Contas a Receber e Contas a
-  Pagar, consolida as fontes de recebimento com a regra aprovada de não
-  duplicidade e agrupa pela data efetiva de vencimento.
-- A entrada da T02 usa `net_amount` (coluna “Líquido”); se não houver valor
-  líquido disponível para a linha, usa `gross_amount`, como na tabela da tela de
-  recebíveis. Não usa o saldo bancário nem o valor bruto quando há líquido.
-- Títulos não são mais descartados porque estão vinculados a outra conta
-  financeira. A inclusão por status, saldo em aberto e janela de datas continua
-  aplicada. O valor e o vencimento passam diretamente para o agrupamento semanal,
-  mantendo a mesma origem e o mesmo valor da tela de Contas a Receber/Pagar.
-- Removidos os cálculos de taxa, prazo de liquidação e float da série T02, que
-  pertenciam à reprodução do relatório preparado de Fluxo de Caixa e alteravam
-  os valores ou suas semanas.
-- Removida a trava que transformava os totais em indisponíveis quando os lotes
-  de origem não eram identificados na mesma execução. A série sempre retorna os
-  valores numéricos calculados dos títulos normalizados, sem “Parcial”.
-- O ícone de atualização no cabeçalho recarrega o retrato mais recente do
-  worker. Atualiza a tela, mas não dispara uma nova sincronização com o
-  provedor; sincronizar continua sendo uma ação separada em Integrações.
-- Se a tabela auxiliar da migration 000024 ainda não existir no banco local, a
-  consulta conserva o último checkpoint aprovado do Itaú e continua montando
-  os totais de Receber/Pagar. A atualização do saldo com conciliações posteriores
-  depende de instalar essa migration; a ausência dela não deve mais apagar a
-  tela toda.
-- O saldo-base do gráfico volta a usar o resultado de `readLatestItauBalance`;
-  essa mesma consulta alimenta o card de saldo, mantendo o Itaú como única fonte
-  de saldo.
-- O uso do relatório “Fluxo de Caixa” e a seleção de contas Itaú + Nuvem Pago
-  permanecem registrados como histórico anterior, mas estão substituídos para
-  esta composição da T02.
-- A Visão Executiva e a T02 limitam a apresentação do gráfico à data atual em
-  São Paulo, removendo o dia anterior que aparecia como 07/11 quando a tela já
-  devia iniciar em 08/11. O filtro da T02 continua controlando tabela e gráfico.
+A T02 foi alterada para ler as linhas do snapshot diário de Contas a Receber do Bling diretamente, sem acrescentar a fonte externa nem deduplicar entre fontes. O valor líquido é calculado com as taxas oficiais da mesma execução; a série de despesas permanece vinculada ao snapshot de Contas a Pagar. Um teste de regressão verifica essas fontes e impede o retorno do fallback bruto.
 
-## Verificação e limites
+## Validação e limites
 
-- `go test ./internal/dashboard -count=1`: passou depois da correção dos totais;
-  a integração real do PostgreSQL não executa neste ambiente sem
-  `MAJUCAU_TEST_DATABASE_URL`.
-- `npm run build`: passou após corrigir a regra de agrupamento semanal do
-  protótipo.
-- O teste PostgreSQL de integração foi ignorado porque
-  `MAJUCAU_TEST_DATABASE_URL` não está configurada neste ambiente; a consulta
-  precisa ser validada pela CI PostgreSQL.
-- `go build ./cmd/...`: passou após a alteração da consulta da T02.
-- `npm run build`: passou após ligar o botão de atualização ao recarregamento
-  do retrato do painel.
-- `git diff --check`: passou.
-- As capturas comprovam o desenho dos filtros e a diferença entre valor bruto e
-  líquido no relatório de origem. Ainda falta atualizar o worker em execução,
-  sincronizar os dados e conferir numericamente a T02 com o intervalo
-  22/11–28/11. Os testes automatizados e a integração PostgreSQL também não
-  foram executados nesta revisão. Portanto, a integração real e a homologação
-  continuam pendentes.
+- `go test ./internal/dashboard ./internal/financial -count=1`: passou.
+- `go test ./... -count=1`: passou.
+- A integração com PostgreSQL real não foi executada porque `MAJUCAU_TEST_DATABASE_URL` não está configurada neste ambiente.
+- A validação automatizada comprova a regra no código; não comprova que a execução diária real tenha a mesma lista de 146 linhas nem o total líquido da captura. A janela 22/11–28/11 precisa ser conferida no protótipo após atualizar o worker e sincronizar novamente.
+- A atualização do protótipo ainda não está comprovada nesta revisão. Não afirmar que o valor de R$ 43.790,66 já aparece na tela até essa conferência visual e numérica.

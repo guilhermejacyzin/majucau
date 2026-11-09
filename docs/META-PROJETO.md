@@ -2,17 +2,24 @@
 
 ### Regra vigente T02 — títulos das telas de origem — 08/11/2026
 
-Gisele determinou que a T02 use os mesmos valores em aberto e as mesmas datas de
-vencimento que as telas Contas a Receber e Contas a Pagar. A série não consulta
-o relatório preparado de Fluxo de Caixa, não filtra pelos bancos ligados aos
-títulos, não recalcula taxas/prazos e não mostra o rótulo “Parcial”. O saldo e a
-abertura do gráfico continuam usando somente o último saldo conciliado do Itaú.
-A consulta semanal e a regressão PostgreSQL para títulos associados a outras
-contas estão no checkout; a execução PostgreSQL depende de
-`MAJUCAU_TEST_DATABASE_URL`. Próximo passo de homologação: comparar no protótipo
-cada semana com as telas de origem, começando por 22/11–28/11. BK-062 segue em
-30% concluído (70% restante); projeto em 12,3% (87,7% restante). Registro:
-[`T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md`](evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).
+Gisele determinou que a T02 use os mesmos títulos e datas de vencimento das
+telas Contas a Receber e Contas a Pagar. A receita usa o líquido da lista do
+Bling, calculado com as taxas oficiais da forma de pagamento sincronizadas na
+mesma execução. A T02 não soma novamente o arquivo externo Nuvem Pago porque
+esses recebimentos já aparecem na lista do Bling. Despesas usam os saldos em
+aberto de Contas a Pagar; ambas as séries incluem todas as contas financeiras e
+não filtram pelo banco associado. O saldo atual e a abertura semanal usam
+somente o último saldo conciliado do Itaú. Não usar o relatório preparado
+“Fluxo de Caixa”, prazo/float, nem o rótulo “Parcial”.
+
+A auditoria de código corrigiu duas causas da receita incorreta: deduplicar
+linhas Bling contra a cópia externa Nuvem Pago e somar o bruto sem taxas. Os
+testes Go completos e o build dos comandos passaram. O teste PostgreSQL real
+não rodou por falta de `MAJUCAU_TEST_DATABASE_URL`, e a comparação dos 146
+títulos (R$ 43.790,66 líquidos) com a semana 22/11–28/11 ainda não foi feita no
+protótipo atualizado. Portanto, a correção de código está pronta para
+conferência; T02 não está homologada. BK-062 segue em 30% até a comparação real.
+Registro: [`T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md`](evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).
 ### Auditoria da diferença nas despesas semanais da T02 — 08/11/2026
 
 Abri a T02 do protótipo web: ela está sem snapshot e não mostra dados. Na janela
@@ -1110,17 +1117,27 @@ segue em 30% e o projeto em 12,3%. Depois da aprovação da T02, a tarefa seguin
 é T03 — Contas a Receber. Evidência:
 [`RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md`](./evidence/RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md).
 
-### Correção da origem líquida das receitas da T02 — 08/11/2026
+### Auditoria da receita semanal da T02 — 08/11/2026
 
-Gisele corrigiu a regra: **A Receber na T02 é líquido**. A consulta da série
-semanal estava usando primeiro `open_balance`, o que podia mostrar o valor bruto
-mesmo quando havia líquido disponível, e não aplicava a mesma deduplicação de
-Contas a Receber. A consulta foi ajustada para usar `net_amount` (com fallback
-para `gross_amount` somente quando a tela também não possui líquido), reaproveitar
-a composição/deduplicação aprovada entre Bling e Nuvem Pago e agrupar pela data
-de vencimento efetiva. A saída de Contas a Pagar e o saldo-base do Itaú não foram
-alterados. Atualizei também a regra operacional, o registro de decisão e a
-matriz de requisitos. A T02 permanece em conferência até a semana 22–28/11
-mostrar o mesmo líquido do relatório; a captura de referência informa bruto de
-R$ 45.482,22 e líquido de R$ 43.790,66. A integração PostgreSQL e a validação
-visual desta correção ainda precisam ser executadas.
+A revisão corrigiu o registro anterior: a série da T02 não deve usar o fallback
+bruto nem cruzar seus títulos com o arquivo externo da Nuvem Pago. Gisele
+determinou que as entradas sigam diretamente a lista de Contas a Receber do
+Bling, que já inclui recebimentos pela forma Nuvem Pago. Foram encontradas duas
+causas no código: a deduplicação externa podia retirar títulos da lista Bling; e
+o cálculo da série usava o saldo em aberto sem descontar a taxa oficial da forma
+de pagamento.
+
+A T02 agora parte do snapshot Bling de Contas a Receber, sem somar/parear o
+arquivo externo, calcula o líquido a partir das taxas oficiais sincronizadas na
+mesma execução e mantém Contas a Pagar como origem das saídas. O card de saldo e
+o ponto de abertura do gráfico continuam separados, baseados no último saldo
+conciliado do Itaú. `go test ./... -count=1`, `go build ./cmd/...` e
+`git diff --check` passaram. Os testes PostgreSQL reais foram ignorados porque
+`MAJUCAU_TEST_DATABASE_URL` não está configurada.
+
+A alteração de código está pronta para conferência, mas a instância ativa ainda
+precisa receber o worker recompilado e executar nova sincronização. A comparação
+real da semana 22/11–28/11 (146 títulos, R$ 43.790,66 líquido na captura) não foi
+concluída; não declarar a T02 homologada até bater a mesma janela e filtros no
+protótipo. Ver [`STATUS-ATUAL-2026-11-08.md`](STATUS-ATUAL-2026-11-08.md) e
+[`evidência T02`](evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).

@@ -423,16 +423,19 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 
 - **Confirmada por:** Gisele, nesta conversa Codex, em 2026-11-08 (America/Sao_Paulo).
 - Não usar mais o relatório “Fluxo de Caixa” do Bling para alimentar a T02. A responsável não consegue conferir a origem dos números desse relatório e determinou a origem direta nas telas de origem.
-- **Receitas:** títulos em aberto de Contas a Receber, usando o valor **líquido** mostrado na tela (se a origem não fornecer valor líquido, usar o mesmo fallback bruto que a própria tela). **Despesas:** títulos em aberto de Contas a Pagar. Considerar todos os títulos incluídos nessas listas, mesmo quando a conta financeira vinculada a um título não for Itaú ou Nuvem Pago. Agrupar por vencimento; não recalcular taxas, prazos de liquidação ou float. Os totais de receitas/despesas não exibem “Parcial”. Aplicar a regra aprovada de correspondência entre Nuvem Pago e Bling para a mesma venda não ser contada duas vezes.
+- **Receitas:** títulos em aberto da tela Contas a Receber do Bling, pelo valor líquido da coluna “Líquido”. A API não devolve essa coluna; reproduzir seu cálculo a partir das taxas oficiais da forma de pagamento obtidas na mesma carga, sem fallback silencioso para bruto. Não somar nem deduplicar a cópia externa Nuvem Pago na série T02, pois o relatório Bling já contém esses recebimentos. **Despesas:** títulos em aberto da tela Contas a Pagar do Bling. Considerar todos os títulos dessas listas, mesmo quando a conta associada não for Itaú. Agrupar por vencimento, sem prazo de liquidação ou float. Não exibir “Parcial”.
 
 ### Ajuste confirmado — valor líquido de Contas a Receber — 08/11/2026
 
 Para a série de **Receitas** da T02, usar o valor líquido por título mostrado na
-coluna “Líquido” de Contas a Receber. Se a origem não tiver um valor líquido,
-usar o mesmo fallback já apresentado na tela (valor bruto). A regra de
-correspondência Nuvem Pago/Bling continua evitando duplicar a mesma venda. As
-despesas continuam vindo dos valores em aberto de Contas a Pagar. Não usar o
-relatório pronto “Fluxo de Caixa” para compor essas duas séries.
+coluna “Líquido” de Contas a Receber. A API não persiste esse campo: obter as
+taxas oficiais de pagamento na mesma execução diária e calcular o líquido por
+título com arredondamento do Bling. Não usar valor bruto como fallback e não
+somar a cópia externa Nuvem Pago na T02, pois a lista Contas a Receber já inclui
+os recebimentos dessa forma. As despesas continuam vindo dos valores em aberto
+de Contas a Pagar. Não usar o relatório pronto “Fluxo de Caixa” para compor
+essas séries. Esta atualização corrige a formulação anterior desta seção, que
+permitia fallback bruto e deduplicação externa na T02.
 - **Saldo:** usar exclusivamente o último saldo conciliado do Itaú como base do card e do gráfico. Não adicionar outras contas bancárias ao saldo. O saldo projetado de cada semana é saldo inicial + receitas − despesas; o fechamento de uma semana abre a seguinte.
 - Esta decisão substitui, para T02, as decisões anteriores que mandavam reproduzir as entradas/saídas do relatório “Fluxo de Caixa” e que exigiam identificar Itaú + Nuvem Pago como conjunto de contas do gráfico. A regra separada de Contas a Receber para deduplicar títulos entre Bling e Nuvem Pago continua valendo na projeção consolidada de 90 dias da tela T01; não deve ser aplicada novamente aos títulos da T02, que usa os títulos já normalizados de Contas a Receber.
 - Evidência dos relatórios filtrados para 22–28/11: `docs/evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md`.

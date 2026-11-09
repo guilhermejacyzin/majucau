@@ -62,3 +62,12 @@ a configuração e autoriza novamente o Majucau. Depois disso, é preciso fazer
 uma nova carga e comparar os dados com o relatório Fluxo de Caixa do Bling.
 O saldo atual por banco continua sem fonte confirmada. Nenhuma tela aprovada ou
 regra financeira foi alterada.
+
+## Esclarecimento posterior sobre o ícone Atualizar — 08/11/2026
+
+O termo “refresh” neste registro histórico se referia a reler os dados locais
+depois de uma sincronização/importação que já tivesse terminado. Não significa
+que o ícone no cabeçalho inicie uma nova consulta ao provedor. A auditoria de
+08/11 constatou que esse ícone somente chama `getState()` e `getSnapshot()`.
+Para a pendência e os critérios da ação solicitada agora, consultar
+`T02-UPDATE-ACTION-AUDIT-2026-11-08.md`.

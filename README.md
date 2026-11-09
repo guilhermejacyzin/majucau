@@ -4,6 +4,8 @@ Aplicativo Wails de inteligência financeira para Windows 10/11 x64. A implement
 
 > **Estado atual — 08/11/2026:** protótipo em desenvolvimento, ainda sem homologação. BK-062 (T02 — Fluxo de Caixa) continua em conferência. Foi corrigido no código que as entradas da T02 devem vir somente do relatório Contas a Receber do Bling, em valor líquido; o arquivo externo Nuvem Pago não deve ser somado novamente nessa série. Testes Go passaram, mas a instância ativa e os números reais ainda precisam ser atualizados e comparados com a semana 22/11–28/11. O saldo permanece separado e depende do último saldo conciliado do Itaú. Veja [`docs/STATUS-ATUAL-2026-11-08.md`](docs/STATUS-ATUAL-2026-11-08.md), [`docs/META-PROJETO.md`](docs/META-PROJETO.md) e a [evidência da auditoria T02](docs/evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).
 
+> **Limite da atualização visível:** o ícone “Atualizar dados da tela” atualmente recarrega o snapshot já salvo no worker; ele não busca novos dados do Bling. A busca manual continua separada em Integrações, e há uma rotina agendada às 09:30. A responsável pediu que Atualizar passe a buscar dados novos e só então reflita os resultados. Essa alteração ainda não foi implementada. Não considerar um clique no ícone como prova de nova sincronização. Veja [`docs/evidence/T02-UPDATE-ACTION-AUDIT-2026-11-08.md`](docs/evidence/T02-UPDATE-ACTION-AUDIT-2026-11-08.md).
+
 ## O que o produto entrega
 
 - visão executiva com os cards financeiros oficiais do handoff;

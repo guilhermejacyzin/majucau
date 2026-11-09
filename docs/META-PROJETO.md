@@ -1,5 +1,23 @@
 # Meta do Majucau
 
+### Estado atualizado — funcionamento do comando “Atualizar” — 08/11/2026
+
+Gisele esclareceu que a ação Atualizar deve buscar os dados recentes e modificar
+os resultados que aparecem na tela. A inspeção de `frontend/src/mockupDashboard.tsx`
+e `frontend/src/App.tsx` confirmou que o ícone atual só relê o estado e o snapshot
+local já persistido; não aciona uma consulta/sincronização do Bling. Por isso, ele
+pode continuar exibindo os mesmos números antigos. O botão “Sincronizar agora”
+separado em Integrações e a rotina diária das 09:30 são os caminhos de busca já
+existentes. Ligar a atualização visível ao fluxo oficial e recarregar os dados
+após a conclusão ainda está pendente de implementação.
+
+Os commits `7038613` e `d3f2358` corrigem e registram a regra da receita líquida
+semanal T02, mas não implementam o novo comportamento do botão Atualizar nem
+comprovam os totais numa sincronização real. Progresso não muda nesta revisão:
+BK-062 segue em 30% concluído (70% restante) e a média do projeto em 12,3%
+concluído (87,7% restante). A evidência e próximos passos estão em
+[`T02-UPDATE-ACTION-AUDIT-2026-11-08.md`](evidence/T02-UPDATE-ACTION-AUDIT-2026-11-08.md).
+
 ### Regra vigente T02 — títulos das telas de origem — 08/11/2026
 
 Gisele determinou que a T02 use os mesmos títulos e datas de vencimento das

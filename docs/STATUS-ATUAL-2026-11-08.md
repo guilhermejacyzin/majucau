@@ -16,6 +16,14 @@
 
 **Ainda não comprovado:** não afirmar que R$ 43.790,66 já aparece na tela. A etapa só fecha depois de confirmar o snapshot sincronizado e comparar a mesma semana e os mesmos filtros. O ajuste depende das taxas da forma de pagamento presentes na mesma carga; se alguma não estiver configurada ou sincronizada, não deve exibir o valor bruto como se fosse líquido.
 
+## O que o botão “Atualizar” faz hoje
+
+A responsável esclareceu que espera que a atualização busque os dados e altere os resultados mostrados. A auditoria do frontend constatou que o ícone “Atualizar dados da tela” apenas chama `getState()` e `getSnapshot()` e relê o que já está salvo localmente. Ele **não inicia uma nova busca no Bling**. Portanto, clicar nele pode redesenhar os mesmos números antigos e não comprova sincronização. A busca manual ainda é uma ação separada em Integrações; existe também a rotina automática diária das 09:30.
+
+Essa diferença explica por que uma atualização visual não corrigiu os totais. A interface precisa ligar a ação Atualizar ao fluxo oficial de sincronização; quando o lote terminar, deve recarregar o snapshot e apresentar o horário e o resultado reais. Isso está documentado como trabalho pendente, não como código concluído. Não alterei a tela ou regras financeiras nesta atualização de documentação.
+
+Evidência: [`T02-UPDATE-ACTION-AUDIT-2026-11-08.md`](evidence/T02-UPDATE-ACTION-AUDIT-2026-11-08.md).
+
 ## Sequência imediata
 
 1. Atualizar o worker e a interface ativos com o código corrigido.

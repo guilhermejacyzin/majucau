@@ -54,7 +54,7 @@ func (tx *scriptedDashboardTx) QueryRow(_ context.Context, query string, args ..
 }
 
 func (tx *scriptedDashboardTx) Query(_ context.Context, query string, args ...any) (pgx.Rows, error) {
-	if strings.Contains(query, "WITH daily AS (") {
+	if strings.Contains(query, "WITH daily AS (") || strings.Contains(query, "SELECT kind, flow_date, direction, amount") {
 		// T02 reads forecast rows directly from the normalized receivable/payable
 		// snapshots. Keep the scripted fixture empty unless a test supplies rows.
 		return &emptyDashboardRows{}, nil

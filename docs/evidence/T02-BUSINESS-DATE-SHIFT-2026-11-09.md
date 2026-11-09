@@ -31,10 +31,11 @@ em aberto) e o saldo conciliado do Itaú como base separada.
 
 ## O que ainda não foi comprovado
 
-O aplicativo nativo foi reconstruído e reaberto com esta correção. A janela
-está ativa na tela inicial, mas a captura para confirmar visualmente a T02
-expirou; portanto, ainda falta a conferência visual da T02. A comparação com
-uma nova carga real e com os filtros do relatório do Bling continua pendente.
-O último saldo-base autorizado é R$ 62.548,33 em 06/11/2026; a
+O protótipo local foi aberto na T02. A tabela e o gráfico expõem as mesmas nove
+semanas, de 09/11/2026 a 08/01/2027. O último snapshot mostrado tem horário
+09/11/2026 às 00:11; não foi feita nova sincronização ao abrir a tela. A
+revisão visual da responsável e a comparação com uma nova carga real e com os
+filtros do relatório do Bling continuam pendentes. O último saldo-base
+autorizado é R$ 62.548,33 em 06/11/2026; a
 atualização desse valor depende de uma sincronização real, normalizada e
 concluída de Caixa e Bancos com movimentos conciliados do Itaú.

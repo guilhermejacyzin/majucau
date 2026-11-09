@@ -17,13 +17,13 @@ pagamento selecionada nessa etapa tem taxa zero, portanto não deve descontar
 taxa de outro título do cenário. Os testes do pacote e o teste PostgreSQL
 passaram.
 
-**Limite desta entrega:** o protótipo nativo foi reconstruído e reaberto com o
-código novo; a janela está ativa, mas abre na tela inicial. A captura de tela
-para conferir visualmente a T02 expirou, então não afirmo que a tela foi
-conferida. Também não houve confirmação de uma nova sincronização real do
-Bling. O último saldo-base aprovado continua sendo R$ 62.548,33 em 06/11; a
-API só pode atualizá-lo com movimentos do Itaú que apareçam em uma execução
-normalizada de conciliação. A T02 não está homologada e a T03 ainda não começou.
+**Estado de conferência:** abri a T02 no protótipo local. Tabela e gráfico
+apresentam as mesmas nove semanas, de 09/11/2026 a 08/01/2027. O último dado
+salvo exibido é de 09/11/2026 às 00:11; ainda não foi executada uma nova
+sincronização real nesta conferência. O saldo-base aprovado continua sendo
+R$ 62.548,33 em 06/11; a API só pode atualizá-lo com movimentos do Itaú que
+apareçam em uma execução normalizada de conciliação. A revisão visual da
+responsável ainda está pendente; a T02 não está homologada e a T03 não começou.
 
 Evidência: [`T02-BUSINESS-DATE-SHIFT-2026-11-09.md`](evidence/T02-BUSINESS-DATE-SHIFT-2026-11-09.md).
 

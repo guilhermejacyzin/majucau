@@ -13,10 +13,9 @@ como conciliados. A conferência das permissões passou.
 
 ## O que ainda falta antes de aprovar a T02
 
-1. Conferir visualmente a T02 atualizada. A aplicação nativa foi reconstruída
-   e reaberta com o código novo, mas a captura para confirmar a tela expirou;
-   não afirmo que a T02 foi visualmente revisada.
-2. Rodar uma sincronização real do Bling com a nova estrutura e comparar
+1. Gisele conferir a T02 que está aberta no protótipo local e aprovar ou
+   apontar correções visuais.
+2. Rodar uma nova sincronização real do Bling e comparar
    Contas a Receber (líquido), Contas a Pagar e o saldo conciliado do Itaú.
 3. Confirmar a atualização diária do saldo a partir do último saldo-base
    aprovado, sem misturar Itaú com Mercado Pago.
@@ -38,10 +37,16 @@ de Contas a Receber e saídas de Contas a Pagar.
 - Aplicação da migration 000024, scripts de permissão e verificação de
   privilégios no banco isolado — passou.
 
-## O que ainda não se pode afirmar
+## Estado que aparece na tela aberta
 
-A tela nativa foi reconstruída e reaberta com o código novo, mas não consegui
-confirmar visualmente a T02 nesta sessão; a sincronização real também não foi
-confirmada. Portanto, T02 não está homologada e T03 não começou. Os
-percentuais existentes no documento de meta são estimativas antigas; não foram
-recalculados nesta atualização.
+O protótipo local está na T02. O último snapshot exibido indica atualização em
+09/11/2026 às 00:11. Os cards mostram entradas de R$ 219.267,59 em 30 dias e
+R$ 260.805,50 em 60 dias; saídas de -R$ 313.408,28 e -R$ 512.222,94,
+respectivamente. O saldo atual mostrado é R$ 62.548,33. A tabela e o gráfico
+trazem as mesmas semanas e os mesmos valores de receitas, despesas e saldo
+acumulado. Esses valores vêm do último snapshot local; não comprovam uma nova
+consulta ao Bling nesta conferência.
+
+T02 aguarda a aprovação visual e uma nova comparação real com o Bling; portanto
+não está homologada e T03 não começou. Os percentuais existentes na meta são
+estimativas anteriores e não foram recalculados nesta atualização.

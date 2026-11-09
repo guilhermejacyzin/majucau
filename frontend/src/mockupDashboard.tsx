@@ -75,12 +75,14 @@ function formatSnapshotDate(value?: string): string {
 
 function MocapHeader({ config, snapshot, onRefresh }: { config: ScreenConfig; snapshot?: DashboardSnapshot; onRefresh?: () => Promise<void> }) {
   const [refreshing, setRefreshing] = useState(false)
+  const [refreshError, setRefreshError] = useState('')
   const refresh = async () => {
     if (!onRefresh || refreshing) return
     setRefreshing(true)
-    try { await onRefresh() } finally { setRefreshing(false) }
+    setRefreshError('')
+    try { await onRefresh() } catch (error) { setRefreshError(error instanceof Error ? error.message : 'A atualização não foi concluída. Confira Integrações e tente novamente.') } finally { setRefreshing(false) }
   }
-  return <header className="mocap-header"><div className="mocap-heading"><span className="mocap-number">{config.number}</span><div><h1 aria-label={config.title === 'VISÃO EXECUTIVA' ? 'Visão Executiva' : config.title}>{config.title}</h1><p>{config.subtitle}</p></div></div><div className="mocap-header-actions"><div className="mocap-sync"><span>Posição: <strong>—</strong></span><span>Última sincronização: <strong>{formatSnapshotDate(snapshot?.last_bling_sync_at)}</strong> <button className="mocap-refresh-button" type="button" aria-label="Atualizar dados da tela" title="Atualizar dados da tela" disabled={!onRefresh || refreshing} onClick={() => void refresh()}><Icon icon="refresh" /></button></span></div></div></header>
+  return <header className="mocap-header"><div className="mocap-heading"><span className="mocap-number">{config.number}</span><div><h1 aria-label={config.title === 'VISÃO EXECUTIVA' ? 'Visão Executiva' : config.title}>{config.title}</h1><p>{config.subtitle}</p></div></div><div className="mocap-header-actions"><div className="mocap-sync"><span>Posição: <strong>—</strong></span><span>{refreshing ? 'Atualizando dados do Bling…' : 'Última sincronização:'} {!refreshing && <strong>{formatSnapshotDate(snapshot?.last_bling_sync_at)}</strong>} <Tooltip id="action.refreshData"><button className="mocap-refresh-button" type="button" aria-label={refreshing ? 'Atualizando dados do Bling' : 'Atualizar dados da tela'} title="Buscar dados novos do Bling" disabled={!onRefresh || refreshing} onClick={() => void refresh()}><Icon icon="refresh" /></button></Tooltip></span>{refreshError && <span role="alert" className="mocap-refresh-error">{refreshError}</span>}</div></div></header>
 }
 
 function MocapCard({ card, detailScreen, onNavigate, hideAction = false }: { card: Card; detailScreen?: MockupScreenKey; onNavigate?: (screen: MockupScreenKey) => void; hideAction?: boolean }) {
@@ -564,7 +566,7 @@ export function MockupDashboard({ screen, snapshot, onNavigate, onRefresh }: { s
     if (current === undefined) return selected
     return best === undefined || (current < 0n ? -current : current) > (best < 0n ? -best : best) ? period : selected
   }, undefined)
-  const cashFlowView = rawCashFlow ? { ...rawCashFlow, periods: selectedPeriods, critical_week: selectedCriticalWeek } : undefined
+  const cashFlowView = rawCashFlow ? { ...rawCashFlow, periods: screen === 'cashflow' ? selectedPeriods : rawCashFlow.periods ?? [], critical_week: screen === 'cashflow' ? selectedCriticalWeek : rawCashFlow.critical_week } : undefined
   const cards = config.cards.map((card) => withSnapshot(screen, card, snapshot))
   const lowerCards = config.lower
     .filter((card) => screen !== 'dre' || card.label !== 'UNMAPPED')

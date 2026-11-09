@@ -71,6 +71,17 @@ type fakeBlingRawSyncer struct {
 	filter bling.ReceivablesFilter
 }
 
+type fakeBlingOnDemandSyncer struct {
+	calls  int
+	result bling.BlingRawSyncResult
+	err    error
+}
+
+func (f *fakeBlingOnDemandSyncer) SyncNow(context.Context) (bling.BlingRawSyncResult, error) {
+	f.calls++
+	return f.result, f.err
+}
+
 func (f *fakeBlingRawSyncer) Sync(_ context.Context, filter bling.ReceivablesFilter) (bling.BlingRawSyncResult, error) {
 	f.called = true
 	f.filter = filter
@@ -322,6 +333,31 @@ func TestWorkerSyncRequiresExplicitFilterAndReturnsCounts(t *testing.T) {
 	}
 	if fake.filter.ReceivedDateFrom != "2026-09-01" || fake.filter.PaymentDateTo != "2026-09-30" || !strings.Contains(string(response.Payload), `"records_read":2`) {
 		t.Fatalf("filter/counts not preserved: filter=%+v payload=%s", fake.filter, response.Payload)
+	}
+}
+
+func TestWorkerBlingRefreshRunsFullSyncAndReturnsSanitizedCounts(t *testing.T) {
+	fake := &fakeBlingOnDemandSyncer{result: bling.BlingRawSyncResult{Status: "SUCCESS", Receivables: bling.APISyncResult{Status: "SUCCESS", PagesRead: 3, RecordsRead: 201}, Payables: bling.APISyncResult{Status: "SUCCESS", PagesRead: 2, RecordsRead: 101}}}
+	handler := workerHandler{health: application.StaticHealth{Service: "test"}, onDemandBlingSync: fake}
+	response, err := handler.Handle(context.Background(), ipc.Request{RequestID: "refresh", Method: ipc.MethodBlingRefresh, Payload: []byte(`{}`)})
+	if err != nil || !response.OK || fake.calls != 1 {
+		t.Fatalf("refresh response: %#v calls=%d err=%v", response, fake.calls, err)
+	}
+	var result application.BlingSyncResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != "SUCCESS" || result.Receivables.RecordsRead != 201 || result.Payables.RecordsRead != 101 {
+		t.Fatalf("unexpected refresh result: %+v", result)
+	}
+}
+
+func TestWorkerBlingRefreshRejectsUnexpectedPayload(t *testing.T) {
+	fake := &fakeBlingOnDemandSyncer{}
+	handler := workerHandler{health: application.StaticHealth{Service: "test"}, onDemandBlingSync: fake}
+	response, err := handler.Handle(context.Background(), ipc.Request{RequestID: "refresh", Method: ipc.MethodBlingRefresh, Payload: []byte(`{"status":"OPEN"}`)})
+	if err != nil || response.OK || response.Error == nil || response.Error.Code != "BLING_REFRESH_REQUEST_INVALID" || fake.calls != 0 {
+		t.Fatalf("unexpected refresh payload response: %#v calls=%d err=%v", response, fake.calls, err)
 	}
 }
 

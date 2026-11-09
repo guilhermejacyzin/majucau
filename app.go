@@ -585,13 +585,22 @@ func (a *App) SyncBling(input application.BlingSyncRequest) application.BlingSyn
 	if parent == nil {
 		parent = context.Background()
 	}
-	ctx, cancel := context.WithTimeout(parent, 2*time.Minute)
+	timeout := 2 * time.Minute
+	method := ipc.MethodBlingSync
+	if input.FullRefresh {
+		timeout = 10 * time.Minute
+		method = ipc.MethodBlingRefresh
+		// The refresh endpoint accepts an empty object; the flag is an app-side
+		// dispatch hint and must not cross IPC as part of the request payload.
+		input = application.BlingSyncRequest{}
+	}
+	ctx, cancel := context.WithTimeout(parent, timeout)
 	defer cancel()
 	payload, err := json.Marshal(input)
 	if err != nil {
 		return application.BlingSyncResponse{Status: "FAILED", ErrorCode: "BLING_SYNC_FILTER_REQUIRED", Message: "Informe uma janela de datas ou situação antes de sincronizar."}
 	}
-	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-sync"), Method: ipc.MethodBlingSync, Payload: payload})
+	response, err := client.Call(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("bling-sync"), Method: method, Payload: payload})
 	if err != nil {
 		return fallback
 	}

@@ -1,22 +1,24 @@
 # Meta do Majucau
 
-### Estado atualizado — funcionamento do comando “Atualizar” — 08/11/2026
+### Estado atualizado — comando “Atualizar” ligado à carga oficial — 08/11/2026
 
-Gisele esclareceu que a ação Atualizar deve buscar os dados recentes e modificar
-os resultados que aparecem na tela. A inspeção de `frontend/src/mockupDashboard.tsx`
-e `frontend/src/App.tsx` confirmou que o ícone atual só relê o estado e o snapshot
-local já persistido; não aciona uma consulta/sincronização do Bling. Por isso, ele
-pode continuar exibindo os mesmos números antigos. O botão “Sincronizar agora”
-separado em Integrações e a rotina diária das 09:30 são os caminhos de busca já
-existentes. Ligar a atualização visível ao fluxo oficial e recarregar os dados
-após a conclusão ainda está pendente de implementação.
+A ação do cabeçalho agora solicita uma sincronização completa e somente de
+leitura do Bling pelo worker. Ela não apenas relê o snapshot local: a nova
+requisição tem identificador próprio, aguarda com o mesmo bloqueio da rotina
+diária, executa as mesmas fontes oficiais e, ao concluir, manda a interface
+reler o snapshot. O botão indica andamento, evita repetição simultânea e mostra
+aviso verdadeiro quando alguma etapa falha. O caminho respeita os dados
+sensíveis no worker e não muda desenho nem regra financeira.
 
-Os commits `7038613` e `d3f2358` corrigem e registram a regra da receita líquida
-semanal T02, mas não implementam o novo comportamento do botão Atualizar nem
-comprovam os totais numa sincronização real. Progresso não muda nesta revisão:
-BK-062 segue em 30% concluído (70% restante) e a média do projeto em 12,3%
-concluído (87,7% restante). A evidência e próximos passos estão em
-[`T02-UPDATE-ACTION-AUDIT-2026-11-08.md`](evidence/T02-UPDATE-ACTION-AUDIT-2026-11-08.md).
+Foram incluídos testes no app/IPC/worker e na interface. `scripts/verify.ps1`
+passou localmente em 08/11/2026, incluindo os 75 testes de interface e o build
+de produção. Isso confirma a implementação, não a sincronização com a conta
+real: ainda é preciso executar Atualizar no protótipo e comparar as telas Bling
+na mesma semana. Portanto, os números reais ainda não estão homologados.
+BK-062 continua em conferência (30% estimado) e o projeto segue em 12,3%
+estimado. Depois da publicação, a próxima etapa é conferir o protótipo com
+Gisele; T03 só começa após aprovação de T02. Evidência:
+[`T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md`](evidence/T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md).
 
 ### Regra vigente T02 — títulos das telas de origem — 08/11/2026
 

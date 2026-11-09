@@ -181,6 +181,7 @@ type BlingOAuthDisconnectResponse struct {
 }
 
 type BlingSyncRequest struct {
+	FullRefresh      bool   `json:"full_refresh,omitempty"`
 	Page             int    `json:"page,omitempty"`
 	Limit            int    `json:"limit,omitempty"`
 	DueDateFrom      string `json:"due_date_from,omitempty"`

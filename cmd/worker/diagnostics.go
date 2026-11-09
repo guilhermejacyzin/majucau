@@ -193,7 +193,7 @@ func safeBlingIntegrationStatus(method ipc.Method, payload []byte) string {
 
 func diagnosticSource(method ipc.Method) string {
 	switch method {
-	case ipc.MethodBlingConfigRead, ipc.MethodBlingConfigSave, ipc.MethodBlingOAuthStart, ipc.MethodBlingOAuthStatus, ipc.MethodBlingOAuthTest, ipc.MethodBlingOAuthDisconnect, ipc.MethodBlingSync, ipc.MethodBlingReceiptsPreview, ipc.MethodBlingReceiptsImport:
+	case ipc.MethodBlingConfigRead, ipc.MethodBlingConfigSave, ipc.MethodBlingOAuthStart, ipc.MethodBlingOAuthStatus, ipc.MethodBlingOAuthTest, ipc.MethodBlingOAuthDisconnect, ipc.MethodBlingSync, ipc.MethodBlingRefresh, ipc.MethodBlingReceiptsPreview, ipc.MethodBlingReceiptsImport:
 		return "BLING"
 	case ipc.MethodNuvemshopConfigSave:
 		return "NUVEMSHOP"

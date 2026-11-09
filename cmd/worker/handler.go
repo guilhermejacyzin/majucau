@@ -58,6 +58,10 @@ type blingDailySyncer interface {
 	SyncDaily(context.Context, time.Time) (bling.BlingRawSyncResult, bool, error)
 }
 
+type blingOnDemandSyncer interface {
+	SyncNow(context.Context) (bling.BlingRawSyncResult, error)
+}
+
 type googleDriveDailySyncer interface {
 	SyncDaily(context.Context, time.Time) (googledrive.DailyFileInventorySyncResult, error)
 }
@@ -78,6 +82,7 @@ type workerHandler struct {
 	blingOAuth        blingOAuthService
 	blingSync         blingRawSyncer
 	dailyBlingSync    blingDailySyncer
+	onDemandBlingSync blingOnDemandSyncer
 	dailyDriveSync    googleDriveDailySyncer
 	driveCredential   googleDriveCredentialSaver
 	driveSetupError   string
@@ -103,6 +108,7 @@ func newWorkerHandlerWithContext(ctx context.Context) workerHandler {
 	var oauthService blingOAuthService
 	var rawSync blingRawSyncer
 	var dailySync blingDailySyncer
+	var onDemandSync blingOnDemandSyncer
 	var dailyDriveSync googleDriveDailySyncer
 	var driveCredential googleDriveCredentialSaver
 	driveSetupError := "DATABASE_NOT_CONFIGURED"
@@ -125,9 +131,10 @@ func newWorkerHandlerWithContext(ctx context.Context) workerHandler {
 			oauthService = bling.NewBlingOAuthServiceWithState(pool, blingCredentials)
 			rawSync = oauthService.(blingRawSyncer)
 			dailySync = oauthService.(blingDailySyncer)
+			onDemandSync = oauthService.(blingOnDemandSyncer)
 		}
 	}
-	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, blingConfigReader: configReader, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, dailyDriveSync: dailyDriveSync, driveCredential: driveCredential, driveSetupError: driveSetupError, statusReader: statusReader, dashboardReader: dashboardReader}
+	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, blingConfigReader: configReader, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, onDemandBlingSync: onDemandSync, dailyDriveSync: dailyDriveSync, driveCredential: driveCredential, driveSetupError: driveSetupError, statusReader: statusReader, dashboardReader: dashboardReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -151,6 +158,8 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		return h.disconnectBlingOAuth(ctx, req)
 	case ipc.MethodBlingSync:
 		return h.syncBling(ctx, req)
+	case ipc.MethodBlingRefresh:
+		return h.refreshBling(ctx, req)
 	case ipc.MethodBlingReceiptsPreview:
 		return h.previewBlingReceipts(ctx, req)
 	case ipc.MethodBlingReceiptsImport:
@@ -219,6 +228,22 @@ func (h workerHandler) syncBling(ctx context.Context, req ipc.Request) (ipc.Resp
 		return ipc.NewErrorResponse(req.RequestID, "BLING_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
 	}
 	result, err := h.blingSync.Sync(ctx, bling.ReceivablesFilter{Page: input.Page, Limit: input.Limit, DueDateFrom: input.DueDateFrom, DueDateTo: input.DueDateTo, ReceivedDateFrom: input.ReceivedDateFrom, ReceivedDateTo: input.ReceivedDateTo, PaymentDateFrom: input.PaymentDateFrom, PaymentDateTo: input.PaymentDateTo, Status: input.Status})
+	response := application.BlingSyncResponse{Status: result.Status, Receivables: syncResourceResult(result.Receivables), Payables: syncResourceResult(result.Payables)}
+	if err != nil {
+		response.ErrorCode = blingSyncErrorCode(err)
+		response.Message = blingSyncErrorMessage(err)
+	}
+	return ipc.NewResponse(req.RequestID, response)
+}
+
+func (h workerHandler) refreshBling(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+	if len(req.Payload) != 0 && string(req.Payload) != "null" && string(req.Payload) != "{}" {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_REFRESH_REQUEST_INVALID", "Não foi possível iniciar a atualização do Bling."), nil
+	}
+	if h.onDemandBlingSync == nil {
+		return ipc.NewErrorResponse(req.RequestID, "BLING_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
+	}
+	result, err := h.onDemandBlingSync.SyncNow(ctx)
 	response := application.BlingSyncResponse{Status: result.Status, Receivables: syncResourceResult(result.Receivables), Payables: syncResourceResult(result.Payables)}
 	if err != nil {
 		response.ErrorCode = blingSyncErrorCode(err)

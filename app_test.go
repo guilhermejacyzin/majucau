@@ -245,3 +245,18 @@ func TestSyncBlingForwardsExplicitFilterAndOnlyCounts(t *testing.T) {
 		t.Fatalf("unexpected sync result: %+v", result)
 	}
 }
+
+func TestSyncBlingFullRefreshUsesDedicatedWorkerMethodWithEmptyPayload(t *testing.T) {
+	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+		if req.Method != ipc.MethodBlingRefresh || string(req.Payload) != "{}" {
+			t.Fatalf("unexpected full refresh request: method=%q payload=%s", req.Method, req.Payload)
+		}
+		return ipc.NewResponse(req.RequestID, application.BlingSyncResponse{Status: "SUCCESS"})
+	})
+	app := NewApp()
+	app.clientFactory = func() (ipc.Client, error) { return ipc.NewFakeClient(handler), nil }
+	result := app.SyncBling(application.BlingSyncRequest{FullRefresh: true})
+	if result.ErrorCode != "" || result.Status != "SUCCESS" {
+		t.Fatalf("unexpected full refresh result: %+v", result)
+	}
+}

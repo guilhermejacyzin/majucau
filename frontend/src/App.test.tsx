@@ -97,6 +97,62 @@ describe('shell financeiro', () => {
     }
   })
 
+  it('o botão Atualizar busca uma nova carga completa do Bling e depois relê o snapshot', async () => {
+    const user = userEvent.setup()
+    let snapshotReads = 0
+    let syncInput: Record<string, unknown> | undefined
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        return snapshotAdapterFor(snapshotReads === 1 ? '100.0000' : '125.0000').getSnapshot()
+      },
+    }
+    const blingOAuthAdapter: BlingOAuthAdapter = {
+      start: async () => ({ status: 'AUTHORIZING' }),
+      status: async () => ({ status: 'CONNECTED' }),
+      test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      disconnect: async () => ({ status: 'NOT_CONFIGURED' }),
+      sync: async (input) => {
+        syncInput = input
+        return { status: 'SUCCESS', receivables: { pages_read: 3, records_read: 201 }, payables: { pages_read: 2, records_read: 101 } }
+      },
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} blingOAuthAdapter={blingOAuthAdapter} />)
+    expect(await screen.findByText('R$ 100,00')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Atualizar dados da tela' }))
+
+    expect(await screen.findByText('R$ 125,00')).toBeInTheDocument()
+    expect(syncInput).toEqual({ full_refresh: true })
+    expect(snapshotReads).toBe(2)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('informa quando a atualização completa do Bling falha sem reler o snapshot', async () => {
+    const user = userEvent.setup()
+    let snapshotReads = 0
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        return snapshotAdapterFor().getSnapshot()
+      },
+    }
+    const blingOAuthAdapter: BlingOAuthAdapter = {
+      start: async () => ({ status: 'AUTHORIZING' }),
+      status: async () => ({ status: 'CONNECTED' }),
+      test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      disconnect: async () => ({ status: 'NOT_CONFIGURED' }),
+      sync: async () => ({ status: 'FAILED', error_code: 'BLING_NOT_CONNECTED', message: 'Autorize o Bling antes de atualizar.', receivables: { pages_read: 0, records_read: 0 }, payables: { pages_read: 0, records_read: 0 } }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} blingOAuthAdapter={blingOAuthAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+
+    await user.click(screen.getByRole('button', { name: 'Atualizar dados da tela' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Autorize o Bling antes de atualizar.')
+    expect(snapshotReads).toBe(1)
+  })
+
   it('não apresenta zero como valor confirmado quando não há dados do Bling', async () => {
     const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
       getSnapshot: async () => ({

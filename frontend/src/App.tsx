@@ -429,6 +429,12 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
     if (bootstrapResult.status === 'fulfilled' && !bootstrapResult.value.error_code) setBootstrap(bootstrapResult.value)
     if (snapshotResult.status === 'fulfilled' && !snapshotResult.value.error_code) setDashboardSnapshot(snapshotResult.value)
   }, [adapter, snapshotAdapter])
+  const refreshBlingData = useCallback(async () => {
+    const result = await blingOAuth.sync({ full_refresh: true })
+    if (result.status === 'SUCCESS' || result.status === 'PARTIAL') await refreshDataViews()
+    if (result.status === 'PARTIAL') throw new Error('A atualização terminou com consultas pendentes. Alguns resultados podem ter sido atualizados; confira Integrações.')
+    if (result.status !== 'SUCCESS' || result.error_code) throw new Error(result.message || 'A atualização não foi concluída. Os dados da tela não foram recarregados; confira a conexão e tente novamente.')
+  }, [blingOAuth, refreshDataViews])
   useEffect(() => {
     let active = true
     void adapter.getState().then((state) => { if (active) setBootstrap(state) })
@@ -450,7 +456,7 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
     return () => { active = false }
   }, [adapter, screen, snapshotAdapter])
   const navigate = (next: Screen) => { setScreen(next); window.requestAnimationFrame(() => mainRef.current?.focus()) }
-  return <div className="app-shell"><MockupSidebar screen={screen} onNavigate={navigate} /><main className="main-area" ref={mainRef} tabIndex={-1}>{bootstrap === null ? <BootstrapLoading /> : screen === 'integrations' ? <IntegrationsView bootstrap={bootstrap} blingPreview={blingPreview} blingImporter={blingImporter} futurePreview={futurePreview} futureImporter={futureImporter} blingConfig={blingConfig} nuvemshopConfig={nuvemshopConfig} blingOAuth={blingOAuth} onDataChanged={refreshDataViews} /> : <MockupDashboard screen={screen} snapshot={dashboardSnapshot ?? undefined} onNavigate={navigate} onRefresh={refreshDataViews} />} {bootstrap && <WorkerFooter bootstrap={bootstrap} />}</main></div>
+  return <div className="app-shell"><MockupSidebar screen={screen} onNavigate={navigate} /><main className="main-area" ref={mainRef} tabIndex={-1}>{bootstrap === null ? <BootstrapLoading /> : screen === 'integrations' ? <IntegrationsView bootstrap={bootstrap} blingPreview={blingPreview} blingImporter={blingImporter} futurePreview={futurePreview} futureImporter={futureImporter} blingConfig={blingConfig} nuvemshopConfig={nuvemshopConfig} blingOAuth={blingOAuth} onDataChanged={refreshDataViews} /> : <MockupDashboard screen={screen} snapshot={dashboardSnapshot ?? undefined} onNavigate={navigate} onRefresh={refreshBlingData} />} {bootstrap && <WorkerFooter bootstrap={bootstrap} />}</main></div>
 }
 
 export { App }

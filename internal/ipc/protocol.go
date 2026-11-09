@@ -34,6 +34,7 @@ const (
 	MethodBlingOAuthTest            Method = "bling.oauth.test"
 	MethodBlingOAuthDisconnect      Method = "bling.oauth.disconnect"
 	MethodBlingSync                 Method = "bling.sync"
+	MethodBlingRefresh              Method = "bling.refresh"
 	MethodBlingReceiptsPreview      Method = "bling.receipts.preview"
 	MethodBlingReceiptsImport       Method = "bling.receipts.import"
 	MethodNuvemPagoFuturePreview    Method = "nuvem_pago.future.preview"
@@ -73,7 +74,7 @@ func (r Request) Validate() error {
 	if strings.TrimSpace(r.RequestID) == "" || len(r.RequestID) > 128 {
 		return ErrInvalidRequest
 	}
-	if r.Method != MethodHealth && r.Method != MethodIntegrationStatus && r.Method != MethodBlingConfigRead && r.Method != MethodBlingConfigSave && r.Method != MethodNuvemshopConfigSave && r.Method != MethodBlingOAuthStart && r.Method != MethodBlingOAuthStatus && r.Method != MethodBlingOAuthTest && r.Method != MethodBlingOAuthDisconnect && r.Method != MethodBlingSync && r.Method != MethodBlingReceiptsPreview && r.Method != MethodBlingReceiptsImport && r.Method != MethodNuvemPagoFuturePreview && r.Method != MethodNuvemPagoFutureImport && r.Method != MethodGoogleDriveCredentialSave && r.Method != MethodDashboardSnapshot {
+	if r.Method != MethodHealth && r.Method != MethodIntegrationStatus && r.Method != MethodBlingConfigRead && r.Method != MethodBlingConfigSave && r.Method != MethodNuvemshopConfigSave && r.Method != MethodBlingOAuthStart && r.Method != MethodBlingOAuthStatus && r.Method != MethodBlingOAuthTest && r.Method != MethodBlingOAuthDisconnect && r.Method != MethodBlingSync && r.Method != MethodBlingRefresh && r.Method != MethodBlingReceiptsPreview && r.Method != MethodBlingReceiptsImport && r.Method != MethodNuvemPagoFuturePreview && r.Method != MethodNuvemPagoFutureImport && r.Method != MethodGoogleDriveCredentialSave && r.Method != MethodDashboardSnapshot {
 		return fmt.Errorf("%w: %s", ErrUnsupportedMethod, r.Method)
 	}
 	if len(r.Payload) > MaxMessageSize {

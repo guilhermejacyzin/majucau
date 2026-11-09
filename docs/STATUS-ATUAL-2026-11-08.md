@@ -16,18 +16,30 @@
 
 **Ainda não comprovado:** não afirmar que R$ 43.790,66 já aparece na tela. A etapa só fecha depois de confirmar o snapshot sincronizado e comparar a mesma semana e os mesmos filtros. O ajuste depende das taxas da forma de pagamento presentes na mesma carga; se alguma não estiver configurada ou sincronizada, não deve exibir o valor bruto como se fosse líquido.
 
-## O que o botão “Atualizar” faz hoje
+## Ação “Atualizar” — implementação no checkout
 
-A responsável esclareceu que espera que a atualização busque os dados e altere os resultados mostrados. A auditoria do frontend constatou que o ícone “Atualizar dados da tela” apenas chama `getState()` e `getSnapshot()` e relê o que já está salvo localmente. Ele **não inicia uma nova busca no Bling**. Portanto, clicar nele pode redesenhar os mesmos números antigos e não comprova sincronização. A busca manual ainda é uma ação separada em Integrações; existe também a rotina automática diária das 09:30.
+A auditoria inicial encontrou que o botão apenas relia os dados locais. Essa
+falha foi corrigida no checkout atual: o clique agora chama uma operação
+dedicada do worker para a carga oficial completa; concluindo, relê o snapshot e
+atualiza a tela. Durante a operação, o botão mostra o andamento e bloqueia
+cliques duplicados. Falha completa e execução incompleta têm avisos diferentes;
+não se afirma que dados antigos foram preservados se algumas fontes tiverem
+atualizado.
 
-Essa diferença explica por que uma atualização visual não corrigiu os totais. A interface precisa ligar a ação Atualizar ao fluxo oficial de sincronização; quando o lote terminar, deve recarregar o snapshot e apresentar o horário e o resultado reais. Isso está documentado como trabalho pendente, não como código concluído. Não alterei a tela ou regras financeiras nesta atualização de documentação.
-
-Evidência: [`T02-UPDATE-ACTION-AUDIT-2026-11-08.md`](evidence/T02-UPDATE-ACTION-AUDIT-2026-11-08.md).
+**Verificação local concluída:** `scripts/verify.ps1` passou, incluindo Go,
+`go vet`, análise de segurança, integridade de migrations, sqlc determinístico,
+lint, TypeScript, 75 testes de interface, build de produção e `npm audit`.
+Isso valida o código, não a execução real da API. A operação ainda precisa ser
+executada com o Bling real e conferida contra Contas a Receber (líquido),
+Contas a Pagar e saldo conciliado do Itaú. Portanto, a ação está implementada
+e verificada localmente, mas a T02 não está homologada e não se afirma que os
+valores reais já estejam atualizados na tela.
+Evidência: [`T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md`](evidence/T02-UPDATE-ACTION-IMPLEMENTATION-2026-11-08.md).
 
 ## Sequência imediata
 
-1. Atualizar o worker e a interface ativos com o código corrigido.
-2. Recarregar a fonte Bling e validar que os 146 títulos e taxas da janela estão no snapshot normalizado.
-3. Conferir que a T02 mostra R$ 43.790,66 de entradas na semana 22/11–28/11, R$ 25.275,71 de saídas e os fechamentos semanais derivados do saldo inicial aprovado.
+1. Reconstruir/reabrir o protótipo com o código do botão atualizado.
+2. Clicar em Atualizar e confirmar que a execução nova termina sem erro.
+3. Conferir que a T02 mostra R$ 43.790,66 líquidos de entradas na semana 22/11–28/11 e R$ 25.275,71 de saídas, usando os mesmos filtros das telas Bling.
 4. Se a soma não bater, decompor diferenças por quantidade de títulos, vencimento, status, taxa e valor líquido por registro; não ajustar por palpite.
-5. Registrar resultado real, hash/ID de sincronização sem dados secretos, encerrar a conferência T02 e só então avançar para T03.
+5. Registrar resultado real, hash/ID de sincronização sem dados secretos, aguardar a aprovação da T02 e só então avançar para T03.

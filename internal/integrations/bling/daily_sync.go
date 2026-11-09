@@ -68,6 +68,45 @@ func (s *BlingOAuthService) SyncDaily(ctx context.Context, scheduledAt time.Time
 	return result, false, err
 }
 
+// SyncNow runs the same complete, read-only set of Bling resources as the
+// daily job, but gives this user-requested refresh its own correlation ID so a
+// completed 09:30 run never causes a manual refresh to be skipped. Resource
+// publication remains atomic and serialized with the scheduled load.
+func (s *BlingOAuthService) SyncNow(ctx context.Context) (result BlingRawSyncResult, returnErr error) {
+	if s == nil || s.pool == nil {
+		return BlingRawSyncResult{}, ErrBlingAPISyncDatabaseUnavailable
+	}
+	location, err := time.LoadLocation(scheduler.SaoPauloTimeZone)
+	if err != nil {
+		return BlingRawSyncResult{}, errors.Join(ErrBlingDailyScheduleInvalid, err)
+	}
+	now := time.Now().In(location)
+	cashMovementFilter := CashMovementsFilter{DateFrom: approvedCashHistoryStartDate, DateTo: now.Format("2006-01-02"), Situation: "R"}
+	if _, err := cashMovementFilter.normalized(); err != nil {
+		return BlingRawSyncResult{}, errors.Join(ErrBlingDailyScheduleInvalid, err)
+	}
+	connection, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return BlingRawSyncResult{}, fmt.Errorf("acquire manual Bling sync lock connection: %w", err)
+	}
+	if _, err := connection.Exec(ctx, `SELECT pg_advisory_lock($1, $2)`, dailyBlingLockClass, dailyBlingLockKey); err != nil {
+		closeHijackedConnection(connection)
+		return BlingRawSyncResult{}, errors.Join(ErrBlingDailySyncLock, err)
+	}
+	defer func() {
+		if err := releaseDailyBlingLock(connection); err != nil {
+			returnErr = errors.Join(returnErr, err)
+		}
+	}()
+
+	correlationID, err := uuid.NewRandom()
+	if err != nil {
+		return BlingRawSyncResult{}, fmt.Errorf("create manual Bling sync correlation ID: %w", err)
+	}
+	result, returnErr = s.sync(ctx, ReceivablesFilter{}, &correlationID, true, &cashMovementFilter, true)
+	return result, returnErr
+}
+
 func dailyCashMovementHistoryFilter(scheduledAt time.Time) (CashMovementsFilter, error) {
 	if scheduledAt.IsZero() {
 		return CashMovementsFilter{}, ErrBlingDailyScheduleInvalid

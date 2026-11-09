@@ -43,6 +43,7 @@ export const tooltipCatalog = {
   'nav.accounting': 'Contabilidade gerencial e patrimonial permanece disponível conforme os contratos aprovados.',
   'settings.open': 'Abre as configurações de integrações e segurança.',
   'metric.details': 'Abre a composição do valor, a regra usada e os registros de origem quando houver dados confirmados.',
+  'action.refreshData': 'Busca os dados atuais no Bling e atualiza os resultados quando a consulta terminar.',
   'notice.integrations': 'As fontes oficiais são conectadas nas configurações de integrações.',
   'filter.scenario': 'Troca as premissas da projeção sem alterar os valores realizados.',
   'filter.referenceDate': 'Data usada como início dos saldos, recebíveis, obrigações e projeções exibidos.',

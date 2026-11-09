@@ -1,4 +1,51 @@
-# Status atual — 09/11/2026, 02:36 BRT
+# Status da T02 — 09/11/2026, 04:59 BRT
+
+## Atualização verificada — 09/11/2026, 04:59 BRT
+
+O protótipo Wails real está aberto na janela `Majucau Financial Intelligence`.
+Na conferência da Visão Executiva, os indicadores e o gráfico aparecem vazios.
+Não considero a T02 concluída nem os dados atuais homologados.
+
+Uma nova leitura manual da API está ativa com a correlação
+`e08c578a-8ff0-436f-b7a7-40ac8b49bf90`. O estado no banco isolado do projeto,
+consultado às 04:58 BRT, é:
+
+- Contas a Receber: `SUCCESS`, 15.157 registros.
+- Movimentos conciliados: `SUCCESS`, 3.162 registros.
+- Formas de pagamento: `SUCCESS`, 53 registros.
+- Movimentos gerais: `PARTIAL`, 31.927 registros; falta um campo de situação
+  que a API não retornou (`BLING_CASH_MOVEMENT_STATUS_MISSING`).
+- Contas a Pagar: `RUNNING`, 30 de 104 páginas de detalhe preparadas (3.000
+  registros preparados); ainda não publicou os registros normalizados.
+- Contas contábeis: `FAILED`, sem registros (`BLING_API_READ_FAILED`).
+
+O motivo observado para o painel vazio é a carga de Contas a Pagar ainda não
+ter sido publicada. O resumo financeiro exige a mesma leitura diária completa
+de Contas a Pagar, Contas a Receber e Caixa; não mistura retratos de execuções
+diferentes. Por isso a interface não tem uma série atual confirmada para
+mostrar enquanto essa execução permanece em andamento.
+
+A tentativa `contas.pagar` anterior terminou `FAILED` após HTTP 401; a correção
+para renovar a sessão em leituras GET de detalhe está no commit `c916117`. A
+execução em andamento é a primeira verificação real dessa correção. Ela ainda
+não provou que a carga termina nem que os valores semanais batem. Não reiniciar
+nem duplicar essa leitura enquanto a execução estiver ativa.
+
+### Próximas ações da T02
+
+1. Acompanhar a execução atual até um estado terminal.
+2. Se ela falhar, usar o código de erro sanitizado e os checkpoints para corrigir
+   a causa e repetir a leitura com segurança.
+3. Se publicar, conferir no protótipo as semanas selecionadas: entradas líquidas
+   de Contas a Receber, saídas de Contas a Pagar e saldo acumulado a partir do
+   último saldo conciliado do Itaú.
+4. Só declarar T02 pronta depois de conferir valores e apresentação da série no
+   protótipo e receber a aprovação visual/numérica da responsável.
+5. T03 continua aguardando a aprovação da T02.
+
+As decisões financeiras e de tela aprovadas não foram alteradas nesta
+verificação. Esta atualização descreve o estado real no momento da consulta;
+ela não é uma declaração de que a T02 foi corrigida ou homologada.
 
 ## Carga da T02 interrompida por HTTP 401 em leitura de detalhes — 09/11/2026, 03:44 BRT
 

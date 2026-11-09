@@ -4,6 +4,14 @@
 **Escopo:** abrir o protótipo, localizar o valor mencionado e rastrear a composição
 no código. Nenhuma regra financeira ou tela foi alterada nesta auditoria.
 
+> **Atualização posterior no mesmo dia:** Gisele determinou que a T02 não use
+> o relatório Fluxo de Caixa do Bling. A regra atual é montar Receitas de
+> Contas a Receber e Despesas de Contas a Pagar, com todas as contas financeiras
+> desses relatórios; saldo usa somente Itaú. A seção de recomendação abaixo
+> registra a hipótese e a decisão vigentes na hora da auditoria e foi
+> substituída pela implementação documentada em
+> [`T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md`](./T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).
+
 ## O que aparece nas telas
 
 O protótipo web em `http://127.0.0.1:5173/` está na T02, com o período

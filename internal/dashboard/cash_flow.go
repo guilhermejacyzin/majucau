@@ -11,7 +11,6 @@ import (
 
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/domain"
-	"majucau.local/financial-intelligence/internal/financial"
 )
 
 const selectedCashFlowAccountsSQL = `
@@ -29,12 +28,8 @@ SELECT source_id, description
  ORDER BY source_id
 `
 
-// GET /caixas includes the financial-account ID and description with each
-// movement. Use those official fields when the optional account catalog is
-// unavailable or incomplete. The approved report screenshot selects one
-// financial account; project only the unique Itaú account identified in the
-// approved context. Keep the separate bank-balance card and report balance
-// formulas independent; do not infer Nuvem transfers.
+// Use movement identities only as a fallback to identify Itaú for the balance
+// card. These rows are not an input to T02 revenue or expense totals.
 const selectedCashFlowMovementAccountsSQL = `
 SELECT DISTINCT m.account_source_id, m.account_name
   FROM bling_cash_movements m
@@ -91,33 +86,22 @@ SELECT EXISTS (SELECT 1 FROM current_reconciliation_batch),
        (SELECT MAX(movement_date) FROM reconciled_movements)
 `
 
-// The report comparison indicates one calendar day for forecast dates while
-// the bank-float option is enabled. Registered cash movements already carry
-// their actual movement date and must not be shifted into the report window.
-// Keep forecasts PARTIAL until the account's saved float setting is verified.
-const blingCashFlowEffectiveFloatDays = 1
+const reconciledCashMovementSnapshotExistsSQL = `
+SELECT to_regclass('public.bling_cash_movement_reconciled_snapshot_rows') IS NOT NULL
+`
 
-// Bling documents the prepared Flow of Cash report as a projection from
-// receivables and payables, but does not expose a public API route for that
-// report. This query reads the normalized official API snapshots to reproduce
-// its inputs; it returns individual
-// candidates so the domain can apply payment-method terms without buffering a
-// transaction history in memory. Missing or unsupported fields are retained as
-// candidates and make the resulting metric partial instead of silently zero.
+// T02 mirrors Contas a Receber's displayed net value and Contas a Pagar's open
+// balance, grouped by due date. The shared receivable CTE applies the approved
+// cross-source duplicate matching. Do not source values from the prepared Flow
+// of Cash report or recalculate payment fees/settlement terms here.
 const cashFlowCandidatesSQL = `
-WITH daily AS (
+WITH ` + dashboardEligibleReceivablesCTE + `, daily AS (
   SELECT DISTINCT ON (b.resource) b.resource, b.id AS batch_id, b.status
     FROM integration_sync_batches b
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING' AND b.correlation_id = $1
      AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED'
    ORDER BY b.resource, b.finished_at DESC NULLS LAST, b.id DESC
-), current_receivables AS (
-  SELECT r.*
-    FROM daily d
-    JOIN receivable_sync_snapshot_rows membership ON membership.sync_batch_id = d.batch_id
-    JOIN receivables r ON r.id = membership.receivable_id
-   WHERE d.resource = 'contas.receber'
 ), current_payables AS (
   SELECT p.*
     FROM daily d
@@ -125,53 +109,31 @@ WITH daily AS (
     JOIN payables p ON p.id = membership.payable_id
    WHERE d.resource = 'contas.pagar'
 ), candidates AS (
-  SELECT 'MOVEMENT'::text AS kind, m.movement_date AS flow_date,
-         m.direction, m.amount::text AS amount, m.source_status AS source_status,
-         m.account_source_id, ''::text AS financial_status,
-         NULL::text AS payment_method_id, NULL::text AS fee_rate,
-         NULL::text AS fixed_fee, NULL::integer AS settlement_days,
+  SELECT 'RECEIVABLE'::text AS kind, r.effective_due_date AS flow_date, 'INFLOW'::text AS direction,
+         COALESCE(r.net_amount, r.gross_amount)::text AS amount,
+         ''::text AS source_status, r.source_financial_account_id::text AS account_source_id,
+         r.status AS financial_status, COALESCE(r.source_payment_method_id::text, '') AS payment_method_id,
+         NULL::text AS fee_rate, NULL::text AS fixed_fee, NULL::integer AS settlement_days,
          NULL::boolean AS use_business_days, NULL::smallint AS destination,
-         false AS fee_rate_known, false AS fixed_fee_known,
-         false AS settlement_known, false AS business_days_known,
-         false AS destination_known, d.status AS batch_status
-    FROM daily d
-    JOIN bling_cash_movements m ON m.sync_batch_id = d.batch_id
-   WHERE d.resource = 'caixas'
-     AND m.movement_date >= $5::date AND m.movement_date <= $3::date
-  UNION ALL
-  SELECT 'RECEIVABLE', r.due_date, 'INFLOW', COALESCE(r.open_balance, r.gross_amount)::text,
-         ''::text, r.source_financial_account_id::text,
-         r.status, r.source_payment_method_id::text,
-         terms.fee_rate::text, terms.fixed_fee::text, terms.settlement_days,
-         terms.use_business_days, terms.destination,
-         COALESCE(terms.fee_rate_known, false), COALESCE(terms.fixed_fee_known, false),
-         COALESCE(terms.settlement_known, false), COALESCE(terms.business_days_known, false),
-         terms.destination IS NOT NULL,
-         d.status
-    FROM daily d
-    JOIN current_receivables r ON true
-    LEFT JOIN bling_payment_method_terms terms
-      ON terms.connection_id = r.connection_id
-     AND terms.source_id = r.source_payment_method_id::text
-     AND terms.sync_batch_id = (SELECT forms.batch_id FROM daily forms WHERE forms.resource = 'formas-pagamentos' LIMIT 1)
-   WHERE d.resource = 'contas.receber'
-     AND r.source_system = 'BLING' AND r.source_entity = 'bling.conta_receber'
-     AND r.status IN ('OPEN', 'PARTIALLY_PAID') AND COALESCE(r.open_balance, 0) > 0
-     AND r.due_date >= $2::date - 3650 AND r.due_date <= $3::date
+         false AS fee_rate_known, false AS fixed_fee_known, false AS settlement_known,
+         false AS business_days_known, false AS destination_known,
+         COALESCE((SELECT status FROM daily WHERE resource = 'contas.receber'), 'SUCCESS') AS batch_status
+    FROM deduplicated_receivables r
+   WHERE COALESCE(r.open_balance, r.net_amount, r.gross_amount, 0) > 0
+     AND (
+       (r.source_system = 'BLING' AND r.source_entity = 'bling.conta_receber' AND r.status IN ('OPEN', 'PARTIALLY_PAID'))
+       OR (r.source_system = 'NUVEM_PAGO' AND r.business_type = 'B2C' AND r.status = 'PROJECTED')
+     )
+     AND r.effective_due_date >= $2::date AND r.effective_due_date <= $3::date
   UNION ALL
   SELECT 'PAYABLE', p.due_date, 'OUTFLOW', abs(p.open_balance)::text,
          ''::text, p.source_financial_account_id::text,
-         p.status, p.source_payment_method_id::text,
-         NULL::text, NULL::text, NULL::integer, NULL::boolean,
-         terms.destination,
-         false, false, false, false, terms.destination IS NOT NULL,
+         p.status, COALESCE(p.source_payment_method_id::text, ''),
+         NULL::text, NULL::text, NULL::integer, NULL::boolean, NULL::smallint,
+         false, false, false, false, false,
          d.status
     FROM daily d
     JOIN current_payables p ON true
-    LEFT JOIN bling_payment_method_terms terms
-      ON terms.connection_id = p.connection_id
-     AND terms.source_id = p.source_payment_method_id::text
-     AND terms.sync_batch_id = (SELECT forms.batch_id FROM daily forms WHERE forms.resource = 'formas-pagamentos' LIMIT 1)
    WHERE d.resource = 'contas.pagar'
      AND p.source_system = 'BLING' AND p.source_entity = 'bling.conta_pagar'
      AND p.open_balance <> 0
@@ -259,6 +221,15 @@ func reconciledCashMovementDelta(ctx context.Context, tx pgx.Tx, correlationID s
 	if len(accountIDs) == 0 || after.IsZero() || through.Before(after) {
 		return false, "0", pgtype.Date{}, nil
 	}
+	var snapshotTableExists bool
+	if err := tx.QueryRow(ctx, reconciledCashMovementSnapshotExistsSQL).Scan(&snapshotTableExists); err != nil {
+		return false, "0", pgtype.Date{}, err
+	}
+	if !snapshotTableExists {
+		// Do not issue a query that references a missing optional table: PostgreSQL
+		// marks the whole transaction failed even if the caller ignores SQLSTATE 42P01.
+		return false, "0", pgtype.Date{}, nil
+	}
 	var ready bool
 	var delta string
 	var latestDate pgtype.Date
@@ -268,122 +239,36 @@ func reconciledCashMovementDelta(ctx context.Context, tx pgx.Tx, correlationID s
 	return ready, delta, latestDate, nil
 }
 
-func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string, checkpoint approvedItauBalance) (*application.DashboardCashFlow, error) {
+func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string, itauBalance approvedItauBalance) (*application.DashboardCashFlow, error) {
 	start := domain.BusinessDate(asOf)
 	end := start.AddDate(0, 0, 60)
-	accountIDs, accountsReady, err := selectedCashFlowAccountIDs(ctx, tx, correlationID)
-	if err != nil {
-		return nil, err
-	}
-	if !accountsReady {
-		return &application.DashboardCashFlow{
-			InflowsNext30Days:    application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
-			OutflowsNext30Days:   application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
-			InflowsNext60Days:    application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
-			OutflowsNext60Days:   application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
-			MinimumBalance30Days: unavailableMinimumBalance(),
-			MinimumBalance60Days: unavailableMinimumBalance(),
-		}, nil
-	}
-	// Query one day before the visible window to include forecast rows that can
-	// appear on D after the report's effective float is applied. Keep the query
-	// through the actual end date because recorded movements are not shifted.
-	sourceStart := start.AddDate(0, 0, -blingCashFlowEffectiveFloatDays)
-	sourceEnd := end
-	// Cash movements in the visible window reproduce the report's inflow/outflow
-	// lines. Reconciled movements after the approved baseline but before this
-	// window advance the opening balance; the API's `situacao=R` alone only means
-	// registered, so bridge movements come from a separate reconciliation-filtered snapshot.
-	movementStart := start
-	rows, err := tx.Query(ctx, cashFlowCandidatesSQL, correlationID, sourceStart.Format(time.DateOnly), sourceEnd.Format(time.DateOnly), start.Format(time.DateOnly), movementStart.Format(time.DateOnly))
+	rows, err := tx.Query(ctx, cashFlowCandidatesSQL, correlationID, start.Format(time.DateOnly), end.Format(time.DateOnly), start.Format(time.DateOnly))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var daily [61]cashFlowDayAggregate
-	partial := true // Float equivalence still needs a live comparison with the selected report.
 	for rows.Next() {
 		candidate, err := scanCashFlowCandidate(rows)
 		if err != nil {
 			return nil, err
-		}
-		if candidate.batchPartial {
-			partial = true
-		}
-		accountSelected := false
-		for _, id := range accountIDs {
-			if candidate.accountID == id {
-				accountSelected = true
-				break
-			}
-		}
-		if !accountSelected {
-			if candidate.accountID == "" {
-				partial = true
-			}
-			continue
 		}
 		amount, err := domain.ParseMoney(candidate.amount)
 		if err != nil {
 			return nil, fmt.Errorf("cash-flow candidate contains invalid amount")
 		}
 		flowDate := candidate.flowDate
-		if candidate.kind == "MOVEMENT" {
-			if candidate.sourceStatus != "R" && candidate.sourceStatus != "" {
-				partial = true
-				continue
-			}
-			if candidate.sourceStatus == "" {
-				partial = true
-			}
-		} else if candidate.kind == "RECEIVABLE" {
-			if (candidate.financialStatus != "OPEN" && candidate.financialStatus != "PARTIALLY_PAID") || !candidate.destinationKnown || candidate.destination.Int16 != int16(financial.BlingDestinationReceivablePayable) || !candidate.feeRateKnown || !candidate.fixedFeeKnown || !candidate.settlementKnown || !candidate.businessDaysKnown || !candidate.useBusinessDays.Valid || candidate.useBusinessDays.Bool {
-				partial = true
-				continue
-			}
-			terms := financial.BlingPaymentMethodTerms{
-				Destination: financial.BlingPaymentDestination(candidate.destination.Int16), DestinationKnown: true,
-				FeeRateKnown: candidate.feeRateKnown, FixedFeeKnown: candidate.fixedFeeKnown,
-				SettlementKnown: candidate.settlementKnown, BusinessDaysKnown: candidate.businessDaysKnown,
-			}
-			terms.FeeRate, err = parseCashFlowMoney(candidate.feeRate)
-			if err != nil {
-				partial = true
-				continue
-			}
-			terms.FixedFee, err = parseCashFlowMoney(candidate.fixedFee)
-			if err != nil {
-				partial = true
-				continue
-			}
-			terms.SettlementDays = int(candidate.settlementDays.Int32)
-			amount, err = financial.BlingNetReceivableValue(amount, terms)
-			if err != nil {
-				partial = true
-				continue
-			}
-			flowDate, err = financial.BlingExpectedReceiptDate(flowDate, terms, nil)
-			if err != nil {
-				partial = true
-				continue
-			}
-		} else if candidate.kind == "PAYABLE" {
-			if !candidate.destinationKnown || candidate.destination.Int16 != int16(financial.BlingDestinationReceivablePayable) {
-				partial = true
-				continue
-			}
+		switch candidate.kind {
+		case "PAYABLE":
 			amount, err = amount.AbsExact()
 			if err != nil {
 				return nil, err
 			}
-		} else {
-			partial = true
+		case "RECEIVABLE":
+			// Receivables already carry their positive open balance.
+		default:
 			continue
 		}
-		// The cash-movement API already records the realized date. The observed
-		// bank float applies only to forecasted receipts/payables, after receipt
-		// settlement terms; never move a registered movement into another day.
-		flowDate = blingCashFlowReportDate(candidate.kind, flowDate)
 		day := dashboardDateOnly(flowDate)
 		if day.Before(start) {
 			continue
@@ -397,7 +282,6 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 		} else if candidate.direction == "OUTFLOW" {
 			daily[index].outflows, err = daily[index].outflows.Add(amount)
 		} else {
-			partial = true
 			continue
 		}
 		if err != nil {
@@ -436,52 +320,30 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 		}
 		flow.Days = append(flow.Days, application.DashboardCashFlowDay{
 			Date:     date.Format(time.DateOnly),
-			Inflows:  dashboardFlowMetric(daily[index].inflows.String(), partial),
-			Outflows: dashboardFlowMetric(outflow.String(), partial),
+			Inflows:  dashboardFlowMetric(daily[index].inflows.String(), false),
+			Outflows: dashboardFlowMetric(outflow.String(), false),
 		})
 	}
-	flow.InflowsNext30Days = dashboardFlowMetric(inflows30.String(), partial)
-	flow.OutflowsNext30Days = dashboardFlowMetric(outflows30.String(), partial)
-	flow.InflowsNext60Days = dashboardFlowMetric(inflows60.String(), partial)
-	flow.OutflowsNext60Days = dashboardFlowMetric(outflows60.String(), partial)
-	flow.Periods, err = groupCashFlowReportWeeks(flow.Days, partial)
+	flow.InflowsNext30Days = dashboardFlowMetric(inflows30.String(), false)
+	flow.OutflowsNext30Days = dashboardFlowMetric(outflows30.String(), false)
+	flow.InflowsNext60Days = dashboardFlowMetric(inflows60.String(), false)
+	flow.OutflowsNext60Days = dashboardFlowMetric(outflows60.String(), false)
+	flow.Periods, err = groupCashFlowReportWeeks(flow.Days, false)
 	if err != nil {
 		return nil, err
 	}
-	projectedOpening := checkpoint.BaseMetric
-	if projectedOpening.Value == "" || checkpoint.BaseDate.IsZero() {
+	projectedOpening := itauBalance.Metric
+	if projectedOpening.Value == "" || itauBalance.ReferenceDate.IsZero() {
 		projectedOpening = application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}
-	} else if start.After(checkpoint.BaseDate.AddDate(0, 0, 1)) {
-		ready, delta, _, deltaErr := reconciledCashMovementDelta(ctx, tx, correlationID, accountIDs, checkpoint.BaseDate, start.AddDate(0, 0, -1))
-		if deltaErr != nil {
-			return nil, deltaErr
-		}
-		if !ready {
-			projectedOpening = application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}
-		} else {
-			base, parseErr := domain.ParseMoney(projectedOpening.Value)
-			if parseErr != nil {
-				return nil, fmt.Errorf("approved opening balance is invalid")
-			}
-			bridge, parseErr := domain.ParseMoney(delta)
-			if parseErr != nil {
-				return nil, fmt.Errorf("reconciled opening movement total is invalid")
-			}
-			base, err = base.Add(bridge)
-			if err != nil {
-				return nil, err
-			}
-			projectedOpening = metric(base.String(), 1, "PARTIAL", "BLING")
-		}
 	}
-	if err := applyWeeklyCashBalances(flow.Periods, projectedOpening, partial); err != nil {
+	if err := applyWeeklyCashBalances(flow.Periods, projectedOpening, false); err != nil {
 		return nil, err
 	}
 	flow.CriticalWeek, err = selectCriticalCashFlowWeek(flow.Periods)
 	if err != nil {
 		return nil, err
 	}
-	flow.MinimumBalance30Days, flow.MinimumBalance60Days, err = minimumCashFlowBalances(daily[:], start, projectedOpening, partial)
+	flow.MinimumBalance30Days, flow.MinimumBalance60Days, err = minimumCashFlowBalances(daily[:], start, projectedOpening, false)
 	if err != nil {
 		return nil, err
 	}
@@ -667,17 +529,6 @@ func dashboardDateOnly(value time.Time) time.Time {
 	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
 }
 
-func applyBlingCashFlowFloat(sourceDate time.Time) time.Time {
-	return sourceDate.AddDate(0, 0, blingCashFlowEffectiveFloatDays)
-}
-
-func blingCashFlowReportDate(kind string, sourceDate time.Time) time.Time {
-	if kind == "MOVEMENT" {
-		return sourceDate
-	}
-	return applyBlingCashFlowFloat(sourceDate)
-}
-
 func selectedCashFlowAccountIDs(ctx context.Context, tx pgx.Tx, correlationID string) ([]string, bool, error) {
 	rows, err := tx.Query(ctx, selectedCashFlowAccountsSQL, correlationID)
 	if err != nil {
@@ -737,23 +588,6 @@ func normalizeCashFlowAccountName(value string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
 	value = strings.NewReplacer("á", "a", "à", "a", "â", "a", "ã", "a", "é", "e", "ê", "e", "í", "i", "ó", "o", "ô", "o", "õ", "o", "ú", "u", "ü", "u", "ç", "c").Replace(value)
 	return strings.Join(strings.Fields(value), " ")
-}
-
-// PostgreSQL returns the source's NUMERIC(20,8) percentage with all eight
-// fractional places, including insignificant trailing zeros. The exact-money
-// helper accepts up to four places, so strip only insignificant zeros before
-// parsing; a meaningful fifth-through-eighth decimal remains unsupported and
-// the affected forecast row is skipped as partial by the caller.
-func parseCashFlowMoney(value string) (domain.Money, error) {
-	value = strings.TrimSpace(value)
-	if separator := strings.IndexByte(value, '.'); separator >= 0 {
-		fraction := strings.TrimRight(value[separator+1:], "0")
-		value = value[:separator]
-		if fraction != "" {
-			value += "." + fraction
-		}
-	}
-	return domain.ParseMoney(value)
 }
 
 func scanCashFlowCandidate(rows pgx.Rows) (cashFlowCandidate, error) {

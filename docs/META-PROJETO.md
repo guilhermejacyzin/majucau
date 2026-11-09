@@ -1,20 +1,18 @@
 # Meta do Majucau
 
-### Escopo das contas na comparação do Fluxo de Caixa — 08/11/2026
+### Regra vigente T02 — títulos das telas de origem — 08/11/2026
 
-Gisele confirmou que o relatório de referência usa Itaú e Nuvem Pago. A T02
-deve reproduzir as entradas e saídas das duas contas; o card de saldo bancário
-continua usando somente Itaú. A auditoria encontrou que o código ainda filtra
-o gráfico para Itaú, então a implementação pode excluir movimentos e títulos
-da conta Nuvem Pago. A abertura do saldo acumulado do gráfico também não pode
-ser calculada com o saldo Itaú sozinho; precisa de uma base combinada
-comprovada. Registro técnico em
-[`T02-OUTFLOW-MISMATCH-AUDIT-2026-11-08.md`](evidence/T02-OUTFLOW-MISMATCH-AUDIT-2026-11-08.md).
-Próximo passo: separar no código a seleção das contas do gráfico e do card,
-depois validar os mesmos dias/contas/opções do relatório e decompor cada valor
-por origem. Até essa validação, T02 não está homologada. BK-062: 30% concluído
-(70% restante); projeto: 12,3% concluído (87,7% restante).
-
+Gisele determinou que a T02 use os mesmos valores em aberto e as mesmas datas de
+vencimento que as telas Contas a Receber e Contas a Pagar. A série não consulta
+o relatório preparado de Fluxo de Caixa, não filtra pelos bancos ligados aos
+títulos, não recalcula taxas/prazos e não mostra o rótulo “Parcial”. O saldo e a
+abertura do gráfico continuam usando somente o último saldo conciliado do Itaú.
+A consulta semanal e a regressão PostgreSQL para títulos associados a outras
+contas estão no checkout; a execução PostgreSQL depende de
+`MAJUCAU_TEST_DATABASE_URL`. Próximo passo de homologação: comparar no protótipo
+cada semana com as telas de origem, começando por 22/11–28/11. BK-062 segue em
+30% concluído (70% restante); projeto em 12,3% (87,7% restante). Registro:
+[`T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md`](evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).
 ### Auditoria da diferença nas despesas semanais da T02 — 08/11/2026
 
 Abri a T02 do protótipo web: ela está sem snapshot e não mostra dados. Na janela
@@ -1111,3 +1109,18 @@ executar a carga diária, comparar com Caixa e Bancos e conferir a T02. BK-062
 segue em 30% e o projeto em 12,3%. Depois da aprovação da T02, a tarefa seguinte
 é T03 — Contas a Receber. Evidência:
 [`RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md`](./evidence/RESPONSIVE-LAYOUT-AND-BALANCE-SOURCE-2026-11-08.md).
+
+### Correção da origem líquida das receitas da T02 — 08/11/2026
+
+Gisele corrigiu a regra: **A Receber na T02 é líquido**. A consulta da série
+semanal estava usando primeiro `open_balance`, o que podia mostrar o valor bruto
+mesmo quando havia líquido disponível, e não aplicava a mesma deduplicação de
+Contas a Receber. A consulta foi ajustada para usar `net_amount` (com fallback
+para `gross_amount` somente quando a tela também não possui líquido), reaproveitar
+a composição/deduplicação aprovada entre Bling e Nuvem Pago e agrupar pela data
+de vencimento efetiva. A saída de Contas a Pagar e o saldo-base do Itaú não foram
+alterados. Atualizei também a regra operacional, o registro de decisão e a
+matriz de requisitos. A T02 permanece em conferência até a semana 22–28/11
+mostrar o mesmo líquido do relatório; a captura de referência informa bruto de
+R$ 45.482,22 e líquido de R$ 43.790,66. A integração PostgreSQL e a validação
+visual desta correção ainda precisam ser executadas.

@@ -4,22 +4,21 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
-	"time"
 
 	"majucau.local/financial-intelligence/internal/application"
 )
 
 func TestGroupCashFlowReportWeeksUsesBlingWeekBoundariesAndExactValues(t *testing.T) {
 	days := []application.DashboardCashFlowDay{
-		{Date: "2026-11-03", Inflows: dashboardFlowMetric("10.1000", true), Outflows: dashboardFlowMetric("-2.0000", true)},
-		{Date: "2026-11-04", Inflows: dashboardFlowMetric("0.0000", true), Outflows: dashboardFlowMetric("-3.2500", true)},
-		{Date: "2026-11-05", Inflows: dashboardFlowMetric("0.0000", true), Outflows: dashboardFlowMetric("0.0000", true)},
-		{Date: "2026-11-06", Inflows: dashboardFlowMetric("0.0000", true), Outflows: dashboardFlowMetric("0.0000", true)},
-		{Date: "2026-11-07", Inflows: dashboardFlowMetric("0.0000", true), Outflows: dashboardFlowMetric("0.0000", true)},
-		{Date: "2026-11-08", Inflows: dashboardFlowMetric("0.2000", true), Outflows: dashboardFlowMetric("-1.0000", true)},
-		{Date: "2026-11-09", Inflows: dashboardFlowMetric("0.0000", true), Outflows: dashboardFlowMetric("0.0000", true)},
+		{Date: "2026-11-03", Inflows: dashboardFlowMetric("10.1000", false), Outflows: dashboardFlowMetric("-2.0000", false)},
+		{Date: "2026-11-04", Inflows: dashboardFlowMetric("0.0000", false), Outflows: dashboardFlowMetric("-3.2500", false)},
+		{Date: "2026-11-05", Inflows: dashboardFlowMetric("0.0000", false), Outflows: dashboardFlowMetric("0.0000", false)},
+		{Date: "2026-11-06", Inflows: dashboardFlowMetric("0.0000", false), Outflows: dashboardFlowMetric("0.0000", false)},
+		{Date: "2026-11-07", Inflows: dashboardFlowMetric("0.0000", false), Outflows: dashboardFlowMetric("0.0000", false)},
+		{Date: "2026-11-08", Inflows: dashboardFlowMetric("0.2000", false), Outflows: dashboardFlowMetric("-1.0000", false)},
+		{Date: "2026-11-09", Inflows: dashboardFlowMetric("0.0000", false), Outflows: dashboardFlowMetric("0.0000", false)},
 	}
-	periods, err := groupCashFlowReportWeeks(days, true)
+	periods, err := groupCashFlowReportWeeks(days, false)
 	if err != nil {
 		t.Fatalf("groupCashFlowReportWeeks() error = %v", err)
 	}
@@ -33,31 +32,9 @@ func TestGroupCashFlowReportWeeksUsesBlingWeekBoundariesAndExactValues(t *testin
 		t.Fatalf("second report bucket mismatch: %+v", periods[1])
 	}
 	for _, period := range periods {
-		if period.Inflows.State != "PARTIAL" || period.Outflows.State != "PARTIAL" {
-			t.Fatalf("partial source state was lost: %+v", period)
+		if period.Inflows.State != "CONFIRMED" || period.Outflows.State != "CONFIRMED" {
+			t.Fatalf("confirmed source totals must not be labeled partial: %+v", period)
 		}
-	}
-}
-
-func TestApplyBlingCashFlowFloatMovesSourceToNextCalendarDay(t *testing.T) {
-	source := time.Date(2026, time.November, 21, 0, 0, 0, 0, time.UTC)
-	got := applyBlingCashFlowFloat(source)
-	want := time.Date(2026, time.November, 22, 0, 0, 0, 0, time.UTC)
-	if !got.Equal(want) {
-		t.Fatalf("applyBlingCashFlowFloat(%s) = %s, want %s", source.Format(time.DateOnly), got.Format(time.DateOnly), want.Format(time.DateOnly))
-	}
-}
-
-func TestRecordedCashMovementKeepsItsActualDateWhileForecastUsesFloat(t *testing.T) {
-	source := time.Date(2026, time.November, 6, 0, 0, 0, 0, time.UTC)
-	recorded := blingCashFlowReportDate("MOVEMENT", source)
-	if !recorded.Equal(source) {
-		t.Fatalf("recorded movement date = %s, want actual date %s", recorded.Format(time.DateOnly), source.Format(time.DateOnly))
-	}
-	wantForecast := time.Date(2026, time.November, 7, 0, 0, 0, 0, time.UTC)
-	forecast := blingCashFlowReportDate("PAYABLE", source)
-	if !forecast.Equal(wantForecast) {
-		t.Fatalf("forecast date = %s, want effective float date %s", forecast.Format(time.DateOnly), wantForecast.Format(time.DateOnly))
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"time"
 
@@ -74,11 +75,11 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (ret
 
 	snapshot, err := readStreamSummary(ctx, tx, now)
 	if err != nil {
-		return err
+		return fmt.Errorf("read dashboard summary: %w", err)
 	}
 	encoded, err := json.Marshal(snapshot)
 	if err != nil {
-		return err
+		return fmt.Errorf("encode dashboard summary: %w", err)
 	}
 	if len(encoded) == 0 || encoded[len(encoded)-1] != '}' {
 		return errors.New("dashboard snapshot could not be encoded")
@@ -94,7 +95,7 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (ret
 	}
 	if snapshot.Receivables.State != "UNAVAILABLE" {
 		if err := streamReceivableRows(ctx, tx, dst); err != nil {
-			return err
+			return fmt.Errorf("read dashboard receivable details: %w", err)
 		}
 	}
 	if err := writeAll(dst, []byte(`],"payable_rows":[`)); err != nil {
@@ -102,13 +103,16 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (ret
 	}
 	if snapshot.Payables.State != "UNAVAILABLE" {
 		if err := streamPayableRows(ctx, tx, dst); err != nil {
-			return err
+			return fmt.Errorf("read dashboard payable details: %w", err)
 		}
 	}
 	if err := writeAll(dst, []byte(`]}`)); err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit dashboard snapshot: %w", err)
+	}
+	return nil
 }
 
 func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (application.DashboardSnapshot, error) {
@@ -128,7 +132,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	)
 	dailyCorrelationID, err := latestPublishedBlingCorrelationID(ctx, tx, asOf)
 	if err != nil {
-		return application.DashboardSnapshot{}, err
+		return application.DashboardSnapshot{}, fmt.Errorf("load latest Bling snapshot: %w", err)
 	}
 	err = tx.QueryRow(ctx, dashboardStreamSummarySQL,
 		businessDate.Format("2006-01-02"),
@@ -176,7 +180,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&dailyReceivablesPartial,
 	)
 	if err != nil {
-		return application.DashboardSnapshot{}, err
+		return application.DashboardSnapshot{}, fmt.Errorf("aggregate dashboard summary: %w", err)
 	}
 	receivablesFresh := completedBy(dailyReceivablesSyncAt, asOf)
 	nuvemFutureFresh := !dailyNuvemFuturePartial
@@ -184,11 +188,11 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	cashMovementsFresh := completedBy(dailyCashMovementsSyncAt, asOf)
 	cashBalance, err := readLatestItauBalance(ctx, tx, businessDate, dailyCorrelationID)
 	if err != nil {
-		return application.DashboardSnapshot{}, err
+		return application.DashboardSnapshot{}, fmt.Errorf("read Itaú balance: %w", err)
 	}
 	cashFlow, err := readBlingCashFlow(ctx, tx, businessDate, dailyCorrelationID, cashBalance)
 	if err != nil {
-		return application.DashboardSnapshot{}, err
+		return application.DashboardSnapshot{}, fmt.Errorf("read cash-flow projection: %w", err)
 	}
 	state := "UNAVAILABLE"
 	if futureCount > 0 || receivablesFresh || payablesFresh || cashMovementsFresh {

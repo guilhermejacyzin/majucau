@@ -140,12 +140,22 @@ function calculateClosingBalance(opening: DashboardMetric | undefined, inflows: 
   }
 }
 
-function groupSelectedCashFlowDays(cashFlow: DashboardSnapshot['cash_flow'], from: string, through: string): DashboardCashFlowPeriod[] {
+function groupSelectedCashFlowDays(cashFlow: DashboardSnapshot['cash_flow'], from: string, through: string, currentBalance?: DashboardMetric, currentBalanceDate?: string): DashboardCashFlowPeriod[] {
   if (!cashFlow?.days || !from || !through || from > through) return []
   const selected = cashFlow.days.filter((day) => day.date >= from && day.date <= through)
   const result: DashboardCashFlowPeriod[] = []
   let days: typeof selected = []
   let previousClosing: DashboardMetric | undefined
+  const balanceBeforeFrom = () => {
+    if (!currentBalance || !currentBalanceDate || currentBalanceDate > from) return undefined
+    let balance = currentBalance
+    for (const day of cashFlow.days ?? []) {
+      if (day.date < currentBalanceDate || day.date >= from) continue
+      balance = calculateClosingBalance(balance, day.inflows, day.outflows)
+      if (balance.state === 'UNAVAILABLE') return balance
+    }
+    return balance
+  }
   const publishWeek = () => {
     if (days.length === 0) return
     const start = days[0].date
@@ -153,7 +163,7 @@ function groupSelectedCashFlowDays(cashFlow: DashboardSnapshot['cash_flow'], fro
     const sourcePeriod = cashFlow.periods?.find((period) => period.from === start && period.through === end)
     const inflows = sumCashFlowMetrics(days.map((day) => day.inflows))
     const outflows = sumCashFlowMetrics(days.map((day) => day.outflows))
-    const opening = result.length > 0 ? previousClosing : sourcePeriod?.opening_balance
+    const opening = result.length > 0 ? previousClosing : balanceBeforeFrom() ?? sourcePeriod?.opening_balance
     const closing = calculateClosingBalance(opening, inflows, outflows)
     result.push({
       from: start,
@@ -528,14 +538,14 @@ function AlertPanel({ messages, screen, onNavigate, title = 'ALERTAS IMPORTANTES
 export function MockupDashboard({ screen, snapshot, onNavigate }: { screen: MockupScreenKey; snapshot?: DashboardSnapshot; onNavigate?: (screen: MockupScreenKey) => void }) {
   const [periodRange, setPeriodRange] = useState({ from: '', through: '' })
   const config = configs[screen === 'integrations' ? 'executive' : screen]
-  const rawCashFlow = screen === 'cashflow' ? snapshot?.cash_flow : undefined
+  const rawCashFlow = snapshot?.cash_flow
   const sourceStartDate = rawCashFlow?.days?.[0]?.date ?? snapshot?.as_of.slice(0, 10) ?? ''
   const currentDate = saoPauloToday()
   const minDate = sourceStartDate && sourceStartDate > currentDate ? sourceStartDate : currentDate
   const maxDate = rawCashFlow?.days?.[rawCashFlow.days.length - 1]?.date ?? availableCashFlowDate(rawCashFlow, snapshot, 60)
   const selectedFrom = periodRange.from >= minDate && periodRange.from <= maxDate ? periodRange.from : minDate
   const selectedThrough = periodRange.through >= minDate && periodRange.through <= maxDate ? periodRange.through : maxDate
-  const selectedPeriods = groupSelectedCashFlowDays(rawCashFlow, selectedFrom, selectedThrough)
+  const selectedPeriods = groupSelectedCashFlowDays(rawCashFlow, selectedFrom, selectedThrough, snapshot?.cash_balance, currentDate)
   const selectedCriticalWeek = selectedPeriods.reduce<DashboardCashFlowPeriod | undefined>((selected, period) => {
     const parseUnits = (value?: string) => {
       const match = /^(-?)(\d{1,15})(?:\.(\d{1,4}))?$/.exec(value ?? '')
@@ -556,8 +566,8 @@ export function MockupDashboard({ screen, snapshot, onNavigate }: { screen: Mock
   const receivableRows = screen === 'receivables' ? (snapshot?.receivable_rows ?? []).map(receivableTableRow) : []
   const payableRows = screen === 'payables' ? (snapshot?.payable_rows ?? []).map(payableTableRow) : []
   const tableRows = screen === 'receivables' ? receivableRows : screen === 'payables' ? payableRows : []
-  const middleLeft = screen === 'cashflow' ? <div className="mocap-cashflow-visuals"><CashFlowWeeklyTable periods={selectedPeriods} /><EmptyChart title="GRÁFICO DO FLUXO DE CAIXA" cashFlow={cashFlowView} rangeLabel={`${selectedFrom} a ${selectedThrough}`} /></div> : config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} rows={config.tableRows ?? tableRows} emptyMessage={config.tableEmptyMessage} /> : config.chart ? <EmptyChart title={config.middleTitle} cashFlow={snapshot?.cash_flow} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
+  const middleLeft = screen === 'cashflow' ? <div className="mocap-cashflow-visuals"><CashFlowWeeklyTable periods={selectedPeriods} /><EmptyChart title="GRÁFICO DO FLUXO DE CAIXA" cashFlow={cashFlowView} rangeLabel={`${selectedFrom} a ${selectedThrough}`} /></div> : config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} rows={config.tableRows ?? tableRows} emptyMessage={config.tableEmptyMessage} /> : config.chart ? <EmptyChart title={config.middleTitle} cashFlow={cashFlowView} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
   const middleRight = config.layout === 'market' ? <EmptyRiskPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'critical' ? <EmptyCriticalPanel title={config.rightTitle} subtitle={config.rightSubtitle} cashFlow={cashFlowView} /> : config.layout === 'calculation' ? <EmptyRulesPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'forecast' ? <EmptyMetadataPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} emptyMessage={config.distributionEmptyMessage} items={config.distributionItems} bankBalances={screen === 'executive' ? snapshot?.bank_balances : undefined} />
   const lower = screen === 'cashflow' ? null : screen === 'dre' ? <section className="mocap-lower-cards mocap-dre-lower-cards" aria-label="Indicadores e composição da DRE">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}<DreDerivedIndicators /><CapexIndicators snapshot={snapshot} /></section> : config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} screen={screen} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} detailScreen={screen === 'executive' ? executiveCardTarget(card.label) : undefined} onNavigate={screen === 'executive' ? onNavigate : undefined} />)}</section>
-  return <div className={`mocap-page${screen === 'cashflow' ? ' mocap-page-cashflow' : ''}`}><MocapHeader config={config} snapshot={snapshot} /><section className="mocap-top-cards">{cards.map((card) => <MocapCard key={card.label} card={card} hideAction={config.hideCardActions || (screen === 'cashflow' && ['SALDO ATUAL', 'ENTRADAS', 'SAÍDAS'].includes(card.label))} detailScreen={screen === 'executive' ? executiveCardTarget(card.label) : undefined} onNavigate={screen === 'executive' ? onNavigate : undefined} />)}</section>{screen === 'cashflow' && <CashFlowDateControls from={selectedFrom} through={selectedThrough} min={minDate} max={maxDate} onFromChange={(value) => setPeriodRange((current) => { const through = current.through || maxDate; return { from: value, through: through >= value ? through : value } })} onThroughChange={(value) => setPeriodRange((current) => { const from = current.from || minDate; return { from: from <= value ? from : value, through: value } })} />}<section className={`mocap-middle ${config.layout ? `layout-${config.layout}` : ''}`}>{screen === 'executive' && config.chart ? <EmptyChart title={config.middleTitle} cashFlow={snapshot?.cash_flow} /> : middleLeft}{screen === 'executive' && !config.layout ? <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} onNavigate={onNavigate} /> : middleRight}</section>{lower}{config.layout !== 'market' && config.alerts.length > 0 && <AlertPanel messages={config.alerts} screen={screen} onNavigate={onNavigate} title={config.alertsTitle} subtitles={config.alertSubtitles} hideActions={config.hideCardActions} />}</div>
+  return <div className={`mocap-page${screen === 'cashflow' ? ' mocap-page-cashflow' : ''}`}><MocapHeader config={config} snapshot={snapshot} /><section className="mocap-top-cards">{cards.map((card) => <MocapCard key={card.label} card={card} hideAction={config.hideCardActions || (screen === 'cashflow' && ['SALDO ATUAL', 'ENTRADAS', 'SAÍDAS'].includes(card.label))} detailScreen={screen === 'executive' ? executiveCardTarget(card.label) : undefined} onNavigate={screen === 'executive' ? onNavigate : undefined} />)}</section>{screen === 'cashflow' && <CashFlowDateControls from={selectedFrom} through={selectedThrough} min={minDate} max={maxDate} onFromChange={(value) => setPeriodRange((current) => { const through = current.through || maxDate; return { from: value, through: through >= value ? through : value } })} onThroughChange={(value) => setPeriodRange((current) => { const from = current.from || minDate; return { from: from <= value ? from : value, through: value } })} />}<section className={`mocap-middle ${config.layout ? `layout-${config.layout}` : ''}`}>{screen === 'executive' && config.chart ? <EmptyChart title={config.middleTitle} cashFlow={cashFlowView} /> : middleLeft}{screen === 'executive' && !config.layout ? <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} onNavigate={onNavigate} /> : middleRight}</section>{lower}{config.layout !== 'market' && config.alerts.length > 0 && <AlertPanel messages={config.alerts} screen={screen} onNavigate={onNavigate} title={config.alertsTitle} subtitles={config.alertSubtitles} hideActions={config.hideCardActions} />}</div>
 }

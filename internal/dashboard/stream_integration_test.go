@@ -278,7 +278,7 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE connection_id = $1::uuid AND resource IN ('contas-contabeis', 'formas-pagamentos') AND correlation_id = $2`, connectionID, correlationID); err != nil {
 		t.Fatalf("normalize cash-flow account and payment-method batches: %v", err)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO bling_financial_account_identities (sync_batch_id, source_id, description) VALUES ($1::uuid, '1', 'Itaú'), ($1::uuid, '2', 'Mercado Pago')`, accountsBatchID); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO bling_financial_account_identities (sync_batch_id, source_id, description) VALUES ($1::uuid, '1', 'Itaú'), ($1::uuid, '2', 'Nuvem Pago')`, accountsBatchID); err != nil {
 		t.Fatalf("seed selected Bling cash-flow accounts: %v", err)
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO bling_payment_method_terms (connection_id, sync_batch_id, source_id, destination, fee_rate, fee_rate_known, fixed_fee, fixed_fee_known, settlement_days, settlement_known, use_business_days, business_days_known) VALUES ($1::uuid, $2::uuid, '9', 1, 0, true, 0, true, 0, true, false, true)`, connectionID, paymentMethodsBatchID); err != nil {
@@ -287,8 +287,35 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `UPDATE receivables SET connection_id = $1::uuid, source_payment_method_id = 9, source_financial_account_id = 1, status = CASE WHEN source_id = 'bling-2' THEN 'PARTIALLY_PAID' ELSE 'OPEN' END WHERE source_system = 'BLING' AND source_id IN ('bling-1', 'bling-2')`, connectionID); err != nil {
 		t.Fatalf("link receivable flow candidates to selected bank account: %v", err)
 	}
+	nuvemFlowReceivableID := "00000000-0000-4000-8000-000000000047"
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO receivables (id, connection_id, source_system, source_entity, source_id, source_payment_method_id, source_financial_account_id, status, open_balance, gross_amount, due_date)
+		VALUES ($1::uuid, $2::uuid, 'BLING', 'bling.conta_receber', 'bling-nuvem-flow', 9, 2, 'OPEN', 60, 60, $3::date + 15)`, nuvemFlowReceivableID, connectionID, businessDate); err != nil {
+		t.Fatalf("seed Bling receivable assigned to Nuvem Pago: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO receivable_sync_snapshot_rows (sync_batch_id, receivable_id) VALUES ($1::uuid, $2::uuid)`, receivableBatchID, nuvemFlowReceivableID); err != nil {
+		t.Fatalf("add Nuvem Pago receivable to current snapshot: %v", err)
+	}
+	otherAccountReceivableID := "00000000-0000-4000-8000-000000000048"
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO receivables (id, connection_id, source_system, source_entity, source_id, source_payment_method_id, source_financial_account_id, status, open_balance, gross_amount, due_date)
+		VALUES ($1::uuid, $2::uuid, 'BLING', 'bling.conta_receber', 'bling-other-account-flow', 9, 3, 'OPEN', 40, 40, $3::date + 20)`, otherAccountReceivableID, connectionID, businessDate); err != nil {
+		t.Fatalf("seed Bling receivable assigned to an account outside the report selection: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO receivable_sync_snapshot_rows (sync_batch_id, receivable_id) VALUES ($1::uuid, $2::uuid)`, receivableBatchID, otherAccountReceivableID); err != nil {
+		t.Fatalf("add other-account receivable to current snapshot: %v", err)
+	}
 	if _, err := tx.Exec(ctx, `UPDATE payables SET connection_id = $1::uuid, source_system = 'BLING', source_id = id::text, source_payment_method_id = 9, source_financial_account_id = 1 WHERE source_entity = 'bling.conta_pagar' AND status = 'OPEN'`, connectionID); err != nil {
 		t.Fatalf("link payable flow candidates to selected bank account: %v", err)
+	}
+	otherAccountPayableID := "00000000-0000-4000-8000-000000000049"
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO payables (id, connection_id, source_system, source_entity, source_id, source_payment_method_id, source_financial_account_id, open_balance, due_date, status)
+		VALUES ($1::uuid, $2::uuid, 'BLING', 'bling.conta_pagar', 'bling-other-account-flow', 9, 3, -70, $3::date + 20, 'OPEN')`, otherAccountPayableID, connectionID, businessDate); err != nil {
+		t.Fatalf("seed Bling payable assigned to an account outside the report selection: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO payable_sync_snapshot_rows (sync_batch_id, payable_id) VALUES ($1::uuid, $2::uuid)`, payableBatchID, otherAccountPayableID); err != nil {
+		t.Fatalf("add other-account payable to current snapshot: %v", err)
 	}
 	cancelledCodeFiveID := "00000000-0000-4000-8000-000000000022"
 	if _, err := tx.Exec(ctx, `
@@ -312,16 +339,16 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read summary with normalized cash-flow sources: %v", err)
 	}
-	if snapshot.PayablesDueNext90Days.Value != "-310" || snapshot.PayablesDueNext90Days.Count != 5 {
-		t.Fatalf("numeric status 5 must be excluded from next-90-day open payables: %+v", snapshot.PayablesDueNext90Days)
+	if snapshot.PayablesDueNext90Days.Value != "-380" || snapshot.PayablesDueNext90Days.Count != 6 {
+		t.Fatalf("90-day payables must include the open title assigned to another bank and exclude numeric status 5: %+v", snapshot.PayablesDueNext90Days)
 	}
-	if snapshot.PayablesDueNext30Days.Value != "-310" || snapshot.PayablesDueNext30Days.Count != 5 {
-		t.Fatalf("numeric status 5 must be excluded from next-30-day open payables: %+v", snapshot.PayablesDueNext30Days)
+	if snapshot.PayablesDueNext30Days.Value != "-380" || snapshot.PayablesDueNext30Days.Count != 6 {
+		t.Fatalf("30-day payables must include the open title assigned to another bank and exclude numeric status 5: %+v", snapshot.PayablesDueNext30Days)
 	}
-	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.InflowsNext30Days.Value != "150.0000" || snapshot.CashFlow.OutflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.OutflowsNext30Days.Value != "-290.0000" || len(snapshot.CashFlow.Days) != 61 {
-		t.Fatalf("cash-flow series should show the visible API composition as partial over 61 bounded dates: %+v", snapshot.CashFlow)
+	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext30Days.Value != "247.0000" || snapshot.CashFlow.OutflowsNext30Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" || len(snapshot.CashFlow.Days) != 61 {
+		t.Fatalf("cash-flow series should use net receivable values, deduplicate approved cross-source matches, and preserve AP totals across 61 bounded dates: %+v", snapshot.CashFlow)
 	}
-	if snapshot.CashFlow.InflowsNext60Days.State != "PARTIAL" || snapshot.CashFlow.InflowsNext60Days.Value != "260.0000" || snapshot.CashFlow.OutflowsNext60Days.State != "PARTIAL" || snapshot.CashFlow.OutflowsNext60Days.Value != "-340.0000" {
+	if snapshot.CashFlow.InflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext60Days.Value != "357.0000" || snapshot.CashFlow.OutflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext60Days.Value != "-410.0000" {
 		t.Fatalf("60-day cash-flow totals should include day 30–59, preserve signs and exclude day 60: %+v", snapshot.CashFlow)
 	}
 	if _, err := tx.Exec(ctx, `DELETE FROM bling_financial_account_identities WHERE sync_batch_id = $1::uuid AND source_id = '1'`, accountsBatchID); err != nil {
@@ -331,17 +358,7 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read summary with incomplete account catalog and complete movement identities: %v", err)
 	}
-	if snapshot.CashFlow == nil || len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.InflowsNext30Days.Value != "150.0000" || snapshot.CashFlow.OutflowsNext30Days.Value != "-290.0000" {
-		t.Fatalf("cash-flow graph should recover the unique Itaú series from official movement identities when the catalog is incomplete: %+v", snapshot.CashFlow)
-	}
-	var canceledFlowDay *application.DashboardCashFlowDay
-	for index := range snapshot.CashFlow.Days {
-		if snapshot.CashFlow.Days[index].Date == "2026-11-08" {
-			canceledFlowDay = &snapshot.CashFlow.Days[index]
-			break
-		}
-	}
-	if canceledFlowDay == nil || canceledFlowDay.Outflows.Value != "0.0000" {
-		t.Fatalf("numeric status 5 must exclude canceled R$ 1,794.15 from the Bling cash-flow series: day=%+v", canceledFlowDay)
+	if snapshot.CashFlow == nil || len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.InflowsNext30Days.Value != "247.0000" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" {
+		t.Fatalf("cash-flow graph should retain all AR/AP titles when the account catalog is incomplete: %+v", snapshot.CashFlow)
 	}
 }

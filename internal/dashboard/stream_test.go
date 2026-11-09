@@ -54,6 +54,11 @@ func (tx *scriptedDashboardTx) QueryRow(_ context.Context, query string, args ..
 }
 
 func (tx *scriptedDashboardTx) Query(_ context.Context, query string, args ...any) (pgx.Rows, error) {
+	if strings.Contains(query, "WITH daily AS (") {
+		// T02 reads forecast rows directly from the normalized receivable/payable
+		// snapshots. Keep the scripted fixture empty unless a test supplies rows.
+		return &emptyDashboardRows{}, nil
+	}
 	if strings.Contains(query, "bling_financial_account_identities") || strings.Contains(query, "SELECT DISTINCT m.account_source_id, m.account_name") {
 		// The first streaming query resolves the two configured Bling bank
 		// identities. The fixture has no accounts, so the flow is unavailable.

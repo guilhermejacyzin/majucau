@@ -23,6 +23,19 @@ Planejamento do sistema de gestão e análise da Majucau. A **versão 2** é a r
 - A tela independente T05 — Conciliação foi retirada em 31/10/2026. As regras internas de correspondência e controle permanecem necessárias para validar dados de outras telas; não haverá uma página substituta.
 - O fechamento funcional vigente está registrado na v2. Regras antigas substituídas nas v0/v1 são histórico.
 
+## Regra financeira vigente da T02 — 08/11/2026
+
+Gisele determinou que a T02 não use mais o relatório “Fluxo de Caixa” do
+Bling. Receitas devem vir diretamente dos títulos abertos em Contas a Receber;
+despesas, dos títulos abertos em Contas a Pagar. Incluir todas as contas
+financeiras listadas nas duas telas, sem filtrar pelo banco associado ao
+título. Saldo atual e saldo inicial do gráfico usam exclusivamente o último
+saldo conciliado do Itaú. O saldo de cada semana é saldo inicial + receitas −
+despesas e inicia a semana seguinte. A decisão substitui as instruções antigas
+de copiar o relatório de Fluxo de Caixa; ver
+[`G0-DECISION-REGISTER.md`](../../G0-DECISION-REGISTER.md) e
+[`evidência técnica da T02`](../evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).
+
 ## Evolução registrada
 
 **T02 — conciliação e gráfico — 08/11/2026:** a captura enviada mostrou que as

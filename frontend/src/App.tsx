@@ -450,7 +450,7 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
     return () => { active = false }
   }, [adapter, screen, snapshotAdapter])
   const navigate = (next: Screen) => { setScreen(next); window.requestAnimationFrame(() => mainRef.current?.focus()) }
-  return <div className="app-shell"><MockupSidebar screen={screen} onNavigate={navigate} /><main className="main-area" ref={mainRef} tabIndex={-1}>{bootstrap === null ? <BootstrapLoading /> : screen === 'integrations' ? <IntegrationsView bootstrap={bootstrap} blingPreview={blingPreview} blingImporter={blingImporter} futurePreview={futurePreview} futureImporter={futureImporter} blingConfig={blingConfig} nuvemshopConfig={nuvemshopConfig} blingOAuth={blingOAuth} onDataChanged={refreshDataViews} /> : <MockupDashboard screen={screen} snapshot={dashboardSnapshot ?? undefined} onNavigate={navigate} />} {bootstrap && <WorkerFooter bootstrap={bootstrap} />}</main></div>
+  return <div className="app-shell"><MockupSidebar screen={screen} onNavigate={navigate} /><main className="main-area" ref={mainRef} tabIndex={-1}>{bootstrap === null ? <BootstrapLoading /> : screen === 'integrations' ? <IntegrationsView bootstrap={bootstrap} blingPreview={blingPreview} blingImporter={blingImporter} futurePreview={futurePreview} futureImporter={futureImporter} blingConfig={blingConfig} nuvemshopConfig={nuvemshopConfig} blingOAuth={blingOAuth} onDataChanged={refreshDataViews} /> : <MockupDashboard screen={screen} snapshot={dashboardSnapshot ?? undefined} onNavigate={navigate} onRefresh={refreshDataViews} />} {bootstrap && <WorkerFooter bootstrap={bootstrap} />}</main></div>
 }
 
 export { App }

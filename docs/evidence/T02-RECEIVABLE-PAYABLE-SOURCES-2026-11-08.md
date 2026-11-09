@@ -54,6 +54,9 @@ entre Nuvem Pago e Bling para não contar duas vezes a mesma venda.
 - Removida a trava que transformava os totais em indisponíveis quando os lotes
   de origem não eram identificados na mesma execução. A série sempre retorna os
   valores numéricos calculados dos títulos normalizados, sem “Parcial”.
+- O ícone de atualização no cabeçalho recarrega o retrato mais recente do
+  worker. Atualiza a tela, mas não dispara uma nova sincronização com o
+  provedor; sincronizar continua sendo uma ação separada em Integrações.
 - Se a tabela auxiliar da migration 000024 ainda não existir no banco local, a
   consulta conserva o último checkpoint aprovado do Itaú e continua montando
   os totais de Receber/Pagar. A atualização do saldo com conciliações posteriores
@@ -80,6 +83,8 @@ entre Nuvem Pago e Bling para não contar duas vezes a mesma venda.
   `MAJUCAU_TEST_DATABASE_URL` não está configurada neste ambiente; a consulta
   precisa ser validada pela CI PostgreSQL.
 - `go build ./cmd/...`: passou após a alteração da consulta da T02.
+- `npm run build`: passou após ligar o botão de atualização ao recarregamento
+  do retrato do painel.
 - `git diff --check`: passou.
 - As capturas comprovam o desenho dos filtros e a diferença entre valor bruto e
   líquido no relatório de origem. Ainda falta atualizar o worker em execução,

@@ -147,6 +147,9 @@ body { background: #fff; }
 .mocap-sync { display: grid; gap: 5px; color: var(--mocap-navy); font-size: 15px; white-space: nowrap; }
 .mocap-sync strong { font-weight: 800; }
 .mocap-sync .mocap-icon { width: 22px; height: 22px; margin-left: 3px; vertical-align: middle; color: var(--mocap-teal); }
+.mocap-refresh-button { display: inline-grid; place-items: center; width: 25px; height: 25px; margin-left: 2px; padding: 0; border: 0; border-radius: 50%; color: var(--mocap-teal); background: transparent; vertical-align: middle; cursor: pointer; }
+.mocap-refresh-button:hover:not(:disabled), .mocap-refresh-button:focus-visible { background: #e7f6f4; outline: 2px solid #91d8d3; outline-offset: 1px; }
+.mocap-refresh-button:disabled { cursor: wait; opacity: .6; }
 .mocap-help { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 9px; font-size: 15px; font-weight: 700; }
 .mocap-help { min-width: 96px; padding: 0 15px; border: 1px solid #9dd8e5; color: #087c91; background: white; }
 .mocap-help .mocap-icon { width: 21px; height: 21px; }

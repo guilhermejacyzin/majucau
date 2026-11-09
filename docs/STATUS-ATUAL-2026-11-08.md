@@ -12,7 +12,9 @@
 
 **Validação local:** `go test ./... -count=1`, `go build ./cmd/...` e `git diff --check` passaram. Testes PostgreSQL de integração foram ignorados porque `MAJUCAU_TEST_DATABASE_URL` não foi configurada.
 
-**Ainda não comprovado:** a instância real do protótipo e sua carga do Bling ainda não foram conferidas com a correção. Não afirmar que R$ 43.790,66 já aparece na tela. A etapa só fecha depois de reconstruir/reiniciar a instância com o código novo, atualizar o snapshot e comparar a mesma semana e os mesmos filtros. O ajuste depende das taxas da forma de pagamento presentes na mesma carga; se alguma não estiver configurada ou sincronizada, não deve exibir o valor bruto como se fosse líquido.
+**Protótipo atualizado:** em 08/11 às 23:02, encerrei normalmente a execução anterior e reabri o app pelo roteiro oficial. O worker novo e a janela Majucau iniciaram; o servidor local da interface respondeu HTTP 200. A captura visual automática da janela falhou, então ainda não confirmei pela tela quais valores aparecem. Também não executei uma nova sincronização do Bling nesta etapa.
+
+**Ainda não comprovado:** não afirmar que R$ 43.790,66 já aparece na tela. A etapa só fecha depois de confirmar o snapshot sincronizado e comparar a mesma semana e os mesmos filtros. O ajuste depende das taxas da forma de pagamento presentes na mesma carga; se alguma não estiver configurada ou sincronizada, não deve exibir o valor bruto como se fosse líquido.
 
 ## Sequência imediata
 

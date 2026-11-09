@@ -1135,9 +1135,10 @@ conciliado do Itaú. `go test ./... -count=1`, `go build ./cmd/...` e
 `git diff --check` passaram. Os testes PostgreSQL reais foram ignorados porque
 `MAJUCAU_TEST_DATABASE_URL` não está configurada.
 
-A alteração de código está pronta para conferência, mas a instância ativa ainda
-precisa receber o worker recompilado e executar nova sincronização. A comparação
-real da semana 22/11–28/11 (146 títulos, R$ 43.790,66 líquido na captura) não foi
+A alteração de código está pronta para conferência. O protótipo foi reaberto
+pelo roteiro oficial com o worker recompilado às 23:02 de 08/11, mas não houve
+nova sincronização, e a captura visual automática falhou. A comparação real da
+semana 22/11–28/11 (146 títulos, R$ 43.790,66 líquido na captura) não foi
 concluída; não declarar a T02 homologada até bater a mesma janela e filtros no
 protótipo. Ver [`STATUS-ATUAL-2026-11-08.md`](STATUS-ATUAL-2026-11-08.md) e
 [`evidência T02`](evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).

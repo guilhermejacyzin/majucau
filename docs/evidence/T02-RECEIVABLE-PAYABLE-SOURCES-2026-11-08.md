@@ -29,4 +29,4 @@ A T02 foi alterada para ler as linhas do snapshot diário de Contas a Receber do
 - `go test ./... -count=1`: passou.
 - A integração com PostgreSQL real não foi executada porque `MAJUCAU_TEST_DATABASE_URL` não está configurada neste ambiente.
 - A validação automatizada comprova a regra no código; não comprova que a execução diária real tenha a mesma lista de 146 linhas nem o total líquido da captura. A janela 22/11–28/11 precisa ser conferida no protótipo após atualizar o worker e sincronizar novamente.
-- A atualização do protótipo ainda não está comprovada nesta revisão. Não afirmar que o valor de R$ 43.790,66 já aparece na tela até essa conferência visual e numérica.
+- O protótipo foi reaberto pelo roteiro oficial com o worker recompilado às 23:02 de 08/11 e a interface local respondeu HTTP 200. A captura visual da janela falhou e não foi feita nova sincronização. Não afirmar que o valor de R$ 43.790,66 já aparece na tela até a conferência visual e numérica do snapshot atualizado.

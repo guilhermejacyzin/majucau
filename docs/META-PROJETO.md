@@ -1,31 +1,34 @@
 # Meta do Majucau
 
-### Estado real da T02 — atualização completa em andamento — 09/11/2026, 02:03 BRT
+### Estado real da T02 — carga completa interrompida pelo limite antigo — 09/11/2026, 02:18 BRT
 
-Abri o aplicativo nativo Majucau; a árvore de acessibilidade confirma que ele
-está na T03 — Contas a Receber e mostra “—”/“Sem dados confirmados”. Portanto,
-a tela real está aberta, mas não está alimentada com dados atuais.
+Abri o aplicativo nativo Majucau e conferi a tela real pela árvore de
+acessibilidade. Ela está na T01 — Visão Executiva. A sincronização exibida é de
+09/11 às 01:58. O saldo mostrado é R$ 62.548,33, mas A Receber aparece como
+R$ 0,00, A Pagar como -R$ 688.071,73 com indicação “Parcial”, e as semanas do
+gráfico mostram receitas zeradas e saldos “—”. Esses resultados não estão
+homologados e não devem ser tratados como corretos.
 
-Uma nova leitura pela API oficial já completou `contas.receber` (15.155
-registros) e `caixas.conciliadas` (3.162 registros). `contas.pagar` leu 104
-páginas/10.301 registros e terminou a paginação; a preparação dos detalhes
-está na página 5 de 104 às 02:03 BRT. O lote permanece `RUNNING`, sem publicar
-os resultados enquanto a etapa completa não termina. A leitura `caixas` ficou
-`PARTIAL` com `BLING_CASH_MOVEMENT_STATUS_MISSING`; isso é separado do resultado
-de Contas a Pagar/Receber.
+A leitura oficial anterior terminou sem publicar a carga completa às 02:14:12.
+Contas a Receber terminou com 15.155 registros e o endpoint de movimentos
+conciliados com 3.162. Contas a Pagar leu 104 páginas (10.301 registros), mas
+a preparação dos detalhes alcançou apenas a página 19 de 104 às 02:13:31. O
+processo expirou no limite de 30 minutos; a publicação completa e atômica não
+ocorreu. A leitura geral de Caixa ficou `PARTIAL` por
+`BLING_CASH_MOVEMENT_STATUS_MISSING`, uma pendência separada.
 
-O ritmo observado em Contas a Pagar é de cerca de 40 segundos por página de
-100, pois cada registro precisa de consulta de detalhe e a API é limitada a
-menos de três chamadas por segundo. O prazo anterior de 30 minutos não cobriria
-a preparação das 104 páginas. Ampliei o prazo compartilhado da atualização
-completa para duas horas; os demais comandos IPC continuam curtos. Não alterei
-telas nem regras financeiras. O app e worker em execução ainda precisam usar a
-build com esse novo prazo; não reiniciei nem interrompi a execução ativa.
+O commit `9384758` já está no GitHub e eleva para duas horas o prazo da chamada
+completa compartilhado entre aplicativo e worker. O processo que ainda está
+aberto usa a versão antiga. Também corrigi localmente a classificação da causa:
+cancelamento e prazo excedido durante a preparação não devem ser registrados
+como erro de normalização. O teste focado de integração Bling passou. Essa
+correção de código ainda precisa de commit/push e da build nova.
 
-A T02 não está homologada. Depois da carga completa, ainda é preciso confirmar
-que as linhas aparecem na aplicação e conferir as semanas contra Contas a
-Receber (líquido), Contas a Pagar e o saldo conciliado do Itaú. T03 continua
-aguardando a aprovação da T02.
+Próxima ação: encerrar ordenadamente a instância antiga, reconstruir aplicativo
+e worker, reabrir o protótipo e executar uma única carga completa. Depois,
+conferir os valores das semanas com Contas a Receber pelo líquido, Contas a
+Pagar e saldo conciliado do Itaú. A T02 não está homologada; T03 aguarda sua
+aprovação visual e numérica.
 
 Evidência: [`T02-FULL-REFRESH-TIMEOUT-2026-11-09.md`](evidence/T02-FULL-REFRESH-TIMEOUT-2026-11-09.md).
 

@@ -1,33 +1,33 @@
-# Status atual — 09/11/2026, 02:03 BRT
+# Status atual — 09/11/2026, 02:18 BRT
 
 ## Em que ponto está
 
-Estamos concluindo a T02 — Fluxo de Caixa. O aplicativo nativo real está
-aberto, mas a tela atual é T03 — Contas a Receber e apresenta traços e “Sem
-dados confirmados”. A atualização nova do Bling ainda está em andamento; não
-apresentei os dados como concluídos.
+Estamos corrigindo e conferindo a T02 — Fluxo de Caixa. O aplicativo nativo
+real está aberto na T01 — Visão Executiva. A última sincronização mostrada é
+09/11 às 01:58. O saldo é R$ 62.548,33; A Receber está R$ 0,00; A Pagar está
+-R$ 688.071,73 com indicação “Parcial”; e as receitas do gráfico estão zeradas.
+Esses valores não estão homologados e não correspondem a uma atualização
+completa confirmada.
 
 ## Resultado observado na sincronização
 
-- Contas a Receber: etapa concluída, 15.155 registros lidos.
-- Movimentos conciliados do caixa: etapa concluída, 3.162 registros lidos.
-- Contas a Pagar: paginação concluída, 104 páginas e 10.301 registros; os
-  detalhes ainda estão sendo preparados. O último registro de progresso mostra
-  a página 5 de 104 às 02:03 BRT.
+- Contas a Receber: `SUCCESS`, 15.155 registros lidos.
+- Movimentos conciliados: `SUCCESS`, 3.162 registros lidos.
+- Contas a Pagar: 104 páginas/10.301 registros lidos; detalhes preparados até
+  19/104. A execução terminou às 02:14:12, sem publicar a carga completa.
 - Movimentos gerais do caixa: `PARTIAL`, código
   `BLING_CASH_MOVEMENT_STATUS_MISSING`.
 
-O lote de Contas a Pagar continua `RUNNING`. A publicação dos resultados ocorre
-somente depois da etapa completa, para evitar mostrar uma carga pela metade.
+O lote de Contas a Pagar não ficou `RUNNING`: expirou após 30 minutos. A carga
+completa não foi publicada, por isso a tela continua com o retrato anterior.
 
 ## Correção técnica em andamento
 
-O prazo anterior de 30 minutos não cobre o tempo observado para detalhar as
-104 páginas de Contas a Pagar, respeitando o limite de chamadas da API. O prazo
-compartilhado do comando de atualização completa foi aumentado para duas horas
-no código do aplicativo e do worker. A versão que está em execução ainda não
-foi substituída; não interrompi a leitura atual. A alteração mais recente ainda
-precisa ser validada, compilada e aplicada a uma nova execução completa.
+O commit `9384758` no GitHub aumenta o prazo compartilhado de atualização para
+duas horas. O app e o worker abertos ainda são da build antiga. Também corrigi
+localmente o registro de cancelamentos e prazos excedidos durante preparação;
+o teste focado `go test ./internal/integrations/bling` passou. Essa correção
+ainda precisa ser publicada e aplicada na próxima build.
 
 ## Saldo e regras aprovadas
 
@@ -39,12 +39,14 @@ saldo bancário atual.
 
 ## O que falta antes de aprovar a T02
 
-1. Completar a carga e confirmar que os valores aparecem no aplicativo nativo.
-2. Conferir as semanas selecionadas contra os relatórios correspondentes de
+1. Publicar a correção do código de erro, reconstruir aplicativo e worker e
+   executar uma única carga completa com o prazo de duas horas.
+2. Confirmar que os valores novos aparecem no aplicativo nativo.
+3. Conferir as semanas selecionadas contra os relatórios correspondentes de
    Contas a Receber (líquido) e Contas a Pagar.
-3. Confirmar o saldo da primeira semana e os fechamentos semanais com a base
+4. Confirmar o saldo da primeira semana e os fechamentos semanais com a base
    conciliada do Itaú.
-4. Abrir a T02 no protótipo para revisão visual e aguardar a aprovação de
+5. Abrir a T02 no protótipo para revisão visual e aguardar a aprovação de
    Gisele.
 
 Somente depois da aprovação da T02 começa a T03. Percentuais antigos de BK-062

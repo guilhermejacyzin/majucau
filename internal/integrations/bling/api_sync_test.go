@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -42,6 +43,8 @@ func TestBlingAPINormalizationFailureCodeDoesNotExposeErrorText(t *testing.T) {
 		{name: "database constraint", err: &pgconn.PgError{Code: "23514", Message: "sensitive constraint detail"}, want: "BLING_NORMALIZATION_CONSTRAINT_FAILED"},
 		{name: "other database state", err: &pgconn.PgError{Code: "22007", Message: "sensitive date detail"}, want: "BLING_NORMALIZATION_STORAGE_22007"},
 		{name: "unsafe database state", err: &pgconn.PgError{Code: "bad-state", Message: "sensitive detail"}, want: "BLING_NORMALIZATION_STORAGE_FAILED"},
+		{name: "deadline exceeded", err: fmt.Errorf("prepare detail page: %w", context.DeadlineExceeded), want: "SYNC_DEADLINE_EXCEEDED"},
+		{name: "cancelled", err: fmt.Errorf("prepare detail page: %w", context.Canceled), want: "SYNC_CANCELLED"},
 		{name: "unknown", err: errors.New("sensitive provider payload"), want: "BLING_API_NORMALIZATION_FAILED"},
 	}
 	for _, test := range tests {

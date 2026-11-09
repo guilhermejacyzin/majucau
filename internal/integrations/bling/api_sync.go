@@ -487,6 +487,15 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 // database protects account data while still making a failed live import
 // diagnosable.
 func blingAPINormalizationFailureCode(err error) string {
+	// Preparation and normalization may wrap a context timeout/cancellation.
+	// Preserve the operational cause in the audit instead of reporting it as
+	// malformed provider data; both codes are safe and contain no payload data.
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "SYNC_DEADLINE_EXCEEDED"
+	}
+	if errors.Is(err, context.Canceled) {
+		return "SYNC_CANCELLED"
+	}
 	var fieldErr *payableSchemaFieldError
 	if errors.As(err, &fieldErr) {
 		switch fieldErr.code {

@@ -2,29 +2,37 @@
 
 ## O que foi observado
 
-Às 02:03 BRT, consultei os lotes do banco isolado do protótipo enquanto a
-atualização oficial continuava ativa:
+A carga oficial terminou às 02:14:12 BRT, depois de 30 minutos, antes de
+publicar o retrato completo:
 
 - `contas.receber`: `SUCCESS`, 15.155 registros.
 - `caixas.conciliadas`: `SUCCESS`, 3.162 registros.
-- `contas.pagar`: `RUNNING`; 104 páginas da lista, 10.301 registros; página
-  preparada mais recente: 5 de 104.
+- `contas.pagar`: leu 104 páginas/10.301 registros; preparou detalhes até a
+  página 19 de 104 às 02:13:31 e terminou sem publicar.
 - `caixas`: `PARTIAL`, código `BLING_CASH_MOVEMENT_STATUS_MISSING`.
+- O registro sanitizado do worker aponta expiração/cancelamento do prazo total
+  de 30 minutos. O lote de Contas a Pagar não teve sucesso completo.
 
-A janela real do aplicativo Wails foi trazida à frente. A árvore da T03 mostrou
-traços e “Sem dados confirmados”. Assim, foi possível confirmar que o protótipo
-estava aberto e vazio enquanto uma leitura extensa ainda não terminara. A
-captura visual da janela falhou por tempo esgotado; não afirmo inspeção visual
-de pixel.
+Às 02:18 BRT, trouxe o aplicativo Wails real para a frente e conferi sua árvore
+de acessibilidade: ele está na T01. A sincronização exibida é 09/11 às 01:58;
+Saldo Atual R$ 62.548,33; A Receber R$ 0,00; A Pagar -R$ 688.071,73 com rótulo
+“Parcial”; todas as receitas do gráfico estão R$ 0,00 e os saldos semanais são
+“—”. A captura de pixels da janela expirou, então a verificação do conteúdo foi
+por acessibilidade. Os números não foram homologados.
 
-## Causa do tempo elevado
+## Causa e correção do registro de erro
 
 A sincronização relê as contas e depois busca detalhes em blocos de 100
 registros para normalizar os campos usados nas telas. A API limita o ritmo das
 chamadas; a execução observada levou cerca de 40 segundos para preparar cada
-página de Contas a Pagar. Com 104 páginas, 30 minutos não são suficientes. O
-lote só publica após a preparação completa, portanto a T03 continua sem o novo
-resultado enquanto o lote está `RUNNING`.
+página de Contas a Pagar. Com 104 páginas, 30 minutos não são suficientes. A
+publicação completa é atômica, então o lote interrompido preserva o retrato
+anterior e os novos dados não aparecem na tela.
+
+O código também classificava erros de contexto (prazo vencido/cancelamento)
+durante essa preparação como falha de normalização. Corrigi essa classificação
+para `SYNC_DEADLINE_EXCEEDED` ou `SYNC_CANCELLED`, sem gravar detalhes sensíveis.
+`go test ./internal/integrations/bling` passou com os casos de regressão.
 
 ## Ajuste realizado no código local
 
@@ -34,20 +42,15 @@ prazo estendido vale apenas para a leitura completa e somente de leitura; não
 altera os prazos dos demais comandos, os relatórios de origem, o desenho ou as
 regras financeiras.
 
-## Limites desta evidência
+## Estado atual e próximos passos
 
-O worker e aplicativo que estão abertos ainda não foram substituídos pela build
-com o limite de duas horas. A carga que está em andamento começou antes desse
-ajuste. Portanto, este registro não afirma que os dados já apareceram, que a
-sincronização terminou ou que a T02 foi homologada. A captura da janela foi
-inspecionada por acessibilidade; a captura visual automática falhou.
+O commit `9384758` já contém o prazo de duas horas, mas o processo aberto usa a
+build anterior. A correção do código de classificação descrita acima ainda é
+local. Os dados reais da carga interrompida não foram publicados. Portanto, a
+T02 não está concluída nem homologada.
 
-## Próximos passos
-
-1. Deixar a execução atual chegar a um estado terminal e registrar seu
-   resultado, sem iniciar uma sincronização concorrente.
-2. Validar a mudança de limite com os testes, reconstruir o worker/aplicativo e
-   confirmar que a próxima execução completa termina.
-3. Conferir que o snapshot aparece na tela e comparar os períodos iguais com
+1. Publicar a correção de classificação, reconstruir o worker e o aplicativo,
+   e iniciar uma única nova carga com o prazo de duas horas.
+2. Confirmar que o retrato completo aparece na tela e comparar os períodos com
    Contas a Receber (líquido), Contas a Pagar e o saldo conciliado do Itaú.
-4. Abrir a T02 para a aprovação visual; T03 só começa após essa aprovação.
+3. Abrir a T02 para a aprovação visual; T03 só começa após essa aprovação.

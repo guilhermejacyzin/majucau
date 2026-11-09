@@ -1,5 +1,34 @@
 # Meta do Majucau
 
+### Estado real da T02 — atualização completa em andamento — 09/11/2026, 02:03 BRT
+
+Abri o aplicativo nativo Majucau; a árvore de acessibilidade confirma que ele
+está na T03 — Contas a Receber e mostra “—”/“Sem dados confirmados”. Portanto,
+a tela real está aberta, mas não está alimentada com dados atuais.
+
+Uma nova leitura pela API oficial já completou `contas.receber` (15.155
+registros) e `caixas.conciliadas` (3.162 registros). `contas.pagar` leu 104
+páginas/10.301 registros e terminou a paginação; a preparação dos detalhes
+está na página 5 de 104 às 02:03 BRT. O lote permanece `RUNNING`, sem publicar
+os resultados enquanto a etapa completa não termina. A leitura `caixas` ficou
+`PARTIAL` com `BLING_CASH_MOVEMENT_STATUS_MISSING`; isso é separado do resultado
+de Contas a Pagar/Receber.
+
+O ritmo observado em Contas a Pagar é de cerca de 40 segundos por página de
+100, pois cada registro precisa de consulta de detalhe e a API é limitada a
+menos de três chamadas por segundo. O prazo anterior de 30 minutos não cobriria
+a preparação das 104 páginas. Ampliei o prazo compartilhado da atualização
+completa para duas horas; os demais comandos IPC continuam curtos. Não alterei
+telas nem regras financeiras. O app e worker em execução ainda precisam usar a
+build com esse novo prazo; não reiniciei nem interrompi a execução ativa.
+
+A T02 não está homologada. Depois da carga completa, ainda é preciso confirmar
+que as linhas aparecem na aplicação e conferir as semanas contra Contas a
+Receber (líquido), Contas a Pagar e o saldo conciliado do Itaú. T03 continua
+aguardando a aprovação da T02.
+
+Evidência: [`T02-FULL-REFRESH-TIMEOUT-2026-11-09.md`](evidence/T02-FULL-REFRESH-TIMEOUT-2026-11-09.md).
+
 ### Correção T02 — deslocamento de um dia no fluxo — 09/11/2026
 
 Identifiquei e corrigi a causa concreta que fazia o fluxo começar no dia

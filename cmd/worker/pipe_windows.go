@@ -17,10 +17,9 @@ import (
 
 func runWorkerPipe(ctx context.Context, handler ipc.Handler) (returnErr error) {
 	cfg := ipc.DefaultNamedPipeConfig()
-	// A full Bling refresh performs several paginated read-only requests. Its
-	// request lifetime must match the desktop's ten-minute deadline rather than
-	// the short default used for ordinary local IPC calls.
-	cfg.MethodTimeouts = map[ipc.Method]time.Duration{ipc.MethodBlingRefresh: 10 * time.Minute}
+	// A complete refresh may span a large account's many pages; share the
+	// desktop deadline so neither end cancels a valid read-only load prematurely.
+	cfg.MethodTimeouts = map[ipc.Method]time.Duration{ipc.MethodBlingRefresh: ipc.BlingRefreshTimeout}
 	if usesWindowsServiceExecution(ctx) {
 		serviceSID, err := lookupInstalledServiceSID()
 		if err != nil {

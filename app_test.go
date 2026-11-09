@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/domain"
@@ -250,6 +251,11 @@ func TestSyncBlingFullRefreshUsesDedicatedWorkerMethodWithEmptyPayload(t *testin
 	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 		if req.Method != ipc.MethodBlingRefresh || string(req.Payload) != "{}" {
 			t.Fatalf("unexpected full refresh request: method=%q payload=%s", req.Method, req.Payload)
+		}
+		deadline, ok := ctx.Deadline()
+		remaining := time.Until(deadline)
+		if !ok || remaining <= 29*time.Minute || remaining > ipc.BlingRefreshTimeout {
+			t.Fatalf("full refresh deadline remaining = %s, want up to %s", remaining, ipc.BlingRefreshTimeout)
 		}
 		return ipc.NewResponse(req.RequestID, application.BlingSyncResponse{Status: "SUCCESS"})
 	})

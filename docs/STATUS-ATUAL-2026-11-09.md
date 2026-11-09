@@ -1,52 +1,52 @@
-# Status atual — 09/11/2026
+# Status atual — 09/11/2026, 02:03 BRT
 
 ## Em que ponto está
 
-O trabalho continua na T02 — Fluxo de Caixa. Corrigi uma conversão duplicada
-de data que fazia o fluxo começar um dia antes. Isso podia puxar uma conta
-vencida fora do período e deslocar os valores semanais. Os testes locais e a
-verificação PostgreSQL passaram depois da correção.
+Estamos concluindo a T02 — Fluxo de Caixa. O aplicativo nativo real está
+aberto, mas a tela atual é T03 — Contas a Receber e apresenta traços e “Sem
+dados confirmados”. A atualização nova do Bling ainda está em andamento; não
+apresentei os dados como concluídos.
 
-O banco de desenvolvimento isolado recebeu a migration 000024 e as permissões
-necessárias para guardar, por execução, quais movimentos o Bling devolveu
-como conciliados. A conferência das permissões passou.
+## Resultado observado na sincronização
 
-## O que ainda falta antes de aprovar a T02
+- Contas a Receber: etapa concluída, 15.155 registros lidos.
+- Movimentos conciliados do caixa: etapa concluída, 3.162 registros lidos.
+- Contas a Pagar: paginação concluída, 104 páginas e 10.301 registros; os
+  detalhes ainda estão sendo preparados. O último registro de progresso mostra
+  a página 5 de 104 às 02:03 BRT.
+- Movimentos gerais do caixa: `PARTIAL`, código
+  `BLING_CASH_MOVEMENT_STATUS_MISSING`.
 
-1. Gisele conferir a T02 que está aberta no protótipo local e aprovar ou
-   apontar correções visuais.
-2. Rodar uma nova sincronização real do Bling e comparar
-   Contas a Receber (líquido), Contas a Pagar e o saldo conciliado do Itaú.
-3. Confirmar a atualização diária do saldo a partir do último saldo-base
-   aprovado, sem misturar Itaú com Mercado Pago.
-4. Só após esses pontos e a aprovação visual da responsável, iniciar T03.
+O lote de Contas a Pagar continua `RUNNING`. A publicação dos resultados ocorre
+somente depois da etapa completa, para evitar mostrar uma carga pela metade.
 
-## Saldo-base
+## Correção técnica em andamento
 
-Último valor aprovado: **R$ 62.548,33 em 06/11/2026**, copiado do saldo
-conciliado do Itaú mostrado por Gisele. Esse é o ponto inicial autorizado. O
-saldo só avança quando a API retorna movimentos conciliados do mesmo Itaú em
-um lote normalizado; o fluxo projetado usa o saldo-base mais entradas líquidas
-de Contas a Receber e saídas de Contas a Pagar.
+O prazo anterior de 30 minutos não cobre o tempo observado para detalhar as
+104 páginas de Contas a Pagar, respeitando o limite de chamadas da API. O prazo
+compartilhado do comando de atualização completa foi aumentado para duas horas
+no código do aplicativo e do worker. A versão que está em execução ainda não
+foi substituída; não interrompi a leitura atual. A alteração mais recente ainda
+precisa ser validada, compilada e aplicada a uma nova execução completa.
 
-## Verificações executadas
+## Saldo e regras aprovadas
 
-- `go test ./internal/dashboard -count=1` — passou.
-- Teste de integração `TestReadStreamSummaryPostgresRequiresNormalizedDailyStages`
-  no PostgreSQL 18 isolado — passou.
-- Aplicação da migration 000024, scripts de permissão e verificação de
-  privilégios no banco isolado — passou.
+Último valor-base aprovado: R$ 62.548,33 em 06/11/2026, informado a partir do
+saldo conciliado do Itaú. O saldo atual usa apenas Itaú. A projeção do fluxo usa
+Contas a Receber pelo valor líquido, Contas a Pagar pelas saídas e a base
+conciliada do Itaú para abrir o saldo. Receitas − despesas não substituem o
+saldo bancário atual.
 
-## Estado que aparece na tela aberta
+## O que falta antes de aprovar a T02
 
-O protótipo local está na T02. O último snapshot exibido indica atualização em
-09/11/2026 às 00:11. Os cards mostram entradas de R$ 219.267,59 em 30 dias e
-R$ 260.805,50 em 60 dias; saídas de -R$ 313.408,28 e -R$ 512.222,94,
-respectivamente. O saldo atual mostrado é R$ 62.548,33. A tabela e o gráfico
-trazem as mesmas semanas e os mesmos valores de receitas, despesas e saldo
-acumulado. Esses valores vêm do último snapshot local; não comprovam uma nova
-consulta ao Bling nesta conferência.
+1. Completar a carga e confirmar que os valores aparecem no aplicativo nativo.
+2. Conferir as semanas selecionadas contra os relatórios correspondentes de
+   Contas a Receber (líquido) e Contas a Pagar.
+3. Confirmar o saldo da primeira semana e os fechamentos semanais com a base
+   conciliada do Itaú.
+4. Abrir a T02 no protótipo para revisão visual e aguardar a aprovação de
+   Gisele.
 
-T02 aguarda a aprovação visual e uma nova comparação real com o Bling; portanto
-não está homologada e T03 não começou. Os percentuais existentes na meta são
-estimativas anteriores e não foram recalculados nesta atualização.
+Somente depois da aprovação da T02 começa a T03. Percentuais antigos de BK-062
+e do projeto não foram recalculados e devem ser tratados como histórico até a
+revisão do backlog inteiro.

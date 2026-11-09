@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DashboardCashFlowPeriod, DashboardSnapshot } from './bootstrap'
 import { MockupDashboard, type MockupScreenKey } from './mockupDashboard'
 
@@ -17,6 +17,8 @@ const cardRoutes = [
 ] as const satisfies ReadonlyArray<readonly [string, MockupScreenKey]>
 
 describe('atalhos da Visão Executiva para as telas de origem', () => {
+  afterEach(() => vi.useRealTimers())
+
   it('não exibe na tela Estoque os cards ou alerta de envelhecimento/validade removidos', () => {
     render(<MockupDashboard screen="inventory" />)
 
@@ -128,6 +130,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
   })
 
   it('mostra o relatório semanal em tabela e preserva o gráfico agregado da visão executiva', () => {
+    vi.useFakeTimers({ now: new Date('2026-11-08T12:00:00-03:00') })
     const unavailable = { state: 'UNAVAILABLE' as const }
     const partial = { state: 'PARTIAL' as const, source_system: 'BLING' }
     const snapshot: DashboardSnapshot = {
@@ -231,6 +234,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
   })
 
   it('filtra a tabela e a semana crítica pelo período escolhido sem recalcular com ponto flutuante', () => {
+    vi.useFakeTimers({ now: new Date('2026-11-08T12:00:00-03:00') })
     const unavailable = { state: 'UNAVAILABLE' as const }
     const partial = { state: 'PARTIAL' as const, source_system: 'BLING' }
     const days = Array.from({ length: 8 }, (_, index) => {

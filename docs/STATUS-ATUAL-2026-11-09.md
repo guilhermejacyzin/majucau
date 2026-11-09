@@ -1,13 +1,38 @@
-# Status atual — 09/11/2026, 02:18 BRT
+# Status atual — 09/11/2026, 02:36 BRT
+
+## Correção aplicada: receita líquida da T02
+
+O protótipo mostrava entradas R$ 0,00 apesar de Contas a Receber ter dados. A
+causa confirmada foi a execução completa anterior ter expirado durante Contas a
+Pagar antes de atualizar as formas de pagamento. A consulta exigia taxas da
+mesma execução e convertia o valor líquido ausente em zero.
+
+Para 22–28/11, os 146 títulos do snapshot real somam R$ 45.482,22 brutos. A
+última configuração oficial válida de taxas cobre os 146 e reproduz R$ 43.790,66
+líquidos, igual ao total do relatório do Bling enviado pela responsável. O
+código agora usa a tabela de taxas oficial mais recente bem-sucedida da mesma
+conta e prioriza a nova consulta de taxas antes da longa preparação de Contas a
+Pagar.
+
+Testes focados de dashboard/PostgreSQL, Bling e worker passaram. Às 02:36
+reconstruí e abri a T02 no protótipo real: a semana 22–28/11 mostra R$ 43.790,66
+de receitas e -R$ 25.275,71 de despesas, os mesmos totais dos relatórios
+enviados. O saldo acumulado mostrado para a semana é R$ 898,42, calculado pela
+abertura semanal exibida mais as entradas líquidas e as saídas negativas.
+
+A sincronização nova de Contas a Pagar terminou `FAILED`/`RAW_ONLY` às 02:14,
+então a tela preserva o último snapshot normalizado dessa fonte. A semana
+conferida bate, mas outras semanas e uma nova carga completa ainda precisam ser
+verificadas antes de homologar a T02. T03 não começou e aguarda aprovação da T02.
 
 ## Em que ponto está
 
-Estamos corrigindo e conferindo a T02 — Fluxo de Caixa. O aplicativo nativo
-real está aberto na T01 — Visão Executiva. A última sincronização mostrada é
-09/11 às 01:58. O saldo é R$ 62.548,33; A Receber está R$ 0,00; A Pagar está
--R$ 688.071,73 com indicação “Parcial”; e as receitas do gráfico estão zeradas.
-Esses valores não estão homologados e não correspondem a uma atualização
-completa confirmada.
+O protótipo Wails real está aberto na T02 — Fluxo de Caixa. O cabeçalho mostra
+última sincronização em 09/11 às 02:31 e saldo bancário R$ 62.548,33. A semana
+22–28/11 já mostra receitas líquidas R$ 43.790,66 e despesas -R$ 25.275,71,
+iguais aos dois relatórios enviados. Isso valida a correção dessa semana, mas
+não homologa toda a série: a nova carga de Contas a Pagar não terminou e as
+demais semanas ainda precisam ser comparadas.
 
 ## Resultado observado na sincronização
 
@@ -21,13 +46,13 @@ completa confirmada.
 O lote de Contas a Pagar não ficou `RUNNING`: expirou após 30 minutos. A carga
 completa não foi publicada, por isso a tela continua com o retrato anterior.
 
-## Correção técnica em andamento
+## Correção técnica da carga anterior
 
 O commit `9384758` no GitHub aumenta o prazo compartilhado de atualização para
-duas horas. O app e o worker abertos ainda são da build antiga. Também corrigi
-localmente o registro de cancelamentos e prazos excedidos durante preparação;
-o teste focado `go test ./internal/integrations/bling` passou. Essa correção
-ainda precisa ser publicada e aplicada na próxima build.
+duas horas. O classificador de cancelamentos e prazos excedidos também foi
+corrigido e publicado no commit `a787a29`. A nova build está aberta e mostra a
+correção do líquido. A carga que terminou às 02:14 ocorreu antes da build nova e
+permanece sem publicação completa.
 
 ## Saldo e regras aprovadas
 
@@ -39,15 +64,14 @@ saldo bancário atual.
 
 ## O que falta antes de aprovar a T02
 
-1. Publicar a correção do código de erro, reconstruir aplicativo e worker e
-   executar uma única carga completa com o prazo de duas horas.
-2. Confirmar que os valores novos aparecem no aplicativo nativo.
+1. Publicar a correção atual de seleção/ordem das taxas e reconstruir o worker.
+2. Executar uma carga completa atualizada e confirmar publicação de Contas a
+   Pagar, Contas a Receber, taxas e movimentos.
 3. Conferir as semanas selecionadas contra os relatórios correspondentes de
    Contas a Receber (líquido) e Contas a Pagar.
 4. Confirmar o saldo da primeira semana e os fechamentos semanais com a base
    conciliada do Itaú.
-5. Abrir a T02 no protótipo para revisão visual e aguardar a aprovação de
-   Gisele.
+5. Aguardar a aprovação visual e numérica de Gisele para encerrar a T02.
 
 Somente depois da aprovação da T02 começa a T03. Percentuais antigos de BK-062
 e do projeto não foram recalculados e devem ser tratados como histórico até a

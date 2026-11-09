@@ -91,14 +91,18 @@ func buildBlingSyncSteps(result *BlingRawSyncResult, dateMode string, includeCas
 	if dateMode != blingDateFilterPayment {
 		steps = append(steps, blingSyncStep{target: &result.Receivables, run: receivables})
 	}
-	if dateMode != blingDateFilterReceived {
-		steps = append(steps, blingSyncStep{target: &result.Payables, run: payables})
-	}
+	// Payment terms and financial account identities are quick reference data
+	// needed to render receivable net values and balance lineage. Read them
+	// before the potentially very large payable detail hydration so a timeout in
+	// that final source does not leave the dashboard without current terms.
 	if includePaymentMethods {
 		steps = append(steps, blingSyncStep{target: &result.PaymentMethods, run: paymentMethods})
 	}
 	if includeFinancialAccounts {
 		steps = append(steps, blingSyncStep{target: &result.FinancialAccounts, run: financialAccounts})
+	}
+	if dateMode != blingDateFilterReceived {
+		steps = append(steps, blingSyncStep{target: &result.Payables, run: payables})
 	}
 	return steps
 }

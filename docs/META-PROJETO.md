@@ -1,5 +1,29 @@
 # Meta do Majucau
 
+### Correção da receita líquida zerada na T02 — 09/11/2026, 02:33 BRT
+
+Conferi o protótipo real na T02 e identifiquei por que a receita aparecia como
+R$ 0,00: a leitura mais recente de Contas a Receber foi salva, mas a atualização
+completa expirou durante Contas a Pagar antes de salvar as formas de pagamento.
+O cálculo exigia taxas da mesma execução e transformava ausência de taxa em
+zero. Na janela 22–28/11, a lista do Bling tem 146 títulos, R$ 45.482,22 brutos;
+com a última configuração de taxas válida, o líquido calculado é R$ 43.790,66,
+exatamente o total líquido mostrado no relatório enviado pela responsável.
+
+Corrigi a seleção para usar a tabela de taxas oficial mais recente que terminou
+com sucesso, vinculada à mesma conta Bling, mesmo que pertença à execução
+anterior. Também movi a atualização rápida de taxas e identidades de contas para
+antes da hidratação longa de Contas a Pagar. A fórmula financeira e as telas
+aprovadas não mudaram. Testes focados de dashboard/PostgreSQL, integração Bling
+e worker passaram. Às 02:36 reconstruí e abri o protótipo atualizado; a T02
+mostra R$ 43.790,66 de entradas líquidas e -R$ 25.275,71 de saídas para
+22–28/11, iguais aos relatórios enviados. A última carga de Contas a Pagar não
+terminou: o lote novo foi `FAILED`/`RAW_ONLY` às 02:14, e a tela preserva o
+último lote normalizado. Outras semanas e uma carga completa ainda precisam de
+conferência. T02 segue aberta para aprovação; T03 aguarda.
+
+Evidência: [`T02-RECEIVABLE-NET-VALUE-ROOT-CAUSE-2026-11-09.md`](evidence/T02-RECEIVABLE-NET-VALUE-ROOT-CAUSE-2026-11-09.md).
+
 ### Estado real da T02 — carga completa interrompida pelo limite antigo — 09/11/2026, 02:18 BRT
 
 Abri o aplicativo nativo Majucau e conferi a tela real pela árvore de

@@ -455,9 +455,8 @@ latest_daily_receivable_snapshot AS (
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
      AND b.resource = 'formas-pagamentos'
-     AND b.correlation_id = (SELECT correlation_id FROM latest_daily_receivable_snapshot)
      AND b.connection_id = (SELECT connection_id FROM latest_daily_receivable_snapshot)
-     AND b.status IN ('SUCCESS', 'PARTIAL')
+     AND b.status = 'SUCCESS'
      AND b.data_stage = 'NORMALIZED'
    ORDER BY b.finished_at DESC, b.id DESC
    LIMIT 1

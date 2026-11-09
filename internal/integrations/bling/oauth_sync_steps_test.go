@@ -37,7 +37,7 @@ func TestRunIndependentBlingSyncStepsAttemptsRemainingSourcesAfterFailure(t *tes
 	)
 	failures := runIndependentBlingSyncSteps(steps...)
 
-	if len(attempted) != 6 || attempted[0] != "cash_movements" || attempted[1] != "reconciled_cash_movements" || attempted[2] != "receivables" || attempted[3] != "payables" || attempted[4] != "payment_methods" || attempted[5] != "financial_accounts" {
+	if len(attempted) != 6 || attempted[0] != "cash_movements" || attempted[1] != "reconciled_cash_movements" || attempted[2] != "receivables" || attempted[3] != "payment_methods" || attempted[4] != "financial_accounts" || attempted[5] != "payables" {
 		t.Fatalf("attempted sources = %v, want all six in order", attempted)
 	}
 	if len(failures) != 1 || !errors.Is(failures[0], wantFailure) {

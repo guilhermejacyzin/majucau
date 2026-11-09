@@ -156,7 +156,13 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 			t.Fatalf("mark %s normalized: %v", resource, err)
 		}
 	}
-	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE connection_id = $1::uuid AND resource = 'formas-pagamentos' AND correlation_id = $2`, connectionID, correlationID); err != nil {
+	// Payment-method fees are stable configuration and may have completed in
+	// the last successful sync even when a newer, slow payable sync times out.
+	// The dashboard must keep using the most recent successful terms.
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET correlation_id = '00000000-0000-4000-8000-000000000099' WHERE id = $1::uuid`, paymentMethodsBatchID); err != nil {
+		t.Fatalf("separate last successful payment-method batch from current receivables run: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE id = $1::uuid`, paymentMethodsBatchID); err != nil {
 		t.Fatalf("normalize payment-method batch for liquid receivable fixture: %v", err)
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO bling_payment_method_terms (connection_id, sync_batch_id, source_id, destination, fee_rate, fee_rate_known, fixed_fee, fixed_fee_known, settlement_days, settlement_known, use_business_days, business_days_known) VALUES

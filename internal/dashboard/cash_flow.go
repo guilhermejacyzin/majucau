@@ -61,9 +61,12 @@ SELECT to_regclass('public.bling_cash_movement_reconciled_snapshot_rows') IS NOT
 `
 
 // T02 mirrors the Bling Contas a Receber/Contas a Pagar reports, grouped by due
-// date. Receivables use the displayed liquid value calculated from the
-// same-run official payment-method terms. Do not add the external Nuvem file to
-// T02: the Bling receivables report already includes Nuvem Pago payment methods.
+// date. Receivables use the displayed liquid value calculated from the most
+// recent successful, normalized official payment-method terms. Payment-method
+// settings are refreshed independently from the slower payable detail load, so
+// a payable timeout must not turn otherwise calculable receivables into zero.
+// Do not add the external Nuvem file to T02: the Bling receivables report
+// already includes Nuvem Pago payment methods.
 // Do not source values from Bling's prepared Flow of Cash report.
 const cashFlowCandidatesSQL = `
 WITH ` + dashboardEligibleReceivablesCTE + `, daily AS (

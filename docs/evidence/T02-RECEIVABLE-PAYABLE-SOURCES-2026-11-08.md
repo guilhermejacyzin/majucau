@@ -1,5 +1,12 @@
 # T02 — origem e conferência das receitas e despesas — 08/11/2026
 
+> **Correção posterior — 09/11/2026:** a API das Contas a Receber não traz a
+> coluna “Líquido” pronta. Para espelhá-la sem zerar a receita quando a carga
+> atual é interrompida antes das formas de pagamento, a T02 usa a última tabela
+> oficial de taxas **bem-sucedida e normalizada** da mesma conta Bling. A nova
+> carga de taxas é priorizada antes da hidratação longa de Contas a Pagar. Ver
+> [`T02-RECEIVABLE-NET-VALUE-ROOT-CAUSE-2026-11-09.md`](./T02-RECEIVABLE-NET-VALUE-ROOT-CAUSE-2026-11-09.md).
+
 ## Regra aprovada
 
 - A T02 não usa o relatório preparado “Fluxo de Caixa” do Bling.
@@ -12,7 +19,7 @@
 
 As capturas da responsável mostram “Todas as contas financeiras” e títulos “Em aberto”. Contas a Pagar: 14 títulos, total de **R$ 25.275,71**. Contas a Receber: 146 títulos, **R$ 45.482,22 bruto**, taxas de **R$ 1.691,56** e **R$ 43.790,66 líquido**. O resultado de receita da semana deve reconciliar com o líquido da lista para o mesmo intervalo e filtros.
 
-O próprio Bling descreve o líquido como valor total menos as taxas da forma de pagamento e documenta a taxa percentual, fixa e arredondamento. A API de Contas a Receber não retorna a coluna “Líquido”; para reproduzi-la, o app usa as configurações oficiais da forma de pagamento obtidas na mesma carga diária. Se as taxas necessárias não forem conhecidas, não deve substituir o resultado por bruto.
+O próprio Bling descreve o líquido como valor total menos as taxas da forma de pagamento e documenta a taxa percentual, fixa e arredondamento. A API de Contas a Receber não retorna a coluna “Líquido”; para reproduzi-la, o app usa as configurações oficiais mais recentes que tenham sido sincronizadas com sucesso para a mesma conta. Se as taxas necessárias não forem conhecidas, não deve substituir o resultado por bruto.
 
 ## Auditoria e causa encontrada
 

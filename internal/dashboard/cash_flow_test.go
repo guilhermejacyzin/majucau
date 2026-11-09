@@ -69,6 +69,9 @@ func TestT02ReceivablesUseLiquidAmountsAndOfficialPaymentMethodTerms(t *testing.
 	if !strings.Contains(cashFlowCandidatesSQL, "r.liquid_amount") {
 		t.Fatal("T02 weekly receipts must consume the shared liquid amount")
 	}
+	if strings.Contains(dashboardEligibleReceivablesCTE, "b.correlation_id = (SELECT correlation_id FROM latest_daily_receivable_snapshot)") {
+		t.Fatal("liquid amounts must retain the latest successful payment-method terms even if payable hydration times out before the same-run terms batch")
+	}
 	if !strings.Contains(cashFlowCandidatesSQL, "FROM eligible_receivables r") || !strings.Contains(cashFlowCandidatesSQL, "r.source_system = 'BLING'") || !strings.Contains(cashFlowCandidatesSQL, "r.source_entity = 'bling.conta_receber'") {
 		t.Fatal("T02 receipts must come directly from the current Bling Contas a Receber snapshot")
 	}

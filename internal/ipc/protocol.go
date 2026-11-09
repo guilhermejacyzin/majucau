@@ -16,10 +16,14 @@ const MaxMessageSize = 1 << 20
 // keeping every stream frame comfortably below MaxMessageSize.
 const StreamChunkSize = 512 << 10
 
-// BlingRefreshTimeout bounds a complete, paginated, read-only refresh in both
-// the desktop client and the worker pipe. Large accounts require detail reads
-// for each 100-record page and must remain within Bling's shared rate limit.
-const BlingRefreshTimeout = 2 * time.Hour
+// BlingSyncTimeout bounds a complete, paginated, read-only Bling sync in both
+// the desktop client and worker pipe. Large accounts require detail reads for
+// each 100-record page and must remain within Bling's shared rate limit.
+const BlingSyncTimeout = 2 * time.Hour
+
+// BlingRefreshTimeout is kept as an alias for callers that explicitly request
+// the full refresh operation.
+const BlingRefreshTimeout = BlingSyncTimeout
 
 var (
 	ErrInvalidRequest     = errors.New("invalid ipc request")

@@ -1,5 +1,41 @@
 # Status atual — 09/11/2026, 02:36 BRT
 
+## Carga da T02 interrompida por HTTP 401 em leitura de detalhes — 09/11/2026, 03:44 BRT
+
+**Correção de código preparada:** a carga longa de Contas a Pagar expirou depois
+de preparar 67 das 104 páginas. O lote terminou `FAILED`/`RAW_ONLY`, com
+`BLING_API_UNAUTHORIZED`, e não publicou os novos dados. A sessão OAuth expirou
+às 03:44 enquanto eram lidos detalhes de títulos. A auditoria do adapter mostrou
+que as listagens já renovavam o token após HTTP 401, mas as leituras individuais
+de detalhe não acionavam essa renovação. Esse era um caminho usado pela
+preparação de Contas a Pagar.
+
+Corrigi as leituras GET de detalhe para renovar o token pelo callback protegido
+do worker e repetir uma vez a leitura segura. Se a renovação falhar ou não
+retornar token novo, a leitura continua falhando sem repetir com credencial
+inválida. Dois testes do adapter cobrem renovação com sucesso e falha fechada;
+`go test ./internal/integrations/bling` passou. Após reconstruir o worker,
+executei pela interface a leitura filtrada por vencimento de 09/11/2026 a
+08/01/2027. Ela foi cancelada em 10 segundos, com 500 recebíveis e zero contas
+a pagar lidas. A auditoria encontrou um segundo limite: o aplicativo permitia
+dois minutos, mas o serviço IPC do worker mantinha 10 segundos para o método
+filtrado `bling.sync`. Corrigi a configuração para ambos os lados aceitarem
+até duas horas, o suficiente para leitura paginada com os detalhes da API.
+
+Ainda falta reconstruir/reabrir o protótipo, completar uma nova leitura real
+dos dois relatórios, confirmar a publicação e comparar os valores semanais. A
+correção OAuth e a correção de prazo estão locais e ainda não comprovam dados
+atualizados na tela. T02 continua sem homologação visual/numérica.
+
+**Atualização 04:09 BRT:** `scripts/verify.ps1` passou depois das duas correções:
+testes Go, vet, scanner de vulnerabilidades, migrations, sqlc, scanner local de
+segredos, validação do instalador, lint, tipagem e 75 testes/build do frontend.
+O build terminou sem vulnerabilidades no `npm audit`. A nova leitura real ainda
+precisa ser feita com o worker recém-compilado; a tentativa anterior foi
+cancelada antes da correção do prazo IPC.
+
+Evidência: [`T02-PAYABLE-DETAIL-401-REFRESH-2026-11-09.md`](evidence/T02-PAYABLE-DETAIL-401-REFRESH-2026-11-09.md).
+
 ## Correção aplicada: receita líquida da T02
 
 O protótipo mostrava entradas R$ 0,00 apesar de Contas a Receber ter dados. A

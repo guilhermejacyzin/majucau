@@ -233,6 +233,11 @@ func TestSyncBlingForwardsExplicitFilterAndOnlyCounts(t *testing.T) {
 		if req.Method != ipc.MethodBlingSync {
 			return ipc.Response{}, ipc.ErrUnsupportedMethod
 		}
+		deadline, ok := ctx.Deadline()
+		remaining := time.Until(deadline)
+		if !ok || remaining <= 29*time.Minute || remaining > ipc.BlingSyncTimeout {
+			t.Fatalf("filtered sync deadline remaining = %s, want up to %s", remaining, ipc.BlingSyncTimeout)
+		}
 		var input application.BlingSyncRequest
 		if err := json.Unmarshal(req.Payload, &input); err != nil || input.ReceivedDateFrom != "2026-09-01" {
 			t.Fatalf("unexpected sync request: %#v %v", input, err)

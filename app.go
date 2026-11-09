@@ -585,10 +585,9 @@ func (a *App) SyncBling(input application.BlingSyncRequest) application.BlingSyn
 	if parent == nil {
 		parent = context.Background()
 	}
-	timeout := 2 * time.Minute
+	timeout := ipc.BlingSyncTimeout
 	method := ipc.MethodBlingSync
 	if input.FullRefresh {
-		timeout = ipc.BlingRefreshTimeout
 		method = ipc.MethodBlingRefresh
 		// The refresh endpoint accepts an empty object; the flag is an app-side
 		// dispatch hint and must not cross IPC as part of the request payload.

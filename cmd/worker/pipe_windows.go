@@ -17,9 +17,12 @@ import (
 
 func runWorkerPipe(ctx context.Context, handler ipc.Handler) (returnErr error) {
 	cfg := ipc.DefaultNamedPipeConfig()
-	// A complete refresh may span a large account's many pages; share the
-	// desktop deadline so neither end cancels a valid read-only load prematurely.
-	cfg.MethodTimeouts = map[ipc.Method]time.Duration{ipc.MethodBlingRefresh: ipc.BlingRefreshTimeout}
+	// Manual and scheduled reads can span many detail pages; share the desktop
+	// deadline so neither end cancels a valid read-only load prematurely.
+	cfg.MethodTimeouts = map[ipc.Method]time.Duration{
+		ipc.MethodBlingSync:    ipc.BlingSyncTimeout,
+		ipc.MethodBlingRefresh: ipc.BlingSyncTimeout,
+	}
 	if usesWindowsServiceExecution(ctx) {
 		serviceSID, err := lookupInstalledServiceSID()
 		if err != nil {

@@ -1,5 +1,21 @@
 # Meta do Majucau
 
+### Correção de renovação OAuth em detalhes de Contas a Pagar — 09/11/2026
+
+A investigação da carga real identificou que o adapter renovava o token nas
+listas do Bling, mas não nas leituras de detalhe de título. Quando o token
+expirou durante a preparação de Contas a Pagar, a carga falhou em 67/104 páginas
+sem publicar. Corrigi o caminho de detalhe para renovar com o callback protegido
+e repetir o GET uma vez; acrescentei testes para renovação bem-sucedida e falha
+segura. Depois, uma leitura manual revelou que o worker cancelava `bling.sync`
+em 10 segundos, embora o aplicativo permitisse 2 minutos. Alinhei os prazos da
+leitura filtrada e do refresh completo em até duas horas nos dois lados do IPC.
+O verificador completo passou após essas alterações. Ainda falta reconstruir e
+reabrir o protótipo com a última correção, executar a carga real completa e
+validar os totais da T02 antes de pedir aprovação ou iniciar T03.
+
+Evidência: [`T02-PAYABLE-DETAIL-401-REFRESH-2026-11-09.md`](evidence/T02-PAYABLE-DETAIL-401-REFRESH-2026-11-09.md).
+
 ### Correção da receita líquida zerada na T02 — 09/11/2026, 02:33 BRT
 
 Conferi o protótipo real na T02 e identifiquei por que a receita aparecia como

@@ -71,6 +71,74 @@ func TestGetPayableAndBorderoReadBoundedRawDetails(t *testing.T) {
 	}
 }
 
+func TestGetPayableRefreshesExpiredAccessTokenOnce(t *testing.T) {
+	var calls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if r.Method != http.MethodGet || r.URL.Path != "/Api/v3/contas/pagar/123" {
+			t.Fatalf("request = %s %s, want GET payable detail", r.Method, r.URL.Path)
+		}
+		if calls == 1 {
+			if got := r.Header.Get("Authorization"); got != "Bearer expired-token" {
+				t.Errorf("first authorization = %q, want expired token", got)
+			}
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer refreshed-token" {
+			t.Errorf("retry authorization = %q, want refreshed token", got)
+		}
+		_, _ = w.Write([]byte(`{"data":{"id":123,"saldo":250.00}}`))
+	}))
+	defer server.Close()
+
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "expired-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	refreshCalls := 0
+	client.SetUnauthorizedTokenRefresh(func(context.Context, string) (string, error) {
+		refreshCalls++
+		return "refreshed-token", nil
+	})
+
+	record, err := client.GetPayable(context.Background(), 123)
+	if err != nil || string(record) != `{"id":123,"saldo":250.00}` {
+		t.Fatalf("GetPayable() after refresh = %s, err = %v", record, err)
+	}
+	if calls != 2 || refreshCalls != 1 {
+		t.Fatalf("requests=%d refreshes=%d, want 2/1", calls, refreshCalls)
+	}
+}
+
+func TestGetPayableDoesNotRetryWhenTokenRefreshFails(t *testing.T) {
+	var calls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer server.Close()
+
+	client, err := NewBlingAPIClient(server.Client(), server.URL+"/Api/v3", "expired-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	refreshErr := errors.New("refresh rejected")
+	refreshCalls := 0
+	client.SetUnauthorizedTokenRefresh(func(context.Context, string) (string, error) {
+		refreshCalls++
+		return "", refreshErr
+	})
+
+	_, err = client.GetPayable(context.Background(), 123)
+	if !errors.Is(err, ErrBlingAPIUnauthorized) || !errors.Is(err, refreshErr) {
+		t.Fatalf("GetPayable() error = %v, want authorization and refresh errors", err)
+	}
+	if calls != 1 || refreshCalls != 1 {
+		t.Fatalf("requests=%d refreshes=%d, want 1/1", calls, refreshCalls)
+	}
+}
+
 func TestListPaymentMethodsUsesBoundedPagination(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || r.URL.Path != "/Api/v3/formas-pagamentos" {

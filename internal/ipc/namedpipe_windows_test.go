@@ -88,7 +88,10 @@ func TestNamedPipeHealthRoundTripAndCancellation(t *testing.T) {
 
 func TestNamedPipeMethodTimeoutOverridesShortDefault(t *testing.T) {
 	cfg := DefaultNamedPipeConfig()
-	cfg.MethodTimeouts = map[Method]time.Duration{MethodBlingRefresh: BlingRefreshTimeout}
+	cfg.MethodTimeouts = map[Method]time.Duration{MethodBlingSync: BlingSyncTimeout, MethodBlingRefresh: BlingSyncTimeout}
+	if got := requestTimeoutFor(cfg, MethodBlingSync); got != BlingSyncTimeout {
+		t.Fatalf("filtered sync timeout = %s, want %s", got, BlingSyncTimeout)
+	}
 	if got := requestTimeoutFor(cfg, MethodBlingRefresh); got != BlingRefreshTimeout {
 		t.Fatalf("refresh timeout = %s, want %s", got, BlingRefreshTimeout)
 	}

@@ -302,6 +302,19 @@ func (c *BlingAPIClient) getDataRecord(ctx context.Context, resource string) (js
 	req.Header.Set("enable-jwt", "1")
 
 	return withBlingReadRetry(req.Context(), req.Method, c.maxAttempts, c.wait, c.random, func() (json.RawMessage, error) {
+		record, err := c.getDataRecordAttempt(req)
+		if !errors.Is(err, ErrBlingAPIUnauthorized) || c.refreshAccessToken == nil {
+			return record, err
+		}
+		refreshedToken, refreshErr := c.refreshAccessToken(req.Context(), c.accessToken)
+		if refreshErr != nil {
+			return nil, errors.Join(ErrBlingAPIUnauthorized, refreshErr)
+		}
+		if strings.TrimSpace(refreshedToken) == "" || refreshedToken == c.accessToken {
+			return nil, ErrBlingAPIUnauthorized
+		}
+		c.accessToken = refreshedToken
+		req.Header.Set("Authorization", "Bearer "+refreshedToken)
 		return c.getDataRecordAttempt(req)
 	})
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Tooltip } from './components/Tooltip'
 import type { TooltipId } from './tooltips'
-import type { DashboardBankBalance, DashboardCashFlowPeriod, DashboardCashMovementRow, DashboardMetric, DashboardPayableRow, DashboardReceivableRow, DashboardReceivablesByMethod, DashboardSnapshot } from './bootstrap'
+import type { DashboardCashFlowPeriod, DashboardCashMovementRow, DashboardMetric, DashboardPayableRow, DashboardReceivableRow, DashboardReceivablesByMethod, DashboardSnapshot } from './bootstrap'
 import { formatBRL, formatPercentVariation } from './money'
 import sidebarReference from './assets/images/mocap-sidebar.png'
 
@@ -48,10 +48,10 @@ type ScreenLayout = 'standard' | 'critical' | 'calculation' | 'market' | 'foreca
 type ScreenConfig = { number: string; title: string; subtitle: string; cards: Card[]; middleTitle: string; middleSubtitle: string; rightTitle: string; rightSubtitle: string; lower: Card[]; alerts: string[]; table?: string[]; tableRows?: string[][]; tableEmptyMessage?: string; distributionEmptyMessage?: string; distributionItems?: string[]; alertSubtitles?: string[]; alertsTitle?: string; hideCardActions?: boolean; chart?: boolean; layout?: ScreenLayout }
 
 const configs: Record<Exclude<MockupScreenKey, 'integrations'>, ScreenConfig> = {
-  executive: { number: '01', title: 'VISÃO EXECUTIVA', subtitle: 'Panorama financeiro e operacional do negócio', cards: [{ label: 'SALDO ATUAL', icon: 'bank', tone: 'green', supporting: 'Banco conciliado' }, { label: 'A RECEBER', icon: 'receivable', tone: 'blue', supporting: '60 dias · valor líquido' }, { label: 'A PAGAR', icon: 'payable', tone: 'orange', supporting: '60 dias · contas a pagar' }, { label: 'MENOR SALDO 30 / 60 DIAS', icon: 'trend', tone: 'blue', variant: 'minimum-balance' }], middleTitle: 'FLUXO DE CAIXA PROJETADO', middleSubtitle: 'Próximos 30 dias', rightTitle: 'DISTRIBUIÇÃO DO SALDO', rightSubtitle: 'Por conta / meio', lower: [{ label: 'VENDAS DO MÊS', icon: 'cart', tone: 'blue', supporting: 'Meta' }, { label: 'MARGEM BRUTA', icon: 'chart', tone: 'green', supporting: 'Meta' }, { label: 'ESTOQUE / COBERTURA', icon: 'box', tone: 'orange', supporting: 'Cacau, embalagens e acabados' }, { label: 'PRODUÇÃO PREVISTA', icon: 'production', tone: 'blue', supporting: 'Próximas 2 semanas' }, { label: 'COMPRAS PREVISTAS', icon: 'shopping', tone: 'purple', supporting: 'Próximos 15 dias' }], alerts: ['Saldo projetado abaixo da reserva mínima'], chart: true },
+  executive: { number: '01', title: 'VISÃO EXECUTIVA', subtitle: 'Panorama financeiro e operacional do negócio', cards: [{ label: 'SALDO ATUAL', icon: 'bank', tone: 'green', supporting: 'Banco conciliado' }, { label: 'A RECEBER', icon: 'receivable', tone: 'blue', supporting: '60 dias · valor líquido' }, { label: 'A PAGAR', icon: 'payable', tone: 'orange', supporting: '60 dias · contas a pagar' }, { label: 'MENOR SALDO 30 / 60 DIAS', icon: 'trend', tone: 'blue', variant: 'minimum-balance' }], middleTitle: 'FLUXO DE CAIXA PROJETADO', middleSubtitle: 'Próximos 30 dias', rightTitle: 'DISTRIBUIÇÃO DOS RECEBÍVEIS', rightSubtitle: 'Valor líquido por forma de recebimento, conforme Contas a Receber.', lower: [{ label: 'VENDAS DO MÊS', icon: 'cart', tone: 'blue', supporting: 'Meta' }, { label: 'MARGEM BRUTA', icon: 'chart', tone: 'green', supporting: 'Meta' }, { label: 'ESTOQUE / COBERTURA', icon: 'box', tone: 'orange', supporting: 'Cacau, embalagens e acabados' }, { label: 'PRODUÇÃO PREVISTA', icon: 'production', tone: 'blue', supporting: 'Próximas 2 semanas' }, { label: 'COMPRAS PREVISTAS', icon: 'shopping', tone: 'purple', supporting: 'Próximos 15 dias' }], alerts: ['Saldo projetado abaixo da reserva mínima'], chart: true },
   cashflow: { number: '02', title: 'FLUXO DE CAIXA', subtitle: 'Realizado, previsto e projetado do caixa', cards: [{ label: 'SALDO ATUAL', icon: 'bank', tone: 'green', supporting: 'Banco conciliado' }, { label: 'ENTRADAS', icon: 'trend', tone: 'green', supporting: 'Realizado + previsto', variant: 'period-comparison' }, { label: 'SAÍDAS', icon: 'trend', tone: 'orange', supporting: 'Compromissos e pagamentos', variant: 'period-comparison' }, { label: 'MENOR SALDO 30 / 60 DIAS', icon: 'trend', tone: 'blue', variant: 'minimum-balance' }], middleTitle: 'FLUXO DE CAIXA CONSOLIDADO', middleSubtitle: 'Próximos 30 dias', rightTitle: 'SEMANA CRÍTICA', rightSubtitle: 'Maior total de despesas / compromissos', lower: [{ label: 'RECEBIDO NO MÊS', icon: 'cart', tone: 'blue', supporting: 'Até a data-base' }, { label: 'PAGO NO MÊS', icon: 'document', tone: 'red', supporting: 'Até a data-base' }, { label: 'RESERVA MÍNIMA', icon: 'wallet', tone: 'orange', supporting: 'Parametrizada' }, { label: 'SALDO TRANSFERÍVEL', icon: 'flow', tone: 'blue', supporting: 'Aplicação possível' }, { label: 'NÍVEL DE CAIXA', icon: 'chart', tone: 'blue', supporting: 'Acima da reserva' }], alerts: ['Saldo projetado abaixo da reserva mínima'], chart: true, layout: 'critical' },
   receivables: { number: '03', title: 'CONTAS A RECEBER', subtitle: 'Recebíveis e recebimentos', cards: [{ label: 'TOTAL A RECEBER', icon: 'bank', tone: 'green', supporting: 'Clientes e boletos' }, { label: 'EM ATRASO', icon: 'clock', tone: 'orange', supporting: 'Recebimentos' }, { label: 'TOTAL RECEBIDO', icon: 'trend', tone: 'green', supporting: 'Entradas conciliadas no mês' }], middleTitle: 'RECEBÍVEIS', middleSubtitle: 'Títulos em aberto e previstos', rightTitle: 'DISTRIBUIÇÃO DOS RECEBÍVEIS', rightSubtitle: 'Valor líquido por forma de recebimento, conforme Contas a Receber.', distributionEmptyMessage: 'Sem dados disponíveis', lower: [{ label: 'PIX', icon: 'money', tone: 'blue', supporting: 'Valor líquido em Contas a Receber' }, { label: 'BOLETOS', icon: 'document', tone: 'green', supporting: 'Valor líquido em Contas a Receber' }, { label: 'CARTÃO', icon: 'money', tone: 'blue', supporting: 'Valor líquido em Contas a Receber' }], alerts: [], table: ['Cliente', 'Origem', 'Vencimento', 'Valor bruto', 'Valor líquido', 'Status'] },
-  payables: { number: '04', title: 'CONTAS A PAGAR', subtitle: 'Obrigações, vencimentos e divergências', cards: [{ label: 'TOTAL A PAGAR', icon: 'document', tone: 'orange', supporting: 'Bling' }, { label: 'VENCE HOJE', icon: 'calendar', tone: 'blue', supporting: 'Contas' }, { label: 'EM ATRASO', icon: 'clock', tone: 'orange', supporting: 'Obrigações' }, { label: 'DIVERGÊNCIAS', icon: 'refresh', tone: 'purple', supporting: 'Diferença ≠ pagamento parcial' }], middleTitle: 'OBRIGAÇÕES', middleSubtitle: 'Títulos a pagar e vencimentos', rightTitle: 'DISTRIBUIÇÃO A PAGAR', rightSubtitle: 'Por status', lower: [{ label: 'FORNECEDORES', icon: 'user', tone: 'blue', supporting: 'Ativos' }, { label: 'FRETES', icon: 'shopping', tone: 'green', supporting: 'Etiquetas e NF' }, { label: 'IMPOSTOS', icon: 'document', tone: 'blue', supporting: 'Competência' }, { label: 'SEM PAGTO PARCIAL', icon: 'warning', tone: 'orange', supporting: 'Regra' }, { label: 'VENCIMENTOS 7 DIAS', icon: 'calendar', tone: 'purple', supporting: 'Prioridade' }], alerts: ['Contas a pagar vencendo hoje', 'Obrigações em atraso', 'Títulos com divergência de valor', 'Pagamentos parciais não permitidos'], table: ['Fornecedor', 'Documento', 'Vencimento', 'Valor', 'Categoria', 'Status'] },
+  payables: { number: '04', title: 'CONTAS A PAGAR', subtitle: 'Títulos a pagar por data de vencimento', cards: [{ label: 'TOTAL A PAGAR NA DATA', icon: 'document', tone: 'orange', supporting: 'Total com vencimento no período' }, { label: 'VENCE NA DATA', icon: 'calendar', tone: 'blue', supporting: 'Quantidade de contas no período' }, { label: 'EM ATRASO NA DATA', icon: 'clock', tone: 'orange', supporting: 'Saldo vencido antes do período' }], middleTitle: 'OBRIGAÇÕES', middleSubtitle: 'Títulos a pagar e vencimentos', rightTitle: 'DISTRIBUIÇÃO A PAGAR', rightSubtitle: 'Por status', lower: [], alerts: [], table: ['Fornecedor', 'Documento', 'Vencimento', 'Valor', 'Categoria', 'Status'] },
   dre: { number: '06', title: 'DRE', subtitle: 'Demonstrativo do resultado do exercício', cards: [{ label: 'RECEITA BRUTA', icon: 'chart', tone: 'green', supporting: 'Mês atual' }, { label: 'RECEITA LÍQUIDA', icon: 'trend', tone: 'blue', supporting: 'Após deduções' }, { label: 'LUCRO BRUTO', icon: 'box', tone: 'orange', supporting: 'Margem' }, { label: 'RESULTADO LÍQUIDO', icon: 'database', tone: 'green', supporting: 'DRE Majucau' }], middleTitle: 'DRE CONSOLIDADA', middleSubtitle: 'Competência selecionada', rightTitle: 'COMPOSIÇÃO DO RESULTADO', rightSubtitle: 'Principais blocos', lower: [{ label: 'CMV / CPV', icon: 'box', tone: 'green', supporting: 'Base Bling' }, { label: 'DESPESAS', icon: 'chart', tone: 'green', supporting: 'Operacionais' }, { label: 'PERDAS', icon: 'warning', tone: 'orange', supporting: 'Sem dupla contagem' }, { label: 'TRIBUTOS', icon: 'document', tone: 'blue', supporting: 'Competência' }, { label: 'UNMAPPED', icon: 'document', tone: 'purple', supporting: 'Lançamentos pendentes' }], alerts: ['Lançamentos UNMAPPED na DRE', 'Perdas com competência pendente', 'Resultado financeiro em revisão', 'Sem conta automática de fechamento'], table: ['Descrição', 'Valor (R$)'] },
   'trial-balance': { number: '07', title: 'BALANCETE', subtitle: 'Débitos, créditos e saldos com rastreabilidade', cards: [{ label: 'DÉBITOS', icon: 'bank', tone: 'green', supporting: 'Período' }, { label: 'CRÉDITOS', icon: 'trend', tone: 'blue', supporting: 'Período' }, { label: 'SALDO', icon: 'document', tone: 'orange', supporting: 'Sem conta de ajuste' }, { label: 'DIVERGÊNCIAS', icon: 'warning', tone: 'red', supporting: 'Revisão necessária' }], middleTitle: 'LANÇAMENTOS DO BALANCETE', middleSubtitle: 'Competência selecionada', rightTitle: 'COMPOSIÇÃO DOS SALDOS', rightSubtitle: 'Por grupo contábil', lower: [{ label: 'LANÇAMENTOS', icon: 'cart', tone: 'blue', supporting: 'No período' }, { label: 'CONTRAPARTIDAS', icon: 'chart', tone: 'green', supporting: 'Rastreáveis' }, { label: 'SALDOS INICIAIS', icon: 'box', tone: 'orange', supporting: 'Pendente' }, { label: 'SEM AJUSTE', icon: 'reconcile', tone: 'blue', supporting: 'Sem conta automática' }, { label: 'ORIGEM', icon: 'control', tone: 'purple', supporting: 'Bling + Majucau' }], alerts: ['Divergências de saldo / contrapartida', 'Saldos iniciais permanecem abertos', 'Ausência de saldo inicial não vira zero', 'Sem conta automática para fechar diferença'], table: ['Conta', 'Descrição', 'Débito', 'Crédito', 'Saldo', 'Status'] },
   'investment-calculator': { number: '08', title: 'CALCULADORA DE APLICAÇÃO', subtitle: 'Capacidade de investimento e regras de segurança', cards: [{ label: 'LUCRO ELEGÍVEL', icon: 'chart', tone: 'green', supporting: 'DRE Majucau' }, { label: 'CAIXA CONSOLIDADO', icon: 'bank', tone: 'blue', supporting: 'Posição atual' }, { label: 'RESERVA MÍNIMA', icon: 'wallet', tone: 'orange', supporting: 'Parametrizada' }, { label: 'CAPACIDADE DE APLICAÇÃO', icon: 'trend', tone: 'blue', supporting: 'Saldo transferível' }], middleTitle: 'CÁLCULO DE CAPACIDADE', middleSubtitle: 'Fórmula auditável', rightTitle: 'REGRAS DA DECISÃO', rightSubtitle: 'Critérios vigentes', lower: [{ label: 'CDI PLUS APLICADO', icon: 'chart', tone: 'green', supporting: 'Histórico' }, { label: 'SALDO TRANSFERÍVEL', icon: 'flow', tone: 'blue', supporting: 'Disponível' }, { label: 'SEMANA CRÍTICA', icon: 'clock', tone: 'orange', supporting: 'Diagnóstico' }, { label: 'PMR', icon: 'chart', tone: 'purple', supporting: 'Diagnóstico' }, { label: 'CICLO FINANCEIRO', icon: 'calendar', tone: 'blue', supporting: 'Indicador' }], alerts: ['Posição de caixa da semana crítica permanece aberta', 'Reserva mínima ativa', 'PMR / PMP / PME não alteram automaticamente a aplicação', 'Validação final depende das fontes reais'], table: ['Componente', 'Valor'], layout: 'calculation' },
@@ -127,6 +127,54 @@ function sumCashFlowMetrics(metrics: DashboardMetric[]): DashboardMetric {
   const absolute = negative ? -units : units
   const value = `${negative ? '-' : ''}${absolute / 10_000n}.${(absolute % 10_000n).toString().padStart(4, '0')}`
   return { value, state: metrics.some((metric) => metric.state === 'PARTIAL') ? 'PARTIAL' : 'CONFIRMED', source_system: 'BLING' }
+}
+
+function sumPayableRows(rows: DashboardPayableRow[]): string {
+  let units = 0n
+  for (const row of rows) {
+    const value = row.value.trim()
+    if (!/^-?\d{1,15}(?:\.\d{1,4})?$/.test(value)) continue
+    const negativeValue = value.startsWith('-')
+    const unsigned = negativeValue ? value.slice(1) : value
+    const [whole, fraction = ''] = unsigned.split('.')
+    const rowUnits = BigInt(whole) * 10_000n + BigInt(fraction.padEnd(4, '0'))
+    units += negativeValue ? -rowUnits : rowUnits
+  }
+  const negativeTotal = units < 0n
+  const absolute = negativeTotal ? -units : units
+  return `${negativeTotal ? '-' : ''}${absolute / 10_000n}.${(absolute % 10_000n).toString().padStart(4, '0')}`
+}
+
+function sumReceivableRows(rows: DashboardReceivableRow[], valueKey: 'net_value' | 'gross_value'): DashboardMetric {
+  let units = 0n
+  for (const row of rows) {
+    const value = row[valueKey]?.trim() ?? ''
+    if (!/^-?\d{1,15}(?:\.\d{1,4})?$/.test(value)) continue
+    const negativeValue = value.startsWith('-')
+    const unsigned = negativeValue ? value.slice(1) : value
+    const [whole, fraction = ''] = unsigned.split('.')
+    const rowUnits = BigInt(whole) * 10_000n + BigInt(fraction.padEnd(4, '0'))
+    units += negativeValue ? -rowUnits : rowUnits
+  }
+  const negativeTotal = units < 0n
+  const absolute = negativeTotal ? -units : units
+  return { value: `${negativeTotal ? '-' : ''}${absolute / 10_000n}.${(absolute % 10_000n).toString().padStart(4, '0')}`, count: rows.length, state: 'CONFIRMED', source_system: 'BLING' }
+}
+
+function sumCashMovementRows(rows: DashboardCashMovementRow[]): DashboardMetric {
+  let units = 0n
+  for (const row of rows) {
+    const value = row.value.trim()
+    if (!/^-?\d{1,15}(?:\.\d{1,4})?$/.test(value)) continue
+    const negativeValue = value.startsWith('-')
+    const unsigned = negativeValue ? value.slice(1) : value
+    const [whole, fraction = ''] = unsigned.split('.')
+    const rowUnits = BigInt(whole) * 10_000n + BigInt(fraction.padEnd(4, '0'))
+    units += negativeValue ? -rowUnits : rowUnits
+  }
+  const negativeTotal = units < 0n
+  const absolute = negativeTotal ? -units : units
+  return { value: `${negativeTotal ? '-' : ''}${absolute / 10_000n}.${(absolute % 10_000n).toString().padStart(4, '0')}`, count: rows.length, state: 'CONFIRMED', source_system: 'BLING' }
 }
 
 function calculateClosingBalance(opening: DashboardMetric | undefined, inflows: DashboardMetric, outflows: DashboardMetric): DashboardMetric {
@@ -213,6 +261,21 @@ function saoPauloToday(): string {
 
 function CashFlowDateControls({ from, through, min, max, onFromChange, onThroughChange }: { from: string; through: string; min: string; max: string; onFromChange: (value: string) => void; onThroughChange: (value: string) => void }) {
   return <section className="mocap-period-controls" aria-label="Período do fluxo de caixa"><h2>Período do relatório</h2><label>De<input aria-label="Data inicial do fluxo de caixa" type="date" min={min} max={max} value={from} onChange={(event) => onFromChange(event.currentTarget.value)} /></label><label>Até<input aria-label="Data final do fluxo de caixa" type="date" min={min} max={max} value={through} onChange={(event) => onThroughChange(event.currentTarget.value)} /></label><span>A tabela, o gráfico e a semana crítica acompanham o período selecionado.</span></section>
+}
+
+function ReferenceDateControl({ from, through, onFromChange, onThroughChange, kind = 'receivable' }: { from: string; through: string; onFromChange: (value: string) => void; onThroughChange: (value: string) => void; kind?: 'receivable' | 'payable' }) {
+  const label = kind === 'payable' ? 'das contas a pagar' : 'dos recebíveis'
+  return <section className="mocap-period-controls mocap-reference-date-control" aria-label={`Período ${label}`}><h2>Período dos resultados</h2><label htmlFor={`mocap-${kind}-from`}>De<input id={`mocap-${kind}-from`} aria-label={`Data inicial ${label}`} type="date" value={from} onChange={(event) => onFromChange(event.currentTarget.value)} /></label><label htmlFor={`mocap-${kind}-through`}>Até<input id={`mocap-${kind}-through`} aria-label={`Data final ${label}`} type="date" value={through} onChange={(event) => onThroughChange(event.currentTarget.value)} /></label><span>Cards e detalhes acompanham o período selecionado.</span></section>
+}
+
+function rangeAfterStartChange(current: { from: string; through: string }, from: string, defaultThrough: string) {
+  const through = current.through || defaultThrough
+  return { from, through: through >= from ? through : from }
+}
+
+function rangeAfterThroughChange(current: { from: string; through: string }, through: string, defaultFrom: string) {
+  const from = current.from || defaultFrom
+  return { from: from <= through ? from : through, through }
 }
 
 function CashFlowWeeklyTable({ periods }: { periods: DashboardCashFlowPeriod[] }) {
@@ -397,7 +460,7 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
   )
 }
 
-function EmptyDistribution({ title, subtitle, onNavigate, emptyMessage = 'Sem dados', items, bankBalances = [], receivablesByMethod, receivablesTotal }: { title: string; subtitle: string; onNavigate?: (screen: MockupScreenKey) => void; emptyMessage?: string; items?: string[]; bankBalances?: DashboardBankBalance[]; receivablesByMethod?: DashboardReceivablesByMethod; receivablesTotal?: DashboardMetric }) {
+function EmptyDistribution({ title, subtitle, onNavigate, emptyMessage = 'Sem dados', items, receivablesByMethod, receivablesTotal }: { title: string; subtitle: string; onNavigate?: (screen: MockupScreenKey) => void; emptyMessage?: string; items?: string[]; receivablesByMethod?: DashboardReceivablesByMethod; receivablesTotal?: DashboardMetric }) {
   const isReceivables = title === 'DISTRIBUIÇÃO DOS RECEBÍVEIS'
   const methodItems = isReceivables ? [
     { label: 'PIX', metric: receivablesByMethod?.pix },
@@ -405,7 +468,7 @@ function EmptyDistribution({ title, subtitle, onNavigate, emptyMessage = 'Sem da
     { label: 'Cartão', metric: receivablesByMethod?.card },
     { label: 'Não identificados', metric: receivablesByMethod?.unclassified },
   ] : []
-  const legendItems = bankBalances.length > 0 ? bankBalances.map((balance) => ({ label: balance.account, value: balance.value })) : isReceivables ? methodItems.map((item) => ({ label: item.label, value: item.metric?.state === 'UNAVAILABLE' ? undefined : item.metric?.value })) : (items ?? ['Confirmado', 'Provisório', 'Pendente', 'Divergente']).map((label) => ({ label, value: undefined }))
+  const legendItems = isReceivables ? methodItems.map((item) => ({ label: item.label, value: item.metric?.state === 'UNAVAILABLE' ? undefined : item.metric?.value })) : (items ?? ['Confirmado', 'Provisório', 'Pendente', 'Divergente']).map((label) => ({ label, value: undefined }))
   const colors = ['dot-teal', 'dot-blue', 'dot-orange', 'dot-purple']
   const toUnits = (value?: string) => {
     if (!value || !/^-?\d{1,15}(?:\.\d{1,4})?$/.test(value.trim())) return 0n
@@ -428,11 +491,11 @@ function EmptyDistribution({ title, subtitle, onNavigate, emptyMessage = 'Sem da
     return `${['#0c8b88', '#2877eb', '#ffb334', '#8b41dd'][index]} ${Number(start) / 100}% ${Number(chartCursor) / 100}%`
   })
   const chartStyle = chartTotalUnits > 0n ? { background: `conic-gradient(${chartStops.join(', ')})` } : undefined
-  const chartTotalLabel = isReceivables && receivablesByMethod && receivablesTotal?.value && receivablesTotal.state !== 'UNAVAILABLE' && chartValues.every((_, index) => methodItems[index].metric?.state !== 'UNAVAILABLE') ? formatBRL(receivablesTotal.value) : emptyMessage
+  const chartTotalLabel = isReceivables && receivablesByMethod && receivablesTotal?.value !== undefined && receivablesTotal.state !== 'UNAVAILABLE' && chartValues.every((_, index) => methodItems[index].metric?.state !== 'UNAVAILABLE') ? formatBRL(receivablesTotal.value) : emptyMessage
   return <section className="mocap-panel mocap-distribution">
     <div className="mocap-panel-heading"><div><Icon icon="pie" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div>
     <div className="mocap-donut-wrap">
-      <div className={`mocap-donut${bankBalances.length > 0 || (isReceivables && chartTotalUnits > 0n) ? ' has-data' : ''}${isReceivables ? ' mocap-receivables-donut' : ''}`} style={chartStyle}><span>{bankBalances.length > 0 ? 'Soma dos lançamentos' : chartTotalLabel}</span></div>
+      <div className={`mocap-donut${isReceivables && chartTotalUnits > 0n ? ' has-data' : ''}${isReceivables ? ' mocap-receivables-donut' : ''}`} style={chartStyle}><span>{chartTotalLabel}</span></div>
       <div className="mocap-legend-list">{legendItems.map((item, index) => <span key={item.label}><i className={`tone-dot ${colors[index % colors.length]}`} />{item.label}<b>{item.value === undefined ? '—' : formatBRL(item.value)}</b></span>)}</div>
     </div>
     {isReceivables
@@ -449,8 +512,8 @@ function EmptyTable({ title, subtitle, columns, rows = [], emptyMessage = 'Sem d
   return <section className="mocap-panel mocap-table-panel"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>{title}</h2><p>{subtitle}</p></div></div></div><div className="mocap-table-scroll"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.length === 0 ? <tr><td colSpan={columns.length}><span>{emptyMessage}</span></td></tr> : rows.map((row, rowIndex) => <tr key={`${rowIndex}-${row[0]}`}>{columns.map((column, columnIndex) => <td key={`${column}-${columnIndex}`}>{row[columnIndex] ?? '—'}</td>)}</tr>)}</tbody></table></div><Tooltip id="metric.details"><button type="button" className="mocap-link" disabled>Ver detalhes <span>→</span></button></Tooltip></section>
 }
 
-function ReceivableDetailsDialog({ title, columns, rows, note, onClose }: { title: string; columns: string[]; rows: string[][]; note: string; onClose: () => void }) {
-  return <div className="mocap-detail-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><section className="mocap-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="receivable-detail-title"><header><div><h2 id="receivable-detail-title">{title}</h2><p>{note}</p></div><button type="button" className="mocap-detail-close" aria-label="Fechar detalhes" onClick={onClose}>×</button></header>{rows.length > 0 ? <div className="mocap-detail-table-scroll"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={`${index}-${row[0]}`}>{row.map((cell, column) => <td key={`${index}-${column}`}>{cell || '—'}</td>)}</tr>)}</tbody></table></div> : <div className="mocap-detail-empty">Nenhum lançamento detalhado disponível nesta atualização.</div>}<footer>{rows.length > 0 ? `${rows.length}${rows.length === 200 ? ' ou mais' : ''} lançamentos exibidos` : 'Sem linhas detalhadas disponíveis'}</footer></section></div>
+function DetailsDialog({ title, columns, rows, note, onClose }: { title: string; columns: string[]; rows: string[][]; note: string; onClose: () => void }) {
+  return <div className="mocap-detail-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><section className="mocap-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="detail-dialog-title"><header><div><h2 id="detail-dialog-title">{title}</h2><p>{note}</p></div><button type="button" className="mocap-detail-close" aria-label="Fechar detalhes" onClick={onClose}>×</button></header>{rows.length > 0 ? <div className="mocap-detail-table-scroll"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={`${index}-${row[0]}`}>{row.map((cell, column) => <td key={`${index}-${column}`}>{cell || '—'}</td>)}</tr>)}</tbody></table></div> : <div className="mocap-detail-empty">Nenhum lançamento detalhado disponível nesta atualização.</div>}<footer>{rows.length > 0 ? `${rows.length}${rows.length === 10000 ? ' ou mais' : ''} lançamentos exibidos` : 'Sem linhas detalhadas disponíveis'}</footer></section></div>
 }
 
 function EmptyRightPanel({ title, subtitle }: { title: string; subtitle: string }) {
@@ -596,6 +659,8 @@ function AlertPanel({ messages, screen, onNavigate, title = 'ALERTAS IMPORTANTES
 export function MockupDashboard({ screen, snapshot, onNavigate, onRefresh }: { screen: MockupScreenKey; snapshot?: DashboardSnapshot; onNavigate?: (screen: MockupScreenKey) => void; onRefresh?: (screen: MockupScreenKey) => Promise<void> }) {
   const [periodRange, setPeriodRange] = useState({ from: '', through: '' })
   const [receivableDetails, setReceivableDetails] = useState<{ title: string; columns: string[]; rows: string[][]; note: string } | null>(null)
+  const [receivableRange, setReceivableRange] = useState({ from: '', through: '' })
+  const [payableRange, setPayableRange] = useState({ from: '', through: '' })
   const config = configs[screen === 'integrations' ? 'executive' : screen]
   const rawCashFlow = snapshot?.cash_flow
   const sourceStartDate = rawCashFlow?.days?.[0]?.date ?? snapshot?.as_of.slice(0, 10) ?? ''
@@ -625,20 +690,83 @@ export function MockupDashboard({ screen, snapshot, onNavigate, onRefresh }: { s
     periods: screen === 'cashflow' ? selectedPeriods : rawCashFlow.periods,
     critical_week: screen === 'cashflow' ? selectedCriticalWeek : rawCashFlow.critical_week,
   } : undefined
-  const cards = config.cards.map((card) => withSnapshot(screen, card, snapshot))
+  const defaultReceivableFrom = minDate
+  const defaultReceivableThrough = maxDate || defaultReceivableFrom
+  const selectedReceivableFrom = receivableRange.from || defaultReceivableFrom
+  const selectedReceivableThrough = receivableRange.through || (defaultReceivableThrough >= selectedReceivableFrom ? defaultReceivableThrough : selectedReceivableFrom)
+  const receivableRangeLabel = `${selectedReceivableFrom} a ${selectedReceivableThrough}`
+  const selectedPayableFrom = payableRange.from || defaultReceivableFrom
+  const selectedPayableThrough = payableRange.through || (defaultReceivableThrough >= selectedPayableFrom ? defaultReceivableThrough : selectedPayableFrom)
+  const payableRangeLabel = `${selectedPayableFrom} a ${selectedPayableThrough}`
+  const sourceReceivableRows = snapshot?.receivable_rows
+  const selectedReceivableRows = (sourceReceivableRows ?? []).filter((row) => Boolean(row.due_date && row.due_date >= selectedReceivableFrom && row.due_date <= selectedReceivableThrough))
+  const overdueReceivableRows = (sourceReceivableRows ?? []).filter((row) => Boolean(row.due_date && row.due_date < selectedReceivableFrom))
+  const selectedMovementSource = snapshot?.cash_movement_rows
+  const selectedMovementRows = (selectedMovementSource ?? []).filter((row) => row.date >= selectedReceivableFrom && row.date <= selectedReceivableThrough)
+  const availableReceivableState = snapshot?.receivables?.state ?? 'UNAVAILABLE'
+  const availableMovementState = snapshot?.receipts_month?.state ?? 'UNAVAILABLE'
+  const metricForRows = (rows: DashboardReceivableRow[], availableState: DashboardMetric['state']): DashboardMetric =>
+    sourceReceivableRows === undefined || availableState === 'UNAVAILABLE'
+      ? { state: 'UNAVAILABLE', source_system: 'BLING' }
+      : { ...sumReceivableRows(rows, 'net_value'), state: availableState }
+  const selectedReceivableMetric = metricForRows(selectedReceivableRows, availableReceivableState)
+  const selectedOverdueMetric = metricForRows(overdueReceivableRows, availableReceivableState)
+  const selectedReceivedMetric: DashboardMetric = selectedMovementSource === undefined || availableMovementState === 'UNAVAILABLE'
+    ? { state: 'UNAVAILABLE', source_system: 'BLING' }
+    : { ...sumCashMovementRows(selectedMovementRows), state: availableMovementState }
+  const selectedMethodMetrics: DashboardReceivablesByMethod = (() => {
+    const classify = (row: DashboardReceivableRow): keyof DashboardReceivablesByMethod => {
+      const method = (row.payment_method ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      if (method.includes('pix')) return 'pix'
+      if (method.includes('boleto')) return 'boleto'
+      if (method.includes('cart') || method.includes('credit') || method.includes('debit')) return 'card'
+      return 'unclassified'
+    }
+    return (['pix', 'boleto', 'card', 'unclassified'] as const).reduce((totals, key) => {
+      const rows = selectedReceivableRows.filter((row) => classify(row) === key)
+      totals[key] = sourceReceivableRows === undefined || availableReceivableState === 'UNAVAILABLE'
+        ? { state: 'UNAVAILABLE', source_system: 'BLING' }
+        : { ...sumReceivableRows(rows, 'net_value'), state: availableReceivableState }
+      return totals
+    }, {} as DashboardReceivablesByMethod)
+  })()
+  const activePayableRows = (snapshot?.payable_rows ?? []).filter((row) => !['5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO'].includes(row.status.trim().toUpperCase()))
+  const selectedPayableRows = activePayableRows.filter((row) => Boolean(row.due_date && row.due_date >= selectedPayableFrom && row.due_date <= selectedPayableThrough))
+  const overduePayableRows = activePayableRows.filter((row) => Boolean(row.due_date && row.due_date < selectedPayableFrom))
+  const payableState = snapshot?.payables?.state ?? 'UNAVAILABLE'
+  const payableMetric = (rows: DashboardPayableRow[]): DashboardMetric => snapshot?.payable_rows === undefined || payableState === 'UNAVAILABLE'
+    ? { state: 'UNAVAILABLE', source_system: 'BLING' }
+    : { value: sumPayableRows(rows), count: rows.length, state: payableState, source_system: 'BLING' }
+  const selectedPayableMetric = payableMetric(selectedPayableRows)
+  const overduePayableMetric = payableMetric(overduePayableRows)
+  const cards = config.cards.map((card) => {
+    const mapped = withSnapshot(screen, card, snapshot)
+    if (screen === 'payables') {
+      if (card.label === 'TOTAL A PAGAR NA DATA') return { ...mapped, value: selectedPayableMetric.state === 'UNAVAILABLE' ? undefined : selectedPayableMetric.value, supporting: `Vencimentos de ${payableRangeLabel}` }
+      if (card.label === 'VENCE NA DATA') return { ...mapped, value: undefined, displayValue: payableState === 'UNAVAILABLE' || snapshot?.payable_rows === undefined ? '—' : `${selectedPayableRows.length} ${selectedPayableRows.length === 1 ? 'conta' : 'contas'}`, supporting: `Vencimentos de ${payableRangeLabel}` }
+      if (card.label === 'EM ATRASO NA DATA') return { ...mapped, value: overduePayableMetric.state === 'UNAVAILABLE' ? undefined : overduePayableMetric.value, supporting: `Vencidos antes de ${selectedPayableFrom}` }
+      return mapped
+    }
+    if (screen !== 'receivables') return mapped
+    const metric = card.label === 'TOTAL A RECEBER' ? selectedReceivableMetric : card.label === 'EM ATRASO' ? selectedOverdueMetric : card.label === 'TOTAL RECEBIDO' ? selectedReceivedMetric : undefined
+    return metric ? { ...mapped, value: metric.state === 'UNAVAILABLE' ? undefined : metric.value, supporting: card.label === 'TOTAL RECEBIDO' ? `Entradas conciliadas de ${receivableRangeLabel}` : `Valor líquido de ${receivableRangeLabel}` } : mapped
+  })
   const lowerCards = config.lower
     .filter((card) => screen !== 'dre' || card.label !== 'UNMAPPED')
-    .map((card) => withSnapshot(screen, card, snapshot))
-  const sourceReceivableRows = screen === 'receivables' ? (snapshot?.receivable_rows ?? []) : []
-  const receivableRows = sourceReceivableRows.map(receivableTableRow)
-  const movementRows = (snapshot?.cash_movement_rows ?? []).map(cashMovementTableRow)
-  const payableRows = screen === 'payables' ? (snapshot?.payable_rows ?? []).map(payableTableRow) : []
+    .map((card) => {
+      const mapped = withSnapshot(screen, card, snapshot)
+      if (screen !== 'receivables') return mapped
+      const method = card.label === 'PIX' ? 'pix' : card.label === 'BOLETOS' ? 'boleto' : card.label === 'CARTÃO' ? 'card' : undefined
+      const metric = method ? selectedMethodMetrics[method] : undefined
+      return metric ? { ...mapped, value: metric.state === 'UNAVAILABLE' ? undefined : metric.value, supporting: `Valor líquido de ${receivableRangeLabel}` } : mapped
+    })
+  const receivableRows = selectedReceivableRows.map(receivableTableRow)
+  const payableRows = screen === 'payables' ? selectedPayableRows.map(payableTableRow) : []
   const tableRows = screen === 'receivables' ? receivableRows : screen === 'payables' ? payableRows : []
   const showReceivableDetails = (label: string) => {
-    const asOf = snapshot?.as_of.slice(0, 10) ?? ''
-    if (label === 'TOTAL A RECEBER') setReceivableDetails({ title: label, columns: ['Cliente', 'Origem', 'Vencimento', 'Valor bruto', 'Valor líquido', 'Status'], rows: receivableRows, note: 'Títulos em aberto e previstos, com origem, vencimento e valor líquido. A tela carrega até 200 lançamentos.' })
-    else if (label === 'TOTAL RECEBIDO') setReceivableDetails({ title: label, columns: ['Data', 'Conta', 'Origem', 'Valor'], rows: movementRows, note: 'Total das entradas conciliadas no relatório Caixa e Bancos no mês da data-base. Esta lista contém os mesmos movimentos usados no valor do card.' })
-    else if (label === 'EM ATRASO') setReceivableDetails({ title: label, columns: ['Cliente', 'Origem', 'Vencimento', 'Valor bruto', 'Valor líquido', 'Status'], rows: sourceReceivableRows.filter((row) => Boolean(asOf && row.due_date && row.due_date < asOf)).map(receivableTableRow), note: `Títulos com vencimento anterior à data-base ${asOf || 'indisponível'}. A tela carrega até 200 lançamentos.` })
+    if (label === 'TOTAL A RECEBER') setReceivableDetails({ title: label, columns: ['Cliente', 'Origem', 'Vencimento', 'Valor bruto', 'Valor líquido', 'Status'], rows: receivableRows, note: `Títulos com vencimento de ${selectedReceivableFrom} a ${selectedReceivableThrough}. O total usa o valor líquido.` })
+    else if (label === 'TOTAL RECEBIDO') setReceivableDetails({ title: label, columns: ['Data', 'Conta', 'Origem', 'Valor'], rows: selectedMovementRows.map(cashMovementTableRow), note: `Entradas conciliadas de ${selectedReceivableFrom} a ${selectedReceivableThrough}. Esta lista contém os mesmos movimentos usados no valor do card.` })
+    else if (label === 'EM ATRASO') setReceivableDetails({ title: label, columns: ['Cliente', 'Origem', 'Vencimento', 'Valor bruto', 'Valor líquido', 'Status'], rows: overdueReceivableRows.map(receivableTableRow), note: `Títulos com vencimento anterior a ${selectedReceivableFrom}. O total usa o valor líquido.` })
     else if (['PIX', 'BOLETOS', 'CARTÃO'].includes(label)) {
       const matches = (method: string) => {
         const normalized = method.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -646,13 +774,17 @@ export function MockupDashboard({ screen, snapshot, onNavigate, onRefresh }: { s
         if (label === 'BOLETOS') return normalized.includes('boleto')
         return normalized.includes('cart') || normalized.includes('credit') || normalized.includes('debit')
       }
-      const matchedRows = sourceReceivableRows.filter((row) => Boolean(row.payment_method && matches(row.payment_method))).map(receivableTableRow)
-      setReceivableDetails({ title: label, columns: ['Cliente', 'Origem', 'Vencimento', 'Valor bruto', 'Valor líquido', 'Status'], rows: matchedRows, note: `Títulos identificados pela forma de pagamento informada na origem. ${matchedRows.length} correspondências no resumo disponível.` })
+      const matchedRows = selectedReceivableRows.filter((row) => Boolean(row.payment_method && matches(row.payment_method))).map(receivableTableRow)
+      setReceivableDetails({ title: label, columns: ['Cliente', 'Origem', 'Vencimento', 'Valor bruto', 'Valor líquido', 'Status'], rows: matchedRows, note: `Títulos com vencimento de ${selectedReceivableFrom} a ${selectedReceivableThrough}, identificados pela forma de pagamento informada na origem. ${matchedRows.length} correspondências.` })
     }
     else setReceivableDetails({ title: label, columns: ['Cliente', 'Origem', 'Vencimento', 'Valor bruto', 'Valor líquido', 'Status'], rows: [], note: `O resumo ainda não fornece lançamentos detalhados para o indicador ${label}.` })
   }
-  const middleLeft = screen === 'receivables' ? null : screen === 'cashflow' ? <div className="mocap-cashflow-visuals"><CashFlowWeeklyTable periods={selectedPeriods} /><EmptyChart title="GRÁFICO DO FLUXO DE CAIXA" cashFlow={cashFlowView} rangeLabel={`${selectedFrom} a ${selectedThrough}`} /></div> : config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} rows={config.tableRows ?? tableRows} emptyMessage={config.tableEmptyMessage} /> : config.chart ? <EmptyChart title={config.middleTitle} cashFlow={cashFlowView} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
-  const middleRight = config.layout === 'market' ? <EmptyRiskPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'critical' ? <EmptyCriticalPanel title={config.rightTitle} subtitle={config.rightSubtitle} cashFlow={cashFlowView} /> : config.layout === 'calculation' ? <EmptyRulesPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'forecast' ? <EmptyMetadataPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} emptyMessage={config.distributionEmptyMessage} items={config.distributionItems} bankBalances={screen === 'executive' ? snapshot?.bank_balances : undefined} receivablesByMethod={screen === 'receivables' ? snapshot?.receivables_by_method : undefined} receivablesTotal={screen === 'receivables' ? snapshot?.receivables : undefined} />
-  const lower = screen === 'cashflow' ? null : screen === 'dre' ? <section className="mocap-lower-cards mocap-dre-lower-cards" aria-label="Indicadores e composição da DRE">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}<DreDerivedIndicators /><CapexIndicators snapshot={snapshot} /></section> : config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} screen={screen} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} detailScreen={screen === 'executive' ? executiveCardTarget(card.label) : undefined} onNavigate={screen === 'executive' ? onNavigate : undefined} onDetails={screen === 'receivables' ? () => showReceivableDetails(card.label) : undefined} />)}</section>
-  return <div className={`mocap-page${screen === 'cashflow' ? ' mocap-page-cashflow' : ''}`}><MocapHeader config={config} snapshot={snapshot} onRefresh={onRefresh ? () => onRefresh(screen) : undefined} /><section className={`mocap-top-cards${screen === 'receivables' ? ' mocap-receivables-top-cards' : ''}`}>{cards.map((card) => <MocapCard key={card.label} card={card} hideAction={config.hideCardActions || (screen === 'cashflow' && ['SALDO ATUAL', 'ENTRADAS', 'SAÍDAS'].includes(card.label))} detailScreen={screen === 'executive' ? executiveCardTarget(card.label) : undefined} onNavigate={screen === 'executive' ? onNavigate : undefined} onDetails={screen === 'receivables' ? () => showReceivableDetails(card.label) : undefined} />)}</section>{screen === 'cashflow' && <CashFlowDateControls from={selectedFrom} through={selectedThrough} min={minDate} max={maxDate} onFromChange={(value) => setPeriodRange((current) => { const through = current.through || maxDate; return { from: value, through: through >= value ? through : value } })} onThroughChange={(value) => setPeriodRange((current) => { const from = current.from || minDate; return { from: from <= value ? from : value, through: value } })} />}<section className={`mocap-middle ${screen === 'receivables' ? 'mocap-receivables-middle' : ''} ${config.layout ? `layout-${config.layout}` : ''}`}>{screen === 'executive' && config.chart ? <EmptyChart title={config.middleTitle} cashFlow={cashFlowView} /> : middleLeft}{screen === 'executive' && !config.layout ? <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} onNavigate={onNavigate} /> : middleRight}</section>{lower}{config.layout !== 'market' && config.alerts.length > 0 && <AlertPanel messages={config.alerts} screen={screen} onNavigate={onNavigate} title={config.alertsTitle} subtitles={config.alertSubtitles} hideActions={config.hideCardActions} />}{receivableDetails && <ReceivableDetailsDialog {...receivableDetails} onClose={() => setReceivableDetails(null)} />}</div>
+  const showPayableDetails = (label: string) => {
+    if (label === 'TOTAL A PAGAR NA DATA' || label === 'VENCE NA DATA') setReceivableDetails({ title: label, columns: ['Fornecedor', 'Documento', 'Vencimento', 'Valor', 'Categoria', 'Status'], rows: payableRows, note: `Contas a pagar com vencimento de ${selectedPayableFrom} a ${selectedPayableThrough}. O total do período é ${formatBRL(selectedPayableMetric.value ?? '0.00')}.` })
+    else if (label === 'EM ATRASO NA DATA') setReceivableDetails({ title: label, columns: ['Fornecedor', 'Documento', 'Vencimento', 'Valor', 'Categoria', 'Status'], rows: overduePayableRows.map(payableTableRow), note: `Contas vencidas antes de ${selectedPayableFrom}. O saldo em atraso é ${formatBRL(overduePayableMetric.value ?? '0.00')}.` })
+  }
+  const middleLeft = screen === 'receivables' || screen === 'payables' ? null : screen === 'cashflow' ? <div className="mocap-cashflow-visuals"><CashFlowWeeklyTable periods={selectedPeriods} /><EmptyChart title="GRÁFICO DO FLUXO DE CAIXA" cashFlow={cashFlowView} rangeLabel={`${selectedFrom} a ${selectedThrough}`} /></div> : config.layout === 'market' ? <EmptyMarketPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.layout === 'calculation' ? <EmptyCalculationPanel title={config.middleTitle} subtitle={config.middleSubtitle} /> : config.table ? <EmptyTable title={config.middleTitle} subtitle={config.middleSubtitle} columns={config.table} rows={config.tableRows ?? tableRows} emptyMessage={config.tableEmptyMessage} /> : config.chart ? <EmptyChart title={config.middleTitle} cashFlow={cashFlowView} /> : <EmptyRightPanel title={config.middleTitle} subtitle={config.middleSubtitle} />
+  const middleRight = config.layout === 'market' ? <EmptyRiskPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'critical' ? <EmptyCriticalPanel title={config.rightTitle} subtitle={config.rightSubtitle} cashFlow={cashFlowView} /> : config.layout === 'calculation' ? <EmptyRulesPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : config.layout === 'forecast' ? <EmptyMetadataPanel title={config.rightTitle} subtitle={config.rightSubtitle} /> : <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} emptyMessage={config.distributionEmptyMessage} items={config.distributionItems} receivablesByMethod={screen === 'executive' || screen === 'receivables' ? selectedMethodMetrics : undefined} receivablesTotal={screen === 'executive' || screen === 'receivables' ? selectedReceivableMetric : undefined} />
+  const lower = screen === 'cashflow' || screen === 'payables' ? null : screen === 'dre' ? <section className="mocap-lower-cards mocap-dre-lower-cards" aria-label="Indicadores e composição da DRE">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}<DreDerivedIndicators /><CapexIndicators snapshot={snapshot} /></section> : config.layout === 'market' ? <><EmptyPurchaseTable columns={config.table ?? []} /><section className="mocap-market-lower"><EmptyChart title="NECESSIDADE DE COMPRA (TONELADAS)" /><EmptyDistribution title="ORIGEM DA NECESSIDADE" subtitle="Produção e estoque" /><AlertPanel messages={config.alerts} screen={screen} onNavigate={onNavigate} /></section></> : config.layout === 'forecast' ? <><EmptyImpactTable title="ITENS DE MAIOR IMPACTO" subtitle="SKUs com maior desvio entre forecast e realizado" columns={config.table ?? []} /><section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} />)}</section></> : <section className="mocap-lower-cards">{lowerCards.map((card) => <MocapCard key={card.label} card={card} detailScreen={screen === 'executive' ? executiveCardTarget(card.label) : undefined} onNavigate={screen === 'executive' ? onNavigate : undefined} onDetails={screen === 'receivables' ? () => showReceivableDetails(card.label) : undefined} />)}</section>
+  return <div className={`mocap-page${screen === 'cashflow' ? ' mocap-page-cashflow' : ''}`}><MocapHeader config={config} snapshot={snapshot} onRefresh={onRefresh ? () => onRefresh(screen) : undefined} />{screen === 'receivables' && <ReferenceDateControl from={selectedReceivableFrom} through={selectedReceivableThrough} onFromChange={(value) => setReceivableRange((current) => rangeAfterStartChange(current, value, defaultReceivableThrough))} onThroughChange={(value) => setReceivableRange((current) => rangeAfterThroughChange(current, value, defaultReceivableFrom))} />}{screen === 'payables' && <ReferenceDateControl kind="payable" from={selectedPayableFrom} through={selectedPayableThrough} onFromChange={(value) => setPayableRange((current) => rangeAfterStartChange(current, value, defaultReceivableThrough))} onThroughChange={(value) => setPayableRange((current) => rangeAfterThroughChange(current, value, defaultReceivableFrom))} />}<section className={`mocap-top-cards${screen === 'receivables' ? ' mocap-receivables-top-cards' : ''}`}>{cards.map((card) => <MocapCard key={card.label} card={card} hideAction={config.hideCardActions || (screen === 'cashflow' && ['SALDO ATUAL', 'ENTRADAS', 'SAÍDAS'].includes(card.label))} detailScreen={screen === 'executive' ? executiveCardTarget(card.label) : undefined} onNavigate={screen === 'executive' ? onNavigate : undefined} onDetails={screen === 'receivables' ? () => showReceivableDetails(card.label) : screen === 'payables' ? () => showPayableDetails(card.label) : undefined} />)}</section>{screen === 'cashflow' && <CashFlowDateControls from={selectedFrom} through={selectedThrough} min={minDate} max={maxDate} onFromChange={(value) => setPeriodRange((current) => { const through = current.through || maxDate; return { from: value, through: through >= value ? through : value } })} onThroughChange={(value) => setPeriodRange((current) => { const from = current.from || minDate; return { from: from <= value ? from : value, through: value } })} />}{screen !== 'payables' && <section className={`mocap-middle ${screen === 'receivables' ? 'mocap-receivables-middle' : ''} ${config.layout ? `layout-${config.layout}` : ''}`}>{screen === 'executive' && config.chart ? <EmptyChart title={config.middleTitle} cashFlow={cashFlowView} /> : middleLeft}{screen === 'executive' && !config.layout ? <EmptyDistribution title={config.rightTitle} subtitle={config.rightSubtitle} receivablesByMethod={selectedMethodMetrics} receivablesTotal={selectedReceivableMetric} /> : middleRight}</section>}{lower}{config.layout !== 'market' && config.alerts.length > 0 && <AlertPanel messages={config.alerts} screen={screen} onNavigate={onNavigate} title={config.alertsTitle} subtitles={config.alertSubtitles} hideActions={config.hideCardActions} />}{receivableDetails && <DetailsDialog {...receivableDetails} onClose={() => setReceivableDetails(null)} />}</div>
 }

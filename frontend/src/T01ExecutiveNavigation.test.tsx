@@ -384,8 +384,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(onNavigate).toHaveBeenCalledWith(target)
   })
 
-  it('mantém o gráfico sem o botão removido e a distribuição abre Fluxo de Caixa', async () => {
-    const user = userEvent.setup()
+  it('mantém o gráfico e mostra a distribuição líquida dos recebíveis da T03', () => {
     const onNavigate = vi.fn()
     render(<MockupDashboard screen="executive" onNavigate={onNavigate} />)
 
@@ -393,10 +392,14 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(chart).not.toBeNull()
     expect(within(chart as HTMLElement).queryByRole('button', { name: /Ver fluxo completo/ })).not.toBeInTheDocument()
 
-    const distribution = screen.getByRole('heading', { name: 'DISTRIBUIÇÃO DO SALDO' }).closest('section')
+    const distribution = screen.getByRole('heading', { name: 'DISTRIBUIÇÃO DOS RECEBÍVEIS' }).closest('section')
     expect(distribution).not.toBeNull()
-    await user.click(within(distribution as HTMLElement).getByRole('button', { name: /Ver detalhes/ }))
-    expect(onNavigate).toHaveBeenLastCalledWith('cashflow')
+    expect(within(distribution as HTMLElement).getByText('PIX')).toBeInTheDocument()
+    expect(within(distribution as HTMLElement).getByText('Boletos')).toBeInTheDocument()
+    expect(within(distribution as HTMLElement).getByText('Cartão')).toBeInTheDocument()
+    expect(within(distribution as HTMLElement).getByText('Não identificados')).toBeInTheDocument()
+    expect(within(distribution as HTMLElement).queryByRole('button', { name: /Ver detalhes/ })).not.toBeInTheDocument()
+    expect(onNavigate).not.toHaveBeenCalled()
   })
 
   it('mantém o alerta aprovado e não mostra avisos de fonte/conciliação removidos', async () => {

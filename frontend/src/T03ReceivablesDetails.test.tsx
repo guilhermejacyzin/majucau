@@ -24,8 +24,8 @@ const snapshot: DashboardSnapshot = {
   payables_due_next_7_days: unavailable,
   payments_month: unavailable,
   receivable_rows: [
-    { customer: 'Cliente vencido', origin: 'Bling', due_date: '2026-11-14', gross_value: '100.00', net_value: '95.00', status: 'OPEN' },
-    { customer: 'Cliente futuro', origin: 'Nuvem Pago', due_date: '2026-11-20', gross_value: '400.00', net_value: '380.00', status: 'PROJECTED' },
+    { customer: 'Cliente vencido', origin: 'Bling', payment_method: 'Cartão', due_date: '2026-11-14', gross_value: '100.00', net_value: '95.00', status: 'OPEN' },
+    { customer: 'Cliente futuro', origin: 'Nuvem Pago', payment_method: 'PIX', due_date: '2026-11-20', gross_value: '400.00', net_value: '380.00', status: 'PROJECTED' },
   ],
   cash_movement_rows: [{ date: '2026-11-12', account: 'Itaú', origin: 'Recebimento', value: '125.00' }],
 }
@@ -34,12 +34,14 @@ describe('T03 detalhes dos recebíveis', () => {
   it('abre a lista pelo card e mantém a tabela fora da tela principal', () => {
     render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
 
+    fireEvent.change(document.getElementById('mocap-receivable-from') as HTMLInputElement, { target: { value: '2026-11-20' } })
+    fireEvent.change(document.getElementById('mocap-receivable-through') as HTMLInputElement, { target: { value: '2026-11-20' } })
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes: TOTAL A RECEBER' }))
 
     const dialog = screen.getByRole('dialog', { name: 'TOTAL A RECEBER' })
-    expect(within(dialog).getByText('Cliente vencido')).toBeInTheDocument()
     expect(within(dialog).getByText('Cliente futuro')).toBeInTheDocument()
+    expect(within(dialog).queryByText('Cliente vencido')).not.toBeInTheDocument()
   })
 
   it('filtra o detalhe de atraso pela data-base', () => {
@@ -53,6 +55,8 @@ describe('T03 detalhes dos recebíveis', () => {
 
   it('abre Total recebido com a origem bancária e o mesmo valor do card', () => {
     render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
+    fireEvent.change(document.getElementById('mocap-receivable-from') as HTMLInputElement, { target: { value: '2026-11-12' } })
+    fireEvent.change(document.getElementById('mocap-receivable-through') as HTMLInputElement, { target: { value: '2026-11-12' } })
     expect(screen.getByText((_, element) => element?.classList.contains('mocap-empty-value') === true && element.textContent?.includes('125,00') === true)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes: TOTAL RECEBIDO' }))
 
@@ -69,27 +73,31 @@ describe('T03 detalhes dos recebíveis', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('explica a composição líquida por forma de recebimento', () => {
+  it('explica a composição líquida por forma de recebimento na data selecionada', () => {
     render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
+    fireEvent.change(document.getElementById('mocap-receivable-from') as HTMLInputElement, { target: { value: '2026-11-20' } })
+    fireEvent.change(document.getElementById('mocap-receivable-through') as HTMLInputElement, { target: { value: '2026-11-20' } })
 
     expect(screen.getByText(/Valor líquido por forma de recebimento/)).toBeInTheDocument()
-    expect(screen.getAllByText('R$ 500,00').length).toBeGreaterThanOrEqual(2)
+    expect(screen.getAllByText('R$ 380,00').length).toBeGreaterThanOrEqual(2)
     expect(document.querySelector('.mocap-donut')).toHaveClass('has-data')
     expect(screen.getByText('Não identificados')).toBeInTheDocument()
     expect(screen.getByText(/títulos cuja forma de pagamento não veio informada/i)).toBeInTheDocument()
     expect(screen.queryByText('Confirmado:')).not.toBeInTheDocument()
   })
 
-  it('mostra os mesmos totais líquidos nos cards por forma de pagamento', () => {
+  it('mostra os mesmos totais líquidos da data nos cards por forma de pagamento', () => {
     render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
+    fireEvent.change(document.getElementById('mocap-receivable-from') as HTMLInputElement, { target: { value: '2026-11-20' } })
+    fireEvent.change(document.getElementById('mocap-receivable-through') as HTMLInputElement, { target: { value: '2026-11-20' } })
 
     const lowerCards = document.querySelector('.mocap-lower-cards')
     const valueFor = (label: string) => [...(lowerCards?.querySelectorAll('article') ?? [])]
       .find((card) => card.querySelector('.mocap-card-label')?.textContent === label)
       ?.querySelector('.mocap-empty-value')?.textContent
-    expect(valueFor('PIX')).toContain('100,00')
-    expect(valueFor('BOLETOS')).toContain('150,00')
-    expect(valueFor('CARTÃO')).toContain('200,00')
+    expect(valueFor('PIX')).toContain('380,00')
+    expect(valueFor('BOLETOS')).toContain('0,00')
+    expect(valueFor('CARTÃO')).toContain('0,00')
   })
 
   it('mantém os três cards por forma de recebimento e não exibe cards sem uso definido', () => {
@@ -103,5 +111,18 @@ describe('T03 detalhes dos recebíveis', () => {
     }
     expect(screen.queryByText('AMBÍGUOS')).not.toBeInTheDocument()
     expect(screen.queryByText('CHARGEBACKS')).not.toBeInTheDocument()
+  })
+
+  it('espelha na T01 a distribuição líquida da T03 a partir de Contas a Receber', () => {
+    const { rerender } = render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
+    fireEvent.change(document.getElementById('mocap-receivable-from') as HTMLInputElement, { target: { value: '2026-11-20' } })
+    fireEvent.change(document.getElementById('mocap-receivable-through') as HTMLInputElement, { target: { value: '2026-11-20' } })
+    const t03 = document.querySelector('.mocap-receivables-middle .mocap-distribution')?.textContent
+    rerender(<MockupDashboard screen="executive" snapshot={snapshot} />)
+    const t01 = document.querySelector('.mocap-distribution')?.textContent
+    expect(t03?.replace(/\u00a0/g, ' ')).toContain('R$ 380,00')
+    expect(t01).toContain('DISTRIBUIÇÃO DOS RECEBÍVEIS')
+    expect(t01).toContain('PIX')
+    expect(t01?.replace(/\u00a0/g, ' ')).toContain('R$ 380,00')
   })
 })

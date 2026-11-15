@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"majucau.local/financial-intelligence/internal/application"
+	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/scheduler"
 )
 
@@ -258,9 +259,10 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 	if !reflect.DeepEqual(tx.summaryArgs, wantDates) {
 		t.Fatalf("summary date arguments = %#v, want %#v", tx.summaryArgs, wantDates)
 	}
-	wantLimits := []any{dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit}
+	wantLimits := []any{"2026-09-21", dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit}
+	wantPayableLimits := []any{dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit}
 	wantMovementArgs := []any{expectedDailyCorrelation(t, asOf), "2026-09-01", "2026-10-01", dashboardDetailRowLimit, dashboardFieldMaxBytes, dashboardRecordMaxBytes}
-	if len(tx.queryArgs) != 3 || !reflect.DeepEqual(tx.queryArgs[0], wantLimits) || !reflect.DeepEqual(tx.queryArgs[1], wantLimits) || !reflect.DeepEqual(tx.queryArgs[2], wantMovementArgs) {
+	if len(tx.queryArgs) != 3 || !reflect.DeepEqual(tx.queryArgs[0], wantLimits) || !reflect.DeepEqual(tx.queryArgs[1], wantPayableLimits) || !reflect.DeepEqual(tx.queryArgs[2], wantMovementArgs) {
 		t.Fatalf("detail query arguments = %#v, want two bounded detail queries and cash movement args %#v", tx.queryArgs, wantMovementArgs)
 	}
 }
@@ -534,6 +536,9 @@ func TestDashboardDetailStreamsUseExplicitBounds(t *testing.T) {
 				t.Fatalf("stream() error = %v", err)
 			}
 			wantLimits := []any{dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit}
+			if tc.name == "receivables" {
+				wantLimits = []any{domain.BusinessDate(time.Now().UTC()).Format("2006-01-02"), dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit}
+			}
 			if len(tx.queryArgs) != 1 || !reflect.DeepEqual(tx.queryArgs[0], wantLimits) {
 				t.Fatalf("query limits = %#v, want %#v", tx.queryArgs, wantLimits)
 			}

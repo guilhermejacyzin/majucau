@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	// Each detail list returns at most 200 rows. Field and record limits cap
-	// the raw detail strings retained by the desktop snapshot at about 6.4 MiB.
+	// Detail lists return up to 10,000 rows, with field, record, and overall
+	// snapshot limits bounding the data retained by the desktop client.
 	dashboardFieldMaxBytes  = 4 << 10
 	dashboardRecordMaxBytes = 16 << 10
-	dashboardDetailRowLimit = 200
+	dashboardDetailRowLimit = 10000
 )
 
 var (
@@ -95,7 +95,7 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (ret
 		return err
 	}
 	if snapshot.Receivables.State != "UNAVAILABLE" {
-		if err := streamReceivableRows(ctx, tx, dst); err != nil {
+		if err := streamReceivableRowsForDate(ctx, tx, dst, domain.BusinessDate(now).Format("2006-01-02")); err != nil {
 			return fmt.Errorf("read dashboard receivable details: %w", err)
 		}
 	}
@@ -355,7 +355,11 @@ func projectedState(count int64) string {
 }
 
 func streamReceivableRows(ctx context.Context, tx pgx.Tx, dst io.Writer) error {
-	rows, err := tx.Query(ctx, dashboardReceivableRowsSQL, dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit)
+	return streamReceivableRowsForDate(ctx, tx, dst, domain.BusinessDate(time.Now().UTC()).Format("2006-01-02"))
+}
+
+func streamReceivableRowsForDate(ctx context.Context, tx pgx.Tx, dst io.Writer, asOfDate string) error {
+	rows, err := tx.Query(ctx, dashboardReceivableRowsSQL, asOfDate, dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit)
 	if err != nil {
 		return err
 	}
@@ -946,9 +950,17 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.net_value END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.status END,
        limits.exceeds_limit
-  FROM (SELECT * FROM deduplicated_receivables
-         WHERE COALESCE(open_balance, liquid_amount) > 0
-         ORDER BY effective_due_date NULLS LAST, source_id LIMIT $3) er
+  FROM (SELECT * FROM eligible_receivables
+         WHERE source_system = 'BLING'
+           AND source_entity = 'bling.conta_receber'
+           AND COALESCE(open_balance, gross_amount, 0) > 0
+           AND liquid_amount > 0
+           AND status IN ('OPEN', 'PARTIALLY_PAID')
+         ORDER BY CASE WHEN effective_due_date >= $1::date THEN 0 ELSE 1 END,
+                  CASE WHEN effective_due_date >= $1::date THEN effective_due_date END ASC NULLS LAST,
+                  effective_due_date DESC NULLS LAST,
+                  source_id
+         LIMIT $4) er
   LEFT JOIN contacts c ON c.id = er.customer_id
   LEFT JOIN raw_records rr ON rr.id = er.raw_record_id
  CROSS JOIN LATERAL (
@@ -962,17 +974,17 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
  ) AS row_data
  CROSS JOIN LATERAL (
    SELECT
-     octet_length(row_data.customer)::bigint > $1 OR
-     octet_length(row_data.origin)::bigint > $1 OR
-     octet_length(row_data.payment_method)::bigint > $1 OR
-     octet_length(row_data.due_date)::bigint > $1 OR
-     octet_length(row_data.gross_value)::bigint > $1 OR
-     octet_length(row_data.net_value)::bigint > $1 OR
-     octet_length(row_data.status)::bigint > $1 OR
+     octet_length(row_data.customer)::bigint > $2 OR
+     octet_length(row_data.origin)::bigint > $2 OR
+     octet_length(row_data.payment_method)::bigint > $2 OR
+     octet_length(row_data.due_date)::bigint > $2 OR
+     octet_length(row_data.gross_value)::bigint > $2 OR
+     octet_length(row_data.net_value)::bigint > $2 OR
+     octet_length(row_data.status)::bigint > $2 OR
      octet_length(row_data.customer)::bigint + octet_length(row_data.origin)::bigint +
      octet_length(row_data.payment_method)::bigint +
      octet_length(row_data.due_date)::bigint + octet_length(row_data.gross_value)::bigint +
-     octet_length(row_data.net_value)::bigint + octet_length(row_data.status)::bigint > $2 AS exceeds_limit
+     octet_length(row_data.net_value)::bigint + octet_length(row_data.status)::bigint > $3 AS exceeds_limit
  ) AS limits
 `
 
@@ -998,12 +1010,15 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.supplier END,
        limits.exceeds_limit
   FROM (SELECT * FROM payables pw
          WHERE pw.open_balance <> 0
-           AND (pw.source_entity <> 'bling.conta_pagar' OR EXISTS (
+           AND pw.source_system = 'BLING'
+           AND pw.source_entity = 'bling.conta_pagar'
+           AND UPPER(pw.status) NOT IN ('5', 'CANCELLED', 'CANCELED', 'REFUNDED', 'REVERSED', 'ESTORNADO')
+           AND EXISTS (
              SELECT 1
                FROM latest_daily_payable_snapshot latest
                JOIN payable_sync_snapshot_rows membership ON membership.sync_batch_id = latest.sync_batch_id
               WHERE membership.payable_id = pw.id
-           ))
+           )
            ORDER BY due_date, source_id LIMIT $3) pw
   LEFT JOIN contacts c ON c.id = pw.supplier_id
  CROSS JOIN LATERAL (

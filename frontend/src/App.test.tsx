@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -15,7 +15,7 @@ describe('shell financeiro', () => {
   it('exibe a composição oficial do mockup T1 sem números inventados', async () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
-    for (const label of ['SALDO ATUAL', 'A RECEBER', 'A PAGAR', 'MENOR SALDO 30 / 60 DIAS', 'FLUXO DE CAIXA PROJETADO', 'DISTRIBUIÇÃO DO SALDO', 'VENDAS DO MÊS', 'MARGEM BRUTA', 'ESTOQUE / COBERTURA', 'PRODUÇÃO PREVISTA', 'COMPRAS PREVISTAS', 'ALERTAS IMPORTANTES']) expect(screen.getByText(label)).toBeInTheDocument()
+    for (const label of ['SALDO ATUAL', 'A RECEBER', 'A PAGAR', 'MENOR SALDO 30 / 60 DIAS', 'FLUXO DE CAIXA PROJETADO', 'DISTRIBUIÇÃO DOS RECEBÍVEIS', 'VENDAS DO MÊS', 'MARGEM BRUTA', 'ESTOQUE / COBERTURA', 'PRODUÇÃO PREVISTA', 'COMPRAS PREVISTAS', 'ALERTAS IMPORTANTES']) expect(screen.getByText(label)).toBeInTheDocument()
     expect(screen.getByText('30 dias')).toBeInTheDocument()
     expect(screen.getByText('60 dias')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ajuda' })).not.toBeInTheDocument()
@@ -308,6 +308,8 @@ describe('shell financeiro', () => {
     await user.click(screen.getByRole('button', { name: 'Contas a Receber' }))
     expect(await screen.findByRole('heading', { name: 'CONTAS A RECEBER' })).toBeInTheDocument()
     expect(screen.queryByText('Cliente real')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Data inicial dos recebíveis'), { target: { value: '2026-09-22' } })
+    fireEvent.change(screen.getByLabelText('Data final dos recebíveis'), { target: { value: '2026-09-22' } })
     await user.click(screen.getByRole('button', { name: 'Ver detalhes: TOTAL A RECEBER' }))
     expect(await screen.findByRole('dialog', { name: 'TOTAL A RECEBER' })).toBeInTheDocument()
     expect(screen.getByText('Cliente real')).toBeInTheDocument()
@@ -315,7 +317,7 @@ describe('shell financeiro', () => {
     expect(screen.getByText('PROJECTED')).toBeInTheDocument()
   })
 
-  it('mostra no card existente os títulos que vencem nos próximos sete dias', async () => {
+  it('usa o período selecionado para os cards e abre as mesmas contas nos detalhes', async () => {
     const user = userEvent.setup()
     const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
       getSnapshot: async () => ({
@@ -323,6 +325,12 @@ describe('shell financeiro', () => {
         payables: { value: '-100.0000', count: 4, state: 'CONFIRMED', source_system: 'BLING' },
         payables_due_next_90_days: { value: '-100.0000', count: 4, state: 'CONFIRMED', source_system: 'BLING' },
         payables_due_next_7_days: { value: '-40.0000', count: 2, state: 'CONFIRMED', source_system: 'BLING' },
+        payable_rows: [
+          { supplier: 'Fornecedor do período A', document: 'DOC-A', due_date: '2026-11-17', value: '-40.0000', status: '1' },
+          { supplier: 'Fornecedor do período B', document: 'DOC-B', due_date: '2026-11-25', value: '-60.0000', status: '1' },
+          { supplier: 'Título cancelado', document: 'DOC-C', due_date: '2026-11-18', value: '-999.0000', status: '5' },
+          { supplier: 'Fornecedor vencido', document: 'DOC-D', due_date: '2026-11-05', value: '-10.0000', status: '1' },
+        ],
         cash_flow: { inflows_next_30_days: { value: '100.0000', state: 'CONFIRMED', source_system: 'BLING' }, outflows_next_30_days: { value: '-100.0000', state: 'CONFIRMED', source_system: 'BLING' }, inflows_next_60_days: { value: '100.0000', state: 'CONFIRMED', source_system: 'BLING' }, outflows_next_60_days: { value: '-100.0000', state: 'CONFIRMED', source_system: 'BLING' } },
       }),
     }
@@ -331,10 +339,18 @@ describe('shell financeiro', () => {
     const executivePayablesCard = screen.getByText('A PAGAR').closest('article')
     expect(executivePayablesCard?.textContent).toContain('100,00')
     await user.click(screen.getByRole('button', { name: 'Contas a Pagar' }))
-    const payableTotalCard = screen.getByText('TOTAL A PAGAR').closest('article')
-    expect(payableTotalCard?.textContent).toContain('-')
-    const upcomingCard = screen.getByText('VENCIMENTOS 7 DIAS').closest('article')
-    expect(upcomingCard?.textContent).toContain('-')
+    fireEvent.change(screen.getByLabelText('Data final das contas a pagar'), { target: { value: '2026-11-25' } })
+    const payableTotalCard = screen.getByText('TOTAL A PAGAR NA DATA').closest('article')
+    expect(payableTotalCard).toHaveTextContent('-R$ 100,00')
+    expect(screen.getByText('VENCE NA DATA').closest('article')).toHaveTextContent('2 contas')
+    expect(screen.getByText('EM ATRASO NA DATA').closest('article')).toHaveTextContent('-R$ 10,00')
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Ver detalhes: TOTAL A PAGAR NA DATA' }))
+    const details = screen.getByRole('dialog', { name: 'TOTAL A PAGAR NA DATA' })
+    expect(within(details).getByText('Fornecedor do período A')).toBeInTheDocument()
+    expect(within(details).getByText('Fornecedor do período B')).toBeInTheDocument()
+    expect(within(details).queryByText('Título cancelado')).not.toBeInTheDocument()
+    expect(within(details).queryByText('Fornecedor vencido')).not.toBeInTheDocument()
   })
 
   it('mantém títulos sem categoria visíveis sem exibir o rótulo parcial', async () => {
@@ -344,18 +360,21 @@ describe('shell financeiro', () => {
         ...await snapshotAdapterFor().getSnapshot(),
         data_state: 'PARTIAL',
         payables: { value: '-250.0000', count: 1, state: 'PARTIAL', source_system: 'BLING' },
-        payable_rows: [{ supplier: 'Fornecedor real', document: 'DOC-1', due_date: '2026-11-05', value: '-250.0000', status: '1' }],
+        payable_rows: [{ supplier: 'Fornecedor real', document: 'DOC-1', due_date: '2026-11-17', value: '-250.0000', status: '1' }],
       }),
     }
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await user.click(screen.getByRole('button', { name: 'Contas a Pagar' }))
-    const payableTotalCard = screen.getByText('TOTAL A PAGAR').closest('article')
-    expect(payableTotalCard?.textContent).toContain('-')
+    const payableTotalCard = screen.getByText('TOTAL A PAGAR NA DATA').closest('article')
+    expect(payableTotalCard).toHaveTextContent('-R$ 250,00')
     expect(payableTotalCard).not.toHaveTextContent('Parcial')
-    const row = screen.getByText('Fornecedor real').closest('tr')
+    expect(screen.queryByText('Fornecedor real')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Ver detalhes: TOTAL A PAGAR NA DATA' }))
+    const dialog = screen.getByRole('dialog', { name: 'TOTAL A PAGAR NA DATA' })
+    const row = within(dialog).getByText('Fornecedor real').closest('tr')
     expect(row).toHaveTextContent('DOC-1')
-    expect(row).toHaveTextContent('2026-11-05')
+    expect(row).toHaveTextContent('2026-11-17')
     expect(row?.textContent).toContain('-')
     expect(row).toHaveTextContent('—')
     expect(row).toHaveTextContent('1')

@@ -11,26 +11,29 @@
 - Não apagar o gráfico com base na pergunta sobre o seu significado.
 - Remover os cards “Ambíguos” e “Chargebacks”, que não têm finalidade aprovada para esta tela.
 - Substituir o card “Conciliação” por “TOTAL RECEBIDO”; seu valor é a soma de entradas conciliadas do relatório Caixa e Bancos no mês da data-base.
+- Incluir no topo um período personalizado “De” e “Até” que controle os valores, o gráfico, a distribuição e os detalhes dos recebíveis.
+- Fazer a distribuição da T01 espelhar a mesma distribuição líquida da T03, originada em Contas a Receber, e não no saldo do Itaú.
 
 ## Alterações
 
-- A tabela principal de recebíveis foi retirada do fluxo visual da T03. “TOTAL A RECEBER” abre uma janela com Cliente, Origem, Vencimento, Valor bruto, Valor líquido e Status. O detalhe de “EM ATRASO” filtra pela data-base do snapshot.
-- “TOTAL RECEBIDO” abre Data, Conta, Origem e Valor. O total e o detalhe usam os movimentos de entrada cujos IDs constam no snapshot oficial `situacaoConciliacao=1`, vinculado à mesma carga diária de `Caixas e Bancos`, e aplicam o mesmo intervalo mensal. Não há remoção de outro card de recebimentos além da substituição solicitada do card “Conciliação”.
+- A tabela principal de recebíveis foi retirada do fluxo visual da T03. “TOTAL A RECEBER” abre uma janela com Cliente, Origem, Vencimento, Valor bruto, Valor líquido e Status. O período De/Até controla os cards, o gráfico, a distribuição e os detalhes. “TOTAL A RECEBER”, PIX, Boletos e Cartão somam o líquido dos títulos com vencimento no intervalo; “EM ATRASO” considera vencimentos anteriores ao início; “TOTAL RECEBIDO” soma movimentos conciliados dentro do intervalo.
+- “TOTAL RECEBIDO” abre Data, Conta, Origem e Valor. O total e o detalhe usam os movimentos de entrada cujos IDs constam no snapshot oficial `situacaoConciliacao=1`, vinculado à mesma carga diária de `Caixas e Bancos`, e filtram a data selecionada. Não há remoção de outro card de recebimentos além da substituição solicitada do card “Conciliação”.
 - Auditoria da regra corrigiu a confusão entre os dois campos da API: `situacao=R` significa que o lançamento é um registro ativo; a conciliação é indicada separadamente por `situacaoConciliacao=1` e pela lista de IDs retornada por esse filtro. A consulta agora exige essa associação oficial para os totais e detalhes. A situação opcional não é usada como prova de conciliação nem exclui uma linha que esteja na lista oficial.
 - A atualização do protótipo revelou e corrigiu outra falha: o detalhe de recebíveis parava porque a consulta tinha dois campos chamados `payment_method`. O nome associado à forma de pagamento agora tem alias próprio, eliminando a ambiguidade no banco real.
 - A auditoria da tela reaberta encontrou um elo faltando entre o worker e a janela Majucau: `WailsDashboardSnapshot` descartava `receivables_by_method`. O backend já fazia o cálculo, mas os cards e a legenda recebiam traços. O DTO do aplicativo agora encaminha o campo, com teste de mapeamento e serialização.
 - A conferência seguinte encontrou a divergência entre a soma por forma e “TOTAL A RECEBER”: o total de uma única origem era deduplicado contra registros da outra origem que não estavam atualizados. O cálculo do subtotal Bling agora usa seus registros elegíveis sem deduplicar contra uma origem Nuvem Pago desatualizada; a distribuição usa a mesma seleção da origem atual e aplica a deduplicação cruzada apenas quando ambas estão atualizadas. Um teste PostgreSQL verifica ambos os cenários e exige que PIX + boleto + cartão + não identificados feche exatamente com “TOTAL A RECEBER”.
-- As listas do dashboard aceitam até 200 linhas. O limite e os limites por campo/registro continuam protegendo a leitura e a memória; se houver mais de 200 itens, o detalhe não substitui uma exportação completa.
+- As listas do dashboard aceitam até 10.000 linhas por tipo, dentro do limite de 16 MiB do snapshot. A lista de recebíveis agora prioriza vencimentos a partir da data-base e depois os atrasados mais recentes, para que milhares de títulos antigos não ocultem as semanas selecionadas. O detalhamento por período usa a mesma lista e os valores dos cards são recalculados nela.
 - O nome da forma de pagamento é mapeado no backend para somar valores líquidos de PIX, boleto, cartão e não identificados sobre o conjunto completo deduplicado. Os três cards inferiores e o gráfico usam esses mesmos totais, sem depender do limite de 200 linhas da janela de detalhes.
 - “Ver detalhes” dos outros cards permanece acionável. Quando o snapshot não possui uma lista de origem para aquele indicador, a janela informa essa ausência e não fabrica linhas.
 - O gráfico de distribuição permanece na T03 e agora mostra a participação por forma de recebimento, em valor líquido. “Não identificados” reúne as linhas sem uma forma reconhecida como PIX, boleto ou cartão. Quando não há dados atuais, o círculo fica neutro e não sugere percentuais.
+- A distribuição exibida na T01 usa a mesma agregação de Contas a Receber da T03 e compartilha o período enquanto a navegação permanece aberta. Ela mostra PIX, Boletos, Cartão e Não identificados, sem usar saldo bancário do Itaú ou categorias genéricas de conciliação.
 - Os cards “Ambíguos” e “Chargebacks” foram removidos da faixa inferior. PIX, Boletos e Cartão permanecem com valores líquidos e detalhes sob demanda.
 
 ## Validação
 
 - O teste de integração existente foi atualizado para exigir o snapshot oficial de conciliação e conferir que apenas IDs presentes nele entram nos totais, mesmo com `situacao` opcional ausente.
 - `go test ./internal/dashboard -count=1` passou; os testes focados de sincronização/normalização do Bling passaram.
-- `npm test -- --run src/T03ReceivablesDetails.test.tsx` cobre a consistência dos totais líquidos de PIX, Boletos e Cartão, os detalhes sob demanda e a ausência dos cards Ambíguos e Chargebacks.
+- `npm test -- --run src/T03ReceivablesDetails.test.tsx` cobre o intervalo De/Até, os totais líquidos por forma, os detalhes sob demanda, o espelhamento T01/T03 e a ausência dos cards Ambíguos e Chargebacks.
 - `npm run build` passou (TypeScript e Vite).
 - Teste da camada Wails confirma o encaminhamento e a serialização de `receivables_by_method`.
 - `go test ./internal/dashboard -run TestReadStreamSummaryPostgresRequiresNormalizedDailyStages -count=1` passou contra o banco isolado do protótipo; a divisão por forma reconcilia com o total no cenário de integração.

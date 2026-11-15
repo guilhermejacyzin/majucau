@@ -33,6 +33,29 @@ passaram; a regressão PostgreSQL foi adicionada e será confirmada pela CI.
 
 Evidência: [`T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md`](evidence/T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md).
 
+## Protótipo aberto e alinhamento dos cards da T01 — 15/11/2026
+
+O protótipo real está aberto na aba local `localhost:34115`, na T02 — Fluxo de
+Caixa. A tabela, o gráfico e a semana crítica estão preenchidos. Ao conferir a
+T01, encontrei dois cards ainda ligados a métricas antigas: Receber combinava
+fontes B2C+B2B e Pagar mostrava a origem como “Bling”, com janela diferente da
+T02. A T01 agora mostra, nos cards A Receber e A Pagar, os mesmos totais de 60
+dias calculados pela T02 a partir dos relatórios Contas a Receber (líquido) e
+Contas a Pagar; removi esses rótulos de origem antigos da apresentação.
+
+O resultado exibido na T02 permanece R$ 289.559,53 a receber e -R$ 506.770,38
+a pagar em 60 dias na sincronização de 14/11 às 22:39; o saldo atual é R$
+62.548,33. A semana 22–28/11 continua igual aos relatórios compartilhados:
+R$ 43.790,66 líquidos a receber e R$ 25.275,71 a pagar. As demais semanas
+continuam pendentes de conferência da responsável.
+
+Na última execução antes deste alinhamento visual, a CI confirmou o job do
+backlog, a validação da mensagem de commit e os testes Go no Windows; o job
+PostgreSQL falhou em um teste de sincronização diária (`bling oauth
+configuration is invalid`), sem apontar falha no teste de dashboard T02. A
+mudança dos cards da T01 ainda precisa ser compilada, enviada e passar pela CI.
+Isso não encerra a validação PostgreSQL nem aprova a T02.
+
 ---
 
 ## Histórico de 09/11/2026, 05:40 BRT

@@ -289,7 +289,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(screen.getByRole('heading', { name: 'SEMANA CRÍTICA' }).closest('section')).toHaveTextContent('08/11–14/11')
   })
 
-  it('não mostra o rótulo parcial nos cards e preserva a identificação das fontes', () => {
+  it('usa nos cards executivos os mesmos totais de 60 dias do fluxo por contas a receber e pagar', () => {
     const unavailable = { state: 'UNAVAILABLE' as const }
     const snapshot: DashboardSnapshot = {
       as_of: '2026-11-01T12:00:00Z',
@@ -305,18 +305,24 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
       payables_overdue: unavailable,
       payables_due_next_7_days: unavailable,
       payments_month: unavailable,
+      cash_flow: {
+        inflows_next_30_days: { value: '11.00', state: 'CONFIRMED', source_system: 'BLING' },
+        outflows_next_30_days: { value: '-22.00', state: 'CONFIRMED', source_system: 'BLING' },
+        inflows_next_60_days: { value: '61.00', state: 'CONFIRMED', source_system: 'BLING' },
+        outflows_next_60_days: { value: '-34.00', state: 'CONFIRMED', source_system: 'BLING' },
+      },
     }
     render(<MockupDashboard screen="executive" snapshot={snapshot} />)
 
     const receivables = screen.getByText('A RECEBER').closest('article')
     const payables = screen.getByText('A PAGAR').closest('article')
-    expect(receivables).toHaveTextContent('125,00')
+    expect(receivables).toHaveTextContent('61,00')
     expect(receivables).not.toHaveTextContent('900,00')
-    expect(within(receivables as HTMLElement).getByText('B2C + B2B')).toBeInTheDocument()
+    expect(within(receivables as HTMLElement).getByText('60 dias · valor líquido')).toBeInTheDocument()
     expect(receivables).not.toHaveTextContent('Parcial')
-    expect(within(payables as HTMLElement).getByText('Bling')).toBeInTheDocument()
+    expect(within(payables as HTMLElement).getByText('60 dias · contas a pagar')).toBeInTheDocument()
     expect(payables?.textContent).toContain('-')
-    expect(payables).toHaveTextContent('80,00')
+    expect(payables).toHaveTextContent('34,00')
     expect(payables).not.toHaveTextContent('500,00')
     expect(within(payables as HTMLElement).queryByText(/Parcial/)).not.toBeInTheDocument()
   })

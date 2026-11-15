@@ -53,6 +53,13 @@ preserva o período completo mesmo se a T02 estiver filtrada. Ver [status da
 T02](../STATUS-ATUAL-2026-11-09.md) e [evidência do saldo-base e da auditoria
 da janela](../evidence/T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md).
 
+**Alinhamento dos cards T01 — 15/11/2026:** A Receber e A Pagar usam os mesmos
+totais de 60 dias que os cards da T02, diretamente da série consolidada dos
+relatórios Contas a Receber (líquido) e Contas a Pagar. A apresentação não
+combina mais recebíveis de Nuvem Pago nem mostra um rótulo de origem confuso.
+O botão de atualização também descreve os relatórios financeiros e o saldo
+conciliado, sem citar o fornecedor na tela.
+
 **Correção do saldo semanal — 09/11/2026:** a série de fechamentos semanais
 calculada para a T02 agora também alimenta a Visão Executiva (T01). Antes, T01
 recebia somente os períodos crus e por isso a linha laranja ficava ausente,

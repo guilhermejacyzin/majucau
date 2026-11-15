@@ -23,7 +23,7 @@ Planejamento do sistema de gestão e análise da Majucau. A **versão 2** é a r
 - A tela independente T05 — Conciliação foi retirada em 31/10/2026. As regras internas de correspondência e controle permanecem necessárias para validar dados de outras telas; não haverá uma página substituta.
 - O fechamento funcional vigente está registrado na v2. Regras antigas substituídas nas v0/v1 são histórico.
 
-## Regra financeira vigente da T02 — atualização 09/11/2026
+## Regra financeira vigente da T02 — atualização 14/11/2026
 
 Gisele determinou que a T02 não use mais o relatório “Fluxo de Caixa” do
 Bling. Receitas devem vir diretamente dos títulos abertos em Contas a Receber;
@@ -35,6 +35,13 @@ despesas e inicia a semana seguinte. A decisão substitui as instruções antiga
 de copiar o relatório de Fluxo de Caixa; ver
 [`G0-DECISION-REGISTER.md`](../../G0-DECISION-REGISTER.md) e
 [`evidência técnica da T02`](../evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).
+
+O mesmo último checkpoint conciliado de Itaú que aparece em **Saldo atual** é
+agora usado como abertura das projeções do menor saldo em 30/60 dias. Uma
+conciliação posterior avança a base apenas pelos movimentos reconciliados
+identificados. Sem checkpoint aprovado, a projeção permanece indisponível.
+Implementação e evidência de verificação: [`correção do saldo-base da projeção
+T02`](../evidence/T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md).
 
 **Correção do saldo semanal — 09/11/2026:** a série de fechamentos semanais
 calculada para a T02 agora também alimenta a Visão Executiva (T01). Antes, T01

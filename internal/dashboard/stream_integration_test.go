@@ -246,6 +246,13 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `INSERT INTO bling_cash_balance_checkpoints (connection_id, account_source_id, reference_date, reconciled_amount, source) VALUES ($1::uuid, '1', '2026-10-10', 1000, 'USER_APPROVED_BLING_SCREENSHOT')`, connectionID); err != nil {
 		t.Fatalf("seed approved Itaú balance checkpoint: %v", err)
 	}
+	snapshot, err = readStreamSummary(ctx, tx, asOf)
+	if err != nil {
+		t.Fatalf("read summary with approved checkpoint and no newer reconciliation: %v", err)
+	}
+	if snapshot.CashFlow.MinimumBalance30Days == nil || snapshot.CashFlow.MinimumBalance30Days.Balance.State != "PROJECTED" || snapshot.CashFlow.MinimumBalance60Days == nil || snapshot.CashFlow.MinimumBalance60Days.Balance.State != "PROJECTED" {
+		t.Fatalf("approved Itaú checkpoint must seed 30/60-day minimum balance before a newer reconciliation exists: %+v", snapshot.CashFlow)
+	}
 	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE id = $1::uuid`, reconciledCashBatchID); err != nil {
 		t.Fatalf("normalize empty reconciled cash snapshot: %v", err)
 	}

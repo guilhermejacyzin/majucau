@@ -164,7 +164,10 @@ func readLatestItauBalance(ctx context.Context, tx pgx.Tx, asOf time.Time, corre
 	}
 	result := approvedItauBalance{
 		Metric:        base,
-		Projection:    application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"},
+		// The approved reconciled checkpoint is the opening balance for the
+		// forecast. A newer reconciliation batch may move it forward, but its
+		// absence must not erase a valid approved starting point.
+		Projection:    base,
 		ReferenceDate: baseDate,
 		BaseMetric:    base,
 		BaseDate:      baseDate,

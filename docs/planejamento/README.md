@@ -1,6 +1,15 @@
 # Arquivos do planejamento
 
-**Estado T02 — 09/11/2026:** a T01 agora usa a série de fechamento semanal
+**Estado T02 — atualização 14/11/2026:** o protótipo Wails está aberto na T02.
+O último checkpoint conciliado do Itaú agora inicia também a projeção do menor
+saldo 30/60 dias; antes, esse card ficava vazio sem uma nova conciliação,
+embora o checkpoint aprovado já existisse. Testes de dashboard e integração
+PostgreSQL passaram. A semana 22–28/11 segue em R$ 43.790,66 líquidos a receber
+e R$ 25.275,71 a pagar. A responsável ainda precisa conferir as demais semanas
+e aprovar T02; T03 aguarda esse aceite. Evidência em
+[`T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md`](../evidence/T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md).
+
+**Histórico de 09/11/2026:** a T01 agora usa a série de fechamento semanal
 calculada pela T02, que corrige a linha de saldo que faltava na Visão Executiva.
 As entradas vêm de Contas a Receber pelo líquido; as saídas, de Contas a Pagar;
 o gráfico não usa o relatório pronto de Fluxo de Caixa. O rótulo visual

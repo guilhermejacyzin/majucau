@@ -1,4 +1,27 @@
-# Status da T02 — 09/11/2026, 05:40 BRT
+# Status da T02 — atualização 14/11/2026
+
+## Projeção pelo último saldo conciliado — 14/11/2026
+
+O protótipo atualizado está aberto na janela Wails **Majucau Financial
+Intelligence**, na T02 — Fluxo de Caixa. A causa dos cards de menor saldo em
+branco foi corrigida: o worker estava iniciando a projeção como indisponível
+até receber uma nova conciliação, mesmo quando já havia um saldo-base
+conciliado aprovado. A projeção agora parte desse mesmo saldo-base de Itaú e
+avança por movimentos conciliados posteriores, se existirem.
+
+Teste de dashboard e teste de integração PostgreSQL passaram. A conferência do
+protótipo mostrou saldo atual de R$ 62.548,33, menor saldo de 30 dias de
+-R$ 57.998,81 em 05/12 e menor saldo de 60 dias de -R$ 159.418,96 em 06/01.
+A semana 22–28/11 continua exibindo receita líquida de R$ 43.790,66 e despesa
+de R$ 25.275,71. Isto corrige a abertura e o card de mínimos, mas não substitui
+a análise da responsável de todas as demais semanas nem representa aprovação
+final da T02. T03 segue aguardando essa aprovação.
+
+Evidência: [`T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md`](evidence/T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md).
+
+---
+
+## Histórico de 09/11/2026, 05:40 BRT
 
 ## Correção aplicada no protótipo — 09/11/2026, 05:40 BRT
 

@@ -459,7 +459,12 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
   const refreshBlingData = useCallback(async () => {
     const result = await blingOAuth.sync({ full_refresh: true })
     if (result.status === 'SUCCESS' || result.status === 'PARTIAL') await refreshDataViews()
-    if (result.status === 'PARTIAL') throw new Error('A atualização terminou com consultas pendentes. Alguns resultados podem ter sido atualizados; confira Integrações.')
+    if (result.status === 'PARTIAL') {
+      if (result.error_code === 'BLING_API_SCOPE_INSUFFICIENT') {
+        throw new Error('O Bling não autorizou a leitura de Contas a Receber. Os valores dessa tela continuam sendo da última atualização concluída. Reautorize a conexão com acesso de leitura a Contas a Receber em Integrações.')
+      }
+      throw new Error(result.message || 'A atualização terminou parcialmente. Alguns valores podem continuar da última atualização concluída; confira Integrações.')
+    }
     if (result.status !== 'SUCCESS' || result.error_code) throw new Error(result.message || 'A atualização não foi concluída. Os dados da tela não foram recarregados; confira a conexão e tente novamente.')
   }, [blingOAuth, refreshDataViews])
   useEffect(() => {

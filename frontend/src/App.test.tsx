@@ -205,6 +205,32 @@ describe('shell financeiro', () => {
     expect(snapshotReads).toBe(1)
   })
 
+  it('explica quando falta acesso de leitura a Contas a Receber numa atualização parcial', async () => {
+    const user = userEvent.setup()
+    let snapshotReads = 0
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        return snapshotAdapterFor('269080.1400').getSnapshot()
+      },
+    }
+    const blingOAuthAdapter: BlingOAuthAdapter = {
+      start: async () => ({ status: 'AUTHORIZING' }),
+      status: async () => ({ status: 'CONNECTED' }),
+      test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      disconnect: async () => ({ status: 'NOT_CONFIGURED' }),
+      sync: async () => ({ status: 'PARTIAL', error_code: 'BLING_API_SCOPE_INSUFFICIENT', message: 'O aplicativo Bling não tem permissão para consultar este recurso.', receivables: { pages_read: 0, records_read: 0 }, payables: { pages_read: 2, records_read: 10313 } }),
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} blingOAuthAdapter={blingOAuthAdapter} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+
+    await user.click(screen.getByRole('button', { name: 'Atualizar dados da tela' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('O Bling não autorizou a leitura de Contas a Receber.')
+    expect(screen.getByRole('alert')).toHaveTextContent('última atualização concluída')
+    expect(snapshotReads).toBe(2)
+  })
+
   it('não apresenta zero como valor confirmado quando não há dados do Bling', async () => {
     const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
       getSnapshot: async () => ({

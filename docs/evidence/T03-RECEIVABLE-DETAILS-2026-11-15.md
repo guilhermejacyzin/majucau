@@ -39,6 +39,7 @@
 - O botão de atualização foi acionado durante a conferência. A tentativa atual do Bling falhou para recebíveis com `BLING_API_SCOPE_INSUFFICIENT` (0 recebíveis lidos) e terminou parcial; por isso, a tela conserva o último snapshot publicado, datado de 15/11/2026 02:13. Não considerar esse snapshot como uma nova importação bem-sucedida.
 - Após a correção da consulta SQL ambígua (`payment_method`), o snapshot do dashboard voltou a carregar no protótipo. O card “TOTAL RECEBIDO” e sua lista usam exclusivamente IDs do snapshot oficial de conciliação; o último snapshot disponível mostra R$ 0,00 e nenhuma linha para esse indicador. A causa exata é a ausência de entradas conciliadas nessa carga publicada, não um valor inventado ou o valor bruto de contas a receber.
 - Para que a atualização diária produza novos recebíveis, a conexão precisa ter o escopo de leitura de contas a receber. A conexão atual não o concedeu; será necessário reautorizar a integração com esse escopo antes de declarar os novos valores como atualizados.
+- O botão “Atualizar dados da tela” agora preserva e mostra o motivo de uma atualização parcial. Para o erro de escopo, informa que a leitura de Contas a Receber não foi autorizada, que esses valores continuam vindo da última atualização concluída e que a conexão precisa ser reautorizada. Teste dedicado em `App.test.tsx` passou (37 testes do arquivo) e `npm run build` passou.
 
 ## Pendência de aprovação
 

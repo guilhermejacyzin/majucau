@@ -1316,7 +1316,9 @@ ler Contas a Receber por escopo ausente (`BLING_API_SCOPE_INSUFFICIENT`, zero
 recebíveis lidos), portanto os valores exibidos ainda refletem o último snapshot
 publicado, 15/11/2026 02:13, e não uma nova carga completa. Depois do reparo da
 consulta SQL ambígua de `payment_method`, o snapshot do dashboard voltou a
-carregar localmente. A autorização da API para recebíveis é dependência para a
+carregar localmente. O botão Atualizar agora explica quando a leitura de
+recebíveis falha por falta de acesso e avisa que aqueles valores são do último
+snapshot concluído. A autorização da API para recebíveis é dependência para a
 próxima atualização diária. A T03 está aberta no protótipo para aprovação
 visual; não marcar sincronização completa. Evidência:
 [`T03 — detalhes de Contas a Receber`](evidence/T03-RECEIVABLE-DETAILS-2026-11-15.md).

@@ -237,8 +237,8 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if snapshot.ReceiptsMonth.State != "PARTIAL" || snapshot.PaymentsMonth.State != "PARTIAL" {
 		t.Fatalf("cash movement metrics should keep values visible and mark missing source status partial: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
-	if snapshot.ReceiptsMonth.Value != "120.00" || snapshot.PaymentsMonth.Value != "-30.00" {
-		t.Fatalf("cash flow should include listed movements, with inflows positive and outflows negative: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
+	if snapshot.ReceiptsMonth.Value != "100.00" || snapshot.PaymentsMonth.Value != "-25.00" {
+		t.Fatalf("only movements with explicit reconciled status R should count: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
 	if snapshot.CashBalance.State != "UNAVAILABLE" || snapshot.CashBalance.Value != "" {
 		t.Fatalf("current Itaú balance must stay unavailable without a verified opening balance; movement net must not be mislabeled as an account balance: %+v", snapshot.CashBalance)

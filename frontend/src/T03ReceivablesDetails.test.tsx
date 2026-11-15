@@ -66,11 +66,10 @@ describe('T03 detalhes dos recebíveis', () => {
   it('explica o gráfico e não inventa fatias sem dados de status', () => {
     render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
 
-    expect(screen.getByText('Mostra como o total de recebíveis se divide entre situações de confirmação.')).toBeInTheDocument()
+    expect(screen.getByText(/Situação dos títulos: confirmado, provisório, pendente ou divergente/)).toBeInTheDocument()
     expect(document.querySelector('.mocap-donut')).not.toHaveClass('has-data')
-    fireEvent.click(screen.getByRole('button', { name: /O que significa cada situação/ }))
-    expect(screen.getByText(/conciliado com a fonte oficial e validado/)).toBeInTheDocument()
-    expect(screen.getByText(/Cada fatia representará a parte do total/)).toBeInTheDocument()
+    expect(screen.getByText(/título e valor conferidos com a origem/)).toBeInTheDocument()
+    expect(screen.getByText(/o círculo mostra a proporção de cada situação/)).toBeInTheDocument()
   })
 
   it('abre detalhes sem remover os demais cards da tela', () => {

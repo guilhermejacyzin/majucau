@@ -271,3 +271,18 @@ func TestSyncBlingFullRefreshUsesDedicatedWorkerMethodWithEmptyPayload(t *testin
 		t.Fatalf("unexpected full refresh result: %+v", result)
 	}
 }
+
+func TestSyncBlingReceivablesRefreshUsesDashboardSourcesOnly(t *testing.T) {
+	handler := ipc.HandlerFunc(func(ctx context.Context, req ipc.Request) (ipc.Response, error) {
+		if req.Method != ipc.MethodBlingRefresh || string(req.Payload) != `{"receivables_refresh":true}` {
+			t.Fatalf("unexpected receivables refresh request: method=%q payload=%s", req.Method, req.Payload)
+		}
+		return ipc.NewResponse(req.RequestID, application.BlingSyncResponse{Status: "SUCCESS", Receivables: application.BlingSyncResourceResult{Status: "SUCCESS", RecordsRead: 201}})
+	})
+	app := NewApp()
+	app.clientFactory = func() (ipc.Client, error) { return ipc.NewFakeClient(handler), nil }
+	result := app.SyncBling(application.BlingSyncRequest{ReceivablesRefresh: true})
+	if result.ErrorCode != "" || result.Status != "SUCCESS" || result.Receivables.RecordsRead != 201 {
+		t.Fatalf("unexpected receivables refresh result: %+v", result)
+	}
+}

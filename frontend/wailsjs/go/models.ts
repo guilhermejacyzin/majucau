@@ -220,6 +220,7 @@ export namespace application {
 	}
 	export class BlingSyncRequest {
 	    full_refresh?: boolean;
+	    receivables_refresh?: boolean;
 	    page?: number;
 	    limit?: number;
 	    due_date_from?: string;
@@ -237,6 +238,7 @@ export namespace application {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.full_refresh = source["full_refresh"];
+	        this.receivables_refresh = source["receivables_refresh"];
 	        this.page = source["page"];
 	        this.limit = source["limit"];
 	        this.due_date_from = source["due_date_from"];

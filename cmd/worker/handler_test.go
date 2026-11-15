@@ -72,13 +72,19 @@ type fakeBlingRawSyncer struct {
 }
 
 type fakeBlingOnDemandSyncer struct {
-	calls  int
-	result bling.BlingRawSyncResult
-	err    error
+	calls            int
+	receivablesCalls int
+	result           bling.BlingRawSyncResult
+	err              error
 }
 
 func (f *fakeBlingOnDemandSyncer) SyncNow(context.Context) (bling.BlingRawSyncResult, error) {
 	f.calls++
+	return f.result, f.err
+}
+
+func (f *fakeBlingOnDemandSyncer) SyncReceivablesNow(context.Context) (bling.BlingRawSyncResult, error) {
+	f.receivablesCalls++
 	return f.result, f.err
 }
 
@@ -349,6 +355,22 @@ func TestWorkerBlingRefreshRunsFullSyncAndReturnsSanitizedCounts(t *testing.T) {
 	}
 	if result.Status != "SUCCESS" || result.Receivables.RecordsRead != 201 || result.Payables.RecordsRead != 101 {
 		t.Fatalf("unexpected refresh result: %+v", result)
+	}
+}
+
+func TestWorkerBlingRefreshCanRefreshOnlyReceivablesScreenSources(t *testing.T) {
+	fake := &fakeBlingOnDemandSyncer{result: bling.BlingRawSyncResult{Status: "PARTIAL", Receivables: bling.APISyncResult{Status: "FAILED"}, CashMovements: bling.APISyncResult{Status: "SUCCESS", RecordsRead: 10}, Payables: bling.APISyncResult{Status: "NOT_APPLICABLE"}}}
+	handler := workerHandler{health: application.StaticHealth{Service: "test"}, onDemandBlingSync: fake}
+	response, err := handler.Handle(context.Background(), ipc.Request{RequestID: "receivables-refresh", Method: ipc.MethodBlingRefresh, Payload: []byte(`{"receivables_refresh":true}`)})
+	if err != nil || !response.OK || fake.receivablesCalls != 1 || fake.calls != 0 {
+		t.Fatalf("receivables refresh response: %#v full calls=%d receivables calls=%d err=%v", response, fake.calls, fake.receivablesCalls, err)
+	}
+	var result application.BlingSyncResponse
+	if err := json.Unmarshal(response.Payload, &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != "PARTIAL" || result.Receivables.Status != "FAILED" || result.Payables.RecordsRead != 0 {
+		t.Fatalf("unexpected targeted refresh result: %+v", result)
 	}
 }
 

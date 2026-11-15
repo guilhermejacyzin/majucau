@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -60,6 +61,7 @@ type blingDailySyncer interface {
 
 type blingOnDemandSyncer interface {
 	SyncNow(context.Context) (bling.BlingRawSyncResult, error)
+	SyncReceivablesNow(context.Context) (bling.BlingRawSyncResult, error)
 }
 
 type googleDriveDailySyncer interface {
@@ -237,13 +239,24 @@ func (h workerHandler) syncBling(ctx context.Context, req ipc.Request) (ipc.Resp
 }
 
 func (h workerHandler) refreshBling(ctx context.Context, req ipc.Request) (ipc.Response, error) {
-	if len(req.Payload) != 0 && string(req.Payload) != "null" && string(req.Payload) != "{}" {
-		return ipc.NewErrorResponse(req.RequestID, "BLING_REFRESH_REQUEST_INVALID", "Não foi possível iniciar a atualização do Bling."), nil
+	var input application.BlingSyncRequest
+	if len(req.Payload) != 0 && string(req.Payload) != "null" {
+		decoder := json.NewDecoder(bytes.NewReader(req.Payload))
+		decoder.DisallowUnknownFields()
+		if decoder.Decode(&input) != nil || input.FullRefresh || input.Page != 0 || input.Limit != 0 || input.DueDateFrom != "" || input.DueDateTo != "" || input.ReceivedDateFrom != "" || input.ReceivedDateTo != "" || input.PaymentDateFrom != "" || input.PaymentDateTo != "" || input.Status != "" {
+			return ipc.NewErrorResponse(req.RequestID, "BLING_REFRESH_REQUEST_INVALID", "Não foi possível iniciar a atualização do Bling."), nil
+		}
 	}
 	if h.onDemandBlingSync == nil {
 		return ipc.NewErrorResponse(req.RequestID, "BLING_VAULT_UNAVAILABLE", "O cofre seguro e o banco local ainda não estão disponíveis."), nil
 	}
-	result, err := h.onDemandBlingSync.SyncNow(ctx)
+	var result bling.BlingRawSyncResult
+	var err error
+	if input.ReceivablesRefresh {
+		result, err = h.onDemandBlingSync.SyncReceivablesNow(ctx)
+	} else {
+		result, err = h.onDemandBlingSync.SyncNow(ctx)
+	}
 	response := application.BlingSyncResponse{Status: result.Status, Receivables: syncResourceResult(result.Receivables), Payables: syncResourceResult(result.Payables)}
 	if err != nil {
 		response.ErrorCode = blingSyncErrorCode(err)

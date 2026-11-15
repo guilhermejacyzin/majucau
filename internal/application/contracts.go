@@ -181,16 +181,17 @@ type BlingOAuthDisconnectResponse struct {
 }
 
 type BlingSyncRequest struct {
-	FullRefresh      bool   `json:"full_refresh,omitempty"`
-	Page             int    `json:"page,omitempty"`
-	Limit            int    `json:"limit,omitempty"`
-	DueDateFrom      string `json:"due_date_from,omitempty"`
-	DueDateTo        string `json:"due_date_to,omitempty"`
-	ReceivedDateFrom string `json:"received_date_from,omitempty"`
-	ReceivedDateTo   string `json:"received_date_to,omitempty"`
-	PaymentDateFrom  string `json:"payment_date_from,omitempty"`
-	PaymentDateTo    string `json:"payment_date_to,omitempty"`
-	Status           string `json:"status,omitempty"`
+	FullRefresh        bool   `json:"full_refresh,omitempty"`
+	ReceivablesRefresh bool   `json:"receivables_refresh,omitempty"`
+	Page               int    `json:"page,omitempty"`
+	Limit              int    `json:"limit,omitempty"`
+	DueDateFrom        string `json:"due_date_from,omitempty"`
+	DueDateTo          string `json:"due_date_to,omitempty"`
+	ReceivedDateFrom   string `json:"received_date_from,omitempty"`
+	ReceivedDateTo     string `json:"received_date_to,omitempty"`
+	PaymentDateFrom    string `json:"payment_date_from,omitempty"`
+	PaymentDateTo      string `json:"payment_date_to,omitempty"`
+	Status             string `json:"status,omitempty"`
 }
 
 type BlingSyncResourceResult struct {

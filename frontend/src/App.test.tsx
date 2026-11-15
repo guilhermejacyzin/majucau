@@ -180,6 +180,30 @@ describe('shell financeiro', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  it('a atualização de Contas a Receber consulta as fontes da T03 sem esperar Contas a Pagar', async () => {
+    const user = userEvent.setup()
+    let syncInput: Record<string, unknown> | undefined
+    const blingOAuthAdapter: BlingOAuthAdapter = {
+      start: async () => ({ status: 'AUTHORIZING' }),
+      status: async () => ({ status: 'CONNECTED' }),
+      test: async () => ({ status: 'SUCCESS', page_record_count: 1 }),
+      disconnect: async () => ({ status: 'NOT_CONFIGURED' }),
+      sync: async (input) => {
+        syncInput = input
+        return { status: 'SUCCESS', receivables: { status: 'SUCCESS', pages_read: 2, records_read: 201 }, payables: { status: 'NOT_APPLICABLE', pages_read: 0, records_read: 0 } }
+      },
+    }
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} blingOAuthAdapter={blingOAuthAdapter} />)
+    await user.click(await screen.findByRole('button', { name: 'Contas a Receber' }))
+    await screen.findByRole('heading', { name: 'CONTAS A RECEBER' })
+
+    await user.click(screen.getByRole('button', { name: 'Atualizar dados da tela' }))
+
+    expect(syncInput).toEqual({ receivables_refresh: true })
+    expect(await screen.findByText(/Última sincronização:/)).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('informa quando a atualização completa do Bling falha sem reler o snapshot', async () => {
     const user = userEvent.setup()
     let snapshotReads = 0

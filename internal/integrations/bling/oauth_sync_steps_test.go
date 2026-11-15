@@ -9,7 +9,7 @@ func TestRunIndependentBlingSyncStepsAttemptsRemainingSourcesAfterFailure(t *tes
 	wantFailure := errors.New("source unavailable")
 	var result BlingRawSyncResult
 	attempted := make([]string, 0, 5)
-	steps := buildBlingSyncSteps(&result, blingDateFilterDue, true, true, true,
+	steps := buildBlingSyncSteps(&result, blingDateFilterDue, true, true, true, true,
 		func() (APISyncResult, error) {
 			attempted = append(attempted, "cash_movements")
 			return APISyncResult{Status: "SUCCESS", RecordsRead: 12}, nil
@@ -63,7 +63,7 @@ func TestBuildBlingSyncStepsKeepsManualDateFilterScope(t *testing.T) {
 		}
 	}
 
-	steps := buildBlingSyncSteps(&result, blingDateFilterReceived, false, false, false, nil, nil, makeRun("receivables"), makeRun("payables"), nil, nil)
+	steps := buildBlingSyncSteps(&result, blingDateFilterReceived, false, false, false, true, nil, nil, makeRun("receivables"), makeRun("payables"), nil, nil)
 	if len(steps) != 1 {
 		t.Fatalf("received-date sync has %d steps, want only receivables", len(steps))
 	}
@@ -72,6 +72,25 @@ func TestBuildBlingSyncStepsKeepsManualDateFilterScope(t *testing.T) {
 	}
 	if len(attempted) != 1 || attempted[0] != "receivables" {
 		t.Fatalf("received-date sources = %v, want only receivables", attempted)
+	}
+}
+
+func TestReceivablesScreenRefreshDoesNotWaitForPayableHydration(t *testing.T) {
+	var result BlingRawSyncResult
+	var attempted []string
+	makeRun := func(name string) func() (APISyncResult, error) {
+		return func() (APISyncResult, error) {
+			attempted = append(attempted, name)
+			return APISyncResult{Status: "SUCCESS"}, nil
+		}
+	}
+	steps := buildBlingSyncSteps(&result, blingDateFilterDue, true, true, true, false,
+		makeRun("cash"), makeRun("reconciled cash"), makeRun("receivables"), makeRun("payables"), makeRun("payment methods"), makeRun("financial accounts"))
+	if failures := runIndependentBlingSyncSteps(steps...); len(failures) != 0 {
+		t.Fatalf("receivables-screen refresh failures = %v", failures)
+	}
+	if len(attempted) != 5 || attempted[0] != "cash" || attempted[1] != "reconciled cash" || attempted[2] != "receivables" || attempted[3] != "payment methods" || attempted[4] != "financial accounts" {
+		t.Fatalf("receivables-screen sources = %v, want cash, reconciled cash, receivables, payment methods, financial accounts; payables must be skipped", attempted)
 	}
 }
 

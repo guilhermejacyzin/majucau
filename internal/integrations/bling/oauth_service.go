@@ -85,7 +85,7 @@ type blingSyncStep struct {
 	run      func() (APISyncResult, error)
 }
 
-func buildBlingSyncSteps(result *BlingRawSyncResult, dateMode string, includeCashMovements, includePaymentMethods, includeFinancialAccounts bool, cash, reconciledCash, receivables, payables, paymentMethods, financialAccounts func() (APISyncResult, error)) []blingSyncStep {
+func buildBlingSyncSteps(result *BlingRawSyncResult, dateMode string, includeCashMovements, includePaymentMethods, includeFinancialAccounts, includePayables bool, cash, reconciledCash, receivables, payables, paymentMethods, financialAccounts func() (APISyncResult, error)) []blingSyncStep {
 	steps := make([]blingSyncStep, 0, 6)
 	if includeCashMovements {
 		steps = append(steps, blingSyncStep{resource: CashMovementsAPIResource, target: &result.CashMovements, run: cash})
@@ -104,7 +104,7 @@ func buildBlingSyncSteps(result *BlingRawSyncResult, dateMode string, includeCas
 	if includeFinancialAccounts {
 		steps = append(steps, blingSyncStep{resource: FinancialAccountsAPIResource, target: &result.FinancialAccounts, run: financialAccounts})
 	}
-	if dateMode != blingDateFilterReceived {
+	if includePayables && dateMode != blingDateFilterReceived {
 		steps = append(steps, blingSyncStep{resource: PayablesAPIResource, target: &result.Payables, run: payables})
 	}
 	return steps
@@ -631,10 +631,10 @@ func (s *BlingOAuthService) Disconnect(ctx context.Context) error {
 // payables. Status-only requests retain the existing behavior and read both.
 // This method never invents a financial window and never normalizes records.
 func (s *BlingOAuthService) Sync(ctx context.Context, filter ReceivablesFilter) (BlingRawSyncResult, error) {
-	return s.sync(ctx, filter, nil, false, nil, false)
+	return s.sync(ctx, filter, nil, false, nil, false, true)
 }
 
-func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, correlationID *uuid.UUID, includeCashMovements bool, cashMovementFilter *CashMovementsFilter, includePaymentMethods bool) (BlingRawSyncResult, error) {
+func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, correlationID *uuid.UUID, includeCashMovements bool, cashMovementFilter *CashMovementsFilter, includePaymentMethods, includePayables bool) (BlingRawSyncResult, error) {
 	if includeCashMovements && correlationID == nil {
 		return BlingRawSyncResult{}, errors.New("daily cash movement sync requires a stable correlation ID")
 	}
@@ -710,7 +710,7 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 			return financialAccounts.SyncWithCorrelationID(ctx, ReceivablesFilter{}, pgUUID(*correlationID))
 		}
 	}
-	if dateMode != blingDateFilterReceived {
+	if includePayables && dateMode != blingDateFilterReceived {
 		payables := NewPayablesAPISyncService(s.pool, client)
 		payablesSync = func() (APISyncResult, error) {
 			if correlationID == nil {
@@ -719,7 +719,7 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 			return payables.SyncWithCorrelationID(ctx, filter, pgUUID(*correlationID))
 		}
 	}
-	steps := buildBlingSyncSteps(&result, dateMode, includeCashMovements, includePaymentMethods, includePaymentMethods, cashSync, reconciledCashSync, receivablesSync, payablesSync, paymentMethodsSync, financialAccountsSync)
+	steps := buildBlingSyncSteps(&result, dateMode, includeCashMovements, includePaymentMethods, includePaymentMethods, includePayables, cashSync, reconciledCashSync, receivablesSync, payablesSync, paymentMethodsSync, financialAccountsSync)
 	if correlationID != nil {
 		connection, lookupErr := database.New(s.pool).GetIntegrationConnectionByProvider(ctx, string(domain.OriginBling))
 		if lookupErr != nil {

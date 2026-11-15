@@ -64,7 +64,7 @@ func (s *BlingOAuthService) SyncDaily(ctx context.Context, scheduledAt time.Time
 	if completed {
 		return BlingRawSyncResult{Status: "SUCCESS"}, true, nil
 	}
-	result, err = s.sync(ctx, ReceivablesFilter{}, &correlationID, true, &cashMovementFilter, true)
+	result, err = s.sync(ctx, ReceivablesFilter{}, &correlationID, true, &cashMovementFilter, true, true)
 	return result, false, err
 }
 
@@ -73,6 +73,17 @@ func (s *BlingOAuthService) SyncDaily(ctx context.Context, scheduledAt time.Time
 // completed 09:30 run never causes a manual refresh to be skipped. Resource
 // publication remains atomic and serialized with the scheduled load.
 func (s *BlingOAuthService) SyncNow(ctx context.Context) (result BlingRawSyncResult, returnErr error) {
+	return s.syncNow(ctx, true)
+}
+
+// SyncReceivablesNow refreshes the sources displayed on T03 without waiting
+// for the unrelated, detail-heavy payable snapshot. Cash movements and their
+// official reconciliation membership remain part of the same screen refresh.
+func (s *BlingOAuthService) SyncReceivablesNow(ctx context.Context) (result BlingRawSyncResult, returnErr error) {
+	return s.syncNow(ctx, false)
+}
+
+func (s *BlingOAuthService) syncNow(ctx context.Context, includePayables bool) (result BlingRawSyncResult, returnErr error) {
 	if s == nil || s.pool == nil {
 		return BlingRawSyncResult{}, ErrBlingAPISyncDatabaseUnavailable
 	}
@@ -113,7 +124,7 @@ func (s *BlingOAuthService) SyncNow(ctx context.Context) (result BlingRawSyncRes
 			return BlingRawSyncResult{}, fmt.Errorf("create manual Bling sync correlation ID: %w", err)
 		}
 	}
-	result, returnErr = s.sync(ctx, ReceivablesFilter{}, &correlationID, true, &cashMovementFilter, true)
+	result, returnErr = s.sync(ctx, ReceivablesFilter{}, &correlationID, true, &cashMovementFilter, true, includePayables)
 	return result, returnErr
 }
 

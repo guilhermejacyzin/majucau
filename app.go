@@ -589,9 +589,10 @@ func (a *App) SyncBling(input application.BlingSyncRequest) application.BlingSyn
 	method := ipc.MethodBlingSync
 	if input.FullRefresh {
 		method = ipc.MethodBlingRefresh
-		// The refresh endpoint accepts an empty object; the flag is an app-side
-		// dispatch hint and must not cross IPC as part of the request payload.
 		input = application.BlingSyncRequest{}
+	} else if input.ReceivablesRefresh {
+		method = ipc.MethodBlingRefresh
+		input = application.BlingSyncRequest{ReceivablesRefresh: true}
 	}
 	ctx, cancel := context.WithTimeout(parent, timeout)
 	defer cancel()

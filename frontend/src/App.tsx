@@ -456,8 +456,9 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
     if (bootstrapResult.status === 'fulfilled' && !bootstrapResult.value.error_code) setBootstrap(bootstrapResult.value)
     if (snapshotResult.status === 'fulfilled') applyDashboardSnapshot(snapshotResult.value)
   }, [adapter, applyDashboardSnapshot, snapshotAdapter])
-  const refreshBlingData = useCallback(async () => {
-    const result = await blingOAuth.sync({ full_refresh: true })
+  const refreshBlingData = useCallback(async (targetScreen: Screen) => {
+    const request = targetScreen === 'receivables' ? { receivables_refresh: true } : { full_refresh: true }
+    const result = await blingOAuth.sync(request)
     if (result.status === 'SUCCESS' || result.status === 'PARTIAL') await refreshDataViews()
     if (result.status === 'PARTIAL') {
       if (result.error_code === 'BLING_API_SCOPE_INSUFFICIENT') {

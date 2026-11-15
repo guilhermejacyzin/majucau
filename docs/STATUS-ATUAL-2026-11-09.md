@@ -54,9 +54,12 @@ idempotência, que não preparava o lote normalizado de movimentos conciliados
 exigido pela regra de conclusão. Com o fixture completo, o job PostgreSQL
 passou. A etapa Windows então encontrou GO-2026-6859 no Go 1.26.10 fixado pelo
 projeto; o relatório oficial indica correção no Go 1.26.11. Atualizei o
-toolchain e os dois pontos de configuração da CI para 1.26.11. A nova CI ainda
-precisa confirmar a varredura de segurança e os builds. O build de produção do
-frontend passou localmente; isto não aprova a T02.
+toolchain e os dois pontos de configuração da CI para 1.26.11. Nessa execução,
+os testes Go e o PostgreSQL passaram; seis testes de interface falharam porque
+seus dados de teste ainda alimentavam os cards pela fonte anterior. Atualizei
+os cenários para a regra atual de 60 dias, e a suíte local passou com 75/75.
+Essa correção está pronta para publicação e nova CI; o build de produção do
+frontend também passou localmente. Isto não aprova a T02.
 
 ---
 

@@ -10,11 +10,18 @@ conciliado aprovado. A projeção agora parte desse mesmo saldo-base de Itaú e
 avança por movimentos conciliados posteriores, se existirem.
 
 Teste de dashboard e teste de integração PostgreSQL passaram. A conferência do
-protótipo mostrou saldo atual de R$ 62.548,33, menor saldo de 30 dias de
--R$ 57.998,81 em 05/12 e menor saldo de 60 dias de -R$ 159.418,96 em 06/01.
-A semana 22–28/11 continua exibindo receita líquida de R$ 43.790,66 e despesa
-de R$ 25.275,71. Isto corrige a abertura e o card de mínimos, mas não substitui
-a análise da responsável de todas as demais semanas nem representa aprovação
+protótipo, na sincronização mais recente de 14/11 às 22:39, mostrou saldo atual
+de R$ 62.548,33, entradas de R$ 248.274,64 em 30 dias e R$ 289.559,53 em 60
+dias, saídas de -R$ 307.955,72 e -R$ 506.770,38, respectivamente. O menor
+saldo ficou em -R$ 56.191,12 em 05/12 (30 dias) e -R$ 156.695,68 em 06/01
+(60 dias). Esses números mudam conforme a carga sincronizada; a base de
+comparação permanece o relatório de Contas a Receber pelo líquido e Contas a
+Pagar por vencimento. A semana 22–28/11 continua exibindo R$ 43.790,66 líquidos
+a receber e R$ 25.275,71 a pagar, iguais aos relatórios enviados. A data-base
+de 14/11 a 12/01 compõe os 60 dias; o gráfico vai até 13/01 para fechar a
+semana parcial, e o retrato diário confirmou que esse último dia está zerado.
+Isto corrige a abertura, o card de mínimos e o limite da janela, mas não
+substitui a análise da responsável das demais semanas nem representa aprovação
 final da T02. T03 segue aguardando essa aprovação.
 
 Evidência: [`T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md`](evidence/T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md).

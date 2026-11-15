@@ -43,6 +43,16 @@ identificados. Sem checkpoint aprovado, a projeção permanece indisponível.
 Implementação e evidência de verificação: [`correção do saldo-base da projeção
 T02`](../evidence/T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md).
 
+**Atualização T02 — 14/11/2026, 22:39:** a janela de 60 dias inclui a data-base
+e termina em 12/01; a série semanal mostra também 13/01 para completar o último
+intervalo, e esse dia não tem movimentos. A semana 22–28/11 foi comparada com
+os relatórios enviados (R$ 43.790,66 líquidos a receber e R$ 25.275,71 a pagar).
+O restante continua aguardando conferência da responsável. O texto da tabela
+agora identifica Contas a Receber líquido e Contas a Pagar; o gráfico de T01
+preserva o período completo mesmo se a T02 estiver filtrada. Ver [status da
+T02](../STATUS-ATUAL-2026-11-09.md) e [evidência do saldo-base e da auditoria
+da janela](../evidence/T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md).
+
 **Correção do saldo semanal — 09/11/2026:** a série de fechamentos semanais
 calculada para a T02 agora também alimenta a Visão Executiva (T01). Antes, T01
 recebia somente os períodos crus e por isso a linha laranja ficava ausente,

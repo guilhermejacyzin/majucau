@@ -166,19 +166,20 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
 
     const { rerender } = render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
     expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('30 dias')
-    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('R$ 1.250,00 · Parcial')
+    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('R$ 1.250,00')
+    expect(screen.getByText('ENTRADAS').closest('article')).not.toHaveTextContent('Parcial')
     expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('60 dias')
-    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('R$ 3.250,00 · Parcial')
-    expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('-R$ 800,00 · Parcial')
-    expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('-R$ 1.800,00 · Parcial')
+    expect(screen.getByText('ENTRADAS').closest('article')).toHaveTextContent('R$ 3.250,00')
+    expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('-R$ 800,00')
+    expect(screen.getByText('SAÍDAS').closest('article')).toHaveTextContent('-R$ 1.800,00')
     const weeklyTable = screen.getByRole('region', { name: 'Tabela semanal do fluxo de caixa' })
     expect(weeklyTable).toHaveTextContent(/08\/11\/2026 a\s*14\/11\/2026/)
     expect(weeklyTable).not.toHaveTextContent(/07\/11\/2026/)
     expect(weeklyTable).not.toHaveTextContent('R$ 1.250,00 · Parcial')
-    expect(weeklyTable).toHaveTextContent('R$ 1.500,00 · Parcial')
+    expect(weeklyTable).toHaveTextContent('R$ 1.500,00')
     expect(weeklyTable).not.toHaveTextContent('−25,0%')
     expect(weeklyTable).not.toHaveTextContent('+20,0%')
-    const cashFlowChart = screen.getByRole('group', { name: 'Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling' })
+    const cashFlowChart = screen.getByRole('group', { name: 'Gráfico semanal do fluxo de caixa: receitas, despesas e saldo acumulado' })
     const cashFlowWeekLabels = cashFlowChart.querySelectorAll('text[data-axis-date="week"]')
     expect(cashFlowWeekLabels).toHaveLength(1)
     expect(cashFlowChart.querySelectorAll('tspan[data-axis-date], text[data-axis-date="day"]')).toHaveLength(0)
@@ -197,8 +198,8 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(cashFlowChart.querySelector('.cash-flow-chart-tooltip')).toBeInTheDocument()
     const criticalWeek = screen.getByRole('heading', { name: 'SEMANA CRÍTICA' }).closest('section')
     expect(criticalWeek).toHaveTextContent('08/11–14/11')
-    expect(criticalWeek).toHaveTextContent('-R$ 600,00 · Parcial')
-    expect(criticalWeek).toHaveTextContent('R$ 1.500,00 · Parcial')
+    expect(criticalWeek).toHaveTextContent('-R$ 600,00')
+    expect(criticalWeek).toHaveTextContent('R$ 1.500,00')
     expect(screen.getByText('Reserva mínima').parentElement).toHaveTextContent('R$ 50.000,00')
     for (const label of ['SALDO ATUAL', 'ENTRADAS', 'SAÍDAS']) {
       expect(within(screen.getByText(label).closest('article') as HTMLElement).queryByRole('button', { name: /Ver detalhes/ })).not.toBeInTheDocument()
@@ -206,7 +207,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(criticalWeek).not.toHaveTextContent('Posição de caixa da semana: SEM DADOS')
 
     rerender(<MockupDashboard screen="executive" snapshot={snapshot} />)
-    const executiveChart = screen.getByRole('group', { name: 'Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling' })
+    const executiveChart = screen.getByRole('group', { name: 'Gráfico semanal do fluxo de caixa: receitas, despesas e saldo acumulado' })
     expect(executiveChart).toBeInTheDocument()
     const executiveWeekLabels = executiveChart.querySelectorAll('text[data-axis-date="week"]')
     expect(executiveWeekLabels).toHaveLength(2)
@@ -225,7 +226,7 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
       }
     })
     rerender(<MockupDashboard screen="executive" snapshot={{ ...snapshot, cash_flow: { ...snapshot.cash_flow!, periods: densePeriods } }} />)
-    const denseChart = screen.getByRole('group', { name: 'Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling' })
+    const denseChart = screen.getByRole('group', { name: 'Gráfico semanal do fluxo de caixa: receitas, despesas e saldo acumulado' })
     const denseLabels = denseChart.querySelectorAll('text[data-axis-date="week"]')
     expect(denseLabels).toHaveLength(10)
     expect(denseLabels[0]).toHaveTextContent('08/11–14/11')
@@ -279,15 +280,16 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
 
     const weekly = screen.getByRole('region', { name: 'Tabela semanal do fluxo de caixa' })
     expect(weekly).toHaveTextContent(/08\/11\/2026 a\s*14\/11\/2026/)
-    expect(weekly).toHaveTextContent('R$ 3,50 · Parcial')
-    expect(weekly).toHaveTextContent('-R$ 0,25 · Parcial')
+    expect(weekly).toHaveTextContent('R$ 3,50')
+    expect(weekly).toHaveTextContent('-R$ 0,25')
+    expect(weekly).not.toHaveTextContent('Parcial')
     expect(weekly).toHaveTextContent('Saldo inicial')
     expect(weekly).not.toHaveTextContent('Ajuste de saldo')
     expect(weekly).toHaveTextContent('Saldo acumulado')
     expect(screen.getByRole('heading', { name: 'SEMANA CRÍTICA' }).closest('section')).toHaveTextContent('08/11–14/11')
   })
 
-  it('identifica como parcial o valor incompleto sem mudar a identificação dos demais cards', () => {
+  it('não mostra o rótulo parcial nos cards e preserva a identificação das fontes', () => {
     const unavailable = { state: 'UNAVAILABLE' as const }
     const snapshot: DashboardSnapshot = {
       as_of: '2026-11-01T12:00:00Z',
@@ -310,7 +312,8 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     const payables = screen.getByText('A PAGAR').closest('article')
     expect(receivables).toHaveTextContent('125,00')
     expect(receivables).not.toHaveTextContent('900,00')
-    expect(within(receivables as HTMLElement).getByText('Parcial · B2C + B2B')).toBeInTheDocument()
+    expect(within(receivables as HTMLElement).getByText('B2C + B2B')).toBeInTheDocument()
+    expect(receivables).not.toHaveTextContent('Parcial')
     expect(within(payables as HTMLElement).getByText('Bling')).toBeInTheDocument()
     expect(payables?.textContent).toContain('-')
     expect(payables).toHaveTextContent('80,00')

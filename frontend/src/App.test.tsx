@@ -230,7 +230,7 @@ describe('shell financeiro', () => {
     expect(upcomingCard?.textContent).toContain('-')
   })
 
-  it('mantém títulos sem categoria visíveis e marca o total como parcial', async () => {
+  it('mantém títulos sem categoria visíveis sem exibir o rótulo parcial', async () => {
     const user = userEvent.setup()
     const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
       getSnapshot: async () => ({
@@ -245,7 +245,7 @@ describe('shell financeiro', () => {
     await user.click(screen.getByRole('button', { name: 'Contas a Pagar' }))
     const payableTotalCard = screen.getByText('TOTAL A PAGAR').closest('article')
     expect(payableTotalCard?.textContent).toContain('-')
-    expect(payableTotalCard).toHaveTextContent('Parcial')
+    expect(payableTotalCard).not.toHaveTextContent('Parcial')
     const row = screen.getByText('Fornecedor real').closest('tr')
     expect(row).toHaveTextContent('DOC-1')
     expect(row).toHaveTextContent('2026-11-05')

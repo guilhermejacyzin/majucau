@@ -228,7 +228,7 @@ function CashFlowWeeklyTable({ periods }: { periods: DashboardCashFlowPeriod[] }
     const [year, month, day] = value.split('-')
     return `${day}/${month}/${year}`
   }
-  return <section className="mocap-panel mocap-cashflow-table" aria-label="Tabela semanal do fluxo de caixa"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>FLUXO DE CAIXA POR SEMANA</h2><p>Entradas e saídas da API do Bling, agrupadas no período selecionado</p></div></div></div><div className="mocap-table-scroll"><table><thead><tr><th>Período</th>{periods.map((period) => <th key={`${period.from}-${period.through}`}>{dateLabel(period.from)} a<br />{dateLabel(period.through)}</th>)}<th>Total</th></tr></thead><tbody>{rows.map((row) => <tr key={row.label}><th scope="row">{row.label}</th>{row.metrics.map((metric, index) => <td key={`${row.label}-${periods[index]?.from ?? index}`} className={isNegative(metric) ? 'mocap-negative-value' : undefined}>{metricText(metric)}</td>)}<td className={isNegative(row.total) ? 'mocap-negative-value' : undefined}>{metricText(row.total)}</td></tr>)}</tbody></table></div><p className="mocap-cashflow-table-note">Se houver mais semanas, use a barra inferior para vê-las. Saldos sem confirmação oficial permanecem como “—”. O saldo final é calculado por saldo inicial + receitas − despesas.</p></section>
+  return <section className="mocap-panel mocap-cashflow-table" aria-label="Tabela semanal do fluxo de caixa"><div className="mocap-panel-heading"><div><Icon icon="calendar" /><div><h2>FLUXO DE CAIXA POR SEMANA</h2><p>Contas a Receber pelo valor líquido e Contas a Pagar, agrupadas pela data de vencimento</p></div></div></div><div className="mocap-table-scroll"><table><thead><tr><th>Período</th>{periods.map((period) => <th key={`${period.from}-${period.through}`}>{dateLabel(period.from)} a<br />{dateLabel(period.through)}</th>)}<th>Total</th></tr></thead><tbody>{rows.map((row) => <tr key={row.label}><th scope="row">{row.label}</th>{row.metrics.map((metric, index) => <td key={`${row.label}-${periods[index]?.from ?? index}`} className={isNegative(metric) ? 'mocap-negative-value' : undefined}>{metricText(metric)}</td>)}<td className={isNegative(row.total) ? 'mocap-negative-value' : undefined}>{metricText(row.total)}</td></tr>)}</tbody></table></div><p className="mocap-cashflow-table-note">Se houver mais semanas, use a barra inferior para vê-las. Saldos sem confirmação oficial permanecem como “—”. O saldo final é calculado por saldo inicial + receitas − despesas.</p></section>
 }
 
 function metricForCard(screen: MockupScreenKey, label: string, snapshot?: DashboardSnapshot): DashboardMetric | undefined {
@@ -336,7 +336,7 @@ function EmptyChart({ title, cashFlow, rangeLabel }: { title: string; cashFlow?:
       <div className="mocap-chart-legend"><span className="legend-blue">●</span> Entradas <span className="legend-red">●</span> Saídas <span className="legend-orange">━●</span> Saldo <span>Variação semanal</span></div>
       <div className="mocap-chart-empty">
         {hasFlow ? (
-          <svg role="group" aria-label="Gráfico semanal de receitas, despesas e saldo resultante do fluxo de caixa Bling" viewBox="0 0 680 220" preserveAspectRatio="none" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', overflow: 'visible' }}>
+          <svg role="group" aria-label="Gráfico semanal do fluxo de caixa: receitas, despesas e saldo acumulado" viewBox="0 0 680 220" preserveAspectRatio="none" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', overflow: 'visible' }}>
             {yTicks.map((tick) => {
               const y = yFor(tick)
               return <g key={tick}><line x1={plot.left} x2={plot.right} y1={y} y2={y} stroke={tick === 0 ? '#d8e5ef' : '#e7eff6'} strokeWidth={tick === 0 ? 2 : 1} /><text x={plot.left - 8} y={y + 4} textAnchor="end" fill={tick < 0 ? '#d93025' : '#4564b0'} fontSize="10">{axisLabel(tick)}</text></g>
@@ -563,7 +563,11 @@ export function MockupDashboard({ screen, snapshot, onNavigate, onRefresh }: { s
     if (current === undefined) return selected
     return best === undefined || (current < 0n ? -current : current) > (best < 0n ? -best : best) ? period : selected
   }, undefined)
-  const cashFlowView = rawCashFlow ? { ...rawCashFlow, periods: selectedPeriods, critical_week: selectedCriticalWeek } : undefined
+  const cashFlowView = rawCashFlow ? {
+    ...rawCashFlow,
+    periods: screen === 'cashflow' ? selectedPeriods : rawCashFlow.periods,
+    critical_week: screen === 'cashflow' ? selectedCriticalWeek : rawCashFlow.critical_week,
+  } : undefined
   const cards = config.cards.map((card) => withSnapshot(screen, card, snapshot))
   const lowerCards = config.lower
     .filter((card) => screen !== 'dre' || card.label !== 'UNMAPPED')

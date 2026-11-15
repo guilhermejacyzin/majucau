@@ -219,6 +219,15 @@ type DashboardMetric struct {
 	SourceSystem string `json:"source_system,omitempty"`
 }
 
+// DashboardReceivablesByMethod summarizes the liquid value of eligible
+// receivables by the payment method carried by their source records.
+type DashboardReceivablesByMethod struct {
+	Pix          DashboardMetric `json:"pix"`
+	Boleto       DashboardMetric `json:"boleto"`
+	Card         DashboardMetric `json:"card"`
+	Unclassified DashboardMetric `json:"unclassified"`
+}
+
 // DashboardReceivableRow is a sanitized detail row for the T3 table. It is
 // read-only and comes from normalized data; RAW payloads never cross the UI
 // boundary through this contract.
@@ -306,32 +315,33 @@ type DashboardCashFlow struct {
 // local ledger. It deliberately does not manufacture cash balances, DRE,
 // inventory or forecast values from RAW payloads.
 type DashboardSnapshot struct {
-	AsOf                     time.Time                  `json:"as_of"`
-	LastBlingSyncAt          *time.Time                 `json:"last_bling_sync_at,omitempty"`
-	DataState                string                     `json:"data_state"`
-	Receivables              DashboardMetric            `json:"receivables"`
-	FutureB2C                DashboardMetric            `json:"future_b2c"`
-	ReceiptsMonth            DashboardMetric            `json:"receipts_month"`
-	ReceivablesOverdue       DashboardMetric            `json:"receivables_overdue"`
-	ReceivablesDueNext90Days DashboardMetric            `json:"receivables_due_next_90_days"`
-	ReceivablesDueNext30Days DashboardMetric            `json:"receivables_due_next_30_days"`
-	Payables                 DashboardMetric            `json:"payables"`
-	PayablesDueToday         DashboardMetric            `json:"payables_due_today"`
-	PayablesOverdue          DashboardMetric            `json:"payables_overdue"`
-	PayablesDueNext7Days     DashboardMetric            `json:"payables_due_next_7_days"`
-	PayablesDueNext90Days    DashboardMetric            `json:"payables_due_next_90_days"`
-	PayablesDueNext30Days    DashboardMetric            `json:"payables_due_next_30_days"`
-	CashBalance              DashboardMetric            `json:"cash_balance"`
-	CashFlow                 *DashboardCashFlow         `json:"cash_flow,omitempty"`
-	BankBalances             []DashboardBankBalance     `json:"bank_balances,omitempty"`
-	PaymentsMonth            DashboardMetric            `json:"payments_month"`
-	CapexPaidMonth           *DashboardMetric           `json:"capex_paid_month,omitempty"`
-	CapexAccumulated         *DashboardMetric           `json:"capex_accumulated,omitempty"`
-	ReceivableRows           []DashboardReceivableRow   `json:"receivable_rows,omitempty"`
-	CashMovementRows         []DashboardCashMovementRow `json:"cash_movement_rows,omitempty"`
-	PayableRows              []DashboardPayableRow      `json:"payable_rows,omitempty"`
-	ErrorCode                string                     `json:"error_code,omitempty"`
-	Message                  string                     `json:"message,omitempty"`
+	AsOf                     time.Time                     `json:"as_of"`
+	LastBlingSyncAt          *time.Time                    `json:"last_bling_sync_at,omitempty"`
+	DataState                string                        `json:"data_state"`
+	Receivables              DashboardMetric               `json:"receivables"`
+	ReceivablesByMethod      *DashboardReceivablesByMethod `json:"receivables_by_method,omitempty"`
+	FutureB2C                DashboardMetric               `json:"future_b2c"`
+	ReceiptsMonth            DashboardMetric               `json:"receipts_month"`
+	ReceivablesOverdue       DashboardMetric               `json:"receivables_overdue"`
+	ReceivablesDueNext90Days DashboardMetric               `json:"receivables_due_next_90_days"`
+	ReceivablesDueNext30Days DashboardMetric               `json:"receivables_due_next_30_days"`
+	Payables                 DashboardMetric               `json:"payables"`
+	PayablesDueToday         DashboardMetric               `json:"payables_due_today"`
+	PayablesOverdue          DashboardMetric               `json:"payables_overdue"`
+	PayablesDueNext7Days     DashboardMetric               `json:"payables_due_next_7_days"`
+	PayablesDueNext90Days    DashboardMetric               `json:"payables_due_next_90_days"`
+	PayablesDueNext30Days    DashboardMetric               `json:"payables_due_next_30_days"`
+	CashBalance              DashboardMetric               `json:"cash_balance"`
+	CashFlow                 *DashboardCashFlow            `json:"cash_flow,omitempty"`
+	BankBalances             []DashboardBankBalance        `json:"bank_balances,omitempty"`
+	PaymentsMonth            DashboardMetric               `json:"payments_month"`
+	CapexPaidMonth           *DashboardMetric              `json:"capex_paid_month,omitempty"`
+	CapexAccumulated         *DashboardMetric              `json:"capex_accumulated,omitempty"`
+	ReceivableRows           []DashboardReceivableRow      `json:"receivable_rows,omitempty"`
+	CashMovementRows         []DashboardCashMovementRow    `json:"cash_movement_rows,omitempty"`
+	PayableRows              []DashboardPayableRow         `json:"payable_rows,omitempty"`
+	ErrorCode                string                        `json:"error_code,omitempty"`
+	Message                  string                        `json:"message,omitempty"`
 }
 
 type DashboardSnapshotStreamer interface {

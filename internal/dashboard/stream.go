@@ -200,6 +200,10 @@ func readStreamSummaryWithCorrelation(ctx context.Context, tx pgx.Tx, asOf time.
 	}
 	receivablesFresh := completedBy(dailyReceivablesSyncAt, asOf)
 	nuvemFutureFresh := !dailyNuvemFuturePartial
+	receivablesByMethod, err := readReceivablesByMethod(ctx, tx, receivablesFresh, nuvemFutureFresh)
+	if err != nil {
+		return application.DashboardSnapshot{}, "", fmt.Errorf("aggregate receivables by payment method: %w", err)
+	}
 	payablesFresh := completedBy(dailyPayablesSyncAt, asOf)
 	cashMovementsFresh := completedBy(dailyCashMovementsSyncAt, asOf) &&
 		completedBy(dailyReconciledCashMovementsSyncAt, asOf) && !dailyReconciledCashMovementsPartial
@@ -225,6 +229,7 @@ func readStreamSummaryWithCorrelation(ctx context.Context, tx pgx.Tx, asOf time.
 		LastBlingSyncAt:          lastBlingSyncTime,
 		DataState:                state,
 		Receivables:              combinedReceivableMetric(receivablesValue, receivablesCount, blingReceivablesValue, blingReceivablesCount, futureValue, futureCount, receivablesFresh, dailyReceivablesPartial, nuvemFutureFresh),
+		ReceivablesByMethod:      &receivablesByMethod,
 		FutureB2C:                metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
 		ReceiptsMonth:            metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING"),
 		ReceivablesOverdue:       combinedReceivableMetric(receivablesOverdueValue, receivablesOverdueCount, blingReceivablesOverdueValue, blingReceivablesOverdueCount, "0.0000", 0, receivablesFresh, dailyReceivablesPartial, nuvemFutureFresh),
@@ -589,12 +594,98 @@ latest_daily_receivable_snapshot AS (
 )
 `
 
+const dashboardReceivablesByMethodSQL = `WITH ` + dashboardEligibleReceivablesCTE + `, scoped_receivables AS (
+  SELECT *
+    FROM eligible_receivables
+   WHERE ($1::boolean AND source_system = 'BLING')
+      OR ($2::boolean AND source_system = 'NUVEM_PAGO')
+), scoped_ranked_receivables AS (
+  SELECT er.*,
+         row_number() OVER (
+           PARTITION BY customer_match_name, gross_amount, source_system
+           ORDER BY source_entity, source_id, id
+         ) AS source_match_ordinal
+    FROM scoped_receivables er
+), scoped_deduplicated_receivables AS (
+  SELECT bling.*
+    FROM scoped_ranked_receivables bling
+   WHERE bling.source_system = 'BLING'
+     AND (bling.customer_match_name IS NULL OR NOT EXISTS (
+       SELECT 1
+         FROM scoped_ranked_receivables nuvem
+        WHERE nuvem.source_system = 'NUVEM_PAGO'
+          AND nuvem.customer_match_name = bling.customer_match_name
+          AND nuvem.gross_amount = bling.gross_amount
+          AND nuvem.source_match_ordinal = bling.source_match_ordinal
+     ))
+  UNION ALL
+  SELECT nuvem.*
+    FROM scoped_ranked_receivables nuvem
+   WHERE nuvem.source_system = 'NUVEM_PAGO'
+), classified AS (
+  SELECT id, source_system, liquid_amount,
+         CASE
+           WHEN normalized_method LIKE '%pix%' THEN 'PIX'
+           WHEN normalized_method LIKE '%boleto%' THEN 'BOLETO'
+           WHEN normalized_method LIKE '%cart%' OR normalized_method LIKE '%credit%' OR normalized_method LIKE '%debit%' OR normalized_method LIKE '%card%' THEN 'CARD'
+           ELSE 'UNCLASSIFIED'
+         END AS payment_group
+    FROM (
+      SELECT id, source_system, liquid_amount,
+             LOWER(COALESCE(NULLIF(mapped_payment_method, ''), NULLIF(payment_method, ''), '')) AS normalized_method
+        FROM scoped_deduplicated_receivables
+    ) source_rows
+)
+SELECT
+  COALESCE(SUM(liquid_amount) FILTER (WHERE payment_group = 'PIX'), 0)::text, COUNT(id) FILTER (WHERE payment_group = 'PIX'),
+  COALESCE(SUM(liquid_amount) FILTER (WHERE payment_group = 'BOLETO'), 0)::text, COUNT(id) FILTER (WHERE payment_group = 'BOLETO'),
+  COALESCE(SUM(liquid_amount) FILTER (WHERE payment_group = 'CARD'), 0)::text, COUNT(id) FILTER (WHERE payment_group = 'CARD'),
+  COALESCE(SUM(liquid_amount) FILTER (WHERE payment_group = 'UNCLASSIFIED'), 0)::text, COUNT(id) FILTER (WHERE payment_group = 'UNCLASSIFIED'),
+  (($1::boolean AND EXISTS (SELECT 1 FROM latest_daily_receivable_snapshot))
+   OR EXISTS (
+     SELECT 1
+       FROM integration_sync_batches b
+       JOIN integration_connections c ON c.id = b.connection_id
+      WHERE c.provider = 'NUVEM_PAGO'
+        AND b.resource = 'nuvem_pago_recebimentos_futuros_csv_v1'
+        AND b.status IN ('SUCCESS', 'PARTIAL')
+        AND b.data_stage = 'NORMALIZED'
+   ) AND $2::boolean) AS has_normalized_source
+FROM classified
+`
+
+func readReceivablesByMethod(ctx context.Context, tx pgx.Tx, blingFresh, nuvemFutureFresh bool) (application.DashboardReceivablesByMethod, error) {
+	var values [4]string
+	var counts [4]int64
+	var hasNormalizedSource bool
+	err := tx.QueryRow(ctx, dashboardReceivablesByMethodSQL, blingFresh, nuvemFutureFresh).Scan(
+		&values[0], &counts[0], &values[1], &counts[1], &values[2], &counts[2], &values[3], &counts[3], &hasNormalizedSource,
+	)
+	if err != nil {
+		return application.DashboardReceivablesByMethod{}, err
+	}
+	state := "UNAVAILABLE"
+	source := "BLING + NUVEM_PAGO"
+	if hasNormalizedSource {
+		// Keep showing the latest normalized report totals when today's sync
+		// fails; the page already displays the last sync time. Never replace
+		// known report amounts with dashes or a fabricated zero.
+		state = "CONFIRMED"
+	}
+	return application.DashboardReceivablesByMethod{
+		Pix:          metric(values[0], counts[0], state, source),
+		Boleto:       metric(values[1], counts[1], state, source),
+		Card:         metric(values[2], counts[2], state, source),
+		Unclassified: metric(values[3], counts[3], state, source),
+	}, nil
+}
+
 const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `, r AS (
   SELECT
     COALESCE(SUM(liquid_amount), 0)::text AS total_value,
     COUNT(id) AS total_count,
-    COALESCE(SUM(liquid_amount) FILTER (WHERE source_system = 'BLING'), 0)::text AS bling_value,
-    COUNT(id) FILTER (WHERE source_system = 'BLING') AS bling_count,
+    COALESCE((SELECT SUM(liquid_amount) FROM eligible_receivables WHERE source_system = 'BLING'), 0)::text AS bling_value,
+    (SELECT COUNT(id) FROM eligible_receivables WHERE source_system = 'BLING') AS bling_count,
     COALESCE(SUM(liquid_amount) FILTER (
       WHERE source_system = 'NUVEM_PAGO' AND business_type = 'B2C' AND status = 'PROJECTED'
     ), 0)::text AS future_value,
@@ -607,10 +698,10 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
     COUNT(id) FILTER (
       WHERE COALESCE(open_balance, gross_amount) > 0 AND effective_due_date < $1::date
     ) AS overdue_count
-    ,COALESCE(SUM(liquid_amount) FILTER (
+    ,COALESCE((SELECT SUM(liquid_amount) FROM eligible_receivables
       WHERE source_system = 'BLING' AND COALESCE(open_balance, gross_amount) > 0 AND effective_due_date < $1::date
     ), 0)::text AS bling_overdue_value,
-    COUNT(id) FILTER (
+    (SELECT COUNT(id) FROM eligible_receivables
       WHERE source_system = 'BLING' AND COALESCE(open_balance, gross_amount) > 0 AND effective_due_date < $1::date
     ) AS bling_overdue_count
   FROM deduplicated_receivables
@@ -863,7 +954,7 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
  CROSS JOIN LATERAL (
    SELECT COALESCE(c.name, rr.payload->>'customer_name', '') AS customer,
           CASE er.source_system WHEN 'NUVEM_PAGO' THEN 'Nuvem Pago' WHEN 'BLING' THEN 'Bling' ELSE er.source_system END AS origin,
-          COALESCE(er.mapped_payment_method, '') AS payment_method,
+          COALESCE(NULLIF(er.mapped_payment_method, ''), er.payment_method, '') AS payment_method,
           COALESCE(to_char(er.effective_due_date, 'YYYY-MM-DD'), '') AS due_date,
           COALESCE(er.gross_amount::text, '') AS gross_value,
           COALESCE(er.liquid_amount::text, '') AS net_value,

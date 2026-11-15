@@ -30,14 +30,21 @@ func (db *scriptedDashboardDB) BeginTx(_ context.Context, options pgx.TxOptions)
 
 type scriptedDashboardTx struct {
 	pgx.Tx
-	summary     pgx.Row
-	summaryArgs []any
-	queryArgs   [][]any
-	queryRows   []pgx.Rows
-	committed   bool
+	summary      pgx.Row
+	distribution pgx.Row
+	summaryArgs  []any
+	queryArgs    [][]any
+	queryRows    []pgx.Rows
+	committed    bool
 }
 
 func (tx *scriptedDashboardTx) QueryRow(_ context.Context, query string, args ...any) pgx.Row {
+	if query == dashboardReceivablesByMethodSQL {
+		if tx.distribution != nil {
+			return tx.distribution
+		}
+		return scriptedDashboardSummaryRow{values: []any{"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), false}}
+	}
 	if strings.Contains(query, "SELECT checkpoint.connection_id::text") {
 		// Most scripted dashboard cases do not seed an approved opening-balance
 		// checkpoint. Exercise the production no-checkpoint path without treating
@@ -191,6 +198,29 @@ func (rows *scriptedDashboardRows) Scan(dest ...any) error {
 
 func (*scriptedDashboardRows) Close()     {}
 func (*scriptedDashboardRows) Err() error { return nil }
+
+func TestReadReceivablesByMethodKeepsLastNormalizedReportValues(t *testing.T) {
+	tx := &scriptedDashboardTx{distribution: scriptedDashboardSummaryRow{values: []any{
+		"100.00", int64(2), "0.00", int64(0), "250.00", int64(3), "50.00", int64(1), true,
+	}}}
+	got, err := readReceivablesByMethod(context.Background(), tx, true, true)
+	if err != nil {
+		t.Fatalf("readReceivablesByMethod() error = %v", err)
+	}
+	if got.Pix.Value != "100.00" || got.Pix.Count != 2 || got.Card.Value != "250.00" || got.Unclassified.Value != "50.00" {
+		t.Fatalf("payment-method totals = %+v, want liquid amounts from the complete selected snapshot", got)
+	}
+	if got.Pix.State != "CONFIRMED" || got.Pix.SourceSystem != "BLING + NUVEM_PAGO" {
+		t.Fatalf("normalized report values should stay visible even if the daily refresh is stale, got %+v", got.Pix)
+	}
+	unavailableTx := &scriptedDashboardTx{distribution: scriptedDashboardSummaryRow{values: []any{
+		"0.00", int64(0), "0.00", int64(0), "0.00", int64(0), "0.00", int64(0), false,
+	}}}
+	unavailable, err := readReceivablesByMethod(context.Background(), unavailableTx, false, false)
+	if err != nil || unavailable.Pix.State != "UNAVAILABLE" || unavailable.Pix.Value != "" {
+		t.Fatalf("stale sources must not be presented as current payment-method totals, metric=%+v err=%v", unavailable.Pix, err)
+	}
+}
 
 func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 	asOf := time.Date(2026, 9, 21, 12, 0, 0, 0, time.UTC)

@@ -544,6 +544,42 @@ export namespace application {
 	        this.status = source["status"];
 	    }
 	}
+	export class DashboardReceivablesByMethod {
+	    pix: DashboardMetric;
+	    boleto: DashboardMetric;
+	    card: DashboardMetric;
+	    unclassified: DashboardMetric;
+	
+	    static createFrom(source: any = {}) {
+	        return new DashboardReceivablesByMethod(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.pix = this.convertValues(source["pix"], DashboardMetric);
+	        this.boleto = this.convertValues(source["boleto"], DashboardMetric);
+	        this.card = this.convertValues(source["card"], DashboardMetric);
+	        this.unclassified = this.convertValues(source["unclassified"], DashboardMetric);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class DependencyHealth {
 	    name: string;
 	    state: string;
@@ -814,6 +850,7 @@ export namespace main {
 	    last_bling_sync_at?: string;
 	    data_state: string;
 	    receivables: application.DashboardMetric;
+	    receivables_by_method?: application.DashboardReceivablesByMethod;
 	    future_b2c: application.DashboardMetric;
 	    receipts_month: application.DashboardMetric;
 	    receivables_overdue: application.DashboardMetric;
@@ -846,6 +883,7 @@ export namespace main {
 	        this.last_bling_sync_at = source["last_bling_sync_at"];
 	        this.data_state = source["data_state"];
 	        this.receivables = this.convertValues(source["receivables"], application.DashboardMetric);
+	        this.receivables_by_method = this.convertValues(source["receivables_by_method"], application.DashboardReceivablesByMethod);
 	        this.future_b2c = this.convertValues(source["future_b2c"], application.DashboardMetric);
 	        this.receipts_month = this.convertValues(source["receipts_month"], application.DashboardMetric);
 	        this.receivables_overdue = this.convertValues(source["receivables_overdue"], application.DashboardMetric);

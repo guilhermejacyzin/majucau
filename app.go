@@ -46,31 +46,32 @@ type WailsIntegrationStatus struct {
 }
 
 type WailsDashboardSnapshot struct {
-	AsOf                     string                               `json:"as_of"`
-	LastBlingSyncAt          *string                              `json:"last_bling_sync_at,omitempty"`
-	DataState                string                               `json:"data_state"`
-	Receivables              application.DashboardMetric          `json:"receivables"`
-	FutureB2C                application.DashboardMetric          `json:"future_b2c"`
-	ReceiptsMonth            application.DashboardMetric          `json:"receipts_month"`
-	ReceivablesOverdue       application.DashboardMetric          `json:"receivables_overdue"`
-	ReceivablesDueNext90Days application.DashboardMetric          `json:"receivables_due_next_90_days"`
-	ReceivablesDueNext30Days application.DashboardMetric          `json:"receivables_due_next_30_days"`
-	Payables                 application.DashboardMetric          `json:"payables"`
-	PayablesDueToday         application.DashboardMetric          `json:"payables_due_today"`
-	PayablesOverdue          application.DashboardMetric          `json:"payables_overdue"`
-	PayablesDueNext7Days     application.DashboardMetric          `json:"payables_due_next_7_days"`
-	PayablesDueNext90Days    application.DashboardMetric          `json:"payables_due_next_90_days"`
-	PayablesDueNext30Days    application.DashboardMetric          `json:"payables_due_next_30_days"`
-	CashBalance              application.DashboardMetric          `json:"cash_balance"`
-	CashFlow                 *application.DashboardCashFlow       `json:"cash_flow,omitempty"`
-	BankBalances             []application.DashboardBankBalance   `json:"bank_balances,omitempty"`
-	PaymentsMonth            application.DashboardMetric          `json:"payments_month"`
-	CapexPaidMonth           *application.DashboardMetric         `json:"capex_paid_month,omitempty"`
-	CapexAccumulated         *application.DashboardMetric         `json:"capex_accumulated,omitempty"`
-	ReceivableRows           []application.DashboardReceivableRow `json:"receivable_rows,omitempty"`
-	PayableRows              []application.DashboardPayableRow    `json:"payable_rows,omitempty"`
-	ErrorCode                string                               `json:"error_code,omitempty"`
-	Message                  string                               `json:"message,omitempty"`
+	AsOf                     string                                    `json:"as_of"`
+	LastBlingSyncAt          *string                                   `json:"last_bling_sync_at,omitempty"`
+	DataState                string                                    `json:"data_state"`
+	Receivables              application.DashboardMetric               `json:"receivables"`
+	ReceivablesByMethod      *application.DashboardReceivablesByMethod `json:"receivables_by_method,omitempty"`
+	FutureB2C                application.DashboardMetric               `json:"future_b2c"`
+	ReceiptsMonth            application.DashboardMetric               `json:"receipts_month"`
+	ReceivablesOverdue       application.DashboardMetric               `json:"receivables_overdue"`
+	ReceivablesDueNext90Days application.DashboardMetric               `json:"receivables_due_next_90_days"`
+	ReceivablesDueNext30Days application.DashboardMetric               `json:"receivables_due_next_30_days"`
+	Payables                 application.DashboardMetric               `json:"payables"`
+	PayablesDueToday         application.DashboardMetric               `json:"payables_due_today"`
+	PayablesOverdue          application.DashboardMetric               `json:"payables_overdue"`
+	PayablesDueNext7Days     application.DashboardMetric               `json:"payables_due_next_7_days"`
+	PayablesDueNext90Days    application.DashboardMetric               `json:"payables_due_next_90_days"`
+	PayablesDueNext30Days    application.DashboardMetric               `json:"payables_due_next_30_days"`
+	CashBalance              application.DashboardMetric               `json:"cash_balance"`
+	CashFlow                 *application.DashboardCashFlow            `json:"cash_flow,omitempty"`
+	BankBalances             []application.DashboardBankBalance        `json:"bank_balances,omitempty"`
+	PaymentsMonth            application.DashboardMetric               `json:"payments_month"`
+	CapexPaidMonth           *application.DashboardMetric              `json:"capex_paid_month,omitempty"`
+	CapexAccumulated         *application.DashboardMetric              `json:"capex_accumulated,omitempty"`
+	ReceivableRows           []application.DashboardReceivableRow      `json:"receivable_rows,omitempty"`
+	PayableRows              []application.DashboardPayableRow         `json:"payable_rows,omitempty"`
+	ErrorCode                string                                    `json:"error_code,omitempty"`
+	Message                  string                                    `json:"message,omitempty"`
 }
 
 type BootstrapState struct {
@@ -127,6 +128,7 @@ func wailsDashboardSnapshot(value application.DashboardSnapshot) WailsDashboardS
 		LastBlingSyncAt:          wailsOptionalTimestamp(value.LastBlingSyncAt),
 		DataState:                value.DataState,
 		Receivables:              value.Receivables,
+		ReceivablesByMethod:      value.ReceivablesByMethod,
 		FutureB2C:                value.FutureB2C,
 		ReceiptsMonth:            value.ReceiptsMonth,
 		ReceivablesOverdue:       value.ReceivablesOverdue,

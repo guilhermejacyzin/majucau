@@ -18,9 +18,17 @@ describe('retirada da tela T05', () => {
   it('mantém os cards de recebíveis aprovados na T03', () => {
     render(<MockupDashboard screen="receivables" />)
 
-    for (const label of ['TOTAL A RECEBER', 'EM ATRASO', 'TOTAL RECEBIDO', 'PIX', 'BOLETOS', 'CARTÃO', 'AMBÍGUOS', 'CHARGEBACKS', 'DISTRIBUIÇÃO DOS RECEBÍVEIS']) {
+    for (const label of ['TOTAL A RECEBER', 'EM ATRASO', 'TOTAL RECEBIDO']) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
+    const lowerCards = document.querySelector('.mocap-lower-cards')
+    for (const label of ['PIX', 'BOLETOS', 'CARTÃO']) {
+      expect([...((lowerCards?.querySelectorAll('.mocap-card-label')) ?? [])].some((card) => card.textContent === label)).toBe(true)
+    }
+    for (const retiredLabel of ['AMBÍGUOS', 'CHARGEBACKS']) {
+      expect([...((lowerCards?.querySelectorAll('.mocap-card-label')) ?? [])].some((card) => card.textContent === retiredLabel)).toBe(false)
+    }
+    expect(screen.getByRole('heading', { name: 'DISTRIBUIÇÃO DOS RECEBÍVEIS' })).toBeInTheDocument()
     expect(screen.queryByText('CONCILIAÇÃO')).not.toBeInTheDocument()
     expect(screen.queryByText('RECEBÍVEIS')).not.toBeInTheDocument()
     for (const retiredLabel of ['PRIORIDADE', 'FALLBACK', 'REUSO BLOQUEADO', 'SEM ID BLING']) {

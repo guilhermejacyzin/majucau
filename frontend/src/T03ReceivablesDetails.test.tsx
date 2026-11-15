@@ -9,6 +9,12 @@ const snapshot: DashboardSnapshot = {
   as_of: '2026-11-15T12:00:00Z',
   data_state: 'PARTIAL',
   receivables: { value: '500.00', count: 2, state: 'CONFIRMED' },
+  receivables_by_method: {
+    pix: { value: '100.00', count: 1, state: 'CONFIRMED' },
+    boleto: { value: '150.00', count: 1, state: 'CONFIRMED' },
+    card: { value: '200.00', count: 1, state: 'CONFIRMED' },
+    unclassified: { value: '50.00', count: 1, state: 'CONFIRMED' },
+  },
   future_b2c: unavailable,
   receipts_month: { value: '125.00', count: 1, state: 'CONFIRMED' },
   receivables_overdue: { value: '100.00', count: 1, state: 'CONFIRMED' },
@@ -63,23 +69,39 @@ describe('T03 detalhes dos recebíveis', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('explica o gráfico e não inventa fatias sem dados de status', () => {
+  it('explica a composição líquida por forma de recebimento', () => {
     render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
 
-    expect(screen.getByText(/Valor dos títulos por situação\. A legenda explica cada situação/)).toBeInTheDocument()
-    expect(screen.getByText('Sem valores classificados')).toBeInTheDocument()
-    expect(document.querySelector('.mocap-donut')).not.toHaveClass('has-data')
-    expect(screen.getByText(/valor e origem conferidos/)).toBeInTheDocument()
-    expect(screen.getByText(/o círculo representa quanto do valor está em cada situação/i)).toBeInTheDocument()
+    expect(screen.getByText(/Valor líquido por forma de recebimento/)).toBeInTheDocument()
+    expect(screen.getAllByText('R$ 500,00').length).toBeGreaterThanOrEqual(2)
+    expect(document.querySelector('.mocap-donut')).toHaveClass('has-data')
+    expect(screen.getByText('Não identificados')).toBeInTheDocument()
+    expect(screen.getByText(/títulos cuja forma de pagamento não veio informada/i)).toBeInTheDocument()
+    expect(screen.queryByText('Confirmado:')).not.toBeInTheDocument()
   })
 
-  it('abre detalhes sem remover os demais cards da tela', () => {
+  it('mostra os mesmos totais líquidos nos cards por forma de pagamento', () => {
     render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
 
-    for (const label of ['AMBÍGUOS', 'CHARGEBACKS', 'PIX', 'BOLETOS', 'CARTÃO']) {
+    const lowerCards = document.querySelector('.mocap-lower-cards')
+    const valueFor = (label: string) => [...(lowerCards?.querySelectorAll('article') ?? [])]
+      .find((card) => card.querySelector('.mocap-card-label')?.textContent === label)
+      ?.querySelector('.mocap-empty-value')?.textContent
+    expect(valueFor('PIX')).toContain('100,00')
+    expect(valueFor('BOLETOS')).toContain('150,00')
+    expect(valueFor('CARTÃO')).toContain('200,00')
+  })
+
+  it('mantém os três cards por forma de recebimento e não exibe cards sem uso definido', () => {
+    render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
+
+    for (const label of ['PIX', 'BOLETOS', 'CARTÃO']) {
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0)
       fireEvent.click(screen.getByRole('button', { name: `Ver detalhes: ${label}` }))
       expect(screen.getByRole('dialog', { name: label })).toBeInTheDocument()
       fireEvent.click(screen.getByRole('button', { name: 'Fechar detalhes' }))
     }
+    expect(screen.queryByText('AMBÍGUOS')).not.toBeInTheDocument()
+    expect(screen.queryByText('CHARGEBACKS')).not.toBeInTheDocument()
   })
 })

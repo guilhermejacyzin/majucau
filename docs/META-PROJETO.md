@@ -13,13 +13,13 @@ por `situacaoConciliacao=1`. O total e os detalhes agora usam essa lista e a
 situação do lançamento não é confundida com conciliação. As tabelas do snapshot
 agora suportam até 200 linhas.
 
-O gráfico permanece e mostra o significado de Confirmado,
-Provisório, Pendente e Divergente. A distribuição de valores ainda não está
-calculada; o protótipo mostra estado neutro “Sem dados”, sem sugerir fatias ou
-percentuais. Os cards PIX, Boletos, Cartão, Ambíguos e Chargebacks também foram
-preservados. Todos os botões de detalhe abrem sua janela. Para Ambíguos e
-Chargebacks, a janela informa que o relatório atual não contém campos que
-permitam identificar esses casos com segurança.
+O gráfico foi definido para mostrar a distribuição do valor líquido por forma
+de recebimento: PIX, boleto, cartão e não identificados. O backend calcula os
+totais sobre os recebíveis completos deduplicados; os cards PIX, Boletos e
+Cartão usam as mesmas métricas. O gráfico não soma valores na tela e permanece
+neutro quando a origem não fornece dados atuais. Ambíguos e Chargebacks foram
+removidos da tela conforme a solicitação; permanecem apenas as categorias
+financeiras usadas no gráfico e nos cards de forma de recebimento.
 
 O total recebido é mensal e aparece uma única vez; “CONCILIAÇÃO” foi substituído.
 A validação visual final do protótipo fica para aprovação da responsável. A
@@ -1305,9 +1305,11 @@ protótipo. Ver [`STATUS-ATUAL-2026-11-08.md`](STATUS-ATUAL-2026-11-08.md) e
 
 Na T03, a tabela de recebíveis permanece recolhida na página principal e abre
 por “Ver detalhes”; os detalhes dos demais cards continuam disponíveis. Os
-cards PIX, Boletos, Cartão, Ambíguos e Chargebacks e o gráfico de distribuição
-foram mantidos. A tela explica os quatro status do gráfico e deixa o círculo
-neutro quando não existe uma divisão classificada confirmada.
+cards PIX, Boletos e Cartão recebem valores líquidos agregados no backend sobre
+todos os títulos elegíveis, com a mesma deduplicação do total. O gráfico mostra
+a composição por forma identificada e o valor não identificado; não usa a lista
+limitada de detalhes para calcular totais. Os cards Ambíguos e Chargebacks não
+são exibidos; PIX, Boletos e Cartão permanecem com seus próprios detalhes.
 
 O card TOTAL RECEBIDO substitui Conciliação e soma somente entradas presentes
 no snapshot oficial de lançamentos conciliados de Caixa e Bancos; sua janela
@@ -1320,5 +1322,9 @@ carregar localmente. O botão Atualizar agora explica quando a leitura de
 recebíveis falha por falta de acesso e avisa que aqueles valores são do último
 snapshot concluído. A autorização da API para recebíveis é dependência para a
 próxima atualização diária. A T03 está aberta no protótipo para aprovação
-visual; não marcar sincronização completa. Evidência:
+visual; não marcar sincronização completa. Na revisão posterior, a T03 foi
+reaberta com PIX, Boletos e Cartão, sem os cards Ambíguos e Chargebacks, e a
+soma da distribuição passou a coincidir com “TOTAL A RECEBER”. Isso valida a
+consistência da tela com o snapshot local, não uma nova sincronização do Bling.
+Evidência:
 [`T03 — detalhes de Contas a Receber`](evidence/T03-RECEIVABLE-DETAILS-2026-11-15.md).

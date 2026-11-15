@@ -85,6 +85,12 @@ func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
 	input := application.DashboardSnapshot{
 		ReceivablesDueNext30Days: application.DashboardMetric{Value: "123.45", State: "PARTIAL"},
 		PayablesDueNext30Days:    application.DashboardMetric{Value: "-67.89", State: "PARTIAL"},
+		ReceivablesByMethod: &application.DashboardReceivablesByMethod{
+			Pix:          application.DashboardMetric{Value: "100.00", Count: 2, State: "CONFIRMED", SourceSystem: "BLING"},
+			Boleto:       application.DashboardMetric{Value: "150.00", Count: 3, State: "CONFIRMED", SourceSystem: "BLING"},
+			Card:         application.DashboardMetric{Value: "200.00", Count: 4, State: "CONFIRMED", SourceSystem: "BLING"},
+			Unclassified: application.DashboardMetric{Value: "50.00", Count: 1, State: "CONFIRMED", SourceSystem: "BLING"},
+		},
 		CashFlow: &application.DashboardCashFlow{
 			InflowsNext30Days:  application.DashboardMetric{Value: "69994.1200", State: "PARTIAL", SourceSystem: "BLING"},
 			OutflowsNext30Days: application.DashboardMetric{Value: "-263930.4700", State: "PARTIAL", SourceSystem: "BLING"},
@@ -108,6 +114,9 @@ func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
 	if got.PayablesDueNext30Days.Value != input.PayablesDueNext30Days.Value || got.PayablesDueNext30Days.State != input.PayablesDueNext30Days.State {
 		t.Fatalf("payables due in 30 days were lost in Wails mapping: got %+v", got.PayablesDueNext30Days)
 	}
+	if got.ReceivablesByMethod == nil || *got.ReceivablesByMethod != *input.ReceivablesByMethod {
+		t.Fatalf("receivables by payment method were lost in Wails mapping: got %+v", got.ReceivablesByMethod)
+	}
 	if got.CashFlow == nil || got.CashFlow.InflowsNext30Days != input.CashFlow.InflowsNext30Days || got.CashFlow.OutflowsNext30Days != input.CashFlow.OutflowsNext30Days || len(got.CashFlow.Days) != 1 || got.CashFlow.Days[0] != input.CashFlow.Days[0] || len(got.CashFlow.Periods) != 1 || got.CashFlow.Periods[0] != input.CashFlow.Periods[0] {
 		t.Fatalf("cash-flow report composition was lost in Wails mapping: got %+v, want %+v", got.CashFlow, input.CashFlow)
 	}
@@ -123,6 +132,10 @@ func TestWailsDashboardSnapshotPreserves30DayFlowMetrics(t *testing.T) {
 	var serializedFlow application.DashboardCashFlow
 	if raw, ok := payload["cash_flow"]; !ok || json.Unmarshal(raw, &serializedFlow) != nil || serializedFlow.InflowsNext30Days != input.CashFlow.InflowsNext30Days || len(serializedFlow.Days) != 1 || len(serializedFlow.Periods) != 1 || serializedFlow.Periods[0] != input.CashFlow.Periods[0] {
 		t.Fatalf("cash_flow JSON contract was not preserved: %s", encoded)
+	}
+	var serializedMethods application.DashboardReceivablesByMethod
+	if raw, ok := payload["receivables_by_method"]; !ok || json.Unmarshal(raw, &serializedMethods) != nil || serializedMethods != *input.ReceivablesByMethod {
+		t.Fatalf("receivables_by_method JSON contract was not preserved: %s", encoded)
 	}
 }
 

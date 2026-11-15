@@ -357,6 +357,9 @@ body { background: #fff; }
 .mocap-receivables-middle { grid-template-columns: minmax(0,1fr); }
 .mocap-distribution .mocap-donut:not(.has-data) { border-right-color: #d6e4ed; border-bottom-color: #d6e4ed; }
 .mocap-distribution .mocap-donut.has-data { border-right-color: #a4d7e2; border-bottom-color: #7bb9e8; }
+.mocap-distribution .mocap-donut.mocap-receivables-donut.has-data { position: relative; border: 0; background: conic-gradient(#0c8b88 0% 25%, #2877eb 25% 50%, #ffb334 50% 75%, #8b41dd 75% 100%); color: #17305b; }
+.mocap-distribution .mocap-donut.mocap-receivables-donut.has-data::before { content: ''; position: absolute; inset: 27px; border-radius: 50%; background: #fff; }
+.mocap-distribution .mocap-donut.mocap-receivables-donut.has-data > span { position: relative; z-index: 1; padding: 0 8px; text-align: center; }
 .mocap-distribution-explainer { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 10px 6px; }
 .mocap-distribution-explainer .mocap-link { margin: 0; }
 .mocap-status-meanings { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 18px; width: 100%; padding: 12px; border: 1px solid #dbe8f2; border-radius: 8px; background: #f8fbfe; color: #294777; font-size: 12px; line-height: 1.45; }

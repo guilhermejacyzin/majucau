@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -142,8 +143,8 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `INSERT INTO raw_records (id, payload) VALUES ($1::uuid, '{"customer_name":" jose   cliente "}'::jsonb)`, nuvemRawID); err != nil {
 		t.Fatalf("seed Nuvem customer name in RAW fixture: %v", err)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO receivables (id, source_system, source_entity, source_id, business_type, customer_id, raw_record_id, status, open_balance, net_amount, gross_amount, due_date, expected_receipt_date)
-		VALUES ($1::uuid, 'NUVEM_PAGO', 'nuvem_pago_recebimentos_futuros_csv_v1', 'nuvem-1', 'B2C', NULL, $2::uuid, 'PROJECTED', NULL, 97, 100, NULL, $3::date + 20)`, nuvemReceivableID, nuvemRawID, asOf.Format("2006-01-02")); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO receivables (id, source_system, source_entity, source_id, business_type, customer_id, raw_record_id, status, payment_method, open_balance, net_amount, gross_amount, due_date, expected_receipt_date)
+		VALUES ($1::uuid, 'NUVEM_PAGO', 'nuvem_pago_recebimentos_futuros_csv_v1', 'nuvem-1', 'B2C', NULL, $2::uuid, 'PROJECTED', 'Cartão de crédito', NULL, 97, 100, NULL, $3::date + 20)`, nuvemReceivableID, nuvemRawID, asOf.Format("2006-01-02")); err != nil {
 		t.Fatalf("seed current Nuvem future receivable: %v", err)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
@@ -167,9 +168,14 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE id = $1::uuid`, paymentMethodsBatchID); err != nil {
 		t.Fatalf("normalize payment-method batch for liquid receivable fixture: %v", err)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO bling_payment_method_terms (connection_id, sync_batch_id, source_id, destination, fee_rate, fee_rate_known, fixed_fee, fixed_fee_known, settlement_days, settlement_known, use_business_days, business_days_known) VALUES
-		($1::uuid, $2::uuid, '9', 1, 0, true, 0, true, 0, true, false, true),
-		($1::uuid, $2::uuid, '10', 1, 2.59, true, 0.35, true, 0, true, false, true)`, connectionID, paymentMethodsBatchID); err != nil {
+	if _, err := tx.Exec(ctx, `INSERT INTO raw_records (id, payload) VALUES
+		('00000000-0000-4000-8000-000000000050'::uuid, '{"list":{"descricao":"PIX"}}'::jsonb),
+		('00000000-0000-4000-8000-000000000051'::uuid, '{"list":{"descricao":"Cartão de crédito"}}'::jsonb)`); err != nil {
+		t.Fatalf("seed payment-method names for receivable summary: %v", err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO bling_payment_method_terms (connection_id, sync_batch_id, raw_record_id, source_id, destination, fee_rate, fee_rate_known, fixed_fee, fixed_fee_known, settlement_days, settlement_known, use_business_days, business_days_known) VALUES
+		($1::uuid, $2::uuid, '00000000-0000-4000-8000-000000000050'::uuid, '9', 1, 0, true, 0, true, 0, true, false, true),
+		($1::uuid, $2::uuid, '00000000-0000-4000-8000-000000000051'::uuid, '10', 1, 2.59, true, 0.35, true, 0, true, false, true)`, connectionID, paymentMethodsBatchID); err != nil {
 		t.Fatalf("seed Bling payment-method net values: %v", err)
 	}
 	blingCustomerID := "00000000-0000-4000-8000-000000000041"
@@ -208,6 +214,43 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.ReceivablesDueNext30Days.Value != "145.35" || snapshot.ReceivablesDueNext30Days.Count != 2 {
 		t.Fatalf("next 30 day receivables should use the same approved one-to-one cross-source matching: %+v", snapshot.ReceivablesDueNext30Days)
+	}
+	if snapshot.ReceivablesByMethod == nil || snapshot.ReceivablesByMethod.Pix.Value != "0" || snapshot.ReceivablesByMethod.Card.Value != "145.35" || snapshot.ReceivablesByMethod.Unclassified.Value != "0" {
+		t.Fatalf("payment-method totals should use the deduplicated liquid amounts and Nuvem Pago method: %+v", snapshot.ReceivablesByMethod)
+	}
+	methodTotal := new(big.Rat)
+	for _, metric := range []application.DashboardMetric{snapshot.ReceivablesByMethod.Pix, snapshot.ReceivablesByMethod.Boleto, snapshot.ReceivablesByMethod.Card, snapshot.ReceivablesByMethod.Unclassified} {
+		value, ok := new(big.Rat).SetString(metric.Value)
+		if !ok {
+			t.Fatalf("payment-method value %q is not a decimal", metric.Value)
+		}
+		methodTotal.Add(methodTotal, value)
+	}
+	receivablesTotal, ok := new(big.Rat).SetString(snapshot.Receivables.Value)
+	if !ok || methodTotal.Cmp(receivablesTotal) != 0 {
+		t.Fatalf("payment-method categories do not reconcile to total receivables: methods=%s receivables=%s", methodTotal.RatString(), snapshot.Receivables.Value)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET status = 'PARTIAL' WHERE connection_id = $1::uuid AND resource = 'nuvem_pago_recebimentos_futuros_csv_v1'`, nuvemConnectionID); err != nil {
+		t.Fatalf("mark Nuvem Pago source stale for single-source reconciliation: %v", err)
+	}
+	singleSourceSnapshot, err := readStreamSummary(ctx, tx, asOf)
+	if err != nil {
+		t.Fatalf("read summary with current Bling and stale Nuvem Pago sources: %v", err)
+	}
+	singleSourceMethodTotal := new(big.Rat)
+	for _, metric := range []application.DashboardMetric{singleSourceSnapshot.ReceivablesByMethod.Pix, singleSourceSnapshot.ReceivablesByMethod.Boleto, singleSourceSnapshot.ReceivablesByMethod.Card, singleSourceSnapshot.ReceivablesByMethod.Unclassified} {
+		value, ok := new(big.Rat).SetString(metric.Value)
+		if !ok {
+			t.Fatalf("single-source payment-method value %q is not a decimal", metric.Value)
+		}
+		singleSourceMethodTotal.Add(singleSourceMethodTotal, value)
+	}
+	singleSourceReceivables, ok := new(big.Rat).SetString(singleSourceSnapshot.Receivables.Value)
+	if !ok || singleSourceMethodTotal.Cmp(singleSourceReceivables) != 0 {
+		t.Fatalf("single-source method categories must match the same current Bling report without deduplicating against stale Nuvem Pago: methods=%s receivables=%s", singleSourceMethodTotal.RatString(), singleSourceSnapshot.Receivables.Value)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET status = 'SUCCESS' WHERE connection_id = $1::uuid AND resource = 'nuvem_pago_recebimentos_futuros_csv_v1'`, nuvemConnectionID); err != nil {
+		t.Fatalf("restore Nuvem Pago source status: %v", err)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil || snapshot.Receivables.State != "CONFIRMED" || snapshot.ReceivablesDueNext90Days.State != "CONFIRMED" {

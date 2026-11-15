@@ -163,7 +163,7 @@ func readLatestItauBalance(ctx context.Context, tx pgx.Tx, asOf time.Time, corre
 		return approvedItauBalance{}, err
 	}
 	result := approvedItauBalance{
-		Metric:        base,
+		Metric: base,
 		// The approved reconciled checkpoint is the opening balance for the
 		// forecast. A newer reconciliation batch may move it forward, but its
 		// absence must not erase a valid approved starting point.
@@ -217,7 +217,7 @@ func reconciledCashMovementDelta(ctx context.Context, tx pgx.Tx, correlationID, 
 	return ready, delta, latestDate, nil
 }
 
-func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string, itauBalance approvedItauBalance) (*application.DashboardCashFlow, error) {
+func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlationID string, itauBalance approvedItauBalance, receivablesPartial, payablesPartial bool) (*application.DashboardCashFlow, error) {
 	// readStreamSummary passes a date-only business date represented at UTC
 	// midnight. Convert only to date here; converting that normalized value to
 	// Sao Paulo again shifts it to the previous calendar day (21:00 BRT).
@@ -241,11 +241,13 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 		flowDate := candidate.flowDate
 		switch candidate.kind {
 		case "PAYABLE":
+			payablesPartial = payablesPartial || candidate.batchPartial
 			amount, err = amount.AbsExact()
 			if err != nil {
 				return nil, err
 			}
 		case "RECEIVABLE":
+			receivablesPartial = receivablesPartial || candidate.batchPartial
 			// Receivables already carry their positive open balance.
 		default:
 			continue
@@ -301,14 +303,14 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 		}
 		flow.Days = append(flow.Days, application.DashboardCashFlowDay{
 			Date:     date.Format(time.DateOnly),
-			Inflows:  dashboardFlowMetric(daily[index].inflows.String(), false),
-			Outflows: dashboardFlowMetric(outflow.String(), false),
+			Inflows:  dashboardFlowMetric(daily[index].inflows.String(), receivablesPartial),
+			Outflows: dashboardFlowMetric(outflow.String(), payablesPartial),
 		})
 	}
-	flow.InflowsNext30Days = dashboardFlowMetric(inflows30.String(), false)
-	flow.OutflowsNext30Days = dashboardFlowMetric(outflows30.String(), false)
-	flow.InflowsNext60Days = dashboardFlowMetric(inflows60.String(), false)
-	flow.OutflowsNext60Days = dashboardFlowMetric(outflows60.String(), false)
+	flow.InflowsNext30Days = dashboardFlowMetric(inflows30.String(), receivablesPartial)
+	flow.OutflowsNext30Days = dashboardFlowMetric(outflows30.String(), payablesPartial)
+	flow.InflowsNext60Days = dashboardFlowMetric(inflows60.String(), receivablesPartial)
+	flow.OutflowsNext60Days = dashboardFlowMetric(outflows60.String(), payablesPartial)
 	flow.Periods, err = groupCashFlowReportWeeks(flow.Days, false)
 	if err != nil {
 		return nil, err
@@ -317,14 +319,15 @@ func readBlingCashFlow(ctx context.Context, tx pgx.Tx, asOf time.Time, correlati
 	if projectedOpening.Value == "" || itauBalance.ReferenceDate.IsZero() {
 		projectedOpening = application.DashboardMetric{State: "UNAVAILABLE", SourceSystem: "BLING"}
 	}
-	if err := applyWeeklyCashBalances(flow.Periods, projectedOpening, false); err != nil {
+	flowPartial := receivablesPartial || payablesPartial
+	if err := applyWeeklyCashBalances(flow.Periods, projectedOpening, flowPartial); err != nil {
 		return nil, err
 	}
 	flow.CriticalWeek, err = selectCriticalCashFlowWeek(flow.Periods)
 	if err != nil {
 		return nil, err
 	}
-	flow.MinimumBalance30Days, flow.MinimumBalance60Days, err = minimumCashFlowBalances(daily[:], start, projectedOpening, false)
+	flow.MinimumBalance30Days, flow.MinimumBalance60Days, err = minimumCashFlowBalances(daily[:], start, projectedOpening, flowPartial)
 	if err != nil {
 		return nil, err
 	}
@@ -469,6 +472,7 @@ func groupCashFlowReportWeeks(days []application.DashboardCashFlowDay, partial b
 	periods := make([]application.DashboardCashFlowPeriod, 0, (len(days)+6)/7)
 	var current application.DashboardCashFlowPeriod
 	inflows, outflows := domain.ZeroMoney(), domain.ZeroMoney()
+	inflowsPartial, outflowsPartial := partial, partial
 	for index, day := range days {
 		date, err := time.Parse(time.DateOnly, day.Date)
 		if err != nil {
@@ -494,12 +498,15 @@ func groupCashFlowReportWeeks(days []application.DashboardCashFlowDay, partial b
 		if err != nil {
 			return nil, err
 		}
+		inflowsPartial = inflowsPartial || day.Inflows.State == "PARTIAL"
+		outflowsPartial = outflowsPartial || day.Outflows.State == "PARTIAL"
 		if date.Weekday() == time.Saturday || index == len(days)-1 {
-			current.Inflows = dashboardFlowMetric(inflows.String(), partial)
-			current.Outflows = dashboardFlowMetric(outflows.String(), partial)
+			current.Inflows = dashboardFlowMetric(inflows.String(), inflowsPartial)
+			current.Outflows = dashboardFlowMetric(outflows.String(), outflowsPartial)
 			periods = append(periods, current)
 			current = application.DashboardCashFlowPeriod{}
 			inflows, outflows = domain.ZeroMoney(), domain.ZeroMoney()
+			inflowsPartial, outflowsPartial = partial, partial
 		}
 	}
 	return periods, nil

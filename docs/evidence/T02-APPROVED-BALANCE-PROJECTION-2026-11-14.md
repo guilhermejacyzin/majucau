@@ -35,6 +35,7 @@ continuam indisponíveis; não há valor presumido.
 - A semana 22–28/11 foi a única comparada nesta sessão com relatórios enviados. A equivalência dos demais agrupamentos ainda precisa de conferência pela responsável.
 - A sincronização mais recente, em 14/11 às 22:39, atualizou os cards para entradas de R$ 248.274,64 (30 dias) e R$ 289.559,53 (60 dias), saídas de -R$ 307.955,72 e -R$ 506.770,38, mínimo de -R$ 56.191,12 em 05/12 e -R$ 156.695,68 em 06/01. O saldo-base permaneceu R$ 62.548,33; a semana 22–28/11 permaneceu igual aos relatórios conferidos.
 - O teste visual automatizado confirmou que o filtro de datas da T02 não encurta o gráfico semanal da T01. O subtítulo da tabela explicita as fontes: Contas a Receber líquido e Contas a Pagar por vencimento.
+- Auditoria de integridade: o fluxo agora conserva o estado interno da última carga normalizada de cada relatório (Receber e Pagar) em cards, dias, semanas, fechamentos e mínimos. Os valores continuam visíveis, sem o rótulo “Parcial” na tela, conforme orientação da responsável; o estado interno não transforma uma carga interrompida em dado completo. A escolha de status considera a tentativa normalizada mais recente de cada recurso, não lotes antigos da mesma execução. Teste unitário e regressão PostgreSQL adicionados; execução PostgreSQL aguarda o CI após o envio deste commit.
 
 Esses resultados comprovam a correção da abertura da projeção e da semana
 22–28/11 observada; não aprovam automaticamente as demais semanas nem concluem

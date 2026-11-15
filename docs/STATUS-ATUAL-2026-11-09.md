@@ -24,6 +24,13 @@ Isto corrige a abertura, o card de mínimos e o limite da janela, mas não
 substitui a análise da responsável das demais semanas nem representa aprovação
 final da T02. T03 segue aguardando essa aprovação.
 
+**Integridade do estado das cargas — 14/11/2026:** a T02 mantém os números
+visíveis sem o rótulo “Parcial”, mas agora preserva internamente quando a carga
+mais recente de Contas a Receber ou Contas a Pagar foi parcial. Essa informação
+acompanha cards, dias, semanas, saldo acumulado e mínimos projetados; assim uma
+tentativa incompleta não é registrada como fonte completa. Testes unitários
+passaram; a regressão PostgreSQL foi adicionada e será confirmada pela CI.
+
 Evidência: [`T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md`](evidence/T02-APPROVED-BALANCE-PROJECTION-2026-11-14.md).
 
 ---

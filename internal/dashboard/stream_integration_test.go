@@ -405,6 +405,25 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if snapshot.CashFlow.InflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.InflowsNext60Days.Value != "250.0000" || snapshot.CashFlow.OutflowsNext60Days.State != "CONFIRMED" || snapshot.CashFlow.OutflowsNext60Days.Value != "-360.0000" {
 		t.Fatalf("60-day cash-flow totals should use the same Sao Paulo start date, preserve signs, and exclude day 60: %+v", snapshot.CashFlow)
 	}
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET status = 'PARTIAL' WHERE id IN ($1::uuid, $2::uuid)`, receivableBatchID, payableBatchID); err != nil {
+		t.Fatalf("mark the receivable and payable source batches partial: %v", err)
+	}
+	snapshot, err = readStreamSummary(ctx, tx, asOf)
+	if err != nil {
+		t.Fatalf("read summary with partial receivable and payable source batches: %v", err)
+	}
+	if snapshot.CashFlow == nil || snapshot.CashFlow.InflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.InflowsNext30Days.Value != "250.0000" || snapshot.CashFlow.OutflowsNext30Days.State != "PARTIAL" || snapshot.CashFlow.OutflowsNext30Days.Value != "-360.0000" {
+		t.Fatalf("cash-flow cards must retain values while preserving incomplete source status: %+v", snapshot.CashFlow)
+	}
+	if len(snapshot.CashFlow.Days) == 0 || snapshot.CashFlow.Days[0].Inflows.State != "PARTIAL" || snapshot.CashFlow.Days[0].Outflows.State != "PARTIAL" || len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.Periods[0].Inflows.State != "PARTIAL" || snapshot.CashFlow.Periods[0].Outflows.State != "PARTIAL" || snapshot.CashFlow.Periods[0].ClosingBalance == nil || snapshot.CashFlow.Periods[0].ClosingBalance.State != "PARTIAL" {
+		t.Fatalf("daily, weekly, and closing-balance states must reflect incomplete sources: %+v", snapshot.CashFlow)
+	}
+	if snapshot.CashFlow.MinimumBalance30Days == nil || snapshot.CashFlow.MinimumBalance30Days.Balance.State != "PARTIAL" || snapshot.CashFlow.MinimumBalance60Days == nil || snapshot.CashFlow.MinimumBalance60Days.Balance.State != "PARTIAL" {
+		t.Fatalf("minimum balance projections must preserve incomplete source status: %+v", snapshot.CashFlow)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET status = 'SUCCESS' WHERE id IN ($1::uuid, $2::uuid)`, receivableBatchID, payableBatchID); err != nil {
+		t.Fatalf("restore successful source batches for subsequent checks: %v", err)
+	}
 	if _, err := tx.Exec(ctx, `DELETE FROM bling_financial_account_identities WHERE sync_batch_id = $1::uuid AND source_id = '1'`, accountsBatchID); err != nil {
 		t.Fatalf("simulate an incomplete account catalog without Itaú: %v", err)
 	}

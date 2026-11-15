@@ -190,7 +190,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	if err != nil {
 		return application.DashboardSnapshot{}, fmt.Errorf("read Itaú balance: %w", err)
 	}
-	cashFlow, err := readBlingCashFlow(ctx, tx, businessDate, dailyCorrelationID, cashBalance)
+	cashFlow, err := readBlingCashFlow(ctx, tx, businessDate, dailyCorrelationID, cashBalance, dailyReceivablesPartial, dailyPayablesPartial)
 	if err != nil {
 		return application.DashboardSnapshot{}, fmt.Errorf("read cash-flow projection: %w", err)
 	}
@@ -698,14 +698,24 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
      AND b.status IN ('SUCCESS', 'PARTIAL')
+), current_daily_bling_batches AS (
+  SELECT DISTINCT ON (b.resource) b.resource, b.finished_at, b.status
+    FROM integration_sync_batches b
+    JOIN integration_connections c ON c.id = b.connection_id
+   WHERE c.provider = 'BLING'
+     AND b.correlation_id = $4
+     AND b.resource IN ('contas.receber', 'contas.pagar', 'caixas')
+     AND b.status IN ('SUCCESS', 'PARTIAL')
+     AND b.data_stage = 'NORMALIZED'
+   ORDER BY b.resource, b.finished_at DESC NULLS LAST, b.id DESC
 ), current_daily_bling_sync AS (
   SELECT
-    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.receber' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS receivables_finished_at,
-    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.receber' AND b.data_stage = 'NORMALIZED'), false) AS receivables_partial,
-    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS payables_finished_at,
-    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.pagar' AND b.data_stage = 'NORMALIZED'), false) AS payables_partial,
-    MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas' AND b.status IN ('SUCCESS', 'PARTIAL') AND b.data_stage = 'NORMALIZED') AS cash_movements_finished_at,
-    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'caixas' AND b.data_stage = 'NORMALIZED'), false) AS cash_movements_partial
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.receber') AS receivables_finished_at,
+    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.receber'), false) AS receivables_partial,
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar') AS payables_finished_at,
+    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.pagar'), false) AS payables_partial,
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas') AS cash_movements_finished_at,
+    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'caixas'), false) AS cash_movements_partial
     ,NOT EXISTS (
       SELECT 1
         FROM integration_sync_batches nuvem
@@ -717,13 +727,7 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
          AND nuvem.data_stage = 'NORMALIZED'
     ) AS nuvem_future_partial
     FROM (SELECT 1) seed
-    LEFT JOIN (
-      SELECT b.*
-        FROM integration_sync_batches b
-        JOIN integration_connections c ON c.id = b.connection_id
-       WHERE c.provider = 'BLING'
-         AND b.correlation_id = $4
-    ) b ON true
+    LEFT JOIN current_daily_bling_batches b ON true
 )
 SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        rc.month_value, rc.month_count, rc.total_count,

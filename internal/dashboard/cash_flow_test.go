@@ -54,6 +54,34 @@ func TestCashFlowPeriodOmitsUnconfirmedClosingBalance(t *testing.T) {
 	}
 }
 
+func TestCashFlowWeekPreservesPerSourcePartialState(t *testing.T) {
+	days := []application.DashboardCashFlowDay{
+		{
+			Date:     "2026-11-16",
+			Inflows:  dashboardFlowMetric("125.00", true),
+			Outflows: dashboardFlowMetric("-80.00", false),
+		},
+		{
+			Date:     "2026-11-17",
+			Inflows:  dashboardFlowMetric("25.00", false),
+			Outflows: dashboardFlowMetric("-20.00", false),
+		},
+	}
+	periods, err := groupCashFlowReportWeeks(days, false)
+	if err != nil {
+		t.Fatalf("groupCashFlowReportWeeks() error = %v", err)
+	}
+	if len(periods) != 1 {
+		t.Fatalf("got %d periods, want 1", len(periods))
+	}
+	if periods[0].Inflows.Value != "150.0000" || periods[0].Inflows.State != "PARTIAL" {
+		t.Fatalf("weekly receipts must sum values and retain their source state: %+v", periods[0].Inflows)
+	}
+	if periods[0].Outflows.Value != "-100.0000" || periods[0].Outflows.State != "CONFIRMED" {
+		t.Fatalf("weekly payables must retain their independent source state: %+v", periods[0].Outflows)
+	}
+}
+
 func TestT02ReceivablesUseLiquidAmountsAndOfficialPaymentMethodTerms(t *testing.T) {
 	for _, fragment := range []string{
 		"latest_payment_method_snapshot AS",

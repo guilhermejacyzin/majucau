@@ -53,8 +53,9 @@ Na última execução antes deste alinhamento visual, a CI confirmou o job do
 backlog, a validação da mensagem de commit e os testes Go no Windows; o job
 PostgreSQL falhou em um teste de sincronização diária (`bling oauth
 configuration is invalid`), sem apontar falha no teste de dashboard T02. A
-mudança dos cards da T01 ainda precisa ser compilada, enviada e passar pela CI.
-Isso não encerra a validação PostgreSQL nem aprova a T02.
+mudança atual foi compilada localmente e enviada ao GitHub no commit `a54c917`;
+a CI deste commit ainda precisa terminar. Isso não encerra a validação
+PostgreSQL nem aprova a T02.
 
 ---
 

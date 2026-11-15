@@ -111,6 +111,22 @@ func TestT02ReceivablesUseLiquidAmountsAndOfficialPaymentMethodTerms(t *testing.
 	}
 }
 
+func TestCashFlowCompletenessUsesLatestNormalizedBatchForEachSource(t *testing.T) {
+	for _, fragment := range []string{
+		"current_daily_bling_batches AS (",
+		"SELECT DISTINCT ON (b.resource)",
+		"b.correlation_id = $4",
+		"b.resource IN ('contas.receber', 'contas.pagar', 'caixas')",
+		"b.data_stage = 'NORMALIZED'",
+		"ORDER BY b.resource, b.finished_at DESC NULLS LAST, b.id DESC",
+		"LEFT JOIN current_daily_bling_batches b ON true",
+	} {
+		if !strings.Contains(dashboardStreamSummarySQL, fragment) {
+			t.Fatalf("daily source completeness query is missing latest-batch rule %q", fragment)
+		}
+	}
+}
+
 func TestWeeklyBalanceCarriesReconciledOpeningThroughSelectedPeriod(t *testing.T) {
 	periods := []application.DashboardCashFlowPeriod{
 		{From: "2026-11-08", Through: "2026-11-14", Inflows: dashboardFlowMetric("200.00", true), Outflows: dashboardFlowMetric("-50.00", true)},

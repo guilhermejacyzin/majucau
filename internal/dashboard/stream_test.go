@@ -366,8 +366,9 @@ func TestReadStreamSummaryConfirmsZeroAfterSuccessfulNormalizedBlingAndNuvemLoad
 	asOf := time.Date(2026, 10, 19, 16, 0, 0, 0, time.UTC)
 	values := emptyDashboardSummaryValues()
 	values[18], values[19], values[20], values[22] = finishedAt, finishedAt, finishedAt, finishedAt
-	values[34] = false            // Same-day Nuvem import completed successfully.
-	values[len(values)-1] = false // Bling receivables import is not partial.
+	values[len(values)-2] = finishedAt // Same-day reconciled-cash snapshot completed too.
+	values[34] = false                 // Same-day Nuvem import completed successfully.
+	values[len(values)-1] = false      // Bling receivables import is not partial.
 	tx := &scriptedDashboardTx{summary: scriptedDashboardSummaryRow{values: values}}
 	snapshot, err := readStreamSummary(context.Background(), tx, asOf)
 	if err != nil {
@@ -447,7 +448,7 @@ func TestReadStreamSummaryUsesCashMovementSyncForReceiptAndPaymentMetrics(t *tes
 	}
 }
 
-func TestReadStreamSummaryMarksCashFlowOutflowsNegativeAndPartial(t *testing.T) {
+func TestReadStreamSummaryMarksCashFlowOutflowsNegativeAndUsesReconciledTotals(t *testing.T) {
 	finishedAt := time.Date(2026, 11, 2, 13, 0, 0, 0, time.UTC)
 	asOf := time.Date(2026, 11, 2, 16, 0, 0, 0, time.UTC)
 	values := dashboardSummaryValues()
@@ -458,11 +459,11 @@ func TestReadStreamSummaryMarksCashFlowOutflowsNegativeAndPartial(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if snapshot.PaymentsMonth.State != "PARTIAL" || snapshot.PaymentsMonth.Value != "-125.5000" || snapshot.PaymentsMonth.Count != 1 {
-		t.Fatalf("payments month = %+v, want one partial outflow of -125.5000", snapshot.PaymentsMonth)
+	if snapshot.PaymentsMonth.State != "CONFIRMED" || snapshot.PaymentsMonth.Value != "-125.5000" || snapshot.PaymentsMonth.Count != 1 {
+		t.Fatalf("payments month = %+v, want one confirmed reconciled outflow of -125.5000", snapshot.PaymentsMonth)
 	}
-	if snapshot.ReceiptsMonth.State != "PARTIAL" {
-		t.Fatalf("receipts month = %+v, want same partial cash source", snapshot.ReceiptsMonth)
+	if snapshot.ReceiptsMonth.State != "CONFIRMED" {
+		t.Fatalf("receipts month = %+v, want same confirmed reconciled cash source", snapshot.ReceiptsMonth)
 	}
 }
 
@@ -555,6 +556,7 @@ func dashboardSummaryValues() []any {
 		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false, time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false,
 		"-35.0000", int64(2), "40.0000", int64(1), "40.0000", int64(1), "-75.0000", int64(3), "-40.0000", int64(2), false,
 		"100.0000", int64(2), "5.0000", int64(1), "40.0000", int64(1), "40.0000", int64(1), "5.0000", int64(1), "40.0000", int64(1), false,
+		time.Date(2026, 9, 20, 15, 30, 0, 0, time.UTC), false,
 	}
 }
 
@@ -566,6 +568,7 @@ func emptyDashboardSummaryValues() []any {
 		"0.0000", int64(0), int64(0), nil, nil, nil, false, nil, false,
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), true,
 		"0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), "0.0000", int64(0), false,
+		nil, false,
 	}
 }
 

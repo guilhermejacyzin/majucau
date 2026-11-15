@@ -65,7 +65,6 @@ type normalizedCashMovement struct {
 
 func normalizeCashMovementAPISnapshotPage() (func(context.Context, *database.Queries, pgtype.UUID, pgtype.UUID, []json.RawMessage) error, func() string) {
 	accountMissing := false
-	statusIncomplete := false
 	normalize := func(ctx context.Context, queries *database.Queries, connectionID, batchID pgtype.UUID, records []json.RawMessage) error {
 		if queries == nil || !connectionID.Valid || !batchID.Valid {
 			return fmt.Errorf("%w: cash movement normalizer dependencies are missing", ErrBlingAPIConfiguration)
@@ -84,9 +83,6 @@ func normalizeCashMovementAPISnapshotPage() (func(context.Context, *database.Que
 			}
 			if movement.AccountSourceID == nil {
 				accountMissing = true
-			}
-			if !cashMovementStatusIsKnown(movement.SourceStatus) {
-				statusIncomplete = true
 			}
 			if err := queries.UpsertBlingCashMovement(ctx, database.UpsertBlingCashMovementParams{
 				ConnectionID:    connectionID,
@@ -109,9 +105,6 @@ func normalizeCashMovementAPISnapshotPage() (func(context.Context, *database.Que
 	partialErrorCode := func() string {
 		if accountMissing {
 			return "BLING_CASH_ACCOUNT_ID_MISSING"
-		}
-		if statusIncomplete {
-			return "BLING_CASH_MOVEMENT_STATUS_MISSING"
 		}
 		return ""
 	}
@@ -145,10 +138,6 @@ func normalizeReconciledCashMovementSnapshotPage() func(context.Context, *databa
 		}
 		return nil
 	}
-}
-
-func cashMovementStatusIsKnown(value string) bool {
-	return strings.TrimSpace(value) == "R"
 }
 
 func parseCashMovementAPIRecord(payload json.RawMessage) (normalizedCashMovement, error) {
@@ -256,9 +245,9 @@ func parseCashMovementAPIDate(value string) (time.Time, error) {
 }
 
 func validCashMovementSourceStatus(value string) bool {
-	// Bling's public schema marks situacao as an optional string and gives R
-	// only as an example. Preserve a missing/empty or new value without assigning
-	// financial meaning to it; dashboard queries decide which statuses count.
+	// Bling's public schema marks situacao as optional. The sync explicitly
+	// requests situacao=R; reconciliation is tracked separately by the official
+	// situacaoConciliacao=1 result, so this optional field is retained as metadata.
 	return len(value) <= maxCashMovementStatusBytes
 }
 

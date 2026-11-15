@@ -116,7 +116,7 @@ func TestCashFlowCompletenessUsesLatestNormalizedBatchForEachSource(t *testing.T
 		"current_daily_bling_batches AS (",
 		"SELECT DISTINCT ON (b.resource)",
 		"b.correlation_id = $4",
-		"b.resource IN ('contas.receber', 'contas.pagar', 'caixas')",
+		"b.resource IN ('contas.receber', 'contas.pagar', 'caixas', 'caixas.conciliadas')",
 		"b.data_stage = 'NORMALIZED'",
 		"ORDER BY b.resource, b.finished_at DESC NULLS LAST, b.id DESC",
 		"LEFT JOIN current_daily_bling_batches b ON true",

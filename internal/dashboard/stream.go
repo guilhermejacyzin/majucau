@@ -141,8 +141,8 @@ func readStreamSummaryWithCorrelation(ctx context.Context, tx pgx.Tx, asOf time.
 		blingReceivablesCount, blingReceivablesOverdueCount, due90BlingCount, due90NuvemCount, due30BlingCount, due30NuvemCount                                                                                                           int64
 		paymentsTotalCount, paymentsMonthCount                                                                                                                                                                                            int64
 		blingReceivablesValue, blingReceivablesOverdueValue, due90BlingValue, due90NuvemValue, due30BlingValue, due30NuvemValue                                                                                                           string
-		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt                                                                                                                                            pgtype.Timestamptz
-		dailyReceivablesPartial, dailyPayablesPartial, dailyCashMovementsPartial, dailyNuvemFuturePartial                                                                                                                                 bool
+		lastBlingSyncAt, dailyReceivablesSyncAt, dailyPayablesSyncAt, dailyCashMovementsSyncAt, dailyReconciledCashMovementsSyncAt                                                                                                        pgtype.Timestamptz
+		dailyReceivablesPartial, dailyPayablesPartial, dailyCashMovementsPartial, dailyReconciledCashMovementsPartial, dailyNuvemFuturePartial                                                                                            bool
 	)
 	dailyCorrelationID, err := latestPublishedBlingCorrelationID(ctx, tx, asOf)
 	if err != nil {
@@ -192,6 +192,8 @@ func readStreamSummaryWithCorrelation(ctx context.Context, tx pgx.Tx, asOf time.
 		&due30NuvemValue,
 		&due30NuvemCount,
 		&dailyReceivablesPartial,
+		&dailyReconciledCashMovementsSyncAt,
+		&dailyReconciledCashMovementsPartial,
 	)
 	if err != nil {
 		return application.DashboardSnapshot{}, "", fmt.Errorf("aggregate dashboard summary: %w", err)
@@ -199,7 +201,8 @@ func readStreamSummaryWithCorrelation(ctx context.Context, tx pgx.Tx, asOf time.
 	receivablesFresh := completedBy(dailyReceivablesSyncAt, asOf)
 	nuvemFutureFresh := !dailyNuvemFuturePartial
 	payablesFresh := completedBy(dailyPayablesSyncAt, asOf)
-	cashMovementsFresh := completedBy(dailyCashMovementsSyncAt, asOf)
+	cashMovementsFresh := completedBy(dailyCashMovementsSyncAt, asOf) &&
+		completedBy(dailyReconciledCashMovementsSyncAt, asOf) && !dailyReconciledCashMovementsPartial
 	cashBalance, err := readLatestItauBalance(ctx, tx, businessDate, dailyCorrelationID)
 	if err != nil {
 		return application.DashboardSnapshot{}, "", fmt.Errorf("read Itaú balance: %w", err)
@@ -223,7 +226,7 @@ func readStreamSummaryWithCorrelation(ctx context.Context, tx pgx.Tx, asOf time.
 		DataState:                state,
 		Receivables:              combinedReceivableMetric(receivablesValue, receivablesCount, blingReceivablesValue, blingReceivablesCount, futureValue, futureCount, receivablesFresh, dailyReceivablesPartial, nuvemFutureFresh),
 		FutureB2C:                metric(futureValue, futureCount, projectedState(futureCount), "NUVEM_PAGO"),
-		ReceiptsMonth:            metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
+		ReceiptsMonth:            metricForSourceRun(receiptsMonthValue, receiptsMonthCount, receiptsTotalCount, cashMovementsFresh, "BLING"),
 		ReceivablesOverdue:       combinedReceivableMetric(receivablesOverdueValue, receivablesOverdueCount, blingReceivablesOverdueValue, blingReceivablesOverdueCount, "0.0000", 0, receivablesFresh, dailyReceivablesPartial, nuvemFutureFresh),
 		ReceivablesDueNext90Days: combinedReceivableMetric(receivablesDueNext90DaysValue, receivablesDueNext90DaysCount, due90BlingValue, due90BlingCount, due90NuvemValue, due90NuvemCount, receivablesFresh, dailyReceivablesPartial, nuvemFutureFresh),
 		ReceivablesDueNext30Days: combinedReceivableMetric(receivablesDueNext30DaysValue, receivablesDueNext30DaysCount, due30BlingValue, due30BlingCount, due30NuvemValue, due30NuvemCount, receivablesFresh, dailyReceivablesPartial, nuvemFutureFresh),
@@ -235,7 +238,7 @@ func readStreamSummaryWithCorrelation(ctx context.Context, tx pgx.Tx, asOf time.
 		PayablesDueNext30Days:    metricForSourceRun(payablesDueNext30DaysValue, payablesDueNext30DaysCount, payablesCount, payablesFresh, "BLING", dailyPayablesPartial),
 		CashBalance:              cashBalance.Metric,
 		CashFlow:                 cashFlow,
-		PaymentsMonth:            metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
+		PaymentsMonth:            metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING"),
 	}, dailyCorrelationID, nil
 }
 
@@ -521,7 +524,7 @@ latest_daily_receivable_snapshot AS (
    LIMIT 1
 ), eligible_receivables AS (
   SELECT r.*,
-         COALESCE(payment_method_record.payload->'list'->>'descricao', payment_method_record.payload->'detail'->>'descricao', '') AS payment_method,
+         COALESCE(payment_method_record.payload->'list'->>'descricao', payment_method_record.payload->'detail'->>'descricao', '') AS mapped_payment_method,
          CASE
            WHEN r.source_system = 'NUVEM_PAGO' THEN r.net_amount
            WHEN r.source_system = 'BLING'
@@ -654,7 +657,7 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
          COUNT(id) FILTER (WHERE source_system = 'NUVEM_PAGO' AND effective_due_date < ($1::date + 30)) AS due30_nuvem_count
     FROM due90_deduplicated
 ), cash_snapshot AS (
-  SELECT b.id AS sync_batch_id, b.status
+  SELECT b.id AS sync_batch_id, b.connection_id, b.status
     FROM integration_sync_batches b
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
@@ -664,19 +667,35 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
      AND b.data_stage = 'NORMALIZED'
    ORDER BY b.finished_at DESC, b.id DESC
    LIMIT 1
+), reconciled_cash_snapshot AS (
+  SELECT b.id AS sync_batch_id, b.connection_id
+    FROM integration_sync_batches b
+   WHERE b.resource = 'caixas.conciliadas'
+     AND b.correlation_id = $4
+     AND b.status = 'SUCCESS'
+     AND b.data_stage = 'NORMALIZED'
+   ORDER BY b.finished_at DESC, b.id DESC
+   LIMIT 1
 ), rc AS (
   SELECT
     COALESCE(SUM(amount) FILTER (
-      WHERE direction = 'INFLOW' AND source_status = 'R'
+      WHERE direction = 'INFLOW'
         AND movement_date >= $2::date AND movement_date < $3::date
     ), 0)::text AS month_value,
     COUNT(id) FILTER (
-      WHERE direction = 'INFLOW' AND source_status = 'R'
+      WHERE direction = 'INFLOW'
         AND movement_date >= $2::date AND movement_date < $3::date
     ) AS month_count,
-    COUNT(id) FILTER (WHERE direction = 'INFLOW' AND source_status = 'R') AS total_count
-  FROM bling_cash_movements movement
-  JOIN cash_snapshot snapshot ON snapshot.sync_batch_id = movement.sync_batch_id
+    COUNT(id) FILTER (WHERE direction = 'INFLOW') AS total_count
+  FROM (SELECT 1) seed
+  LEFT JOIN cash_snapshot cash ON true
+  LEFT JOIN reconciled_cash_snapshot reconciled ON reconciled.connection_id = cash.connection_id
+  LEFT JOIN bling_cash_movement_reconciled_snapshot_rows membership
+    ON membership.sync_batch_id = reconciled.sync_batch_id
+   AND membership.connection_id = cash.connection_id
+  LEFT JOIN bling_cash_movements movement
+    ON movement.sync_batch_id = cash.sync_batch_id
+   AND movement.source_id = membership.source_id
 ), latest_daily_payable_snapshot AS (
   SELECT b.id AS sync_batch_id
     FROM integration_sync_batches b
@@ -743,16 +762,23 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
 ), pm AS (
   SELECT
     COALESCE(SUM(-amount) FILTER (
-      WHERE direction = 'OUTFLOW' AND source_status = 'R'
+      WHERE direction = 'OUTFLOW'
         AND movement_date >= $2::date AND movement_date < $3::date
     ), 0)::text AS month_value,
     COUNT(id) FILTER (
-      WHERE direction = 'OUTFLOW' AND source_status = 'R'
+      WHERE direction = 'OUTFLOW'
         AND movement_date >= $2::date AND movement_date < $3::date
     ) AS month_count,
-    COUNT(id) FILTER (WHERE direction = 'OUTFLOW' AND source_status = 'R') AS total_count
-  FROM bling_cash_movements movement
-  JOIN cash_snapshot snapshot ON snapshot.sync_batch_id = movement.sync_batch_id
+    COUNT(id) FILTER (WHERE direction = 'OUTFLOW') AS total_count
+  FROM (SELECT 1) seed
+  LEFT JOIN cash_snapshot cash ON true
+  LEFT JOIN reconciled_cash_snapshot reconciled ON reconciled.connection_id = cash.connection_id
+  LEFT JOIN bling_cash_movement_reconciled_snapshot_rows membership
+    ON membership.sync_batch_id = reconciled.sync_batch_id
+   AND membership.connection_id = cash.connection_id
+  LEFT JOIN bling_cash_movements movement
+    ON movement.sync_batch_id = cash.sync_batch_id
+   AND movement.source_id = membership.source_id
 ), last_bling_sync AS (
   SELECT MAX(b.finished_at) AS finished_at
     FROM integration_sync_batches b
@@ -765,7 +791,7 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
      AND b.correlation_id = $4
-     AND b.resource IN ('contas.receber', 'contas.pagar', 'caixas')
+     AND b.resource IN ('contas.receber', 'contas.pagar', 'caixas', 'caixas.conciliadas')
      AND b.status IN ('SUCCESS', 'PARTIAL')
      AND b.data_stage = 'NORMALIZED'
    ORDER BY b.resource, b.finished_at DESC NULLS LAST, b.id DESC
@@ -776,7 +802,9 @@ const dashboardStreamSummarySQL = `WITH ` + dashboardEligibleReceivablesCTE + `,
     MAX(b.finished_at) FILTER (WHERE b.resource = 'contas.pagar') AS payables_finished_at,
     COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'contas.pagar'), false) AS payables_partial,
     MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas') AS cash_movements_finished_at,
-    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'caixas'), false) AS cash_movements_partial
+    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'caixas'), false) AS cash_movements_partial,
+    MAX(b.finished_at) FILTER (WHERE b.resource = 'caixas.conciliadas') AS reconciled_cash_movements_finished_at,
+    COALESCE(BOOL_OR(b.status = 'PARTIAL') FILTER (WHERE b.resource = 'caixas.conciliadas'), false) AS reconciled_cash_movements_partial
     ,NOT EXISTS (
       SELECT 1
         FROM integration_sync_batches nuvem
@@ -811,7 +839,9 @@ SELECT r.total_value, r.total_count, r.future_value, r.future_count,
        r.bling_value, r.bling_count, r.bling_overdue_value, r.bling_overdue_count,
        due90.bling_value, due90.bling_count, due90.nuvem_value, due90.nuvem_count,
        due90.due30_bling_value, due90.due30_bling_count, due90.due30_nuvem_value, due90.due30_nuvem_count,
-       current_daily_bling_sync.receivables_partial
+       current_daily_bling_sync.receivables_partial,
+       current_daily_bling_sync.reconciled_cash_movements_finished_at,
+       current_daily_bling_sync.reconciled_cash_movements_partial
 FROM r CROSS JOIN due90 CROSS JOIN rc CROSS JOIN p CROSS JOIN pm CROSS JOIN last_bling_sync CROSS JOIN current_daily_bling_sync
 `
 
@@ -833,7 +863,7 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
  CROSS JOIN LATERAL (
    SELECT COALESCE(c.name, rr.payload->>'customer_name', '') AS customer,
           CASE er.source_system WHEN 'NUVEM_PAGO' THEN 'Nuvem Pago' WHEN 'BLING' THEN 'Bling' ELSE er.source_system END AS origin,
-          COALESCE(er.payment_method, '') AS payment_method,
+          COALESCE(er.mapped_payment_method, '') AS payment_method,
           COALESCE(to_char(er.effective_due_date, 'YYYY-MM-DD'), '') AS due_date,
           COALESCE(er.gross_amount::text, '') AS gross_value,
           COALESCE(er.liquid_amount::text, '') AS net_value,
@@ -909,7 +939,7 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.supplier END,
 
 const dashboardCashMovementRowsSQL = `
 WITH daily_snapshot AS (
-  SELECT b.id AS sync_batch_id
+  SELECT b.id AS sync_batch_id, b.connection_id
     FROM integration_sync_batches b
     JOIN integration_connections c ON c.id = b.connection_id
    WHERE c.provider = 'BLING'
@@ -919,15 +949,30 @@ WITH daily_snapshot AS (
      AND b.data_stage = 'NORMALIZED'
    ORDER BY b.finished_at DESC, b.id DESC
    LIMIT 1
+), reconciled_snapshot AS (
+  SELECT b.id AS sync_batch_id, b.connection_id
+    FROM integration_sync_batches b
+   WHERE b.resource = 'caixas.conciliadas'
+     AND b.correlation_id = $1
+     AND b.status = 'SUCCESS'
+     AND b.data_stage = 'NORMALIZED'
+   ORDER BY b.finished_at DESC, b.id DESC
+   LIMIT 1
 ), movement_rows AS (
   SELECT movement.movement_date::text AS movement_date,
          COALESCE(movement.account_name, '') AS account_name,
          COALESCE(movement.origin_type, '') AS origin_type,
          movement.amount::text AS amount
     FROM bling_cash_movements movement
-    JOIN daily_snapshot snapshot ON snapshot.sync_batch_id = movement.sync_batch_id
+    JOIN daily_snapshot snapshot
+      ON snapshot.sync_batch_id = movement.sync_batch_id
+    JOIN reconciled_snapshot reconciled
+      ON reconciled.connection_id = snapshot.connection_id
+    JOIN bling_cash_movement_reconciled_snapshot_rows membership
+      ON membership.sync_batch_id = reconciled.sync_batch_id
+     AND membership.connection_id = reconciled.connection_id
+     AND membership.source_id = movement.source_id
    WHERE movement.direction = 'INFLOW'
-     AND movement.source_status = 'R'
      AND movement.movement_date >= $2::date
      AND movement.movement_date < $3::date
    ORDER BY movement.movement_date, movement.source_id

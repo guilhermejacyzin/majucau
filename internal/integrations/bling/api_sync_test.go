@@ -8,12 +8,43 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+func TestCashMovementSyncServicesFilterRegisteredAndReconciledRecords(t *testing.T) {
+	requests := make(chan url.Values, 2)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests <- r.URL.Query()
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	}))
+	defer server.Close()
+	client, err := NewBlingAPIClient(server.Client(), server.URL, "test-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cash := newCashMovementsAPISyncService(nil, client, CashMovementsFilter{})
+	if _, err := cash.list(context.Background(), ReceivablesFilter{Page: 1, Limit: 10}); err != nil {
+		t.Fatal(err)
+	}
+	reconciled := newReconciledCashMovementsAPISyncService(nil, client, CashMovementsFilter{})
+	if _, err := reconciled.list(context.Background(), ReceivablesFilter{Page: 1, Limit: 10}); err != nil {
+		t.Fatal(err)
+	}
+	registeredQuery := <-requests
+	if registeredQuery.Get("situacao") != "R" || registeredQuery.Get("situacaoConciliacao") != "" {
+		t.Fatalf("registered cash query = %v, want active records and no reconciliation filter", registeredQuery)
+	}
+	reconciledQuery := <-requests
+	if reconciledQuery.Get("situacao") != "R" || reconciledQuery.Get("situacaoConciliacao") != "1" {
+		t.Fatalf("reconciled cash query = %v, want active, reconciled records", reconciledQuery)
+	}
+}
 
 func TestBlingAPINormalizationFailureCodeDoesNotExposeErrorText(t *testing.T) {
 	tests := []struct {

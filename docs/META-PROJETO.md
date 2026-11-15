@@ -7,9 +7,11 @@ T02. A tabela de recebíveis saiu da página principal e é aberta pelo card
 “TOTAL A RECEBER”; o card “EM ATRASO” abre a mesma lista filtrada pela data-base.
 “TOTAL RECEBIDO” substitui a conciliação e lista os movimentos conciliados de
 Caixa e Bancos que compõem o total do mês, com a mesma carga e os mesmos critérios.
-Uma auditoria encontrou que situação vazia estava sendo somada junto com `R`;
-agora somente `R` entra no total e na lista. Situação vazia/desconhecida não é
-tratada como conciliada. As tabelas do snapshot agora suportam até 200 linhas.
+Uma auditoria corrigiu a confusão entre os dois campos do Bling: `situacao=R`
+significa lançamento ativo; a conciliação vem da lista oficial de IDs filtrada
+por `situacaoConciliacao=1`. O total e os detalhes agora usam essa lista e a
+situação do lançamento não é confundida com conciliação. As tabelas do snapshot
+agora suportam até 200 linhas.
 
 O gráfico permanece e mostra o significado de Confirmado,
 Provisório, Pendente e Divergente. A distribuição de valores ainda não está
@@ -80,6 +82,13 @@ a preparação dos detalhes alcançou apenas a página 19 de 104 às 02:13:31. O
 processo expirou no limite de 30 minutos; a publicação completa e atômica não
 ocorreu. A leitura geral de Caixa ficou `PARTIAL` por
 `BLING_CASH_MOVEMENT_STATUS_MISSING`, uma pendência separada.
+
+**Correção registrada em 15/11:** essa pendência foi causada pela interpretação
+incorreta de `situacao` como prova de conciliação. No contrato oficial, `R`
+significa registro ativo; conciliação é outro filtro. O normalizador agora envia
+`situacao=R` explicitamente e usa `situacaoConciliacao=1` para registrar IDs
+conciliados. Campo `situacao` ausente no payload não deve, por si só, marcar a
+carga como parcial. Consulte a evidência T03 de 15/11.
 
 O commit `9384758` já está no GitHub e eleva para duas horas o prazo da chamada
 completa compartilhado entre aplicativo e worker. O processo que ainda está
@@ -1291,3 +1300,23 @@ semana 22/11–28/11 (146 títulos, R$ 43.790,66 líquido na captura) não foi
 concluída; não declarar a T02 homologada até bater a mesma janela e filtros no
 protótipo. Ver [`STATUS-ATUAL-2026-11-08.md`](STATUS-ATUAL-2026-11-08.md) e
 [`evidência T02`](evidence/T02-RECEIVABLE-PAYABLE-SOURCES-2026-11-08.md).
+
+### T03 — revisão dos detalhes e origem conciliada — 15/11/2026
+
+Na T03, a tabela de recebíveis permanece recolhida na página principal e abre
+por “Ver detalhes”; os detalhes dos demais cards continuam disponíveis. Os
+cards PIX, Boletos, Cartão, Ambíguos e Chargebacks e o gráfico de distribuição
+foram mantidos. A tela explica os quatro status do gráfico e deixa o círculo
+neutro quando não existe uma divisão classificada confirmada.
+
+O card TOTAL RECEBIDO substitui Conciliação e soma somente entradas presentes
+no snapshot oficial de lançamentos conciliados de Caixa e Bancos; sua janela
+lista as mesmas linhas usadas no total. A sincronização de 15/11 não conseguiu
+ler Contas a Receber por escopo ausente (`BLING_API_SCOPE_INSUFFICIENT`, zero
+recebíveis lidos), portanto os valores exibidos ainda refletem o último snapshot
+publicado, 15/11/2026 02:13, e não uma nova carga completa. Depois do reparo da
+consulta SQL ambígua de `payment_method`, o snapshot do dashboard voltou a
+carregar localmente. A autorização da API para recebíveis é dependência para a
+próxima atualização diária. A T03 está aberta no protótipo para aprovação
+visual; não marcar sincronização completa. Evidência:
+[`T03 — detalhes de Contas a Receber`](evidence/T03-RECEIVABLE-DETAILS-2026-11-15.md).

@@ -118,6 +118,7 @@ func NewCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient) 
 }
 
 func newCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient, dateFilter CashMovementsFilter) *CashMovementsAPISyncService {
+	dateFilter.Situation = "R"
 	var list func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
 	normalizePage, partialErrorCode := normalizeCashMovementAPISnapshotPage()
 	if client != nil {
@@ -132,6 +133,7 @@ func newCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient, 
 }
 
 func newReconciledCashMovementsAPISyncService(pool *pgxpool.Pool, client *BlingAPIClient, dateFilter CashMovementsFilter) *ReconciledCashMovementsAPISyncService {
+	dateFilter.Situation = "R"
 	dateFilter.ReconciliationSituation = 1
 	var list func(context.Context, ReceivablesFilter) (BlingReceivablesPage, error)
 	normalizePage := normalizeReconciledCashMovementSnapshotPage()
@@ -448,8 +450,6 @@ func (s *apiResourceSyncService) sync(ctx context.Context, filter ReceivablesFil
 					message = "Os títulos foram carregados; alguns não têm categoria atribuída no Bling."
 				case "BLING_CASH_ACCOUNT_ID_MISSING":
 					message = "As movimentações foram carregadas; falta identificar a conta financeira de algumas linhas."
-				case "BLING_CASH_MOVEMENT_STATUS_MISSING":
-					message = "As movimentações do caixa foram carregadas; o Bling não informou a situação de algumas linhas, então os totais aparecem como parciais."
 				}
 				batchErrorCode, batchErrorMessage = &code, &message
 			}

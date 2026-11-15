@@ -1,7 +1,9 @@
 package dashboard
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"testing"
 	"time"
@@ -50,17 +52,17 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 		`CREATE TEMP TABLE integration_sync_batches (id uuid DEFAULT gen_random_uuid(), connection_id uuid, resource text, started_at timestamptz, finished_at timestamptz, status text, correlation_id uuid, data_stage text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE contacts (id uuid, name text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE raw_records (id uuid, payload jsonb) ON COMMIT DROP`,
-		`CREATE TEMP TABLE receivables (id uuid, connection_id uuid, source_system text, source_entity text, source_id text, business_type text, customer_id uuid, raw_record_id uuid, status text, open_balance numeric, net_amount numeric, gross_amount numeric, due_date date, expected_receipt_date date, source_payment_method_id bigint, source_financial_account_id bigint) ON COMMIT DROP`,
+		`CREATE TEMP TABLE receivables (id uuid, connection_id uuid, source_system text, source_entity text, source_id text, business_type text, customer_id uuid, raw_record_id uuid, status text, payment_method text, open_balance numeric, net_amount numeric, gross_amount numeric, due_date date, expected_receipt_date date, source_payment_method_id bigint, source_financial_account_id bigint) ON COMMIT DROP`,
 		`CREATE TEMP TABLE receivable_sync_snapshot_rows (sync_batch_id uuid, receivable_id uuid) ON COMMIT DROP`,
 		`CREATE TEMP TABLE receipts (id uuid, source_system text, status text, receipt_date date, amount numeric) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payables (id uuid, connection_id uuid, source_system text, source_entity text, source_id text, source_payment_method_id bigint, source_financial_account_id bigint, open_balance numeric, due_date date, status text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payable_sync_snapshot_rows (sync_batch_id uuid, payable_id uuid) ON COMMIT DROP`,
 		`CREATE TEMP TABLE payments (id uuid, source_system text, payment_date date, amount numeric) ON COMMIT DROP`,
-		`CREATE TEMP TABLE bling_cash_movements (id uuid, sync_batch_id uuid, source_id text, account_source_id text, account_name text, direction text, source_status text, movement_date date, amount numeric) ON COMMIT DROP`,
+		`CREATE TEMP TABLE bling_cash_movements (id uuid, sync_batch_id uuid, source_id text, account_source_id text, account_name text, direction text, source_status text, movement_date date, amount numeric, origin_type text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE bling_cash_balance_checkpoints (id uuid DEFAULT gen_random_uuid(), connection_id uuid, account_source_id text, reference_date date, reconciled_amount numeric, source text, created_at timestamptz DEFAULT clock_timestamp()) ON COMMIT DROP`,
 		`CREATE TEMP TABLE bling_cash_movement_reconciled_snapshot_rows (sync_batch_id uuid, connection_id uuid, source_id text) ON COMMIT DROP`,
 		`CREATE TEMP TABLE bling_financial_account_identities (sync_batch_id uuid, source_id text, description text) ON COMMIT DROP`,
-		`CREATE TEMP TABLE bling_payment_method_terms (connection_id uuid, sync_batch_id uuid, source_id text, destination smallint, fee_rate numeric, fee_rate_known boolean, fixed_fee numeric, fixed_fee_known boolean, settlement_days integer, settlement_known boolean, use_business_days boolean, business_days_known boolean) ON COMMIT DROP`,
+		`CREATE TEMP TABLE bling_payment_method_terms (connection_id uuid, sync_batch_id uuid, raw_record_id uuid, source_id text, destination smallint, fee_rate numeric, fee_rate_known boolean, fixed_fee numeric, fixed_fee_known boolean, settlement_days integer, settlement_known boolean, use_business_days boolean, business_days_known boolean) ON COMMIT DROP`,
 	} {
 		if _, err := tx.Exec(ctx, statement); err != nil {
 			t.Fatalf("create isolated dashboard fixture table: %v", err)
@@ -214,9 +216,6 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE connection_id = $1::uuid AND resource = 'caixas' AND correlation_id = $2`, connectionID, correlationID); err != nil {
 		t.Fatalf("mark cash movement batch normalized: %v", err)
 	}
-	if _, err := tx.Exec(ctx, `UPDATE integration_sync_batches SET status = 'PARTIAL' WHERE id = $1::uuid`, cashBatchID); err != nil {
-		t.Fatalf("mark cash source with missing statuses partial: %v", err)
-	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO bling_cash_movements (id, sync_batch_id, source_id, account_source_id, account_name, direction, source_status, movement_date, amount) VALUES
 		('00000000-0000-4000-8000-000000000031', $1::uuid, '31', '1', 'Itaú', 'INFLOW', 'R', '2026-10-10', 100.00),
@@ -234,11 +233,11 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("readStreamSummary() failed against PostgreSQL with normalized cash batch: %v", err)
 	}
-	if snapshot.ReceiptsMonth.State != "PARTIAL" || snapshot.PaymentsMonth.State != "PARTIAL" {
-		t.Fatalf("cash movement metrics should keep values visible and mark missing source status partial: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
+	if snapshot.ReceiptsMonth.State != "UNAVAILABLE" || snapshot.PaymentsMonth.State != "UNAVAILABLE" {
+		t.Fatalf("cash movement metrics require the official reconciliation snapshot: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
-	if snapshot.ReceiptsMonth.Value != "100.00" || snapshot.PaymentsMonth.Value != "-25.00" {
-		t.Fatalf("only movements with explicit reconciled status R should count: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
+	if snapshot.ReceiptsMonth.Value != "" || snapshot.PaymentsMonth.Value != "" {
+		t.Fatalf("unreconciled movements must not produce a received/paid total: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
 	}
 	if snapshot.CashBalance.State != "UNAVAILABLE" || snapshot.CashBalance.Value != "" {
 		t.Fatalf("current Itaú balance must stay unavailable without a verified opening balance; movement net must not be mislabeled as an account balance: %+v", snapshot.CashBalance)
@@ -263,11 +262,14 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	if snapshot.CashBalance.State != "CONFIRMED" || snapshot.CashBalance.Value != "1000.0000" {
 		t.Fatalf("saldo atual must display the exact user-approved checkpoint even when no Itaú movement is returned: %+v", snapshot.CashBalance)
 	}
+	if snapshot.ReceiptsMonth.State != "CONFIRMED" || snapshot.ReceiptsMonth.Value != "0" || snapshot.PaymentsMonth.State != "CONFIRMED" || snapshot.PaymentsMonth.Value != "0" {
+		t.Fatalf("a complete empty reconciliation snapshot should confirm zero movements: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
+	}
 	if len(snapshot.CashFlow.Periods) == 0 || snapshot.CashFlow.Periods[0].ClosingBalance == nil {
 		t.Fatalf("a complete reconciled snapshot should enable the projected weekly closing balance: %+v", snapshot.CashFlow)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO bling_cash_movement_reconciled_snapshot_rows (sync_batch_id, connection_id, source_id) VALUES ($1::uuid, $2::uuid, '32')`, reconciledCashBatchID, connectionID); err != nil {
-		t.Fatalf("seed reconciled Itaú outflow membership: %v", err)
+	if _, err := tx.Exec(ctx, `INSERT INTO bling_cash_movement_reconciled_snapshot_rows (sync_batch_id, connection_id, source_id) VALUES ($1::uuid, $2::uuid, '31'), ($1::uuid, $2::uuid, '32'), ($1::uuid, $2::uuid, '33'), ($1::uuid, $2::uuid, '34')`, reconciledCashBatchID, connectionID); err != nil {
+		t.Fatalf("seed reconciled Itaú movement membership: %v", err)
 	}
 	snapshot, err = readStreamSummary(ctx, tx, asOf)
 	if err != nil {
@@ -275,6 +277,20 @@ func TestReadStreamSummaryPostgresRequiresNormalizedDailyStages(t *testing.T) {
 	}
 	if snapshot.CashBalance.State != "CONFIRMED" || snapshot.CashBalance.Value != "975.0000" {
 		t.Fatalf("saldo atual must equal the approved checkpoint plus the signed reconciled Itaú delta: %+v", snapshot.CashBalance)
+	}
+	if snapshot.ReceiptsMonth.Value != "120.00" || snapshot.PaymentsMonth.Value != "-30.00" {
+		t.Fatalf("monthly totals must follow official reconciliation membership even when optional situation is empty: receipts=%+v payments=%+v", snapshot.ReceiptsMonth, snapshot.PaymentsMonth)
+	}
+	var detailOutput bytes.Buffer
+	if err := streamCashMovementRows(ctx, tx, &detailOutput, asOf, correlationID.String()); err != nil {
+		t.Fatalf("stream reconciled receipt details: %v", err)
+	}
+	var receiptDetails []application.DashboardCashMovementRow
+	if err := json.Unmarshal([]byte("["+detailOutput.String()+"]"), &receiptDetails); err != nil {
+		t.Fatalf("decode reconciled receipt details: %v", err)
+	}
+	if len(receiptDetails) != 2 || receiptDetails[0].Date != "2026-10-10" || receiptDetails[0].Value != "100.00" || receiptDetails[1].Date != "2026-10-12" || receiptDetails[1].Value != "20.00" {
+		t.Fatalf("receipt detail must show the exact same reconciled inflows, including the row with optional situation empty: %v", receiptDetails)
 	}
 	currentPayableID := "00000000-0000-4000-8000-000000000011"
 	stalePayableID := "00000000-0000-4000-8000-000000000012"

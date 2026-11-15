@@ -110,6 +110,19 @@ recursos financeiros e filtros já aprovados. Nenhuma página é transformada em
 recebimento, pagamento, CAPEX ou indicador enquanto os campos e categorias da
 conta real não forem homologados.
 
+### Registros conciliados no card de recebimentos — 15/11/2026
+
+A referência oficial distingue os filtros `situacao` e
+`situacaoConciliacao`: `situacao=R` significa registro ativo; `situacaoConciliacao=1`
+retorna registros conciliados. Ambos os serviços de movimentos agora pedem
+`situacao=R` explicitamente, e o serviço de conciliação também pede
+`situacaoConciliacao=1`. O card “TOTAL RECEBIDO” soma apenas as entradas cujos IDs
+constam na resposta conciliada completa, ligada à mesma carga de `GET /caixas`;
+o modal usa exatamente a mesma associação. A ausência opcional do campo
+`situacao` no JSON não invalida a associação nem faz uma entrada conciliada
+desaparecer. A carga precisa ter paginação concluída e o snapshot de conciliação
+completo antes de o total ser confirmado.
+
 ## Importador CSV de apoio — Contas Recebidas
 
 O importador usa o relatório do Bling como uma entrada local controlada para

@@ -49,13 +49,14 @@ a pagar em 60 dias na sincronização de 14/11 às 22:39; o saldo atual é R$
 R$ 43.790,66 líquidos a receber e R$ 25.275,71 a pagar. As demais semanas
 continuam pendentes de conferência da responsável.
 
-Na última execução antes deste alinhamento visual, a CI confirmou o job do
-backlog, a validação da mensagem de commit e os testes Go no Windows; o job
-PostgreSQL falhou em um teste de sincronização diária (`bling oauth
-configuration is invalid`), sem apontar falha no teste de dashboard T02. A
-mudança atual foi compilada localmente e enviada ao GitHub no commit `a54c917`;
-a CI deste commit ainda precisa terminar. Isso não encerra a validação
-PostgreSQL nem aprova a T02.
+Na execução da CI do alinhamento T01, o job PostgreSQL falhou no teste de
+idempotência do sincronizador diário. A auditoria mostrou que o fixture não
+incluía o lote normalizado de movimentos conciliados exigido pela regra de
+conclusão; o teste tentava iniciar uma carga real e parava por falta de
+credencial OAuth de teste. O fixture foi corrigido para preparar o conjunto
+completo de seis recursos antes de testar idempotência. A nova CI ainda está
+pendente. O build de produção do frontend passou localmente; isso não encerra a
+validação PostgreSQL nem aprova a T02.
 
 ---
 

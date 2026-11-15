@@ -119,6 +119,11 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE integration_sync_batches SET data_stage = 'NORMALIZED' WHERE correlation_id = $1 AND resource = $2`, correlation, FinancialAccountsAPIResource); err != nil {
 		t.Fatalf("mark financial-account fixture as normalized: %v", err)
 	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO integration_sync_batches (connection_id, resource, status, finished_at, correlation_id, data_stage)
+		VALUES ($1, $2, 'SUCCESS', clock_timestamp(), $3, 'NORMALIZED')`, connection.ID, ReconciledCashMovementsAPIResource, correlation); err != nil {
+		t.Fatalf("seed completed %s batch: %v", ReconciledCashMovementsAPIResource, err)
+	}
 	for attempt := 0; attempt < 2; attempt++ {
 		result, skipped, err = service.SyncDaily(ctx, scheduledAt)
 		if err != nil || !skipped || result.Status != "SUCCESS" {
@@ -136,7 +141,7 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM integration_sync_batches WHERE correlation_id = $1`, correlation).Scan(&batchCount); err != nil {
 		t.Fatalf("count daily sync batches: %v", err)
 	}
-	if batchCount != 5 {
-		t.Fatalf("restarted daily load created duplicate batches: got %d, want 5", batchCount)
+	if batchCount != 6 {
+		t.Fatalf("restarted daily load created duplicate batches: got %d, want 6", batchCount)
 	}
 }

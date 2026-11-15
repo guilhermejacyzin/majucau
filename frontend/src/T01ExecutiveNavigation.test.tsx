@@ -289,6 +289,49 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     expect(screen.getByRole('heading', { name: 'SEMANA CRÍTICA' }).closest('section')).toHaveTextContent('08/11–14/11')
   })
 
+  it('limita o padrão do fluxo às mesmas 60 datas usadas pelo card', () => {
+    vi.useFakeTimers({ now: new Date('2026-11-15T12:00:00-03:00') })
+    try {
+      const unavailable = { state: 'UNAVAILABLE' as const }
+      const partial = { state: 'PARTIAL' as const, source_system: 'BLING' }
+      const days = Array.from({ length: 61 }, (_, index) => {
+        const date = new Date(Date.UTC(2026, 10, 15 + index)).toISOString().slice(0, 10)
+        return {
+          date,
+          inflows: { ...partial, value: index === 60 ? '109.6500' : '0.0000' },
+          outflows: { ...partial, value: '0.0000' },
+        }
+      })
+      const snapshot: DashboardSnapshot = {
+        as_of: '2026-11-15T12:00:00Z',
+        data_state: 'PARTIAL',
+        receivables: unavailable,
+        future_b2c: unavailable,
+        receipts_month: unavailable,
+        receivables_overdue: unavailable,
+        payables: unavailable,
+        payables_due_today: unavailable,
+        payables_overdue: unavailable,
+        payables_due_next_7_days: unavailable,
+        payments_month: unavailable,
+        cash_flow: {
+          inflows_next_30_days: { ...partial, value: '0.0000' },
+          outflows_next_30_days: { ...partial, value: '0.0000' },
+          inflows_next_60_days: { ...partial, value: '0.0000' },
+          outflows_next_60_days: { ...partial, value: '0.0000' },
+          days,
+        },
+      }
+      render(<MockupDashboard screen="cashflow" snapshot={snapshot} />)
+
+      expect(screen.getByLabelText('Data inicial do fluxo de caixa')).toHaveValue('2026-11-15')
+      expect(screen.getByLabelText('Data final do fluxo de caixa')).toHaveValue('2027-01-13')
+      expect(screen.getByRole('region', { name: 'Tabela semanal do fluxo de caixa' })).not.toHaveTextContent('109,65')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('usa nos cards executivos os mesmos totais de 60 dias do fluxo por contas a receber e pagar', () => {
     const unavailable = { state: 'UNAVAILABLE' as const }
     const snapshot: DashboardSnapshot = {

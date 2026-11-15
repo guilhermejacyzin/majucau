@@ -1,4 +1,33 @@
-# Status da T02 — atualização 14/11/2026
+# Status da T02 — atualização 15/11/2026
+
+## Auditoria da janela de 60 dias e recuperação da tela — 15/11/2026
+
+O protótipo atualizado está aberto na T02 — Fluxo de Caixa. A tela agora
+preserva o último retrato financeiro válido durante uma leitura indisponível e
+restaura esse retrato ao recarregar a interface; uma resposta vazia/indisponível
+não apaga cards e séries já confirmados. A correção é coberta por testes de
+interface.
+
+A auditoria encontrou um dia excedente na janela padrão da T02. Ela incluía
+14/01/2027, enquanto os cards usam 60 datas a partir de 15/11/2026, terminando
+em 13/01/2027. Esse dia extra tinha R$ 109,65 em recebimentos e criava a
+diferença entre a tabela e o card. O intervalo padrão da T02 agora termina em
+13/01/2027; o total líquido recebido na tabela e o card de 60 dias coincidem
+em R$ 278.455,46. A semana 22–28/11 permanece conferida contra os relatórios:
+R$ 43.790,66 líquidos a receber e R$ 25.275,71 a pagar.
+
+**Estado real dos dados:** a última leitura normalizada de Contas a Receber
+terminou em 14/11 às 23:53. A carga publicada mais recente de Contas a Pagar
+continua sendo a de 08/11 às 11:00. Uma tentativa manual mais nova foi
+interrompida na página 92 de 104, antes de publicar os dados; portanto, a tela
+mantém o último retrato publicado e não se pode afirmar que o Contas a Pagar
+esteja atualizado. Saldo-base Itaú continua em R$ 62.548,33, conforme a última
+conciliação aprovada disponível. T02 segue aguardando conferência das demais
+semanas e aprovação; T03 ainda não começou.
+
+Os testes direcionados de persistência/restauração do retrato e do alinhamento
+de 60 dias passaram (58/58). Evidência detalhada: [auditoria do intervalo e da
+tentativa de atualização](evidence/T02-60-DAY-WEEKLY-RANGE-AUDIT-2026-11-15.md).
 
 ## Projeção pelo último saldo conciliado — 14/11/2026
 
@@ -43,9 +72,10 @@ T02. A T01 agora mostra, nos cards A Receber e A Pagar, os mesmos totais de 60
 dias calculados pela T02 a partir dos relatórios Contas a Receber (líquido) e
 Contas a Pagar; removi esses rótulos de origem antigos da apresentação.
 
-O resultado exibido na T02 permanece R$ 289.559,53 a receber e -R$ 506.770,38
-a pagar em 60 dias na sincronização de 14/11 às 22:39; o saldo atual é R$
-62.548,33. A semana 22–28/11 continua igual aos relatórios compartilhados:
+Na captura histórica da sincronização de 14/11 às 22:39, a T02 exibia R$
+289.559,53 a receber e -R$ 506.770,38 a pagar em 60 dias; esses números não
+representam a leitura de 23:53 nem devem ser tratados como valores atuais. O
+saldo atual dessa captura era R$ 62.548,33. A semana 22–28/11 continua igual aos relatórios compartilhados:
 R$ 43.790,66 líquidos a receber e R$ 25.275,71 a pagar. As demais semanas
 continuam pendentes de conferência da responsável.
 

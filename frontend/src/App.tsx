@@ -388,6 +388,22 @@ function Sidebar({ screen, onNavigate }: { screen: Screen; onNavigate: (screen: 
 }
 
 type AppProps = { bootstrapAdapter?: BootstrapAdapter; dashboardSnapshotAdapter?: DashboardSnapshotAdapter; blingPreviewAdapter?: BlingPreviewAdapter; blingImportAdapter?: BlingImportAdapter; futurePreviewAdapter?: NuvemPagoFuturePreviewAdapter; futureImportAdapter?: NuvemPagoFutureImportAdapter; blingConfigAdapter?: BlingConfigAdapter; nuvemshopConfigAdapter?: NuvemshopConfigAdapter; blingOAuthAdapter?: BlingOAuthAdapter }
+const cachedDashboardSnapshotKey = 'majucau.dashboardSnapshot.v1'
+
+function readCachedDashboardSnapshot(): DashboardSnapshot | null {
+  try {
+    const serialized = window.localStorage.getItem(cachedDashboardSnapshotKey)
+    if (!serialized) return null
+    const cached: unknown = JSON.parse(serialized)
+    if (typeof cached !== 'object' || cached === null) return null
+    const snapshot = cached as DashboardSnapshot
+    if (snapshot.error_code || !['CONFIRMED', 'PARTIAL'].includes(snapshot.data_state) || !snapshot.as_of) return null
+    return snapshot
+  } catch {
+    return null
+  }
+}
+
 function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, blingImportAdapter, futurePreviewAdapter, futureImportAdapter, blingConfigAdapter, nuvemshopConfigAdapter, blingOAuthAdapter }: AppProps = {}) {
   const [screen, setScreen] = useState<Screen>('executive')
   const adapter = useMemo(() => bootstrapAdapter ?? createBootstrapAdapter(), [bootstrapAdapter])
@@ -400,9 +416,20 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
   const nuvemshopConfig = useMemo(() => nuvemshopConfigAdapter ?? createNuvemshopConfigAdapter(), [nuvemshopConfigAdapter])
   const blingOAuth = useMemo(() => blingOAuthAdapter ?? createBlingOAuthAdapter(), [blingOAuthAdapter])
   const [bootstrap, setBootstrap] = useState<BootstrapState | null>(null)
-  const [dashboardSnapshot, setDashboardSnapshot] = useState<DashboardSnapshot | null>(null)
+  const [dashboardSnapshot, setDashboardSnapshot] = useState<DashboardSnapshot | null>(readCachedDashboardSnapshot)
+  const dashboardSnapshotRef = useRef(dashboardSnapshot)
   const mainRef = useRef<HTMLElement>(null)
   const previousScreenRef = useRef<Screen>('executive')
+  const applyDashboardSnapshot = useCallback((next: DashboardSnapshot) => {
+    if (next.error_code || next.data_state === 'UNAVAILABLE') return
+    const current = dashboardSnapshotRef.current
+    const currentHasConfirmedCashFlow = current?.cash_balance?.state === 'CONFIRMED' && Boolean(current.cash_flow?.days?.length)
+    const nextHasCashFlow = Boolean(next.cash_flow?.days?.length)
+    if (currentHasConfirmedCashFlow && !nextHasCashFlow) return
+    dashboardSnapshotRef.current = next
+    setDashboardSnapshot(next)
+    try { window.localStorage.setItem(cachedDashboardSnapshotKey, JSON.stringify(next)) } catch { /* Cache is best-effort; the live snapshot remains authoritative. */ }
+  }, [])
   useEffect(() => {
     let active = true
     let polling = false
@@ -413,7 +440,7 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
         const [bootstrapResult, snapshotResult] = await Promise.allSettled([adapter.getState(), snapshotAdapter.getSnapshot()])
         if (!active) return
         if (bootstrapResult.status === 'fulfilled') setBootstrap(bootstrapResult.value)
-        if (snapshotResult.status === 'fulfilled') setDashboardSnapshot(snapshotResult.value)
+        if (snapshotResult.status === 'fulfilled') applyDashboardSnapshot(snapshotResult.value)
       } finally {
         polling = false
       }
@@ -423,12 +450,12 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
       active = false
       window.clearInterval(timer)
     }
-  }, [adapter, snapshotAdapter])
+  }, [adapter, applyDashboardSnapshot, snapshotAdapter])
   const refreshDataViews = useCallback(async () => {
     const [bootstrapResult, snapshotResult] = await Promise.allSettled([adapter.getState(), snapshotAdapter.getSnapshot()])
     if (bootstrapResult.status === 'fulfilled' && !bootstrapResult.value.error_code) setBootstrap(bootstrapResult.value)
-    if (snapshotResult.status === 'fulfilled' && !snapshotResult.value.error_code) setDashboardSnapshot(snapshotResult.value)
-  }, [adapter, snapshotAdapter])
+    if (snapshotResult.status === 'fulfilled') applyDashboardSnapshot(snapshotResult.value)
+  }, [adapter, applyDashboardSnapshot, snapshotAdapter])
   const refreshBlingData = useCallback(async () => {
     const result = await blingOAuth.sync({ full_refresh: true })
     if (result.status === 'SUCCESS' || result.status === 'PARTIAL') await refreshDataViews()
@@ -442,9 +469,9 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
   }, [adapter])
   useEffect(() => {
     let active = true
-    void snapshotAdapter.getSnapshot().then((snapshot) => { if (active) setDashboardSnapshot(snapshot) })
+    void snapshotAdapter.getSnapshot().then((snapshot) => { if (active) applyDashboardSnapshot(snapshot) })
     return () => { active = false }
-  }, [snapshotAdapter])
+  }, [applyDashboardSnapshot, snapshotAdapter])
   useEffect(() => {
     const returnedFromIntegrations = previousScreenRef.current === 'integrations' && screen !== 'integrations'
     previousScreenRef.current = screen
@@ -452,9 +479,9 @@ function App({ bootstrapAdapter, dashboardSnapshotAdapter, blingPreviewAdapter, 
 
     let active = true
     void adapter.getState().then((state) => { if (active) setBootstrap(state) })
-    void snapshotAdapter.getSnapshot().then((snapshot) => { if (active) setDashboardSnapshot(snapshot) })
+    void snapshotAdapter.getSnapshot().then((snapshot) => { if (active) applyDashboardSnapshot(snapshot) })
     return () => { active = false }
-  }, [adapter, screen, snapshotAdapter])
+  }, [adapter, applyDashboardSnapshot, screen, snapshotAdapter])
   const navigate = (next: Screen) => { setScreen(next); window.requestAnimationFrame(() => mainRef.current?.focus()) }
   return <div className="app-shell"><MockupSidebar screen={screen} onNavigate={navigate} /><main className="main-area" ref={mainRef} tabIndex={-1}>{bootstrap === null ? <BootstrapLoading /> : screen === 'integrations' ? <IntegrationsView bootstrap={bootstrap} blingPreview={blingPreview} blingImporter={blingImporter} futurePreview={futurePreview} futureImporter={futureImporter} blingConfig={blingConfig} nuvemshopConfig={nuvemshopConfig} blingOAuth={blingOAuth} onDataChanged={refreshDataViews} /> : <MockupDashboard screen={screen} snapshot={dashboardSnapshot ?? undefined} onNavigate={navigate} onRefresh={refreshBlingData} />} {bootstrap && <WorkerFooter bootstrap={bootstrap} />}</main></div>
 }

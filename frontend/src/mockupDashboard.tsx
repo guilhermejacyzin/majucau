@@ -547,7 +547,10 @@ export function MockupDashboard({ screen, snapshot, onNavigate, onRefresh }: { s
   const sourceStartDate = rawCashFlow?.days?.[0]?.date ?? snapshot?.as_of.slice(0, 10) ?? ''
   const currentDate = saoPauloToday()
   const minDate = sourceStartDate && sourceStartDate > currentDate ? sourceStartDate : currentDate
-  const maxDate = rawCashFlow?.days?.[rawCashFlow.days.length - 1]?.date ?? availableCashFlowDate(rawCashFlow, snapshot, 60)
+  // The summary cards cover 60 calendar days from the as-of date. Keep the
+  // default selectable range on those same 60 dates; the payload contains an
+  // extra boundary day so callers can calculate the trailing edge safely.
+  const maxDate = rawCashFlow?.days?.[Math.min(rawCashFlow.days.length - 1, 59)]?.date ?? availableCashFlowDate(rawCashFlow, snapshot, 60)
   const selectedFrom = periodRange.from >= minDate && periodRange.from <= maxDate ? periodRange.from : minDate
   const selectedThrough = periodRange.through >= minDate && periodRange.through <= maxDate ? periodRange.through : maxDate
   const selectedPeriods = groupSelectedCashFlowDays(rawCashFlow, selectedFrom, selectedThrough, snapshot?.cash_balance, currentDate)

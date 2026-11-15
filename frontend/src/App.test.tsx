@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { tooltipCatalog } from './tooltips'
 import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPreviewAdapter, BootstrapAdapter, BootstrapState, DashboardSnapshotAdapter, NuvemPagoFutureImportAdapter, NuvemPagoFuturePreviewAdapter } from './bootstrap'
@@ -8,6 +8,8 @@ import type { BlingConfigAdapter, BlingImportAdapter, BlingOAuthAdapter, BlingPr
 const connectedBootstrap: BootstrapState = { app_version: '0.1.0-g1', worker: { service: 'majucau-worker', version: 'test-worker', state: 'OK', checked_at: '2026-08-16T12:00:00Z' }, integrations: [{ provider: 'BLING', status: 'CONNECTED', last_success_at: '2026-08-16T11:58:00Z', last_attempt_at: '2026-08-16T11:58:00Z' }, { provider: 'NUVEMSHOP', status: 'PARTIALLY_AVAILABLE' }, { provider: 'NUVEM_PAGO', status: 'UNAVAILABLE' }], checked_at: '2026-08-16T12:00:00Z' }
 const adapterFor = (state: BootstrapState): BootstrapAdapter => ({ getState: () => Promise.resolve(state) })
 const snapshotAdapterFor = (value = '100.0000'): DashboardSnapshotAdapter => ({ getSnapshot: () => Promise.resolve({ as_of: '2026-09-21T12:00:00Z', last_bling_sync_at: '2026-09-21T11:30:00Z', data_state: 'PARTIAL', receivables: { value, count: 1, state: 'CONFIRMED', source_system: 'BLING + NUVEM_PAGO' }, receivables_due_next_90_days: { value, count: 1, state: 'CONFIRMED', source_system: 'BLING + NUVEM_PAGO' }, future_b2c: { state: 'UNAVAILABLE', source_system: 'NUVEM_PAGO' }, receipts_month: { state: 'UNAVAILABLE', source_system: 'BLING' }, receivables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING + NUVEM_PAGO' }, payables: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_due_today: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_overdue: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_due_next_7_days: { state: 'UNAVAILABLE', source_system: 'BLING' }, payables_due_next_90_days: { state: 'UNAVAILABLE', source_system: 'BLING' }, payments_month: { state: 'UNAVAILABLE', source_system: 'BLING' }, cash_flow: { inflows_next_30_days: { value, state: 'CONFIRMED', source_system: 'BLING' }, outflows_next_30_days: { value: `-${value}`, state: 'CONFIRMED', source_system: 'BLING' }, inflows_next_60_days: { value, state: 'CONFIRMED', source_system: 'BLING' }, outflows_next_60_days: { value: `-${value}`, state: 'CONFIRMED', source_system: 'BLING' } } }) })
+
+beforeEach(() => window.localStorage.clear())
 
 describe('shell financeiro', () => {
   it('exibe a composição oficial do mockup T1 sem números inventados', async () => {
@@ -95,6 +97,56 @@ describe('shell financeiro', () => {
       rendered.unmount()
       vi.useRealTimers()
     }
+  })
+
+  it('preserva o último fluxo confirmado quando uma leitura periódica fica indisponível', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    let snapshotReads = 0
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
+      getSnapshot: async () => {
+        snapshotReads += 1
+        const snapshot = await snapshotAdapterFor('100.0000').getSnapshot()
+        if (snapshotReads === 1) {
+          snapshot.cash_balance = { value: '62548.3300', state: 'CONFIRMED', source_system: 'BLING' }
+          snapshot.cash_flow = { ...snapshot.cash_flow!, days: [{ date: '2026-09-21', inflows: { value: '100.0000', state: 'CONFIRMED', source_system: 'BLING' }, outflows: { value: '0.0000', state: 'CONFIRMED', source_system: 'BLING' } }] }
+          return snapshot
+        }
+        return {
+          ...snapshot,
+          data_state: 'UNAVAILABLE',
+          last_bling_sync_at: undefined,
+          cash_balance: { state: 'UNAVAILABLE', source_system: 'BLING' },
+          cash_flow: {
+            inflows_next_30_days: { state: 'UNAVAILABLE', source_system: 'BLING' },
+            outflows_next_30_days: { state: 'UNAVAILABLE', source_system: 'BLING' },
+            inflows_next_60_days: { state: 'UNAVAILABLE', source_system: 'BLING' },
+            outflows_next_60_days: { state: 'UNAVAILABLE', source_system: 'BLING' },
+            days: [],
+          },
+        }
+      },
+    }
+    const rendered = render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
+    try {
+      expect(await screen.findByText('R$ 100,00')).toBeInTheDocument()
+      await act(async () => { await vi.advanceTimersByTimeAsync(60_000) })
+      expect(screen.getByText('R$ 100,00')).toBeInTheDocument()
+      expect(snapshotReads).toBe(2)
+    } finally {
+      rendered.unmount()
+      vi.useRealTimers()
+    }
+  })
+
+  it('restaura o último painel confirmado enquanto o worker ainda não responde', async () => {
+    const cached = await snapshotAdapterFor('100.0000').getSnapshot()
+    cached.cash_balance = { value: '62548.3300', state: 'CONFIRMED', source_system: 'BLING' }
+    window.localStorage.setItem('majucau.dashboardSnapshot.v1', JSON.stringify(cached))
+    const dashboardSnapshotAdapter: DashboardSnapshotAdapter = { getSnapshot: () => new Promise(() => {}) }
+
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
+
+    expect(await screen.findByText('R$ 62.548,33')).toBeInTheDocument()
   })
 
   it('o botão Atualizar busca uma nova carga completa do Bling e depois relê o snapshot', async () => {

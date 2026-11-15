@@ -243,7 +243,7 @@ body { background: #fff; }
 .mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend { gap: 12px; margin-top: 10px; font-size: 10px; }
 .mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-green,.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-red,.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-blue,.mocap-page-cashflow .mocap-chart-panel .mocap-chart-legend .legend-orange { font-size: 18px; }
 .mocap-page-cashflow .mocap-chart-panel .mocap-chart-empty { height: 285px; margin-top: 8px; }
-.mocap-page-cashflow .mocap-negative-value { color: #d93025 !important; }
+.mocap-negative-value { color: #d93025 !important; }
 .mocap-page-cashflow .mocap-panel { min-height: 0; padding: 12px 13px 10px; border-radius: 7px; }
 .mocap-page-cashflow .mocap-panel-heading > div { gap: 8px; }
 .mocap-page-cashflow .mocap-panel-heading > div > .mocap-icon { width: 25px; height: 25px; }

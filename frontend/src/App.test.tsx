@@ -342,6 +342,7 @@ describe('shell financeiro', () => {
     fireEvent.change(screen.getByLabelText('Data final das contas a pagar'), { target: { value: '2026-11-25' } })
     const payableTotalCard = screen.getByText('TOTAL A PAGAR NA DATA').closest('article')
     expect(payableTotalCard).toHaveTextContent('-R$ 100,00')
+    expect(payableTotalCard?.querySelector('.mocap-empty-value')).toHaveClass('mocap-negative-value')
     expect(screen.getByText('VENCE NA DATA').closest('article')).toHaveTextContent('2 contas')
     expect(screen.getByText('EM ATRASO NA DATA').closest('article')).toHaveTextContent('-R$ 10,00')
     expect(screen.queryByRole('table')).not.toBeInTheDocument()

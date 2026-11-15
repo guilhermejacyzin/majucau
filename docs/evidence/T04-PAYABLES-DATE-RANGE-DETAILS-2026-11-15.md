@@ -21,6 +21,7 @@ Na tela aberta em 15/11, os cards mostravam traços porque a configuração visu
 
 - Incluído seletor personalizado “De/Até”, iniciado na data-base corrente e com fim na janela de 60 dias disponível.
 - Ligados os três cards à lista de Contas a Pagar filtrada por vencimento.
+- Valores negativos agora ficam em vermelho em todas as telas, incluindo os cards da T04.
 - Corrigida a edição do período: mudar “Até” preserva o “De” já exibido; mudar “De” preserva “Até” quando a ordem continua válida. A mesma regra está aplicada na T03.
 - Os detalhes usam exatamente as linhas e somas do período selecionado; o detalhe de atraso usa vencimentos anteriores ao início.
 - A consulta detalhada do snapshot agora seleciona apenas `BLING / bling.conta_pagar`, associada à última carga normalizada, e exclui cancelados/estornados.
@@ -31,5 +32,5 @@ Na tela aberta em 15/11, os cards mostravam traços porque a configuração visu
 - O protótipo foi aberto em T04. O intervalo exibido é 15/11/2026 a 13/01/2027; nessa carga local, os cards mostram -R$ 538.158,66, 328 títulos e -R$ 14.484,18 em atraso. O detalhe do card de total abriu e apresentou fornecedores com vencimentos no mesmo intervalo. A soma do card executivo “A PAGAR” para 60 dias também é -R$ 538.158,66.
 - A tela aberta anteriormente explicava o erro da imagem: os cards ainda estavam sem vínculo com os dados e a tabela fixa ignorava o período. A tela atual não exibe essa tabela fixa.
 - Os valores calculados passam a depender das linhas detalhadas contidas no snapshot ativo. Se a fonte não disponibilizar a lista ou estiver indisponível, os cards continuam sem valor; não se substitui por números de exemplo.
-- Validação executada: `npm test -- --reporter=dot` (7 arquivos, 88 testes aprovados); `npm run lint`; `npm run build`; `go test ./...`; `go vet ./...`.
+- Validação executada: `npm test -- --reporter=dot` (7 arquivos, 88 testes aprovados, incluindo a cor vermelha para valores negativos); `npm run lint`; `npm run build`; `go test ./...`; `go vet ./...`.
 - O protótipo mostra a última sincronização já existente, 15/11/2026 às 11:03. Não foi iniciada nova sincronização do Bling. Falta a aprovação visual da responsável e a conferência financeira no relatório de origem para homologar a T04.

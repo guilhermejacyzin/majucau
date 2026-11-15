@@ -521,6 +521,7 @@ export namespace application {
 	export class DashboardReceivableRow {
 	    customer?: string;
 	    origin: string;
+	    payment_method?: string;
 	    due_date?: string;
 	    gross_value?: string;
 	    net_value?: string;
@@ -534,6 +535,7 @@ export namespace application {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.customer = source["customer"];
 	        this.origin = source["origin"];
+	        this.payment_method = source["payment_method"];
 	        this.due_date = source["due_date"];
 	        this.gross_value = source["gross_value"];
 	        this.net_value = source["net_value"];

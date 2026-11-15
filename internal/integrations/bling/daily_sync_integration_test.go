@@ -6,9 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	database "majucau.local/financial-intelligence/database/gen"
+	"majucau.local/financial-intelligence/internal/scheduler"
 )
 
 func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
@@ -143,5 +145,112 @@ func TestBlingDailySyncSkipsACompletedScheduledLoad(t *testing.T) {
 	}
 	if batchCount != 6 {
 		t.Fatalf("restarted daily load created duplicate batches: got %d, want 6", batchCount)
+	}
+}
+
+func TestManualSyncResumesNewestUnpublishedPayablePages(t *testing.T) {
+	dsn := os.Getenv("MAJUCAU_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("set MAJUCAU_TEST_DATABASE_URL to run the PostgreSQL resume integration test")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("create PostgreSQL pool: %v", err)
+	}
+	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		t.Fatalf("ping PostgreSQL: %v", err)
+	}
+	var databaseName string
+	if err := pool.QueryRow(ctx, `SELECT current_database()`).Scan(&databaseName); err != nil {
+		t.Fatal(err)
+	}
+	if databaseName != "majucau_test" {
+		t.Skip("resume integration test only runs against the dedicated majucau_test database")
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO integration_connections (provider, status, external_account_id)
+		VALUES ('BLING', 'CONNECTED', 'manual-sync-resume-ci')
+		ON CONFLICT (provider) DO NOTHING`); err != nil {
+		t.Fatalf("prepare Bling connection: %v", err)
+	}
+	connection, err := database.New(pool).GetIntegrationConnectionByProvider(ctx, "BLING")
+	if err != nil || !connection.ID.Valid {
+		t.Fatalf("load Bling connection: %v", err)
+	}
+	location, err := time.LoadLocation(scheduler.SaoPauloTimeZone)
+	if err != nil {
+		t.Fatal(err)
+	}
+	older, err := dailyBlingCorrelationID(time.Date(2100, 1, 2, 9, 30, 0, 0, location))
+	if err != nil {
+		t.Fatal(err)
+	}
+	newer, err := dailyBlingCorrelationID(time.Date(2100, 1, 3, 9, 30, 0, 0, location))
+	if err != nil {
+		t.Fatal(err)
+	}
+	olderID, newerID := pgUUID(older), pgUUID(newer)
+	cleanup := func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cleanupCancel()
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM bling_sync_page_checkpoints WHERE connection_id = $1 AND resource IN ($2, $2 || '.prepared') AND correlation_id = ANY($3::uuid[])`, connection.ID, PayablesAPIResource, []pgtype.UUID{olderID, newerID})
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM integration_sync_batches WHERE connection_id = $1 AND correlation_id = ANY($2::uuid[])`, connection.ID, []pgtype.UUID{olderID, newerID})
+	}
+	cleanup()
+	defer cleanup()
+	for _, candidate := range []struct {
+		id        pgtype.UUID
+		startedAt time.Time
+	}{{olderID, time.Now().Add(-time.Minute)}, {newerID, time.Now()}} {
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO integration_sync_batches (connection_id, resource, status, started_at, finished_at, correlation_id, data_stage)
+			VALUES ($1, $2, 'FAILED', $3, $3, $4, 'RAW_ONLY')`, connection.ID, PayablesAPIResource, candidate.startedAt, candidate.id); err != nil {
+			t.Fatalf("seed incomplete payable batch: %v", err)
+		}
+		for _, resource := range []string{PayablesAPIResource, PayablesAPIResource + ".prepared"} {
+			if _, err := pool.Exec(ctx, `
+				INSERT INTO bling_sync_page_checkpoints (connection_id, resource, correlation_id, page_number, page_limit, has_next, record_count, payload_hash, payload)
+				VALUES ($1, $2, $3, 1, 100, false, 0, repeat('0', 64), '{}'::jsonb)`, connection.ID, resource, candidate.id); err != nil {
+				t.Fatalf("seed %s checkpoint: %v", resource, err)
+			}
+		}
+		for _, resource := range []string{CashMovementsAPIResource, ReconciledCashMovementsAPIResource, ReceivablesAPIResource, PaymentMethodsAPIResource, FinancialAccountsAPIResource} {
+			if _, err := pool.Exec(ctx, `
+				INSERT INTO integration_sync_batches (connection_id, resource, status, started_at, finished_at, correlation_id, data_stage)
+				VALUES ($1, $2, 'SUCCESS', $3, $3, $4, 'NORMALIZED')`, connection.ID, resource, candidate.startedAt, candidate.id); err != nil {
+				t.Fatalf("seed full snapshot resource %s: %v", resource, err)
+			}
+		}
+	}
+
+	resumed, found, err := resumableBlingSyncCorrelation(ctx, pool, connection.ID)
+	if err != nil || !found || resumed != newer {
+		t.Fatalf("resumable correlation = %s, found=%t, err=%v; want newest %s", resumed, found, err, newer)
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO integration_sync_batches (connection_id, resource, status, started_at, finished_at, correlation_id, data_stage)
+		VALUES ($1, $2, 'SUCCESS', clock_timestamp(), clock_timestamp(), $3, 'NORMALIZED')`, connection.ID, PayablesAPIResource, newerID); err != nil {
+		t.Fatalf("mark newest payable snapshot as published: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `DELETE FROM bling_sync_page_checkpoints WHERE connection_id = $1 AND resource IN ($2, $2 || '.prepared') AND correlation_id = $3`, connection.ID, PayablesAPIResource, newerID); err != nil {
+		t.Fatalf("clear published payable checkpoints: %v", err)
+	}
+	resumed, found, err = resumableBlingSyncCorrelation(ctx, pool, connection.ID)
+	if err != nil || !found || resumed != older {
+		t.Fatalf("after publish, resumable correlation = %s, found=%t, err=%v; want older unfinished %s", resumed, found, err, older)
+	}
+
+	var attempts int
+	var result BlingRawSyncResult
+	steps := []blingSyncStep{{resource: PayablesAPIResource, target: &result.Payables, run: func() (APISyncResult, error) {
+		attempts++
+		return APISyncResult{Status: "FAILED"}, nil
+	}}}
+	skipPublishedBlingSyncSteps(ctx, pool, connection.ID, &newer, steps)
+	if failures := runIndependentBlingSyncSteps(steps...); len(failures) != 0 || attempts != 0 || result.Payables.Status != "SUCCESS" {
+		t.Fatalf("published source was not skipped: failures=%v attempts=%d result=%+v", failures, attempts, result.Payables)
 	}
 }

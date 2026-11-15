@@ -99,9 +99,19 @@ func (s *BlingOAuthService) SyncNow(ctx context.Context) (result BlingRawSyncRes
 		}
 	}()
 
-	correlationID, err := uuid.NewRandom()
+	var integrationConnectionID pgtype.UUID
+	if err := connection.QueryRow(ctx, `SELECT id FROM integration_connections WHERE provider = 'BLING'`).Scan(&integrationConnectionID); err != nil || !integrationConnectionID.Valid {
+		return BlingRawSyncResult{}, errors.Join(ErrBlingAPISyncConnectionMissing, err)
+	}
+	correlationID, resumable, err := resumableBlingSyncCorrelation(ctx, connection, integrationConnectionID)
 	if err != nil {
-		return BlingRawSyncResult{}, fmt.Errorf("create manual Bling sync correlation ID: %w", err)
+		return BlingRawSyncResult{}, err
+	}
+	if !resumable {
+		correlationID, err = uuid.NewRandom()
+		if err != nil {
+			return BlingRawSyncResult{}, fmt.Errorf("create manual Bling sync correlation ID: %w", err)
+		}
 	}
 	result, returnErr = s.sync(ctx, ReceivablesFilter{}, &correlationID, true, &cashMovementFilter, true)
 	return result, returnErr

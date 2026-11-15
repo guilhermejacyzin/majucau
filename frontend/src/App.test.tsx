@@ -245,7 +245,7 @@ describe('shell financeiro', () => {
     expect(snapshotReads).toBe(2)
   })
 
-  it('renderiza linhas normalizadas nas tabelas de recebíveis do mockup', async () => {
+  it('abre as linhas normalizadas pelo detalhe do card de recebíveis', async () => {
     const dashboardSnapshotAdapter: DashboardSnapshotAdapter = {
       getSnapshot: async () => ({
         ...await snapshotAdapterFor().getSnapshot(),
@@ -257,6 +257,9 @@ describe('shell financeiro', () => {
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await user.click(screen.getByRole('button', { name: 'Contas a Receber' }))
     expect(await screen.findByRole('heading', { name: 'CONTAS A RECEBER' })).toBeInTheDocument()
+    expect(screen.queryByText('Cliente real')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Ver detalhes: TOTAL A RECEBER' }))
+    expect(await screen.findByRole('dialog', { name: 'TOTAL A RECEBER' })).toBeInTheDocument()
     expect(screen.getByText('Cliente real')).toBeInTheDocument()
     expect(screen.getByText('R$ 40,00')).toBeInTheDocument()
     expect(screen.getByText('PROJECTED')).toBeInTheDocument()

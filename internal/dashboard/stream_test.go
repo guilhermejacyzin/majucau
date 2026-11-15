@@ -64,6 +64,15 @@ type scriptedDashboardErrorRow struct{ err error }
 func (row scriptedDashboardErrorRow) Scan(...any) error { return row.err }
 
 func (tx *scriptedDashboardTx) Query(_ context.Context, query string, args ...any) (pgx.Rows, error) {
+	if query == dashboardCashMovementRowsSQL {
+		tx.queryArgs = append(tx.queryArgs, append([]any(nil), args...))
+		if len(tx.queryRows) == 0 {
+			return &emptyDashboardRows{}, nil
+		}
+		rows := tx.queryRows[0]
+		tx.queryRows = tx.queryRows[1:]
+		return rows, nil
+	}
 	if strings.Contains(query, "WITH daily AS (") || strings.Contains(query, "SELECT kind, flow_date, direction, amount") {
 		// T02 reads forecast rows directly from the normalized receivable/payable
 		// snapshots. Keep the scripted fixture empty unless a test supplies rows.
@@ -141,7 +150,7 @@ func (row scriptedDashboardSummaryRow) Scan(dest ...any) error {
 }
 
 type dashboardRowValues struct {
-	fields    [6]string
+	fields    [7]string
 	oversized bool
 }
 
@@ -160,18 +169,19 @@ func (rows *scriptedDashboardRows) Next() bool {
 }
 
 func (rows *scriptedDashboardRows) Scan(dest ...any) error {
-	if rows.index == 0 || rows.index > len(rows.values) || len(dest) != 7 {
+	if rows.index == 0 || rows.index > len(rows.values) || len(dest) < 2 || len(dest) > 8 {
 		return pgx.ErrNoRows
 	}
 	value := rows.values[rows.index-1]
-	for index, field := range value.fields {
+	stringCount := len(dest) - 1
+	for index := 0; index < stringCount; index++ {
 		target, ok := dest[index].(*string)
 		if !ok {
 			return pgx.ErrNoRows
 		}
-		*target = field
+		*target = value.fields[index]
 	}
-	oversized, ok := dest[6].(*bool)
+	oversized, ok := dest[len(dest)-1].(*bool)
 	if !ok {
 		return pgx.ErrNoRows
 	}
@@ -187,8 +197,9 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 	tx := &scriptedDashboardTx{
 		summary: scriptedDashboardSummaryRow{values: dashboardSummaryValues()},
 		queryRows: []pgx.Rows{
-			&scriptedDashboardRows{values: []dashboardRowValues{{fields: [6]string{"Cliente", "Nuvem Pago", "2026-09-22", "40.0000", "39.0000", "PROJECTED"}}}},
-			&scriptedDashboardRows{values: []dashboardRowValues{{fields: [6]string{"Fornecedor", "NF-1", "2026-09-23", "-80.0000", "Insumos", "OPEN"}}}},
+			&scriptedDashboardRows{values: []dashboardRowValues{{fields: [7]string{"Cliente", "Nuvem Pago", "", "2026-09-22", "40.0000", "39.0000", "PROJECTED"}}}},
+			&scriptedDashboardRows{values: []dashboardRowValues{{fields: [7]string{"Fornecedor", "NF-1", "2026-09-23", "-80.0000", "Insumos", "OPEN", ""}}}},
+			&scriptedDashboardRows{values: []dashboardRowValues{{fields: [7]string{"2026-09-12", "Itaú", "Recebimento", "125.0000", "", "", ""}}}},
 		},
 	}
 	db := &scriptedDashboardDB{tx: tx}
@@ -206,7 +217,7 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 	if !snapshot.AsOf.Equal(asOf) || snapshot.DataState != "PARTIAL" || snapshot.Receivables.Value != "100.0000" || snapshot.ReceivablesDueNext90Days.Value != "40.0000" || snapshot.PayablesDueNext7Days.Value != "-35.0000" || snapshot.PayablesDueNext7Days.Count != 2 || snapshot.PayablesDueNext90Days.Value != "-75.0000" || snapshot.PayablesDueNext90Days.Count != 3 || snapshot.LastBlingSyncAt == nil || !snapshot.LastBlingSyncAt.Equal(wantLastSync) {
 		t.Fatalf("unexpected snapshot summary: %+v", snapshot)
 	}
-	if len(snapshot.ReceivableRows) != 1 || snapshot.ReceivableRows[0].Customer != "Cliente" || len(snapshot.PayableRows) != 1 || snapshot.PayableRows[0].Supplier != "Fornecedor" {
+	if len(snapshot.ReceivableRows) != 1 || snapshot.ReceivableRows[0].Customer != "Cliente" || len(snapshot.PayableRows) != 1 || snapshot.PayableRows[0].Supplier != "Fornecedor" || len(snapshot.CashMovementRows) != 1 || snapshot.CashMovementRows[0].Value != "125.0000" {
 		t.Fatalf("detail rows were not streamed into the snapshot: %+v", snapshot)
 	}
 	wantOptions := pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}
@@ -217,9 +228,10 @@ func TestWriteDashboardSnapshotStreamsRowsInReadOnlyTransaction(t *testing.T) {
 	if !reflect.DeepEqual(tx.summaryArgs, wantDates) {
 		t.Fatalf("summary date arguments = %#v, want %#v", tx.summaryArgs, wantDates)
 	}
-	wantLimits := []any{dashboardFieldMaxBytes, dashboardRecordMaxBytes}
-	if len(tx.queryArgs) != 2 || !reflect.DeepEqual(tx.queryArgs[0], wantLimits) || !reflect.DeepEqual(tx.queryArgs[1], wantLimits) {
-		t.Fatalf("detail query limits = %#v, want two copies of %#v", tx.queryArgs, wantLimits)
+	wantLimits := []any{dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit}
+	wantMovementArgs := []any{expectedDailyCorrelation(t, asOf), "2026-09-01", "2026-10-01", dashboardDetailRowLimit, dashboardFieldMaxBytes, dashboardRecordMaxBytes}
+	if len(tx.queryArgs) != 3 || !reflect.DeepEqual(tx.queryArgs[0], wantLimits) || !reflect.DeepEqual(tx.queryArgs[1], wantLimits) || !reflect.DeepEqual(tx.queryArgs[2], wantMovementArgs) {
+		t.Fatalf("detail query arguments = %#v, want two bounded detail queries and cash movement args %#v", tx.queryArgs, wantMovementArgs)
 	}
 }
 
@@ -475,12 +487,12 @@ func TestDashboardDetailStreamsUseExplicitBounds(t *testing.T) {
 	cases := []struct {
 		name       string
 		stream     func(context.Context, pgx.Tx, io.Writer) error
-		fields     [6]string
+		fields     [7]string
 		firstKey   string
 		firstValue string
 	}{
-		{name: "receivables", stream: streamReceivableRows, fields: [6]string{"Cliente", "Bling", "2026-10-04", "100.00", "100.00", "OPEN"}, firstKey: "customer", firstValue: "Cliente"},
-		{name: "payables", stream: streamPayableRows, fields: [6]string{"Fornecedor", "NF-1", "2026-10-04", "-100.00", "Insumos", "OPEN"}, firstKey: "supplier", firstValue: "Fornecedor"},
+		{name: "receivables", stream: streamReceivableRows, fields: [7]string{"Cliente", "Bling", "Cartão", "2026-10-04", "100.00", "100.00", "OPEN"}, firstKey: "customer", firstValue: "Cliente"},
+		{name: "payables", stream: streamPayableRows, fields: [7]string{"Fornecedor", "NF-1", "2026-10-04", "-100.00", "Insumos", "OPEN", ""}, firstKey: "supplier", firstValue: "Fornecedor"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -490,7 +502,7 @@ func TestDashboardDetailStreamsUseExplicitBounds(t *testing.T) {
 			if err := tc.stream(context.Background(), tx, &output); err != nil {
 				t.Fatalf("stream() error = %v", err)
 			}
-			wantLimits := []any{dashboardFieldMaxBytes, dashboardRecordMaxBytes}
+			wantLimits := []any{dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit}
 			if len(tx.queryArgs) != 1 || !reflect.DeepEqual(tx.queryArgs[0], wantLimits) {
 				t.Fatalf("query limits = %#v, want %#v", tx.queryArgs, wantLimits)
 			}

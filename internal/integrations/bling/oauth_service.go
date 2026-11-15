@@ -18,10 +18,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"majucau.local/financial-intelligence/database/gen"
+	"majucau.local/financial-intelligence/internal/domain"
 	"majucau.local/financial-intelligence/internal/security"
 )
 
@@ -78,33 +80,146 @@ type BlingRawSyncResult struct {
 }
 
 type blingSyncStep struct {
-	target *APISyncResult
-	run    func() (APISyncResult, error)
+	resource string
+	target   *APISyncResult
+	run      func() (APISyncResult, error)
 }
 
 func buildBlingSyncSteps(result *BlingRawSyncResult, dateMode string, includeCashMovements, includePaymentMethods, includeFinancialAccounts bool, cash, reconciledCash, receivables, payables, paymentMethods, financialAccounts func() (APISyncResult, error)) []blingSyncStep {
 	steps := make([]blingSyncStep, 0, 6)
 	if includeCashMovements {
-		steps = append(steps, blingSyncStep{target: &result.CashMovements, run: cash})
-		steps = append(steps, blingSyncStep{target: &result.ReconciledCashMovements, run: reconciledCash})
+		steps = append(steps, blingSyncStep{resource: CashMovementsAPIResource, target: &result.CashMovements, run: cash})
+		steps = append(steps, blingSyncStep{resource: ReconciledCashMovementsAPIResource, target: &result.ReconciledCashMovements, run: reconciledCash})
 	}
 	if dateMode != blingDateFilterPayment {
-		steps = append(steps, blingSyncStep{target: &result.Receivables, run: receivables})
+		steps = append(steps, blingSyncStep{resource: ReceivablesAPIResource, target: &result.Receivables, run: receivables})
 	}
 	// Payment terms and financial account identities are quick reference data
 	// needed to render receivable net values and balance lineage. Read them
 	// before the potentially very large payable detail hydration so a timeout in
 	// that final source does not leave the dashboard without current terms.
 	if includePaymentMethods {
-		steps = append(steps, blingSyncStep{target: &result.PaymentMethods, run: paymentMethods})
+		steps = append(steps, blingSyncStep{resource: PaymentMethodsAPIResource, target: &result.PaymentMethods, run: paymentMethods})
 	}
 	if includeFinancialAccounts {
-		steps = append(steps, blingSyncStep{target: &result.FinancialAccounts, run: financialAccounts})
+		steps = append(steps, blingSyncStep{resource: FinancialAccountsAPIResource, target: &result.FinancialAccounts, run: financialAccounts})
 	}
 	if dateMode != blingDateFilterReceived {
-		steps = append(steps, blingSyncStep{target: &result.Payables, run: payables})
+		steps = append(steps, blingSyncStep{resource: PayablesAPIResource, target: &result.Payables, run: payables})
 	}
 	return steps
+}
+
+// resumableBlingSyncCorrelation finds a full-snapshot run whose durable page
+// checkpoints remain but which has not published normalized payables. A
+// repeated manual refresh can then continue detail hydration from its last
+// prepared page instead of discarding hours of read-only API work.
+type blingQueryRower interface {
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
+
+func resumableBlingSyncCorrelation(ctx context.Context, connection blingQueryRower, connectionID pgtype.UUID) (uuid.UUID, bool, error) {
+	if connection == nil || !connectionID.Valid {
+		return uuid.UUID{}, false, ErrBlingAPISyncConnectionMissing
+	}
+	var correlation uuid.UUID
+	err := connection.QueryRow(ctx, `
+		SELECT b.correlation_id
+		FROM integration_sync_batches b
+		WHERE b.connection_id = $1
+		  AND b.resource = $2
+		  AND b.data_stage = 'RAW_ONLY'
+		  AND b.status IN ('RUNNING', 'FAILED', 'CANCELLED')
+		  AND EXISTS (
+		    SELECT 1 FROM bling_sync_page_checkpoints p
+		    WHERE p.connection_id = b.connection_id
+		      AND p.correlation_id = b.correlation_id
+		      AND p.resource IN ($2, $2 || '.prepared')
+		  )
+		  AND EXISTS (
+		    SELECT 1 FROM integration_sync_batches full_run
+		    WHERE full_run.connection_id = b.connection_id
+		      AND full_run.correlation_id = b.correlation_id
+		      AND full_run.resource = 'caixas'
+		  )
+		  AND EXISTS (
+		    SELECT 1 FROM integration_sync_batches full_run
+		    WHERE full_run.connection_id = b.connection_id
+		      AND full_run.correlation_id = b.correlation_id
+		      AND full_run.resource = 'caixas.conciliadas'
+		  )
+		  AND EXISTS (
+		    SELECT 1 FROM integration_sync_batches full_run
+		    WHERE full_run.connection_id = b.connection_id
+		      AND full_run.correlation_id = b.correlation_id
+		      AND full_run.resource = 'contas.receber'
+		  )
+		  AND EXISTS (
+		    SELECT 1 FROM integration_sync_batches full_run
+		    WHERE full_run.connection_id = b.connection_id
+		      AND full_run.correlation_id = b.correlation_id
+		      AND full_run.resource = 'formas-pagamentos'
+		  )
+		  AND EXISTS (
+		    SELECT 1 FROM integration_sync_batches full_run
+		    WHERE full_run.connection_id = b.connection_id
+		      AND full_run.correlation_id = b.correlation_id
+		      AND full_run.resource = 'contas-contabeis'
+		  )
+		  AND NOT EXISTS (
+		    SELECT 1 FROM integration_sync_batches published
+		    WHERE published.connection_id = b.connection_id
+		      AND published.resource = b.resource
+		      AND published.correlation_id = b.correlation_id
+		      AND published.data_stage = 'NORMALIZED'
+		      AND published.status IN ('SUCCESS', 'PARTIAL')
+		  )
+		ORDER BY b.started_at DESC
+		LIMIT 1`, connectionID, PayablesAPIResource).Scan(&correlation)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return uuid.UUID{}, false, nil
+	}
+	if err != nil {
+		return uuid.UUID{}, false, fmt.Errorf("find resumable Bling payable snapshot: %w", err)
+	}
+	return correlation, true, nil
+}
+
+func skipPublishedBlingSyncSteps(ctx context.Context, pool *pgxpool.Pool, connectionID pgtype.UUID, correlationID *uuid.UUID, steps []blingSyncStep) {
+	if pool == nil || !connectionID.Valid || correlationID == nil {
+		return
+	}
+	for i := range steps {
+		step := &steps[i]
+		if step.resource == "" || step.run == nil {
+			continue
+		}
+		originalRun := step.run
+		resource := step.resource
+		step.run = func() (APISyncResult, error) {
+			var status, stage string
+			err := pool.QueryRow(ctx, `
+				SELECT status, data_stage
+				FROM integration_sync_batches
+				WHERE connection_id = $1 AND resource = $2 AND correlation_id = $3
+				  AND data_stage = 'NORMALIZED' AND status IN ('SUCCESS', 'PARTIAL')
+				  AND NOT EXISTS (
+				    SELECT 1 FROM bling_sync_page_checkpoints checkpoint
+				    WHERE checkpoint.connection_id = $1
+				      AND checkpoint.correlation_id = $3
+				      AND checkpoint.resource IN ($2, $2 || '.prepared')
+				  )
+				ORDER BY started_at DESC
+				LIMIT 1`, connectionID, resource, pgUUID(*correlationID)).Scan(&status, &stage)
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				return APISyncResult{}, fmt.Errorf("check resumable Bling %s snapshot: %w", resource, err)
+			}
+			if err == nil && stage == "NORMALIZED" && (status == "SUCCESS" || status == "PARTIAL") {
+				return APISyncResult{Status: status}, nil
+			}
+			return originalRun()
+		}
+	}
 }
 
 // runIndependentBlingSyncSteps attempts every applicable resource. A failure
@@ -605,6 +720,13 @@ func (s *BlingOAuthService) sync(ctx context.Context, filter ReceivablesFilter, 
 		}
 	}
 	steps := buildBlingSyncSteps(&result, dateMode, includeCashMovements, includePaymentMethods, includePaymentMethods, cashSync, reconciledCashSync, receivablesSync, payablesSync, paymentMethodsSync, financialAccountsSync)
+	if correlationID != nil {
+		connection, lookupErr := database.New(s.pool).GetIntegrationConnectionByProvider(ctx, string(domain.OriginBling))
+		if lookupErr != nil {
+			return finishBlingRawSyncResult(result, []error{fmt.Errorf("load Bling connection before resuming snapshots: %w", lookupErr)})
+		}
+		skipPublishedBlingSyncSteps(ctx, s.pool, connection.ID, correlationID, steps)
+	}
 	return finishBlingRawSyncResult(result, runIndependentBlingSyncSteps(steps...))
 }
 

@@ -1,5 +1,26 @@
 # Meta do Majucau
 
+### T03 — Contas a Receber: detalhes ligados aos cards — 15/11/2026
+
+Por solicitação da responsável, a T03 foi iniciada antes da homologação final da
+T02. A tabela de recebíveis saiu da página principal e é aberta pelo card
+“TOTAL A RECEBER”; o card “EM ATRASO” abre a mesma lista filtrada pela data-base.
+“TOTAL RECEBIDO” substitui a conciliação e lista os movimentos conciliados de
+Caixa e Bancos que compõem o total do mês, com a mesma carga e os mesmos critérios.
+As tabelas do snapshot agora suportam até 200 linhas.
+
+O gráfico permanece. Seu título explica a composição por status, mas a
+distribuição de valores ainda não está calculada; o protótipo mostra estado
+neutro “Sem dados”, sem fatias decorativas. Os cards PIX, Boletos, Cartão,
+Ambíguos e Chargebacks também foram preservados após a responsável questionar
+a remoção. Os botões de detalhe abrem a janela correspondente; quando não há
+linhas de origem no snapshot, a interface informa isso em vez de inventá-las.
+
+O total recebido é mensal e aparece uma única vez; “CONCILIAÇÃO” foi substituído.
+A validação visual final do protótipo fica para aprovação da responsável. A
+implementação e os limites estão registrados em
+[`evidence/T03-RECEIVABLE-DETAILS-2026-11-15.md`](evidence/T03-RECEIVABLE-DETAILS-2026-11-15.md).
+
 ### Correção de renovação OAuth em detalhes de Contas a Pagar — 09/11/2026
 
 A investigação da carga real identificou que o adapter renovava o token nas

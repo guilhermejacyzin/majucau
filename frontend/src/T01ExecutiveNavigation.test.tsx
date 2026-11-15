@@ -56,8 +56,10 @@ describe('atalhos da Visão Executiva para as telas de origem', () => {
     render(<MockupDashboard screen="receivables" />)
 
     expect(screen.getByText('TOTAL A RECEBER')).toBeInTheDocument()
-    expect(screen.getByText('RECEBIDO NO MÊS')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'RECEBÍVEIS' })).toBeInTheDocument()
+    expect(screen.getByText('TOTAL RECEBIDO')).toBeInTheDocument()
+    expect(screen.queryByText('CONCILIAÇÃO')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'RECEBÍVEIS' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'DISTRIBUIÇÃO DOS RECEBÍVEIS' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'ALERTAS IMPORTANTES' })).not.toBeInTheDocument()
     expect(screen.queryByText('Recebimentos em atraso')).not.toBeInTheDocument()
     expect(screen.queryByText('Matches ambíguos aguardando análise')).not.toBeInTheDocument()

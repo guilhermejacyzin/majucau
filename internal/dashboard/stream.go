@@ -19,10 +19,11 @@ import (
 )
 
 const (
-	// Each detail table returns at most 50 rows. These limits cap the raw
-	// detail strings retained by the desktop snapshot at about 1.6 MiB.
+	// Each detail list returns at most 200 rows. Field and record limits cap
+	// the raw detail strings retained by the desktop snapshot at about 6.4 MiB.
 	dashboardFieldMaxBytes  = 4 << 10
 	dashboardRecordMaxBytes = 16 << 10
+	dashboardDetailRowLimit = 200
 )
 
 var (
@@ -48,7 +49,7 @@ func NewReader(pool *pgxpool.Pool) *Reader {
 
 // WriteDashboardSnapshot emits the same dashboard data as a JSON document but
 // reads and writes detail rows one at a time. The read-only repeatable-read
-// transaction keeps summary metrics and both tables on the same database view.
+// transaction keeps summary metrics and detail lists on the same database view.
 func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (returnErr error) {
 	if r == nil || r.db == nil {
 		return ErrDatabaseUnavailable
@@ -73,7 +74,7 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (ret
 		}
 	}()
 
-	snapshot, err := readStreamSummary(ctx, tx, now)
+	snapshot, correlationID, err := readStreamSummaryWithCorrelation(ctx, tx, now)
 	if err != nil {
 		return fmt.Errorf("read dashboard summary: %w", err)
 	}
@@ -106,6 +107,14 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (ret
 			return fmt.Errorf("read dashboard payable details: %w", err)
 		}
 	}
+	if err := writeAll(dst, []byte(`],"cash_movement_rows":[`)); err != nil {
+		return err
+	}
+	if snapshot.ReceiptsMonth.State != "UNAVAILABLE" {
+		if err := streamCashMovementRows(ctx, tx, dst, snapshot.AsOf, correlationID); err != nil {
+			return fmt.Errorf("read dashboard cash movement details: %w", err)
+		}
+	}
 	if err := writeAll(dst, []byte(`]}`)); err != nil {
 		return err
 	}
@@ -116,6 +125,11 @@ func (r *Reader) WriteDashboardSnapshot(ctx context.Context, dst io.Writer) (ret
 }
 
 func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (application.DashboardSnapshot, error) {
+	snapshot, _, err := readStreamSummaryWithCorrelation(ctx, tx, asOf)
+	return snapshot, err
+}
+
+func readStreamSummaryWithCorrelation(ctx context.Context, tx pgx.Tx, asOf time.Time) (application.DashboardSnapshot, string, error) {
 	businessDate := domain.BusinessDate(asOf)
 	monthStart := time.Date(businessDate.Year(), businessDate.Month(), 1, 0, 0, 0, 0, time.UTC)
 	monthEnd := monthStart.AddDate(0, 1, 0)
@@ -132,7 +146,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	)
 	dailyCorrelationID, err := latestPublishedBlingCorrelationID(ctx, tx, asOf)
 	if err != nil {
-		return application.DashboardSnapshot{}, fmt.Errorf("load latest Bling snapshot: %w", err)
+		return application.DashboardSnapshot{}, "", fmt.Errorf("load latest Bling snapshot: %w", err)
 	}
 	err = tx.QueryRow(ctx, dashboardStreamSummarySQL,
 		businessDate.Format("2006-01-02"),
@@ -180,7 +194,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		&dailyReceivablesPartial,
 	)
 	if err != nil {
-		return application.DashboardSnapshot{}, fmt.Errorf("aggregate dashboard summary: %w", err)
+		return application.DashboardSnapshot{}, "", fmt.Errorf("aggregate dashboard summary: %w", err)
 	}
 	receivablesFresh := completedBy(dailyReceivablesSyncAt, asOf)
 	nuvemFutureFresh := !dailyNuvemFuturePartial
@@ -188,11 +202,11 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 	cashMovementsFresh := completedBy(dailyCashMovementsSyncAt, asOf)
 	cashBalance, err := readLatestItauBalance(ctx, tx, businessDate, dailyCorrelationID)
 	if err != nil {
-		return application.DashboardSnapshot{}, fmt.Errorf("read Itaú balance: %w", err)
+		return application.DashboardSnapshot{}, "", fmt.Errorf("read Itaú balance: %w", err)
 	}
 	cashFlow, err := readBlingCashFlow(ctx, tx, businessDate, dailyCorrelationID, cashBalance, dailyReceivablesPartial, dailyPayablesPartial)
 	if err != nil {
-		return application.DashboardSnapshot{}, fmt.Errorf("read cash-flow projection: %w", err)
+		return application.DashboardSnapshot{}, "", fmt.Errorf("read cash-flow projection: %w", err)
 	}
 	state := "UNAVAILABLE"
 	if futureCount > 0 || receivablesFresh || payablesFresh || cashMovementsFresh {
@@ -222,7 +236,7 @@ func readStreamSummary(ctx context.Context, tx pgx.Tx, asOf time.Time) (applicat
 		CashBalance:              cashBalance.Metric,
 		CashFlow:                 cashFlow,
 		PaymentsMonth:            metricForSourceRun(paymentsMonthValue, paymentsMonthCount, paymentsTotalCount, cashMovementsFresh, "BLING", dailyCashMovementsPartial),
-	}, nil
+	}, dailyCorrelationID, nil
 }
 
 const latestPublishedBlingCorrelationSQL = `
@@ -333,7 +347,7 @@ func projectedState(count int64) string {
 }
 
 func streamReceivableRows(ctx context.Context, tx pgx.Tx, dst io.Writer) error {
-	rows, err := tx.Query(ctx, dashboardReceivableRowsSQL, dashboardFieldMaxBytes, dashboardRecordMaxBytes)
+	rows, err := tx.Query(ctx, dashboardReceivableRowsSQL, dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit)
 	if err != nil {
 		return err
 	}
@@ -345,7 +359,7 @@ func streamReceivableRows(ctx context.Context, tx pgx.Tx, dst io.Writer) error {
 		}
 		var row application.DashboardReceivableRow
 		var oversized bool
-		if err := rows.Scan(&row.Customer, &row.Origin, &row.DueDate, &row.GrossValue, &row.NetValue, &row.Status, &oversized); err != nil {
+		if err := rows.Scan(&row.Customer, &row.Origin, &row.PaymentMethod, &row.DueDate, &row.GrossValue, &row.NetValue, &row.Status, &oversized); err != nil {
 			return err
 		}
 		if oversized {
@@ -372,7 +386,7 @@ func streamReceivableRows(ctx context.Context, tx pgx.Tx, dst io.Writer) error {
 }
 
 func streamPayableRows(ctx context.Context, tx pgx.Tx, dst io.Writer) error {
-	rows, err := tx.Query(ctx, dashboardPayableRowsSQL, dashboardFieldMaxBytes, dashboardRecordMaxBytes)
+	rows, err := tx.Query(ctx, dashboardPayableRowsSQL, dashboardFieldMaxBytes, dashboardRecordMaxBytes, dashboardDetailRowLimit)
 	if err != nil {
 		return err
 	}
@@ -385,6 +399,51 @@ func streamPayableRows(ctx context.Context, tx pgx.Tx, dst io.Writer) error {
 		var row application.DashboardPayableRow
 		var oversized bool
 		if err := rows.Scan(&row.Supplier, &row.Document, &row.DueDate, &row.Value, &row.Category, &row.Status, &oversized); err != nil {
+			return err
+		}
+		if oversized {
+			return ErrSnapshotRecordTooLarge
+		}
+		if !first {
+			if err := writeAll(dst, []byte{','}); err != nil {
+				return err
+			}
+		}
+		encoded, err := json.Marshal(row)
+		if err != nil {
+			return err
+		}
+		if err := writeAll(dst, encoded); err != nil {
+			return err
+		}
+		if err := flushDashboardOutput(dst); err != nil {
+			return err
+		}
+		first = false
+	}
+	return rows.Err()
+}
+
+func streamCashMovementRows(ctx context.Context, tx pgx.Tx, dst io.Writer, asOf time.Time, correlationID string) error {
+	businessDate := domain.BusinessDate(asOf)
+	monthStart := time.Date(businessDate.Year(), businessDate.Month(), 1, 0, 0, 0, 0, time.UTC)
+	monthEnd := monthStart.AddDate(0, 1, 0)
+	rows, err := tx.Query(ctx, dashboardCashMovementRowsSQL,
+		correlationID, monthStart.Format("2006-01-02"), monthEnd.Format("2006-01-02"),
+		dashboardDetailRowLimit, dashboardFieldMaxBytes, dashboardRecordMaxBytes,
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	first := true
+	for rows.Next() {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		var row application.DashboardCashMovementRow
+		var oversized bool
+		if err := rows.Scan(&row.Date, &row.Account, &row.Origin, &row.Value, &oversized); err != nil {
 			return err
 		}
 		if oversized {
@@ -462,6 +521,7 @@ latest_daily_receivable_snapshot AS (
    LIMIT 1
 ), eligible_receivables AS (
   SELECT r.*,
+         COALESCE(payment_method_record.payload->'list'->>'descricao', payment_method_record.payload->'detail'->>'descricao', '') AS payment_method,
          CASE
            WHEN r.source_system = 'NUVEM_PAGO' THEN r.net_amount
            WHEN r.source_system = 'BLING'
@@ -489,6 +549,7 @@ latest_daily_receivable_snapshot AS (
       ON terms.connection_id = r.connection_id
      AND terms.source_id = r.source_payment_method_id::text
      AND terms.sync_batch_id = payment_batch.sync_batch_id
+		LEFT JOIN raw_records payment_method_record ON payment_method_record.id = terms.raw_record_id
     LEFT JOIN contacts c ON c.id = r.customer_id
     LEFT JOIN raw_records rr ON rr.id = r.raw_record_id
    WHERE (r.source_system = 'NUVEM_PAGO' AND r.business_type = 'B2C' AND r.status = 'PROJECTED')
@@ -758,6 +819,7 @@ const dashboardReceivableRowsSQL = `
 WITH ` + dashboardEligibleReceivablesCTE + `
 SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.origin END,
+       CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.payment_method END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.due_date END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.gross_value END,
        CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.net_value END,
@@ -765,12 +827,13 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
        limits.exceeds_limit
   FROM (SELECT * FROM deduplicated_receivables
          WHERE COALESCE(open_balance, liquid_amount) > 0
-         ORDER BY effective_due_date NULLS LAST, source_id LIMIT 50) er
+         ORDER BY effective_due_date NULLS LAST, source_id LIMIT $3) er
   LEFT JOIN contacts c ON c.id = er.customer_id
   LEFT JOIN raw_records rr ON rr.id = er.raw_record_id
  CROSS JOIN LATERAL (
    SELECT COALESCE(c.name, rr.payload->>'customer_name', '') AS customer,
           CASE er.source_system WHEN 'NUVEM_PAGO' THEN 'Nuvem Pago' WHEN 'BLING' THEN 'Bling' ELSE er.source_system END AS origin,
+          COALESCE(er.payment_method, '') AS payment_method,
           COALESCE(to_char(er.effective_due_date, 'YYYY-MM-DD'), '') AS due_date,
           COALESCE(er.gross_amount::text, '') AS gross_value,
           COALESCE(er.liquid_amount::text, '') AS net_value,
@@ -780,11 +843,13 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.customer END,
    SELECT
      octet_length(row_data.customer)::bigint > $1 OR
      octet_length(row_data.origin)::bigint > $1 OR
+     octet_length(row_data.payment_method)::bigint > $1 OR
      octet_length(row_data.due_date)::bigint > $1 OR
      octet_length(row_data.gross_value)::bigint > $1 OR
      octet_length(row_data.net_value)::bigint > $1 OR
      octet_length(row_data.status)::bigint > $1 OR
      octet_length(row_data.customer)::bigint + octet_length(row_data.origin)::bigint +
+     octet_length(row_data.payment_method)::bigint +
      octet_length(row_data.due_date)::bigint + octet_length(row_data.gross_value)::bigint +
      octet_length(row_data.net_value)::bigint + octet_length(row_data.status)::bigint > $2 AS exceeds_limit
  ) AS limits
@@ -818,7 +883,7 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.supplier END,
                JOIN payable_sync_snapshot_rows membership ON membership.sync_batch_id = latest.sync_batch_id
               WHERE membership.payable_id = pw.id
            ))
-         ORDER BY due_date, source_id LIMIT 50) pw
+           ORDER BY due_date, source_id LIMIT $3) pw
   LEFT JOIN contacts c ON c.id = pw.supplier_id
  CROSS JOIN LATERAL (
    SELECT COALESCE(c.name, '') AS supplier,
@@ -840,4 +905,48 @@ SELECT CASE WHEN limits.exceeds_limit THEN '' ELSE row_data.supplier END,
      octet_length(row_data.due_date)::bigint + octet_length(row_data.value)::bigint +
      octet_length(row_data.category)::bigint + octet_length(row_data.status)::bigint > $2 AS exceeds_limit
  ) AS limits
+`
+
+const dashboardCashMovementRowsSQL = `
+WITH daily_snapshot AS (
+  SELECT b.id AS sync_batch_id
+    FROM integration_sync_batches b
+    JOIN integration_connections c ON c.id = b.connection_id
+   WHERE c.provider = 'BLING'
+     AND b.resource = 'caixas'
+     AND b.correlation_id = $1
+     AND b.status IN ('SUCCESS', 'PARTIAL')
+     AND b.data_stage = 'NORMALIZED'
+   ORDER BY b.finished_at DESC, b.id DESC
+   LIMIT 1
+), movement_rows AS (
+  SELECT movement.movement_date::text AS movement_date,
+         COALESCE(movement.account_name, '') AS account_name,
+         COALESCE(movement.origin_type, '') AS origin_type,
+         movement.amount::text AS amount
+    FROM bling_cash_movements movement
+    JOIN daily_snapshot snapshot ON snapshot.sync_batch_id = movement.sync_batch_id
+   WHERE movement.direction = 'INFLOW'
+     AND movement.source_status IN ('R', '')
+     AND movement.movement_date >= $2::date
+     AND movement.movement_date < $3::date
+   ORDER BY movement.movement_date, movement.source_id
+   LIMIT $4
+)
+SELECT CASE WHEN bounds.exceeds_limit THEN '' ELSE movement_rows.movement_date END,
+       CASE WHEN bounds.exceeds_limit THEN '' ELSE movement_rows.account_name END,
+       CASE WHEN bounds.exceeds_limit THEN '' ELSE movement_rows.origin_type END,
+       CASE WHEN bounds.exceeds_limit THEN '' ELSE movement_rows.amount END,
+       bounds.exceeds_limit
+  FROM movement_rows
+ CROSS JOIN LATERAL (
+   SELECT octet_length(movement_rows.movement_date)::bigint > $5 OR
+          octet_length(movement_rows.account_name)::bigint > $5 OR
+          octet_length(movement_rows.origin_type)::bigint > $5 OR
+          octet_length(movement_rows.amount)::bigint > $5 OR
+          octet_length(movement_rows.movement_date)::bigint +
+          octet_length(movement_rows.account_name)::bigint +
+          octet_length(movement_rows.origin_type)::bigint +
+          octet_length(movement_rows.amount)::bigint > $6 AS exceeds_limit
+ ) AS bounds
 `

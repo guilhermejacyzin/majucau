@@ -15,12 +15,14 @@ describe('retirada da tela T05', () => {
     expect(screen.queryByText('Conciliação pendente aguardando fonte oficial')).not.toBeInTheDocument()
   })
 
-  it('mantém os cards aprovados de T03 sem expor os antigos cards da T05', () => {
+  it('mantém os cards de recebíveis aprovados na T03', () => {
     render(<MockupDashboard screen="receivables" />)
 
-    for (const label of ['TOTAL A RECEBER', 'RECEBIDO NO MÊS', 'EM ATRASO', 'CONCILIAÇÃO', 'PIX', 'BOLETOS', 'CARTÃO', 'AMBÍGUOS', 'CHARGEBACKS']) {
+    for (const label of ['TOTAL A RECEBER', 'EM ATRASO', 'TOTAL RECEBIDO', 'PIX', 'BOLETOS', 'CARTÃO', 'AMBÍGUOS', 'CHARGEBACKS', 'DISTRIBUIÇÃO DOS RECEBÍVEIS']) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
+    expect(screen.queryByText('CONCILIAÇÃO')).not.toBeInTheDocument()
+    expect(screen.queryByText('RECEBÍVEIS')).not.toBeInTheDocument()
     for (const retiredLabel of ['PRIORIDADE', 'FALLBACK', 'REUSO BLOQUEADO', 'SEM ID BLING']) {
       expect(screen.queryByText(retiredLabel)).not.toBeInTheDocument()
     }

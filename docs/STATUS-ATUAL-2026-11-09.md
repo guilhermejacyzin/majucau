@@ -49,14 +49,14 @@ a pagar em 60 dias na sincronização de 14/11 às 22:39; o saldo atual é R$
 R$ 43.790,66 líquidos a receber e R$ 25.275,71 a pagar. As demais semanas
 continuam pendentes de conferência da responsável.
 
-Na execução da CI do alinhamento T01, o job PostgreSQL falhou no teste de
-idempotência do sincronizador diário. A auditoria mostrou que o fixture não
-incluía o lote normalizado de movimentos conciliados exigido pela regra de
-conclusão; o teste tentava iniciar uma carga real e parava por falta de
-credencial OAuth de teste. O fixture foi corrigido para preparar o conjunto
-completo de seis recursos antes de testar idempotência. A nova CI ainda está
-pendente. O build de produção do frontend passou localmente; isso não encerra a
-validação PostgreSQL nem aprova a T02.
+Na CI do alinhamento T01, a auditoria corrigiu o fixture do teste de
+idempotência, que não preparava o lote normalizado de movimentos conciliados
+exigido pela regra de conclusão. Com o fixture completo, o job PostgreSQL
+passou. A etapa Windows então encontrou GO-2026-6859 no Go 1.26.10 fixado pelo
+projeto; o relatório oficial indica correção no Go 1.26.11. Atualizei o
+toolchain e os dois pontos de configuração da CI para 1.26.11. A nova CI ainda
+precisa confirmar a varredura de segurança e os builds. O build de produção do
+frontend passou localmente; isto não aprova a T02.
 
 ---
 

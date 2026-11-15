@@ -140,6 +140,9 @@ func TestWeeklyBalanceCarriesReconciledOpeningThroughSelectedPeriod(t *testing.T
 	if periods[0].OpeningBalance == nil || periods[0].OpeningBalance.Value != "1000.0000" || periods[0].ClosingBalance == nil || periods[0].ClosingBalance.Value != "1150.0000" {
 		t.Fatalf("first week opening/closing = %+v/%+v, want 1000/1150", periods[0].OpeningBalance, periods[0].ClosingBalance)
 	}
+	if periods[0].ClosingBalance.State != "PARTIAL" {
+		t.Fatalf("weekly closing balance must preserve incomplete source status, got %+v", periods[0].ClosingBalance)
+	}
 	if periods[1].OpeningBalance == nil || periods[1].OpeningBalance.Value != periods[0].ClosingBalance.Value {
 		t.Fatalf("second week opening = %+v, want prior closing %s", periods[1].OpeningBalance, periods[0].ClosingBalance.Value)
 	}

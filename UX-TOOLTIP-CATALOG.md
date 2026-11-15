@@ -26,7 +26,7 @@
 | `receivables.b2bBling` | A Receber B2B — Bling | “Títulos futuros classificados como vendas entre empresas no Bling. Casos sem classificação aprovada ficam fora do total confirmado.” |
 | `receivables.total` | Total a Receber | “Soma do B2C futuro da Nuvem com o B2B futuro do Bling. O B2C do Bling não é somado.” |
 | `receivables.receivedMonth` | Total Recebido | “Soma das entradas conciliadas no relatório Caixa e Bancos do Bling, no mês da data-base. Os detalhes mostram os mesmos movimentos e usam o mesmo filtro do total.” |
-| `receivables.statusDistribution` | Distribuição dos Recebíveis | “Cada fatia representa a participação dos títulos por situação: confirmado, provisório, pendente ou divergente. Sem a distribuição real, o gráfico fica sem dados e não mostra percentuais estimados.” |
+| `receivables.statusDistribution` | Distribuição dos Recebíveis | “Mostra como o total de recebíveis se divide entre situações de confirmação. Cada fatia representa a parte do total em uma situação; sem a distribuição real, o gráfico fica neutro e não mostra percentuais estimados. O botão explica o significado de cada situação.” |
 | `receivables.aging` | Faixa de vencimento | “Agrupa o saldo aberto em vencidos, hoje, 7, 15, 30, 45 ou 60 dias, sem contar o mesmo título duas vezes.” |
 | `receivables.openBalance` | Saldo em aberto | “Parte do título que ainda não foi recebida. Recebimentos parciais reduzem este valor.” |
 | `receivables.classification` | Classificação B2B/B2C | “Regra que define a origem correta do recebível e evita dupla contagem. Alterações ficam registradas na auditoria.” |

@@ -357,6 +357,13 @@ body { background: #fff; }
 .mocap-receivables-middle { grid-template-columns: minmax(0,1fr); }
 .mocap-distribution .mocap-donut:not(.has-data) { border-right-color: #d6e4ed; border-bottom-color: #d6e4ed; }
 .mocap-distribution .mocap-donut.has-data { border-right-color: #a4d7e2; border-bottom-color: #7bb9e8; }
+.mocap-distribution-explainer { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 10px 6px; }
+.mocap-distribution-explainer .mocap-link { margin: 0; }
+.mocap-status-meanings { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 18px; width: 100%; padding: 12px; border: 1px solid #dbe8f2; border-radius: 8px; background: #f8fbfe; color: #294777; font-size: 12px; line-height: 1.45; }
+.mocap-status-meanings p { margin: 0; }
+.mocap-status-meanings strong { color: #17305b; }
+.mocap-status-meanings .mocap-status-meaning-note { grid-column: 1 / -1; padding-top: 8px; border-top: 1px solid #dbe8f2; color: #526b9e; }
+@media (max-width: 760px) { .mocap-status-meanings { grid-template-columns: 1fr; }.mocap-status-meanings .mocap-status-meaning-note { grid-column: auto; } }
 .mocap-detail-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(10,31,54,.46); }
 .mocap-detail-dialog { display: flex; flex-direction: column; width: min(1040px,100%); max-height: min(82vh,760px); overflow: hidden; border: 1px solid #d9e5f0; border-radius: 12px; background: #fff; box-shadow: 0 18px 60px rgba(16,42,67,.25); color: #17305b; }
 .mocap-detail-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px 12px; border-bottom: 1px solid #e2eaf2; }

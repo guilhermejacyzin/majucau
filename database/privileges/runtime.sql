@@ -35,8 +35,14 @@ GRANT SELECT ON TABLE
   receivables,
   payables,
   payments,
-  contacts
+  contacts,
+  statement_snapshots,
+  statement_lines,
+  dre_calculation_steps,
+  dre_calculation_operands
 TO majucau_runtime;
+GRANT SELECT (id, rule_code, version, status)
+  ON TABLE financial_rule_versions TO majucau_runtime;
 
 -- Writes are restricted to the configuration, sync ledger, RAW ingestion,
 -- cursors, normalized financial facts, and bounded snapshot/checkpoint rows.
@@ -53,6 +59,9 @@ GRANT INSERT, UPDATE ON TABLE
   bling_payment_method_terms,
   bling_financial_account_identities
 TO majucau_runtime;
+GRANT INSERT ON TABLE calculation_runs TO majucau_runtime;
+GRANT INSERT ON TABLE statement_snapshots, statement_lines,
+  dre_calculation_steps, dre_calculation_operands TO majucau_runtime;
 GRANT INSERT ON TABLE
   raw_records,
   bling_sync_page_checkpoints,
@@ -90,6 +99,7 @@ GRANT EXECUTE ON FUNCTION retire_current_raw_record(uuid) TO majucau_runtime;
 GRANT EXECUTE ON FUNCTION audit_google_drive_credential_configured(text, uuid, boolean) TO majucau_runtime;
 GRANT EXECUTE ON FUNCTION upsert_bling_supplier_contact(uuid, text, text, uuid) TO majucau_runtime;
 GRANT EXECUTE ON FUNCTION upsert_bling_customer_contact(uuid, text, text, uuid) TO majucau_runtime;
+GRANT EXECUTE ON FUNCTION finish_dre_calculation(uuid, text) TO majucau_runtime;
 
 -- The schema uses UUID defaults and does not need runtime sequence access.
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC;

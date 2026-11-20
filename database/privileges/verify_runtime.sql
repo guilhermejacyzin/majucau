@@ -71,12 +71,17 @@ BEGIN
       'public.receivables',
       'public.payables',
       'public.payments',
-      'public.contacts'
+      'public.contacts',
+      'public.statement_snapshots',
+      'public.statement_lines',
+      'public.dre_calculation_steps',
+      'public.dre_calculation_operands'
     ]::text[]);
     expected_column_select := expected_select OR
       relation_row.qualified_name = ANY (ARRAY[
         'public.payable_sources',
-        'public.receivable_sources'
+        'public.receivable_sources',
+        'public.financial_rule_versions'
       ]::text[]);
     expected_insert := relation_row.qualified_name = ANY (ARRAY[
       'public.integration_connections',
@@ -99,7 +104,12 @@ BEGIN
       'public.payable_sources',
       'public.payables',
       'public.receipts',
-      'public.receivables'
+      'public.receivables',
+      'public.calculation_runs',
+      'public.statement_snapshots',
+      'public.statement_lines',
+      'public.dre_calculation_steps',
+      'public.dre_calculation_operands'
     ]::text[]);
     expected_update := relation_row.qualified_name = ANY (ARRAY[
       'public.integration_connections',
@@ -165,7 +175,8 @@ BEGIN
            'public.retire_current_raw_record(uuid)'::regprocedure,
            'public.audit_google_drive_credential_configured(text,uuid,boolean)'::regprocedure,
            'public.upsert_bling_supplier_contact(uuid,text,text,uuid)'::regprocedure,
-           'public.upsert_bling_customer_contact(uuid,text,text,uuid)'::regprocedure
+           'public.upsert_bling_customer_contact(uuid,text,text,uuid)'::regprocedure,
+           'public.finish_dre_calculation(uuid,text)'::regprocedure
          ])
        ) THEN
       RAISE EXCEPTION 'runtime role has unexpected function privileges on %', function_row.oid::regprocedure;

@@ -90,6 +90,7 @@ type normalizedPayable struct {
 	Status                   string
 	SourcePaymentMethodID    *int64
 	SourceFinancialAccountID *int64
+	SourceCategoryID         *string
 }
 
 // payableSchemaFieldError carries a reviewed field identifier for the batch
@@ -331,6 +332,7 @@ func normalizePayablesAPISnapshotPage(client *BlingAPIClient) (
 				OpenBalance: payable.OpenBalance, Status: payable.Status, RawRecordID: rawID,
 				SourcePaymentMethodID:    payable.SourcePaymentMethodID,
 				SourceFinancialAccountID: payable.SourceFinancialAccountID,
+				SourceCategoryID:         payable.SourceCategoryID,
 			})
 			if err != nil {
 				return fmt.Errorf("persist normalized Bling payable: %w", err)
@@ -422,6 +424,8 @@ func parsePayableAPIDetail(payload []byte, expectedID int64) (normalizedPayable,
 			result.CategoryUnassigned = true
 		} else {
 			result.CategoryID = *detail.Category.ID
+			categoryID := strconv.FormatInt(*detail.Category.ID, 10)
+			result.SourceCategoryID = &categoryID
 		}
 	}
 	if detail.Contact == nil || detail.Contact.ID <= 0 {

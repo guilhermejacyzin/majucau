@@ -29,7 +29,7 @@ func TestParseReceivableAPIListAndDetailWithoutClassifyingCustomerType(t *testin
 		t.Fatalf("parsed receivable amount = %+v, %v", amount, err)
 	}
 
-	detailPayload := json.RawMessage(`{"id":321,"situacao":3,"vencimento":"2026-11-12","dataEmissao":"2026-10-01","competencia":"2026-10-01","numeroDocumento":"R-321","valor":100.25,"saldo":40.10,"contato":{"id":9},"formaPagamento":{"id":11},"contaContabil":{"id":12},"portador":{"id":13}}`)
+	detailPayload := json.RawMessage(`{"id":321,"situacao":3,"vencimento":"2026-11-12","dataEmissao":"2026-10-01","competencia":"2026-10-01","numeroDocumento":"R-321","valor":100.25,"saldo":40.10,"contato":{"id":9},"formaPagamento":{"id":11},"contaContabil":{"id":12},"portador":{"id":13},"categoria":{"id":14}}`)
 	detail, err := parseReceivableAPIDetail(detailPayload, 321)
 	if err != nil {
 		t.Fatalf("parse receivable detail = %v", err)
@@ -38,7 +38,7 @@ func TestParseReceivableAPIListAndDetailWithoutClassifyingCustomerType(t *testin
 		t.Fatalf("detail changed list status/contact: %+v", detail)
 	}
 	detailNormalized, err := normalizedReceivableFromDetail(detail, normalizedReceivable{})
-	if err != nil || detailNormalized.SourcePaymentMethodID == nil || *detailNormalized.SourcePaymentMethodID != 11 || detailNormalized.SourceAccountingAccountID == nil || *detailNormalized.SourceAccountingAccountID != 12 || detailNormalized.SourceFinancialAccountID == nil || *detailNormalized.SourceFinancialAccountID != 13 {
+	if err != nil || detailNormalized.SourcePaymentMethodID == nil || *detailNormalized.SourcePaymentMethodID != 11 || detailNormalized.SourceAccountingAccountID == nil || *detailNormalized.SourceAccountingAccountID != 12 || detailNormalized.SourceFinancialAccountID == nil || *detailNormalized.SourceFinancialAccountID != 13 || detailNormalized.SourceCategoryID == nil || *detailNormalized.SourceCategoryID != "14" {
 		t.Fatalf("parsed detail source references = %+v, %v", detailNormalized, err)
 	}
 	open, err := parseRequiredAPIMoney(detail.OpenAmount)
@@ -48,6 +48,15 @@ func TestParseReceivableAPIListAndDetailWithoutClassifyingCustomerType(t *testin
 	}
 	if err != nil || open.Int.Cmp(wantOpen.Int) != 0 || open.Exp != wantOpen.Exp {
 		t.Fatalf("parsed outstanding balance = %+v, %v", open, err)
+	}
+}
+
+func TestReceivableCategoryIDPreservesExactIdentityAndRejectsNegative(t *testing.T) {
+	if got, err := receivableCategoryID(&receivableAPISourceReference{ID: 0}); err != nil || got != nil {
+		t.Fatalf("zero category should remain unclassified: %v, %v", got, err)
+	}
+	if _, err := receivableCategoryID(&receivableAPISourceReference{ID: -1}); err == nil || blingAPINormalizationFailureCode(err) != "BLING_RECEIVABLE_CATEGORY_ID_INVALID" {
+		t.Fatalf("negative category should fail with a reviewed code: %v", err)
 	}
 }
 

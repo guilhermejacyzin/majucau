@@ -173,18 +173,19 @@ func TestDailyPayablesAPIIsNormalizedAtomicallyWithCategoryScopeGap(t *testing.T
 		t.Fatalf("first batch stage/status = %s/%s", stage, status)
 	}
 	var payableCount int
-	var dueDate, statusCode, document, category, supplier string
+	var dueDate, statusCode, document, category, supplier, sourceCategoryID string
 	var originalAmount, openBalance string
 	if err := pool.QueryRow(ctx, `
 		SELECT COUNT(*), MIN(p.due_date)::text, MIN(p.status), MIN(p.document), COALESCE(MIN(p.category), ''),
+		       COALESCE(MIN(p.source_category_id), ''),
 		       MIN(original_amount)::text, MIN(open_balance)::text,
 		       MIN(c.name)
 		FROM payables p LEFT JOIN contacts c ON c.id = p.supplier_id
-		WHERE p.connection_id = $1 AND p.source_system = 'BLING' AND p.source_entity = $2 AND p.source_id = $3`, connection.ID, payableAPISourceEntity, sourceID).Scan(&payableCount, &dueDate, &statusCode, &document, &category, &originalAmount, &openBalance, &supplier); err != nil {
+		WHERE p.connection_id = $1 AND p.source_system = 'BLING' AND p.source_entity = $2 AND p.source_id = $3`, connection.ID, payableAPISourceEntity, sourceID).Scan(&payableCount, &dueDate, &statusCode, &document, &category, &sourceCategoryID, &originalAmount, &openBalance, &supplier); err != nil {
 		t.Fatalf("read normalized payable: %v", err)
 	}
-	if payableCount != 1 || dueDate != "2026-10-31" || statusCode != "3" || document != "NF-21" || category != "CAPEX teste" || originalAmount != "250.0000" || openBalance != "-150.2500" || supplier != "Fornecedor de teste" {
-		t.Fatalf("normalized payable = count:%d due:%s status:%s document:%s category:%s original:%s balance:%s supplier:%s", payableCount, dueDate, statusCode, document, category, originalAmount, openBalance, supplier)
+	if payableCount != 1 || dueDate != "2026-10-31" || statusCode != "3" || document != "NF-21" || category != "CAPEX teste" || sourceCategoryID != categorySourceID || originalAmount != "250.0000" || openBalance != "-150.2500" || supplier != "Fornecedor de teste" {
+		t.Fatalf("normalized payable = count:%d due:%s status:%s document:%s category:%s categoryID:%s original:%s balance:%s supplier:%s", payableCount, dueDate, statusCode, document, category, sourceCategoryID, originalAmount, openBalance, supplier)
 	}
 	var lineageCount, snapshotCount int
 	if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM payable_sources WHERE payable_id IN (SELECT id FROM payables WHERE connection_id = $1 AND source_entity = $2 AND source_id = $3)`, connection.ID, payableAPISourceEntity, sourceID).Scan(&lineageCount); err != nil {

@@ -66,6 +66,7 @@ func TestDailyReceivablesAPIIsNormalizedAndFailedRefreshKeepsPreviousSnapshot(t 
 	firstSourceID := strconv.FormatInt(baseID, 10)
 	secondSourceID := strconv.FormatInt(baseID+1, 10)
 	contactSourceID := strconv.FormatInt(baseID+2, 10)
+	categorySourceID := strconv.FormatInt(baseID+4, 10)
 	failSecondRecord := false
 	publicationTransactionOpenDuringRequest := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +91,7 @@ func TestDailyReceivablesAPIIsNormalizedAndFailedRefreshKeepsPreviousSnapshot(t 
 			}
 			_, _ = fmt.Fprintf(w, `{"data":[%s]}`, records)
 		case "/Api/v3/contas/receber/" + firstSourceID:
-			_, _ = fmt.Fprintf(w, `{"data":{"id":%s,"situacao":1,"vencimento":"2026-11-20","dataEmissao":"2026-10-01","competencia":"2026-10-01","numeroDocumento":"CR-teste","valor":100.25,"saldo":80.10,"contato":{"id":%s}}}`, firstSourceID, contactSourceID)
+			_, _ = fmt.Fprintf(w, `{"data":{"id":%s,"situacao":1,"vencimento":"2026-11-20","dataEmissao":"2026-10-01","competencia":"2026-10-01","numeroDocumento":"CR-teste","valor":100.25,"saldo":80.10,"contato":{"id":%s},"categoria":{"id":%s}}}`, firstSourceID, contactSourceID, categorySourceID)
 		case "/Api/v3/contas/receber/" + secondSourceID:
 			if !failSecondRecord {
 				t.Errorf("unexpected detail request for second test record")
@@ -116,19 +117,20 @@ func TestDailyReceivablesAPIIsNormalizedAndFailedRefreshKeepsPreviousSnapshot(t 
 		t.Fatal("Bling API was called while a PostgreSQL publication transaction was open")
 	}
 	var stage, status, sourceID, businessType, customerName string
+	var sourceCategoryID *string
 	var grossAmount, openBalance string
 	if err := pool.QueryRow(ctx, `
-		SELECT b.data_stage, b.status, r.source_id, r.business_type, c.name,
+		SELECT b.data_stage, b.status, r.source_id, r.business_type, c.name, r.source_category_id,
 		       r.gross_amount::text, r.open_balance::text
 		  FROM integration_sync_batches b
 		  JOIN receivable_sync_snapshot_rows snapshot ON snapshot.sync_batch_id = b.id
 		  JOIN receivables r ON r.id = snapshot.receivable_id
 		  JOIN contacts c ON c.id = r.customer_id
-		 WHERE b.id = $1::uuid`, first.BatchID).Scan(&stage, &status, &sourceID, &businessType, &customerName, &grossAmount, &openBalance); err != nil {
+		 WHERE b.id = $1::uuid`, first.BatchID).Scan(&stage, &status, &sourceID, &businessType, &customerName, &sourceCategoryID, &grossAmount, &openBalance); err != nil {
 		t.Fatalf("read normalized daily receivable: %v", err)
 	}
-	if stage != "NORMALIZED" || status != "SUCCESS" || sourceID != firstSourceID || businessType != "UNCLASSIFIED" || customerName != "Cliente de teste" || grossAmount != "100.2500" || openBalance != "80.1000" {
-		t.Fatalf("normalized receivable is not the expected unclassified open title: stage/status=%s/%s id=%s type=%s customer=%s gross=%s open=%s", stage, status, sourceID, businessType, customerName, grossAmount, openBalance)
+	if stage != "NORMALIZED" || status != "SUCCESS" || sourceID != firstSourceID || businessType != "UNCLASSIFIED" || customerName != "Cliente de teste" || sourceCategoryID == nil || *sourceCategoryID != categorySourceID || grossAmount != "100.2500" || openBalance != "80.1000" {
+		t.Fatalf("normalized receivable is not the expected unclassified open title: stage/status=%s/%s id=%s type=%s customer=%s category=%v gross=%s open=%s", stage, status, sourceID, businessType, customerName, sourceCategoryID, grossAmount, openBalance)
 	}
 
 	failSecondRecord = true

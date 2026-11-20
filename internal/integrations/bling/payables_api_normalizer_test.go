@@ -33,7 +33,7 @@ func TestParsePayableAPIDetailUsesExactSourceAmountsAndDate(t *testing.T) {
 	if err != nil || signedOutflow.OpenBalance.Int.Cmp(wantBalance.Int) != 0 || signedOutflow.OpenBalance.Exp != wantBalance.Exp {
 		t.Fatalf("already-negative source balance = %+v, %v; want exact negative outflow", signedOutflow.OpenBalance, err)
 	}
-	if got.SupplierSource != "88" || got.CategoryID != 9 || got.Document == nil || *got.Document != "NF-21" {
+	if got.SupplierSource != "88" || got.CategoryID != 9 || got.SourceCategoryID == nil || *got.SourceCategoryID != "9" || got.Document == nil || *got.Document != "NF-21" {
 		t.Fatalf("optional source mapping = %+v", got)
 	}
 	if got.SourcePaymentMethodID == nil || *got.SourcePaymentMethodID != 11 || got.SourceFinancialAccountID == nil || *got.SourceFinancialAccountID != 13 {

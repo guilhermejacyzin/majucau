@@ -729,6 +729,7 @@ type Payable struct {
 	UpdatedAt                pgtype.Timestamptz `json:"updated_at"`
 	SourcePaymentMethodID    *int64             `json:"source_payment_method_id"`
 	SourceFinancialAccountID *int64             `json:"source_financial_account_id"`
+	SourceCategoryID         *string            `json:"source_category_id"`
 }
 
 type PayableSource struct {
@@ -872,6 +873,7 @@ type Receivable struct {
 	SourcePaymentMethodID     *int64             `json:"source_payment_method_id"`
 	SourceFinancialAccountID  *int64             `json:"source_financial_account_id"`
 	SourceAccountingAccountID *int64             `json:"source_accounting_account_id"`
+	SourceCategoryID          *string            `json:"source_category_id"`
 }
 
 type ReceivableSource struct {

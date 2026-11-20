@@ -61,6 +61,7 @@ type receivableAPIDetail struct {
 	PaymentMethod     *receivableAPISourceReference `json:"formaPagamento"`
 	FinancialAccount  *receivableAPISourceReference `json:"portador"`
 	AccountingAccount *receivableAPISourceReference `json:"contaContabil"`
+	Category          *receivableAPISourceReference `json:"categoria"`
 }
 
 type preparedReceivableAPISnapshotRecord struct {
@@ -84,6 +85,7 @@ type normalizedReceivable struct {
 	SourcePaymentMethodID     *int64
 	SourceFinancialAccountID  *int64
 	SourceAccountingAccountID *int64
+	SourceCategoryID          *string
 }
 
 func normalizeReceivablesAPISnapshotPage(client *BlingAPIClient) (
@@ -246,6 +248,7 @@ func normalizeReceivablesAPISnapshotPage(client *BlingAPIClient) (
 				SourcePaymentMethodID:     receivable.SourcePaymentMethodID,
 				SourceFinancialAccountID:  receivable.SourceFinancialAccountID,
 				SourceAccountingAccountID: receivable.SourceAccountingAccountID,
+				SourceCategoryID:          receivable.SourceCategoryID,
 			})
 			if err != nil {
 				return fmt.Errorf("persist normalized Bling receivable: %w", err)
@@ -367,6 +370,10 @@ func normalizedReceivableFromDetail(detail receivableAPIDetail, base normalizedR
 	base.SourcePaymentMethodID = receivableSourceReferenceID(detail.PaymentMethod)
 	base.SourceFinancialAccountID = receivableSourceReferenceID(detail.FinancialAccount)
 	base.SourceAccountingAccountID = receivableSourceReferenceID(detail.AccountingAccount)
+	base.SourceCategoryID, err = receivableCategoryID(detail.Category)
+	if err != nil {
+		return normalizedReceivable{}, err
+	}
 	base.GrossAmount, err = parseRequiredAPIMoney(detail.Amount)
 	if err != nil {
 		return normalizedReceivable{}, receivableSchemaField("BLING_RECEIVABLE_AMOUNT_INVALID")
@@ -396,6 +403,17 @@ func normalizedReceivableFromDetail(detail receivableAPIDetail, base normalizedR
 	}
 	base.Status = receivableStatus(detail.Status)
 	return base, nil
+}
+
+func receivableCategoryID(reference *receivableAPISourceReference) (*string, error) {
+	if reference == nil || reference.ID == 0 {
+		return nil, nil
+	}
+	if reference.ID < 0 {
+		return nil, receivableSchemaField("BLING_RECEIVABLE_CATEGORY_ID_INVALID")
+	}
+	value := strconv.FormatInt(reference.ID, 10)
+	return &value, nil
 }
 
 func receivableStatus(status int64) string {

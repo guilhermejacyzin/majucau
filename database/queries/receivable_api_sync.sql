@@ -6,11 +6,12 @@ INSERT INTO receivables (
   connection_id, source_system, source_entity, source_id, business_type,
   customer_id, external_document, issue_date, competence_date, due_date,
   gross_amount, open_balance, currency_code, status, raw_record_id,
-  source_payment_method_id, source_financial_account_id, source_accounting_account_id
+  source_payment_method_id, source_financial_account_id, source_accounting_account_id,
+  source_category_id
 ) VALUES (
   $1, 'BLING', 'bling.conta_receber', $2, 'UNCLASSIFIED',
   $3, $4, $5, $6, $7,
-  $8, $9, 'BRL', $10, $11, $12, $13, $14
+  $8, $9, 'BRL', $10, $11, $12, $13, $14, $15
 )
 ON CONFLICT (connection_id, source_system, source_entity, source_id)
 DO UPDATE SET
@@ -28,6 +29,7 @@ DO UPDATE SET
   source_payment_method_id = EXCLUDED.source_payment_method_id,
   source_financial_account_id = EXCLUDED.source_financial_account_id,
   source_accounting_account_id = EXCLUDED.source_accounting_account_id,
+  source_category_id = EXCLUDED.source_category_id,
   updated_at = clock_timestamp()
 RETURNING id;
 

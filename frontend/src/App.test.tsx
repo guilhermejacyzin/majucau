@@ -62,6 +62,24 @@ describe('shell financeiro', () => {
     expect(screen.getByRole('table')).not.toHaveTextContent('CAPEX')
   })
 
+  it('aplica o mês selecionado aos rótulos e ao estado vazio da T06 sem reutilizar outra competência', async () => {
+    const user = userEvent.setup()
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'DRE' }))
+
+    const month = screen.getByLabelText('Mês da DRE')
+    expect(month).toHaveValue('2026-09')
+    expect(screen.getByText(/Sem dados importados e conciliados para setembro de 2026/)).toBeInTheDocument()
+
+    fireEvent.change(month, { target: { value: '2026-10' } })
+
+    expect(month).toHaveValue('2026-10')
+    expect(screen.getByText(/Sem dados importados e conciliados para outubro de 2026/)).toBeInTheDocument()
+    expect(screen.getAllByText('Competência: outubro de 2026').length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Sem dados importados e conciliados para setembro de 2026/)).not.toBeInTheDocument()
+  })
+
   it('exibe métrica confirmada e usa a data da última sincronização Bling', async () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={snapshotAdapterFor()} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
@@ -339,6 +357,7 @@ describe('shell financeiro', () => {
     const executivePayablesCard = screen.getByText('A PAGAR').closest('article')
     expect(executivePayablesCard?.textContent).toContain('100,00')
     await user.click(screen.getByRole('button', { name: 'Contas a Pagar' }))
+    fireEvent.change(screen.getByLabelText('Data inicial das contas a pagar'), { target: { value: '2026-11-17' } })
     fireEvent.change(screen.getByLabelText('Data final das contas a pagar'), { target: { value: '2026-11-25' } })
     const payableTotalCard = screen.getByText('TOTAL A PAGAR NA DATA').closest('article')
     expect(payableTotalCard).toHaveTextContent('-R$ 100,00')
@@ -367,6 +386,8 @@ describe('shell financeiro', () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={dashboardSnapshotAdapter} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
     await user.click(screen.getByRole('button', { name: 'Contas a Pagar' }))
+    fireEvent.change(screen.getByLabelText('Data inicial das contas a pagar'), { target: { value: '2026-11-17' } })
+    fireEvent.change(screen.getByLabelText('Data final das contas a pagar'), { target: { value: '2026-11-17' } })
     const payableTotalCard = screen.getByText('TOTAL A PAGAR NA DATA').closest('article')
     expect(payableTotalCard).toHaveTextContent('-R$ 250,00')
     expect(payableTotalCard).not.toHaveTextContent('Parcial')

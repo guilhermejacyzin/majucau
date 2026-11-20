@@ -49,3 +49,10 @@ A regra de estimativa de tributos para a competência correta e sua memória de 
 ## Próxima implementação
 
 Ligar a competência selecionada ao carregamento/calculador DRE, importar as fontes disponíveis com origem e hash, persistir contribuições e memória de cálculo por linha, e substituir a regra estática pela memória daquela execução nos detalhes. Bloquear CONFIRMADO quando estiverem ausentes fontes exigidas, âncora de CMV, classificação ou apuração fiscal. Revalidar T04 separadamente, preservando as regras já aprovadas.
+
+## Atualização posterior — persistência da memória aritmética
+
+- O pacote `internal/drememory` agora cria uma execução e um snapshot DRE em uma transação, grava linhas, expressões, operandos, valores disponíveis e indisponibilidade explícita; a leitura recupera os mesmos dados por snapshot.
+- A finalização da execução usa a função restrita `finish_dre_calculation`; o runtime não recebe permissão geral de atualização de execuções. O acesso às tabelas DRE está explicitado na allowlist de privilégios e no verificador.
+- Foram adicionados testes unitários para expressão, rótulos e validação do hash, além de um teste de integração PostgreSQL que cria uma fixture sintética e verifica leitura, operandos, hash e ausência de resultado quando falta tributo. `go test ./...` passou; o teste PostgreSQL foi ignorado localmente porque `MAJUCAU_TEST_DATABASE_URL` não está configurada. A verificação de checksums das migrations e limites de dependência passou.
+- Limite atual: ainda não há classificador/importador que monte fontes e contribuições DRE, a migration 000026 não foi aplicada ao banco local, o worker não chama o repositório e a T06 ainda não consulta a memória persistida. Esta entrega é apenas a base transacional da trilha aritmética, não memória de uma apuração real. Tributos continuam sem fórmula até orientação especializada.

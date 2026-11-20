@@ -67,3 +67,7 @@ The repository root owns the Go module, so this task does not change `go.mod`. T
 10. Run `privileges/verify_runtime.sql` after `privileges/runtime.sql` to check the runtime role's exact read/write allowlist (including column-level grants), role attributes, object ownership, routine execution and append-only protections. CI performs this check against its disposable PostgreSQL service.
 
 No real credentials or personal payloads belong in this directory or its fixtures.
+
+## Memória de cálculo da DRE
+
+Migration `000026_dre_run_finalization.up.sql` libera a finalização controlada de uma execução DRE já gravada. O adaptador `internal/drememory` grava atomicamente a execução, o snapshot, as linhas e os passos/operandos aritméticos, e lê a trilha por snapshot. Ele exige versão de regra aprovada e hash SHA-256 das entradas; valores indisponíveis permanecem `NULL` com motivo, nunca como zero. Esta etapa não classifica nem importa documentos de origem, não grava `dre_line_sources` e ainda não está conectada ao worker ou à T06. Portanto, ainda não produz memória financeira real visível na tela. A integração com as fontes e o detalhe na T06 continuam pendentes.

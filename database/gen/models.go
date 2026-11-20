@@ -270,6 +270,106 @@ type DataQualityIssue struct {
 	ResolvedBy pgtype.UUID        `json:"resolved_by"`
 }
 
+type DreAdjustment struct {
+	ID               pgtype.UUID        `json:"id"`
+	CalculationRunID pgtype.UUID        `json:"calculation_run_id"`
+	TargetLineCode   string             `json:"target_line_code"`
+	SourceLineCode   *string            `json:"source_line_code"`
+	AmountSigned     pgtype.Numeric     `json:"amount_signed"`
+	ReasonCode       string             `json:"reason_code"`
+	EvidenceRef      string             `json:"evidence_ref"`
+	ApprovedBy       pgtype.UUID        `json:"approved_by"`
+	ApprovedAt       pgtype.Timestamptz `json:"approved_at"`
+	RuleVersionID    pgtype.UUID        `json:"rule_version_id"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type DreCalculationOperand struct {
+	ID                 pgtype.UUID        `json:"id"`
+	CalculationRunID   pgtype.UUID        `json:"calculation_run_id"`
+	SnapshotID         pgtype.UUID        `json:"snapshot_id"`
+	CalculationStepID  pgtype.UUID        `json:"calculation_step_id"`
+	OperandOrder       int32              `json:"operand_order"`
+	OperandCode        string             `json:"operand_code"`
+	OperandType        string             `json:"operand_type"`
+	StatementLineID    pgtype.UUID        `json:"statement_line_id"`
+	ConstantName       *string            `json:"constant_name"`
+	OperandAmount      pgtype.Numeric     `json:"operand_amount"`
+	AvailabilityStatus string             `json:"availability_status"`
+	UnavailableReason  *string            `json:"unavailable_reason"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+}
+
+// Immutable formula and result steps for a statement line; unavailable calculations have no numeric result.
+type DreCalculationStep struct {
+	ID                 pgtype.UUID        `json:"id"`
+	CalculationRunID   pgtype.UUID        `json:"calculation_run_id"`
+	SnapshotID         pgtype.UUID        `json:"snapshot_id"`
+	StatementLineID    pgtype.UUID        `json:"statement_line_id"`
+	StepOrder          int32              `json:"step_order"`
+	OperationCode      string             `json:"operation_code"`
+	FormulaExpression  string             `json:"formula_expression"`
+	OutputAmount       pgtype.Numeric     `json:"output_amount"`
+	AvailabilityStatus string             `json:"availability_status"`
+	UnavailableReason  *string            `json:"unavailable_reason"`
+	RuleVersionID      pgtype.UUID        `json:"rule_version_id"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+}
+
+type DreInventoryEvent struct {
+	ID               pgtype.UUID        `json:"id"`
+	CalculationRunID pgtype.UUID        `json:"calculation_run_id"`
+	EventID          string             `json:"event_id"`
+	SourceRowID      pgtype.UUID        `json:"source_row_id"`
+	EventDate        pgtype.Date        `json:"event_date"`
+	Priority         int32              `json:"priority"`
+	ProductID        string             `json:"product_id"`
+	QuantityDelta    pgtype.Numeric     `json:"quantity_delta"`
+	UnitCostBefore   pgtype.Numeric     `json:"unit_cost_before"`
+	UnitCostAfter    pgtype.Numeric     `json:"unit_cost_after"`
+	ValueEffect      pgtype.Numeric     `json:"value_effect"`
+	BomVersion       *string            `json:"bom_version"`
+	AnchorID         *string            `json:"anchor_id"`
+	Warning          *string            `json:"warning"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+// Included and excluded source contributions for a published DRE statement line, with the applied rule and reason.
+type DreLineSource struct {
+	ID                 pgtype.UUID        `json:"id"`
+	CalculationRunID   pgtype.UUID        `json:"calculation_run_id"`
+	SnapshotID         pgtype.UUID        `json:"snapshot_id"`
+	StatementLineID    pgtype.UUID        `json:"statement_line_id"`
+	SourceRowID        pgtype.UUID        `json:"source_row_id"`
+	InventoryEventID   pgtype.UUID        `json:"inventory_event_id"`
+	SaleCostID         pgtype.UUID        `json:"sale_cost_id"`
+	AdjustmentID       pgtype.UUID        `json:"adjustment_id"`
+	CategoryID         *string            `json:"category_id"`
+	SourceAmount       pgtype.Numeric     `json:"source_amount"`
+	ContributionAmount pgtype.Numeric     `json:"contribution_amount"`
+	Included           bool               `json:"included"`
+	InclusionRule      string             `json:"inclusion_rule"`
+	ExclusionReason    *string            `json:"exclusion_reason"`
+	RuleVersionID      pgtype.UUID        `json:"rule_version_id"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+}
+
+type DreSaleCost struct {
+	ID                pgtype.UUID        `json:"id"`
+	CalculationRunID  pgtype.UUID        `json:"calculation_run_id"`
+	OrderID           string             `json:"order_id"`
+	ItemID            string             `json:"item_id"`
+	ProductID         string             `json:"product_id"`
+	EventDate         pgtype.Date        `json:"event_date"`
+	Quantity          pgtype.Numeric     `json:"quantity"`
+	CmpBefore         pgtype.Numeric     `json:"cmp_before"`
+	Cmv               pgtype.Numeric     `json:"cmv"`
+	InventoryEventID  pgtype.UUID        `json:"inventory_event_id"`
+	CostCompleteness  string             `json:"cost_completeness"`
+	UnavailableReason *string            `json:"unavailable_reason"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+}
+
 type DreSnapshot struct {
 	ID               pgtype.UUID        `json:"id"`
 	CalculationRunID pgtype.UUID        `json:"calculation_run_id"`
@@ -279,6 +379,34 @@ type DreSnapshot struct {
 	ScenarioID       pgtype.UUID        `json:"scenario_id"`
 	Status           string             `json:"status"`
 	CalculatedAt     pgtype.Timestamptz `json:"calculated_at"`
+}
+
+// Normalized, non-payload source references for one DRE calculation run; raw source content remains in append-only raw_records.
+type DreSourceRow struct {
+	ID                pgtype.UUID        `json:"id"`
+	CalculationRunID  pgtype.UUID        `json:"calculation_run_id"`
+	RawRecordID       pgtype.UUID        `json:"raw_record_id"`
+	SourceTable       string             `json:"source_table"`
+	SourceRecordID    string             `json:"source_record_id"`
+	SourceItemKey     string             `json:"source_item_key"`
+	SourceDocumentRef *string            `json:"source_document_ref"`
+	SourceRowNumber   *int64             `json:"source_row_number"`
+	CompetenceDate    pgtype.Date        `json:"competence_date"`
+	CategoryID        *string            `json:"category_id"`
+	OriginalAmount    pgtype.Numeric     `json:"original_amount"`
+	SignedAmount      pgtype.Numeric     `json:"signed_amount"`
+	MovementType      *string            `json:"movement_type"`
+	TransactionType   *string            `json:"transaction_type"`
+	SourceStatus      *string            `json:"source_status"`
+	OriginType        *string            `json:"origin_type"`
+	OriginID          *string            `json:"origin_id"`
+	OrderID           *string            `json:"order_id"`
+	InvoiceID         *string            `json:"invoice_id"`
+	ProductID         *string            `json:"product_id"`
+	Quantity          pgtype.Numeric     `json:"quantity"`
+	Included          bool               `json:"included"`
+	ExclusionReason   *string            `json:"exclusion_reason"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 }
 
 type EbitdaSnapshot struct {
@@ -791,13 +919,15 @@ type Scenario struct {
 }
 
 type StatementLine struct {
-	ID            pgtype.UUID    `json:"id"`
-	SnapshotID    pgtype.UUID    `json:"snapshot_id"`
-	LineCode      string         `json:"line_code"`
-	Label         string         `json:"label"`
-	Amount        pgtype.Numeric `json:"amount"`
-	DisplayOrder  int32          `json:"display_order"`
-	RuleVersionID pgtype.UUID    `json:"rule_version_id"`
+	ID                 pgtype.UUID    `json:"id"`
+	SnapshotID         pgtype.UUID    `json:"snapshot_id"`
+	LineCode           string         `json:"line_code"`
+	Label              string         `json:"label"`
+	Amount             pgtype.Numeric `json:"amount"`
+	DisplayOrder       int32          `json:"display_order"`
+	RuleVersionID      pgtype.UUID    `json:"rule_version_id"`
+	AvailabilityStatus string         `json:"availability_status"`
+	UnavailableReason  *string        `json:"unavailable_reason"`
 }
 
 type StatementLineContribution struct {

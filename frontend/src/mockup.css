@@ -380,4 +380,12 @@ body { background: #fff; }
 .mocap-detail-dialog th { position: sticky; top: 0; background: #f1f5f9; }
 .mocap-detail-dialog td:nth-child(n+3) { white-space: nowrap; }
 .mocap-detail-dialog footer { padding: 10px 20px; border-top: 1px solid #e2eaf2; color: #536d97; font-size: 11px; }
+.mocap-dre-memory-content { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; overflow-y: auto; padding: 18px 20px; }
+.mocap-dre-memory-content section { min-width: 0; padding: 14px; border: 1px solid #dbe7f1; border-radius: 9px; background: #f8fbfe; }
+.mocap-dre-memory-content h3 { margin: 0 0 8px; color: #17305b; font-size: 13px; }
+.mocap-dre-memory-content p { margin: 0; color: #284a77; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.mocap-dre-memory-content small { display: block; margin-top: 5px; color: #536d97; line-height: 1.45; }
+.mocap-dre-memory-content .mocap-dre-memory-value { font-size: 20px; font-weight: 700; }
+.mocap-dre-memory-dialog footer { line-height: 1.45; }
 @media (max-width: 680px) { .mocap-detail-backdrop { padding: 10px; }.mocap-detail-dialog { max-height: 90vh; }.mocap-detail-dialog > header { padding: 14px; }.mocap-detail-dialog th,.mocap-detail-dialog td { padding: 8px; } }
+@media (max-width: 680px) { .mocap-dre-memory-content { grid-template-columns: 1fr; gap: 8px; padding: 12px; }.mocap-dre-memory-content section { padding: 12px; }.mocap-dre-memory-dialog footer { padding: 10px 14px; } }

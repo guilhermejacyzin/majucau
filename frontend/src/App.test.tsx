@@ -80,6 +80,25 @@ describe('shell financeiro', () => {
     expect(screen.queryByText(/Sem dados importados e conciliados para setembro de 2026/)).not.toBeInTheDocument()
   })
 
+  it('abre a memória da linha da DRE e identifica a regra fiscal como pendente', async () => {
+    const user = userEvent.setup()
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'DRE' }))
+
+    const taxRow = screen.getByRole('row', { name: /^Tributos sobre o Lucro/ })
+    await user.click(within(taxRow).getByRole('button', { name: 'Ver regra e composição' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Memória de cálculo — Tributos sobre o Lucro' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Fórmula aplicada' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Fontes previstas' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Resultado nesta competência' })).toBeInTheDocument()
+    expect(screen.getByText(/O imposto pago no mês 11 refere-se à competência 10/)).toBeInTheDocument()
+    expect(screen.getByText('Aguardando fórmula do especialista e dados fiscais conciliados.')).toBeInTheDocument()
+    expect(screen.getByText(/Sem valores importados e conciliados; não foi tratado como zero/)).toBeInTheDocument()
+    expect(screen.getByText(/Os cálculos executados e os lançamentos de origem só aparecerão após a integração/)).toBeInTheDocument()
+  })
+
   it('exibe métrica confirmada e usa a data da última sincronização Bling', async () => {
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} dashboardSnapshotAdapter={snapshotAdapterFor()} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })

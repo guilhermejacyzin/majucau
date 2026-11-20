@@ -13,7 +13,13 @@
 
 ## Limite atual
 
-O seletor ainda não consulta um snapshot DRE nem aciona cálculo. Os cards permanecem sem valores, a tabela permanece vazia e os detalhes não mostram lançamentos de origem. Portanto, essa alteração valida somente a seleção e o contexto visual do mês; não entrega resultados financeiros, memória de cálculo nem a DRE funcional pedida.
+O seletor ainda não consulta um snapshot DRE nem aciona cálculo. Os cards e valores da tabela permanecem sem números; a tabela lista as linhas previstas, mas ainda não exibe lançamentos de origem. Portanto, essa alteração valida o mês e a regra/composição informativa; não entrega resultados financeiros nem a memória da execução da DRE.
+
+## Regra e composição por linha
+
+- A tabela agora lista as linhas do demonstrativo previsto e cada linha abre a regra/fonte que deve formar aquele resultado. A visão identifica as categorias de Receita Bruta e Deduções descritas no manual e explicita que o pagamento feito em novembro se refere à competência outubro.
+- Em Tributos sobre o Lucro, o detalhe declara que a estimativa depende de pagamentos já feitos e da regra original validada; a fórmula não é inventada enquanto aguarda o especialista.
+- Esta visualização é **a especificação da regra**, não a memória de uma execução financeira. Não carrega valores, documentos, parcelas ou resultados calculados; não substitui a memória imutável de origem/cálculo que será conectada ao banco e à execução da DRE.
 
 A regra de estimativa de tributos para a competência correta e sua memória de cálculo aguardam a fórmula e orientação do especialista que Gisele consultará. Nenhuma fórmula tributária foi criada nesta entrega.
 
@@ -37,7 +43,8 @@ A regra de estimativa de tributos para a competência correta e sua memória de 
 - `npm run test -- --run src/App.test.tsx -t "aplica o mês selecionado aos rótulos"`: passou (1 teste).
 - `npm run test -- --run src/App.test.tsx`: passou (39 testes). Dois casos existentes da T04 presumiam uma data inicial diferente do padrão e foram corrigidos para selecionar explicitamente as datas que pretendem conferir; a regra da tela não foi alterada.
 - `npm run build`: passou.
+- Incremento da regra por linha: `npm run typecheck`, `npm run test -- --run src/App.test.tsx -t "abre a memória da linha da DRE"` (1 teste) e `npm run build`: passaram. A suíte completa anterior do mesmo incremento teve 90 testes aprovados; não substitui conferência dos valores reais.
 
 ## Próxima implementação
 
-Ligar a competência selecionada ao carregamento/calculador DRE, importar as fontes disponíveis com origem e hash, persistir contribuições e memória de cálculo por linha, e mostrar seus detalhes. Bloquear CONFIRMADO quando estiverem ausentes fontes exigidas, âncora de CMV, classificação ou apuração fiscal. Revalidar T04 separadamente, preservando as regras já aprovadas.
+Ligar a competência selecionada ao carregamento/calculador DRE, importar as fontes disponíveis com origem e hash, persistir contribuições e memória de cálculo por linha, e substituir a regra estática pela memória daquela execução nos detalhes. Bloquear CONFIRMADO quando estiverem ausentes fontes exigidas, âncora de CMV, classificação ou apuração fiscal. Revalidar T04 separadamente, preservando as regras já aprovadas.

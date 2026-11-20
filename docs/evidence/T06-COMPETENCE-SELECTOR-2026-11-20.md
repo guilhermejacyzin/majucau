@@ -1,7 +1,7 @@
 # Evidência T06 — seletor de competência
 
 **Data:** 2026-11-20
-**Branch:** `codex/majucau-artifact-consolidation`
+**Branch:** `codex/dre-calculation-memory-20261120`
 **Situação:** implementação parcial; T06 não homologada.
 
 ## Alteração verificada
@@ -56,3 +56,14 @@ Ligar a competência selecionada ao carregamento/calculador DRE, importar as fon
 - A finalização da execução usa a função restrita `finish_dre_calculation`; o runtime não recebe permissão geral de atualização de execuções. O acesso às tabelas DRE está explicitado na allowlist de privilégios e no verificador.
 - Foram adicionados testes unitários para expressão, rótulos e validação do hash, além de um teste de integração PostgreSQL que cria uma fixture sintética e verifica leitura, operandos, hash e ausência de resultado quando falta tributo. `go test ./...` passou; o teste PostgreSQL foi ignorado localmente porque `MAJUCAU_TEST_DATABASE_URL` não está configurada. A verificação de checksums das migrations e limites de dependência passou.
 - Limite atual: ainda não há classificador/importador que monte fontes e contribuições DRE, a migration 000026 não foi aplicada ao banco local, o worker não chama o repositório e a T06 ainda não consulta a memória persistida. Esta entrega é apenas a base transacional da trilha aritmética, não memória de uma apuração real. Tributos continuam sem fórmula até orientação especializada.
+
+## Atualização posterior — consulta por competência e memória salva na T06
+
+- `Repository.LoadPeriod` encontra a execução concluída mais recente para o intervalo exato da competência solicitada. Não substitui mês sem execução por outro período.
+- O worker expõe a consulta por Named Pipe como `dre.calculation_memory`; a tela T06 consulta novamente quando o mês muda. Se não houver execução, mostra que aquele mês não tem cálculo salvo; erro de consulta é apresentado separadamente.
+- Quando existe uma execução persistida, a tabela usa seus valores disponíveis e o detalhe abre fórmulas aritméticas, operandos, resultado, versão da regra e hash de entrada. Entradas indisponíveis continuam sem número.
+- O detalhe ainda não mostra documentos e lançamentos de origem: o writer não grava `dre_source_rows`/`dre_line_sources` e não há pipeline classificador conectado para gerar execuções reais. Portanto, este incremento liga a leitura da memória aritmética, mas não conclui a memória integral exigida para homologar a DRE.
+- Tributos continuam sem fórmula estimada até a orientação do especialista. A T06 não deve ser aprovada como cálculo financeiro real enquanto faltarem as fontes, contribuições e a trilha documental.
+- Validação deste incremento: suíte Go direcionada para worker/IPC/memória, `npm run typecheck`, três testes direcionados de memória/competência e `npm run build` passaram. A integração com banco real segue sem validação local: não há `MAJUCAU_TEST_DATABASE_URL`.
+- Validação ampliada em 20/11/2026: `go test ./...`, `go vet ./...`, suíte frontend completa (92 testes), lint, typecheck e build passaram; `git diff --check` passou. Na conferência visual em `http://127.0.0.1:5173/`, a T06 mostrou o detalhe de memória sem inventar valores e distinguiu “consulta indisponível” de “sem execução confirmada”. O protótipo Vite não tem o worker Wails conectado, portanto não prova consulta de uma execução real.
+- A memória aritmética já pode ser consultada por competência exata quando houver execução persistida: apresenta as expressões, operandos e valores gravados. A memória integral ainda exige o pipeline que importe e classifique os lançamentos, grave as contribuições e documentos de origem e produza uma execução real. A fórmula tributária segue pendente da orientação especializada; não exibir “memória completa” até essas etapas estarem ligadas e verificadas.

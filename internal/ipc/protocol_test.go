@@ -54,6 +54,9 @@ func TestProtocolRoundTripAndValidation(t *testing.T) {
 	if _, err := DecodeRequest([]byte(`{"version":"2","request_id":"x","method":"dashboard.snapshot","payload":{}}`)); err != nil {
 		t.Fatalf("dashboard snapshot method must be accepted: %v", err)
 	}
+	if _, err := DecodeRequest([]byte(`{"version":"2","request_id":"x","method":"dre.calculation_memory","payload":{"competence":"2026-09"}}`)); err != nil {
+		t.Fatalf("DRE calculation memory method must be accepted: %v", err)
+	}
 	if _, err := DecodeRequest([]byte(`{"version":"2","request_id":"x","method":"bling.oauth.disconnect","payload":{}}`)); err != nil {
 		t.Fatalf("bling OAuth disconnect method must be accepted: %v", err)
 	}

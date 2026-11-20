@@ -213,7 +213,7 @@ func (s *NamedPipeServer) handleConnection(ctx context.Context, pipe *serverPipe
 		_, _ = f.Read(trailing[:])
 		cancel()
 	}()
-	if request.Method == MethodDashboardSnapshot {
+	if request.Method == MethodDashboardSnapshot || request.Method == MethodDRECalculationMemory {
 		if streamHandler, ok := handler.(StreamingHandler); ok {
 			stream := newResponseStreamWriter(f, request.RequestID)
 			response, streamErr := streamHandler.HandleStream(requestCtx, request, stream)

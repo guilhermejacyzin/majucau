@@ -62,7 +62,19 @@ describe('shell financeiro', () => {
     expect(screen.getByRole('table')).not.toHaveTextContent('CAPEX')
   })
 
-  it('aplica o mês selecionado aos rótulos e ao estado vazio da T06 sem reutilizar outra competência', async () => {
+  it('preserva os dois alertas da T04 e remove somente os dois alertas retirados', async () => {
+    const user = userEvent.setup()
+    render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
+    await screen.findByRole('heading', { name: 'Visão Executiva' })
+    await user.click(screen.getByRole('button', { name: 'Contas a Pagar' }))
+
+    expect(screen.getByText('Contas a pagar vencendo hoje')).toBeInTheDocument()
+    expect(screen.getByText('Obrigações em atraso')).toBeInTheDocument()
+    expect(screen.queryByText('Títulos com divergência de valor')).not.toBeInTheDocument()
+    expect(screen.queryByText('Pagamentos parciais não permitidos')).not.toBeInTheDocument()
+  })
+
+  it('consulta o mês selecionado na T06 sem reutilizar outra competência', async () => {
     const user = userEvent.setup()
     render(<App bootstrapAdapter={adapterFor(connectedBootstrap)} />)
     await screen.findByRole('heading', { name: 'Visão Executiva' })
@@ -70,14 +82,14 @@ describe('shell financeiro', () => {
 
     const month = screen.getByLabelText('Mês da DRE')
     expect(month).toHaveValue('2026-09')
-    expect(screen.getByText(/Sem dados importados e conciliados para setembro de 2026/)).toBeInTheDocument()
+    expect(await screen.findByText(/Não foi possível consultar a memória de setembro de 2026/)).toBeInTheDocument()
 
     fireEvent.change(month, { target: { value: '2026-10' } })
 
     expect(month).toHaveValue('2026-10')
-    expect(screen.getByText(/Sem dados importados e conciliados para outubro de 2026/)).toBeInTheDocument()
+    expect(await screen.findByText(/Não foi possível consultar a memória de outubro de 2026/)).toBeInTheDocument()
     expect(screen.getAllByText('Competência: outubro de 2026').length).toBeGreaterThan(0)
-    expect(screen.queryByText(/Sem dados importados e conciliados para setembro de 2026/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Não foi possível consultar a memória de setembro de 2026/)).not.toBeInTheDocument()
   })
 
   it('abre a memória da linha da DRE e identifica a regra fiscal como pendente', async () => {
@@ -90,13 +102,12 @@ describe('shell financeiro', () => {
     await user.click(within(taxRow).getByRole('button', { name: 'Ver regra e composição' }))
 
     expect(await screen.findByRole('dialog', { name: 'Memória de cálculo — Tributos sobre o Lucro' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Fórmula aplicada' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Fontes previstas' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Resultado nesta competência' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Regra informativa' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Fontes e situação' })).toBeInTheDocument()
     expect(screen.getByText(/O imposto pago no mês 11 refere-se à competência 10/)).toBeInTheDocument()
-    expect(screen.getByText('Aguardando fórmula do especialista e dados fiscais conciliados.')).toBeInTheDocument()
-    expect(screen.getByText(/Sem valores importados e conciliados; não foi tratado como zero/)).toBeInTheDocument()
-    expect(screen.getByText(/Os cálculos executados e os lançamentos de origem só aparecerão após a integração/)).toBeInTheDocument()
+    expect(screen.getByText(/Aguardando fórmula do especialista e dados fiscais conciliados/)).toBeInTheDocument()
+    expect(screen.getByText(/Este texto descreve a regra prevista; não representa valores calculados/)).toBeInTheDocument()
+    expect(screen.getByText(/A consulta não foi concluída; não é possível afirmar se existe cálculo salvo/)).toBeInTheDocument()
   })
 
   it('exibe métrica confirmada e usa a data da última sincronização Bling', async () => {

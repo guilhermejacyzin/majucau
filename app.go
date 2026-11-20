@@ -10,6 +10,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/domain"
+	"majucau.local/financial-intelligence/internal/drememory"
 	"majucau.local/financial-intelligence/internal/ipc"
 )
 
@@ -72,6 +73,12 @@ type WailsDashboardSnapshot struct {
 	PayableRows              []application.DashboardPayableRow         `json:"payable_rows,omitempty"`
 	ErrorCode                string                                    `json:"error_code,omitempty"`
 	Message                  string                                    `json:"message,omitempty"`
+}
+
+type WailsDRECalculationMemory struct {
+	Snapshot  *drememory.Snapshot `json:"snapshot,omitempty"`
+	ErrorCode string              `json:"error_code,omitempty"`
+	Message   string              `json:"message,omitempty"`
 }
 
 type BootstrapState struct {
@@ -318,6 +325,63 @@ func (a *App) GetDashboardSnapshot() WailsDashboardSnapshot {
 		result.snapshot.Message = diagnosticMessage(result.snapshot.ErrorCode, result.snapshot.Message, response.RequestID)
 	}
 	return wailsDashboardSnapshot(result.snapshot)
+}
+
+// GetDRECalculationMemory asks the worker for the immutable calculation trace
+// of the selected monthly competence. It never substitutes a different month.
+func (a *App) GetDRECalculationMemory(competence string) WailsDRECalculationMemory {
+	fallback := WailsDRECalculationMemory{ErrorCode: "DRE_MEMORY_UNAVAILABLE", Message: "A memória desta competência ainda não está disponível."}
+	client, err := a.clientFactory()
+	if err != nil {
+		return fallback
+	}
+	defer client.Close()
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, 15*time.Second)
+	defer cancel()
+	payload, err := json.Marshal(struct {
+		Competence string `json:"competence"`
+	}{Competence: competence})
+	if err != nil {
+		return fallback
+	}
+	streamClient, ok := client.(ipc.StreamClient)
+	if !ok {
+		fallback.ErrorCode = "WORKER_STREAM_UNAVAILABLE"
+		fallback.Message = "O serviço local não oferece a consulta da memória da DRE."
+		return fallback
+	}
+	reader, writer := io.Pipe()
+	type decodeResult struct {
+		snapshot drememory.Snapshot
+		err      error
+	}
+	decoded := make(chan decodeResult, 1)
+	go func() {
+		var snapshot drememory.Snapshot
+		err := json.NewDecoder(io.LimitReader(reader, maxDashboardSnapshotBytes)).Decode(&snapshot)
+		_ = reader.Close()
+		decoded <- decodeResult{snapshot: snapshot, err: err}
+	}()
+	response, err := streamClient.CallStream(ctx, ipc.Request{Version: ipc.ProtocolVersion, RequestID: requestID("dre-memory"), Method: ipc.MethodDRECalculationMemory, Payload: payload}, writer)
+	if err != nil {
+		_ = writer.CloseWithError(err)
+	} else {
+		_ = writer.Close()
+	}
+	result := <-decoded
+	if !response.OK {
+		fallback.ErrorCode = workerErrorCode(response)
+		fallback.Message = workerErrorMessage(response)
+		return fallback
+	}
+	if err != nil || result.err != nil {
+		return fallback
+	}
+	return WailsDRECalculationMemory{Snapshot: &result.snapshot}
 }
 
 func decodeDashboardSnapshot(reader io.Reader, maxBytes int64) (application.DashboardSnapshot, bool, error) {

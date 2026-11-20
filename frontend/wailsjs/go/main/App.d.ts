@@ -13,6 +13,8 @@ export function GetBootstrapState():Promise<main.BootstrapState>;
 
 export function GetDashboardSnapshot():Promise<main.WailsDashboardSnapshot>;
 
+export function GetDRECalculationMemory(arg1:string):Promise<unknown>;
+
 export function ImportBlingReceipts(arg1:string):Promise<application.BlingReceiptImportResult>;
 
 export function ImportNuvemPagoFuture(arg1:string):Promise<application.NuvemPagoFutureImportResult>;

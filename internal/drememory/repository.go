@@ -100,41 +100,73 @@ func (r *Repository) Execute(ctx context.Context, ruleVersionID uuid.UUID, input
 }
 
 type Snapshot struct {
-	ID          uuid.UUID
-	RunID       uuid.UUID
-	PeriodStart time.Time
-	PeriodEnd   time.Time
-	Status      string
-	RuleCode    string
-	RuleVersion int
-	InputHash   string
-	Lines       []Line
+	ID          uuid.UUID `json:"id"`
+	RunID       uuid.UUID `json:"run_id"`
+	PeriodStart time.Time `json:"period_start"`
+	PeriodEnd   time.Time `json:"period_end"`
+	Status      string    `json:"status"`
+	RuleCode    string    `json:"rule_code"`
+	RuleVersion int       `json:"rule_version"`
+	InputHash   string    `json:"input_hash"`
+	Lines       []Line    `json:"lines"`
 }
 
 type Line struct {
-	ID                uuid.UUID
-	Code              string
-	Label             string
-	Amount            *domain.Money
-	Available         bool
-	UnavailableReason string
-	Steps             []Step
+	ID                uuid.UUID     `json:"id"`
+	Code              string        `json:"code"`
+	Label             string        `json:"label"`
+	Amount            *domain.Money `json:"amount,omitempty"`
+	Available         bool          `json:"available"`
+	UnavailableReason string        `json:"unavailable_reason,omitempty"`
+	Steps             []Step        `json:"steps"`
 }
 
 type Step struct {
-	Operation         string
-	Formula           string
-	Output            *domain.Money
-	Available         bool
-	UnavailableReason string
-	Operands          []Operand
+	Operation         string        `json:"operation"`
+	Formula           string        `json:"formula"`
+	Output            *domain.Money `json:"output,omitempty"`
+	Available         bool          `json:"available"`
+	UnavailableReason string        `json:"unavailable_reason,omitempty"`
+	Operands          []Operand     `json:"operands"`
 }
 
 type Operand struct {
-	Code              string
-	Amount            *domain.Money
-	Available         bool
-	UnavailableReason string
+	Code              string        `json:"code"`
+	Amount            *domain.Money `json:"amount,omitempty"`
+	Available         bool          `json:"available"`
+	UnavailableReason string        `json:"unavailable_reason,omitempty"`
+}
+
+// LoadPeriod returns the most recently completed DRE memory for an exact
+// competence range. The caller supplies month boundaries; no other period is
+// substituted when the requested one has no saved execution.
+func (r *Repository) LoadPeriod(ctx context.Context, periodStart, periodEnd time.Time) (Snapshot, error) {
+	if r == nil || r.pool == nil {
+		return Snapshot{}, ErrUnavailable
+	}
+	start, end := dateOnly(periodStart), dateOnly(periodEnd)
+	if periodStart.IsZero() || periodEnd.IsZero() || start.After(end) {
+		return Snapshot{}, ErrInvalidExecution
+	}
+	var snapshotID uuid.UUID
+	err := r.pool.QueryRow(ctx, `
+		SELECT snapshot.id
+		  FROM statement_snapshots snapshot
+		  JOIN calculation_runs run ON run.id = snapshot.calculation_run_id
+		 WHERE snapshot.statement_type = 'DRE'
+	   AND snapshot.period_start = $1
+	   AND snapshot.period_end = $2
+	   AND run.calculation_type = 'DRE'
+	   AND run.status IN ('SUCCESS', 'PARTIAL')
+	 ORDER BY run.finished_at DESC, snapshot.calculated_at DESC, snapshot.id DESC
+	 LIMIT 1`, start, end).Scan(&snapshotID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Snapshot{}, ErrMemoryNotFound
+	}
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("find DRE memory for period: %w", err)
+	}
+	return r.Load(ctx, snapshotID)
 }
 
 // Load returns the persisted arithmetic memory in display order. It reads in
@@ -405,6 +437,11 @@ func isHex(value string) bool {
 		}
 	}
 	return true
+}
+
+func dateOnly(value time.Time) time.Time {
+	year, month, day := value.Date()
+	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
 }
 
 func lineLabel(code financial.DRELineCode) string {

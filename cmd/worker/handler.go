@@ -13,6 +13,7 @@ import (
 	"majucau.local/financial-intelligence/internal/application"
 	"majucau.local/financial-intelligence/internal/dashboard"
 	"majucau.local/financial-intelligence/internal/domain"
+	"majucau.local/financial-intelligence/internal/drememory"
 	"majucau.local/financial-intelligence/internal/integrations/bling"
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/nuvempago"
@@ -90,6 +91,9 @@ type workerHandler struct {
 	driveSetupError   string
 	statusReader      application.IntegrationStatusReader
 	dashboardReader   application.DashboardSnapshotStreamer
+	dreMemoryReader   interface {
+		LoadPeriod(context.Context, time.Time, time.Time) (drememory.Snapshot, error)
+	}
 }
 
 func newWorkerHandler() workerHandler {
@@ -116,11 +120,15 @@ func newWorkerHandlerWithContext(ctx context.Context) workerHandler {
 	driveSetupError := "DATABASE_NOT_CONFIGURED"
 	var statusReader application.IntegrationStatusReader
 	var dashboardReader application.DashboardSnapshotStreamer
+	var dreMemoryReader interface {
+		LoadPeriod(context.Context, time.Time, time.Time) (drememory.Snapshot, error)
+	}
 	if pool != nil {
 		importer = bling.NewReceiptImportService(pool)
 		future = nuvempago.NewFutureImportService(pool)
 		statusReader = newIntegrationStatusReader(pool)
 		dashboardReader = dashboard.NewReader(pool)
+		dreMemoryReader = drememory.NewRepository(pool)
 		store := newWorkerSecretStore(ctx)
 		dailyDriveSync, driveSetupError = newDailyGoogleDriveSyncer(context.Background(), pool, store)
 		if store != nil {
@@ -136,7 +144,7 @@ func newWorkerHandlerWithContext(ctx context.Context) workerHandler {
 			onDemandSync = oauthService.(blingOnDemandSyncer)
 		}
 	}
-	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, blingConfigReader: configReader, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, onDemandBlingSync: onDemandSync, dailyDriveSync: dailyDriveSync, driveCredential: driveCredential, driveSetupError: driveSetupError, statusReader: statusReader, dashboardReader: dashboardReader}
+	return workerHandler{health: newWorkerHealthChecker(pool, databaseErrorCode), databaseErrorCode: databaseErrorCode, resources: resources, receiptImporter: importer, futureImporter: future, blingConfig: configSaver, blingConfigReader: configReader, nuvemshopConfig: nuvemshopSaver, blingOAuth: oauthService, blingSync: rawSync, dailyBlingSync: dailySync, onDemandBlingSync: onDemandSync, dailyDriveSync: dailyDriveSync, driveCredential: driveCredential, driveSetupError: driveSetupError, statusReader: statusReader, dashboardReader: dashboardReader, dreMemoryReader: dreMemoryReader}
 }
 func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Response, error) {
 	switch req.Method {
@@ -174,13 +182,21 @@ func (h workerHandler) Handle(ctx context.Context, req ipc.Request) (ipc.Respons
 		return h.saveGoogleDriveCredential(ctx, req)
 	case ipc.MethodDashboardSnapshot:
 		return ipc.Response{}, errors.New("dashboard snapshot requires the streaming IPC transport")
+	case ipc.MethodDRECalculationMemory:
+		return ipc.Response{}, errors.New("DRE calculation memory requires the streaming IPC transport")
 	default:
 		return ipc.Response{}, ipc.ErrUnsupportedMethod
 	}
 }
 
 func (h workerHandler) HandleStream(ctx context.Context, req ipc.Request, dst io.Writer) (ipc.Response, error) {
-	if req.Method != ipc.MethodDashboardSnapshot || dst == nil {
+	if dst == nil {
+		return ipc.NewErrorResponse(req.RequestID, "STREAM_REQUEST_INVALID", "A consulta não recebeu um destino válido."), nil
+	}
+	if req.Method == ipc.MethodDRECalculationMemory {
+		return h.streamDRECalculationMemory(ctx, req, dst)
+	}
+	if req.Method != ipc.MethodDashboardSnapshot {
 		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_REQUEST_INVALID", "A consulta do painel não recebeu dados válidos."), nil
 	}
 	if len(req.Payload) != 0 && string(req.Payload) != "null" && string(req.Payload) != "{}" {
@@ -191,6 +207,35 @@ func (h workerHandler) HandleStream(ctx context.Context, req ipc.Request, dst io
 	}
 	if err := h.dashboardReader.WriteDashboardSnapshot(ctx, dst); err != nil {
 		return ipc.NewErrorResponse(req.RequestID, "DASHBOARD_UNAVAILABLE", "Os dados normalizados do painel ainda não estão disponíveis."), nil
+	}
+	return ipc.Response{Version: ipc.ProtocolVersion, RequestID: req.RequestID, OK: true}, nil
+}
+
+func (h workerHandler) streamDRECalculationMemory(ctx context.Context, req ipc.Request, dst io.Writer) (ipc.Response, error) {
+	var payload struct {
+		Competence string `json:"competence"`
+	}
+	if err := json.Unmarshal(req.Payload, &payload); err != nil || len(payload.Competence) != 7 || payload.Competence[4] != '-' {
+		return ipc.NewErrorResponse(req.RequestID, "DRE_MEMORY_REQUEST_INVALID", "Informe a competência da DRE no formato AAAA-MM."), nil
+	}
+	monthStart, err := time.Parse("2006-01", payload.Competence)
+	if err != nil || monthStart.Format("2006-01") != payload.Competence {
+		return ipc.NewErrorResponse(req.RequestID, "DRE_MEMORY_REQUEST_INVALID", "Informe a competência da DRE no formato AAAA-MM."), nil
+	}
+	if h.dreMemoryReader == nil {
+		return ipc.NewErrorResponse(req.RequestID, "DRE_MEMORY_DATABASE_NOT_CONFIGURED", "O banco local ainda não está configurado para consultar a memória da DRE."), nil
+	}
+	periodStart := time.Date(monthStart.Year(), monthStart.Month(), 1, 0, 0, 0, 0, time.UTC)
+	periodEnd := periodStart.AddDate(0, 1, -1)
+	snapshot, err := h.dreMemoryReader.LoadPeriod(ctx, periodStart, periodEnd)
+	if err != nil {
+		if errors.Is(err, drememory.ErrMemoryNotFound) {
+			return ipc.NewErrorResponse(req.RequestID, "DRE_MEMORY_NOT_FOUND", "Ainda não existe uma execução salva para esta competência."), nil
+		}
+		return ipc.NewErrorResponse(req.RequestID, "DRE_MEMORY_UNAVAILABLE", "Não foi possível consultar a memória salva desta competência."), nil
+	}
+	if err := json.NewEncoder(dst).Encode(snapshot); err != nil {
+		return ipc.Response{}, err
 	}
 	return ipc.Response{Version: ipc.ProtocolVersion, RequestID: req.RequestID, OK: true}, nil
 }

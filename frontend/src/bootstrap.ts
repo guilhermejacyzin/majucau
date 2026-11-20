@@ -61,6 +61,14 @@ export type DashboardSnapshot = {
 export type DashboardSnapshotSource = () => Promise<unknown>
 export type DashboardSnapshotAdapter = { getSnapshot: () => Promise<DashboardSnapshot> }
 
+export type DREMemoryOperand = { code: string; amount?: string; available: boolean; unavailable_reason?: string }
+export type DREMemoryStep = { operation: string; formula: string; output?: string; available: boolean; unavailable_reason?: string; operands: DREMemoryOperand[] }
+export type DREMemoryLine = { id: string; code: string; label: string; amount?: string; available: boolean; unavailable_reason?: string; steps: DREMemoryStep[] }
+export type DRECalculationMemory = { id: string; run_id: string; period_start: string; period_end: string; status: string; rule_code: string; rule_version: number; input_hash: string; lines: DREMemoryLine[] }
+export type DREMemoryResult = { snapshot?: DRECalculationMemory; error_code?: string; message?: string }
+export type DREMemorySource = (competence: string) => Promise<unknown>
+export type DREMemoryAdapter = { getMemory: (competence: string) => Promise<DREMemoryResult> }
+
 export type BlingReceiptImportPreview = {
   files: Array<{ name: string; sha256: string; receipt_count: number; error_count: number }>
   file_count?: number
@@ -179,6 +187,43 @@ async function readWailsDashboardSnapshot(): Promise<unknown> {
   const method = window.go?.main?.App?.GetDashboardSnapshot
   if (typeof method !== 'function') return unavailableDashboardSnapshot()
   return method()
+}
+
+async function readWailsDRECalculationMemory(competence: string): Promise<unknown> {
+  const method = window.go?.main?.App?.GetDRECalculationMemory
+  if (typeof method !== 'function') return { error_code: 'WORKER_UNAVAILABLE', message: 'A consulta da memória da DRE ainda não está disponível.' }
+  return method(competence)
+}
+
+function isDREMemoryLine(value: unknown): value is DREMemoryLine {
+  if (!value || typeof value !== 'object') return false
+  const line = value as Partial<DREMemoryLine>
+  return typeof line.id === 'string' && typeof line.code === 'string' && typeof line.label === 'string' && typeof line.available === 'boolean' && Array.isArray(line.steps) && line.steps.every((step) => Boolean(step) && typeof step.formula === 'string' && typeof step.operation === 'string' && typeof step.available === 'boolean' && Array.isArray(step.operands) && step.operands.every((operand) => Boolean(operand) && typeof operand.code === 'string' && typeof operand.available === 'boolean')) && (line.amount === undefined || typeof line.amount === 'string')
+}
+
+function isDREMemorySnapshot(value: unknown): value is DRECalculationMemory {
+  if (!value || typeof value !== 'object') return false
+  const snapshot = value as Partial<DRECalculationMemory>
+  return typeof snapshot.id === 'string' && typeof snapshot.run_id === 'string' && typeof snapshot.period_start === 'string' && /^\d{4}-\d{2}-\d{2}/.test(snapshot.period_start) && typeof snapshot.period_end === 'string' && /^\d{4}-\d{2}-\d{2}/.test(snapshot.period_end) && typeof snapshot.status === 'string' && typeof snapshot.rule_code === 'string' && typeof snapshot.rule_version === 'number' && typeof snapshot.input_hash === 'string' && /^[0-9a-f]{64}$/.test(snapshot.input_hash) && Array.isArray(snapshot.lines) && snapshot.lines.every(isDREMemoryLine)
+}
+
+export function createDREMemoryAdapter(source: DREMemorySource = readWailsDRECalculationMemory): DREMemoryAdapter {
+  return {
+    getMemory: async (competence) => {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(competence)) return { error_code: 'DRE_MEMORY_REQUEST_INVALID', message: 'Selecione uma competência válida.' }
+      try {
+        const result = await source(competence)
+        if (result && typeof result === 'object') {
+          const candidate = result as Partial<DREMemoryResult>
+          if (candidate.snapshot === undefined && typeof candidate.error_code === 'string') return { error_code: candidate.error_code, message: typeof candidate.message === 'string' ? candidate.message : undefined }
+          if (isDREMemorySnapshot(candidate.snapshot)) return { snapshot: candidate.snapshot }
+        }
+        return { error_code: 'WORKER_INVALID_RESPONSE', message: 'O serviço local respondeu em formato inválido.' }
+      } catch {
+        return { error_code: 'WORKER_UNAVAILABLE', message: 'A memória da DRE não pôde ser consultada agora.' }
+      }
+    },
+  }
 }
 
 function isDashboardMetric(value: unknown): value is DashboardMetric {
@@ -551,7 +596,7 @@ export function createBootstrapAdapter(source: BootstrapSource = readWailsBootst
 
 declare global {
     interface Window {
-    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; GetDashboardSnapshot?: () => Promise<unknown>; GetBlingConfig?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; DisconnectBlingOAuth?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown>; PreviewNuvemPagoFuture?: (folder: string) => Promise<unknown>; ImportNuvemPagoFuture?: (folder: string) => Promise<unknown> } } }
+    go?: { main?: { App?: { GetBootstrapState?: () => Promise<unknown>; GetDashboardSnapshot?: () => Promise<unknown>; GetDRECalculationMemory?: (competence: string) => Promise<unknown>; GetBlingConfig?: () => Promise<unknown>; SaveBlingConfig?: (input: BlingConfigInput) => Promise<unknown>; SaveNuvemshopConfig?: (input: NuvemshopConfigInput) => Promise<unknown>; StartBlingOAuth?: () => Promise<unknown>; GetBlingOAuthStatus?: (sessionId: string) => Promise<unknown>; TestBlingConnection?: () => Promise<unknown>; DisconnectBlingOAuth?: () => Promise<unknown>; SyncBling?: (input: BlingSyncInput) => Promise<unknown>; PreviewBlingReceipts?: (folder: string) => Promise<unknown>; ImportBlingReceipts?: (folder: string) => Promise<unknown>; PreviewNuvemPagoFuture?: (folder: string) => Promise<unknown>; ImportNuvemPagoFuture?: (folder: string) => Promise<unknown> } } }
 }
 }
 

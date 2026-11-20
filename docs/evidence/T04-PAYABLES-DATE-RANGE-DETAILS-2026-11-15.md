@@ -26,6 +26,7 @@ Na tela aberta em 15/11, os cards mostravam traços porque a configuração visu
 - Os detalhes usam exatamente as linhas e somas do período selecionado; o detalhe de atraso usa vencimentos anteriores ao início.
 - A consulta detalhada do snapshot agora seleciona apenas `BLING / bling.conta_pagar`, associada à última carga normalizada, e exclui cancelados/estornados.
 - Removidos da tela principal a tabela permanente de obrigações e a distribuição genérica por status; fornecedores ficam em “Ver detalhes”.
+- Restaurados os dois alertas que devem permanecer na T04: “Contas a pagar vencendo hoje” e “Obrigações em atraso”. A remoção se limitava aos dois alertas de “Títulos com divergência de valor” e “Pagamentos parciais não permitidos”.
 
 ## Limites e validação
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { createBlingConfigAdapter, createBlingImportAdapter, createBlingPreviewAdapter, createBootstrapAdapter, createDashboardSnapshotAdapter, unavailableBootstrap } from './bootstrap'
+import { describe, expect, it, vi } from 'vitest'
+import { createBlingConfigAdapter, createBlingImportAdapter, createBlingPreviewAdapter, createBootstrapAdapter, createDashboardSnapshotAdapter, createDREMemoryAdapter, unavailableBootstrap } from './bootstrap'
 
 describe('bootstrap adapter', () => {
   it('consome contrato tipado sem acoplar ao runtime Wails', async () => {
@@ -54,6 +54,18 @@ describe('bootstrap adapter', () => {
     const snapshot = { as_of: '2026-09-21T12:00:00Z', data_state: 'PARTIAL' as const, receivables: metric, future_b2c: { ...metric, state: 'PROJECTED' as const, source_system: 'NUVEM_PAGO' }, receipts_month: metric, receivables_overdue: metric, payables: { state: 'UNAVAILABLE' as const, source_system: 'BLING' }, payables_due_today: { state: 'UNAVAILABLE' as const, source_system: 'BLING' }, payables_overdue: { state: 'UNAVAILABLE' as const, source_system: 'BLING' }, payables_due_next_7_days: { state: 'UNAVAILABLE' as const, source_system: 'BLING' }, payments_month: { state: 'UNAVAILABLE' as const, source_system: 'BLING' } }
     await expect(createDashboardSnapshotAdapter(async () => snapshot).getSnapshot()).resolves.toMatchObject({ data_state: 'PARTIAL', receivables: { value: '100.0000' } })
     await expect(createDashboardSnapshotAdapter(async () => ({ data_state: 'PARTIAL' })).getSnapshot()).resolves.toMatchObject({ error_code: 'WORKER_INVALID_RESPONSE', data_state: 'UNAVAILABLE' })
+  })
+
+  it('consulta memória DRE pela competência e preserva etapas aritméticas e ausência explícita', async () => {
+    const competence = '2026-09'
+    const snapshot = { id: 'snapshot-1', run_id: 'run-1', period_start: '2026-09-01T00:00:00Z', period_end: '2026-09-30T00:00:00Z', status: 'PARTIALLY_CONFIRMED', rule_code: 'DRE_REFERENCE', rule_version: 1, input_hash: 'a'.repeat(64), lines: [{ id: 'line-1', code: 'NET_INCOME', label: 'Lucro líquido', available: false, unavailable_reason: 'Tributos sem base validada', steps: [{ operation: 'SUM', formula: 'RESULT_BEFORE_INCOME_TAX + INCOME_TAXES', available: false, unavailable_reason: 'Tributos sem base validada', operands: [{ code: 'RESULT_BEFORE_INCOME_TAX', amount: '10.0000', available: true }, { code: 'INCOME_TAXES', available: false, unavailable_reason: 'Aguardando especialista' }] }] }] }
+    const source = vi.fn(async (selected: string) => ({ snapshot: selected === competence ? snapshot : undefined, error_code: selected === competence ? undefined : 'DRE_MEMORY_NOT_FOUND' }))
+    const adapter = createDREMemoryAdapter(source)
+    await expect(adapter.getMemory(competence)).resolves.toMatchObject({ snapshot: { period_start: '2026-09-01T00:00:00Z', lines: [{ available: false, steps: [{ operands: [{ amount: '10.0000' }, { available: false }] }] }] } })
+    await expect(adapter.getMemory('2026-10')).resolves.toMatchObject({ error_code: 'DRE_MEMORY_NOT_FOUND' })
+    expect(source).toHaveBeenCalledTimes(2)
+    await expect(adapter.getMemory('2026-13')).resolves.toMatchObject({ error_code: 'DRE_MEMORY_REQUEST_INVALID' })
+    expect(source).toHaveBeenCalledTimes(2)
   })
 })
 

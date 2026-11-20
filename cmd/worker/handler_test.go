@@ -1,15 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"majucau.local/financial-intelligence/internal/application"
+	"majucau.local/financial-intelligence/internal/drememory"
 	"majucau.local/financial-intelligence/internal/integrations/bling"
 	"majucau.local/financial-intelligence/internal/integrations/googledrive"
 	"majucau.local/financial-intelligence/internal/integrations/nuvemshop"
@@ -43,6 +47,54 @@ type fakeGoogleDriveCredentialSaver struct {
 	called          bool
 	actorWindowsSID string
 	correlationID   string
+}
+
+type fakeDREMemoryReader struct {
+	start, end time.Time
+	snapshot   drememory.Snapshot
+	err        error
+}
+
+func (f *fakeDREMemoryReader) LoadPeriod(_ context.Context, start, end time.Time) (drememory.Snapshot, error) {
+	f.start, f.end = start, end
+	return f.snapshot, f.err
+}
+
+func TestWorkerStreamsDREMemoryOnlyForRequestedCompetence(t *testing.T) {
+	reader := &fakeDREMemoryReader{snapshot: drememory.Snapshot{Status: "PARTIALLY_CONFIRMED", RuleCode: "DRE_REFERENCE", RuleVersion: 1}}
+	handler := workerHandler{dreMemoryReader: reader}
+	var output bytes.Buffer
+	request := ipc.Request{Version: ipc.ProtocolVersion, RequestID: "dre-memory", Method: ipc.MethodDRECalculationMemory, Payload: json.RawMessage(`{"competence":"2026-09"}`)}
+	response, err := handler.HandleStream(context.Background(), request, &output)
+	if err != nil || !response.OK {
+		t.Fatalf("HandleStream() response=%+v err=%v", response, err)
+	}
+	if reader.start.Format("2006-01-02") != "2026-09-01" || reader.end.Format("2006-01-02") != "2026-09-30" {
+		t.Fatalf("requested period = %s to %s, want September 2026", reader.start, reader.end)
+	}
+	var got drememory.Snapshot
+	if err := json.Unmarshal(output.Bytes(), &got); err != nil {
+		t.Fatalf("decode DRE memory response: %v", err)
+	}
+	if got.Status != "PARTIALLY_CONFIRMED" || got.RuleCode != "DRE_REFERENCE" {
+		t.Fatalf("DRE memory response lost execution metadata: %+v", got)
+	}
+}
+
+func TestWorkerRejectsInvalidDRECompetenceAndReportsMissingExecution(t *testing.T) {
+	handler := workerHandler{dreMemoryReader: &fakeDREMemoryReader{err: drememory.ErrMemoryNotFound}}
+	for _, test := range []struct {
+		payload string
+		want    string
+	}{
+		{payload: `{"competence":"2026-13"}`, want: "DRE_MEMORY_REQUEST_INVALID"},
+		{payload: `{"competence":"2026-09"}`, want: "DRE_MEMORY_NOT_FOUND"},
+	} {
+		response, err := handler.HandleStream(context.Background(), ipc.Request{Version: ipc.ProtocolVersion, RequestID: "dre-memory", Method: ipc.MethodDRECalculationMemory, Payload: json.RawMessage(test.payload)}, io.Discard)
+		if err != nil || response.OK || response.Error == nil || response.Error.Code != test.want {
+			t.Fatalf("payload=%s response=%+v err=%v, want %s", test.payload, response, err, test.want)
+		}
+	}
 }
 
 func (f *fakeGoogleDriveCredentialSaver) Save(_ context.Context, key []byte, _ googledrive.DriveFolderIDs, actorWindowsSID, correlationID string) error {

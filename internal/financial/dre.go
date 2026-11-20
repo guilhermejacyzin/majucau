@@ -39,6 +39,12 @@ const (
 	DRENetIncomeCode          DRELineCode = "NET_INCOME"
 )
 
+const (
+	DREBITCode                      DRELineCode = "EBIT"
+	DREBITDACode                    DRELineCode = "EBITDA"
+	DREDepreciationAmortizationCode DRELineCode = "DEPRECIATION_AND_AMORTIZATION"
+)
+
 type DREInput struct {
 	PeriodStart time.Time
 	PeriodEnd   time.Time
@@ -62,13 +68,25 @@ type DRELine struct {
 	Available bool
 }
 
+// DRECalculationStep records arithmetic for one derived line. Source
+// documents and classification evidence must be attached by the application
+// layer; this calculator does not invent that lineage.
+type DRECalculationStep struct {
+	LineCode      DRELineCode
+	Operation     string
+	OperandCodes  []DRELineCode
+	OperandValues []DREAmount
+	Result        DREAmount
+}
+
 type DREResult struct {
-	PeriodStart time.Time
-	PeriodEnd   time.Time
-	RuleVersion string
-	Status      domain.DataStatus
-	Lines       []DRELine
-	Indicators  DREIndicators
+	PeriodStart       time.Time
+	PeriodEnd         time.Time
+	RuleVersion       string
+	Status            domain.DataStatus
+	Lines             []DRELine
+	CalculationMemory []DRECalculationStep
+	Indicators        DREIndicators
 }
 
 // CalculateDRE applies only the arithmetic of the approved DRE structure to
@@ -141,6 +159,15 @@ func CalculateDRE(in DREInput) (DREResult, error) {
 			dreLine(DREIncomeTaxesCode, in.IncomeTaxes),
 			dreLine(DRENetIncomeCode, netIncome),
 		},
+		CalculationMemory: []DRECalculationStep{
+			dreCalculationStep(DRENetRevenueCode, "SUM", []DRELineCode{DREGrossRevenueCode, DRERevenueDeductionsCode}, []DREAmount{in.GrossRevenue, in.RevenueDeductions}, netRevenue),
+			dreCalculationStep(DREGrossProfitCode, "SUM", []DRELineCode{DRENetRevenueCode, DRECostOfGoodsSoldCode}, []DREAmount{netRevenue, in.CostOfGoodsSold}, grossProfit),
+			dreCalculationStep(DREOperatingResultCode, "SUM", []DRELineCode{DREGrossProfitCode, DRESellingExpensesCode, DREAdministrativeCode, DREOtherOperatingCode}, []DREAmount{grossProfit, in.SellingExpenses, in.Administrative, in.OtherOperating}, operatingResult),
+			dreCalculationStep(DREBeforeTaxCode, "SUM", []DRELineCode{DREOperatingResultCode, DREFinancialResultCode, DREOtherIncomeExpenseCode}, []DREAmount{operatingResult, in.FinancialResult, in.OtherIncomeExpenses}, beforeTax),
+			dreCalculationStep(DRENetIncomeCode, "SUM", []DRELineCode{DREBeforeTaxCode, DREIncomeTaxesCode}, []DREAmount{beforeTax, in.IncomeTaxes}, netIncome),
+			dreCalculationStep(DREBITCode, "IDENTITY", []DRELineCode{DREOperatingResultCode}, []DREAmount{operatingResult}, indicators.EBIT),
+			dreCalculationStep(DREBITDACode, "SUBTRACT_SIGNED_EXPENSE", []DRELineCode{DREOperatingResultCode, DREDepreciationAmortizationCode}, []DREAmount{operatingResult, in.DepreciationAndAmortization}, indicators.EBITDA),
+		},
 		Indicators: indicators,
 	}, nil
 }
@@ -176,6 +203,16 @@ func CalculateDREIndicators(operatingResult, depreciationAndAmortization DREAmou
 
 func dreLine(code DRELineCode, value DREAmount) DRELine {
 	return DRELine{Code: code, Amount: value.Amount, Available: value.Available}
+}
+
+func dreCalculationStep(lineCode DRELineCode, operation string, operandCodes []DRELineCode, operandValues []DREAmount, result DREAmount) DRECalculationStep {
+	return DRECalculationStep{
+		LineCode:      lineCode,
+		Operation:     operation,
+		OperandCodes:  append([]DRELineCode(nil), operandCodes...),
+		OperandValues: append([]DREAmount(nil), operandValues...),
+		Result:        result,
+	}
 }
 
 func sumDREAmounts(values ...DREAmount) (DREAmount, error) {

@@ -17,11 +17,21 @@ O seletor ainda não consulta um snapshot DRE nem aciona cálculo. Os cards perm
 
 A regra de estimativa de tributos para a competência correta e sua memória de cálculo aguardam a fórmula e orientação do especialista que Gisele consultará. Nenhuma fórmula tributária foi criada nesta entrega.
 
+## Incremento da memória aritmética
+
+- `CalculateDRE` passou a devolver sete passos aritméticos para receita líquida, lucro bruto, resultado operacional, resultado antes de impostos, resultado líquido, EBIT e EBITDA.
+- Cada passo registra os códigos e valores dos operandos, a operação, o resultado e a disponibilidade. Ausência de entrada continua propagando indisponibilidade; não vira zero.
+- O teste do motor confere operandos e fechamento do resultado líquido e confirma que falta de CMV mantém indisponíveis os resultados dependentes.
+- Isso é só a parte aritmética em memória do processo. Ainda faltam vínculo com documentos/linhas de origem, persistência imutável da memória, consulta por competência e apresentação de detalhes na T06. Não comprova valores reais nem libera confirmação da DRE.
+- A regra fiscal e sua memória específica (pagamentos base, competência, fórmula, etapas e arredondamentos) permanecem pendentes da orientação especializada; nenhuma regra foi presumida.
+
 ## Validação executada
 
+- `go test ./internal/financial`: passou.
 - `npm run typecheck`: passou.
 - `npm run test -- --run src/App.test.tsx -t "aplica o mês selecionado aos rótulos"`: passou (1 teste).
 - `npm run test -- --run src/App.test.tsx`: passou (39 testes). Dois casos existentes da T04 presumiam uma data inicial diferente do padrão e foram corrigidos para selecionar explicitamente as datas que pretendem conferir; a regra da tela não foi alterada.
+- `npm run build`: passou.
 
 ## Próxima implementação
 

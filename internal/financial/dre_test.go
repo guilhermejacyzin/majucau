@@ -68,6 +68,17 @@ func TestCalculateDREUsesExactSignedAmountsForApprovedLines(t *testing.T) {
 	if !result.Indicators.EBITDA.Available || result.Indicators.EBITDA.Amount.String() != "150000.0000" {
 		t.Errorf("EBITDA card = %#v, want available 150000.0000", result.Indicators.EBITDA)
 	}
+	if len(result.CalculationMemory) != 7 {
+		t.Fatalf("calculation memory has %d steps, want 7", len(result.CalculationMemory))
+	}
+	memory := result.CalculationMemory[4]
+	if memory.LineCode != DRENetIncomeCode || memory.Operation != "SUM" ||
+		len(memory.OperandCodes) != 2 || memory.OperandCodes[0] != DREBeforeTaxCode || memory.OperandCodes[1] != DREIncomeTaxesCode ||
+		!memory.OperandValues[0].Available || memory.OperandValues[0].Amount.String() != "100000.0000" ||
+		!memory.OperandValues[1].Available || memory.OperandValues[1].Amount.String() != "-25000.0000" ||
+		!memory.Result.Available || memory.Result.Amount.String() != "75000.0000" {
+		t.Errorf("net income calculation memory = %#v, want operands 100000 and -25000 producing 75000", memory)
+	}
 }
 
 func TestCalculateDREKeepsDependentTotalsUnavailable(t *testing.T) {
@@ -93,6 +104,11 @@ func TestCalculateDREKeepsDependentTotalsUnavailable(t *testing.T) {
 	for _, code := range []DRELineCode{DREGrossProfitCode, DREOperatingResultCode, DREBeforeTaxCode, DRENetIncomeCode} {
 		if line := findDRELine(t, result, code); line.Available {
 			t.Errorf("line %s should be unavailable while CMV is missing", code)
+		}
+	}
+	for _, step := range result.CalculationMemory {
+		if step.LineCode == DREGrossProfitCode && step.Result.Available {
+			t.Fatalf("gross profit memory should remain unavailable with missing CMV: %#v", step)
 		}
 	}
 	if line := findDRELine(t, result, DRENetRevenueCode); !line.Available || line.Amount.String() != "100.0000" {

@@ -19,7 +19,7 @@ O seletor ainda não consulta um snapshot DRE nem aciona cálculo. Os cards e va
 
 - A tabela agora lista as linhas do demonstrativo previsto e cada linha abre a regra/fonte que deve formar aquele resultado. A visão identifica as categorias de Receita Bruta e Deduções descritas no manual e explicita que o pagamento feito em novembro se refere à competência outubro.
 - Em Tributos sobre o Lucro, o detalhe declara que a estimativa depende de pagamentos já feitos e da regra original validada; a fórmula não é inventada enquanto aguarda o especialista.
-- Esta visualização é **a especificação da regra**, não a memória de uma execução financeira. Não carrega valores, documentos, parcelas ou resultados calculados; não substitui a memória imutável de origem/cálculo que será conectada ao banco e à execução da DRE.
+- O detalhe agora é uma **memória informativa da regra**, em blocos de fórmula, fontes, resultado da competência e situação. Em tela estreita, os blocos empilham sem cortar o conteúdo. Isso não é ainda a memória de uma execução financeira: não carrega valores, documentos, parcelas ou resultados calculados e não substitui a memória imutável de origem/cálculo que será conectada ao banco e à execução da DRE.
 
 A regra de estimativa de tributos para a competência correta e sua memória de cálculo aguardam a fórmula e orientação do especialista que Gisele consultará. Nenhuma fórmula tributária foi criada nesta entrega.
 
@@ -29,7 +29,7 @@ A regra de estimativa de tributos para a competência correta e sua memória de 
 - Cada passo registra os códigos e valores dos operandos, a operação, o resultado e a disponibilidade. Ausência de entrada continua propagando indisponibilidade; não vira zero.
 - O teste do motor confere operandos e fechamento do resultado líquido e confirma que falta de CMV mantém indisponíveis os resultados dependentes.
 - A migration `000025_dre_calculation_lineage.up.sql` permite que linha indisponível tenha `amount = NULL` e cria armazenamento para fontes RAW referenciadas, contribuições incluídas/excluídas, custos de estoque/venda, ajustes aprovados, passos e operandos. Estados indisponíveis exigem motivo e não carregam valor numérico. FKs compostas protegem a associação à mesma execução/snapshot e triggers tornam o histórico append-only. A view de capital de giro foi ajustada para manter os saldos derivados indisponíveis se faltar uma linha necessária.
-- A migration ainda não foi aplicada ao banco local. O worker não grava nem consulta essas tabelas e a T06 ainda não apresenta a memória. O banco PostgreSQL local/daemon não estava disponível para aplicação; a CI aplica todas as migrations em PostgreSQL descartável. Não comprova valores reais nem libera confirmação da DRE.
+- A migration ainda não foi aplicada ao banco local. O worker não grava nem consulta essas tabelas; a T06 ainda não apresenta a memória de uma execução real. O banco PostgreSQL local/daemon não estava disponível para aplicação; a CI aplica todas as migrations em PostgreSQL descartável. Não comprova valores reais nem libera confirmação da DRE.
 - A regra fiscal e sua memória específica (pagamentos base, competência, fórmula, etapas e arredondamentos) permanecem pendentes da orientação especializada; nenhuma regra foi presumida.
 
 ## Validação executada
@@ -44,6 +44,7 @@ A regra de estimativa de tributos para a competência correta e sua memória de 
 - `npm run test -- --run src/App.test.tsx`: passou (39 testes). Dois casos existentes da T04 presumiam uma data inicial diferente do padrão e foram corrigidos para selecionar explicitamente as datas que pretendem conferir; a regra da tela não foi alterada.
 - `npm run build`: passou.
 - Incremento da regra por linha: `npm run typecheck`, `npm run test -- --run src/App.test.tsx -t "abre a memória da linha da DRE"` (1 teste) e `npm run build`: passaram. A suíte completa anterior do mesmo incremento teve 90 testes aprovados; não substitui conferência dos valores reais.
+- Apresentação da memória informativa em blocos responsivos: typecheck, teste direcionado, build e suíte completa (90 testes) passaram; a conferência visual mostrou fórmula, fontes, estado e ausência de resultado em tela estreita.
 
 ## Próxima implementação
 

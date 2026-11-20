@@ -18,29 +18,29 @@ ALTER TABLE statement_lines
 CREATE OR REPLACE VIEW working_capital_snapshots AS
 SELECT s.id, s.calculation_run_id, s.period_start, s.period_end, s.scenario_id, s.status,
        s.calculated_at,
-       CASE
+       (CASE
          WHEN COUNT(l.id) FILTER (WHERE l.line_code = 'CURRENT_ASSETS' AND l.availability_status = 'AVAILABLE') = 0
            OR BOOL_OR(l.line_code = 'CURRENT_ASSETS' AND l.availability_status = 'UNAVAILABLE')
          THEN NULL
-         ELSE (SUM(l.amount) FILTER (WHERE l.line_code = 'CURRENT_ASSETS' AND l.availability_status = 'AVAILABLE'))::numeric(19,4)
-       END AS current_assets,
-       CASE
+         ELSE SUM(l.amount) FILTER (WHERE l.line_code = 'CURRENT_ASSETS' AND l.availability_status = 'AVAILABLE')
+       END)::numeric(19,4) AS current_assets,
+       (CASE
          WHEN COUNT(l.id) FILTER (WHERE l.line_code = 'CURRENT_LIABILITIES' AND l.availability_status = 'AVAILABLE') = 0
            OR BOOL_OR(l.line_code = 'CURRENT_LIABILITIES' AND l.availability_status = 'UNAVAILABLE')
          THEN NULL
-         ELSE (SUM(l.amount) FILTER (WHERE l.line_code = 'CURRENT_LIABILITIES' AND l.availability_status = 'AVAILABLE'))::numeric(19,4)
-       END AS current_liabilities,
-       CASE
+         ELSE SUM(l.amount) FILTER (WHERE l.line_code = 'CURRENT_LIABILITIES' AND l.availability_status = 'AVAILABLE')
+       END)::numeric(19,4) AS current_liabilities,
+       (CASE
          WHEN COUNT(l.id) FILTER (WHERE l.line_code = 'CURRENT_ASSETS' AND l.availability_status = 'AVAILABLE') = 0
            OR COUNT(l.id) FILTER (WHERE l.line_code = 'CURRENT_LIABILITIES' AND l.availability_status = 'AVAILABLE') = 0
            OR BOOL_OR(l.line_code IN ('CURRENT_ASSETS', 'CURRENT_LIABILITIES') AND l.availability_status = 'UNAVAILABLE')
          THEN NULL
-         ELSE (SUM(CASE
+         ELSE SUM(CASE
            WHEN l.line_code = 'CURRENT_ASSETS' THEN l.amount
            WHEN l.line_code = 'CURRENT_LIABILITIES' THEN -l.amount
            ELSE 0
-         END) FILTER (WHERE l.line_code IN ('CURRENT_ASSETS', 'CURRENT_LIABILITIES')))::numeric(19,4)
-       END AS working_capital
+         END) FILTER (WHERE l.line_code IN ('CURRENT_ASSETS', 'CURRENT_LIABILITIES'))
+       END)::numeric(19,4) AS working_capital
   FROM statement_snapshots s
   LEFT JOIN statement_lines l ON l.snapshot_id = s.id
  WHERE s.statement_type = 'WORKING_CAPITAL'

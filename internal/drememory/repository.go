@@ -5,6 +5,7 @@ package drememory
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -112,14 +113,16 @@ type Snapshot struct {
 }
 
 type Line struct {
-	ID                uuid.UUID     `json:"id"`
-	Code              string        `json:"code"`
-	Label             string        `json:"label"`
-	Amount            *domain.Money `json:"amount,omitempty"`
-	Available         bool          `json:"available"`
-	UnavailableReason string        `json:"unavailable_reason,omitempty"`
-	Steps             []Step        `json:"steps"`
-	Sources           []Source      `json:"sources"`
+	ID                uuid.UUID                   `json:"id"`
+	Code              string                      `json:"code"`
+	Label             string                      `json:"label"`
+	Amount            *domain.Money               `json:"amount,omitempty"`
+	Available         bool                        `json:"available"`
+	UnavailableReason string                      `json:"unavailable_reason,omitempty"`
+	Steps             []Step                      `json:"steps"`
+	Sources           []Source                    `json:"sources"`
+	TaxValueKind      financial.DRETaxValueKind   `json:"tax_value_kind,omitempty"`
+	TaxResolution     *financial.DRETaxResolution `json:"tax_resolution,omitempty"`
 }
 
 // Source is a sanitized reference to a record that contributed to or was
@@ -219,7 +222,8 @@ func (r *Repository) Load(ctx context.Context, snapshotID uuid.UUID) (Snapshot, 
 		return Snapshot{}, fmt.Errorf("read DRE snapshot: %w", err)
 	}
 	rows, err := tx.Query(ctx, `
-		SELECT id, line_code, label, amount::text, availability_status, unavailable_reason
+		SELECT id, line_code, label, amount::text, availability_status, unavailable_reason,
+		       tax_value_kind, tax_memory
 		FROM statement_lines WHERE snapshot_id = $1
 		ORDER BY display_order, line_code`, snapshotID)
 	if err != nil {
@@ -229,7 +233,9 @@ func (r *Repository) Load(ctx context.Context, snapshotID uuid.UUID) (Snapshot, 
 		var line Line
 		var amount *string
 		var availability string
-		if err := rows.Scan(&line.ID, &line.Code, &line.Label, &amount, &availability, &line.UnavailableReason); err != nil {
+		var taxKind *string
+		var taxMemory []byte
+		if err := rows.Scan(&line.ID, &line.Code, &line.Label, &amount, &availability, &line.UnavailableReason, &taxKind, &taxMemory); err != nil {
 			rows.Close()
 			return Snapshot{}, fmt.Errorf("scan DRE line: %w", err)
 		}
@@ -238,6 +244,17 @@ func (r *Repository) Load(ctx context.Context, snapshotID uuid.UUID) (Snapshot, 
 		if err != nil {
 			rows.Close()
 			return Snapshot{}, err
+		}
+		if taxKind != nil {
+			line.TaxValueKind = financial.DRETaxValueKind(*taxKind)
+		}
+		if len(taxMemory) > 0 {
+			var resolution financial.DRETaxResolution
+			if err := json.Unmarshal(taxMemory, &resolution); err != nil {
+				rows.Close()
+				return Snapshot{}, fmt.Errorf("decode DRE tax memory: %w", err)
+			}
+			line.TaxResolution = &resolution
 		}
 		result.Lines = append(result.Lines, line)
 	}
@@ -337,6 +354,16 @@ func writeLines(ctx context.Context, tx pgx.Tx, snapshotID, ruleVersionID uuid.U
 	for order, line := range lines {
 		var amount any
 		var unavailableReason any
+		var taxValueKind any
+		var taxMemory any
+		if line.Code == financial.DREIncomeTaxesCode && result.TaxResolution != nil {
+			taxValueKind = result.TaxResolution.Kind
+			encoded, err := json.Marshal(result.TaxResolution)
+			if err != nil {
+				return nil, fmt.Errorf("encode DRE tax memory: %w", err)
+			}
+			taxMemory = encoded
+		}
 		availability := "AVAILABLE"
 		if line.Available {
 			amount = line.Amount.String()
@@ -346,9 +373,9 @@ func writeLines(ctx context.Context, tx pgx.Tx, snapshotID, ruleVersionID uuid.U
 		}
 		var id uuid.UUID
 		if err := tx.QueryRow(ctx, `
-			INSERT INTO statement_lines (snapshot_id, line_code, label, amount, display_order, rule_version_id, availability_status, unavailable_reason)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			RETURNING id`, snapshotID, line.Code, lineLabel(line.Code), amount, order, ruleVersionID, availability, unavailableReason).Scan(&id); err != nil {
+			INSERT INTO statement_lines (snapshot_id, line_code, label, amount, display_order, rule_version_id, availability_status, unavailable_reason, tax_value_kind, tax_memory)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+			RETURNING id`, snapshotID, line.Code, lineLabel(line.Code), amount, order, ruleVersionID, availability, unavailableReason, taxValueKind, taxMemory).Scan(&id); err != nil {
 			return nil, fmt.Errorf("write DRE line %s: %w", line.Code, err)
 		}
 		lineIDs[line.Code] = id

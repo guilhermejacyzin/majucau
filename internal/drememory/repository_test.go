@@ -1,7 +1,13 @@
 package drememory
 
 import (
+	"context"
+	"errors"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
 
 	"majucau.local/financial-intelligence/internal/financial"
 )
@@ -26,6 +32,21 @@ func TestFormulaExpressionUsesRecordedOperationsAndOperands(t *testing.T) {
 	}
 	if _, err := formulaExpression(financial.DRECalculationStep{Operation: "UNMAPPED", OperandCodes: []financial.DRELineCode{financial.DREGrossRevenueCode}, OperandValues: []financial.DREAmount{{Available: true}}}); err == nil {
 		t.Fatal("unknown operation was accepted as a formula")
+	}
+}
+
+func TestRepositoryAllowsTaxResolutionAndReportsMissingDatabase(t *testing.T) {
+	repository := NewRepository(nil)
+	_, err := repository.Execute(context.Background(), uuid.New(), strings.Repeat("a", 64), financial.DREInput{
+		PeriodStart: time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC),
+		PeriodEnd:   time.Date(2026, 11, 30, 0, 0, 0, 0, time.UTC),
+		TaxResolution: &financial.DRETaxResolution{
+			Competence: "2026-11", Kind: financial.DRETaxValueEstimated,
+			Amount: financial.DREAmount{Available: true},
+		},
+	})
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("Execute() error = %v, want ErrUnavailable after accepting tax resolution", err)
 	}
 }
 

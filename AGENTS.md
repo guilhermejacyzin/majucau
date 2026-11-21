@@ -61,6 +61,7 @@ Estas regras valem para todo o futuro repositório. Instruções mais específic
 - Toda transformação material deve permitir: valor/card -> regra -> snapshot/linha -> contribuição tipada -> entidade -> RAW -> fonte original.
 - FKs polimórficas não são fonte de integridade; use tabelas de contribuição tipadas.
 - Snapshots, forecasts e regras aprovadas são imutáveis; correção cria nova versão.
+- DRE: cada recálculo por competência e perfil cria um snapshot imutável; cards, tabela, gráfico, detalhe e todos os clientes devem ler o mesmo `snapshot_id` publicado. Não duplicar fórmulas em telas nem armazenar o PostgreSQL ativo em pasta sincronizada do Drive. Para vários dispositivos, usar o serviço privado central aprovado em ADR-002; Drive serve para entrada e cópia de segurança versionada.
 
 ## Streaming e limites de dados
 

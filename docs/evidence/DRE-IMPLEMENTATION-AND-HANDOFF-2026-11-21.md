@@ -6,13 +6,15 @@
 
 **Objetivo:** permitir que uma pessoa ou modelo sem contexto anterior entenda a regra, o que está efetivamente implementado, o que falta e como continuar sem criar fatos financeiros.
 
+> **Revisão posterior em 21/11/2026:** o código da DRE de referência foi acessado na conta conectada do GitHub e comparado. A versão consultada é `FinanceiroMajucau/Majucau`, commit `421651ff3ef8ff17b9ce02b7fbb02ff6072a5de3`; veja [`DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md`](DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md) e a regra atualizada na seção 6.2 do manual. O resolvedor de DAS e sua integração com a linha DRE foram implementados; a memória desse valor agora é gravada e lida do mesmo snapshot após aplicar a migration `000028`. Isso **não** completa a extração/classificação das outras fontes nem liga os resultados reais à T06. Nenhum valor real da tela foi validado ou homologado.
+
 ## 1. Resumo em linguagem simples
 
 A DRE própria deve ser calculada no Intelligence por competência. O Bling fornece registros de origem e serve como referência de conferência; o relatório pronto do Bling não é o resultado final do Majucau. Setembro de 2026 é a competência-base que Gisele disse estar correta e deve ser usada para comparar a reprodução. O seletor da T06 deve permitir qualquer mês; setembro não é fixo nem padrão obrigatório.
 
 Para tributos: até o registro do valor real como pago, a tela pode mostrar uma estimativa calculada com a regra semanal estudada no motor de referência. A palavra **Estimado** tem que ficar visível. Quando a fonte passar a mostrar o pagamento real ligado à competência, o valor real substitui a estimativa daquela competência. Nunca somar estimado + pago. O mês do pagamento não é, sozinho, a competência: a regra operacional já confirmada é que pagamento em novembro normalmente se refere à competência de outubro. Todo valor precisa abrir uma memória que explique fontes, fórmulas, taxa, base, períodos e diferenças.
 
-**Estado real deste checkout:** a base aritmética genérica da DRE, o armazenamento/consulta de passos aritméticos e o seletor de competência estão no código. A leitura de vínculos de origem foi acrescentada à memória. Ainda não há no worker um pipeline DRE completo que importe, classifique, estime tributos, gere execução financeira real e publique os valores. Portanto, este commit melhora a memória e documenta a regra, mas não faz a tela preencher números financeiros reais. Não declarar a T06 homologada.
+**Estado real deste checkout após a revisão:** a base aritmética genérica, o resolvedor tributário, o tipo único da linha fiscal, a memória de fontes/taxa/rateio do DAS e o seletor de competência estão no código. A migration `000028` adiciona a persistência da decisão tributária ao snapshot. Ainda não há no worker um pipeline DRE completo que importe e classifique todas as fontes, alimente o resolvedor, monte as demais linhas, gere snapshot com dados reais e publique os valores na T06. A lógica precisa ser comparada ao resultado de setembro e o snapshot precisa ser compartilhado por todos os acessos antes de afirmar igualdade. Não declarar a T06 homologada.
 
 ## 2. Regra tributária aprovada e método de referência
 
@@ -30,15 +32,7 @@ Pode haver diferença entre estimado e realizado. Exibir o delta (real − estim
 
 ### 2.2 Sequência de cálculo a reproduzir
 
-A regra seguinte descreve o comportamento da projeção tributária semanal identificado no código de referência do projeto `FinanceiroMajucau/Majucau`, commit `3b67a0418d930a69b8875e58a419ed20398e3a6c`, especialmente `08_6_tributario.py`, `09_dashboard/metrics/dre.py` e `data/ancoras/mapa_contabil.json`. A regra é espelho de um método de projeção do painel; não é uma declaração de que a estimativa equivale ao imposto legalmente apurado.
-
-1. Ler pagamentos DAS e vendas/Notas Fiscais de saída com IDs, competência, datas, valores e estado originais. Não classificar pelo nome do fornecedor ou pelo texto livre se houver ID/categoria/documento disponível.
-2. Associar pagamento à competência a que o tributo pertence. O deslocamento pagamento M+1 → competência M é regra operacional já aprovada. Se houver vínculo explícito mais confiável no documento/API, preservar esse vínculo e registrar qual regra escolheu a competência.
-3. Encontrar a taxa histórica válida no último período com DAS efetivamente pago (excluindo registros cujo histórico/identificação é de parcelamento da taxa-base) e receita de NF da mesma competência. Taxa efetiva = valor DAS elegível ÷ receita NF elegível. Gravar os IDs dos dois lados do pareamento.
-4. Se a competência selecionada já tem DAS pago, usar o total realizado daquela competência no mês. Para distribuir na visão semanal, ratear o total pago proporcionalmente às vendas de NF de cada semana, conforme o motor de referência. Não mostrar esse total como estimativa.
-5. Se a competência ainda não tem DAS pago, aplicar a última taxa efetiva válida às vendas de NF reais nas semanas encerradas e às vendas projetadas nas semanas abertas. Se não houver NF real para uma semana, só usar projeção quando a fonte de projeção existir e sua cobertura estiver identificada.
-6. A taxa de **8,5%** é o último fallback do motor de referência quando não existe par válido de recolhimento DAS pago e receita NF para derivar a taxa. Exibir explicitamente “fallback 8,5%”, os dados ausentes que levaram ao fallback e o valor que ele alterou. Nunca usar o fallback para disfarçar ausência de vendas ou de cobertura.
-7. Arredondar apenas no limite definido pelo código de referência e registrar a política e precisão da taxa. Comparar centavos com o oráculo antes de homologar.
+A regra exata conferida está em `docs/source/Manual_DRE_Intelligence_Majucau_Dev.md`, seção 6.2, com evidência e links fixados no commit `421651ff3ef8ff17b9ce02b7fbb02ff6072a5de3` em `docs/evidence/DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md`. Resumo: DAS pago em Caixa e Bancos é competência do mês de `data_lancamento` menos um; taxa histórica usa pagamento sem observação “parcelamento” dividido pela receita de NF da mesma competência; guia paga inclui parcelamentos e substitui o estimado, sendo rateada pela receita semanal ou igualmente quando a base é zero; sem guia, a taxa mais recente/fallback 8,5% aplica-se à NF real das semanas fechadas, à projeção em semana fechada sem NF e à projeção das semanas abertas. O fallback só roda depois de confirmar extração completa. As semanas são ISO truncadas ao mês e o corte usa a maior data de lançamento em Caixa e Bancos. A estimativa é uma projeção da referência, não apuração fiscal oficial.
 
 **Parcelamento:** o motor de referência exclui parcelas da amostra que deriva a taxa efetiva; pagamentos da categoria DAS continuam compondo o realizado conforme a regra categorial do próprio motor. Cada parcela precisa permanecer identificada e sua contribuição visível na memória. Não a remover nem contar duas vezes por texto parecido; usar IDs, vínculos e reconciliação.
 
@@ -53,7 +47,7 @@ O usuário autorizou a estimativa como aproximação temporária até existir o 
 - `internal/financial/dre.go`: cálculo decimal determinístico das linhas já classificadas. Propaga indisponibilidade, não converte campo ausente em zero. Não importa nem classifica fatos.
 - `internal/drememory/repository.go`: grava e lê snapshot, linhas, passos, operandos e estados; a alteração desta tarefa acrescenta consulta `dre_line_sources` e vínculos a `dre_source_rows`, eventos de estoque, custos de venda e ajustes.
 - `database/privileges/runtime.sql` e `database/privileges/verify_runtime.sql`: esta revisão acrescenta SELECT somente nas colunas necessárias para a memória de origem. Não libera leitura geral das tabelas financeiras nem INSERT do pipeline ainda não implementado. Depois de aplicar migration e ACL, executar o verificador como administrador e guardar o resultado sanitizado.
-- `database/migrations/000025_dre_calculation_lineage.up.sql`: estrutura para fontes, custos, eventos, ajustes e contribuições imutáveis. `000026` finaliza execução e `000027` preserva IDs de categoria nos títulos de receber/pagar. As migrations 000025–000027 ainda precisam ser aplicadas e verificadas no banco local da implantação.
+- `database/migrations/000025_dre_calculation_lineage.up.sql`: estrutura para fontes, custos, eventos, ajustes e contribuições imutáveis. `000026` finaliza execução e `000027` preserva IDs de categoria nos títulos de receber/pagar. As migrations 000025–000028 ainda precisam ser aplicadas e verificadas no banco local da implantação.
 - `frontend/src/bootstrap.ts` e `frontend/src/mockupDashboard.tsx`: a T06 aceita e exibe as referências de origem ligadas às linhas. Respostas antigas sem o campo opcional `sources` continuam válidas; nesse caso a memória informa que a execução aritmética ainda não apresenta documentos de origem.
 - A memória é leitura de uma execução persistida; ela não busca, importa nem calcula dados faltantes por conta própria.
 
@@ -63,7 +57,7 @@ O usuário autorizou a estimativa como aproximação temporária até existir o 
 - O inventário local `docs/evidence/DRE-INPUT-INVENTORY-2026-11-15.md` registra candidatos para setembro, duplicidades e lacunas. Não declara esses arquivos conciliados com a API.
 - O caminho `01_extracao.py` do projeto de referência carrega tabelas normalizadas de origem e grava cache local/GCS para o dashboard; isso não é a API do Intelligence e não prova uma conexão ao banco privado do outro desenvolvedor. A população do dado de origem no projeto de referência fica fora deste repositório.
 - A conta real do Bling, OAuth, cobertura completa de APIs, importação dos documentos fiscais/financeiros, classificação DRE, execução com dados reais, e confronto de setembro não foram realizados nesta tarefa.
-- O cálculo de tributo estimado descrito acima ainda não foi programado nem conectado ao worker. Não haverá número correto na tela somente por atualizar a documentação ou o leitor de memória.
+- O núcleo do resolvedor tributário e a memória de sua resolução já estão implementados nesta revisão. Ainda falta conectar fontes reais, execução/snapshot e tela; atualizar somente documentação não preenche a T06.
 
 ## 4. Conteúdo deste incremento
 
@@ -94,10 +88,10 @@ O próximo responsável deve seguir esta sequência. Não pule diretamente para 
 
 ### Fase C — estimar e substituir sem duplicar
 
-9. Implementar a taxa de referência documentada na seção 2.2 usando `domain.Money`, nunca `float`; declarar versão da regra, precisão e arredondamento.
-10. Produzir uma única linha tributária por competência com `value_kind = ESTIMATED | ACTUAL | UNAVAILABLE` (ou estado equivalente). A seleção do pago precisa acontecer antes da composição final da linha: se existir pagamento real elegível para aquela competência, descartar o estimado corrente e usar o real. Preservar o estimado calculado em memória para o delta, sem somá-lo.
-11. Gravar como fontes/contribuições a guia/pagamentos usados, NF/receita semanal de base, taxa aplicada, origem da projeção semanal e motivo para o fallback. Documentar parcelas e fazer rateio semanal da mesma forma que o motor de referência.
-12. Ligar o writer à mesma execução/snapshot que alimenta tabela, gráfico e detalhe; persistir tudo atomicamente e manter snapshots anteriores imutáveis. Nenhum card deve fazer cálculo paralelo.
+9. **Concluído no núcleo de DAS:** `internal/financial.ResolveDRETax` usa `domain.Money` (sem `float`) e aplica a regra conferida na referência. A conversão da data de lançamento para competência, a taxa histórica, o fallback, a prioridade do pago e o rateio semanal estão testados. Ainda falta o adapter entregar as fontes originais e as semanas de referência para essa função.
+10. **Implementado:** `CalculateDRE` aceita um único `DRETaxResolution`; pago substitui estimado, não soma os dois, e ausência bloqueia o resultado dependente.
+11. **Implementado no contrato de persistência:** migration `000028` e `internal/drememory` gravam e leem o tipo, fontes, taxa, semanalização, fallback e motivo junto da linha de tributos. Aplicar e validar a migration com PostgreSQL antes de usar essa capacidade no ambiente instalado.
+12. Ainda falta conectar o writer de fontes/contribuições e a execução real que alimenta tabela, gráfico e detalhe. Quando conectado, deve gravar de forma atômica no mesmo snapshot e preservar execuções anteriores; nenhum card deve fazer cálculo paralelo.
 
 ### Fase D — conferir com setembro e outros meses
 

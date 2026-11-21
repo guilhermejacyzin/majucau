@@ -1360,3 +1360,32 @@ O verificador de backlog confirmou 126 tarefas, 7 concluídas, 23 em andamento e
 96 não iniciadas: 12,3% global concluído e 87,7% restante. BK-066 permanece em
 5% (95% restante) e BK-067 em 25% (75% restante), sem avanço de percentual por
 documentação ou apresentação da memória.
+
+### Revisão DRE — fidelidade da regra e consistência entre acessos — 21/11/2026
+
+Gisele reforçou que a DRE deve reproduzir as mesmas regras da referência e que os
+valores precisam ser iguais em todos os acessos. Consultei o repositório privado
+conectado `FinanceiroMajucau/Majucau`, commit
+`421651ff3ef8ff17b9ce02b7fbb02ff6072a5de3`, incluindo `08_6_tributario.py` e
+`09_dashboard/metrics/dre.py`. A regra literal do DAS e os pontos de integração
+estão em [`DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md`](evidence/DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md)
+e no manual, seção 6.2.
+
+O núcleo do DAS já foi implementado com decimal exato: pagamento em Caixa e
+Bancos usa competência pelo mês da data de lançamento menos um; taxa histórica
+exclui parcelamento; total pago inclui parcelas, substitui estimativa e é rateado
+por receita semanal ou igualmente se não houver base; sem guia, a última taxa
+válida ou fallback de 8,5% é aplicada à base semanal real/projetada conforme o
+corte. A memória `ACTUAL/ESTIMATED/UNAVAILABLE` agora pertence ao mesmo snapshot
+da linha tributária, com a migration 000028. Testes focados de `financial` e
+`drememory` passaram.
+
+Ainda não há extração/adaptador DRE que alimente todas as linhas com dados reais,
+nem snapshot real, comparação com setembro ou tela T06 homologada. A migration
+000028 ainda precisa ser aplicada e verificada em PostgreSQL. Portanto, a regra
+foi portada para o núcleo, mas os valores na tela ainda não foram corrigidos nem
+validados contra a referência. Para uma pessoa usar localmente, PostgreSQL fica
+no PC da Gisele; Drive guarda arquivos/backup, não a pasta ativa do banco. Para
+vários dispositivos, continua valendo o serviço e banco privados centrais do
+ADR-002. Os percentuais BK-066/BK-067 não mudaram, pois o pipeline e a conciliação
+continuam pendentes.

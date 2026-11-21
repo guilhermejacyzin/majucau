@@ -930,6 +930,10 @@ type StatementLine struct {
 	RuleVersionID      pgtype.UUID    `json:"rule_version_id"`
 	AvailabilityStatus string         `json:"availability_status"`
 	UnavailableReason  *string        `json:"unavailable_reason"`
+	// Identifies the single tax value represented in this DRE snapshot: actual, estimated, or unavailable.
+	TaxValueKind *string `json:"tax_value_kind"`
+	// Immutable source IDs, rate, weekly bases, fallback and reason used to resolve the tax line in this snapshot.
+	TaxMemory []byte `json:"tax_memory"`
 }
 
 type StatementLineContribution struct {

@@ -60,6 +60,7 @@ type DREInput struct {
 	FinancialResult             DREAmount
 	OtherIncomeExpenses         DREAmount
 	IncomeTaxes                 DREAmount
+	TaxResolution               *DRETaxResolution
 }
 
 type DRELine struct {
@@ -87,6 +88,8 @@ type DREResult struct {
 	Lines             []DRELine
 	CalculationMemory []DRECalculationStep
 	Indicators        DREIndicators
+	TaxValueKind      DRETaxValueKind
+	TaxResolution     *DRETaxResolution
 }
 
 // CalculateDRE applies only the arithmetic of the approved DRE structure to
@@ -98,6 +101,27 @@ func CalculateDRE(in DREInput) (DREResult, error) {
 	if strings.TrimSpace(in.RuleVersion) == "" || in.PeriodStart.IsZero() || in.PeriodEnd.IsZero() ||
 		dateOnly(in.PeriodStart).After(dateOnly(in.PeriodEnd)) {
 		return DREResult{}, ErrInvalidDREInput
+	}
+	taxValueKind := DRETaxValueKind("")
+	if in.TaxResolution != nil {
+		competence := dateOnly(in.PeriodStart).Format("2006-01")
+		if in.TaxResolution.Competence != competence {
+			return DREResult{}, ErrInvalidDREInput
+		}
+		switch in.TaxResolution.Kind {
+		case DRETaxValueActual, DRETaxValueEstimated:
+			if !in.TaxResolution.Amount.Available {
+				return DREResult{}, ErrInvalidDREInput
+			}
+		case DRETaxValueUnavailable:
+			if in.TaxResolution.Amount.Available {
+				return DREResult{}, ErrInvalidDREInput
+			}
+		default:
+			return DREResult{}, ErrInvalidDREInput
+		}
+		in.IncomeTaxes = in.TaxResolution.Amount
+		taxValueKind = in.TaxResolution.Kind
 	}
 
 	netRevenue, err := sumDREAmounts(in.GrossRevenue, in.RevenueDeductions)
@@ -168,7 +192,9 @@ func CalculateDRE(in DREInput) (DREResult, error) {
 			dreCalculationStep(DREBITCode, "IDENTITY", []DRELineCode{DREOperatingResultCode}, []DREAmount{operatingResult}, indicators.EBIT),
 			dreCalculationStep(DREBITDACode, "SUBTRACT_SIGNED_EXPENSE", []DRELineCode{DREOperatingResultCode, DREDepreciationAmortizationCode}, []DREAmount{operatingResult, in.DepreciationAndAmortization}, indicators.EBITDA),
 		},
-		Indicators: indicators,
+		Indicators:    indicators,
+		TaxValueKind:  taxValueKind,
+		TaxResolution: in.TaxResolution,
 	}, nil
 }
 

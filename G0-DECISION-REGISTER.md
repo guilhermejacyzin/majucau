@@ -280,10 +280,18 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 
 - **Aprovada por:** Gisele, nesta conversa Codex, em 2026-11-21 (America/Sao_Paulo).
 - Enquanto o valor real da competência não constar como pago na origem, mostrar uma estimativa calculada pelo método semanal documentado no código de referência e descrito em `docs/source/Manual_DRE_Intelligence_Majucau_Dev.md`, seção 6.2.
-- Quando o pagamento real da competência constar na origem, ele substitui a estimativa daquela competência. Não somar estimativa e realizado, não reaproveitar o valor estimado como realizado e não escolher competência só pela data de saída do dinheiro.
+- Quando o pagamento real da competência constar na origem, ele substitui a estimativa daquela competência. Não somar estimativa e realizado nem reaproveitar o estimado como realizado. Para o DAS que o código de referência lê em Caixa e Bancos, seguir a regra específica `competência = mês(data_lancamento) - 1`, mesmo quando o campo `competencia` do movimento representa o mês do pagamento. Não generalizar esse mapeamento para outros tributos/fontes.
 - A tela e a memória devem identificar claramente “Estimado” ou “Pago/real”, a competência, as fontes/IDs usados, taxa histórica ou fallback de 8,5%, receita-base semanal, fórmula, arredondamentos e o valor final. Parcelamentos devem aparecer como registros separados e não podem compor a taxa-base; sua participação no realizado deve seguir a origem e ficar demonstrada.
 - Essa decisão permite uma estimativa transparente e provisória até o pagamento real; não a declara apuração fiscal oficial nem substitui a validação contábil/tributária. Fonte ausente não vira zero, 8,5% não mascara falta de base e valores sem suporte permanecem indisponíveis.
 - **Limite de execução:** esta aprovação de regra não significa que o cálculo esteja implementado ou ligado à origem. O gate para publicar valores depende do adaptador DRE, dados reais da competência, memória auditável e caso dourado de setembro, conforme o handoff `docs/evidence/DRE-IMPLEMENTATION-AND-HANDOFF-2026-11-21.md`.
+
+### Complemento — fidelidade à referência e uma única versão para todos os acessos
+
+- **Confirmado por:** Gisele nesta conversa, em 2026-11-21.
+- A DRE Majucau deve reproduzir as regras da DRE de referência já enviada; não substituir fonte, calendário, competência, fórmula ou arredondamento por interpretação própria.
+- Cards, tabela, gráfico e detalhes devem ser lidos do mesmo snapshot imutável, calculado uma vez para a competência e versão de regra escolhidas. Não calcular o mesmo indicador de novo em cada tela ou em cada computador.
+- O protótipo usa PostgreSQL local no PC da Gisele. Para acesso independente em vários dispositivos, usar o serviço autenticado e banco PostgreSQL privado central aprovados no ADR-002. O Drive pode guardar arquivos de entrada e backups versionados; não deve conter o diretório ativo do banco PostgreSQL sincronizado como se fosse banco multiusuário.
+- A regra DAS foi conferida no repositório privado `FinanceiroMajucau/Majucau`, commit `421651ff3ef8ff17b9ce02b7fbb02ff6072a5de3`. O espelho e o status de implementação estão em `docs/evidence/DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md` e seção 6.2 do manual. O núcleo do cálculo e o armazenamento da memória foram iniciados; não há ainda adapter de fontes/snapshot real, comparação de setembro, valores iguais validados, nem homologação da T06.
 
 ## Complemento de regra contábil — estoque, produção e CPV/CMV
 

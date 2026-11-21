@@ -119,6 +119,25 @@ type Line struct {
 	Available         bool          `json:"available"`
 	UnavailableReason string        `json:"unavailable_reason,omitempty"`
 	Steps             []Step        `json:"steps"`
+	Sources           []Source      `json:"sources"`
+}
+
+// Source is a sanitized reference to a record that contributed to or was
+// explicitly excluded from a DRE line. Raw payloads and personal data are not
+// returned by the calculation-memory query.
+type Source struct {
+	Included           bool          `json:"included"`
+	InclusionRule      string        `json:"inclusion_rule"`
+	ExclusionReason    string        `json:"exclusion_reason,omitempty"`
+	SourceType         string        `json:"source_type"`
+	SourceRecordID     string        `json:"source_record_id"`
+	SourceItemKey      string        `json:"source_item_key,omitempty"`
+	DocumentRef        string        `json:"document_ref,omitempty"`
+	CompetenceDate     *time.Time    `json:"competence_date,omitempty"`
+	CategoryID         *string       `json:"category_id,omitempty"`
+	SourceStatus       string        `json:"source_status,omitempty"`
+	SourceAmount       *domain.Money `json:"source_amount,omitempty"`
+	ContributionAmount *domain.Money `json:"contribution_amount,omitempty"`
 }
 
 type Step struct {
@@ -233,9 +252,76 @@ func (r *Repository) Load(ctx context.Context, snapshotID uuid.UUID) (Snapshot, 
 			return Snapshot{}, err
 		}
 		result.Lines[i].Steps = steps
+		sources, err := loadSources(ctx, tx, result.Lines[i].ID)
+		if err != nil {
+			return Snapshot{}, err
+		}
+		result.Lines[i].Sources = sources
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return Snapshot{}, fmt.Errorf("finish DRE memory read: %w", err)
+	}
+	return result, nil
+}
+
+func loadSources(ctx context.Context, tx pgx.Tx, lineID uuid.UUID) ([]Source, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT ls.included,
+		       ls.inclusion_rule,
+		       COALESCE(ls.exclusion_reason, ''),
+		       COALESCE(sr.source_table,
+		         CASE
+		           WHEN ie.id IS NOT NULL THEN 'dre_inventory_events'
+		           WHEN sc.id IS NOT NULL THEN 'dre_sale_costs'
+		           ELSE 'dre_adjustments'
+		         END) AS source_type,
+		       COALESCE(sr.source_record_id, ie.event_id,
+		         CASE WHEN sc.id IS NOT NULL THEN sc.order_id || ':' || sc.item_id END,
+		         da.reason_code) AS source_record_id,
+		       COALESCE(sr.source_item_key, CASE WHEN sc.id IS NOT NULL THEN sc.item_id END, '') AS source_item_key,
+		       COALESCE(sr.source_document_ref, da.evidence_ref, '') AS document_ref,
+		       COALESCE(sr.competence_date, ie.event_date, sc.event_date, da.approved_at::date) AS competence_date,
+		       COALESCE(sr.category_id, ls.category_id) AS category_id,
+		       COALESCE(sr.source_status, '') AS source_status,
+		       COALESCE(ls.source_amount, sr.original_amount, ie.value_effect, sc.cmv, da.amount_signed)::text,
+		       ls.contribution_amount::text AS contribution_amount
+		  FROM dre_line_sources ls
+	  LEFT JOIN dre_source_rows sr ON sr.id = ls.source_row_id
+	  LEFT JOIN dre_inventory_events ie ON ie.id = ls.inventory_event_id
+	  LEFT JOIN dre_sale_costs sc ON sc.id = ls.sale_cost_id
+	  LEFT JOIN dre_adjustments da ON da.id = ls.adjustment_id
+	 WHERE ls.statement_line_id = $1
+	 ORDER BY ls.included DESC, source_type, source_record_id, source_item_key, ls.id`, lineID)
+	if err != nil {
+		return nil, fmt.Errorf("read DRE source contributions: %w", err)
+	}
+	defer rows.Close()
+	result := make([]Source, 0)
+	for rows.Next() {
+		var source Source
+		var date *time.Time
+		var category *string
+		var sourceAmount, contributionAmount *string
+		if err := rows.Scan(&source.Included, &source.InclusionRule, &source.ExclusionReason,
+			&source.SourceType, &source.SourceRecordID, &source.SourceItemKey,
+			&source.DocumentRef, &date, &category, &source.SourceStatus,
+			&sourceAmount, &contributionAmount); err != nil {
+			return nil, fmt.Errorf("scan DRE source contribution: %w", err)
+		}
+		source.CompetenceDate = date
+		source.CategoryID = category
+		source.SourceAmount, err = parseOptionalMoney(sourceAmount)
+		if err != nil {
+			return nil, err
+		}
+		source.ContributionAmount, err = parseOptionalMoney(contributionAmount)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, source)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate DRE source contributions: %w", err)
 	}
 	return result, nil
 }

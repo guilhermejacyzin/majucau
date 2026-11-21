@@ -63,7 +63,8 @@ export type DashboardSnapshotAdapter = { getSnapshot: () => Promise<DashboardSna
 
 export type DREMemoryOperand = { code: string; amount?: string; available: boolean; unavailable_reason?: string }
 export type DREMemoryStep = { operation: string; formula: string; output?: string; available: boolean; unavailable_reason?: string; operands: DREMemoryOperand[] }
-export type DREMemoryLine = { id: string; code: string; label: string; amount?: string; available: boolean; unavailable_reason?: string; steps: DREMemoryStep[] }
+export type DREMemorySourceRow = { included: boolean; inclusion_rule: string; exclusion_reason?: string; source_type: string; source_record_id: string; source_item_key?: string; document_ref?: string; competence_date?: string; category_id?: string; source_status?: string; source_amount?: string; contribution_amount?: string }
+export type DREMemoryLine = { id: string; code: string; label: string; amount?: string; available: boolean; unavailable_reason?: string; steps: DREMemoryStep[]; sources?: DREMemorySourceRow[] }
 export type DRECalculationMemory = { id: string; run_id: string; period_start: string; period_end: string; status: string; rule_code: string; rule_version: number; input_hash: string; lines: DREMemoryLine[] }
 export type DREMemoryResult = { snapshot?: DRECalculationMemory; error_code?: string; message?: string }
 export type DREMemorySource = (competence: string) => Promise<unknown>
@@ -198,7 +199,8 @@ async function readWailsDRECalculationMemory(competence: string): Promise<unknow
 function isDREMemoryLine(value: unknown): value is DREMemoryLine {
   if (!value || typeof value !== 'object') return false
   const line = value as Partial<DREMemoryLine>
-  return typeof line.id === 'string' && typeof line.code === 'string' && typeof line.label === 'string' && typeof line.available === 'boolean' && Array.isArray(line.steps) && line.steps.every((step) => Boolean(step) && typeof step.formula === 'string' && typeof step.operation === 'string' && typeof step.available === 'boolean' && Array.isArray(step.operands) && step.operands.every((operand) => Boolean(operand) && typeof operand.code === 'string' && typeof operand.available === 'boolean')) && (line.amount === undefined || typeof line.amount === 'string')
+  const validSources = line.sources === undefined || (Array.isArray(line.sources) && line.sources.every((source) => Boolean(source) && typeof source.included === 'boolean' && typeof source.inclusion_rule === 'string' && typeof source.source_type === 'string' && typeof source.source_record_id === 'string'))
+  return typeof line.id === 'string' && typeof line.code === 'string' && typeof line.label === 'string' && typeof line.available === 'boolean' && Array.isArray(line.steps) && line.steps.every((step) => Boolean(step) && typeof step.formula === 'string' && typeof step.operation === 'string' && typeof step.available === 'boolean' && Array.isArray(step.operands) && step.operands.every((operand) => Boolean(operand) && typeof operand.code === 'string' && typeof operand.available === 'boolean')) && validSources && (line.amount === undefined || typeof line.amount === 'string')
 }
 
 function isDREMemorySnapshot(value: unknown): value is DRECalculationMemory {

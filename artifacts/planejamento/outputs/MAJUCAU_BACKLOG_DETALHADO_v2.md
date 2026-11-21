@@ -2269,7 +2269,7 @@ até a leitura integral, comparação semana a semana e aprovação. Ver
 3. Comparar linhas e totais com o relatório do Bling como referência, guardando período e evidência das diferenças.
 4. Sem regra ou dado necessário, mostrar Dado indisponível. Preservar snapshots fechados e bloquear alteração retroativa silenciosa.
 
-**Critério de aceite:** DRE no Majucau aplica as regras aprovadas, tem origem e cálculo rastreáveis e diferenças explicadas contra o Bling. Não estima nem completa linhas com fatos fictícios. Custo SKU e arquivos externos só entram conforme escopo e regra aprovados.
+**Critério de aceite:** DRE no Majucau aplica as regras aprovadas, tem origem e cálculo rastreáveis e diferenças explicadas contra o Bling. Não completa linhas com fatos fictícios. Estimativa tributária só é permitida pela regra documentada e aprovada em 21/11/2026, aparece como estimativa, tem memória integral e é substituída (nunca somada) quando houver o pagamento real da competência. Custo SKU e arquivos externos só entram conforme escopo e regra aprovados.
 
 **Impacto:** Oferece resultado verificável.
 
@@ -2278,6 +2278,8 @@ até a leitura integral, comparação semana a semana e aprovação. Ver
 **Fonte:** T06; M-017..M-029; Fechamento vigente 13/09/2026, §2
 
 **Regras e verificações vinculadas:** HT-06,F-02
+
+**Atualização de 21/11/2026:** a regra operacional de tributo foi aprovada por Gisele: calcular estimativa enquanto o valor pago da competência não existir; quando pago, substituir pela origem real sem somar os dois. O método de taxa histórica, projeção semanal e fallback documentado está no manual, seção 6.2, e no handoff `docs/evidence/DRE-IMPLEMENTATION-AND-HANDOFF-2026-11-21.md`. A implementação financeira permanece pendente; os 5% não sobem com documentação. A memória agora consulta as contribuições de origem para exibir quando houver writer, e a interface aceita snapshots antigos sem `sources`. Migrations, writer, integração real e conciliação continuam por fazer.
 
 ### BK-067 — Implementar T06 DRE
 
@@ -2304,6 +2306,8 @@ até a leitura integral, comparação semana a semana e aprovação. Ver
 **Fonte:** T06; Fechamento vigente 13/09/2026, §§2,5
 
 **Regras e verificações vinculadas:** Q-22,F-02
+
+**Atualização de 21/11/2026:** a regra estimado → pago foi detalhada para que tabela, gráfico e detalhes compartilhem o mesmo valor e status. A tela possui apresentação de memória de fontes, mas ainda não há execução DRE real, cálculo de tributo, migrações aplicadas ou snapshot financeiro criado pelo pipeline; não marcar aceite nem alterar o percentual de 25%. Consulte `docs/evidence/DRE-IMPLEMENTATION-AND-HANDOFF-2026-11-21.md` para sequência e critérios de continuidade.
 
 **Reauditoria estática de 2026-10-11:** `frontend/src/mockupDashboard.tsx` contém os quatro cards e filtra o card `UNMAPPED` dessa área; o alerta de lançamentos pendentes continua separado. `frontend/src/bootstrap.ts` e `internal/application/contracts.go` aceitam as métricas de CAPEX, mas a busca de código de produção não encontrou fonte que as preencha. EBIT/EBITDA continuam com valor indisponível. A evidência de CI anteriormente registrada em `docs/evidence/MOCAP-T1-T15-REALIGNMENT-2026-09-20.md` cobre a presença da interface; esta reauditoria não executou testes e não altera telas ou regras.
 

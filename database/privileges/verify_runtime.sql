@@ -81,7 +81,12 @@ BEGIN
       relation_row.qualified_name = ANY (ARRAY[
         'public.payable_sources',
         'public.receivable_sources',
-        'public.financial_rule_versions'
+        'public.financial_rule_versions',
+        'public.dre_line_sources',
+        'public.dre_source_rows',
+        'public.dre_inventory_events',
+        'public.dre_sale_costs',
+        'public.dre_adjustments'
       ]::text[]);
     expected_insert := relation_row.qualified_name = ANY (ARRAY[
       'public.integration_connections',

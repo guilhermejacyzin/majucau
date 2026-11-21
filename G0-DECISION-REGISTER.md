@@ -276,6 +276,15 @@ Qualquer mudança deve informar moeda, timezone, escala, arredondamento, frequê
 - A tabela e as linhas da DRE já aprovadas permanecem como estão, inclusive os cards EBIT/EBITDA no lugar do card inferior UNMAPPED. Os cards CAPEX aprovados abaixo são informativos e ficam fora da tabela/lucro.
 - **Pendente:** concluir a validação contábil da política por conta/operação, escolher critérios operacionais (por exemplo, valoração do estoque e rateio de custos), mapear cada lançamento às linhas existentes e confirmar os dados de origem. Os princípios recebidos em 2026-10-04 estão em `docs/DRE-ACCOUNTING-POLICY-v1.md`. Até as dependências serem resolvidas, os valores afetados ficam indisponíveis; nenhuma classificação ou fórmula será inventada.
 
+### Regra operacional aprovada — estimativa temporária de tributos na DRE
+
+- **Aprovada por:** Gisele, nesta conversa Codex, em 2026-11-21 (America/Sao_Paulo).
+- Enquanto o valor real da competência não constar como pago na origem, mostrar uma estimativa calculada pelo método semanal documentado no código de referência e descrito em `docs/source/Manual_DRE_Intelligence_Majucau_Dev.md`, seção 6.2.
+- Quando o pagamento real da competência constar na origem, ele substitui a estimativa daquela competência. Não somar estimativa e realizado, não reaproveitar o valor estimado como realizado e não escolher competência só pela data de saída do dinheiro.
+- A tela e a memória devem identificar claramente “Estimado” ou “Pago/real”, a competência, as fontes/IDs usados, taxa histórica ou fallback de 8,5%, receita-base semanal, fórmula, arredondamentos e o valor final. Parcelamentos devem aparecer como registros separados e não podem compor a taxa-base; sua participação no realizado deve seguir a origem e ficar demonstrada.
+- Essa decisão permite uma estimativa transparente e provisória até o pagamento real; não a declara apuração fiscal oficial nem substitui a validação contábil/tributária. Fonte ausente não vira zero, 8,5% não mascara falta de base e valores sem suporte permanecem indisponíveis.
+- **Limite de execução:** esta aprovação de regra não significa que o cálculo esteja implementado ou ligado à origem. O gate para publicar valores depende do adaptador DRE, dados reais da competência, memória auditável e caso dourado de setembro, conforme o handoff `docs/evidence/DRE-IMPLEMENTATION-AND-HANDOFF-2026-11-21.md`.
+
 ## Complemento de regra contábil — estoque, produção e CPV/CMV
 
 - **Recebido de:** Gisele, nesta conversa Codex, em 2026-10-04 (America/Sao_Paulo). Referência detalhada: `docs/DRE-ACCOUNTING-POLICY-v1.md`.

@@ -1328,3 +1328,35 @@ soma da distribuição passou a coincidir com “TOTAL A RECEBER”. Isso valida
 consistência da tela com o snapshot local, não uma nova sincronização do Bling.
 Evidência:
 [`T03 — detalhes de Contas a Receber`](evidence/T03-RECEIVABLE-DETAILS-2026-11-15.md).
+
+### DRE T06 — regra tributária e memória das fontes — 21/11/2026
+
+Gisele confirmou a regra operacional para tributos: usar uma estimativa calculada
+enquanto ainda não houver pagamento real da competência; assim que houver, o
+real substitui a estimativa, sem somar os dois. O método temporário foi descrito
+conforme o código de referência: taxa derivada de DAS pago pareado com receita
+NF, estimativa proporcional para semanas fechadas/abertas conforme real ou
+projeção disponível, parcelamentos fora da taxa-base e fallback de 8,5% somente
+como último recurso visível. Essa regra está no G0 e na seção 6.2 do manual.
+
+A consulta da memória DRE foi ampliada para retornar as contribuições de origem
+registradas em `dre_line_sources` e seus documentos/valores. O detalhe pode
+mostrar inclusão, exclusão, competência, categoria e contribuição por fonte. O
+frontend continua aceitando execução anterior sem a lista de fontes; nesse caso
+explica que a memória está incompleta. Nenhum cálculo fiscal, importador,
+classificador ou writer de fontes foi conectado por esta revisão; não há número
+real novo nem homologação. Migrations 000025–000027 ainda não estão aplicadas
+na base local. BK-066 segue 5% e BK-067 segue 25%; não foi contado trabalho de
+documentação como integração financeira. Próximos passos, comandos, limites e
+critérios de aceite estão em
+[`handoff detalhado DRE`](evidence/DRE-IMPLEMENTATION-AND-HANDOFF-2026-11-21.md).
+
+`./scripts/verify.ps1` passou em 21/11: Go, vet, lint de migration, SQLC,
+segredos, instalador, ESLint, TypeScript, 92 testes frontend, build e npm audit.
+`govulncheck` não apontou chamadas alcançáveis; há um alerta em dependência sem
+chamada alcançável. Não havia `MAJUCAU_TEST_DATABASE_URL`, então não houve teste
+com PostgreSQL nem validação em execução dos novos grants/consulta de origem.
+O verificador de backlog confirmou 126 tarefas, 7 concluídas, 23 em andamento e
+96 não iniciadas: 12,3% global concluído e 87,7% restante. BK-066 permanece em
+5% (95% restante) e BK-067 em 25% (75% restante), sem avanço de percentual por
+documentação ou apresentação da memória.

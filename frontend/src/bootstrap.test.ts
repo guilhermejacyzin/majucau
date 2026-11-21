@@ -61,7 +61,9 @@ describe('bootstrap adapter', () => {
     const snapshot = { id: 'snapshot-1', run_id: 'run-1', period_start: '2026-09-01T00:00:00Z', period_end: '2026-09-30T00:00:00Z', status: 'PARTIALLY_CONFIRMED', rule_code: 'DRE_REFERENCE', rule_version: 1, input_hash: 'a'.repeat(64), lines: [{ id: 'line-1', code: 'NET_INCOME', label: 'Lucro líquido', available: false, unavailable_reason: 'Tributos sem base validada', steps: [{ operation: 'SUM', formula: 'RESULT_BEFORE_INCOME_TAX + INCOME_TAXES', available: false, unavailable_reason: 'Tributos sem base validada', operands: [{ code: 'RESULT_BEFORE_INCOME_TAX', amount: '10.0000', available: true }, { code: 'INCOME_TAXES', available: false, unavailable_reason: 'Aguardando especialista' }] }] }] }
     const source = vi.fn(async (selected: string) => ({ snapshot: selected === competence ? snapshot : undefined, error_code: selected === competence ? undefined : 'DRE_MEMORY_NOT_FOUND' }))
     const adapter = createDREMemoryAdapter(source)
-    await expect(adapter.getMemory(competence)).resolves.toMatchObject({ snapshot: { period_start: '2026-09-01T00:00:00Z', lines: [{ available: false, steps: [{ operands: [{ amount: '10.0000' }, { available: false }] }] }] } })
+    const restored = await adapter.getMemory(competence)
+    expect(restored).toMatchObject({ snapshot: { period_start: '2026-09-01T00:00:00Z', lines: [{ available: false, steps: [{ operands: [{ amount: '10.0000' }, { available: false }] }] }] } })
+    expect(restored.snapshot?.lines[0].sources).toBeUndefined()
     await expect(adapter.getMemory('2026-10')).resolves.toMatchObject({ error_code: 'DRE_MEMORY_NOT_FOUND' })
     expect(source).toHaveBeenCalledTimes(2)
     await expect(adapter.getMemory('2026-13')).resolves.toMatchObject({ error_code: 'DRE_MEMORY_REQUEST_INVALID' })

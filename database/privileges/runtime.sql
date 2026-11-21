@@ -41,6 +41,22 @@ GRANT SELECT ON TABLE
   dre_calculation_steps,
   dre_calculation_operands
 TO majucau_runtime;
+-- DRE source detail is limited to the columns returned by the sanitized
+-- calculation-memory query. The runtime must not read raw payload references
+-- or unrelated source attributes merely to render line contributions.
+GRANT SELECT (id, statement_line_id, source_row_id, inventory_event_id,
+  sale_cost_id, adjustment_id, category_id, source_amount, contribution_amount,
+  included, inclusion_rule, exclusion_reason)
+  ON TABLE dre_line_sources TO majucau_runtime;
+GRANT SELECT (id, source_table, source_record_id, source_item_key,
+  source_document_ref, competence_date, category_id, source_status, original_amount)
+  ON TABLE dre_source_rows TO majucau_runtime;
+GRANT SELECT (id, event_id, event_date, value_effect)
+  ON TABLE dre_inventory_events TO majucau_runtime;
+GRANT SELECT (id, order_id, item_id, event_date, cmv)
+  ON TABLE dre_sale_costs TO majucau_runtime;
+GRANT SELECT (id, reason_code, evidence_ref, approved_at, amount_signed)
+  ON TABLE dre_adjustments TO majucau_runtime;
 GRANT SELECT (id, rule_code, version, status)
   ON TABLE financial_rule_versions TO majucau_runtime;
 

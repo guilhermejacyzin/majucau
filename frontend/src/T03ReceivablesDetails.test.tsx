@@ -46,6 +46,7 @@ describe('T03 detalhes dos recebíveis', () => {
 
   it('filtra o detalhe de atraso pela data-base', () => {
     render(<MockupDashboard screen="receivables" snapshot={snapshot} />)
+    fireEvent.change(document.getElementById('mocap-receivable-from') as HTMLInputElement, { target: { value: '2026-11-15' } })
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes: EM ATRASO' }))
 
     const dialog = screen.getByRole('dialog', { name: 'EM ATRASO' })

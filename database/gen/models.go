@@ -930,9 +930,9 @@ type StatementLine struct {
 	RuleVersionID      pgtype.UUID    `json:"rule_version_id"`
 	AvailabilityStatus string         `json:"availability_status"`
 	UnavailableReason  *string        `json:"unavailable_reason"`
-	// Identifies the single tax value represented in this DRE snapshot: actual, estimated, or unavailable.
+	// Identifies whether the DAS included in revenue deductions is actual, estimated, or unavailable.
 	TaxValueKind *string `json:"tax_value_kind"`
-	// Immutable source IDs, rate, weekly bases, fallback and reason used to resolve the tax line in this snapshot.
+	// Immutable sources, rate, weekly bases, fallback and reason for the DAS value in revenue deductions.
 	TaxMemory []byte `json:"tax_memory"`
 }
 

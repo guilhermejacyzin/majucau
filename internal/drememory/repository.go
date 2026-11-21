@@ -356,7 +356,7 @@ func writeLines(ctx context.Context, tx pgx.Tx, snapshotID, ruleVersionID uuid.U
 		var unavailableReason any
 		var taxValueKind any
 		var taxMemory any
-		if line.Code == financial.DREIncomeTaxesCode && result.TaxResolution != nil {
+		if line.Code == financial.DRERevenueDeductionsCode && result.TaxResolution != nil {
 			taxValueKind = result.TaxResolution.Kind
 			encoded, err := json.Marshal(result.TaxResolution)
 			if err != nil {

@@ -1389,3 +1389,26 @@ no PC da Gisele; Drive guarda arquivos/backup, não a pasta ativa do banco. Para
 vários dispositivos, continua valendo o serviço e banco privados centrais do
 ADR-002. Os percentuais BK-066/BK-067 não mudaram, pois o pipeline e a conciliação
 continuam pendentes.
+
+### Fonte oficial da DRE mensal e classificação do DAS — 21/11/2026
+
+Na conferência do Drive, localizei `PADRAO_OFICIAL_DRE_MENSAL.md` e a matriz
+`Majucau_DRE_Setembro_2026_revisada.html`, indicada pelo próprio padrão como
+referência. A regra da DRE mensal e os valores publicados nessa matriz têm
+precedência sobre painéis alternativos consultados para estudo de cálculo. O
+caso de setembro foi registrado como regressão aritmética: receita bruta
+R$ 432.799,67; deduções R$ 43.281,90; receita líquida R$ 389.517,77; CMV
+R$ 101.591,89; lucro bruto R$ 287.925,88; despesas comerciais R$ 71.179,75;
+despesas operacionais R$ 60.064,73; EBITDA gerencial R$ 156.681,40; resultado
+financeiro líquido −R$ 953,59; resultado líquido gerencial R$ 155.727,81.
+
+A conferência revelou uma classificação incorreta no primeiro encaixe do
+resolvedor: DAS estava sendo conectado à linha `INCOME_TAXES`, embora o padrão
+mensal o coloque em deduções da receita. Corrigi `CalculateDRE` para somar o DAS
+uma única vez a `REVENUE_DEDUCTIONS`, preservando outros componentes da linha e
+mantendo `INCOME_TAXES` independente. A memória do snapshot agora acompanha a
+linha de deduções. Teste focado de regressão de setembro e teste de substituição
+estimado/pago cobrem essa separação. Isso corrige o contrato aritmético, mas não
+importa os relatórios reais nem prova conciliação financeira. O resolvedor de
+estimativa permanece auxiliar e não pode reescrever a matriz realizada de
+setembro. Evidência: [`DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md`](evidence/DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md).

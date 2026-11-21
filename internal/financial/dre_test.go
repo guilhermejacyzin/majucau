@@ -81,6 +81,41 @@ func TestCalculateDREUsesExactSignedAmountsForApprovedLines(t *testing.T) {
 	}
 }
 
+// September 2026 is the approved monthly DRE reference. This regression test
+// protects its published totals; it does not claim that the source records
+// have already been imported or reconciled by the application.
+func TestCalculateDREMatchesApprovedSeptember2026Totals(t *testing.T) {
+	result, err := CalculateDRE(DREInput{
+		PeriodStart:         time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+		PeriodEnd:           time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),
+		RuleVersion:         "majucau-dre-monthly-v1-september-reference",
+		GrossRevenue:        availableDREAmount(t, "432799.67"),
+		RevenueDeductions:   availableDREAmount(t, "-43281.90"),
+		CostOfGoodsSold:     availableDREAmount(t, "-101591.89"),
+		SellingExpenses:     availableDREAmount(t, "-71179.75"),
+		Administrative:      availableDREAmount(t, "-60064.73"),
+		OtherOperating:      availableDREAmount(t, "0"),
+		FinancialResult:     availableDREAmount(t, "-953.59"),
+		OtherIncomeExpenses: availableDREAmount(t, "0"),
+		IncomeTaxes:         availableDREAmount(t, "0"),
+	})
+	if err != nil {
+		t.Fatalf("CalculateDRE() error = %v", err)
+	}
+	for code, want := range map[DRELineCode]string{
+		DRENetRevenueCode:      "389517.7700",
+		DREGrossProfitCode:     "287925.8800",
+		DREOperatingResultCode: "156681.4000",
+		DREBeforeTaxCode:       "155727.8100",
+		DRENetIncomeCode:       "155727.8100",
+	} {
+		line := findDRELine(t, result, code)
+		if !line.Available || line.Amount.String() != want {
+			t.Errorf("line %s = (%s, available=%t), want (%s, available=true)", code, line.Amount, line.Available, want)
+		}
+	}
+}
+
 func TestCalculateDREKeepsDependentTotalsUnavailable(t *testing.T) {
 	zero := availableDREAmount(t, "0")
 	result, err := CalculateDRE(DREInput{

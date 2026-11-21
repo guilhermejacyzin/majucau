@@ -152,13 +152,14 @@ func TestResolveDRETaxUsesPostingMonthAndUniformAllocationWithoutNFBase(t *testi
 
 func TestCalculateDREUsesExactlyOneResolvedTaxValueForSelectedCompetence(t *testing.T) {
 	for _, tc := range []struct {
-		name          string
-		kind          DRETaxValueKind
-		amount        string
-		wantNetIncome string
+		name           string
+		kind           DRETaxValueKind
+		amount         string
+		wantDeductions string
+		wantNetIncome  string
 	}{
-		{name: "estimated until paid", kind: DRETaxValueEstimated, amount: "-85", wantNetIncome: "915.0000"},
-		{name: "paid replaces estimate", kind: DRETaxValueActual, amount: "-120", wantNetIncome: "880.0000"},
+		{name: "estimated until paid", kind: DRETaxValueEstimated, amount: "-85", wantDeductions: "-85.0000", wantNetIncome: "915.0000"},
+		{name: "paid replaces estimate", kind: DRETaxValueActual, amount: "-120", wantDeductions: "-120.0000", wantNetIncome: "880.0000"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			start := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
@@ -172,14 +173,20 @@ func TestCalculateDREUsesExactlyOneResolvedTaxValueForSelectedCompetence(t *test
 				RevenueDeductions: availableDREAmount(t, "0"), CostOfGoodsSold: availableDREAmount(t, "0"),
 				SellingExpenses: availableDREAmount(t, "0"), Administrative: availableDREAmount(t, "0"),
 				OtherOperating: availableDREAmount(t, "0"), FinancialResult: availableDREAmount(t, "0"),
-				OtherIncomeExpenses: availableDREAmount(t, "0"),
-				TaxResolution:       resolution,
+				OtherIncomeExpenses: availableDREAmount(t, "0"), IncomeTaxes: availableDREAmount(t, "0"),
+				TaxResolution: resolution,
 			})
 			if err != nil {
 				t.Fatalf("CalculateDRE() error = %v", err)
 			}
 			if result.TaxValueKind != tc.kind || findDRELine(t, result, DRENetIncomeCode).Amount.String() != tc.wantNetIncome {
 				t.Fatalf("tax kind/result = %q / %s, want %q / %s", result.TaxValueKind, findDRELine(t, result, DRENetIncomeCode).Amount, tc.kind, tc.wantNetIncome)
+			}
+			if got := findDRELine(t, result, DRERevenueDeductionsCode).Amount.String(); got != tc.wantDeductions {
+				t.Errorf("revenue deductions = %s, want DAS included once at %s", got, tc.wantDeductions)
+			}
+			if got := findDRELine(t, result, DREIncomeTaxesCode).Amount.String(); got != "0.0000" {
+				t.Errorf("tax on profit = %s, want 0.0000; DAS must not be placed on this line", got)
 			}
 		})
 	}

@@ -120,7 +120,14 @@ func CalculateDRE(in DREInput) (DREResult, error) {
 		default:
 			return DREResult{}, ErrInvalidDREInput
 		}
-		in.IncomeTaxes = in.TaxResolution.Amount
+		// DAS is a deduction from sales revenue in the official monthly DRE,
+		// not a tax on profit. Preserve other approved deductions (for example,
+		// ICMS-ST) and add this single paid-or-estimated DAS resolution once.
+		deductions, err := sumDREAmounts(in.RevenueDeductions, in.TaxResolution.Amount)
+		if err != nil {
+			return DREResult{}, fmt.Errorf("include DAS in revenue deductions: %w", err)
+		}
+		in.RevenueDeductions = deductions
 		taxValueKind = in.TaxResolution.Kind
 	}
 

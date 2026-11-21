@@ -15,6 +15,31 @@ A DRE do Intelligence deve seguir as mesmas regras da DRE enviada como referênc
 
 Os endereços são links de leitura do repositório conectado. Não foi consultado o banco privado do app de referência nem copiada uma base privada; o código e as regras públicas ao usuário conectado foram lidos no repositório Git.
 
+## Fonte oficial da DRE mensal e setembro-base
+
+Na conferência adicional do Drive em 21/11/2026, foi localizado o documento que governa a DRE mensal enviada pela responsável: [`PADRAO_OFICIAL_DRE_MENSAL.md`](https://docs.google.com/document/d/1zQeRr09LBSA1xfYX7FO4IYcV3T6mq-BI/edit) e a matriz indicada nele, [`Majucau_DRE_Setembro_2026_revisada.html`](https://drive.google.com/file/d/14HW2Xxr4PKpyTZonCZsPsXmBgCCMrd2g/view). O padrão diz que setembro/2026 é a base aprovada para comparação e que cada novo mês deve manter as regras e a composição detalhada, sem congelar os valores de setembro.
+
+Os valores de referência que o cálculo deve reproduzir são:
+
+| Linha | Setembro/2026 |
+| --- | ---: |
+| Receita bruta | R$ 432.799,67 |
+| Deduções | −R$ 43.281,90 |
+| Receita líquida | R$ 389.517,77 |
+| CMV total | −R$ 101.591,89 |
+| Lucro bruto | R$ 287.925,88 |
+| Despesas comerciais | −R$ 71.179,75 |
+| Despesas operacionais | −R$ 60.064,73 |
+| EBITDA gerencial | R$ 156.681,40 |
+| Resultado financeiro líquido | −R$ 953,59 |
+| Resultado líquido gerencial | R$ 155.727,81 |
+
+O padrão também define a origem da receita bruta como vendas atendidas/realizadas do sistema de vendas, distingue competência de caixa, exige composição identificável para todo total e proíbe inventar classificação. O valor de setembro não é entrada fixa para outros meses.
+
+**Precedência corrigida:** o `PADRAO_OFICIAL_DRE_MENSAL.md`, as instruções atuais de Gisele e a matriz de setembro regem a DRE gerencial mensal. O código de outro painel consultado acima é referência auxiliar para a estimativa tributária semanal autorizada enquanto não há pagamento real; ele não substitui a base de vendas, os valores realizados de setembro nem as demais regras do padrão mensal. Em particular, a taxa e o rateio do resolvedor DAS não podem recalcular ou sobrescrever o valor realizado já estabelecido para setembro. A regra detalhada de uso da estimativa precisa permanecer separada do fechamento real e aparecer como estimada.
+
+Foram localizados no Drive outros HTMLs de auditoria/DRE de setembro com números diferentes. O padrão oficial identifica explicitamente `Majucau_DRE_Setembro_2026_revisada.html` como matriz; não misturar os números de outras versões. A documentação e o teste de regressão deste checkout passaram a usar a matriz e o padrão oficial. Isso valida o contrato aritmético dos totais, mas não comprova ainda que os registros importados gerem esses valores.
+
 ## Regras do DAS encontradas no código
 
 1. Fonte do pagamento: `Fato_Caixas_Bancos`, categoria DAS `14675501032`, por `data_lancamento`. O mês da competência de DAS é mês do lançamento menos um. O código não usa `competencia` do movimento bancário porque ela pode refletir o mês do pagamento. Assim, pagamento lançado em novembro é da competência de outubro.
@@ -30,16 +55,18 @@ O método não é uma apuração fiscal oficial. O pagamento real substitui a es
 
 ## O que foi implementado nesta alteração
 
+- A aritmética genérica agora tem um caso de regressão com os totais do padrão oficial de setembro. Esse caso protege a matemática publicada; não equivale à importação, classificação ou conciliação das fontes.
+
 - `internal/financial/dre_tax.go`: resolvedor de DAS com competência M+1 a partir da data de lançamento, amostra histórica sem parcelamento, fallback da taxa, aplicação sobre as bases semanais entregues, rateio proporcional da guia paga e rateio uniforme quando não há base positiva. As entradas exigem cobertura explícita; pagamentos sem competência identificável bloqueiam a estimativa.
-- `internal/financial/dre.go`: a DRE recebe uma resolução tributária única por competência e usa esse valor na linha de tributos; estimativa e pago não são somados.
-- Migration `000028_dre_tax_resolution_memory.up.sql` e `internal/drememory/repository.go`: persistem o tipo `ACTUAL/ESTIMATED/UNAVAILABLE` e a memória com regra, fontes, taxa, semanas, base, fallback e motivo dentro da própria linha do snapshot. `Load` lê isso do mesmo snapshot imutável.
+- `internal/financial/dre.go`: a resolução do DAS é somada uma única vez às deduções da receita, preservando outros componentes já informados. DAS não é colocado em `INCOME_TAXES` (tributos sobre o lucro); estimativa e pago não são somados.
+- Migrations `000028_dre_tax_resolution_memory.up.sql` e `000029_das_memory_on_revenue_deductions.up.sql`, mais `internal/drememory/repository.go`: persistem o tipo `ACTUAL/ESTIMATED/UNAVAILABLE` e a memória com regra, fontes, taxa, semanas, base, fallback e motivo dentro da linha `REVENUE_DEDUCTIONS` do snapshot. `Load` lê isso do mesmo snapshot imutável.
 - Testes unitários focados dos pacotes `internal/financial` e `internal/drememory` passaram em 21/11/2026.
 
 ## O que ainda impede dizer que os valores da T06 já ficaram iguais
 
 - A extração e o adaptador que montam pagamentos Caixa e Bancos, NF, fallback de vendas, projeção, IDs e calendário semanal ainda não chamam esse resolvedor.
 - As outras linhas DRE ainda não são montadas a partir do conjunto real da referência; não há execução DRE real/snapshot com esses dados.
-- A migration `000028` ainda precisa ser aplicada pela rotina oficial ao banco local e validada em PostgreSQL.
+- As migrations `000028` e `000029` ainda precisam ser aplicadas pela rotina oficial ao banco local e validadas em PostgreSQL.
 - O modo orçamento ainda precisa ser ligado ao perfil correto no cálculo/app.
 - Falta conferir os valores semanais e o arredondamento contra o snapshot da referência e comparar setembro/2026, que Gisele informou estar correto.
 - Nenhum resultado foi apresentado como corrigido/homologado pela tela. Os acessos só poderão mostrar a mesma DRE depois que todos lerem o mesmo snapshot publicado. O protótipo local sozinho não dá acesso multi-dispositivo.
@@ -53,7 +80,7 @@ O método não é uma apuração fiscal oficial. O pagamento real substitui a es
 
 ## Próximos passos em ordem
 
-1. Aplicar e validar migration 000028 no PostgreSQL descartável/ambiente local permitido.
+1. Aplicar e validar as migrations 000028–000029 no PostgreSQL descartável/ambiente local permitido.
 2. Criar o adapter por fonte com contratos, paginação, lote RAW, hash, contagem e total de controle, preservando IDs originais.
 3. Reproduzir o calendário semanal ISO, a data de corte, as semanas fechadas/abertas e o modo orçamento da referência.
 4. Integrar a memória de imposto à montagem da DRE e ao snapshot consumido pela T06; conectar detalhe para expor a memória já persistida.

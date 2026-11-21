@@ -71,3 +71,9 @@ PGDAS e complementos de tributos: há somente documento identificado como compet
 ## Evidência do checkout
 
 Na inspeção de 2026-11-15, `internal/financial/dre.go` contém somente a camada aritmética da DRE já classificada. A auditoria `docs/evidence/END-TO-END-RESULTS-AUDIT-2026-11-02.md` registra que o worker não fornece DRE calculada, depreciação ou CAPEX. Esta etapa não alterou código de produção, arquivos fonte financeiros ou valores da DRE.
+
+## Atualização da auditoria em 2026-11-21
+
+Foi examinada a exportação local `Majucau _ Dashboard de Gestão.pdf` (3 páginas, criada em 15/11/2026, SHA-256 `E1BCA886BCF1794CD79A213D38235C9F91BCA915149D6AC323926111BAECBB61`). Ela mostra setembro/2026, mas seus totais não coincidem com a matriz oficial aprovada: receita bruta R$ 423.506,18; líquida R$ 376.190,11; EBITDA R$ 117.027,63; e resultado líquido da tabela R$ 114.345,79. O cartão do próprio PDF chamado “Lucro Líquido Preparado” mostra R$ 65.688,55, em conflito com a tabela. Não foi possível validar filtros, banco ou composição do painel hospedado.
+
+Não usar essa exportação como fonte dos valores aprovados nem como confirmação da T06. O resultado oficial da comparação continua sendo o HTML indicado por `PADRAO_OFICIAL_DRE_MENSAL.md`. A nova conferência e as diferenças estão descritas em [`DRE-DASHBOARD-EXPORT-DISCREPANCY-2026-11-21.md`](DRE-DASHBOARD-EXPORT-DISCREPANCY-2026-11-21.md). Nenhuma base financeira foi modificada.

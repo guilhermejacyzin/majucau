@@ -1412,3 +1412,22 @@ estimado/pago cobrem essa separação. Isso corrige o contrato aritmético, mas 
 importa os relatórios reais nem prova conciliação financeira. O resolvedor de
 estimativa permanece auxiliar e não pode reescrever a matriz realizada de
 setembro. Evidência: [`DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md`](evidence/DRE-RULE-FIDELITY-AND-SHARED-SNAPSHOT-2026-11-21.md).
+
+### Auditoria da exportação do painel DRE — 21/11/2026
+
+Conferi o PDF local baixado do painel em 15/11/2026 contra a matriz oficial
+aprovada. O PDF mostra receita bruta de R$ 423.506,18, receita líquida de
+R$ 376.190,11, EBITDA de R$ 117.027,63 e resultado líquido de R$ 114.345,79
+na tabela; a matriz usa, respectivamente, R$ 432.799,67, R$ 389.517,77,
+R$ 156.681,40 e R$ 155.727,81. O próprio cartão do PDF “Lucro Líquido
+Preparado” mostra R$ 65.688,55, diferente da tabela. Não tive acesso ao banco
+privado do painel, então o PDF serve somente como evidência de que a exportação
+e a matriz são versões/resultados diferentes; não usei seus números para
+substituir a base aprovada. Detalhei os valores, diferenças, hash e limites em
+[`DRE-DASHBOARD-EXPORT-DISCREPANCY-2026-11-21.md`](evidence/DRE-DASHBOARD-EXPORT-DISCREPANCY-2026-11-21.md).
+
+Essa auditoria não fecha a T06 nem aumenta o percentual do motor: ainda falta
+reconciliar os registros originais, por lançamento, com a matriz de setembro e
+validar um snapshot real. Não alterei arquivos financeiros de entrada. A
+exportação examinada tem SHA-256
+`E1BCA886BCF1794CD79A213D38235C9F91BCA915149D6AC323926111BAECBB61`.

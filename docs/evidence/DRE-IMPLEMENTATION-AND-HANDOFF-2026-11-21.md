@@ -145,3 +145,7 @@ Commit `7fbf1c2` adicionou o resolvedor auxiliar do DAS e a migration `000028`. 
 `./scripts/verify-backlog.ps1` passou: 126 tarefas, 7 concluídas, 23 em andamento e 96 não iniciadas, 12,3% concluído / 87,7% restante. BK-066 permanece 5% e BK-067 25%; a implementação do motor não é o pipeline completo nem a aceitação financeira.
 
 Não havia `MAJUCAU_TEST_DATABASE_URL`; o teste de repositório PostgreSQL foi ignorado. As migrations 000028–000029 foram checksumadas e validadas pelo verificador estrutural, mas ainda não aplicadas a um PostgreSQL. Também não houve conexão OAuth nem importação dos relatórios reais desta DRE, confronto linha a linha de setembro ou apresentação visual da T06. São gates obrigatórios antes de dizer que os valores e todos os acessos estão iguais.
+
+### Nova evidência de comparação — 21/11/2026
+
+Após essa execução, foi lida a exportação local do painel de referência (PDF criado em 15/11/2026). Seus valores de setembro diferem da matriz aprovada e o cartão “Lucro Líquido Preparado” também diverge da linha de lucro líquido na própria tabela. A exportação não dá acesso à base privada e não substitui os documentos oficiais; os valores e diferenças estão em [`DRE-DASHBOARD-EXPORT-DISCREPANCY-2026-11-21.md`](DRE-DASHBOARD-EXPORT-DISCREPANCY-2026-11-21.md). Não usar o PDF para forçar os valores da T06. Próximo gate: localizar/reconciliar as fontes transacionais originais com a matriz aprovada, implementar o adaptador de importação e gerar o snapshot real auditável. A T06 segue não homologada.

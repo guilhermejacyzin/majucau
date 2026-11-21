@@ -40,6 +40,8 @@ O padrão também define a origem da receita bruta como vendas atendidas/realiza
 
 Foram localizados no Drive outros HTMLs de auditoria/DRE de setembro com números diferentes. O padrão oficial identifica explicitamente `Majucau_DRE_Setembro_2026_revisada.html` como matriz; não misturar os números de outras versões. A documentação e o teste de regressão deste checkout passaram a usar a matriz e o padrão oficial. Isso valida o contrato aritmético dos totais, mas não comprova ainda que os registros importados gerem esses valores.
 
+Na auditoria seguinte, a exportação local do painel hospedado (PDF de 15/11/2026) também divergiu da matriz e, internamente, mostrou R$ 65.688,55 no cartão “Lucro Líquido Preparado” e R$ 114.345,79 na tabela do mesmo arquivo. A exportação não foi tratada como base aprovada nem como prova de cálculo correto. Diferenças e limitações estão registradas em [`DRE-DASHBOARD-EXPORT-DISCREPANCY-2026-11-21.md`](DRE-DASHBOARD-EXPORT-DISCREPANCY-2026-11-21.md).
+
 ## Regras do DAS encontradas no código
 
 1. Fonte do pagamento: `Fato_Caixas_Bancos`, categoria DAS `14675501032`, por `data_lancamento`. O mês da competência de DAS é mês do lançamento menos um. O código não usa `competencia` do movimento bancário porque ela pode refletir o mês do pagamento. Assim, pagamento lançado em novembro é da competência de outubro.

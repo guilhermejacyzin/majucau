@@ -137,3 +137,11 @@ A primeira execução da suíte mostrou um teste T03 dependente da data real do 
 O script de verificação não executou consultas contra um PostgreSQL de teste real porque `MAJUCAU_TEST_DATABASE_URL` não está configurada. Portanto, a sintaxe dos grants SQL foi revisada no diff e a estrutura migração foi checada pelo lint/checksum, mas a consulta nova e `verify_runtime.sql` ainda precisam ser aplicados/executados por administrador em uma instalação local depois da migration. Não houve OAuth, chamada Bling, consulta a dado privado, comparação real de setembro ou inspeção visual de valores financeiros.
 
 `./scripts/verify-backlog.ps1` confirmou o estado atual oficial: 126 tarefas; 7 concluídas, 23 em andamento e 96 não iniciadas; média simples de **12,3% concluído / 87,7% restante**. No escopo DRE, BK-066 está em 5% (**95% restante**) e BK-067 em 25% (**75% restante**). Esses percentuais foram mantidos: consulta de memória e documentação não equivalem ao pipeline financeiro nem ao aceite dos valores.
+
+### Verificação após a implementação do resolvedor tributário — 21/11/2026
+
+Commit `7fbf1c2` adicionou o resolvedor DAS, validação do período, persistência da memória tributária na linha do snapshot, migration `000028` e atualização das regras/documentação. `./scripts/verify.ps1` passou por inteiro após esse commit: Go, limites de camadas, vet, `govulncheck` (sem chamada vulnerável alcançável; 1 vulnerabilidade em módulo exigido sem chamada alcançável), checksums, geração SQLC determinística, scan local de segredos, contrato do instalador, lint, TypeScript, 92 testes frontend, build e npm audit (zero vulnerabilidades).
+
+`./scripts/verify-backlog.ps1` passou: 126 tarefas, 7 concluídas, 23 em andamento e 96 não iniciadas, 12,3% concluído / 87,7% restante. BK-066 permanece 5% e BK-067 25%; a implementação do motor não é o pipeline completo nem a aceitação financeira.
+
+Não havia `MAJUCAU_TEST_DATABASE_URL`; o teste de repositório PostgreSQL foi ignorado. A migration 000028 foi checksumada, incluída no código gerado e validada pelo verificador estrutural, mas ainda não aplicada a um PostgreSQL. Também não houve conexão OAuth, extração Bling, uso dos dados reais do banco da referência, confronto de setembro nem apresentação visual da T06. São gates obrigatórios antes de dizer que números reais e todos os acessos estão iguais.
